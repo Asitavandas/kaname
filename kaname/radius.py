@@ -154,7 +154,11 @@ def freeradius_result(decision):
     The callback also returns the native rlm_python3 result code. Auth-Type is
     set only inside check-eap-tls, not in the outer EAP authorize section.
     """
-    if type(decision) is not Decision or decision.action != 'allow':
+    if (type(decision) is not Decision or decision.action != 'allow'
+            or decision.reason != 'POLICY_ALLOW' or type(decision.policy_id) is not str
+            or not re.fullmatch(r'[A-Za-z0-9_.-]{1,64}', decision.policy_id)
+            or (decision.vlan is not None and (type(decision.vlan) is not int
+                                               or not 1 <= decision.vlan <= 4094))):
         return (), (('Auth-Type', ':=', 'Reject'),)
     attrs = radius_vlan_attributes(decision)
     reply = tuple((key + ':0', ':=', str(attrs[key])) for key in (

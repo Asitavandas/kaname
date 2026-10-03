@@ -235,6 +235,7 @@ $INCLUDE sites-enabled/
  func_authorize = authorize
 }}
 ''')
+    private_file(mods / 'reject', 'always reject {\n rcode = reject\n}\n')
     private_file(shim / 'kaname_lab_module.py',
                  'from tests.radius_fixture import authorize as lab_authorize\n'
                  'def authorize(pairs):\n    return lab_authorize(pairs, ' + repr(str(root)) + ')\n')

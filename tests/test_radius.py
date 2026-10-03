@@ -1,6 +1,11 @@
 """Identity boundary tests, not simulated RADIUS authentication claims."""
 import unittest
 from dataclasses import replace
+import json
+from pathlib import Path
+import tempfile
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from kaname.models import ValidationError
 from kaname.policy import Decision
@@ -137,6 +142,15 @@ class RadiusAuthorizationTests(unittest.TestCase):
         self.assertEqual(reply, ())
         self.assertEqual(config, (('Auth-Type', ':=', 'Reject'),))
 
+    def test_malformed_allow_result_cannot_emit_accept_or_vlan(self):
+        for value in (None, {}, Decision('allow', 'unverified', 'policy', 33),
+                      Decision('allow', 'POLICY_ALLOW', None, 33),
+                      Decision('allow', 'POLICY_ALLOW', 'policy', '33'),
+                      Decision('allow', 'POLICY_ALLOW', 'policy', True),
+                      Decision('allow', 'POLICY_ALLOW', 'policy', 4095)):
+            with self.subTest(value=value):
+                self.assertEqual(freeradius_result(value), ((), (('Auth-Type', ':=', 'Reject'),)))
+
     def test_serial_canonicalization_and_bounds(self):
         self.assertEqual(CertificateReference('a' * 64, '0012AB'), CERT)
         for serial in ('', '0', '-1', '12:ab', '"12ab"', '8' + '0' * 39, 'f' * 41):
@@ -169,6 +183,31 @@ class RadiusAuthorizationTests(unittest.TestCase):
                                     access_type='wired').reason, 'IDENTITY_NOT_VERIFIED')
         for change in ({'nas_ip': 'bad'}, {'access_type': 'other'}):
             self.assertEqual(self.decide(self.service(), **change).action, 'deny')
+
+    def test_native_fixture_callback_never_accepts_on_event_storage_failure(self):
+        from tests.radius_fixture import authorize
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / 'LAB_ONLY').write_text('KANAME temporary loopback EAP-TLS laboratory\n')
+            data = {'lab_only': True, 'issuer_sha256': CERT.issuer_sha256, 'issuer_dn': '/CN=Test',
+                    'nas_ip': '127.0.0.1', 'access_type': 'wired', 'case': 'unit',
+                    'directory_available': True, 'policies': [policy()],
+                    'bindings': {CERT.serial: {'domain': DOMAIN, 'object_guid': GUID, 'sid': SID,
+                                              'kind': 'computer', 'active': True}},
+                    'accounts': {GUID: {'domain': DOMAIN, 'object_guid': GUID, 'sid': SID,
+                                       'kind': 'computer', 'enabled': True,
+                                       'security_group_sids': [GROUP]}}}
+            (root / 'fixture.json').write_text(json.dumps(data))
+            (root / 'decisions.jsonl').mkdir()  # Force the event write to fail AFTER an allow.
+            pairs = (('TLS-Client-Cert-Issuer', '"/CN=Test"'), ('TLS-Client-Cert-Serial', '"12AB"'))
+            with patch.dict('sys.modules', {'radiusd': SimpleNamespace(RLM_MODULE_OK=2)}):
+                self.assertEqual(authorize(pairs, root), (2, (), (('Auth-Type', ':=', 'Reject'),)))
+
+    def test_native_fixture_missing_duplicate_and_wrong_issuer_fields_reject(self):
+        from tests.radius_fixture import scalar
+        for pairs in ((), (('Serial', '1'), ('Serial', '2')), (('Serial', '"1\\2"'),)):
+            with self.assertRaises(ValueError):
+                scalar(pairs, 'Serial')
 
 
 if __name__ == '__main__':

@@ -68,5 +68,5 @@ def authorize(pairs, root):
         return radiusd.RLM_MODULE_OK, reply, config
     except Exception:
         # Native integration failures are always a Reject, never a bypass.
-        reply, config = freeradius_result(decision)
+        reply, config = freeradius_result(Decision('deny', 'FIXTURE_ADAPTER_FAILED'))
         return radiusd.RLM_MODULE_OK, reply, config
