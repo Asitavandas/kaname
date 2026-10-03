@@ -1,0 +1,37 @@
+name: KANAME real RADIUS protocol proof
+on:
+  push:
+    branches: [main]
+    paths: ['kaname/**', 'tools/radius_lab.py', 'tests/radius_fixture.py', 'tests/test_radius.py', '.github/workflows/radius.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-eap-tls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          repository: FreeRADIUS/freeradius-server
+          ref: 9071ea041b9172e52eabbba91619afaf3a238795 # release_3_2_10
+          path: upstream-freeradius
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Ephemeral build and supplicant dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends build-essential libssl-dev libtalloc-dev libpcre2-dev libreadline-dev libcap-dev python3-dev eapoltest
+          python -m pip install cryptography==46.0.0
+      - name: Build pinned security-updated FreeRADIUS; no service installation
+        working-directory: upstream-freeradius
+        run: |
+          ./configure --prefix="$RUNNER_TEMP/kaname-freeradius" --with-rlm-python3-config-bin=/usr/bin/python3-config > "$RUNNER_TEMP/kaname-radius-configure.log" 2>&1
+          make -j2 > "$RUNNER_TEMP/kaname-radius-build.log" 2>&1
+          make install > "$RUNNER_TEMP/kaname-radius-install.log" 2>&1
+      - name: Native loopback EAP-TLS, policy and authenticated VLAN responses
+        run: |
+          python -m tools.radius_lab --radius-prefix "$RUNNER_TEMP/kaname-freeradius" --report "$RUNNER_TEMP/kaname-radius-proof.json"
