@@ -80,6 +80,18 @@ class WindowsUpgradeTests(unittest.TestCase):
         for name in ['kaname-state/access-token', '../README.md', '/etc/passwd', 'C:/Windows/file']:
             with self.assertRaises(ValueError): update.protected_path(self.root, name)
 
+    def test_windows_base_interpreter_requires_correct_module_and_owner(self):
+        facts = {'pid': 42, 'exe_matches_virtualenv': False, 'exe_matches_base': True, 'module_matches': True, 'owner_matches': True}
+        result = Mock(returncode=0, stdout=json.dumps(facts).encode())
+        # Stop the upgrade-level mock; test the actual process validation logic.
+        self.patches[2].stop()
+        with patch.dict(update.os.environ, {'SystemRoot': 'C:/Windows'}), patch.object(update.subprocess, 'run', return_value=result):
+            self.assertEqual(42, update.checked_panel_pid(Path('C:/venv/python.exe')))
+            facts['owner_matches'] = False; result.stdout = json.dumps(facts).encode()
+            with self.assertRaises(ValueError): update.checked_panel_pid(Path('C:/venv/python.exe'))
+            facts['owner_matches'] = True; facts['module_matches'] = False; result.stdout = json.dumps(facts).encode()
+            with self.assertRaises(ValueError): update.checked_panel_pid(Path('C:/venv/python.exe'))
+
     def test_started_panel_does_not_inherit_github_tokens(self):
         original = self.mocks[5]
         self.patches[5].stop()

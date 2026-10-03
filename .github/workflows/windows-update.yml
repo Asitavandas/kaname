@@ -39,3 +39,7 @@ jobs:
       - name: Verify updated installation without exporting secrets
         shell: powershell
         run: '& .\tools\windows_diagnose.ps1 -Root ''C:\Users\Administrator\KANAME'''
+      - name: Safe process facts if the update was refused
+        if: failure()
+        shell: powershell
+        run: '& ''C:\Users\Administrator\KANAME\.venv\Scripts\python.exe'' -m tools.windows_update --root ''C:\Users\Administrator\KANAME'' --probe'

@@ -48,7 +48,7 @@ def snapshot(root):
         db.close()
 
 
-def checked_panel_pid(python):
+def checked_panel_pid(python, probe=False):
     # All input is data on stdin; never interpolate machine values into a shell.
     script = '''$ErrorActionPreference='Stop'; $p=[Console]::In.ReadToEnd()|ConvertFrom-Json;
 $listeners=@(Get-NetTCPConnection -State Listen -LocalPort 8765 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique);
@@ -56,14 +56,21 @@ if($listeners.Count -ne 1){throw 'Expected exactly one KANAME listener'};
 $process=Get-CimInstance Win32_Process -Filter ('ProcessId='+$listeners[0]);
 $owner=Invoke-CimMethod -InputObject $process -MethodName GetOwner;
 $current=[System.Security.Principal.WindowsIdentity]::GetCurrent().Name;
-if($process.ExecutablePath -ine $p.python -or $process.CommandLine -notmatch '\\s-m\\s+kaname(?:\\s|$)' -or ($owner.Domain+'\\'+$owner.User) -ine $current){throw 'Process ownership or executable does not match'};
-@{pid=[int]$listeners[0]}|ConvertTo-Json -Compress'''
+$facts=@{pid=[int]$listeners[0]; exe_matches_virtualenv=($process.ExecutablePath -ieq $p.python); exe_matches_base=($process.ExecutablePath -ieq $p.base); module_matches=($process.CommandLine -match '\\s-m\\s+"?kaname"?(?:\\s|$)'); owner_matches=(($owner.Domain+'\\'+$owner.User) -ieq $current)};
+$facts|ConvertTo-Json -Compress'''
     executable = Path(os.environ['SystemRoot']) / 'System32/WindowsPowerShell/v1.0/powershell.exe'
     result = subprocess.run([str(executable), '-NoProfile', '-NonInteractive', '-Command', script],
-                            input=json.dumps({'python': str(python)}).encode(), capture_output=True, timeout=15)
+                            input=json.dumps({'python': str(python), 'base': getattr(sys, '_base_executable', sys.executable)}).encode(), capture_output=True, timeout=15)
     if result.returncode:
         raise ValueError('KANAME process could not be safely identified; no process stopped')
-    return json.loads(result.stdout.decode('utf-8-sig'))['pid']
+    facts = json.loads(result.stdout.decode('utf-8-sig'))
+    if probe:
+        return facts
+    # Windows venv redirectors may report the base interpreter in Win32_Process.
+    # Module, owner and authenticated local state checks still remain mandatory.
+    if facts.get('module_matches') is not True or facts.get('owner_matches') is not True or not (facts.get('exe_matches_virtualenv') is True or facts.get('exe_matches_base') is True):
+        raise ValueError('KANAME process could not be safely identified; no process stopped')
+    return facts['pid']
 
 
 def start_panel(root, python):
@@ -184,9 +191,13 @@ def upgrade(root, source):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', required=True)
+    parser.add_argument('--probe', action='store_true')
     args = parser.parse_args()
     try:
-        print(json.dumps(upgrade(args.root, Path(__file__).resolve().parent.parent)))
+        if args.probe:
+            print(json.dumps({'process_probe': checked_panel_pid(Path(args.root) / '.venv/Scripts/python.exe', probe=True)}))
+        else:
+            print(json.dumps(upgrade(args.root, Path(__file__).resolve().parent.parent)))
     except Exception as exc:
         # Only fixed, non-sensitive errors above are used for operator feedback.
         allowed = str(exc) if isinstance(exc, ValueError) and str(exc) in {

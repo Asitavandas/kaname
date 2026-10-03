@@ -5,7 +5,7 @@
     ".github/workflows/ci.yml": "5abdf39843cf053361e1cb07816cd964b324d4449a5cec1769704fdbf090e598",
     ".github/workflows/ui.yml": "66ce640415aeff3cf7023aee2fd5e0f117bfb4bd63d31f3e09e1d83d4307fa77",
     ".github/workflows/windows-diagnostics.yml": "aece43983d33aee0fc1bdbebc4a71864203644d11212e63a151f3df88c74a29a",
-    ".github/workflows/windows-update.yml": "64dbc5579b93383718f4252fb7dd6c87623008c19211aa2d55e27a05e426fa24",
+    ".github/workflows/windows-update.yml": "91fd2095c737a87a5c4810873e836b5c8057996e25c26bc3348baae002d77bfd",
     ".github/workflows/windows-validation.yml": "d1f3d51369ff4f1d2ada6e0a43e4043e74645da4bf4c3151c52c4e7c378d58eb",
     ".gitignore": "846189c4611c0a049709abd79c476c1e9ea2c5026b5c8087c0bb6f99bde337a1",
     "CHANGELOG.md": "b937fcfe478fde1c6f59c5442611830561c9485dda198574b828c607979ea5fc",
@@ -50,7 +50,7 @@
     "tests/test_policy.py": "69b1d0bd475407c86d95898f45d0c81fafd74f623da07bb447c70c45679af285",
     "tests/test_store.py": "c85e2c7d03bc9d2ea6d08b9c51101462690cb60db77826b3807c42a28cdbef89",
     "tests/test_windows_diagnose.py": "54b196ab794bc93dc3ea85d0d31584adf0375f5cd6651819ed038b469bc4846c",
-    "tests/test_windows_update.py": "2510736c0212c423c91718cc77598ee2e27d3f62f92056d35107f4417e5f51d9",
+    "tests/test_windows_update.py": "b017679b5c4eae5fe68d22493387537b86bbf2851811256fd3fef7e641f50d7c",
     "tools/__init__.py": "7e41a692ddeb7ca616af6038aa8b2d8b14aa1699216b213caaee860937d31403",
     "tools/export_appliance.py": "35ba5228947787ac89cf9f45f1f4961d1bdf1c82cc235568e4c547c48bba54d7",
     "tools/package_source.py": "b98e4b184646ab0fdd417fa466ba87c1b157eb9372dc8dac0f5c154a29b76c10",
@@ -59,6 +59,6 @@
     "tools/windows_baseline.json": "32d3a9811216d3b9c805d5563a311b8d1d07ecbd276602cab1c28dceca84d18e",
     "tools/windows_diagnose.ps1": "257ad0e9d737ea0ad75092e094d7e712bdf3b17a43439977c37efdae3906a553",
     "tools/windows_diagnose.py": "d5dd902e7e34553a032293180017be3c1d6f2e643e65449cc1638122d0479572",
-    "tools/windows_update.py": "83b8960c547ecf4c3096dbecd74cb99fb3d1c0dee75319a31c6b7abec8e1db68"
+    "tools/windows_update.py": "6cdd5d34e289753191558a63c10353c8e425025ee6a35ada7a1e9345bf8f631b"
   }
 }
