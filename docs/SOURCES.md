@@ -23,3 +23,5 @@ Kaynak araştırması 2026-10-02. Uygulama kararları bu belgelerin işlevlerini
 - RFC 5280 X.509/CRL: https://www.rfc-editor.org/rfc/rfc5280
 
 İmaj aşamasında seçilen sürümler ve paketlerin checksum/lisans/SBOM kayıtları ayrıca tutulacak.
+
+0.6 protokol denemesi (2026-10-04): FreeRADIUS release_3_2_10, sabit kaynak commit 9071ea041b9172e52eabbba91619afaf3a238795. Upstream security duyuruları, certificate-check virtual server ve native TLS callback kaynakları [protokol kanıtında](RADIUS_PROTOCOL.md) listelenir. Native supplicant/OpenSSL paket sürümleri her sanitised test raporuna kaydedilir; bu imaj SBOM/lock teslimi değildir.

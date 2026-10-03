@@ -8,12 +8,12 @@ NPS'in connection request policy katmanı isteğin yerelde işleneceğini veya u
 
 ## Hedef bileşenler ve mevcut durum
 
-| Bileşen | Hedef | 0.2.0-dev.1 |
+| Bileşen | Hedef | 0.6.0-dev.1 |
 |---|---|---|
-| Yönetim paneli/API | HTTPS, wizard, RBAC, yönetici oturumları, teşhis | Loopback geliştirme paneli, taslak API |
+| Yönetim paneli/API | HTTPS, wizard, RBAC, yönetici oturumları, teşhis | Loopback geliştirme paneli, oturum/RBAC ve kullanıcı/profil yönetimi; gerçek servis apply yok |
 | Politika motoru | SID ile grup, erişim türü, NAS, EAP, cihaz şartı, VLAN | Çalışıyor; girdiler gerçek adaptör kanıtı değil |
-| RADIUS/EAP | Appliance içinde FreeRADIUS; TLS/EAP/RADIUS protokolünü yeniden yazmama | Bağlı değil; yalnız VLAN öznitelik modeli |
-| AD adaptörü | Güvenli LDAP/Kerberos, grup ve hesap durumu, computer kimliği | Bağlı değil; yalnız domain/DC taslağı |
+| RADIUS/EAP | Appliance içinde FreeRADIUS; TLS/EAP/RADIUS protokolünü yeniden yazmama | Native loopback EAP-TLS/policy/VLAN protokol kanıtı; production servis bağlı değil |
+| AD adaptörü | Güvenli LDAP/Kerberos, grup ve hesap durumu, computer kimliği | Windows Kerberos katalog ve üyelik okuması; live Linux erişim karar sağlayıcısı yok |
 | Dahili PKI | CA, enrollment, yenileme, iptal, CRL ve kimliğe bağlama | Root/issuer CA, şifreli anahtar, server CSR, iptal ve CRL var; istemci enrollment/AD eşlemesi yok |
 | Kalıcılık | Yapılandırma sürümü, secret kasası, audit, kontrollü apply | SQLite sürümleme ve atomik audit; secret kasası yok |
 | Servis uygulayıcı | Doğrula → staged config → etkinleştir → health check → rollback | Henüz yok |
@@ -26,6 +26,8 @@ Yerel PKI mevcut SQLite veritabanına ilave tablolar ekler; eski ayar/politika s
 ## Güven sınırları
 
 Tarayıcıda girilen `authenticated`, grup SID veya `domain_device` bir doğrulama kanıtı değildir. `/api/simulate` yalnız örnek karar üretir. Üretimde bu alanlar sadece doğrulanmış EAP oturumu ile AD/sertifika eşlemesini birleştiren iç adaptörden gelebilir. Yönetim API'si RADIUS Access-Accept gönderemez.
+
+0.6 iç `TLSAuthorization` sınırı native FreeRADIUS certificate-check sanal sunucusu için hazırlanır. Pinned issuer+serial kayıt bağı domain/objectGUID/SID/tür ile güncel dizin hesabına eşlenir. Dizin sağlayıcısı her karar için çağrılır; eksik sağlayıcı ret verir. Kullanıcı sertifikası domain bilgisayar kanıtı değildir. Mevcut üyelik ekranının distribution grupları dahil yapısal grafiği Windows access token/security grup yetkisi yerine kullanılamaz. İzole protokol laboratuvarı gerçek EAP/RADIUS'u, sentetik AD sağlayıcısını kullanır; production enrollment veya provider etkinleştirmez. [Kanıtın kapsamı](RADIUS_PROTOCOL.md).
 
 EAP-TLS sertifikasının CA imzası tek başına domain üyeliğini kanıtlamaz. Kayıt sırasında doğrulanmış bilgisayar/kullanıcı kimliği, SID veya değişmez AD nesne kimliğiyle bağlanır; yetkisiz SAN/UPN talebi kabul edilmez. Kararda sertifika zinciri, amaç, süre, iptal durumu ve eşleşen AD hesabının enabled durumu kontrol edilir. Kullanıcı sertifikası ile bilgisayar sertifikası ayrı profil/amaç ve politikaya sahiptir. Aynı oturumda hem kullanıcı hem cihaz kanıtı gerektiren senaryolar ayrıca tasarlanır; temel EAP-TLS'in bunu kendiliğinden verdiği varsayılmaz.
 

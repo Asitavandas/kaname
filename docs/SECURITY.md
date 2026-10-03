@@ -14,6 +14,8 @@ SQLite yapılandırma audit'i değişikliklerle aynı transaction içinde oluşt
 
 `VerifiedIdentity` tipi girdi biçimini denetler; isim/ad veya tip bir kriptografik doğrulama sayılmaz. Mevcut HTTP simülasyonu sahte örnek alanları kabul eder, yalnız gösterim üretir. Üretim RADIUS adaptörü bu girdiyi istemci/panel beyanından alamaz.
 
+0.6 native FreeRADIUS protokol laboratuvarı yalnız geçici loopback süreçtir. Pinned issuer+serial → registry → canlı dizin sağlayıcısı sınırı eksik/kapalı/yanlış kimliği reddeder; default production registry/provider bulunmaz. Fixture sağlayıcı display katalogdan veya müşteri verisinden okunmaz. Kendi geçici CA'sı ve test sertifikaları kullanılır, müşteri PKI'sına istemci imzalama açılmaz. TLS session cache kapalıdır; her yeni oturumda dizin kontrolü tekrar çalışır. Native Message-Authenticator ve kaynak IP denetimi ile TLS zincir/EKU/süre/CRL sınırları gerçek paket testiyle kontrol edilir. Bu kanıt service hardening, gerçek AD enrollment, CRL yayını/zamanlayıcı, production timeout/rate-limit veya ağ kabulü değildir.
+
 ## Yerel PKI sınırı
 
 Root ve issuer RSA-3072/SHA256 ile oluşturulur. Anahtarlar PKCS#8 BestAvailableEncryption ile şifreli SQLite BLOB olarak saklanır; parola CLI'da getpass ile alınır ve argüman/log/API'ye yazılmaz. Parola uzunluk kontrolü güçlü parola veya HSM güvencesi değildir. Python süreç belleğinin sıfırlanması garanti edilmez. Root ve issuer aynı parola/veritabanındadır; bu bir offline root tasarımı değildir. Üretim key vault, yetki ayrımı ve root lifecycle sonraki aşamadır.

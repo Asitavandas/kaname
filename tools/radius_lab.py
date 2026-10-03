@@ -540,8 +540,10 @@ def run_lab(prefix):
                     process.kill()
                     process.wait(timeout=3)
     packages = subprocess.run(['dpkg-query', '-W', '-f=${Package}=${Version}\n',
-                               'eapoltest', 'libssl3t64', 'libpython3.12'],
+                               'eapoltest', 'libssl3t64', 'libpython3.12t64'],
                               capture_output=True, check=True).stdout.decode().splitlines()
+    if len(packages) != 3 or any(line.endswith('=') for line in packages):
+        raise RuntimeError('Native dependency version evidence is incomplete')
     return {'version': '0.6.0-dev.1', 'freeradius_version': '3.2.10', 'test_packages': packages,
             'freeradius_source_commit': FREE_RADIUS_COMMIT,
             'transport': 'loopback UDP with native FreeRADIUS and eapol_test',

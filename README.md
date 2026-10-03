@@ -2,8 +2,8 @@
 
 Bağımsız Active Directory tabanlı kablolu/kablosuz 802.1X erişim yönetimi.
 
-**Geliştirme sürümü: 0.5.0-dev.1 — akordiyon menüler, ayrılmış yönetim/AD ekranları ve kullanıcı/grup üyelik detayları.**
-Mevcut politika ve dahili PKI temeli korunur. Windows'taki yerel panelden Kerberos signing/sealing ile kullanıcı, bilgisayar ve gruplar okunabilir; son okumadaki doğrudan, primary ve iç içe üyelikler incelenebilir. Parola kaydedilmez. Çalışan RADIUS hizmeti, istemci enrollment veya açılabilir OVF bu sürümde yoktur. Paneldeki ağ/politika kayıtları taslaktır; ağda izin/ret kararı uygulanmaz. Linux appliance AD okuyucusu henüz bağlı değildir.
+**Geliştirme sürümü: 0.6.0-dev.1 — native FreeRADIUS/EAP-TLS protokol laboratuvarı ve sertifikaya bağlı politika sınırı.**
+Mevcut panel, politika ve dahili PKI temeli korunur. Windows'taki yerel panelden Kerberos signing/sealing ile kullanıcı, bilgisayar ve gruplar okunabilir; son okumadaki doğrudan, primary ve iç içe üyelikler incelenebilir. Parola kaydedilmez. Yeni izole laboratuvar native FreeRADIUS/eapol_test ile gerçek TLS ve RADIUS paketlerini kullanır; AD kimlikleri test verisidir. Üretim RADIUS hizmeti, istemci enrollment veya açılabilir OVF bu sürümde yoktur. Paneldeki ağ/politika kayıtları taslaktır; kullanıcı ağında izin/ret kararı uygulanmaz. Linux appliance live AD okuyucusu henüz bağlı değildir.
 
 ## Başlatma
 
@@ -42,6 +42,7 @@ python3 -m kaname --port 8876 --state-dir ./kaname-state
 | Kayıt | SQLite kalıcılığı, çakışan sürüm kaydını engelleme ve yapılandırmayla aynı transaction içinde audit. |
 | Dahili PKI | Yerel konsoldan benzersiz root/issuer CA, şifreli anahtarlar, kayıtlı FQDN için server-only sertifika, iptal ve imzalı CRL. Panel yalnız açık CA bilgilerini gösterir. |
 | Active Directory | User&Authentication → Active Directory altında bağlantı; Users/User Groups altında aynı ekranda iki ayrı liste ve tıklanabilir üyelik detayları. Kerberos korumalı LDAP, nesne/üye sayfalama, primary ve iç içe üyelik; politikaya yalnız security grubu seçimi. Domain Admin parolası saklanmaz; AD değişikliği yapılmaz. |
+| RADIUS protokol laboratuvarı | İzole loopback ortamında native EAP-TLS, sertifika-kimlik eşlemesi, politika motoru ve bütünlüğü doğrulanan gerçek Accept/Reject/VLAN yanıtları. Dizin verisi fixture'dır; production service veya enrollment açılmaz. |
 | OVF araçları | Hazırlanmış temiz VMware VMX'inin dışa aktarımı için sarmalayıcı ve yerel OVF/VMDK/SHA256 manifest denetleyicisi. |
 
 Policy API daha geniş modeli destekler; yeni politika formu EAP-TLS + domain cihazı şartı kullanır. **AD grup kısıtı yok** seçilirse yalnız grup üyeliği koşulu kaldırılır; diğer politika koşulları geçerlidir. Grup seçmek kullanıcı/cihazın o grupta olduğunu veya EAP oturumunu doğrulamaz. Ayrıntılar [AD laboratuvar akışında](docs/AD.md).
@@ -67,6 +68,8 @@ node tools/ui_smoke.cjs
 
 Bu test geçici veri klasörü ve rastgele port kullanır; müşteri ayarı içermez. Bağımlılıklar appliance çalışma zamanı için zorunlu değildir.
 
+Native RADIUS protokol kontrolü `.github/workflows/radius.yml` içinde sabit FreeRADIUS 3.2.10 kaynak commit'i ve eapol_test ile çalışır. Kimlik bağlama sınırları normal unittest'e dahildir; gerçek paket testi ayrı Linux işidir. Ayrıntılar ve sonraki domain laboratuvarı [RADIUS protokol kanıtında](docs/RADIUS_PROTOCOL.md).
+
 ## Dağıtım hedefi
 
 Son ürünün teslimi `.ovf + .vmdk + .mf` paketi olacaktır. İlk doğrulama hedefi VMware vSphere/ESXi'dir. Her kurulum kendi yönetici erişimini, makine kimliğini ve anahtarlarını üretmelidir. Başka ürüne, bulut servisine veya ayrı CA sunucusuna çalışma bağımlılığı olmayacaktır. AD, DNS ve doğru saat erişimi kurumsal ağdan sağlanır.
@@ -82,6 +85,7 @@ OVF bütün hypervisor'larda aynı şekilde içe aktarılmaz. Diğer hedefler i�
 - [Bağlantı sonrası devam kaydı](docs/RESUME.md)
 - [OVF üretim ve dağıtım sözleşmesi](docs/APPLIANCE.md)
 - [AD kullanıcı/grup üyelikleri](docs/DIRECTORY_MEMBERSHIP.md)
+- [Gerçek RADIUS/EAP-TLS protokol kanıtı](docs/RADIUS_PROTOCOL.md)
 - [Yönetici hesapları ve profiller](docs/ADMINISTRATION.md)
 - [Güvenlik sınırları](docs/SECURITY.md)
 - [Doğrulama raporu](docs/TEST_REPORT.md)

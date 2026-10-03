@@ -5,7 +5,7 @@ Güncelleme: 2026-10-04. Aşamalar bağımlılık sırasıyla ilerler; süreler 
 | Aşama | Çıktı | Kabul kapısı | Durum |
 |---|---|---|---|
 | 0. Başlangıç | Bağımsız repo yapısı, taslak panel, politika motoru, SQLite, OVF sözleşmesi/araçları | Otomatik testler; API simülasyonu gerçek auth olarak kullanılamaz | 0.1 temeli korundu |
-| 1. Protokol kanıtı | Gerçek FreeRADIUS + AD adaptörü + dahili PKI enrollment denemesi | Manuel hazırlanmış switch/AP üzerinden gerçek kablolu ve kablosuz EAP-TLS | CA/server CSR/CRL ve Windows AD katalog okuma tamamlandı; Linux AD/EAP sıradaki |
+| 1. Protokol kanıtı | Gerçek FreeRADIUS + AD adaptörü + dahili PKI enrollment denemesi | Manuel hazırlanmış switch/AP üzerinden gerçek kablolu ve kablosuz EAP-TLS | CA/server CSR/CRL, Windows AD katalog ve 0.6 native loopback EAP-TLS/policy/VLAN temeli var; live Linux AD/enrollment/fiziksel kabul bekliyor |
 | 2. Kimlik yaşam döngüsü | AD grup/hesap sorgusu, cihaz/kullanıcı sertifika eşlemesi, yenileme/iptal | Yanlış grup, kapalı hesap, iptal/expired sertifika, AD kesintisi ret testleri | Planlandı |
 | 3. Gerçek wizard | DNS/saat/AD testleri, CA/trust, RADIUS secret, GPO/profil çıktıları, kontrollü apply | Başlangıçtan ilk erişime kadar panelden uygulanabilir akış; rollback | Planlandı |
 | 4. Günlük yönetim | Kullanıcı/grup seçimi, policy edit, accounting, arama/teşhis, RBAC, audit | Kim yaptı/neyi değiştirdi; oturum ve hata korelasyonu | 0.5 yerel oturum/RBAC, akordiyon menüler, ayrılmış System/AD ekranları ve kullanıcı/grup üyelik inceleme tamamlandı; accounting/üretim audit/apply bekliyor |
@@ -17,6 +17,8 @@ Güncelleme: 2026-10-04. Aşamalar bağımlılık sırasıyla ilerler; süreler 
 0.2 dahili CA/server CSR/CRL temelini ekledi. 0.3.2 Windows Kerberos LDAP ve domain kapsamlı sayfalı okuma düzeltmelerini tamamladı; operatör gerçek AD ekranında başarılı 55 sonuç bildirdi. Bu sayı tek başına bütün kategorilerin toplamı veya canlı üyelik doğrulaması değildir. 0.4 kullanıcı/parola girişi, System kullanıcı/profil yönetimi, menü/sekme düzeyinde RBAC ve SID yazmadan grup adı seçimi ekledi. 0.5 akordiyon menüleri, ayrı Admin Profiles ve AD bağlantı sayfalarını, aynı ekranda Users/User Groups listelerini ve doğrudan/primary/iç içe üyelik detaylarını ekler. Bu ilişkiler henüz ağ kimlik doğrulamasına bağlanmaz. Yerel oturum/RBAC üretim HTTPS/appliance aşamasının tamamlandığı anlamına gelmez.
 
 Her sürümün testleri ve güncellemesi tamamlandıktan sonra **Soruların veya değiştirmek/düzenlemek istediğin yerler var mı?** sorulur. Operatör yanıtlamadan aşağıdaki yeni geliştirmeye geçilmez.
+
+Operatör 0.5 menü/üyelik teslimini kabul etti ve sonraki aşamayı onayladı. 0.6, sabit FreeRADIUS 3.2.10 native loopback protokol laboratuvarını ve sertifikaya bağlı iç yetkilendirme sınırını ekler. Gerçek paketler fixture AD/enrollment bağlarıyla denenir; production service, canlı domain kimlik doğrulaması veya Windows fiziksel EAPOL kabulü ilan edilmez. Sonraki ihtiyaç temiz Ubuntu VM ve live Kerberos AD sağlayıcısıdır. Ayrıntılar [RADIUS protokol kanıtı](RADIUS_PROTOCOL.md).
 
 1. Tek domainli Windows AD laboratuvarını, Windows endpoint'i ve temiz Ubuntu appliance VM'ini hazırlamak. Switch/AP ve port/SSID ayarları operatörün manuel sorumluluğundadır.
 2. Mevcut iç CA/server CSR altyapısını gerçek endpoint trust ve EAP oturumuna bağlamak. İstemci enrollment kimliğini AD nesnesiyle doğrulamadan istemci sertifikası üretimini açmamak.

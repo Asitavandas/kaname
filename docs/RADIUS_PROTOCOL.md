@@ -22,7 +22,7 @@ Native `eapol_test` supplicant EAP-TLS oturumu başlatır. Native FreeRADIUS TLS
 
 ## Native test ortamı
 
-FreeRADIUS 3.2.10, upstream `release_3_2_10`, kaynak commit `9071ea041b9172e52eabbba91619afaf3a238795` sabitlenir. GitHub'ın geçici Ubuntu 24.04 runner'ında bağımsız prefix'e derlenir. Sistem RADIUS servisi kurulmaz/değiştirilmez. Yapılandırma rastgele loopback UDP portunu, yalnız 127.0.0.1 NAS kaynağını ve her çalıştırmada rastgele shared secret'ı kullanır. Proxy, parola yöntemleri ve kullanılmayan EAP yöntemleri açılmaz.
+FreeRADIUS 3.2.10, upstream `release_3_2_10`, kaynak commit `9071ea041b9172e52eabbba91619afaf3a238795` sabitlenir. GitHub'ın geçici Ubuntu 24.04 runner'ında bağımsız prefix'e derlenir. Sistem RADIUS servisi kurulmaz/değiştirilmez. Yeniden derlemeyi kısaltan cache yalnız native lib/sbin/share dosyalarını içerir; geçici KANAME CA/state/debug dosyaları cache kapsamına alınmaz. Yapılandırma rastgele loopback UDP portunu, yalnız 127.0.0.1 NAS kaynağını ve her çalıştırmada rastgele shared secret'ı kullanır. Proxy, parola yöntemleri ve kullanılmayan EAP yöntemleri açılmaz.
 
 `require_message_authenticator = yes`, `limit_proxy_state = yes`, native TLS zincir/EKU/CRL denetimi, expired CRL reddi ve kapalı TLS session cache kullanılır. İlk uyumluluk kanıtı TLS 1.2 + ECDHE/RSA/AES-GCM ile sınırlıdır; TLS 1.3 ve Windows davranışı ayrı gerçek lab kontrolüdür. Sertifikalar RSA-2048 leaf ve mevcut RSA-3072 KANAME CA ile üretilir. EAP fragment boyutu 512'dir; çoklu challenge/response oturumu zorunlu doğrulanır.
 
@@ -67,5 +67,6 @@ Sonraki geliştirme, Kerberos signing/sealing ile **live Linux AD** sağlayıcı
 - [FreeRADIUS güvenlik duyuruları](https://www.freeradius.org/security/)
 - [Pinned upstream EAP-TLS virtual server](https://github.com/FreeRADIUS/freeradius-server/blob/9071ea041b9172e52eabbba91619afaf3a238795/raddb/sites-available/check-eap-tls)
 - [Native certificate-check çağrısı ve reply kopyalama](https://github.com/FreeRADIUS/freeradius-server/blob/9071ea041b9172e52eabbba91619afaf3a238795/src/modules/rlm_eap/types/rlm_eap_tls/rlm_eap_tls.c)
+- [Tunnel tag/string kuralları, RFC 2868](https://www.rfc-editor.org/rfc/rfc2868)
 - [RADIUS/EAP Message-Authenticator, RFC 3579](https://www.rfc-editor.org/rfc/rfc3579)
 - [RADIUS Response Authenticator, RFC 2865](https://www.rfc-editor.org/rfc/rfc2865)

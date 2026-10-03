@@ -1,5 +1,14 @@
 # Değişiklikler
 
+## 0.6.0-dev.1 — gerçek EAP-TLS/RADIUS protokol laboratuvarı
+
+- Native FreeRADIUS 3.2.10 ve eapol_test ile geçici loopback protokol testi eklendi; panelin simülasyon endpoint'i kullanılmaz.
+- Sertifika pinned issuer/serial ile kayıt bağına, domain/objectGUID/SID/tür ile güncel dizin sağlayıcısı sonucuna eşlenir. Missing/offline/mismatch/disabled/group removal varsayılan ret verir; display katalog fallback değildir.
+- Kullanıcı sertifikası bilgisayar kimliği üretmez. Policy sıra/koşul/kısıt ve VLAN motoru native sertifika-check sanal sunucusunda kullanılır; bozuk/ret sonuç Accept veya VLAN üretemez.
+- Gerçek TLS zincir/EKU/süre/CRL retleri, sunucu adı/güven reddi, Access-Challenge, Reply Authenticator/Message-Authenticator ve standart VLAN öznitelikleri denetlenir.
+- Native kaynak commit'i sabitlenir; yalnız loopback geçici CA, shared secret, dosyalar ve süreçler kullanılır. Müşteri CA'sı/verisi ve Windows ağ/servis ayarı değiştirilmez.
+- Dizin ve enrollment bağları yalnız fixture'dır. Production RADIUS, live Linux AD, Windows/switch/AP uçtan uca test ve bootable OVF sonraki kabul kapılarıdır.
+
 ## 0.5.0-dev.1 — menüler ve AD üyelik detayları
 
 - Sol menü başlıkları tek başlığı açık tutabilen, klavyeyle kullanılabilen akordiyon yapısına geçti.
