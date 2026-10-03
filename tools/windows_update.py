@@ -43,9 +43,21 @@ def snapshot(root):
         pki = None
         if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='pki_authority'").fetchone():
             pki = db.execute('SELECT public_data,crl_number FROM pki_authority WHERE id=1').fetchone()
-        return state, pki
+        catalog = None
+        if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='directory_catalog'").fetchone():
+            catalog = db.execute('SELECT domain,synced_at,payload FROM directory_catalog WHERE id=1').fetchone()
     finally:
         db.close()
+    admins = None
+    path = root / 'kaname-state' / 'administrators.sqlite3'
+    if path.is_symlink(): raise ValueError('Administrator state cannot be a reparse point')
+    if path.exists():
+        db = sqlite3.connect(path.as_uri() + '?mode=ro', uri=True)
+        try:
+            admins = tuple(db.execute('SELECT * FROM ' + table + ' ORDER BY id').fetchall() for table in ('admin_meta', 'admin_users', 'admin_profiles'))
+        finally:
+            db.close()
+    return state, pki, catalog, admins
 
 
 def checked_panel_pid(python, probe=False):
@@ -131,7 +143,7 @@ def upgrade(root, source):
     status, active = get_json('/api/state', token=token)
     if status != 200 or not isinstance(active, dict) or active.get('product') != 'KANAME':
         raise ValueError('Existing panel could not be authenticated')
-    existing, _ = snapshot(root)
+    existing = snapshot(root)[0]
     if not existing or active.get('revision') != existing[0] or active.get('config') != (json.loads(existing[1]) if existing[1] else None) or active.get('policies') != json.loads(existing[2]):
         raise ValueError('Existing panel does not match the requested installation')
     if active.get('version') == release['version'] and all((root/n).is_file() and digest(root/n) == h for n,h in files.items()):
@@ -166,6 +178,14 @@ def upgrade(root, source):
             db.backup(saved)
         finally:
             db.close(); saved.close()
+        admin_path = state / 'administrators.sqlite3'
+        if admin_path.exists():
+            db = sqlite3.connect(admin_path.as_uri() + '?mode=ro', uri=True)
+            saved = sqlite3.connect(backup / 'administrators.sqlite3')
+            try:
+                db.backup(saved)
+            finally:
+                db.close(); saved.close()
         shutil.copy2(state / 'access-token', backup / 'access-token')
         for name in files:
             destination = root / name
@@ -173,13 +193,15 @@ def upgrade(root, source):
             shutil.copy2(source / name, destination)
         child = start_panel(root, python)
         current = wait_panel(release['version'], token)
-        if read_token(root) != token or snapshot(root) != before:
+        after = snapshot(root)
+        if read_token(root) != token or after[:3] != before[:3] or (before[3] is not None and after[3] != before[3]):
             raise ValueError('Existing configuration or CA preservation check failed')
         if current.get('directory_public', {}).get('runtime_auth_ready') is not False:
             raise ValueError('Directory readiness boundary failed')
         return {'updated': True, 'version': release['version'], 'backup_created': True,
                 'configuration_preserved': True, 'policies_preserved': True, 'ca_preserved': True,
-                'token_preserved': True, 'real_ad_tested': False}
+                'token_preserved': True, 'directory_catalog_preserved': True, 'panel_accounts_preserved': before[3] is not None,
+                'panel_accounts_initialized': before[3] is None and after[3] is not None, 'real_ad_tested': False}
     except Exception:
         if not stopped:
             raise ValueError('Update refused; existing panel not stopped') from None

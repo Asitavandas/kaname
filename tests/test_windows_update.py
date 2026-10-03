@@ -64,6 +64,26 @@ class WindowsUpgradeTests(unittest.TestCase):
             self.assertTrue(update.upgrade(self.root, self.source)['updated'])
         self.assertEqual(1, self.store.snapshot()['revision'])
 
+    def test_upgrade_preserves_and_backs_up_catalog_and_administrator_accounts(self):
+        from kaname.admin import AdminStore
+        from .test_directory import catalog
+        self.store.save_directory(1, catalog())
+        admins = AdminStore(self.store)
+        before = update.snapshot(self.root)
+        with patch.object(update, 'wait_panel', return_value={'directory_public': {'runtime_auth_ready': False}}):
+            result = update.upgrade(self.root, self.source)
+        self.assertEqual(before, update.snapshot(self.root))
+        self.assertTrue(result['directory_catalog_preserved'])
+        self.assertTrue(result['panel_accounts_preserved'])
+        backups = list((self.root / '.kaname-upgrades').glob('*/administrators.sqlite3'))
+        self.assertEqual(1, len(backups))
+        import sqlite3
+        with sqlite3.connect(backups[0]) as backup:
+            self.assertEqual('ok', backup.execute('PRAGMA integrity_check').fetchone()[0])
+            with admins.connect() as original:
+                for table in ('admin_meta', 'admin_users', 'admin_profiles'):
+                    self.assertEqual([tuple(r) for r in original.execute('SELECT * FROM ' + table + ' ORDER BY id')], backup.execute('SELECT * FROM ' + table + ' ORDER BY id').fetchall())
+
     def test_previous_release_manifest_is_digest_checked(self):
         previous = self.source / 'tools/windows_previous_release.json'
         previous.write_text(json.dumps({'files': {'kaname/__init__.py': 'untrusted'}}))
