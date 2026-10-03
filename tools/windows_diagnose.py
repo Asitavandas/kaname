@@ -7,6 +7,7 @@ import json
 import re
 import sqlite3
 import sys
+from dataclasses import asdict
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, build_opener, ProxyHandler, HTTPRedirectHandler
@@ -106,6 +107,35 @@ def database_facts(root):
     return facts, snapshot
 
 
+def simulation_checks(snapshot, token, port):
+    from kaname.policy import VerifiedIdentity, evaluate
+    policies = snapshot['policies']
+    enabled = next((p for p in policies if p['enabled']), None)
+    payload = {'authenticated': True, 'directory_available': True, 'account_enabled': True,
+               'domain_device': True, 'group_sids': [], 'access_type': 'wired',
+               'nas_ip': '192.0.2.2', 'eap_method': 'EAP-TLS'}
+    if enabled:
+        conditions = enabled['conditions']
+        payload.update(group_sids=conditions['group_sids'][:1],
+                       access_type=(conditions['access_types'] or ['wired'])[0],
+                       nas_ip=(conditions['nas_ips'] or ['192.0.2.2'])[0],
+                       eap_method=enabled['constraints']['eap_methods'][0])
+    checks = {}
+    for name, modifications in [('matching_policy', {}), ('non_domain_device', {'domain_device': False}),
+                                ('disabled_account', {'account_enabled': False})]:
+        context = {**payload, **modifications}
+        identity = VerifiedIdentity(**{**context, 'group_sids': frozenset(context['group_sids'])})
+        expected = evaluate(policies, identity)
+        status, response = get_json('/api/simulate', token=token, payload=context, port=port)
+        # Only our local enum value and comparison result are emitted. Full API
+        # responses can contain policy IDs/VLANs and must never reach the log.
+        checks[name] = {'expected_reason': expected.reason,
+                        'passed': status == 200 and isinstance(response, dict)
+                        and response.get('simulation_only') is True and response.get('network_enforced') is False
+                        and response.get('decision') == asdict(expected)}
+    return checks
+
+
 def diagnose(root, port=8765):
     root = Path(root)
     report = {'schema_version': 1, 'inspection': 'read-only-with-inert-simulation',
@@ -151,14 +181,7 @@ def diagnose(root, port=8765):
             report['panel']['state_http_status'] = state_code
             report['panel']['matches_local_state'] = authenticated and snapshot is not None and all(state.get(k) == v for k, v in snapshot.items())
             if authenticated and report['panel']['matches_local_state']:
-                payload = {'authenticated': True, 'directory_available': True, 'account_enabled': False,
-                           'domain_device': True, 'group_sids': [], 'access_type': 'wired',
-                           'nas_ip': '192.0.2.2', 'eap_method': 'EAP-TLS'}
-                sim_code, sim = get_json('/api/simulate', token=token, payload=payload, port=port)
-                report['panel']['disabled_account_simulation_passed'] = (sim_code == 200 and isinstance(sim, dict)
-                    and sim.get('simulation_only') is True and sim.get('network_enforced') is False
-                    and sim.get('decision', {}).get('action') == 'deny'
-                    and sim.get('decision', {}).get('reason') == 'ACCOUNT_DISABLED')
+                report['panel']['simulation_checks'] = simulation_checks(snapshot, token, port)
     report['previous_browser_login'] = 'cannot_determine'
     report['previous_manual_simulation'] = 'cannot_determine'
     report['real_ad_radius_ovf'] = 'not_implemented_in_this_version'

@@ -8,6 +8,7 @@ from pathlib import Path
 
 from kaname.server import DevelopmentServer
 from tools.windows_diagnose import database_facts, diagnose, get_json, read_token
+from .helpers import policy
 
 
 class WindowsDiagnosticTests(unittest.TestCase):
@@ -29,6 +30,7 @@ class WindowsDiagnosticTests(unittest.TestCase):
             config = {'appliance_fqdn': 'hidden-radius.example', 'ad_domain': 'hidden-domain.example',
                       'dc_ips': ['192.0.2.10'], 'radius_clients': [], 'access_modes': ['wired']}
             server.store.save(0, config=config)
+            server.store.save(1, policies=[policy(id='PRIVATE_POLICY_IDENTIFIER', name='PRIVATE_POLICY_NAME')])
             with server.store.connect() as db:
                 db.execute('CREATE TABLE pki_authority (id INTEGER, root_key BLOB, public_data TEXT, crl_number INTEGER)')
                 metadata = {'initialized': True, 'mode': 'local-encrypted', 'instance_id': 'test-instance',
@@ -45,15 +47,20 @@ class WindowsDiagnosticTests(unittest.TestCase):
                 server.server_close()
                 thread.join()
             serialized = json.dumps(report)
-            for hidden in [server.token, 'hidden-radius.example', 'hidden-domain.example', 'PRIVATE_CA_KEY_SENTINEL']:
+            for hidden in [server.token, 'hidden-radius.example', 'hidden-domain.example', 'PRIVATE_CA_KEY_SENTINEL',
+                           'PRIVATE_POLICY_IDENTIFIER', 'PRIVATE_POLICY_NAME', 'S-1-5-21-10-20-30-40']:
                 self.assertNotIn(hidden, serialized)
             self.assertTrue(report['access_token_valid'])
             self.assertTrue(report['database']['config_saved'])
             self.assertTrue(report['database']['ca_initialized'])
             self.assertTrue(report['panel']['matches_local_state'])
-            self.assertTrue(report['panel']['disabled_account_simulation_passed'])
+            checks = report['panel']['simulation_checks']
+            self.assertTrue(all(check['passed'] for check in checks.values()))
+            self.assertEqual('POLICY_ALLOW', checks['matching_policy']['expected_reason'])
+            self.assertEqual('DOMAIN_DEVICE_REQUIRED', checks['non_domain_device']['expected_reason'])
+            self.assertEqual('ACCOUNT_DISABLED', checks['disabled_account']['expected_reason'])
             self.assertEqual(before, hashlib.sha256(server.store.path.read_bytes()).hexdigest())
-            self.assertEqual(1, server.store.snapshot()['revision'])
+            self.assertEqual(2, server.store.snapshot()['revision'])
 
     def test_redirect_never_forwards_token(self):
         paths = []
