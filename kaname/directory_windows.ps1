@@ -1,5 +1,5 @@
 # Read-only AD adapter. Credential JSON arrives on stdin; nothing is written to disk.
-param([switch]$SelfTest)
+param([switch]$SelfTest, [int]$FixturePort=0)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2
 [Console]::InputEncoding = New-Object System.Text.UTF8Encoding($false)
@@ -37,7 +37,7 @@ function Convert-Object($entry, [string]$kind) {
     return $record
 }
 function Read-Objects([string]$kind, [string]$filter, [string]$base) {
-    $script:stage = $kind + '_search'
+    $script:stage = $kind + '_prepare'
     $objects = New-Object 'System.Collections.Generic.List[object]'
     $search = New-Object System.DirectoryServices.Protocols.SearchRequest
     $search.DistinguishedName = $base
@@ -72,6 +72,7 @@ function Read-Objects([string]$kind, [string]$filter, [string]$base) {
     return ,$objects.ToArray()
 }
 try {
+    if ($FixturePort -ne 0 -and (-not $SelfTest -or $FixturePort -lt 1024 -or $FixturePort -gt 65535)) { throw 'Invalid fixture mode' }
     if ($SelfTest) {
         Add-Type -AssemblyName System.DirectoryServices.Protocols
         $identifier = New-Object System.DirectoryServices.Protocols.LdapDirectoryIdentifier('dc01.example.invalid', 389, $true, $false)
@@ -112,7 +113,25 @@ try {
             $group = Convert-Object $entry 'groups'
             if ($group.ContainsKey('enabled') -or (($group | ConvertTo-Json -Compress | ConvertFrom-Json).sid -ne $fixtureSid)) { throw 'Group fixture failed' }
         }
-        @{self_test='passed'; transport='kerberos-sign-seal'; network_called=$false} | ConvertTo-Json -Compress
+        if ($FixturePort -ne 0) {
+            # Only the explicit test CLI can reach this branch. Fixed loopback
+            # destination, anonymous fixture bind, no production credentials.
+            $connection.Dispose()
+            $identifier = [System.DirectoryServices.Protocols.LdapDirectoryIdentifier]::new('127.0.0.1', $FixturePort, $false, $false)
+            $connection = [System.DirectoryServices.Protocols.LdapConnection]::new($identifier)
+            $connection.AuthType = [System.DirectoryServices.Protocols.AuthType]::Anonymous
+            $connection.SessionOptions.ProtocolVersion = 3
+            $connection.SessionOptions.ReferralChasing = [System.DirectoryServices.Protocols.ReferralChasingOptions]::None
+            $connection.Timeout = [TimeSpan]::FromSeconds(5)
+            $failure = 'AD_SEARCH_FAILED'
+            $users = Read-Objects 'users' '(&(objectCategory=person)(objectClass=user))' 'DC=fixture,DC=invalid'
+            $groups = Read-Objects 'groups' '(&(objectCategory=group)(groupType:1.2.840.113556.1.4.803:=2147483648))' 'DC=fixture,DC=invalid'
+            $computers = Read-Objects 'computers' '(objectCategory=computer)' 'DC=fixture,DC=invalid'
+            if ($users.Count -ne 2 -or $groups.Count -ne 1 -or $computers.Count -ne 1 -or $users[0].enabled -ne $false -or $users[1].enabled -ne $true -or $groups[0].sid -ne 'S-1-5-32-544') { throw 'Fixture result failed' }
+            @{self_test='passed'; fixture='paged-ldap'; external_network_called=$false; counts=@{users=$users.Count; groups=$groups.Count; computers=$computers.Count}} | ConvertTo-Json -Compress
+        } else {
+            @{self_test='passed'; transport='kerberos-sign-seal'; network_called=$false} | ConvertTo-Json -Compress
+        }
         exit 0
     }
     $request = [Console]::In.ReadToEnd() | ConvertFrom-Json
@@ -157,6 +176,8 @@ try {
     if ($exception.GetType().FullName -eq 'System.DirectoryServices.Protocols.LdapException' -and $exception.ErrorCode -eq 49) { $errorCode = 'AD_CREDENTIALS_REJECTED' }
     if ($_.Exception.Message -eq 'AD_DIRECTORY_LIMIT') { $errorCode = 'AD_DIRECTORY_LIMIT' }
     $reason = 'UNKNOWN'
+    if ($_.FullyQualifiedErrorId -in @('PropertyNotFoundStrict', 'PropertyAssignmentException')) { $reason = 'PROPERTY_ACCESS' }
+    if ($_.FullyQualifiedErrorId -in @('MethodNotFound', 'MethodException', 'MethodArgumentConversionInvalidCastArgument')) { $reason = 'METHOD_BINDING' }
     if ($exception.GetType().FullName -eq 'System.DirectoryServices.Protocols.DirectoryOperationException') {
         $reason = 'LDAP_RESULT'
         if ($exception.Response -and $exception.Response.ResultCode -eq [System.DirectoryServices.Protocols.ResultCode]::InsufficientAccessRights) { $reason = 'ACCESS_DENIED' }

@@ -14,8 +14,8 @@ TRANSPORT = 'kerberos-sign-seal'
 ERRORS = {'AD_BIND_FAILED', 'AD_CREDENTIALS_REJECTED', 'AD_DOMAIN_MISMATCH',
           'AD_DIRECTORY_LIMIT', 'AD_SEARCH_FAILED', 'AD_PROTOCOL_UNAVAILABLE',
           'AD_PROTECTION_REQUIRED', 'AD_INPUT_INVALID'}
-STAGES = {'input', 'bind', 'rootdse', 'serialize'} | {kind + '_' + step for kind in ('users', 'groups', 'computers') for step in ('search', 'decode', 'page')}
-REASONS = {'UNKNOWN', 'LDAP_RESULT', 'ACCESS_DENIED', 'LDAP_CONNECTION', 'VALUE_CONVERSION', 'ATTRIBUTE_MISSING', 'BINARY_ATTRIBUTE_INVALID'}
+STAGES = {'input', 'bind', 'rootdse', 'serialize'} | {kind + '_' + step for kind in ('users', 'groups', 'computers') for step in ('prepare', 'search', 'decode', 'page')}
+REASONS = {'UNKNOWN', 'LDAP_RESULT', 'ACCESS_DENIED', 'LDAP_CONNECTION', 'VALUE_CONVERSION', 'ATTRIBUTE_MISSING', 'BINARY_ATTRIBUTE_INVALID', 'PROPERTY_ACCESS', 'METHOD_BINDING'}
 
 
 class DirectoryError(Exception):

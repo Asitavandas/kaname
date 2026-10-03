@@ -14,6 +14,7 @@ from kaname.models import ValidationError
 from kaname.server import DevelopmentServer
 from kaname.store import Store, ConflictError
 from .helpers import config
+from .ldap_fixture import LDAPFixture
 
 
 def catalog():
@@ -103,6 +104,39 @@ class DirectoryModelTests(unittest.TestCase):
         result = subprocess.run([str(executable), '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', str(script), '-SelfTest'], capture_output=True, timeout=15)
         self.assertEqual(0, result.returncode, 'Windows adapter self-test failed (no AD network call)')
         self.assertEqual({'self_test': 'passed', 'transport': 'kerberos-sign-seal', 'network_called': False}, json.loads(result.stdout.decode('utf-8-sig')))
+
+    def run_ldap_fixture(self, mode):
+        executable = Path(os.environ['SystemRoot']) / 'System32/WindowsPowerShell/v1.0/powershell.exe'
+        script = Path(__file__).parents[1] / 'kaname/directory_windows.ps1'
+        with LDAPFixture(mode) as fixture:
+            result = subprocess.run([str(executable), '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', str(script), '-SelfTest', '-FixturePort', str(fixture.port)], capture_output=True, timeout=25)
+            value = json.loads(result.stdout.decode('utf-8-sig'))
+            self.assertEqual([], fixture.errors)
+            return result.returncode, value
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows .NET LDAP wire fixture')
+    def test_windows_ldap_query_decoding_and_paging_on_loopback(self):
+        code, value = self.run_ldap_fixture('normal')
+        self.assertEqual(0, code, str(value))
+        self.assertEqual({'self_test': 'passed', 'fixture': 'paged-ldap', 'external_network_called': False, 'counts': {'users': 2, 'groups': 1, 'computers': 1}}, value)
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows .NET LDAP wire fixture')
+    def test_windows_ldap_repeated_cookie_is_rejected(self):
+        code, value = self.run_ldap_fixture('repeat')
+        self.assertEqual(1, code)
+        self.assertEqual('users_page', value['stage'])
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows .NET LDAP wire fixture')
+    def test_windows_ldap_missing_page_control_is_rejected(self):
+        code, value = self.run_ldap_fixture('missing')
+        self.assertEqual(1, code)
+        self.assertEqual('users_page', value['stage'])
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows .NET LDAP wire fixture')
+    def test_windows_ldap_search_referral_is_rejected(self):
+        code, value = self.run_ldap_fixture('referral')
+        self.assertEqual(1, code)
+        self.assertEqual('users_search', value['stage'])
 
 
 class DirectoryStoreTests(unittest.TestCase):
