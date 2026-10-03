@@ -144,7 +144,7 @@ class Handler(BaseHTTPRequestHandler):
         result['config'] = {k: config[k] for resource, fields in config_fields.items() if permits(self.actor, resource) for k in fields if k in config} or None
         if permits(self.actor, 'policies.rules'): result['policies'] = value['policies']
         if permits(self.actor, 'certificates.authority'): result['pki_public'] = value['pki_public']
-        if permits(self.actor, 'directory.catalog'):
+        if permits(self.actor, 'directory.catalog') or permits(self.actor, 'directory.connection'):
             result['directory_public'] = value['directory_public']
             result['directory_context'] = {'configured': bool(config), 'domain': config.get('ad_domain', '')}
         return result
@@ -179,7 +179,7 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
                 if len(self.path) > 1024 or set(query) - {'offset', 'q'} or any(len(v) != 1 for v in query.values()): raise ValueError()
-                self.respond(200, self.server.store.directory_page('groups', int(query.get('offset', ['0'])[0]), query=query.get('q', [''])[0]))
+                self.respond(200, self.server.store.directory_page('groups', int(query.get('offset', ['0'])[0]), query=query.get('q', [''])[0], security_only=True))
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
         elif urlsplit(self.path).path == '/api/directory/catalog' and self.guard(resource='directory.catalog'):
             try:
@@ -195,7 +195,15 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(400, {'error': 'INVALID_INPUT'})
             except sqlite3.Error:
                 self.respond(503, {'error': 'STORE_UNAVAILABLE'})
-        elif urlsplit(self.path).path not in {'/api/state', '/api/audit', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/policies/groups'}:
+        elif urlsplit(self.path).path == '/api/directory/detail' and self.guard(resource='directory.catalog'):
+            try:
+                query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                if len(self.path) > 1024 or set(query) - {'kind', 'id', 'offset', 'q'} or any(len(v) != 1 for v in query.values()): raise ValueError()
+                self.respond(200, self.server.store.directory_detail(query.get('kind', [''])[0], query.get('id', [''])[0], int(query.get('offset', ['0'])[0]), query.get('q', [''])[0]))
+            except LookupError: self.respond(404, {'error': 'CATALOG_OBJECT_NOT_FOUND'})
+            except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
+            except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
+        elif urlsplit(self.path).path not in {'/api/state', '/api/audit', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups'}:
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
@@ -211,7 +219,7 @@ class Handler(BaseHTTPRequestHandler):
             except (ValidationError, ValueError, TypeError, KeyError): self.respond(400, {'error': 'INVALID_INPUT'})
             except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
             return
-        resources = {'/api/config': None, '/api/policies': 'policies.rules', '/api/simulate': 'simulate.scenarios', '/api/directory/sync': 'directory.catalog', '/api/system/users/save': 'system.administrators', '/api/system/users/delete': 'system.administrators', '/api/system/profiles/save': 'system.profiles', '/api/system/profiles/delete': 'system.profiles', '/api/auth/logout': None, '/api/auth/password': None}
+        resources = {'/api/config': None, '/api/policies': 'policies.rules', '/api/simulate': 'simulate.scenarios', '/api/directory/sync': 'directory.connection', '/api/system/users/save': 'system.administrators', '/api/system/users/delete': 'system.administrators', '/api/system/profiles/save': 'system.profiles', '/api/system/profiles/delete': 'system.profiles', '/api/auth/logout': None, '/api/auth/password': None}
         if not self.guard(write=True, resource=resources.get(self.path), permission_write=self.path != '/api/simulate'):
             return
         if self.path not in resources:

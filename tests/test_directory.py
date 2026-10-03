@@ -141,6 +141,23 @@ class DirectoryModelTests(unittest.TestCase):
         self.assertEqual('users_search', value['stage'])
         self.assertEqual('REFERRAL_RETURNED', value['reason'])
 
+    @unittest.skipUnless(os.name == 'nt', 'Windows .NET LDAP ranged membership fixture')
+    def test_windows_member_ranges_include_the_final_page_and_large_groups(self):
+        for mode in ('range-normal', 'range-large'):
+            with self.subTest(mode=mode):
+                code, value = self.run_ldap_fixture(mode)
+                self.assertEqual(0, code, str(value))
+                self.assertEqual('passed', value['self_test'])
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows .NET LDAP ranged membership fixture')
+    def test_windows_missing_repeated_and_duplicate_member_ranges_fail_closed(self):
+        for mode in ('range-missing', 'range-repeat', 'range-duplicate'):
+            with self.subTest(mode=mode):
+                code, value = self.run_ldap_fixture(mode)
+                self.assertEqual(1, code)
+                self.assertEqual('groups_members', value['stage'])
+                self.assertEqual('MEMBERSHIP_RANGE_INVALID', value['reason'])
+
 
 class DirectoryStoreTests(unittest.TestCase):
     def setUp(self):

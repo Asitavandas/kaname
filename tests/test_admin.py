@@ -122,6 +122,24 @@ class AdministratorHTTPTests(unittest.TestCase):
         self.assertEqual('lab.example', self.server.store.snapshot()['config']['ad_domain'])
         self.assertEqual(403, self.call('POST', '/api/config', {'expected_revision': 2, 'patch': {'ad_domain': 'other.example'}}, auth=pair)[0])
 
+    def test_directory_connection_and_catalog_have_independent_rights(self):
+        from .test_membership import membership_catalog
+        self.server.store.save_directory(1, membership_catalog())
+        detail = '/api/directory/detail?kind=users&id=00000000-0000-0000-0000-000000000001'
+        for name, grants, detail_status, catalog_status, sync_status in [
+            ('connector', {'directory.connection': 'write', 'directory.catalog': 'none'}, 403, 403, 400),
+            ('catalogreader', {'directory.connection': 'none', 'directory.catalog': 'read'}, 200, 200, 403),
+        ]:
+            profile = self.create_profile(name, grants); self.user(name, profile); auth = self.login(name)
+            self.assertEqual(detail_status, self.call('GET', detail, auth=auth)[0])
+            self.assertEqual(catalog_status, self.call('GET', '/api/directory/catalog?kind=users', auth=auth)[0])
+            self.assertEqual(sync_status, self.call('POST', '/api/directory/sync', {}, auth=auth)[0])
+
+    def test_legacy_custom_directory_right_is_preserved_until_explicitly_split(self):
+        from kaname.admin import permissions
+        self.assertEqual('write', permissions('Custom', {'directory.catalog': 'write'})['directory.connection'])
+        self.assertEqual('none', permissions('Custom', {'directory.catalog': 'write', 'directory.connection': 'none'})['directory.connection'])
+
     def test_session_writes_require_origin_and_csrf(self):
         for extra in [{'X-Kaname-CSRF': ''}, {'Origin': ''}, {'Origin': 'https://attacker.example'}]:
             self.assertEqual(403, self.call('POST', '/api/auth/logout', {}, headers=extra)[0])

@@ -121,13 +121,14 @@ class Store:
     def directory_status(self):
         catalog = self.directory_catalog()
         result = {'catalog_available': catalog is not None, 'windows_reader_available': os.name == 'nt',
-                  'runtime_auth_ready': False, 'automatic_sync_enabled': False}
+                  'runtime_auth_ready': False, 'automatic_sync_enabled': False,
+                  'membership_available': catalog is not None and catalog.get('membership_schema') == 1}
         if catalog:
             result.update(domain=catalog['domain'], dc_fqdn=catalog['dc_fqdn'], synced_at=catalog['synced_at'],
                           transport=catalog['transport'], counts={k: len(catalog[k]) for k in ('users', 'groups', 'computers')})
         return result
 
-    def directory_page(self, kind, offset=0, limit=100, query=''):
+    def directory_page(self, kind, offset=0, limit=100, query='', security_only=False):
         if kind not in {'users', 'groups', 'computers'}:
             raise ValueError('Invalid catalog kind')
         integer(offset, 0, 10000); integer(limit, 1, 200)
@@ -136,5 +137,23 @@ class Store:
         catalog = self.directory_catalog()
         if catalog is None:
             return {'items': [], 'total': 0, 'offset': offset, 'catalog_available': False}
-        items = [x for x in catalog[kind] if not query or any(query.casefold() in x[k].casefold() for k in ('name', 'sam', 'sid'))]
+        items = [x for x in catalog[kind] if (not security_only or x.get('security_enabled', True)) and (not query or any(query.casefold() in x[k].casefold() for k in ('name', 'sam', 'sid')))]
         return {'items': items[offset:offset + limit], 'total': len(items), 'offset': offset, 'catalog_available': True}
+
+    def directory_detail(self, kind, object_id, offset=0, query=''):
+        import uuid
+        from .membership import related
+        if kind not in {'users', 'groups'}: raise ValueError('Invalid detail kind')
+        integer(offset, 0, 10000)
+        if type(object_id) is not str or str(uuid.UUID(object_id)) != object_id: raise ValueError('Invalid object identity')
+        if type(query) is not str or len(query) > 128 or any(ord(c) < 32 for c in query): raise ValueError('Invalid directory query')
+        catalog = self.directory_catalog()
+        target = next((x for x in catalog[kind] if x['guid'] == object_id), None) if catalog else None
+        if target is None: raise LookupError('Catalog object not found')
+        result = {'object': target, 'kind': kind, 'offset': offset, 'synced_at': catalog['synced_at'],
+                  'membership_available': catalog.get('membership_schema') == 1, 'scope': 'single-domain-snapshot'}
+        if not result['membership_available']: return {**result, 'items': [], 'total': 0}
+        items, coverage = related(catalog, kind, target)
+        items = [x for x in items if not query or any(query.casefold() in x[k].casefold() for k in ('name', 'sam', 'sid'))]
+        items.sort(key=lambda x: (x['name'].casefold(), x['sam'].casefold(), x['guid']))
+        return {**result, **coverage, 'items': items[offset:offset + 100], 'total': len(items)}

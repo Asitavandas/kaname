@@ -18,7 +18,9 @@ RESOURCES = {
     'setup.product': ['Kurulum', 'Ürün'], 'setup.directory': ['Kurulum', 'Dizin'],
     'setup.network': ['Kurulum', 'Ağ erişimi'], 'policies.rules': ['Politikalar', 'Kurallar'],
     'simulate.scenarios': ['Karar testi', 'Senaryolar'], 'audit.events': ['İşlem geçmişi', 'Kayıtlar'],
-    'certificates.authority': ['Sertifikalar', 'Dahili CA'], 'directory.catalog': ['Active Directory', 'Katalog'],
+    'certificates.authority': ['Sertifikalar', 'Dahili CA'],
+    'directory.connection': ['User&Authentication', 'Active Directory'],
+    'directory.catalog': ['User&Authentication', 'Users/User Groups'],
     'system.administrators': ['System', 'Administrators'], 'system.profiles': ['System', 'Admin Profiles'],
 }
 LEVELS = {'none': 0, 'read': 1, 'write': 2}
@@ -57,7 +59,8 @@ def permissions(mode, grants):
         return {k: 'read' for k in RESOURCES}
     if mode != 'Custom' or type(grants) is not dict or set(grants) - set(RESOURCES) or any(type(v) is not str or v not in LEVELS for v in grants.values()):
         raise ValidationError('Invalid profile permissions')
-    return {k: grants.get(k, 'none') for k in RESOURCES}
+    # Preserve the connection right of existing Custom profiles until edited.
+    return {k: grants.get(k, grants.get('directory.catalog', 'none') if k == 'directory.connection' else 'none') for k in RESOURCES}
 
 
 def permits(actor, resource, write=False):

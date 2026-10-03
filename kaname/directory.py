@@ -14,8 +14,8 @@ TRANSPORT = 'kerberos-sign-seal'
 ERRORS = {'AD_BIND_FAILED', 'AD_CREDENTIALS_REJECTED', 'AD_DOMAIN_MISMATCH',
           'AD_DIRECTORY_LIMIT', 'AD_SEARCH_FAILED', 'AD_PROTOCOL_UNAVAILABLE',
           'AD_PROTECTION_REQUIRED', 'AD_INPUT_INVALID'}
-STAGES = {'input', 'bind', 'rootdse', 'serialize'} | {kind + '_' + step for kind in ('users', 'groups', 'computers') for step in ('prepare', 'search', 'decode', 'page')}
-REASONS = {'UNKNOWN', 'LDAP_RESULT', 'ACCESS_DENIED', 'LDAP_CONNECTION', 'VALUE_CONVERSION', 'ATTRIBUTE_MISSING', 'BINARY_ATTRIBUTE_INVALID', 'PROPERTY_ACCESS', 'METHOD_BINDING', 'REFERRAL_RETURNED'}
+STAGES = {'input', 'bind', 'rootdse', 'serialize', 'groups_members', 'memberships'} | {kind + '_' + step for kind in ('users', 'groups', 'computers') for step in ('prepare', 'search', 'decode', 'page')}
+REASONS = {'UNKNOWN', 'LDAP_RESULT', 'ACCESS_DENIED', 'LDAP_CONNECTION', 'VALUE_CONVERSION', 'ATTRIBUTE_MISSING', 'BINARY_ATTRIBUTE_INVALID', 'PROPERTY_ACCESS', 'METHOD_BINDING', 'REFERRAL_RETURNED', 'MEMBERSHIP_RANGE_INVALID'}
 
 
 class DirectoryError(Exception):
@@ -42,7 +42,10 @@ def validate_connection(value, config):
 
 def validate_catalog(value, domain=None, dc_fqdn=None):
     fields = {'domain', 'dc_fqdn', 'transport', 'users', 'groups', 'computers'}
-    keys(value, fields, fields)
+    keys(value, fields | {'membership_schema', 'memberships'}, fields)
+    membership_available = 'membership_schema' in value or 'memberships' in value
+    if membership_available and (type(value.get('membership_schema')) is not int or value['membership_schema'] != 1 or type(value.get('memberships')) is not list):
+        raise ValidationError('Invalid membership schema')
     if value['transport'] != TRANSPORT:
         raise ValidationError('Protected directory connection required')
     result = {'domain': dns_name(value['domain']), 'dc_fqdn': dns_name(value['dc_fqdn']), 'transport': TRANSPORT}
@@ -60,7 +63,8 @@ def validate_catalog(value, domain=None, dc_fqdn=None):
         result[kind] = []
         for obj in objects:
             required = {'guid', 'sid', 'sam', 'name'} | ({'enabled'} if kind != 'groups' else set())
-            keys(obj, required, required)
+            extra = {'security_enabled', 'unresolved_members'} if kind == 'groups' else {'primary_group_unresolved'}
+            keys(obj, required | extra, required | (extra if membership_available else set()))
             guid = str(uuid.UUID(text(obj['guid'], 36)))
             sid = text(obj['sid'], 184)
             pattern = r'S-1-5-21-[0-9]+-[0-9]+-[0-9]+-[0-9]+'
@@ -74,7 +78,35 @@ def validate_catalog(value, domain=None, dc_fqdn=None):
             record = {'guid': guid, 'sid': sid, 'sam': text(obj['sam'], 256), 'name': text(obj['name'], 256)}
             if kind != 'groups':
                 record['enabled'] = boolean(obj['enabled'])
+                if 'primary_group_unresolved' in obj: record['primary_group_unresolved'] = boolean(obj['primary_group_unresolved'])
+            else:
+                if 'security_enabled' in obj: record['security_enabled'] = boolean(obj['security_enabled'])
+                if 'unresolved_members' in obj: record['unresolved_members'] = integer(obj['unresolved_members'], 0, 10000)
             result[kind].append(record)
+    if membership_available:
+        if len(value['memberships']) > 100000: raise ValidationError('Membership size limit')
+        groups = {x['sid']: x for x in result['groups']}
+        accounts = {x['sid'] for kind in ('users', 'computers') for x in result[kind]}
+        seen, primary = set(), set()
+        edges = []
+        for edge in value['memberships']:
+            keys(edge, {'member_sid', 'group_sid', 'type'}, {'member_sid', 'group_sid', 'type'})
+            member, group = text(edge['member_sid'], 184), text(edge['group_sid'], 184)
+            if member not in sids or group not in groups or member == group or type(edge['type']) is not str or edge['type'] not in {'direct', 'primary'}:
+                raise ValidationError('Invalid membership reference')
+            key = (member, group, edge['type'])
+            if key in seen: raise ValidationError('Duplicate membership')
+            seen.add(key)
+            if edge['type'] == 'primary':
+                if member not in accounts or member in primary or member.rsplit('-', 1)[0] != group.rsplit('-', 1)[0] or not groups[group]['security_enabled']:
+                    raise ValidationError('Invalid primary group')
+                primary.add(member)
+            edges.append({'member_sid': member, 'group_sid': group, 'type': edge['type']})
+        for kind in ('users', 'computers'):
+            for account in result[kind]:
+                if account['primary_group_unresolved'] == (account['sid'] in primary):
+                    raise ValidationError('Missing or contradictory primary group')
+        result.update(membership_schema=1, memberships=edges)
     return result
 
 

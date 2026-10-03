@@ -13,7 +13,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
   const python = process.env.CODEX_PRIMARY_RUNTIME_PYTHON || process.env.KANAME_PYTHON || 'python3';
   // Port 0 is accepted by DevelopmentServer; production CLI intentionally rejects it.
   // Directory fixture is confined to this disposable test server; no real AD.
-  const child = spawn(python, ['-u', '-c', 'import sys; from kaname.server import DevelopmentServer; from tests.test_directory import catalog; s=DevelopmentServer(sys.argv[1],0); s.directory_reader=lambda v,c:{**catalog(),"domain":c["ad_domain"],"dc_fqdn":v["dc_fqdn"]}; original=s.store.directory_status; s.store.directory_status=lambda:{**original(),"windows_reader_available":True}; print(s.server_port,flush=True); s.serve_forever()', temp], {cwd: root, stdio:['ignore','pipe','pipe']});
+  const child = spawn(python, ['-u', '-c', 'import sys; from kaname.server import DevelopmentServer; from tests.test_membership import membership_catalog as catalog; s=DevelopmentServer(sys.argv[1],0); s.directory_reader=lambda v,c:{**catalog(),"domain":c["ad_domain"],"dc_fqdn":v["dc_fqdn"]}; original=s.store.directory_status; s.store.directory_status=lambda:{**original(),"windows_reader_available":True}; print(s.server_port,flush=True); s.serve_forever()', temp], {cwd: root, stdio:['ignore','pipe','pipe']});
   let browser;
   try {
     const port = await new Promise((resolve,reject) => {
@@ -27,11 +27,18 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     const page=await browser.newPage({viewport:{width:1440,height:1000}});
     const errors=[];
     page.on('pageerror',err=>errors.push(err.message));
+    async function navigate(view){const button=page.locator('[data-view="'+view+'"]');const group=button.locator('xpath=ancestor::details');if(!await group.evaluate(x=>x.open))await group.locator('summary').click();await button.click();}
     await page.goto(`http://127.0.0.1:${port}`);
     await page.locator('#login-user').fill('admin');
     await page.locator('#login-password').fill('Kaname');
     await page.locator('#unlock').click();
     await page.locator('#workspace').waitFor({state:'visible'});
+    await page.locator('[data-nav-group="configuration"] > summary').click();
+    assert.equal(await page.locator('[data-view="setup"]').isVisible(),false);
+    await page.locator('[data-nav-group="authentication"] > summary').click();
+    assert.equal(await page.locator('[data-view="directory"]').isVisible(),true);
+    assert.equal(await page.locator('[data-nav-group="configuration"]').evaluate(x=>x.open),false);
+    await navigate('setup');
     await page.locator('#fqdn').fill('kaname.kurum.example');
     await page.locator('#next').click();
     await page.locator('#domain').fill('kurum.example');
@@ -42,14 +49,14 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.match(await page.locator('#review').textContent(),/kurum.example/);
     await page.locator('#save').click();
     await page.waitForFunction(()=>document.querySelector('#revision').textContent.includes('1'));
-    await page.locator('[data-view="policies"]').click();
-    await page.locator('summary').click();
+    await navigate('policies');
+    await page.locator('#policies summary').click();
     const sid='S-1-5-21-100-200-300-400';
     assert.equal(await page.locator('#policy-any-group').isChecked(),true);
     assert.equal(await page.locator('#policy-group').isDisabled(),true);
     await page.locator('#add-policy').click();
     await page.waitForFunction(()=>document.querySelectorAll('.policy-row').length===1);
-    await page.locator('[data-view="simulate"]').click();
+    await navigate('simulate');
     await page.locator('#sim-group').fill(sid);
     await page.locator('#run-simulation').click();
     await page.waitForFunction(()=>document.querySelector('#result').textContent.includes('POLICY_ALLOW'));
@@ -57,12 +64,12 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#scenario').selectOption('outside');
     await page.locator('#run-simulation').click();
     await page.waitForFunction(()=>document.querySelector('#result').textContent.includes('DOMAIN_DEVICE_REQUIRED'));
-    await page.locator('[data-view="audit"]').click();
+    await navigate('audit');
     assert.match(await page.locator('#audit-list').textContent(),/config_saved/);
     assert.match(await page.locator('#audit-list').textContent(),/policies_saved/);
-    await page.locator('[data-view="certificates"]').click();
+    await navigate('certificates');
     assert.match(await page.locator('#pki-info').textContent(),/[Hh]enüz CA oluşturulmadı/);
-    await page.locator('[data-view="directory"]').click();
+    await navigate('directory');
     assert.equal(await page.locator('#ad-domain').inputValue(),'kurum.example');
     await page.locator('#ad-host').fill('dc01.kurum.example');
     const fixturePassword='UI_FIXTURE_PASSWORD_NOT_REAL';
@@ -81,14 +88,35 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.unroute('**/api/directory/sync',failRoute);
     await page.locator('#ad-password').fill(fixturePassword);
     await page.locator('#directory-sync').click();
-    await page.waitForFunction(()=>document.querySelector('#directory-status').textContent.includes('1 grup'));
-    await page.waitForFunction(()=>document.querySelector('#directory-list').textContent.includes('<script>alert(1)</script>'));
+    await page.waitForFunction(()=>document.querySelector('#directory-status').textContent.includes('4 grup'));
+    
     await page.waitForFunction(()=>!document.querySelector('#directory-sync').disabled);
     assert.equal(await page.locator('#ad-password').inputValue(),'');
-    assert.match(await page.locator('#directory-list').textContent(),/<script>alert\(1\)<\/script>/);
-    assert.equal(await page.locator('#directory-list script').count(),0);
+    await navigate('identities');
+    await page.waitForFunction(()=>document.querySelectorAll('#directory-users-list .policy-row').length===2&&document.querySelectorAll('#directory-groups-list .policy-row').length===4);
+    assert.match(await page.locator('#directory-groups-list').textContent(),/<script>alert\(1\)<\/script>/);
+    assert.equal(await page.locator('#directory-groups-list script').count(),0);
     assert.ok(!fs.readFileSync(path.join(temp,'kaname.sqlite3')).includes(fixturePassword));
-    await page.locator('#directory-list button').click();
+    await page.locator('#directory-users-list [data-object-id="00000000-0000-0000-0000-000000000001"]').click();
+    await page.waitForFunction(()=>document.querySelector('#detail-title').textContent.includes('Alice')&&document.querySelector('#detail-list').textContent.includes('Parent'));
+    assert.match(await page.locator('#detail-list').textContent(),/Primary group/);
+    assert.match(await page.locator('#detail-list').textContent(),/İç içe grup üzerinden/);
+    await page.locator('#detail-list [data-object-id="00000000-0000-0000-0000-000000000004"]').click();
+    await page.waitForFunction(()=>document.querySelector('#detail-title').textContent.includes('Domain Users')&&document.querySelector('#detail-list').textContent.includes('Bob'));
+    assert.match(await page.locator('#detail-list').textContent(),/Alice/);
+    assert.equal(await page.locator('#detail-list .policy-row').count(),2);
+    await page.locator('#detail-close').click();
+    await page.locator('#directory-groups-list [data-object-id="00000000-0000-0000-0000-000000000006"]').click();
+    await page.waitForFunction(()=>document.querySelector('#detail-title').textContent.includes('Parent')&&document.querySelector('#detail-list').textContent.includes('Alice'));
+    assert.match(await page.locator('#detail-status').textContent(),/2 iç içe grup/);
+    assert.match(await page.locator('#detail-status').textContent(),/1 bilgisayar/);
+    await page.locator('#detail-query').fill('Bob');
+    await page.locator('#detail-search').click();
+    await page.waitForFunction(()=>document.querySelector('#detail-list').textContent.includes('Bu aramada sonuç yok'));
+    await page.locator('#detail-close').click();
+    const distribution=page.locator('#directory-groups-list .policy-row').filter({hasText:'Department'});
+    assert.equal(await distribution.getByText('Politikada kullan',{exact:true}).count(),0);
+    await page.locator('#directory-groups-list .policy-row').filter({hasText:'<script>alert(1)</script>'}).getByText('Politikada kullan',{exact:true}).click();
     assert.equal(await page.locator('#policy-group').inputValue(),'S-1-5-21-1-2-3-1100');
     await page.reload();
     await page.locator('#workspace').waitFor({state:'visible'});
@@ -96,14 +124,14 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.equal(await page.locator('#login-password').inputValue(),'');
     assert.equal((await page.context().cookies()).find(c=>c.name==='kaname_session').httpOnly,true);
     assert.equal(await page.evaluate(()=>localStorage.length),0);
-    await page.locator('[data-view="policies"]').click();
+    await navigate('policies');
     assert.equal(await page.locator('.policy-row').count(),1);
     let releaseSystem;
     const systemGate=new Promise(resolve=>{releaseSystem=resolve;});
     const delayedSystem=async route=>{const response=await route.fetch();await systemGate;await route.fulfill({response});};
     await page.route('**/api/system',delayedSystem);
-    await page.locator('[data-view="system"]').click();
-    await page.locator('#system-profiles-tab').click();
+    await navigate('profiles');
+    assert.equal(await page.locator('#system').isVisible(),false);
     assert.equal(await page.locator('#new-profile').isDisabled(),true);
     releaseSystem();
     await page.waitForFunction(()=>!document.querySelector('#new-profile').disabled);
@@ -114,7 +142,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('[data-resource="policies.rules"]').selectOption('read');
     await page.locator('#admin-profile-form button[type="submit"]').click();
     await page.waitForFunction(()=>document.querySelector('#admin-profiles-list').textContent.includes('ProductOperator'));
-    await page.locator('#system-users-tab').click();
+    await navigate('system');
     async function addUser(name,profileName){
       await page.locator('#new-user').click();
       await page.locator('#admin-username').fill(name);
@@ -136,10 +164,14 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#logout').click();
     await login('reader');
     assert.equal(await page.locator('#fqdn').isDisabled(),true);
-    await page.locator('[data-view="policies"]').click();
+    await navigate('policies');
     assert.equal(await page.locator('#add-policy').isDisabled(),true);
     const denied=await page.evaluate(async()=>{const r=await fetch('/api/policies',{method:'POST',headers:{'Content-Type':'application/json','X-Kaname-CSRF':csrf},body:JSON.stringify({expected_revision:state.revision,policies:[]})});return r.status;});
     assert.equal(denied,403);
+    await navigate('identities');
+    await page.locator('#directory-users-list [data-object-id="00000000-0000-0000-0000-000000000001"]').click();
+    await page.waitForFunction(()=>document.querySelector('#detail-list').textContent.includes('Domain Users'));
+    await page.locator('#detail-close').click();
     let releasePreviousRole,previousRoleReady;
     const previousRoleGate=new Promise(resolve=>{releasePreviousRole=resolve;});
     const previousRoleStarted=new Promise(resolve=>{previousRoleReady=resolve;});
@@ -156,6 +188,9 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.equal(await page.locator('#admin-profiles-list').textContent(),'');
     assert.equal(await page.locator('[data-view="directory"]').isVisible(),false);
     assert.equal(await page.locator('[data-view="system"]').isVisible(),false);
+    assert.equal(await page.locator('[data-view="profiles"]').isVisible(),false);
+    assert.equal(await page.locator('[data-view="identities"]').isVisible(),false);
+    assert.equal(await page.locator('[data-nav-group="authentication"]').isVisible(),false);
     assert.equal(await page.locator('[data-step="1"]').isVisible(),false);
     assert.equal(await page.locator('#fqdn').isDisabled(),false);
     assert.equal(await page.locator('#domain').inputValue(),'');
@@ -166,13 +201,13 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.equal('directory_public' in restricted,false);
     await page.locator('#logout').click();
     await login('admin','Kaname');
-    await page.locator('[data-view="system"]').click();
-    await page.locator('#system-users-tab').click();
+    await navigate('system');
+    await navigate('system');
     page.on('dialog',dialog=>dialog.accept());
     const productRow=page.locator('#admin-users-list .policy-row').filter({hasText:'product •'});
     await productRow.getByText('Sil',{exact:true}).click();
     await page.waitForFunction(()=>!document.querySelector('#admin-users-list').textContent.includes('product •'));
-    await page.locator('#system-profiles-tab').click();
+    await navigate('profiles');
     const customRow=page.locator('#admin-profiles-list .policy-row').filter({hasText:'ProductOperator'});
     await customRow.getByText('Düzenle',{exact:true}).click();
     await page.locator('#admin-profile-name').fill('RenamedOperator');
@@ -183,7 +218,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.ok(!fs.readFileSync(path.join(temp,'administrators.sqlite3')).includes('BrowserUserPassword42'));
     if(process.env.KANAME_SCREENSHOT)await page.screenshot({path:process.env.KANAME_SCREENSHOT,fullPage:true});
     assert.deepEqual(errors,[]);
-    console.log('PASS: username/password login, session reload, profile/user CRUD, ReadOnly server rejection, custom tab and state restrictions, draft, policy, simulation, audit, directory import, password removal and group-name selection. No real AD was contacted.');
+    console.log('PASS: username/password login, session reload, profile/user CRUD, ReadOnly server rejection, custom tab and state restrictions, draft, policy, simulation, audit, accordion navigation, separated profiles/AD/catalog screens, reciprocal direct/primary/nested membership details, directory import, password removal and group-name selection. No real AD was contacted.');
   } finally {
     if(browser)await browser.close();
     child.kill();

@@ -8,6 +8,7 @@ $connection = $null
 $request = $null
 $failure = 'AD_INPUT_INVALID'
 $script:stage = 'input'
+$script:memberCount = 0
 function Attribute-Text($entry, [string]$name) {
     if ($entry.Attributes.Contains($name) -and $entry.Attributes[$name].Count -gt 0) {
         return [string]$entry.Attributes[$name].GetValues([string])[0]
@@ -33,8 +34,88 @@ function Convert-Object($entry, [string]$kind) {
         $uac = Attribute-Text $entry 'userAccountControl'
         if (-not $uac) { throw 'ATTRIBUTE_MISSING' }
         $record.enabled = (([int64]$uac -band 2) -eq 0)
+    } else {
+        $groupType = Attribute-Text $entry 'groupType'
+        if (-not $groupType) { throw 'ATTRIBUTE_MISSING' }
+        $record.security_enabled = (([int64]$groupType -band 2147483648) -ne 0)
     }
     return $record
+}
+function Read-Members($entry) {
+    $script:stage = 'groups_members'
+    $members = New-Object 'System.Collections.Generic.List[string]'
+    $seen = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $current = $entry
+    $start = 0
+    do {
+        $ranged = @($current.Attributes.AttributeNames | Where-Object { $_ -imatch '^member;range=' })
+        $attribute = ''
+        $complete = $true
+        if ($ranged.Count -gt 1) { throw 'MEMBERSHIP_RANGE_INVALID' }
+        if ($ranged.Count -eq 1) {
+            if ($current.Attributes.Contains('member') -and $current.Attributes['member'].Count -gt 0) { throw 'MEMBERSHIP_RANGE_INVALID' }
+            $attribute = [string]$ranged[0]
+            if ($attribute -notmatch '^member;range=(\d+)-(\d+|\*)$' -or [int]$Matches[1] -ne $start) { throw 'MEMBERSHIP_RANGE_INVALID' }
+            $complete = $Matches[2] -eq '*'
+            $end = if ($complete) { 0 } else { [int]$Matches[2] }
+            if (-not $complete -and ($end -lt $start -or $current.Attributes[$attribute].Count -ne ($end - $start + 1))) { throw 'MEMBERSHIP_RANGE_INVALID' }
+        } elseif ($current.Attributes.Contains('member')) {
+            if ($start -ne 0) { throw 'MEMBERSHIP_RANGE_INVALID' }
+            $attribute = 'member'
+        } elseif ($start -ne 0) { throw 'MEMBERSHIP_RANGE_INVALID' }
+        if ($attribute) {
+            foreach ($dn in $current.Attributes[$attribute].GetValues([string])) {
+                if (-not $dn -or $dn.Length -gt 4096 -or -not $seen.Add($dn)) { throw 'MEMBERSHIP_RANGE_INVALID' }
+                $members.Add($dn); $script:memberCount++
+                if ($members.Count -gt 10000 -or $script:memberCount -gt 100000) { throw 'AD_DIRECTORY_LIMIT' }
+            }
+        }
+        if (-not $complete) {
+            $start = $end + 1
+            $search = [System.DirectoryServices.Protocols.SearchRequest]::new()
+            $search.DistinguishedName = $entry.DistinguishedName
+            $search.Filter = '(objectClass=group)'
+            $search.Scope = [System.DirectoryServices.Protocols.SearchScope]::Base
+            $search.TimeLimit = [TimeSpan]::FromSeconds(10)
+            [void]$search.Attributes.Add('member;range=' + $start + '-' + ($start + 999))
+            [void]$search.Controls.Add([System.DirectoryServices.Protocols.DirectoryControl]::new('1.2.840.113556.1.4.1339', [byte[]]@(), $true, $true))
+            $response = [System.DirectoryServices.Protocols.SearchResponse]$connection.SendRequest($search)
+            if ($response.ResultCode -ne [System.DirectoryServices.Protocols.ResultCode]::Success -or $response.Entries.Count -ne 1) { throw 'LDAP_RESULT' }
+            if ($response.References.Count -ne 0) { throw 'REFERRAL_RETURNED' }
+            $current = $response.Entries[0]
+        }
+    } while (-not $complete)
+    return ,$members.ToArray()
+}
+function Build-Catalog($users, $groups, $computers) {
+    $script:stage = 'memberships'
+    $byDn = @{}; $groupSids = @{}
+    foreach ($kind in @($users, $groups, $computers)) {
+        foreach ($record in $kind) {
+            if (-not $record._dn -or $byDn.ContainsKey($record._dn)) { throw 'AD_SEARCH_FAILED' }
+            $byDn[$record._dn] = $record.sid
+        }
+    }
+    foreach ($group in $groups) { $groupSids[$group.sid] = $true }
+    $edges = New-Object 'System.Collections.Generic.List[object]'
+    foreach ($group in $groups) {
+        $group.unresolved_members = 0
+        foreach ($dn in $group._members) {
+            if ($byDn.ContainsKey($dn)) { $edges.Add(@{member_sid=$byDn[$dn]; group_sid=$group.sid; type='direct'}) }
+            else { $group.unresolved_members++ }
+        }
+        [void]$group.Remove('_members')
+    }
+    foreach ($kind in @($users, $computers)) {
+        foreach ($account in $kind) {
+            $account.primary_group_unresolved = -not $groupSids.ContainsKey($account._primary)
+            if (-not $account.primary_group_unresolved) { $edges.Add(@{member_sid=$account.sid; group_sid=$account._primary; type='primary'}) }
+            [void]$account.Remove('_primary')
+        }
+    }
+    if ($edges.Count -gt 100000) { throw 'AD_DIRECTORY_LIMIT' }
+    foreach ($kind in @($users, $groups, $computers)) { foreach ($record in $kind) { [void]$record.Remove('_dn') } }
+    return @{users=@($users); groups=@($groups); computers=@($computers); membership_schema=1; memberships=@($edges.ToArray())}
 }
 function Read-Objects([string]$kind, [string]$filter, [string]$base) {
     $script:stage = $kind + '_prepare'
@@ -44,9 +125,10 @@ function Read-Objects([string]$kind, [string]$filter, [string]$base) {
     $search.Filter = $filter
     $search.Scope = [System.DirectoryServices.Protocols.SearchScope]::Subtree
     $search.TimeLimit = [TimeSpan]::FromSeconds(10)
-    foreach ($attribute in @('objectGUID','objectSid','sAMAccountName','displayName','name','userAccountControl')) {
+    foreach ($attribute in @('objectGUID','objectSid','sAMAccountName','displayName','name','userAccountControl','primaryGroupID','groupType')) {
         [void]$search.Attributes.Add($attribute)
     }
+    if ($kind -eq 'groups') { [void]$search.Attributes.Add('member') }
     $page = New-Object System.DirectoryServices.Protocols.PageResultRequestControl(250)
     $page.IsCritical = $true
     [void]$search.Controls.Add($page)
@@ -64,6 +146,13 @@ function Read-Objects([string]$kind, [string]$filter, [string]$base) {
         foreach ($entry in $response.Entries) {
             $script:stage = $kind + '_decode'
             $record = Convert-Object $entry $kind
+            $record._dn = $entry.DistinguishedName
+            if ($kind -eq 'groups') { $record._members = Read-Members $entry }
+            else {
+                $primary = Attribute-Text $entry 'primaryGroupID'
+                if (-not $primary -or $primary -notmatch '^\d+$' -or [int64]$primary -gt 4294967295) { throw 'ATTRIBUTE_MISSING' }
+                $record._primary = $record.sid.Substring(0, $record.sid.LastIndexOf('-') + 1) + $primary
+            }
             $objects.Add($record)
             if ($objects.Count -gt 10000) { throw 'AD_DIRECTORY_LIMIT' }
         }
@@ -104,6 +193,7 @@ try {
                 sAMAccountName=[System.DirectoryServices.Protocols.DirectoryAttribute]::new('sAMAccountName', 'fixture')
                 name=[System.DirectoryServices.Protocols.DirectoryAttribute]::new('name', 'Fixture')
                 userAccountControl=[System.DirectoryServices.Protocols.DirectoryAttribute]::new('userAccountControl', '514')
+                groupType=[System.DirectoryServices.Protocols.DirectoryAttribute]::new('groupType', '-2147483646')
             }
             # Framework search-result flags reproduce the indexer's UTF-8 path.
             foreach ($attribute in $attributes.Values) {
@@ -117,6 +207,14 @@ try {
             $group = Convert-Object $entry 'groups'
             if ($group.ContainsKey('enabled') -or (($group | ConvertTo-Json -Compress | ConvertFrom-Json).sid -ne $fixtureSid)) { throw 'Group fixture failed' }
         }
+        # Primary groups have no member forward link. Exercise their explicit
+        # SID expansion and a nested group with the same production assembler.
+        $assembled = Build-Catalog @(@{sid='S-1-5-21-1-2-3-500';_dn='CN=u,DC=f';_primary='S-1-5-21-1-2-3-513'}) @(
+            @{sid='S-1-5-21-1-2-3-513';_dn='CN=primary,DC=f';_members=@()},
+            @{sid='S-1-5-32-544';_dn='CN=direct,DC=f';_members=@('CN=u,DC=f')},
+            @{sid='S-1-5-32-545';_dn='CN=parent,DC=f';_members=@('CN=direct,DC=f')}
+        ) @()
+        if ($assembled.memberships.Count -ne 3 -or $assembled.users[0].primary_group_unresolved -ne $false) { throw 'Primary membership fixture failed' }
         if ($FixturePort -ne 0) {
             # Only the explicit test CLI can reach this branch. Fixed loopback
             # destination, anonymous fixture bind, no production credentials.
@@ -129,9 +227,11 @@ try {
             $connection.Timeout = [TimeSpan]::FromSeconds(5)
             $failure = 'AD_SEARCH_FAILED'
             $users = Read-Objects 'users' '(&(objectCategory=person)(objectClass=user))' 'DC=fixture,DC=invalid'
-            $groups = Read-Objects 'groups' '(&(objectCategory=group)(groupType:1.2.840.113556.1.4.803:=2147483648))' 'DC=fixture,DC=invalid'
+            $groups = Read-Objects 'groups' '(objectCategory=group)' 'DC=fixture,DC=invalid'
             $computers = Read-Objects 'computers' '(objectCategory=computer)' 'DC=fixture,DC=invalid'
             if ($users.Count -ne 2 -or $groups.Count -ne 1 -or $computers.Count -ne 1 -or $users[0].enabled -ne $false -or $users[1].enabled -ne $true -or $groups[0].sid -ne 'S-1-5-32-544') { throw 'Fixture result failed' }
+            $catalog = Build-Catalog $users $groups $computers
+            if ($catalog.memberships.Count -ne 2 -or $catalog.groups[0].unresolved_members -lt 1) { throw 'Fixture membership failed' }
             @{self_test='passed'; fixture='paged-ldap'; external_network_called=$false; counts=@{users=$users.Count; groups=$groups.Count; computers=$computers.Count}} | ConvertTo-Json -Compress
         } else {
             @{self_test='passed'; transport='kerberos-sign-seal'; network_called=$false} | ConvertTo-Json -Compress
@@ -169,10 +269,12 @@ try {
     if ($base -ine $expectedBase) { throw 'AD_DOMAIN_MISMATCH' }
     $failure = 'AD_SEARCH_FAILED'
     $users = Read-Objects 'users' '(&(objectCategory=person)(objectClass=user))' $base
-    $groups = Read-Objects 'groups' '(&(objectCategory=group)(groupType:1.2.840.113556.1.4.803:=2147483648))' $base
+    $groups = Read-Objects 'groups' '(objectCategory=group)' $base
     $computers = Read-Objects 'computers' '(objectCategory=computer)' $base
+    $catalog = Build-Catalog $users $groups $computers
+    $catalog.domain = [string]$request.domain; $catalog.dc_fqdn = [string]$request.dc_fqdn; $catalog.transport = 'kerberos-sign-seal'
     $script:stage = 'serialize'
-    @{domain=[string]$request.domain; dc_fqdn=[string]$request.dc_fqdn; transport='kerberos-sign-seal'; users=@($users); groups=@($groups); computers=@($computers)} | ConvertTo-Json -Depth 8 -Compress
+    $catalog | ConvertTo-Json -Depth 8 -Compress
 } catch {
     $errorCode = $failure
     $exception = $_.Exception
@@ -188,7 +290,7 @@ try {
     }
     if ($exception.GetType().FullName -eq 'System.DirectoryServices.Protocols.LdapException') { $reason = 'LDAP_CONNECTION' }
     if ($exception -is [System.ArgumentException] -or $exception -is [System.FormatException] -or $exception -is [System.InvalidCastException]) { $reason = 'VALUE_CONVERSION' }
-    if ($_.Exception.Message -in @('ATTRIBUTE_MISSING', 'BINARY_ATTRIBUTE_INVALID', 'REFERRAL_RETURNED', 'LDAP_RESULT')) { $reason = $_.Exception.Message }
+    if ($_.Exception.Message -in @('ATTRIBUTE_MISSING', 'BINARY_ATTRIBUTE_INVALID', 'REFERRAL_RETURNED', 'LDAP_RESULT', 'MEMBERSHIP_RANGE_INVALID')) { $reason = $_.Exception.Message }
     # Fixed enums only; no exception messages, credentials, DNs or object values.
     @{error=$errorCode; stage=$script:stage; reason=$reason} | ConvertTo-Json -Compress
     exit 1

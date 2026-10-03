@@ -1,6 +1,7 @@
 """Loopback LDAP wire fixture, no AD, credentials, or external network."""
 import socket
 import struct
+import re
 import threading
 import uuid
 
@@ -57,9 +58,9 @@ def sid(*parts):
     return bytes([1, len(parts)]) + (5).to_bytes(6, 'big') + b''.join(struct.pack('<I', p) for p in parts)
 
 
-def entry(message_id, attributes):
+def entry(message_id, attributes, dn='CN=fixture,DC=fixture,DC=invalid'):
     items = b''.join(tlv(48, octet(name) + tlv(49, b''.join(octet(v) for v in values))) for name, values in attributes.items())
-    return tlv(48, number(message_id) + tlv(100, octet('CN=fixture,DC=fixture,DC=invalid') + tlv(48, items)))
+    return tlv(48, number(message_id) + tlv(100, octet(dn) + tlv(48, items)))
 
 
 def done(message_id, tag=101, cookie=None, omit_control=False):
@@ -133,18 +134,40 @@ class LDAPFixture:
                                         tag, value, _ = parse(control, at)
                                         domain_scope = domain_scope and tag == 4 and value == b''
                         self.domain_scope_controls.append(domain_scope)
+                        ranged = re.search(rb'member;range=(\d+)-\d+', content)
+                        if ranged:
+                            start = int(ranged.group(1))
+                            attrs = {f'member;range={start}-*': ['CN=fixture-2,DC=fixture,DC=invalid', 'CN=external,DC=other,DC=invalid']}
+                            if self.mode == 'range-missing': attrs = {}
+                            if self.mode == 'range-repeat': attrs = {'member;range=0-*': ['CN=fixture-1,DC=fixture,DC=invalid']}
+                            if self.mode == 'range-duplicate': attrs = {f'member;range={start}-*': ['CN=fixture-1,DC=fixture,DC=invalid']}
+                            conn.sendall(entry(message_id, attrs, 'CN=fixture-3,DC=fixture,DC=invalid'))
+                            conn.sendall(done(message_id))
+                            continue
                         first_user_page = self.searches == 1
-                        is_group = b'groupType' in content
+                        is_group = b'objectCategory' in content and b'group' in content and b'person' not in content and b'computer' not in content
+                        # All searches request groupType, so inspect the BER filter
+                        # rather than treating that requested attribute as a filter.
                         is_computer = b'computer' in content
-                        index = self.searches
+                        index = 3 if is_group else 4 if is_computer else self.searches
                         attrs = {
                             'objectSid': [sid(32, 544) if is_group else sid(21, 1, 2, 3, 1000 + index)],
                             'objectGUID': [uuid.UUID(int=index).bytes_le],
                             'sAMAccountName': [f'fixture-{index}'],
                             'name': [f'Fixture {index}'],
                             'userAccountControl': ['514' if first_user_page else '512'],
+                            'primaryGroupID': ['513'],
+                            'groupType': ['-2147483646'],
                         }
-                        conn.sendall(entry(message_id, attrs))
+                        if is_group:
+                            members = ['CN=fixture-1,DC=fixture,DC=invalid', 'CN=fixture-2,DC=fixture,DC=invalid', 'CN=external,DC=other,DC=invalid']
+                            if self.mode.startswith('range-'):
+                                attrs['member;range=0-0'] = members[:1]
+                                if self.mode == 'range-large':
+                                    attrs['member;range=0-1499'] = [members[0]] + [f'CN=external-{i},DC=other,DC=invalid' for i in range(1499)]
+                                    del attrs['member;range=0-0']
+                            else: attrs['member'] = members
+                        conn.sendall(entry(message_id, attrs, f'CN=fixture-{index},DC=fixture,DC=invalid'))
                         if self.mode == 'referral' or (self.mode == 'ad-referrals' and not domain_scope):
                             conn.sendall(tlv(48, number(message_id) + tlv(115, octet('ldap://outside.invalid/DC=other'))))
                         cookie = b'next-page' if first_user_page or self.mode == 'repeat' else b''
