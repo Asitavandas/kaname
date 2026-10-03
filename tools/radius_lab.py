@@ -303,9 +303,11 @@ def response_fact(packet, request, secret):
                 raise ValueError('Invalid or duplicate untagged VLAN integer')
             vlan[kind] = int.from_bytes(value[1:], 'big')
         elif kind == 81:
-            if not value or value[0] != 0 or kind in vlan:
+            # RFC 2868: a first octet > 0x1f belongs to the string itself;
+            # FreeRADIUS omits a zero tag for Tunnel-Private-Group-ID.
+            if not value or 0 < value[0] <= 31 or kind in vlan:
                 raise ValueError('Invalid VLAN string tag')
-            vlan[kind] = value[1:].decode('ascii')
+            vlan[kind] = (value[1:] if value[0] == 0 else value).decode('ascii')
     return {'code': packet[0], 'message_authenticator_valid': True, 'vlan': vlan}
 
 
@@ -537,7 +539,10 @@ def run_lab(prefix):
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait(timeout=3)
-    return {'version': '0.6.0-dev.1', 'freeradius_version': '3.2.10',
+    packages = subprocess.run(['dpkg-query', '-W', '-f=${Package}=${Version}\n',
+                               'eapoltest', 'libssl3t64', 'libpython3.12'],
+                              capture_output=True, check=True).stdout.decode().splitlines()
+    return {'version': '0.6.0-dev.1', 'freeradius_version': '3.2.10', 'test_packages': packages,
             'freeradius_source_commit': FREE_RADIUS_COMMIT,
             'transport': 'loopback UDP with native FreeRADIUS and eapol_test',
             'tls_version': '1.2', 'fixture_ad_only': True, 'real_ad_tested': False,
