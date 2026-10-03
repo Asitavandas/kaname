@@ -17,6 +17,14 @@ Depo: Asitavandas/kaname. Kullanıcının mevcut kurulum klasörü: C:\Users\Adm
 
 Tarayıcıdaki önceki girişin ve Set-Clipboard kullanımının geçmişi bu kontrolden belirlenemez. Get-Content ... | Set-Clipboard başarılı olduğunda normal olarak çıktı üretmez.
 
+Kaydedilmiş gerçek politika üzerindeki üç simülasyon da beklenen sonuçla eşleşti: POLICY_ALLOW, DOMAIN_DEVICE_REQUIRED, ACCOUNT_DISABLED. Bunlar inert simülasyondur; gerçek 802.1X kimlik doğrulaması değildir.
+
+Son tanılama: https://github.com/Asitavandas/kaname/actions/runs/37131954450
+Son Windows doğrulaması: https://github.com/Asitavandas/kaname/actions/runs/37131954455
+Son Linux doğrulaması: https://github.com/Asitavandas/kaname/actions/runs/37131954458
+
+Kurulumun yeniden oluşturulmasını gerektiren hata bulunmadı. GitHub checkout/setup-python adımları güncel v6 commit'lerine sabitlendi; eski Node runtime uyarısı giderildi. Mevcut Windows kurulum klasörü, venv, erişim anahtarı, kayıtlı ayarlar/politikalar ve CA korunuyor.
+
 Windows Python uyumluluğu: https://github.com/Asitavandas/kaname/actions/runs/37131663936
 
 132 test çalıştı; 131 geçti, Windows'ta OpenSSL CLI bulunmadığı için 1 bağımsız CLI doğrulama testi atlandı. Gerçek yerel TLS handshake testi geçti. Önceki Linux geliştirme ve GitHub Linux koşularında tüm 132 test geçti. Bu sonuçlar Windows'taki mevcut Python sürümünü değiştirmeyi gerektiren bir hata göstermiyor.

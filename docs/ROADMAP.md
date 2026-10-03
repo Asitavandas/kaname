@@ -1,6 +1,6 @@
 # KANAME — çalışma planı
 
-Güncelleme: 2026-10-02. Aşamalar bağımlılık sırasıyla ilerler; süreler tek geliştirici için önceki kaba mühendislik tahminleridir, teslim tarihi taahhüdü değildir. İlk gerçek kanıt için yaklaşık 3–4 hafta, panel üzerinden MVP için 9–13 hafta, ilk kapsamın sertleştirilmiş appliance teslimi için toplam 13–20 hafta referans alınır. Laboratuvar/AD erişimi ve sertifika kayıt protokolünün sonuçları bu tahminleri değiştirebilir.
+Güncelleme: 2026-10-03. Aşamalar bağımlılık sırasıyla ilerler; süreler tek geliştirici için önceki kaba mühendislik tahminleridir, teslim tarihi taahhüdü değildir. İlk gerçek kanıt için yaklaşık 3–4 hafta, panel üzerinden MVP için 9–13 hafta, ilk kapsamın sertleştirilmiş appliance teslimi için toplam 13–20 hafta referans alınır. Laboratuvar/AD erişimi ve sertifika kayıt protokolünün sonuçları bu tahminleri değiştirebilir.
 
 | Aşama | Çıktı | Kabul kapısı | Durum |
 |---|---|---|---|
@@ -14,7 +14,7 @@ Güncelleme: 2026-10-02. Aşamalar bağımlılık sırasıyla ilerler; süreler 
 
 ## Sıradaki somut geliştirme
 
-0.2.0-dev.1 dahili root/issuer CA, RADIUS sunucu sertifikası ve iptal/CRL altyapısını ekledi. Gerçek yerel TLS ve OpenSSL zincir/DNS/iptal doğrulaması yapıldı. Bunun EAP-TLS ya da AD enrollment kanıtı olmadığı korunuyor.
+0.2.0-dev.1 dahili root/issuer CA, RADIUS sunucu sertifikası ve iptal/CRL altyapısını ekledi. Gerçek yerel TLS ve OpenSSL zincir/DNS/iptal doğrulaması yapıldı. Bunun EAP-TLS ya da AD enrollment kanıtı olmadığı korunuyor. Kullanıcının Windows lab runner'ı bağlandı: mevcut kurulum korundu, 131 Windows testi geçti (OpenSSL CLI olmadığı için 1 ek test atlandı), 132 Linux testi geçti. Kayıtlı config/policy/CA ve üç politika simülasyonu doğrulandı. Ayrıntılar WINDOWS_STATUS_2026-10-03.md belgesinde.
 
 1. Tek domainli Windows AD laboratuvarını, Windows endpoint'i ve temiz Ubuntu appliance VM'ini hazırlamak. Switch/AP ve port/SSID ayarları operatörün manuel sorumluluğundadır.
 2. Mevcut iç CA/server CSR altyapısını gerçek endpoint trust ve EAP oturumuna bağlamak. İstemci enrollment kimliğini AD nesnesiyle doğrulamadan istemci sertifikası üretimini açmamak.
@@ -40,4 +40,4 @@ Switch/AP yönetim API, SSH, SNMP, firmware, roaming, host-mode ve vendor yönet
 
 ## Geliştirme ortamının mevcut sınırı
 
-Bu kodun üretildiği ortamda AD domain, switch/AP, FreeRADIUS runtime, hypervisor, Packer, QEMU veya VMware OVF Tool yoktu. Bu nedenle gerçek auth, temiz disk üretimi, import ve boot doğrulanmadı. Bunlar kaynak testiyle değiştirilemez ve appliance release kapısı olarak kalır.
+Bu kodun üretildiği ortamda AD domain, switch/AP, FreeRADIUS runtime, hypervisor, Packer, QEMU veya VMware OVF Tool yoktu. 3 Ekim'de kullanıcının Windows geliştirme makinesine GitHub self-hosted runner ile bağlanıldı ve mevcut kurulum/testler doğrulandı. Henüz gerçek AD/RADIUS kimlik doğrulaması, temiz Linux appliance diski, import ve boot doğrulanmadı. Bunlar kaynak testiyle değiştirilemez ve appliance release kapısı olarak kalır.
