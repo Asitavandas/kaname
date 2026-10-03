@@ -150,7 +150,11 @@ def diagnose(root, port=8765):
     except importlib.metadata.PackageNotFoundError:
         report['cryptography_46_installed'] = False
     baseline = Path(__file__).with_name('windows_baseline.json')
-    expected = json.loads(baseline.read_text(encoding='utf-8'))['files']
+    release = Path(__file__).with_name('windows_release.json')
+    if release.is_file() and json.loads(release.read_text(encoding='utf-8')).get('version') == report['source_version']:
+        baseline = release
+    manifest = json.loads(baseline.read_text(encoding='utf-8'))
+    expected = manifest['files']
     missing, changed = [], []
     for name, digest in expected.items():
         path = root / name
@@ -162,7 +166,7 @@ def diagnose(root, port=8765):
                     changed.append(name)
             except OSError:
                 changed.append(name)
-    report['source_baseline'] = {'version': '0.2.0-dev.1', 'missing_files': missing, 'changed_files': changed}
+    report['source_baseline'] = {'version': manifest['version'], 'missing_files': missing, 'changed_files': changed}
     token = read_token(root)
     report['access_token_exists'] = (root / 'kaname-state' / 'access-token').is_file()
     report['access_token_valid'] = token is not None
@@ -184,7 +188,8 @@ def diagnose(root, port=8765):
                 report['panel']['simulation_checks'] = simulation_checks(snapshot, token, port)
     report['previous_browser_login'] = 'cannot_determine'
     report['previous_manual_simulation'] = 'cannot_determine'
-    report['real_ad_radius_ovf'] = 'not_implemented_in_this_version'
+    report['real_ad_tested'] = False
+    report['radius_ovf'] = 'not_implemented_in_this_version'
     return report
 
 

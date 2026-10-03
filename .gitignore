@@ -12,3 +12,5 @@ output/
 *.der
 *.csr
 *.crl
+
+.kaname-upgrades/

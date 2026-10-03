@@ -1,0 +1,41 @@
+name: KANAME Windows panel update
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['tools/windows_release.json', '.github/workflows/windows-update.yml']
+permissions:
+  contents: read
+concurrency:
+  group: kaname-windows-panel-update
+  cancel-in-progress: false
+jobs:
+  validate-before-update:
+    if: github.repository == 'Asitavandas/kaname' && github.event.repository.private == true
+    runs-on: [self-hosted, Windows, X64, kaname-windows]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Verify source and rollback fixtures with the installed interpreter
+        shell: powershell
+        run: |
+          & 'C:\Users\Administrator\KANAME\.venv\Scripts\python.exe' -m unittest discover -s tests -t . -v
+          if ($LASTEXITCODE -ne 0) { throw 'Update gate failed; existing installation was not changed.' }
+  update-panel:
+    needs: validate-before-update
+    runs-on: [self-hosted, Windows, X64, kaname-windows]
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Back up source and state, upgrade only the identified KANAME panel
+        shell: powershell
+        run: |
+          & 'C:\Users\Administrator\KANAME\.venv\Scripts\python.exe' -m tools.windows_update --root 'C:\Users\Administrator\KANAME'
+          if ($LASTEXITCODE -ne 0) { throw 'KANAME update did not complete; inspect the sanitized result.' }
+      - name: Verify updated installation without exporting secrets
+        shell: powershell
+        run: '& .\tools\windows_diagnose.ps1 -Root ''C:\Users\Administrator\KANAME'''
