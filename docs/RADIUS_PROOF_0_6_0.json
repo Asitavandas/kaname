@@ -1,0 +1,207 @@
+{
+  "version": "0.6.0-dev.1",
+  "freeradius_version": "3.2.10",
+  "test_packages": [
+    "eapoltest=2:2.10-21ubuntu0.4",
+    "libpython3.12t64=3.12.3-1ubuntu0.17",
+    "libssl3t64=3.0.13-0ubuntu3.16"
+  ],
+  "freeradius_source_commit": "9071ea041b9172e52eabbba91619afaf3a238795",
+  "transport": "loopback UDP with native FreeRADIUS and eapol_test",
+  "tls_version": "1.2",
+  "fixture_ad_only": true,
+  "real_ad_tested": false,
+  "physical_wired_wireless_tested": false,
+  "client_enrollment_enabled": false,
+  "production_radius_enabled": false,
+  "secrets_exported": false,
+  "case_count": 22,
+  "cases": [
+    {
+      "case": "valid-computer",
+      "passed": true,
+      "radius_code": 2,
+      "access_challenges": 12,
+      "response_integrity_checked": true,
+      "policy_reason": "POLICY_ALLOW",
+      "vlan": 33
+    },
+    {
+      "case": "valid-wireless",
+      "passed": true,
+      "radius_code": 2,
+      "access_challenges": 12,
+      "response_integrity_checked": true,
+      "policy_reason": "POLICY_ALLOW",
+      "vlan": 33
+    },
+    {
+      "case": "disabled-account",
+      "passed": true,
+      "radius_code": 3,
+      "access_challenges": 12,
+      "response_integrity_checked": true,
+      "policy_reason": "ACCOUNT_DISABLED",
+      "vlan": null
+    },
+    {
+      "case": "group-removed",
+      "passed": true,
+      "radius_code": 3,
+      "access_challenges": 12,
+      "response_integrity_checked": true,
+      "policy_reason": "NO_MATCHING_POLICY",
+      "vlan": null
+    },
+    {
+      "case": "directory-outage",
+      "passed": true,
+      "radius_code": 3,
+      "access_challenges": 12,
+      "response_integrity_checked": true,
+      "policy_reason": "DIRECTORY_UNAVAILABLE",
+      "vlan": null
+    },
+    {
+      "case": "account-deleted",
+      "passed": true,
+      "radius_code": 3,
+      "access_challenges": 12,
+      "response_integrity_checked": true,
+      "policy_reason": "ACCOUNT_NOT_FOUND",
+      "vlan": null
+    },
+    {
+      "case": "recreated-account",
+      "passed": true,
+      "radius_code": 3,
+      "access_challenges": 12,
+      "response_integrity_checked": true,
+      "policy_reason": "ACCOUNT_BINDING_MISMATCH",
+      "vlan": null
+    },
+    {
+      "case": "inactive-binding",
+      "passed": true,
+      "radius_code": 3,
+      "access_challenges": 12,
+      "response_integrity_checked": true,
+      "policy_reason": "CERTIFICATE_INACTIVE",
+      "vlan": null
+    },
+    {
+      "case": "unbound-certificate",
+      "passed": true,
+      "radius_code": 3,
+      "access_challenges": 12,
+      "response_integrity_checked": true,
+      "policy_reason": "CERTIFICATE_UNBOUND",
+      "vlan": null
+    },
+    {
+      "case": "explicit-deny",
+      "passed": true,
+      "radius_code": 3,
+      "access_challenges": 12,
+      "response_integrity_checked": true,
+      "policy_reason": "POLICY_DENY",
+      "vlan": null
+    },
+    {
+      "case": "user-cannot-prove-computer",
+      "passed": true,
+      "radius_code": 3,
+      "access_challenges": 12,
+      "response_integrity_checked": true,
+      "policy_reason": "DOMAIN_DEVICE_REQUIRED",
+      "vlan": null
+    },
+    {
+      "case": "valid-user-policy",
+      "passed": true,
+      "radius_code": 2,
+      "access_challenges": 12,
+      "response_integrity_checked": true,
+      "policy_reason": "POLICY_ALLOW",
+      "vlan": 33
+    },
+    {
+      "case": "revoked-certificate",
+      "passed": true,
+      "radius_code": 3,
+      "access_challenges": 11,
+      "response_integrity_checked": true,
+      "policy_reason": null,
+      "vlan": null
+    },
+    {
+      "case": "expired-certificate",
+      "passed": true,
+      "radius_code": 3,
+      "access_challenges": 11,
+      "response_integrity_checked": true,
+      "policy_reason": null,
+      "vlan": null
+    },
+    {
+      "case": "untrusted-client-ca",
+      "passed": true,
+      "radius_code": 3,
+      "access_challenges": 10,
+      "response_integrity_checked": true,
+      "policy_reason": null,
+      "vlan": null
+    },
+    {
+      "case": "wrong-client-purpose",
+      "passed": true,
+      "radius_code": 3,
+      "access_challenges": 11,
+      "response_integrity_checked": true,
+      "policy_reason": null,
+      "vlan": null
+    },
+    {
+      "case": "untrusted-server-ca",
+      "passed": true,
+      "radius_code": 3,
+      "access_challenges": 7,
+      "response_integrity_checked": true,
+      "policy_reason": null,
+      "vlan": null
+    },
+    {
+      "case": "wrong-server-name",
+      "passed": true,
+      "radius_code": 3,
+      "access_challenges": 7,
+      "response_integrity_checked": true,
+      "policy_reason": null,
+      "vlan": null
+    },
+    {
+      "case": "missing-message-authenticator",
+      "passed": true,
+      "radius_code": null,
+      "silently_discarded": true
+    },
+    {
+      "case": "invalid-message-authenticator",
+      "passed": true,
+      "radius_code": null,
+      "silently_discarded": true
+    },
+    {
+      "case": "unknown-nas-source",
+      "passed": true,
+      "radius_code": null,
+      "silently_discarded": true
+    },
+    {
+      "case": "non-eap-request",
+      "passed": true,
+      "radius_code": 3,
+      "silently_discarded": false
+    }
+  ]
+}
