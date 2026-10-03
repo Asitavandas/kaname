@@ -1,5 +1,15 @@
 # Değişiklikler
 
+## 0.5.0-dev.1 — menüler ve AD üyelik detayları
+
+- Sol menü başlıkları tek başlığı açık tutabilen, klavyeyle kullanılabilen akordiyon yapısına geçti.
+- System altında Administrators ve Admin Profiles ayrı sayfalar oldu.
+- User&Authentication altında Active Directory bağlantı sayfası ve Users/User Groups listeleri ayrıldı; iki liste aynı ekranda ayrı arama/sayfalama sunar.
+- Kullanıcı veya grup adına tıklanınca karşılıklı doğrudan, primary ve iç içe üyelik detayları açılır. Detayda arama, sayfalama ve karşı nesneye geçiş vardır.
+- LDAP member range devam sayfaları, primary group RID/SID eşlemesi ve security/distribution ayrımı eklendi. Distribution grupları katalogda görünür, erişim politikasına seçilemez.
+- Eski katalog/veriler değiştirilmez; üyelik şeması yoksa yeniden okuma açıklaması gösterilir. AD bağlantısı ve katalog yetkileri ayrılabilir; eski Custom yetkileri korunur.
+- Yükleme sırasında eski satır düzenleme düğmeleri de kapatılır. Reddedilen bounded POST gövdesi okunarak Windows TCP reset yerine hata yanıtının ulaşması sağlanır; yetki/CSRF şartları değişmez.
+
 ## 0.4.0-dev.1 — yönetici hesapları ve yetki profilleri
 
 - PowerShell/token panel girişi yerine kullanıcı/parola formu, ilk kurulum admin/Kaname, cookie oturumu ve kendi parolasını değiştirme eklendi.

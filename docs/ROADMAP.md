@@ -8,13 +8,13 @@ Güncelleme: 2026-10-04. Aşamalar bağımlılık sırasıyla ilerler; süreler 
 | 1. Protokol kanıtı | Gerçek FreeRADIUS + AD adaptörü + dahili PKI enrollment denemesi | Manuel hazırlanmış switch/AP üzerinden gerçek kablolu ve kablosuz EAP-TLS | CA/server CSR/CRL ve Windows AD katalog okuma tamamlandı; Linux AD/EAP sıradaki |
 | 2. Kimlik yaşam döngüsü | AD grup/hesap sorgusu, cihaz/kullanıcı sertifika eşlemesi, yenileme/iptal | Yanlış grup, kapalı hesap, iptal/expired sertifika, AD kesintisi ret testleri | Planlandı |
 | 3. Gerçek wizard | DNS/saat/AD testleri, CA/trust, RADIUS secret, GPO/profil çıktıları, kontrollü apply | Başlangıçtan ilk erişime kadar panelden uygulanabilir akış; rollback | Planlandı |
-| 4. Günlük yönetim | Kullanıcı/grup seçimi, policy edit, accounting, arama/teşhis, RBAC, audit | Kim yaptı/neyi değiştirdi; oturum ve hata korelasyonu | 0.4 yerel kullanıcı/parola, profil RBAC ve grup adı seçimi tamamlandı; accounting/üretim audit/apply bekliyor |
+| 4. Günlük yönetim | Kullanıcı/grup seçimi, policy edit, accounting, arama/teşhis, RBAC, audit | Kim yaptı/neyi değiştirdi; oturum ve hata korelasyonu | 0.5 yerel oturum/RBAC, akordiyon menüler, ayrılmış System/AD ekranları ve kullanıcı/grup üyelik inceleme tamamlandı; accounting/üretim audit/apply bekliyor |
 | 5. Appliance | OS hardening, ilk açılış, offline runtime, yedekleme, imzalı güncelleme, OVF | Gerçek import, boot, iki bağımsız kimlik, restore ve upgrade rollback | Planlandı |
 | 6. NPS uyumluluğu | PEAP yöntemleri, ilave koşullar/VSA, proxy ve failover | Özellik bazlı NPS karşılaştırma matrisi | İlk MVP sonrası |
 
 ## Sıradaki somut geliştirme
 
-0.2 dahili CA/server CSR/CRL temelini ekledi. 0.3.2 Windows Kerberos LDAP ve domain kapsamlı sayfalı okuma düzeltmelerini tamamladı; operatör gerçek AD ekranında başarılı 55 sonuç bildirdi. Bu sayı tek başına bütün kategorilerin toplamı veya canlı üyelik doğrulaması değildir. 0.4 kullanıcı/parola girişi, System kullanıcı/profil yönetimi, menü/sekme düzeyinde RBAC ve SID yazmadan grup adı seçimi ekler. Yerel oturum/RBAC üretim HTTPS/appliance aşamasının tamamlandığı anlamına gelmez.
+0.2 dahili CA/server CSR/CRL temelini ekledi. 0.3.2 Windows Kerberos LDAP ve domain kapsamlı sayfalı okuma düzeltmelerini tamamladı; operatör gerçek AD ekranında başarılı 55 sonuç bildirdi. Bu sayı tek başına bütün kategorilerin toplamı veya canlı üyelik doğrulaması değildir. 0.4 kullanıcı/parola girişi, System kullanıcı/profil yönetimi, menü/sekme düzeyinde RBAC ve SID yazmadan grup adı seçimi ekledi. 0.5 akordiyon menüleri, ayrı Admin Profiles ve AD bağlantı sayfalarını, aynı ekranda Users/User Groups listelerini ve doğrudan/primary/iç içe üyelik detaylarını ekler. Bu ilişkiler henüz ağ kimlik doğrulamasına bağlanmaz. Yerel oturum/RBAC üretim HTTPS/appliance aşamasının tamamlandığı anlamına gelmez.
 
 Her sürümün testleri ve güncellemesi tamamlandıktan sonra **Soruların veya değiştirmek/düzenlemek istediğin yerler var mı?** sorulur. Operatör yanıtlamadan aşağıdaki yeni geliştirmeye geçilmez.
 

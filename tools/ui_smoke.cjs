@@ -114,6 +114,13 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#detail-search').click();
     await page.waitForFunction(()=>document.querySelector('#detail-list').textContent.includes('Bu aramada sonuç yok'));
     await page.locator('#detail-close').click();
+    const legacyDetail=async route=>{const response=await route.fetch();const value=await response.json();await route.fulfill({response,json:{...value,membership_available:false,items:[],total:0}});};
+    await page.route('**/api/directory/detail?*',legacyDetail);
+    await page.locator('#directory-users-list [data-object-id="00000000-0000-0000-0000-000000000001"]').click();
+    await page.waitForFunction(()=>document.querySelector('#detail-status').textContent.includes('bu eski katalogda'));
+    assert.equal(await page.locator('#detail-list').textContent(),'');
+    await page.locator('#detail-close').click();
+    await page.unroute('**/api/directory/detail?*',legacyDetail);
     const distribution=page.locator('#directory-groups-list .policy-row').filter({hasText:'Department'});
     assert.equal(await distribution.getByText('Politikada kullan',{exact:true}).count(),0);
     await page.locator('#directory-groups-list .policy-row').filter({hasText:'<script>alert(1)</script>'}).getByText('Politikada kullan',{exact:true}).click();
@@ -201,7 +208,6 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.equal('directory_public' in restricted,false);
     await page.locator('#logout').click();
     await login('admin','Kaname');
-    await navigate('system');
     await navigate('system');
     page.on('dialog',dialog=>dialog.accept());
     const productRow=page.locator('#admin-users-list .policy-row').filter({hasText:'product •'});

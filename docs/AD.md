@@ -1,11 +1,11 @@
-# AD okuma laboratuvarı — 0.4.0-dev.1
+# AD okuma laboratuvarı — 0.5.0-dev.1
 
 Bu sürüm Windows'taki yerel geliştirme panelinden gerçek AD dizin okumayı denemek içindir. Linux appliance okuyucusu sonraki uygulama adımıdır; OVF hazır sayılmaz.
 
 1. Kurulum ekranında gerçek AD DNS domain adını ve DC IP adreslerini kaydedin.
-2. Active Directory ekranını açın. DC'nin tam DNS adını ve `kullanici@domain` biçiminde kullanıcıyı girin. İlk sürümde UPN suffix'i kayıtlı domain ile aynı olmalı.
+2. User&Authentication → Active Directory ekranını açın. DC'nin tam DNS adını ve `kullanici@domain` biçiminde kullanıcıyı girin. İlk sürümde UPN suffix'i kayıtlı domain ile aynı olmalı.
 3. AD parolasını yalnız yerel panelde girin. Bağlan ve bilgileri getir düğmesine basın. Parola alanı hemen temizlenir; sunucu parolayı kaydetmez.
-4. Son başarılı okumanın zamanı ve sayılar görüntülenir. Kullanıcı/grup/bilgisayar listelerinde arama ve sayfalama yapabilirsiniz.
+4. Son başarılı okumanın zamanı ve sayılar görüntülenir. User&Authentication → Users/User Groups ekranında Users ve User Groups listeleri birlikte gösterilir. Her liste ayrı aranır ve sayfalanır. Adına tıklayınca üyelik detayları açılır.
 5. Güvenlik grubunun Politikada kullan düğmesi yeni politika formunda grup adını seçer. Politika formundan da grup adı aranabilir ve birden fazla grup seçilebilir; SID değerleri içeride saklanır. Kaydetmeden politika oluşturulmaz.
 
 Domain Admin hesabı okunabilir ancak dizin okuması için bu yetki zorunlu değildir. AD'de yazma, domain join, GPO değişikliği veya hesap oluşturma yapılmaz. Her yenilemede parola yeniden girilir; otomatik runtime hesabı/secret kasası bu sürümde yoktur.
@@ -18,9 +18,9 @@ Kimlik bilgileri Python subprocess stdin üzerinden JSON ile taşınır; komut s
 
 ## Katalog sınırları
 
-Her kategori en fazla 10.000 nesne, 250 nesnelik LDAP sayfaları ve toplam 60 saniye işlem sınırı vardır. Eksik/tekrarlanan sayfa, limit, yanlış domain, bilinmeyen alan veya bozuk SID/GUID tüm okumayı reddeder; kısmi liste kaydedilmez. GUID/SID kalıcı kimliklerdir. Disabled kullanıcı/bilgisayar bilgisi userAccountControl ACCOUNTDISABLE bitinden gelir. Yalnız güvenlik grupları okunur; distribution grupları erişim grubu olarak gösterilmez.
+Her kategori en fazla 10.000 nesne, 250 nesnelik LDAP sayfaları ve toplam 60 saniye işlem sınırı vardır. Eksik/tekrarlanan sayfa, limit, yanlış domain, bilinmeyen alan veya bozuk SID/GUID tüm okumayı reddeder; kısmi liste kaydedilmez. GUID/SID kalıcı kimliklerdir. Disabled kullanıcı/bilgisayar bilgisi userAccountControl ACCOUNTDISABLE bitinden gelir. Security ve distribution grupları katalogda ayrı etiketlenir. Politika seçicisinde yalnız security grupları gösterilir. Grup member özniteliğinin ranged yanıtları son sayfaya kadar okunur; eksik, tekrarlanan veya çakışan aralık reddedilir. Primary group RID'si hesap domain SID'siyle birleştirilir. Doğrudan, primary ve iç içe ilişkiler katalogdan hesaplanır.
 
-Katalog kaydı ve audit aynı SQLite transaction içindedir. Yapılandırma okuma sırasında değişirse import reddedilir. Domain değişince eski katalog gizlenir. Son katalog önbellektir; canlı grup üyeliği veya kimlik doğrulama kanıtı değildir. Nested/primary grup, hesap silinmesi/yeniden oluşturulması ve sertifika nesnesi eşlemesi RADIUS adaptörüne bağlanmadan ağ kararı üretmez.
+Katalog kaydı ve audit aynı SQLite transaction içindedir. Yapılandırma okuma sırasında değişirse import reddedilir. Domain değişince eski katalog gizlenir. Son katalog önbellektir; canlı grup üyeliği veya kimlik doğrulama kanıtı değildir. Gösterilen üyelikler, hesap silinmesi/yeniden oluşturulması ve sertifika nesnesi eşlemesi RADIUS adaptörüne bağlanmadan ağ kararı üretmez. Üyelik ayrıntıları [üyelik kapsamı belgesinde](DIRECTORY_MEMBERSHIP.md).
 
 Microsoft kaynakları:
 - https://learn.microsoft.com/en-us/dotnet/api/system.directoryservices.protocols.authtype

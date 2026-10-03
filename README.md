@@ -2,8 +2,8 @@
 
 Bağımsız Active Directory tabanlı kablolu/kablosuz 802.1X erişim yönetimi.
 
-**Geliştirme sürümü: 0.4.0-dev.1 — kullanıcı/parola girişi, yönetici profilleri ve AD grup adıyla politika seçimi.**
-Mevcut politika ve dahili PKI temeli korunur. Windows'taki yerel panelden Kerberos signing/sealing ile kullanıcı, bilgisayar ve güvenlik grupları okunabilir. Parola kaydedilmez. Çalışan RADIUS hizmeti, istemci enrollment veya açılabilir OVF bu sürümde yoktur. Paneldeki ağ/politika kayıtları taslaktır; ağda izin/ret kararı uygulanmaz. Linux appliance AD okuyucusu henüz bağlı değildir.
+**Geliştirme sürümü: 0.5.0-dev.1 — akordiyon menüler, ayrılmış yönetim/AD ekranları ve kullanıcı/grup üyelik detayları.**
+Mevcut politika ve dahili PKI temeli korunur. Windows'taki yerel panelden Kerberos signing/sealing ile kullanıcı, bilgisayar ve gruplar okunabilir; son okumadaki doğrudan, primary ve iç içe üyelikler incelenebilir. Parola kaydedilmez. Çalışan RADIUS hizmeti, istemci enrollment veya açılabilir OVF bu sürümde yoktur. Paneldeki ağ/politika kayıtları taslaktır; ağda izin/ret kararı uygulanmaz. Linux appliance AD okuyucusu henüz bağlı değildir.
 
 ## Başlatma
 
@@ -21,7 +21,7 @@ py -3.12 -m kaname
 
 Tarayıcıda `http://127.0.0.1:8765/` adresini açın. İlk kurulumda kullanıcı adı **admin**, parola **Kaname** ile giriş yapın; harflerin büyüklüğü parolada önemlidir. Günlük panel girişi için PowerShell veya token gerekmez. Panel giriş hesabı AD hesabından bağımsızdır. Üstteki **Parolamı değiştir** düğmesiyle kendi parolanızı değiştirebilirsiniz. Durdurmak için terminalde Ctrl+C kullanın.
 
-**System → Administrators** altında kullanıcı ekleme/düzenleme/silme ve profil atama; **Admin Profiles** sekmesinde SuperAdmin, Admin_ReadOnly ve menü/sekme başına Custom yetkiler bulunur. Ayrıntılar [yönetici kullanım kılavuzunda](docs/ADMINISTRATION.md).
+**System → Administrators** altında kullanıcı ekleme/düzenleme/silme ve profil atama; ayrı **System → Admin Profiles** sekmesinde SuperAdmin, Admin_ReadOnly ve menü/sekme başına Custom yetkiler bulunur. Ayrıntılar [yönetici kullanım kılavuzunda](docs/ADMINISTRATION.md).
 
 Hesaplar, oturumlar ve ayarlar `kaname-state/` içinde yerelde oluşur; kaynak paketine eklenmez. Panel yalnız aynı bilgisayarın loopback adresinde dinler. Yerel bakım araçlarının mevcut access-token dosyası korunur; tarayıcı girişinde kullanılmaz.
 
@@ -41,7 +41,7 @@ python3 -m kaname --port 8876 --state-dir ./kaname-state
 | Karar testi | Örnek kimliklerle politika değerlendirmesi ve VLAN özniteliklerinin gösterimi. Gerçek doğrulama kanıtı üretmez. |
 | Kayıt | SQLite kalıcılığı, çakışan sürüm kaydını engelleme ve yapılandırmayla aynı transaction içinde audit. |
 | Dahili PKI | Yerel konsoldan benzersiz root/issuer CA, şifreli anahtarlar, kayıtlı FQDN için server-only sertifika, iptal ve imzalı CRL. Panel yalnız açık CA bilgilerini gösterir. |
-| Active Directory | Windows'ta Kerberos ile imzalı/şifreli LDAP, sayfalı kullanıcı/bilgisayar/güvenlik grubu okuma, kalıcı son okuma, arama ve politikaya grup adıyla seçim. Domain Admin parolası saklanmaz; AD değişikliği yapılmaz. |
+| Active Directory | User&Authentication → Active Directory altında bağlantı; Users/User Groups altında aynı ekranda iki ayrı liste ve tıklanabilir üyelik detayları. Kerberos korumalı LDAP, nesne/üye sayfalama, primary ve iç içe üyelik; politikaya yalnız security grubu seçimi. Domain Admin parolası saklanmaz; AD değişikliği yapılmaz. |
 | OVF araçları | Hazırlanmış temiz VMware VMX'inin dışa aktarımı için sarmalayıcı ve yerel OVF/VMDK/SHA256 manifest denetleyicisi. |
 
 Policy API daha geniş modeli destekler; yeni politika formu EAP-TLS + domain cihazı şartı kullanır. **AD grup kısıtı yok** seçilirse yalnız grup üyeliği koşulu kaldırılır; diğer politika koşulları geçerlidir. Grup seçmek kullanıcı/cihazın o grupta olduğunu veya EAP oturumunu doğrulamaz. Ayrıntılar [AD laboratuvar akışında](docs/AD.md).
@@ -81,6 +81,7 @@ OVF bütün hypervisor'larda aynı şekilde içe aktarılmaz. Diğer hedefler i�
 - [Dahili CA ve sunucu sertifikası denemesi](docs/PKI.md)
 - [Bağlantı sonrası devam kaydı](docs/RESUME.md)
 - [OVF üretim ve dağıtım sözleşmesi](docs/APPLIANCE.md)
+- [AD kullanıcı/grup üyelikleri](docs/DIRECTORY_MEMBERSHIP.md)
 - [Yönetici hesapları ve profiller](docs/ADMINISTRATION.md)
 - [Güvenlik sınırları](docs/SECURITY.md)
 - [Doğrulama raporu](docs/TEST_REPORT.md)

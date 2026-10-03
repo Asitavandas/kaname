@@ -65,12 +65,27 @@ class Handler(BaseHTTPRequestHandler):
     def setup(self):
         super().setup()
         self.connection.settimeout(5)
+        self.body_read = False
 
     def log_message(self, *_):
         # Never log URL, token, user fields or request bodies.
         pass
 
     def respond(self, code, value, content_type='application/json', cookie=None):
+        # Consume only bounded, declared rejected POST data before closing this
+        # HTTP/1.0 socket. An unread body can turn a 403 into a TCP reset on
+        # Windows. This never parses or authorizes that rejected request.
+        if code >= 400 and self.command == 'POST' and not self.body_read and not self.headers.get('Transfer-Encoding'):
+            try:
+                size = int(self.headers.get('Content-Length', '0'))
+                if 0 < size <= 262144:
+                    self.connection.settimeout(0.15)
+                    self.rfile.read(size)
+                    self.body_read = True
+            except (OSError, ValueError):
+                pass
+            finally:
+                self.connection.settimeout(5)
         body = value if isinstance(value, bytes) else json.dumps(value, ensure_ascii=False, allow_nan=False).encode()
         self.send_response(code)
         self.send_header('Content-Type', content_type + '; charset=utf-8')
@@ -133,7 +148,8 @@ class Handler(BaseHTTPRequestHandler):
         size = int(self.headers.get('Content-Length', '0'))
         if not 1 <= size <= 262144:
             raise AdminError('BODY_LIMIT')
-        return strict_json(self.rfile.read(size))
+        raw = self.rfile.read(size); self.body_read = True
+        return strict_json(raw)
 
     def state_projection(self, value):
         if self.actor['maintenance']:
@@ -233,7 +249,8 @@ class Handler(BaseHTTPRequestHandler):
             if not 1 <= size <= 262144:
                 self.respond(413, {'error': 'BODY_LIMIT'})
                 return
-            value = strict_json(self.rfile.read(size))
+            raw = self.rfile.read(size); self.body_read = True
+            value = strict_json(raw)
             if self.path == '/api/auth/logout':
                 keys(value, set(), set()); self.server.admin.logout(self.actor)
                 self.respond(200, {'logged_out': True}, cookie=self.session_cookie(remove=True))

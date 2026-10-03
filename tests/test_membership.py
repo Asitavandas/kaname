@@ -92,9 +92,10 @@ class MembershipTests(unittest.TestCase):
             self.assertEqual(before, self.store.directory_catalog())
 
     def test_primary_group_must_be_account_domain_security_group(self):
-        for group in [self.value['groups'][2]['sid'], self.value['groups'][0]['sid']]:
+        for group in [self.value['groups'][2]['sid'], 'S-1-5-32-544']:
             bad = copy.deepcopy(self.value)
-            bad['memberships'].append({'member_sid': bad['users'][0]['sid'], 'group_sid': group, 'type': 'primary'})
+            bad['groups'].append({'guid': '00000000-0000-0000-0000-000000000099', 'sid': 'S-1-5-32-544', 'sam': 'Builtin', 'name': 'Builtin', 'security_enabled': True, 'unresolved_members': 0})
+            bad['memberships'][1]['group_sid'] = group
             with self.assertRaises(ValidationError): validate_catalog(bad)
 
     def test_scope_change_hides_details_and_invalid_parameters_are_rejected(self):

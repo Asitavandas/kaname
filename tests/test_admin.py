@@ -146,6 +146,12 @@ class AdministratorHTTPTests(unittest.TestCase):
         self.assertEqual(403, self.call('POST', '/api/auth/login', {'username': 'admin', 'password': 'Kaname'}, auth=None, headers={'Origin': ''})[0])
         self.assertEqual(403, self.call('GET', '/api/state', headers={'Host': 'attacker.example'})[0])
 
+    def test_rejected_partial_post_is_bounded_and_does_not_execute_logout(self):
+        started = time.monotonic()
+        self.assertEqual(403, self.call('POST', '/api/auth/logout', {}, headers={'X-Kaname-CSRF': '', 'Content-Length': '200000'})[0])
+        self.assertLess(time.monotonic() - started, 2)
+        self.assertEqual(200, self.call('GET', '/api/auth/session')[0])
+
     def test_logout_expiry_and_idle_timeout_invalidate_cookie(self):
         self.assertEqual(200, self.call('POST', '/api/auth/logout', {})[0])
         self.assertEqual(401, self.call('GET', '/api/state')[0])
