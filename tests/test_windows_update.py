@@ -52,6 +52,25 @@ class WindowsUpgradeTests(unittest.TestCase):
         self.mocks[3].assert_not_called()
         self.assertEqual('USER EDIT\n', local.read_text())
 
+    def test_previous_release_upgrade_preserves_user_state(self):
+        installed = self.root / 'kaname/__init__.py'
+        installed.write_text('VERSION = "0.3.0-dev.1"\n')
+        previous = self.source / 'tools/windows_previous_release.json'
+        previous.write_text(json.dumps({'files': {'kaname/__init__.py': update.digest(installed)}}))
+        release_path = self.source / 'tools/windows_release.json'
+        release = json.loads(release_path.read_text()); release['files']['tools/windows_previous_release.json'] = update.digest(previous)
+        release_path.write_text(json.dumps(release))
+        with patch.object(update, 'wait_panel', return_value={'directory_public': {'runtime_auth_ready': False}}):
+            self.assertTrue(update.upgrade(self.root, self.source)['updated'])
+        self.assertEqual(1, self.store.snapshot()['revision'])
+
+    def test_previous_release_manifest_is_digest_checked(self):
+        previous = self.source / 'tools/windows_previous_release.json'
+        previous.write_text(json.dumps({'files': {'kaname/__init__.py': 'untrusted'}}))
+        with self.assertRaisesRegex(ValueError, 'Previous release digest mismatch'):
+            update.upgrade(self.root, self.source)
+        self.mocks[3].assert_not_called()
+
     def test_health_failure_rolls_back_source_and_preserves_current_data(self):
         before = self.store.snapshot()
         with patch.object(update, 'wait_panel', side_effect=[ValueError('health failed'), self.active]):

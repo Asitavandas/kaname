@@ -109,13 +109,21 @@ def upgrade(root, source):
         raise ValueError('Invalid installation directory')
     release = json.loads((source / 'tools/windows_release.json').read_text(encoding='utf-8'))
     old = json.loads((source / 'tools/windows_baseline.json').read_text(encoding='utf-8'))['files']
+    previous = {}
+    previous_path = source / 'tools/windows_previous_release.json'
+    if previous_path.is_file():
+        # Trusted staged manifest, never the installation's mutable manifest.
+        # Its digest is covered by this release's source manifest.
+        if release['files'].get('tools/windows_previous_release.json') != digest(previous_path):
+            raise ValueError('Previous release digest mismatch')
+        previous = json.loads(previous_path.read_text(encoding='utf-8'))['files']
     files = {**release['files'], 'tools/windows_release.json': digest(source / 'tools/windows_release.json')}
     for name, expected in files.items():
         staged = protected_path(source, name)
         local = protected_path(root, name)
         if digest(staged) != expected:
             raise ValueError('Staged source digest mismatch')
-        if local.exists() and (not local.is_file() or digest(local) not in {expected, old.get(name)}):
+        if local.exists() and (not local.is_file() or digest(local) not in {expected, old.get(name), previous.get(name)}):
             raise ValueError('Local source changes found; update refused')
     token = read_token(root)
     if not token:

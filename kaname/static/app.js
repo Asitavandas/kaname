@@ -1,12 +1,14 @@
 'use strict';
 let token = '', state = null, step = 0, directoryOffset = 0;
 const $ = id => document.getElementById(id);
-function message(value) { $('message').textContent = value; }
+function message(value) { $('message').textContent = value; if (!$('directory').hidden) $('ad-feedback').textContent = value; }
 async function api(path, data) {
   const response = await fetch(path, {method: data === undefined ? 'GET' : 'POST', headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}, body: data === undefined ? undefined : JSON.stringify(data)});
   const value = await response.json();
-  const errors = {AD_PLATFORM_UNSUPPORTED:'Bu geliştirme sürümünün AD okuyucusu Windows laboratuvarında çalışır.',AD_DNS_FAILED:'DC DNS adı çözümlenemedi. DNS ayarını ve DC adını kontrol edin.',AD_DC_IP_MISMATCH:'DC DNS adresi, Kurulum ekranında kaydettiğiniz DC IP adresleriyle eşleşmiyor.',AD_BIND_FAILED:'AD bağlantısı kurulamadı. DNS, saat, Kerberos erişimi ve kullanıcı bilgilerini kontrol edin.',AD_CREDENTIALS_REJECTED:'AD kullanıcı bilgilerini kabul etmedi. Tekrar denemeden önce bilgileri kontrol edin.',AD_TIMEOUT:'AD yanıtı zaman aşımına uğradı.',AD_RETRY_LATER:'Tekrar denemeden önce 10 saniye bekleyin.',AD_QUERY_BUSY:'Bir AD okuması devam ediyor.',AD_DOMAIN_MISMATCH:'Bağlanılan DC, kaydedilmiş domaine ait değil.',AD_DIRECTORY_LIMIT:'Dizin bu geliştirme sürümünün okuma sınırını aşıyor. Önceki liste korundu.',CONFIG_REQUIRED:'Önce Kurulum ekranından domain ve DC IP adreslerini kaydedin.'};
-  if (!response.ok) throw new Error(value.error === 'REVISION_CONFLICT' ? 'Başka bir kayıt yapıldı. Sayfayı yenileyip tekrar deneyin.' : errors[value.error] || 'İşlem tamamlanamadı: ' + value.error);
+  const errors = {AD_PLATFORM_UNSUPPORTED:'Bu geliştirme sürümünün AD okuyucusu Windows laboratuvarında çalışır.',AD_DNS_FAILED:'DC DNS adı çözümlenemedi. DNS ayarını ve DC adını kontrol edin.',AD_DC_IP_MISMATCH:'DC DNS adresi, Kurulum ekranında kaydettiğiniz DC IP adresleriyle eşleşmiyor.',AD_BIND_FAILED:'AD bağlantısı kurulamadı. DNS, saat, Kerberos erişimi ve kullanıcı bilgilerini kontrol edin.',AD_CREDENTIALS_REJECTED:'AD kullanıcı bilgilerini kabul etmedi. Tekrar denemeden önce bilgileri kontrol edin.',AD_TIMEOUT:'AD yanıtı zaman aşımına uğradı.',AD_RETRY_LATER:'Tekrar denemeden önce 10 saniye bekleyin.',AD_QUERY_BUSY:'Bir AD okuması devam ediyor.',AD_DOMAIN_MISMATCH:'Bağlanılan DC, kaydedilmiş domaine ait değil.',AD_DIRECTORY_LIMIT:'Dizin bu geliştirme sürümünün okuma sınırını aşıyor. Önceki liste korundu.',AD_SEARCH_FAILED:'AD sorgusu veya nesne okuma tamamlanamadı.',AD_INVALID_RESPONSE:'AD okuyucusunun yanıtı doğrulanamadı.',AD_PROTOCOL_UNAVAILABLE:'Windows LDAP okuyucusu başlatılamadı.',CONFIG_REQUIRED:'Önce Kurulum ekranından domain ve DC IP adreslerini kaydedin.'};
+  let diagnostic='';
+  if (value.diagnostic?.stage && value.diagnostic?.reason) diagnostic=' (aşama: '+value.diagnostic.stage+'; neden: '+value.diagnostic.reason+')';
+  if (!response.ok) throw new Error(value.error === 'REVISION_CONFLICT' ? 'Başka bir kayıt yapıldı. Sayfayı yenileyip tekrar deneyin.' : (errors[value.error] || 'İşlem tamamlanamadı: ' + value.error) + diagnostic);
   return value;
 }
 function config() {
@@ -89,8 +91,11 @@ async function loadDirectory() {
   $('directory-next').disabled=directoryOffset+page.items.length>=page.total;
 }
 $('directory-sync').addEventListener('click',()=>run(async()=>{
-  const button=$('directory-sync');button.disabled=true;
+  const button=$('directory-sync');
   const connection={dc_fqdn:$('ad-host').value.trim(),username:$('ad-user').value.trim(),password:$('ad-password').value};
+  if(connection.username.split('@').length!==2||connection.username.split('@')[1].toLowerCase()!==state.config.ad_domain) throw new Error('Kullanıcı adını kullanici@'+state.config.ad_domain+' biçiminde girin.');
+  if(!connection.password) throw new Error('AD parolasını yeniden girin.');
+  button.disabled=true;
   $('ad-password').value='';message('AD bağlantısı kuruluyor; dizin okunuyor…');
   try {await api('/api/directory/sync',{expected_revision:state.revision,connection});await refresh();directoryOffset=0;await loadDirectory();message('Kullanıcılar, bilgisayarlar ve güvenlik grupları alındı. Parola kaydedilmedi.');}
   finally {connection.password='';button.disabled=!state?.directory_public?.windows_reader_available||!state?.config;}

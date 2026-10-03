@@ -7,13 +7,37 @@ Set-StrictMode -Version 2
 $connection = $null
 $request = $null
 $failure = 'AD_INPUT_INVALID'
+$script:stage = 'input'
 function Attribute-Text($entry, [string]$name) {
     if ($entry.Attributes.Contains($name) -and $entry.Attributes[$name].Count -gt 0) {
-        return [string]$entry.Attributes[$name][0]
+        return [string]$entry.Attributes[$name].GetValues([string])[0]
     }
     return ''
 }
+function Attribute-Bytes($entry, [string]$name, [int]$minimum, [int]$maximum) {
+    if (-not $entry.Attributes.Contains($name) -or $entry.Attributes[$name].Count -ne 1) { throw 'ATTRIBUTE_MISSING' }
+    # Search-result indexers may decode valid UTF-8 binary values as strings.
+    # GetValues(byte[]) preserves the LDAP bytes for every SID/GUID.
+    $values = $entry.Attributes[$name].GetValues([byte[]])
+    [byte[]]$bytes = $values[0]
+    if ($bytes.Length -lt $minimum -or $bytes.Length -gt $maximum) { throw 'BINARY_ATTRIBUTE_INVALID' }
+    return ,$bytes
+}
+function Convert-Object($entry, [string]$kind) {
+    $sid = [System.Security.Principal.SecurityIdentifier]::new((Attribute-Bytes $entry 'objectSid' 8 68), 0)
+    $guid = [Guid]::new((Attribute-Bytes $entry 'objectGUID' 16 16))
+    $name = Attribute-Text $entry 'displayName'
+    if (-not $name) { $name = Attribute-Text $entry 'name' }
+    $record = @{guid=$guid.ToString(); sid=$sid.Value; sam=(Attribute-Text $entry 'sAMAccountName'); name=$name}
+    if ($kind -ne 'groups') {
+        $uac = Attribute-Text $entry 'userAccountControl'
+        if (-not $uac) { throw 'ATTRIBUTE_MISSING' }
+        $record.enabled = (([int64]$uac -band 2) -eq 0)
+    }
+    return $record
+}
 function Read-Objects([string]$kind, [string]$filter, [string]$base) {
+    $script:stage = $kind + '_search'
     $objects = New-Object 'System.Collections.Generic.List[object]'
     $search = New-Object System.DirectoryServices.Protocols.SearchRequest
     $search.DistinguishedName = $base
@@ -28,24 +52,18 @@ function Read-Objects([string]$kind, [string]$filter, [string]$base) {
     [void]$search.Controls.Add($page)
     $cookies = New-Object 'System.Collections.Generic.HashSet[string]'
     do {
+        $script:stage = $kind + '_search'
         $response = [System.DirectoryServices.Protocols.SearchResponse]$connection.SendRequest($search)
         if ($response.ResultCode -ne [System.DirectoryServices.Protocols.ResultCode]::Success -or $response.References.Count -ne 0) {
             throw 'AD_SEARCH_FAILED'
         }
         foreach ($entry in $response.Entries) {
-            $sid = [System.Security.Principal.SecurityIdentifier]::new([byte[]]$entry.Attributes['objectSid'][0], 0)
-            $guid = [Guid]::new([byte[]]$entry.Attributes['objectGUID'][0])
-            $name = Attribute-Text $entry 'displayName'
-            if (-not $name) { $name = Attribute-Text $entry 'name' }
-            $record = @{guid=$guid.ToString(); sid=$sid.Value; sam=(Attribute-Text $entry 'sAMAccountName'); name=$name}
-            if ($kind -ne 'groups') {
-                $uac = Attribute-Text $entry 'userAccountControl'
-                if (-not $uac) { throw 'AD_SEARCH_FAILED' }
-                $record.enabled = (([int64]$uac -band 2) -eq 0)
-            }
+            $script:stage = $kind + '_decode'
+            $record = Convert-Object $entry $kind
             $objects.Add($record)
             if ($objects.Count -gt 10000) { throw 'AD_DIRECTORY_LIMIT' }
         }
+        $script:stage = $kind + '_page'
         $control = @($response.Controls | Where-Object { $_ -is [System.DirectoryServices.Protocols.PageResultResponseControl] })
         if ($control.Count -ne 1) { throw 'AD_SEARCH_FAILED' }
         $page.Cookie = $control[0].Cookie
@@ -69,6 +87,31 @@ try {
         $bytes = New-Object byte[] $sid.BinaryLength
         $sid.GetBinaryForm($bytes, 0)
         if ([System.Security.Principal.SecurityIdentifier]::new($bytes, 0).Value -ne $sid.Value) { throw 'Self test failed' }
+        # Actual .NET DirectoryAttribute objects exercise binary values, display
+        # name fallback, disabled users, GUID conversion, and JSON projection.
+        foreach ($fixtureSid in @('S-1-5-32-544', 'S-1-5-32-545', 'S-1-5-21-1-2-3-500')) {
+            $fixture = [System.Security.Principal.SecurityIdentifier]::new($fixtureSid)
+            $binary = New-Object byte[] $fixture.BinaryLength
+            $fixture.GetBinaryForm($binary, 0)
+            $attributes = @{
+                objectSid=[System.DirectoryServices.Protocols.DirectoryAttribute]::new('objectSid', $binary)
+                objectGUID=[System.DirectoryServices.Protocols.DirectoryAttribute]::new('objectGUID', ([Guid]'00000000-0000-0000-0000-000000000001').ToByteArray())
+                sAMAccountName=[System.DirectoryServices.Protocols.DirectoryAttribute]::new('sAMAccountName', 'fixture')
+                name=[System.DirectoryServices.Protocols.DirectoryAttribute]::new('name', 'Fixture')
+                userAccountControl=[System.DirectoryServices.Protocols.DirectoryAttribute]::new('userAccountControl', '514')
+            }
+            # Framework search-result flags reproduce the indexer's UTF-8 path.
+            foreach ($attribute in $attributes.Values) {
+                foreach ($field in $attribute.GetType().GetFields([System.Reflection.BindingFlags]'Instance,NonPublic')) {
+                    if ($field.FieldType -eq [bool] -and $field.Name -match 'searchResult') { $field.SetValue($attribute, $true) }
+                }
+            }
+            $entry = [pscustomobject]@{Attributes=$attributes}
+            $decoded = Convert-Object $entry 'users'
+            if ($decoded.sid -ne $fixtureSid -or $decoded.guid -ne '00000000-0000-0000-0000-000000000001' -or $decoded.enabled -ne $false -or $decoded.name -ne 'Fixture') { throw 'Binary projection fixture failed' }
+            $group = Convert-Object $entry 'groups'
+            if ($group.ContainsKey('enabled') -or (($group | ConvertTo-Json -Compress | ConvertFrom-Json).sid -ne $fixtureSid)) { throw 'Group fixture failed' }
+        }
         @{self_test='passed'; transport='kerberos-sign-seal'; network_called=$false} | ConvertTo-Json -Compress
         exit 0
     }
@@ -84,10 +127,12 @@ try {
     $connection.SessionOptions.Signing = $true
     $connection.SessionOptions.Sealing = $true
     $failure = 'AD_BIND_FAILED'
+    $script:stage = 'bind'
     $connection.Bind()
     $failure = 'AD_PROTECTION_REQUIRED'
     if (-not $connection.SessionOptions.Signing -or -not $connection.SessionOptions.Sealing -or $connection.AuthType -ne [System.DirectoryServices.Protocols.AuthType]::Kerberos) { throw 'AD_PROTECTION_REQUIRED' }
     $failure = 'AD_SEARCH_FAILED'
+    $script:stage = 'rootdse'
     $root = New-Object System.DirectoryServices.Protocols.SearchRequest
     $root.DistinguishedName = ''
     $root.Filter = '(objectClass=*)'
@@ -103,6 +148,7 @@ try {
     $users = Read-Objects 'users' '(&(objectCategory=person)(objectClass=user))' $base
     $groups = Read-Objects 'groups' '(&(objectCategory=group)(groupType:1.2.840.113556.1.4.803:=2147483648))' $base
     $computers = Read-Objects 'computers' '(objectCategory=computer)' $base
+    $script:stage = 'serialize'
     @{domain=[string]$request.domain; dc_fqdn=[string]$request.dc_fqdn; transport='kerberos-sign-seal'; users=@($users); groups=@($groups); computers=@($computers)} | ConvertTo-Json -Depth 8 -Compress
 } catch {
     $errorCode = $failure
@@ -110,7 +156,16 @@ try {
     while ($exception.InnerException) { $exception = $exception.InnerException }
     if ($exception.GetType().FullName -eq 'System.DirectoryServices.Protocols.LdapException' -and $exception.ErrorCode -eq 49) { $errorCode = 'AD_CREDENTIALS_REJECTED' }
     if ($_.Exception.Message -eq 'AD_DIRECTORY_LIMIT') { $errorCode = 'AD_DIRECTORY_LIMIT' }
-    @{error=$errorCode} | ConvertTo-Json -Compress
+    $reason = 'UNKNOWN'
+    if ($exception.GetType().FullName -eq 'System.DirectoryServices.Protocols.DirectoryOperationException') {
+        $reason = 'LDAP_RESULT'
+        if ($exception.Response -and $exception.Response.ResultCode -eq [System.DirectoryServices.Protocols.ResultCode]::InsufficientAccessRights) { $reason = 'ACCESS_DENIED' }
+    }
+    if ($exception.GetType().FullName -eq 'System.DirectoryServices.Protocols.LdapException') { $reason = 'LDAP_CONNECTION' }
+    if ($exception -is [System.ArgumentException] -or $exception -is [System.FormatException] -or $exception -is [System.InvalidCastException]) { $reason = 'VALUE_CONVERSION' }
+    if ($_.Exception.Message -in @('ATTRIBUTE_MISSING', 'BINARY_ATTRIBUTE_INVALID')) { $reason = $_.Exception.Message }
+    # Fixed enums only; no exception messages, credentials, DNs or object values.
+    @{error=$errorCode; stage=$script:stage; reason=$reason} | ConvertTo-Json -Compress
     exit 1
 } finally {
     if ($connection) { $connection.Dispose() }

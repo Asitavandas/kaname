@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from kaname.directory import DirectoryError, read_windows_directory, validate_catalog, validate_connection
+from kaname.directory import DirectoryError, decode_helper_response, read_windows_directory, validate_catalog, validate_connection
 from kaname.models import ValidationError
 from kaname.server import DevelopmentServer
 from kaname.store import Store, ConflictError
@@ -30,6 +30,26 @@ def connection():
 class DirectoryModelTests(unittest.TestCase):
     def test_connection_domain_and_upn(self):
         self.assertEqual('lab.example', validate_connection(connection(), config())['domain'])
+
+    def test_helper_failure_returns_only_known_stage_and_reason(self):
+        value = {'error': 'AD_SEARCH_FAILED', 'stage': 'groups_decode', 'reason': 'VALUE_CONVERSION', 'message': connection()['password']}
+        with self.assertRaises(DirectoryError) as caught:
+            decode_helper_response(json.dumps(value).encode(), 1, 'lab.example', 'dc01.lab.example')
+        self.assertEqual({'stage': 'groups_decode', 'reason': 'VALUE_CONVERSION'}, caught.exception.diagnostic)
+        self.assertNotIn(connection()['password'], str(caught.exception))
+        for stage, reason in [('private-DN', 'secret-message'), ({'secret': 1}, ['secret'])]:
+            value.update(stage=stage, reason=reason)
+            with self.assertRaises(DirectoryError) as caught:
+                decode_helper_response(json.dumps(value).encode(), 1, 'lab.example', 'dc01.lab.example')
+            self.assertIsNone(caught.exception.diagnostic)
+
+    def test_helper_success_and_invalid_output_are_separated(self):
+        self.assertEqual(catalog(), decode_helper_response(json.dumps(catalog()).encode(), 0, 'lab.example', 'dc01.lab.example'))
+        for output in [b'private exception text', b'null', b'{}']:
+            with self.assertRaises(DirectoryError) as caught:
+                decode_helper_response(output, 1, 'lab.example', 'dc01.lab.example')
+            self.assertIn(caught.exception.code, {'AD_INVALID_RESPONSE', 'AD_SEARCH_FAILED'})
+            self.assertIsNone(caught.exception.diagnostic)
 
     def test_foreign_host_rejected(self):
         c = connection(); c['dc_fqdn'] = 'dc01.attacker.example'
@@ -181,6 +201,15 @@ class DirectoryHTTPTests(unittest.TestCase):
         status, result = self.sync()
         self.assertEqual(503, status); self.assertEqual('AD_CREDENTIALS_REJECTED', result['error'])
         self.assertEqual(before, self.server.store.directory_catalog())
+
+    def test_query_diagnostic_does_not_disclose_credentials_or_catalog(self):
+        def fail(*_): raise DirectoryError('AD_SEARCH_FAILED', 'groups_decode', 'VALUE_CONVERSION')
+        self.server.directory_reader = fail
+        status, result = self.sync()
+        self.assertEqual(503, status)
+        self.assertEqual({'error': 'AD_SEARCH_FAILED', 'diagnostic': {'stage': 'groups_decode', 'reason': 'VALUE_CONVERSION'}}, result)
+        self.assertNotIn(connection()['password'], json.dumps(result))
+        self.assertFalse(self.server.store.directory_status()['catalog_available'])
 
     def test_concurrent_and_repeated_bind_are_limited(self):
         self.server.directory_lock.acquire()

@@ -14,11 +14,14 @@ TRANSPORT = 'kerberos-sign-seal'
 ERRORS = {'AD_BIND_FAILED', 'AD_CREDENTIALS_REJECTED', 'AD_DOMAIN_MISMATCH',
           'AD_DIRECTORY_LIMIT', 'AD_SEARCH_FAILED', 'AD_PROTOCOL_UNAVAILABLE',
           'AD_PROTECTION_REQUIRED', 'AD_INPUT_INVALID'}
+STAGES = {'input', 'bind', 'rootdse', 'serialize'} | {kind + '_' + step for kind in ('users', 'groups', 'computers') for step in ('search', 'decode', 'page')}
+REASONS = {'UNKNOWN', 'LDAP_RESULT', 'ACCESS_DENIED', 'LDAP_CONNECTION', 'VALUE_CONVERSION', 'ATTRIBUTE_MISSING', 'BINARY_ATTRIBUTE_INVALID'}
 
 
 class DirectoryError(Exception):
-    def __init__(self, code):
+    def __init__(self, code, stage=None, reason=None):
         self.code = code
+        self.diagnostic = {'stage': stage, 'reason': reason} if type(stage) is str and type(reason) is str and stage in STAGES and reason in REASONS else None
         super().__init__(code)
 
 
@@ -101,18 +104,22 @@ def read_windows_directory(value, config):
         raise DirectoryError('AD_PROTOCOL_UNAVAILABLE') from None
     finally:
         request['password'] = ''
+    return decode_helper_response(completed.stdout, completed.returncode, config['ad_domain'], value['dc_fqdn'].lower())
+
+
+def decode_helper_response(stdout, returncode, domain, dc_fqdn):
     try:
-        if len(completed.stdout) > 24_000_000:
+        if len(stdout) > 24_000_000:
             raise DirectoryError('AD_DIRECTORY_LIMIT')
-        result = json.loads(completed.stdout.decode('utf-8-sig'))
+        result = json.loads(stdout.decode('utf-8-sig'))
         if type(result) is not dict:
             raise ValueError()
         if 'error' in result:
             code = result['error'] if result['error'] in ERRORS else 'AD_SEARCH_FAILED'
-            raise DirectoryError(code)
-        if completed.returncode != 0:
+            raise DirectoryError(code, result.get('stage'), result.get('reason'))
+        if returncode != 0:
             raise DirectoryError('AD_SEARCH_FAILED')
-        return validate_catalog(result, config['ad_domain'], value['dc_fqdn'].lower())
+        return validate_catalog(result, domain, dc_fqdn)
     except (ValueError, TypeError, KeyError, UnicodeError):
         # Never surface subprocess stderr, exceptions or server diagnostic text.
         raise DirectoryError('AD_INVALID_RESPONSE') from None

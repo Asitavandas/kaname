@@ -63,8 +63,20 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('[data-view="directory"]').click();
     assert.equal(await page.locator('#ad-domain').inputValue(),'kurum.example');
     await page.locator('#ad-host').fill('dc01.kurum.example');
-    await page.locator('#ad-user').fill('administrator@kurum.example');
     const fixturePassword='UI_FIXTURE_PASSWORD_NOT_REAL';
+    await page.locator('#ad-user').fill('administrator');
+    await page.locator('#ad-password').fill(fixturePassword);
+    await page.locator('#directory-sync').click();
+    await page.waitForFunction(()=>document.querySelector('#ad-feedback').textContent.includes('kullanici@kurum.example'));
+    assert.equal(await page.locator('#ad-password').inputValue(),fixturePassword);
+    await page.locator('#ad-user').fill('administrator@kurum.example');
+    const failRoute=route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'AD_SEARCH_FAILED',diagnostic:{stage:'groups_decode',reason:'VALUE_CONVERSION'}})});
+    await page.route('**/api/directory/sync',failRoute);
+    await page.locator('#directory-sync').click();
+    await page.waitForFunction(()=>document.querySelector('#ad-feedback').textContent.includes('groups_decode'));
+    assert.equal(await page.locator('#ad-password').inputValue(),'');
+    await page.waitForFunction(()=>!document.querySelector('#directory-sync').disabled);
+    await page.unroute('**/api/directory/sync',failRoute);
     await page.locator('#ad-password').fill(fixturePassword);
     await page.locator('#directory-sync').click();
     await page.waitForFunction(()=>document.querySelector('#directory-status').textContent.includes('1 grup'));
@@ -84,7 +96,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.equal(await page.locator('.policy-row').count(),1);
     if(process.env.KANAME_SCREENSHOT)await page.screenshot({path:process.env.KANAME_SCREENSHOT,fullPage:true});
     assert.deepEqual(errors,[]);
-    console.log('PASS: login, draft, policy, simulation, audit, persistence, directory fixture import, password removal, XSS-safe rendering and group selection. No real AD was contacted.');
+    console.log('PASS: login, draft, policy, simulation, audit, persistence, UPN input feedback, safe directory failure feedback, directory fixture import, password removal, XSS-safe rendering and group selection. No real AD was contacted.');
   } finally {
     if(browser)await browser.close();
     child.kill();

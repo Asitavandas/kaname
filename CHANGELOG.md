@@ -1,5 +1,14 @@
 # Değişiklikler
 
+## 0.3.1-dev.1 — AD ikili öznitelik okuma düzeltmesi
+
+- SID/GUID öznitelikleri GetValues(byte[]) ile okunur; LDAP indexer UTF-8 dönüşümünden etkilenmez.
+- Windows .NET self-test yerleşik grup SID ve GUID nesne dönüşümünü de doğrular.
+- AD hataları yalnız sabit aşama/neden kodlarıyla ayrılır; ham exception, DN veya kimlik bilgisi gösterilmez.
+- Kullanıcı adı biçimi/parola kontrolü ve bağlantı düğmesi yanında durum açıklaması eklendi.
+- Önceki yayın manifestiyle 0.3.0 kurulumu güvenli biçimde güncellenebilir; kullanıcı kaynak değişiklikleri hâlâ reddedilir.
+- Gerçek AD başarılı katalog okuması yeniden operatör denemesi gerektirir.
+
 ## 0.3.0-dev.1 — AD dizin okuma
 
 - Mevcut GitHub kayıtları ve Windows paneli doğrulandı; kaynak/state yeniden oluşturulmadı.

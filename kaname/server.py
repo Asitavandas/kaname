@@ -191,7 +191,7 @@ class Handler(BaseHTTPRequestHandler):
         except ConflictError:
             self.respond(409, {'error': 'REVISION_CONFLICT'})
         except DirectoryError as exc:
-            self.respond(503, {'error': exc.code})
+            self.respond(503, {'error': exc.code, **({'diagnostic': exc.diagnostic} if exc.diagnostic else {})})
         except (ValidationError, ValueError, TypeError, KeyError):
             self.respond(400, {'error': 'INVALID_INPUT'})
         except (sqlite3.Error, OSError):
