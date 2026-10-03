@@ -4,6 +4,8 @@ import tempfile
 import threading
 import time
 import unittest
+import sys
+from pathlib import Path
 
 from kaname.admin import AdminStore, RESOURCES, password_matches
 from kaname.server import DevelopmentServer
@@ -15,6 +17,10 @@ class AdministratorHTTPTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.server = DevelopmentServer(self.temp.name, 0)
+        # Join request workers before removing the fixture database, including
+        # when a timed-out client has disconnected. Do not leave Windows handles
+        # in a daemon worker and hide the original failure under cleanup errors.
+        self.server.daemon_threads = False
         self.server.store.save(0, config=config())
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True); self.thread.start()
         self.addCleanup(self.close)
@@ -37,6 +43,21 @@ class AdministratorHTTPTests(unittest.TestCase):
             conn.request(method, path, body=json.dumps(value) if value is not None else None, headers=h)
             response = conn.getresponse()
             return response.status, json.loads(response.read()), dict(response.headers)
+        except TimeoutError:
+            # Source locations only: never headers, values, locals or secrets.
+            stacks = []
+            for frame in sys._current_frames().values():
+                locations = []
+                while frame:
+                    name = Path(frame.f_code.co_filename).name
+                    if name in {'admin.py', 'server.py', 'store.py'}:
+                        locations.append({'module': name, 'function': frame.f_code.co_name,
+                                          'line': frame.f_lineno})
+                    frame = frame.f_back
+                if locations:
+                    stacks.append(locations)
+            print('KANAME_TEST_TIMEOUT_LOCATIONS=' + json.dumps(stacks), flush=True)
+            raise
         finally:
             conn.close()
 
