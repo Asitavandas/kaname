@@ -1,5 +1,15 @@
 # Değişiklikler
 
+## 0.3.0-dev.1 — AD dizin okuma
+
+- Mevcut GitHub kayıtları ve Windows paneli doğrulandı; kaynak/state yeniden oluşturulmadı.
+- Windows .NET LDAP okuyucusu Kerberos, signing ve sealing zorunluluğuyla eklendi; Basic/NTLM/plaintext fallback yok.
+- Parola yalnız istek/işlem belleğinde kullanılır; argv/env/config/audit/katalog içine yazılmaz.
+- Sayfalı kullanıcı, bilgisayar ve güvenlik grubu listeleri; SID/GUID doğrulaması ve kapalı hesap durumu eklendi.
+- Katalog ve audit atomik kaydedilir; config/policy revision veya CA değiştirilmez. Hatalı okuma eski listeyi korur.
+- Panele AD bağlantısı, sayfalı arama ve yeni politikaya grup seçimi eklendi.
+- Gerçek AD credential testi kullanıcı laboratuvarı kabul kapısıdır. İç içe/primary grup doğrulaması, düzenli eşitleme, Linux Kerberos adaptörü, EAP ve OVF henüz tamamlanmadı.
+
 ## 0.2.0-dev.1 — bağlantı sonrası devam
 
 - 0.1 kaynak/paket bütünlüğü ve 70 test doğrulandı; mevcut temel yeniden oluşturulmadı.

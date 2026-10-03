@@ -2,6 +2,7 @@
 import json
 import os
 import sqlite3
+from datetime import datetime, timezone
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -84,5 +85,56 @@ class Store:
             # Explicit output projection even if database metadata is malformed.
             public_certs = {kind: {k: value[kind][k] for k in ('serial', 'fingerprint_sha256', 'not_before', 'not_after')}
                             for kind in ('root', 'issuer')}
-            return {**{k: value[k] for k in ('initialized', 'mode', 'instance_id')}, **public_certs,
+        return {**{k: value[k] for k in ('initialized', 'mode', 'instance_id')}, **public_certs,
                     'client_enrollment_enabled': False, 'radius_connected': False, 'crl_number': row[1]}
+
+    def save_directory(self, expected_revision, catalog):
+        from .directory import validate_catalog
+        integer(expected_revision, 0, 2**53 - 2)
+        catalog = validate_catalog(catalog)
+        now = datetime.now(timezone.utc).isoformat()
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            revision, config = db.execute('SELECT revision,config FROM state WHERE id=1').fetchone()
+            if revision != expected_revision:
+                raise ConflictError('State changed during directory query')
+            if not config or json.loads(config)['ad_domain'] != catalog['domain']:
+                raise ValueError('Directory domain does not match config')
+            db.execute('CREATE TABLE IF NOT EXISTS directory_catalog (id INTEGER PRIMARY KEY CHECK(id=1), domain TEXT NOT NULL, synced_at TEXT NOT NULL, payload TEXT NOT NULL)')
+            db.execute('INSERT OR REPLACE INTO directory_catalog VALUES (1,?,?,?)',
+                       (catalog['domain'], now, json.dumps(catalog, ensure_ascii=False, allow_nan=False)))
+            db.execute('INSERT INTO audit(event,revision) VALUES (?,?)', ('directory_synced', revision))
+        return self.directory_status()
+
+    def directory_catalog(self):
+        from .directory import validate_catalog
+        with self.connect() as db:
+            if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='directory_catalog'").fetchone():
+                return None
+            row = db.execute('SELECT domain,synced_at,payload FROM directory_catalog WHERE id=1').fetchone()
+            config = db.execute('SELECT config FROM state WHERE id=1').fetchone()[0]
+            if row is None or not config or row[0] != json.loads(config)['ad_domain']:
+                return None
+            catalog = validate_catalog(json.loads(row[2]), row[0])
+        return {**catalog, 'synced_at': row[1]}
+
+    def directory_status(self):
+        catalog = self.directory_catalog()
+        result = {'catalog_available': catalog is not None, 'windows_reader_available': os.name == 'nt',
+                  'runtime_auth_ready': False, 'automatic_sync_enabled': False}
+        if catalog:
+            result.update(domain=catalog['domain'], dc_fqdn=catalog['dc_fqdn'], synced_at=catalog['synced_at'],
+                          transport=catalog['transport'], counts={k: len(catalog[k]) for k in ('users', 'groups', 'computers')})
+        return result
+
+    def directory_page(self, kind, offset=0, limit=100, query=''):
+        if kind not in {'users', 'groups', 'computers'}:
+            raise ValueError('Invalid catalog kind')
+        integer(offset, 0, 10000); integer(limit, 1, 200)
+        if type(query) is not str or len(query) > 128 or any(ord(c) < 32 for c in query):
+            raise ValueError('Invalid directory query')
+        catalog = self.directory_catalog()
+        if catalog is None:
+            return {'items': [], 'total': 0, 'offset': offset, 'catalog_available': False}
+        items = [x for x in catalog[kind] if not query or any(query.casefold() in x[k].casefold() for k in ('name', 'sam', 'sid'))]
+        return {'items': items[offset:offset + limit], 'total': len(items), 'offset': offset, 'catalog_available': True}

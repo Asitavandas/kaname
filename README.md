@@ -2,8 +2,8 @@
 
 Bağımsız Active Directory tabanlı kablolu/kablosuz 802.1X erişim yönetimi.
 
-**Teslim edilen sürüm: 0.2.0-dev.1 — mevcut temelin üzerine dahili PKI geliştirmesi.**
-Yerel konsoldan root/issuer CA, RADIUS sunucu sertifikası ve imzalı CRL üretilebilir. Çalışan RADIUS hizmeti, AD bağlantısı, istemci enrollment veya açılabilir OVF bu pakette yoktur. Paneldeki ağ/politika kayıtları yalnızca taslaktır; ağda izin/ret kararı uygulanmaz.
+**Geliştirme sürümü: 0.3.0-dev.1 — Windows laboratuvarında güvenli AD dizin okuma ve grup seçimi.**
+Mevcut politika ve dahili PKI temeli korunur. Windows'taki yerel panelden Kerberos signing/sealing ile kullanıcı, bilgisayar ve güvenlik grupları okunabilir. Parola kaydedilmez. Çalışan RADIUS hizmeti, istemci enrollment veya açılabilir OVF bu sürümde yoktur. Paneldeki ağ/politika kayıtları taslaktır; ağda izin/ret kararı uygulanmaz. Linux appliance AD okuyucusu henüz bağlı değildir.
 
 ## Başlatma
 
@@ -38,9 +38,10 @@ python3 -m kaname --port 8876 --state-dir ./kaname-state
 | Karar testi | Örnek kimliklerle politika değerlendirmesi ve VLAN özniteliklerinin gösterimi. Gerçek doğrulama kanıtı üretmez. |
 | Kayıt | SQLite kalıcılığı, çakışan sürüm kaydını engelleme ve yapılandırmayla aynı transaction içinde audit. |
 | Dahili PKI | Yerel konsoldan benzersiz root/issuer CA, şifreli anahtarlar, kayıtlı FQDN için server-only sertifika, iptal ve imzalı CRL. Panel yalnız açık CA bilgilerini gösterir. |
+| Active Directory | Windows'ta Kerberos ile imzalı/şifreli LDAP, sayfalı kullanıcı/bilgisayar/güvenlik grubu okuma, kalıcı son okuma, arama ve politikaya SID seçimi. Domain Admin parolası saklanmaz; AD değişikliği yapılmaz. |
 | OVF araçları | Hazırlanmış temiz VMware VMX'inin dışa aktarımı için sarmalayıcı ve yerel OVF/VMDK/SHA256 manifest denetleyicisi. |
 
-Policy API daha geniş modeli destekler; başlangıç panelindeki yeni politika formu EAP-TLS + domain cihazı şartı kullanır. Gerçek AD grup seçici sonraki aşamadadır.
+Policy API daha geniş modeli destekler; yeni politika formu EAP-TLS + domain cihazı şartı kullanır. AD grubu seçmek kullanıcı/cihazın o grupta olduğunu veya EAP oturumunu doğrulamaz. Ayrıntılar [AD laboratuvar akışında](docs/AD.md).
 
 ## Testler
 

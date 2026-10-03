@@ -12,7 +12,8 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'kaname-ui-'));
   const python = process.env.CODEX_PRIMARY_RUNTIME_PYTHON || process.env.KANAME_PYTHON || 'python3';
   // Port 0 is accepted by DevelopmentServer; production CLI intentionally rejects it.
-  const child = spawn(python, ['-u', '-c', 'import sys; from kaname.server import DevelopmentServer; s=DevelopmentServer(sys.argv[1],0); print(s.server_port,flush=True); s.serve_forever()', temp], {cwd: root, stdio:['ignore','pipe','pipe']});
+  // Directory fixture is confined to this disposable test server; no real AD.
+  const child = spawn(python, ['-u', '-c', 'import sys; from kaname.server import DevelopmentServer; from tests.test_directory import catalog; s=DevelopmentServer(sys.argv[1],0); s.directory_reader=lambda v,c:{**catalog(),"domain":c["ad_domain"],"dc_fqdn":v["dc_fqdn"]}; original=s.store.directory_status; s.store.directory_status=lambda:{**original(),"windows_reader_available":True}; print(s.server_port,flush=True); s.serve_forever()', temp], {cwd: root, stdio:['ignore','pipe','pipe']});
   let browser;
   try {
     const port = await new Promise((resolve,reject) => {
@@ -59,6 +60,20 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.match(await page.locator('#audit-list').textContent(),/policies_saved/);
     await page.locator('[data-view="certificates"]').click();
     assert.match(await page.locator('#pki-info').textContent(),/henüz CA oluşturulmadı/);
+    await page.locator('[data-view="directory"]').click();
+    assert.equal(await page.locator('#ad-domain').inputValue(),'kurum.example');
+    await page.locator('#ad-host').fill('dc01.kurum.example');
+    await page.locator('#ad-user').fill('administrator@kurum.example');
+    const fixturePassword='UI_FIXTURE_PASSWORD_NOT_REAL';
+    await page.locator('#ad-password').fill(fixturePassword);
+    await page.locator('#directory-sync').click();
+    await page.waitForFunction(()=>document.querySelector('#directory-status').textContent.includes('1 grup'));
+    assert.equal(await page.locator('#ad-password').inputValue(),'');
+    assert.match(await page.locator('#directory-list').textContent(),/<script>alert\(1\)<\/script>/);
+    assert.equal(await page.locator('#directory-list script').count(),0);
+    assert.ok(!fs.readFileSync(path.join(temp,'kaname.sqlite3')).includes(fixturePassword));
+    await page.locator('#directory-list button').click();
+    assert.equal(await page.locator('#policy-group').inputValue(),'S-1-5-21-1-2-3-1100');
     await page.reload();
     await page.locator('#token').fill(fs.readFileSync(path.join(temp,'access-token'),'utf8').trim());
     await page.locator('#unlock').click();
@@ -69,7 +84,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.equal(await page.locator('.policy-row').count(),1);
     if(process.env.KANAME_SCREENSHOT)await page.screenshot({path:process.env.KANAME_SCREENSHOT,fullPage:true});
     assert.deepEqual(errors,[]);
-    console.log('PASS: local login, four-step draft, policy save, allow/deny simulation, audit, persistence and zero page errors.');
+    console.log('PASS: login, draft, policy, simulation, audit, persistence, directory fixture import, password removal, XSS-safe rendering and group selection. No real AD was contacted.');
   } finally {
     if(browser)await browser.close();
     child.kill();

@@ -4,15 +4,19 @@ import json
 import os
 import secrets
 import sqlite3
+import threading
+import time
 from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 from . import VERSION
 from .models import (ValidationError, address, array, boolean, enum, keys,
                      strict_json, text)
 from .policy import VerifiedIdentity, evaluate, radius_vlan_attributes
 from .store import ConflictError, Store
+from .directory import DirectoryError, read_windows_directory, validate_connection
 
 STATIC = Path(__file__).parent / 'static'
 ASSETS = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
@@ -43,6 +47,9 @@ class DevelopmentServer(ThreadingHTTPServer):
     def __init__(self, root, port=8765, token=None):
         self.store = Store(root)
         self.token = token or development_token(self.store.root)
+        self.directory_lock = threading.Lock()
+        self.directory_next_attempt = 0.0
+        self.directory_reader = read_windows_directory
         super().__init__(('127.0.0.1', port), Handler)
         self.origins = {f'http://127.0.0.1:{self.server_port}', f'http://localhost:{self.server_port}'}
         self.hosts = {f'127.0.0.1:{self.server_port}', f'localhost:{self.server_port}'}
@@ -103,18 +110,33 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == '/api/state' and self.guard():
             value = self.server.store.snapshot()
             value['pki_public'] = self.server.store.public_pki_status()
+            value['directory_public'] = self.server.store.directory_status()
             value.update(product='KANAME', version=VERSION, runtime_ready=False,
-                         integrations={'ad': 'pending', 'pki': 'pending', 'radius': 'pending', 'ovf': 'not-built'})
+                         integrations={'ad': 'catalog-only' if value['directory_public']['catalog_available'] else 'pending', 'pki': 'pending', 'radius': 'pending', 'ovf': 'not-built'})
             self.respond(200, value)
         elif self.path == '/api/audit' and self.guard():
             self.respond(200, {'events': self.server.store.audit()})
+        elif urlsplit(self.path).path == '/api/directory/catalog' and self.guard():
+            try:
+                if len(self.path) > 1024:
+                    raise ValueError()
+                query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                if set(query) - {'kind', 'offset', 'q'} or any(len(v) != 1 for v in query.values()):
+                    raise ValueError()
+                value = self.server.store.directory_page(query.get('kind', ['groups'])[0],
+                    int(query.get('offset', ['0'])[0]), query=query.get('q', [''])[0])
+                self.respond(200, value)
+            except (ValueError, TypeError):
+                self.respond(400, {'error': 'INVALID_INPUT'})
+            except sqlite3.Error:
+                self.respond(503, {'error': 'STORE_UNAVAILABLE'})
         elif self.path not in {'/api/state', '/api/audit'}:
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
         if not self.guard(write=True):
             return
-        if self.path not in {'/api/config', '/api/policies', '/api/simulate'}:
+        if self.path not in {'/api/config', '/api/policies', '/api/simulate', '/api/directory/sync'}:
             self.respond(404, {'error': 'NOT_FOUND'})
             return
         if self.headers.get('Transfer-Encoding') or self.headers.get_content_type() != 'application/json':
@@ -126,7 +148,30 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(413, {'error': 'BODY_LIMIT'})
                 return
             value = strict_json(self.rfile.read(size))
-            if self.path == '/api/simulate':
+            if self.path == '/api/directory/sync':
+                keys(value, {'expected_revision', 'connection'}, {'expected_revision', 'connection'})
+                current = self.server.store.snapshot()
+                if current['config'] is None:
+                    self.respond(409, {'error': 'CONFIG_REQUIRED'})
+                    return
+                if value['expected_revision'] != current['revision'] or type(value['expected_revision']) is not int:
+                    raise ConflictError()
+                validate_connection(value['connection'], current['config'])
+                if not self.server.directory_lock.acquire(blocking=False):
+                    self.respond(429, {'error': 'AD_QUERY_BUSY'})
+                    return
+                try:
+                    if time.monotonic() < self.server.directory_next_attempt:
+                        self.respond(429, {'error': 'AD_RETRY_LATER'})
+                        return
+                    self.server.directory_next_attempt = time.monotonic() + 10
+                    catalog = self.server.directory_reader(value['connection'], current['config'])
+                    status = self.server.store.save_directory(current['revision'], catalog)
+                    self.respond(200, {'directory_public': status, 'network_enforced': False, 'credentials_saved': False})
+                finally:
+                    value['connection']['password'] = ''
+                    self.server.directory_lock.release()
+            elif self.path == '/api/simulate':
                 required = {'authenticated', 'directory_available', 'account_enabled', 'domain_device', 'group_sids', 'access_type', 'nas_ip', 'eap_method'}
                 keys(value, required, required)
                 context = VerifiedIdentity(
@@ -145,6 +190,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(200, {'revision': revision, 'runtime_applied': False})
         except ConflictError:
             self.respond(409, {'error': 'REVISION_CONFLICT'})
+        except DirectoryError as exc:
+            self.respond(503, {'error': exc.code})
         except (ValidationError, ValueError, TypeError, KeyError):
             self.respond(400, {'error': 'INVALID_INPUT'})
         except (sqlite3.Error, OSError):
