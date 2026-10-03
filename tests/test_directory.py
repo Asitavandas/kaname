@@ -112,11 +112,13 @@ class DirectoryModelTests(unittest.TestCase):
             result = subprocess.run([str(executable), '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', str(script), '-SelfTest', '-FixturePort', str(fixture.port)], capture_output=True, timeout=25)
             value = json.loads(result.stdout.decode('utf-8-sig'))
             self.assertEqual([], fixture.errors)
+            if fixture.searches:
+                self.assertTrue(all(fixture.domain_scope_controls), 'Every LDAP page must carry a critical domain-scope control')
             return result.returncode, value
 
     @unittest.skipUnless(os.name == 'nt', 'Windows .NET LDAP wire fixture')
     def test_windows_ldap_query_decoding_and_paging_on_loopback(self):
-        code, value = self.run_ldap_fixture('normal')
+        code, value = self.run_ldap_fixture('ad-referrals')
         self.assertEqual(0, code, str(value))
         self.assertEqual({'self_test': 'passed', 'fixture': 'paged-ldap', 'external_network_called': False, 'counts': {'users': 2, 'groups': 1, 'computers': 1}}, value)
 
@@ -137,6 +139,7 @@ class DirectoryModelTests(unittest.TestCase):
         code, value = self.run_ldap_fixture('referral')
         self.assertEqual(1, code)
         self.assertEqual('users_search', value['stage'])
+        self.assertEqual('REFERRAL_RETURNED', value['reason'])
 
 
 class DirectoryStoreTests(unittest.TestCase):

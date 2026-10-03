@@ -1,4 +1,4 @@
-# AD okuma laboratuvarı — 0.3.0-dev.1
+# AD okuma laboratuvarı — 0.3.2-dev.1
 
 Bu sürüm Windows'taki yerel geliştirme panelinden gerçek AD dizin okumayı denemek içindir. Linux appliance okuyucusu sonraki uygulama adımıdır; OVF hazır sayılmaz.
 
@@ -12,7 +12,7 @@ Domain Admin hesabı okunabilir ancak dizin okuması için bu yetki zorunlu değ
 
 ## Bağlantı koruması
 
-Windows System.DirectoryServices.Protocols, AuthType.Kerberos, ProtocolVersion 3, Signing=true ve Sealing=true kullanılır. LDAP 389 üzerinde SASL koruması vardır; LDAP Basic veya NTLM'e düşüş yoktur. Bu yol ayrı CA/AD CS/LDAPS sertifikası gerektirmez. DNS ve saat uyumu, LDAP/Kerberos ağ erişimi ve uygun AD kullanıcı yetkisi gerekir. DC DNS adı kayıtlı domain altında olmalı ve çözümlenen bütün adresler kaydedilmiş DC IP'leriyle eşleşmelidir. Referral chasing kapalıdır; RootDSE domain eşleşmesi kontrol edilir.
+Windows System.DirectoryServices.Protocols, AuthType.Kerberos, ProtocolVersion 3, Signing=true ve Sealing=true kullanılır. LDAP 389 üzerinde SASL koruması vardır; LDAP Basic veya NTLM'e düşüş yoktur. Bu yol ayrı CA/AD CS/LDAPS sertifikası gerektirmez. DNS ve saat uyumu, LDAP/Kerberos ağ erişimi ve uygun AD kullanıcı yetkisi gerekir. DC DNS adı kayıtlı domain altında olmalı ve çözümlenen bütün adresler kaydedilmiş DC IP'leriyle eşleşmelidir. Sorgular LDAP_SERVER_DOMAIN_SCOPE_OID (1.2.840.113556.1.4.1339) kritik kontrolüyle tek domain naming context içinde tutulur. Referral chasing kapalıdır; RootDSE domain eşleşmesi kontrol edilir.
 
 Kimlik bilgileri Python subprocess stdin üzerinden JSON ile taşınır; komut satırına, ortam değişkenine veya geçici dosyaya yazılmaz. Ham subprocess stderr/AD hata açıklamaları API'ye ya da GitHub'a aktarılmaz. Windows işlemleri kapatılır. Bellek sıfırlama garantisi verilmez; Python/.NET stringleri immutable olabilir. Yönetim sunucusu yalnız loopback'te dinler ve mevcut token/Host/Origin kontrollerini kullanır. LAN'a reverse proxy ile açmayın; üretim HTTPS/RBAC ayrı aşamadır.
 
@@ -31,3 +31,7 @@ Microsoft kaynakları:
 ## Kabul
 
 Fixture API/tarayıcı testleri credential, kalıcılık, CSRF/Origin, XSS ve başarısız okuma davranışını doğrular; gerçek AD testi yerine geçmez. Windows .NET self-test ağ çağrısı yapmadan sınıf/koruma seçeneklerini doğrular. Gerçek kullanıcı/grup okunması, geçersiz kullanıcı bilgisi, yanlış DNS/DC, uygun olmayan yetki ve AD kesintisi operatör laboratuvarında doğrulanmalıdır. GitHub raporlarına AD parolası/katalog içeriği yüklenmez.
+
+Domain-scope kaynakları:
+- https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ldap/ldap-server-domain-scope-oid
+- https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/ldap-paged-queries-subordinate-referrals-not-chased

@@ -82,6 +82,7 @@ class LDAPFixture:
         self.conn = None
         self.errors = []
         self.searches = 0
+        self.domain_scope_controls = []
         self.thread = threading.Thread(target=self.serve, daemon=True)
 
     def __enter__(self):
@@ -111,11 +112,27 @@ class LDAPFixture:
                     packet = read_packet(conn)
                     _, mid, offset = parse(packet)
                     message_id = int.from_bytes(mid, 'big')
-                    operation, content, _ = parse(packet, offset)
+                    operation, content, next_offset = parse(packet, offset)
                     if operation == 96:  # anonymous bind, fixture only
                         conn.sendall(done(message_id, tag=97))
                     elif operation == 99:
                         self.searches += 1
+                        domain_scope = False
+                        if next_offset < len(packet):
+                            tag, controls, _ = parse(packet, next_offset)
+                            if tag != 160:
+                                raise ValueError('Invalid fixture control wrapper')
+                            pos = 0
+                            while pos < len(controls):
+                                _, control, pos = parse(controls, pos)
+                                _, oid, at = parse(control)
+                                if oid == b'1.2.840.113556.1.4.1339':
+                                    tag, critical, at = parse(control, at)
+                                    domain_scope = tag == 1 and critical != b'\0'
+                                    if at < len(control):
+                                        tag, value, _ = parse(control, at)
+                                        domain_scope = domain_scope and tag == 4 and value == b''
+                        self.domain_scope_controls.append(domain_scope)
                         first_user_page = self.searches == 1
                         is_group = b'groupType' in content
                         is_computer = b'computer' in content
@@ -128,7 +145,7 @@ class LDAPFixture:
                             'userAccountControl': ['514' if first_user_page else '512'],
                         }
                         conn.sendall(entry(message_id, attrs))
-                        if self.mode == 'referral':
+                        if self.mode == 'referral' or (self.mode == 'ad-referrals' and not domain_scope):
                             conn.sendall(tlv(48, number(message_id) + tlv(115, octet('ldap://outside.invalid/DC=other'))))
                         cookie = b'next-page' if first_user_page or self.mode == 'repeat' else b''
                         conn.sendall(done(message_id, cookie=cookie, omit_control=self.mode == 'missing'))

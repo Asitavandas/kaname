@@ -50,13 +50,17 @@ function Read-Objects([string]$kind, [string]$filter, [string]$base) {
     $page = New-Object System.DirectoryServices.Protocols.PageResultRequestControl(250)
     $page.IsCritical = $true
     [void]$search.Controls.Add($page)
+    # Restrict the search to the authenticated domain naming context. AD may
+    # otherwise return subordinate DNS/configuration/child-domain references.
+    # Do not chase or silently accept those references.
+    $domainScope = [System.DirectoryServices.Protocols.DirectoryControl]::new('1.2.840.113556.1.4.1339', [byte[]]@(), $true, $true)
+    [void]$search.Controls.Add($domainScope)
     $cookies = New-Object 'System.Collections.Generic.HashSet[string]'
     do {
         $script:stage = $kind + '_search'
         $response = [System.DirectoryServices.Protocols.SearchResponse]$connection.SendRequest($search)
-        if ($response.ResultCode -ne [System.DirectoryServices.Protocols.ResultCode]::Success -or $response.References.Count -ne 0) {
-            throw 'AD_SEARCH_FAILED'
-        }
+        if ($response.ResultCode -ne [System.DirectoryServices.Protocols.ResultCode]::Success) { throw 'LDAP_RESULT' }
+        if ($response.References.Count -ne 0) { throw 'REFERRAL_RETURNED' }
         foreach ($entry in $response.Entries) {
             $script:stage = $kind + '_decode'
             $record = Convert-Object $entry $kind
@@ -184,7 +188,7 @@ try {
     }
     if ($exception.GetType().FullName -eq 'System.DirectoryServices.Protocols.LdapException') { $reason = 'LDAP_CONNECTION' }
     if ($exception -is [System.ArgumentException] -or $exception -is [System.FormatException] -or $exception -is [System.InvalidCastException]) { $reason = 'VALUE_CONVERSION' }
-    if ($_.Exception.Message -in @('ATTRIBUTE_MISSING', 'BINARY_ATTRIBUTE_INVALID')) { $reason = $_.Exception.Message }
+    if ($_.Exception.Message -in @('ATTRIBUTE_MISSING', 'BINARY_ATTRIBUTE_INVALID', 'REFERRAL_RETURNED', 'LDAP_RESULT')) { $reason = $_.Exception.Message }
     # Fixed enums only; no exception messages, credentials, DNs or object values.
     @{error=$errorCode; stage=$script:stage; reason=$reason} | ConvertTo-Json -Compress
     exit 1

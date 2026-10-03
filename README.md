@@ -2,7 +2,7 @@
 
 Bağımsız Active Directory tabanlı kablolu/kablosuz 802.1X erişim yönetimi.
 
-**Geliştirme sürümü: 0.3.1-dev.1 — Windows laboratuvarında güvenli AD dizin okuma ve grup seçimi.**
+**Geliştirme sürümü: 0.3.2-dev.1 — Windows laboratuvarında güvenli AD dizin okuma ve grup seçimi.**
 Mevcut politika ve dahili PKI temeli korunur. Windows'taki yerel panelden Kerberos signing/sealing ile kullanıcı, bilgisayar ve güvenlik grupları okunabilir. Parola kaydedilmez. Çalışan RADIUS hizmeti, istemci enrollment veya açılabilir OVF bu sürümde yoktur. Paneldeki ağ/politika kayıtları taslaktır; ağda izin/ret kararı uygulanmaz. Linux appliance AD okuyucusu henüz bağlı değildir.
 
 ## Başlatma

@@ -1,5 +1,13 @@
 # Değişiklikler
 
+## 0.3.2-dev.1 — domain kapsamlı LDAP sorgusu
+
+- Her kullanıcı/grup/bilgisayar sorgusuna kritik LDAP_SERVER_DOMAIN_SCOPE_OID eklendi; AD DNS/alt-domain yönlendirmeleri arama kapsamına girmez.
+- Referral chasing kapalı ve beklenmeyen referral reddi korunur; artık REFERRAL_RETURNED nedeni gösterilir.
+- Windows .NET sorgu, iki sayfalı kullanıcı okuma, GUID/SID dönüşümü, eksik/tekrarlanan sayfa ve referral reddi gerçek LDAP protokolünü konuşan yerel fixture ile test edilir.
+- Fixture yalnız test CLI seçeneğiyle 127.0.0.1 üzerinde çalışır, gerçek kimlik bilgisi veya dış ağ kullanmaz; üretim Kerberos/signing/sealing koşulları değişmez.
+- Önceki 0.3.1 yayınından ayar/politika/CA/token korunarak güncelleme desteklenir.
+
 ## 0.3.1-dev.1 — AD ikili öznitelik okuma düzeltmesi
 
 - SID/GUID öznitelikleri GetValues(byte[]) ile okunur; LDAP indexer UTF-8 dönüşümünden etkilenmez.
