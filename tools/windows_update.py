@@ -1,6 +1,7 @@
 """Scoped Windows lab source upgrade; local state is never sent to GitHub."""
 import argparse
 import hashlib
+import http.client
 import json
 import os
 import shutil
@@ -112,6 +113,49 @@ def wait_panel(version, token):
     raise ValueError('Updated panel health check failed')
 
 
+def verify_initial_login(port=8765):
+    """Verify the newly seeded browser account locally; never return its session."""
+    from http.cookies import SimpleCookie
+    from kaname.admin import RESOURCES
+
+    def request(method, path, payload=None, cookie='', csrf=''):
+        connection = http.client.HTTPConnection('127.0.0.1', port, timeout=8)
+        headers = {'Origin': f'http://127.0.0.1:{port}', 'Content-Type': 'application/json'}
+        if cookie: headers['Cookie'] = cookie
+        if csrf: headers['X-Kaname-CSRF'] = csrf
+        try:
+            connection.request(method, path, body=json.dumps(payload) if payload is not None else None, headers=headers)
+            response = connection.getresponse()
+            raw = response.read(262145)
+            if len(raw) > 262144: raise ValueError('Initial panel login check failed')
+            return response.status, json.loads(raw), response.getheader('Set-Cookie', '')
+        finally:
+            connection.close()
+
+    cookie = ''; csrf = ''
+    try:
+        status, value, header = request('POST', '/api/auth/login', {'username': 'admin', 'password': 'Kaname'})
+        if status != 200 or value.get('user', {}).get('username') != 'admin': raise ValueError()
+        parsed = SimpleCookie(); parsed.load(header)
+        session = parsed.get('kaname_session')
+        if session is None or not session['httponly'] or session['samesite'] != 'Strict': raise ValueError()
+        cookie = 'kaname_session=' + session.value; csrf = value['csrf']
+        status, actor, _ = request('GET', '/api/auth/session', cookie=cookie)
+        if status != 200 or actor.get('permissions') != {k: 'write' for k in RESOURCES}: raise ValueError()
+        status, _, _ = request('GET', '/api/state', cookie=cookie)
+        if status != 200: raise ValueError()
+        status, _, _ = request('POST', '/api/auth/logout', {}, cookie, csrf)
+        if status != 200: raise ValueError()
+        status, _, _ = request('GET', '/api/auth/session', cookie=cookie)
+        if status != 401: raise ValueError()
+        return True
+    except Exception:
+        if cookie and csrf:
+            try: request('POST', '/api/auth/logout', {}, cookie, csrf)
+            except Exception: pass
+        raise ValueError('Initial panel login check failed') from None
+
+
 def upgrade(root, source):
     if not WINDOWS:
         raise ValueError('Windows lab update only')
@@ -198,10 +242,12 @@ def upgrade(root, source):
             raise ValueError('Existing configuration or CA preservation check failed')
         if current.get('directory_public', {}).get('runtime_auth_ready') is not False:
             raise ValueError('Directory readiness boundary failed')
+        accounts_initialized = before[3] is None and after[3] is not None
+        login_verified = verify_initial_login() if accounts_initialized else False
         return {'updated': True, 'version': release['version'], 'backup_created': True,
                 'configuration_preserved': True, 'policies_preserved': True, 'ca_preserved': True,
                 'token_preserved': True, 'directory_catalog_preserved': True, 'panel_accounts_preserved': before[3] is not None,
-                'panel_accounts_initialized': before[3] is None and after[3] is not None, 'real_ad_tested': False}
+                'panel_accounts_initialized': accounts_initialized, 'initial_login_verified': login_verified, 'real_ad_tested': False}
     except Exception:
         if not stopped:
             raise ValueError('Update refused; existing panel not stopped') from None

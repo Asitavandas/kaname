@@ -1,26 +1,28 @@
 # KANAME — çalışma planı
 
-Güncelleme: 2026-10-03. Aşamalar bağımlılık sırasıyla ilerler; süreler tek geliştirici için önceki kaba mühendislik tahminleridir, teslim tarihi taahhüdü değildir. İlk gerçek kanıt için yaklaşık 3–4 hafta, panel üzerinden MVP için 9–13 hafta, ilk kapsamın sertleştirilmiş appliance teslimi için toplam 13–20 hafta referans alınır. Laboratuvar/AD erişimi ve sertifika kayıt protokolünün sonuçları bu tahminleri değiştirebilir.
+Güncelleme: 2026-10-04. Aşamalar bağımlılık sırasıyla ilerler; süreler tek geliştirici için önceki kaba mühendislik tahminleridir, teslim tarihi taahhüdü değildir. İlk gerçek kanıt için yaklaşık 3–4 hafta, panel üzerinden MVP için 9–13 hafta, ilk kapsamın sertleştirilmiş appliance teslimi için toplam 13–20 hafta referans alınır. Laboratuvar/AD erişimi ve sertifika kayıt protokolünün sonuçları bu tahminleri değiştirebilir.
 
 | Aşama | Çıktı | Kabul kapısı | Durum |
 |---|---|---|---|
 | 0. Başlangıç | Bağımsız repo yapısı, taslak panel, politika motoru, SQLite, OVF sözleşmesi/araçları | Otomatik testler; API simülasyonu gerçek auth olarak kullanılamaz | 0.1 temeli korundu |
-| 1. Protokol kanıtı | Gerçek FreeRADIUS + AD adaptörü + dahili PKI enrollment denemesi | Manuel hazırlanmış switch/AP üzerinden gerçek kablolu ve kablosuz EAP-TLS | CA/server CSR/CRL alt adımı tamamlandı; AD/EAP sıradaki |
+| 1. Protokol kanıtı | Gerçek FreeRADIUS + AD adaptörü + dahili PKI enrollment denemesi | Manuel hazırlanmış switch/AP üzerinden gerçek kablolu ve kablosuz EAP-TLS | CA/server CSR/CRL ve Windows AD katalog okuma tamamlandı; Linux AD/EAP sıradaki |
 | 2. Kimlik yaşam döngüsü | AD grup/hesap sorgusu, cihaz/kullanıcı sertifika eşlemesi, yenileme/iptal | Yanlış grup, kapalı hesap, iptal/expired sertifika, AD kesintisi ret testleri | Planlandı |
 | 3. Gerçek wizard | DNS/saat/AD testleri, CA/trust, RADIUS secret, GPO/profil çıktıları, kontrollü apply | Başlangıçtan ilk erişime kadar panelden uygulanabilir akış; rollback | Planlandı |
-| 4. Günlük yönetim | Kullanıcı/grup seçimi, policy edit, accounting, arama/teşhis, RBAC, audit | Kim yaptı/neyi değiştirdi; oturum ve hata korelasyonu | Planlandı |
+| 4. Günlük yönetim | Kullanıcı/grup seçimi, policy edit, accounting, arama/teşhis, RBAC, audit | Kim yaptı/neyi değiştirdi; oturum ve hata korelasyonu | 0.4 yerel kullanıcı/parola, profil RBAC ve grup adı seçimi tamamlandı; accounting/üretim audit/apply bekliyor |
 | 5. Appliance | OS hardening, ilk açılış, offline runtime, yedekleme, imzalı güncelleme, OVF | Gerçek import, boot, iki bağımsız kimlik, restore ve upgrade rollback | Planlandı |
 | 6. NPS uyumluluğu | PEAP yöntemleri, ilave koşullar/VSA, proxy ve failover | Özellik bazlı NPS karşılaştırma matrisi | İlk MVP sonrası |
 
 ## Sıradaki somut geliştirme
 
-0.2.0-dev.1 dahili root/issuer CA, RADIUS sunucu sertifikası ve iptal/CRL altyapısını ekledi. Gerçek yerel TLS ve OpenSSL zincir/DNS/iptal doğrulaması yapıldı. Bunun EAP-TLS ya da AD enrollment kanıtı olmadığı korunuyor. Kullanıcının Windows lab runner'ı bağlandı: mevcut kurulum korundu, 131 Windows testi geçti (OpenSSL CLI olmadığı için 1 ek test atlandı), 132 Linux testi geçti. Kayıtlı config/policy/CA ve üç politika simülasyonu doğrulandı. Ayrıntılar WINDOWS_STATUS_2026-10-03.md belgesinde.
+0.2 dahili CA/server CSR/CRL temelini ekledi. 0.3.2 Windows Kerberos LDAP ve domain kapsamlı sayfalı okuma düzeltmelerini tamamladı; operatör gerçek AD ekranında başarılı 55 sonuç bildirdi. Bu sayı tek başına bütün kategorilerin toplamı veya canlı üyelik doğrulaması değildir. 0.4 kullanıcı/parola girişi, System kullanıcı/profil yönetimi, menü/sekme düzeyinde RBAC ve SID yazmadan grup adı seçimi ekler. Yerel oturum/RBAC üretim HTTPS/appliance aşamasının tamamlandığı anlamına gelmez.
+
+Her sürümün testleri ve güncellemesi tamamlandıktan sonra **Soruların veya değiştirmek/düzenlemek istediğin yerler var mı?** sorulur. Operatör yanıtlamadan aşağıdaki yeni geliştirmeye geçilmez.
 
 1. Tek domainli Windows AD laboratuvarını, Windows endpoint'i ve temiz Ubuntu appliance VM'ini hazırlamak. Switch/AP ve port/SSID ayarları operatörün manuel sorumluluğundadır.
 2. Mevcut iç CA/server CSR altyapısını gerçek endpoint trust ve EAP oturumuna bağlamak. İstemci enrollment kimliğini AD nesnesiyle doğrulamadan istemci sertifikası üretimini açmamak.
 3. FreeRADIUS'u test EAP-TLS oturumlarına bağlamak. EAP başarısını tek başına erişim izni saymadan AD hesabı/grubunu doğrulamak ve politika motorunu güvenilir iç adaptörle çağırmak.
 4. İlk kez gerçek Access-Accept/Reject ve VLAN özniteliklerini uçtan uca görmek. Başarılı olduğu kadar reddedilen durumları da kaydetmek.
-5. Kanıtlandıktan sonra panel API'sini servis uygulayıcı, secret kasası ve AD grup seçiciyle birleştirmek. Geliştirme HTTP sunucusunu üretim TLS/oturum altyapısıyla değiştirmek.
+5. Kanıtlandıktan sonra panel API'sini servis uygulayıcı, secret kasası ve mevcut AD grup seçici ve yetki profilleriyle birleştirmek. Geliştirme HTTP sunucusunu üretim HTTPS/servis altyapısıyla değiştirmek.
 
 Samba/PEAP-MSCHAPv2, proxy veya cihaz yönetimi bu ilk kanıtı geciktirmeyecek. EAP-TLS'ın önceliği dış CA ihtiyacını kaldıran güvenli ürün yolunu erken doğrulamaktır.
 
@@ -40,4 +42,4 @@ Switch/AP yönetim API, SSH, SNMP, firmware, roaming, host-mode ve vendor yönet
 
 ## Geliştirme ortamının mevcut sınırı
 
-Bu kodun üretildiği ortamda AD domain, switch/AP, FreeRADIUS runtime, hypervisor, Packer, QEMU veya VMware OVF Tool yoktu. 3 Ekim'de kullanıcının Windows geliştirme makinesine GitHub self-hosted runner ile bağlanıldı ve mevcut kurulum/testler doğrulandı. Henüz gerçek AD/RADIUS kimlik doğrulaması, temiz Linux appliance diski, import ve boot doğrulanmadı. Bunlar kaynak testiyle değiştirilemez ve appliance release kapısı olarak kalır.
+Bu kodun üretildiği ortamda AD domain, switch/AP, FreeRADIUS runtime, hypervisor, Packer, QEMU veya VMware OVF Tool yoktu. 3 Ekim'de kullanıcının Windows geliştirme makinesine GitHub self-hosted runner ile bağlanıldı ve mevcut kurulum/testler doğrulandı. Windows gerçek AD katalog okuması operatörce başarılı bulundu; henüz RADIUS üzerinden gerçek AD kimlik doğrulaması, temiz Linux appliance diski, import ve boot doğrulanmadı. Bunlar kaynak testiyle değiştirilemez ve appliance release kapısı olarak kalır.

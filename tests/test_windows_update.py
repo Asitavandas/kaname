@@ -1,4 +1,5 @@
 import hashlib
+from contextlib import closing
 import json
 import tempfile
 import unittest
@@ -78,7 +79,7 @@ class WindowsUpgradeTests(unittest.TestCase):
         backups = list((self.root / '.kaname-upgrades').glob('*/administrators.sqlite3'))
         self.assertEqual(1, len(backups))
         import sqlite3
-        with sqlite3.connect(backups[0]) as backup:
+        with closing(sqlite3.connect(backups[0])) as backup:
             self.assertEqual('ok', backup.execute('PRAGMA integrity_check').fetchone()[0])
             with admins.connect() as original:
                 for table in ('admin_meta', 'admin_users', 'admin_profiles'):

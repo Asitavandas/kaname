@@ -10,6 +10,9 @@ Tarih: 2026-10-02. Bu belge önceki ürün adlarının ve kapsam varsayımların
 4. Switch/AP yönetimi ve entegrasyon testleri ilk kapsamdan çıkarıldı. Operatör bunları manuel yapılandırır. KANAME içinde RADIUS istemcisinin kaynak IP ve shared secret tanımı tutulur; bu cihaz yönetimi değildir.
 5. Kablolu ve kablosuz gerçek 802.1X kabul testleri devam eder. Manuel hazırlanmış switch/AP üzerinden test edilir; API/SSH/SNMP yönetim testi yapılmaz.
 6. İlk kurulum ve sonraki yönetim tek panel üzerinden yürür. Başlangıç sürümünün paneli taslaktır; nihai wizard gerçek servisleri kontrollü olarak uygulayacak.
+7. Günlük panel girişi kullanıcı adı/parola ile olur; ilk kurulum hesabı admin/Kaname. System → Administrators ve Admin Profiles üzerinden tüm hesap/profiller düzenlenebilir ve silinebilir. SuperAdmin bütün kaynaklarda Read/Write, Admin_ReadOnly Read, Custom menü/sekme başına seçilen erişimle çalışır.
+8. Politika formunda kullanıcı SID yazmaz; AD grup adını seçer. SID eşleşme kimliği olarak içeride tutulur. Grup koşulu isteğe bağlıdır.
+9. Her sürüm tamamlandığında operatöre soruları veya istediği değişiklikler sorulur; yanıt alınmadan sonraki sürüme geçilmez.
 
 ## Nihai wizard akışı
 

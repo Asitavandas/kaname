@@ -2,7 +2,7 @@
 
 Bağımsız Active Directory tabanlı kablolu/kablosuz 802.1X erişim yönetimi.
 
-**Geliştirme sürümü: 0.3.2-dev.1 — Windows laboratuvarında güvenli AD dizin okuma ve grup seçimi.**
+**Geliştirme sürümü: 0.4.0-dev.1 — kullanıcı/parola girişi, yönetici profilleri ve AD grup adıyla politika seçimi.**
 Mevcut politika ve dahili PKI temeli korunur. Windows'taki yerel panelden Kerberos signing/sealing ile kullanıcı, bilgisayar ve güvenlik grupları okunabilir. Parola kaydedilmez. Çalışan RADIUS hizmeti, istemci enrollment veya açılabilir OVF bu sürümde yoktur. Paneldeki ağ/politika kayıtları taslaktır; ağda izin/ret kararı uygulanmaz. Linux appliance AD okuyucusu henüz bağlı değildir.
 
 ## Başlatma
@@ -19,9 +19,11 @@ Windows'ta:
 py -3.12 -m kaname
 ```
 
-Tarayıcıda `http://127.0.0.1:8765` adresini açın. Programın gösterdiği `kaname-state/access-token` dosyasının içeriğini giriş alanına yapıştırın. Bu yerel geliştirme anahtarıdır; domain parolanızı girmeyin. Durdurmak için terminalde Ctrl+C kullanın.
+Tarayıcıda `http://127.0.0.1:8765/` adresini açın. İlk kurulumda kullanıcı adı **admin**, parola **Kaname** ile giriş yapın; harflerin büyüklüğü parolada önemlidir. Günlük panel girişi için PowerShell veya token gerekmez. Panel giriş hesabı AD hesabından bağımsızdır. Üstteki **Parolamı değiştir** düğmesiyle kendi parolanızı değiştirebilirsiniz. Durdurmak için terminalde Ctrl+C kullanın.
 
-Dosyayı okumak için Linux/macOS: `cat kaname-state/access-token`; PowerShell: `Get-Content kaname-state/access-token`. Anahtar ve SQLite veritabanı yerelde oluşur; dağıtım paketinde bulunmaz. Bu veri klasörünü paylaşmayın. Panel yalnızca aynı bilgisayarın loopback adresinde dinler.
+**System → Administrators** altında kullanıcı ekleme/düzenleme/silme ve profil atama; **Admin Profiles** sekmesinde SuperAdmin, Admin_ReadOnly ve menü/sekme başına Custom yetkiler bulunur. Ayrıntılar [yönetici kullanım kılavuzunda](docs/ADMINISTRATION.md).
+
+Hesaplar, oturumlar ve ayarlar `kaname-state/` içinde yerelde oluşur; kaynak paketine eklenmez. Panel yalnız aynı bilgisayarın loopback adresinde dinler. Yerel bakım araçlarının mevcut access-token dosyası korunur; tarayıcı girişinde kullanılmaz.
 
 Farklı yerel port veya veri klasörü:
 
@@ -34,14 +36,15 @@ python3 -m kaname --port 8876 --state-dir ./kaname-state
 | Alan | Mevcut davranış |
 |---|---|
 | Kurulum | Ürün DNS adı, AD domain/DC bilgileri, RADIUS istemci ad/IP bilgileri ve kablolu/kablosuz seçimleri dört adımda taslak olarak kaydedilir. |
-| Politikalar | AD grup SID, erişim türü, NAS IP, EAP yöntemi, domain cihazı şartı, izin/ret ve VLAN modeli; panelde ekleme, sıralama, etkinleştirme, silme. |
+| Politikalar | AD grup adını listeden seçme (SID içeride saklanır), erişim türü, NAS IP, EAP yöntemi, domain cihazı şartı, izin/ret ve VLAN modeli; panelde ekleme, sıralama, etkinleştirme, silme. |
+| System | Yerel kullanıcı/parola girişi, düzenlenebilir/silinebilir yönetici hesapları ve SuperAdmin/Admin_ReadOnly/Custom profiller; menü ve sekme düzeyinde sunucu tarafında yetki denetimi. |
 | Karar testi | Örnek kimliklerle politika değerlendirmesi ve VLAN özniteliklerinin gösterimi. Gerçek doğrulama kanıtı üretmez. |
 | Kayıt | SQLite kalıcılığı, çakışan sürüm kaydını engelleme ve yapılandırmayla aynı transaction içinde audit. |
 | Dahili PKI | Yerel konsoldan benzersiz root/issuer CA, şifreli anahtarlar, kayıtlı FQDN için server-only sertifika, iptal ve imzalı CRL. Panel yalnız açık CA bilgilerini gösterir. |
-| Active Directory | Windows'ta Kerberos ile imzalı/şifreli LDAP, sayfalı kullanıcı/bilgisayar/güvenlik grubu okuma, kalıcı son okuma, arama ve politikaya SID seçimi. Domain Admin parolası saklanmaz; AD değişikliği yapılmaz. |
+| Active Directory | Windows'ta Kerberos ile imzalı/şifreli LDAP, sayfalı kullanıcı/bilgisayar/güvenlik grubu okuma, kalıcı son okuma, arama ve politikaya grup adıyla seçim. Domain Admin parolası saklanmaz; AD değişikliği yapılmaz. |
 | OVF araçları | Hazırlanmış temiz VMware VMX'inin dışa aktarımı için sarmalayıcı ve yerel OVF/VMDK/SHA256 manifest denetleyicisi. |
 
-Policy API daha geniş modeli destekler; yeni politika formu EAP-TLS + domain cihazı şartı kullanır. AD grubu seçmek kullanıcı/cihazın o grupta olduğunu veya EAP oturumunu doğrulamaz. Ayrıntılar [AD laboratuvar akışında](docs/AD.md).
+Policy API daha geniş modeli destekler; yeni politika formu EAP-TLS + domain cihazı şartı kullanır. **AD grup kısıtı yok** seçilirse yalnız grup üyeliği koşulu kaldırılır; diğer politika koşulları geçerlidir. Grup seçmek kullanıcı/cihazın o grupta olduğunu veya EAP oturumunu doğrulamaz. Ayrıntılar [AD laboratuvar akışında](docs/AD.md).
 
 ## Testler
 
@@ -78,6 +81,7 @@ OVF bütün hypervisor'larda aynı şekilde içe aktarılmaz. Diğer hedefler i�
 - [Dahili CA ve sunucu sertifikası denemesi](docs/PKI.md)
 - [Bağlantı sonrası devam kaydı](docs/RESUME.md)
 - [OVF üretim ve dağıtım sözleşmesi](docs/APPLIANCE.md)
+- [Yönetici hesapları ve profiller](docs/ADMINISTRATION.md)
 - [Güvenlik sınırları](docs/SECURITY.md)
 - [Doğrulama raporu](docs/TEST_REPORT.md)
 - [Teknik kaynaklar](docs/SOURCES.md)

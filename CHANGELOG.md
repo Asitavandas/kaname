@@ -1,5 +1,15 @@
 # Değişiklikler
 
+## 0.4.0-dev.1 — yönetici hesapları ve yetki profilleri
+
+- PowerShell/token panel girişi yerine kullanıcı/parola formu, ilk kurulum admin/Kaname, cookie oturumu ve kendi parolasını değiştirme eklendi.
+- System → Administrators ve Admin Profiles altında hesap/profil ekleme, düzenleme, silme; SuperAdmin, Admin_ReadOnly ve menü/sekme bazında Custom yetkiler eklendi.
+- Yetkiler API'de denetlenir; izin verilmeyen veriler durum yanıtından çıkarılır. Yetki devri yapan hesap kendi haklarını aşamaz.
+- Salt'lı parola hash'i, CSRF nonce, oturum sonlandırma/süre sınırları ve giriş deneme sınırı uygulandı. Silinen varsayılan hesap/profiller otomatik yeniden oluşturulmaz.
+- Politika formunda SID yazmak yerine AD grup adıyla arama/çoklu seçim ve açık grup kısıtı yok seçeneği eklendi; kalıcı kimlik olarak SID korunur.
+- Windows güncellemesi AD kataloğunu ve mevcut yönetici hesap/profillerini de yedekler/doğrular; ilk geçişte gerçek yerel panel girişini kontrol eder.
+- Her sürüm tamamlandığında operatörün soruları/değişiklikleri alınmadan sonraki sürüme geçilmez.
+
 ## 0.3.2-dev.1 — domain kapsamlı LDAP sorgusu
 
 - Her kullanıcı/grup/bilgisayar sorgusuna kritik LDAP_SERVER_DOMAIN_SCOPE_OID eklendi; AD DNS/alt-domain yönlendirmeleri arama kapsamına girmez.

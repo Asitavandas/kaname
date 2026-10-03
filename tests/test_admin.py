@@ -77,6 +77,22 @@ class AdministratorHTTPTests(unittest.TestCase):
         self.assertNotIn(b'Kaname', self.server.admin.path.read_bytes())
         self.assertNotIn('password_hash', json.dumps(self.system()))
 
+    def test_windows_initial_login_check_uses_and_revokes_its_session(self):
+        from tools.windows_update import verify_initial_login
+        with self.server.admin.connect() as db:
+            count = db.execute('SELECT COUNT(*) FROM admin_sessions').fetchone()[0]
+        self.assertTrue(verify_initial_login(self.server.server_port))
+        with self.server.admin.connect() as db:
+            self.assertEqual(count, db.execute('SELECT COUNT(*) FROM admin_sessions').fetchone()[0])
+
+    def test_windows_initial_login_check_rejects_changed_default_credentials(self):
+        from tools.windows_update import verify_initial_login
+        from kaname.admin import password_hash
+        with self.server.admin.connect() as db:
+            db.execute('UPDATE admin_users SET password_hash=?', (password_hash('ChangedPrivatePassword42'),))
+        with self.assertRaisesRegex(ValueError, '^Initial panel login check failed$'):
+            verify_initial_login(self.server.server_port)
+
     def test_wrong_password_unknown_user_and_disabled_account_share_error(self):
         self.user(enabled=False)
         for name, password in [('admin', 'wrong'), ('missing', 'wrong'), ('reader', 'PrivateTestPassword42')]:

@@ -11,8 +11,8 @@ def main():
         parser.error('port must be between 1 and 65535')
     with DevelopmentServer(args.state_dir, args.port) as server:
         print(f'KANAME development panel: http://127.0.0.1:{server.server_port}')
-        print(f'Local access token file: {server.store.root / "access-token"}')
-        print('Development only. AD, client enrollment, RADIUS and OVF image are pending. Local CA CLI is separate.')
+        print('Panel login: username and password. See README for the first-install account.')
+        print('Development only. Windows AD catalog is supported; enrollment, RADIUS and OVF image are pending.')
         try:
             server.serve_forever()
         except KeyboardInterrupt:

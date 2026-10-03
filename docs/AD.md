@@ -1,4 +1,4 @@
-# AD okuma laboratuvarı — 0.3.2-dev.1
+# AD okuma laboratuvarı — 0.4.0-dev.1
 
 Bu sürüm Windows'taki yerel geliştirme panelinden gerçek AD dizin okumayı denemek içindir. Linux appliance okuyucusu sonraki uygulama adımıdır; OVF hazır sayılmaz.
 
@@ -6,7 +6,7 @@ Bu sürüm Windows'taki yerel geliştirme panelinden gerçek AD dizin okumayı d
 2. Active Directory ekranını açın. DC'nin tam DNS adını ve `kullanici@domain` biçiminde kullanıcıyı girin. İlk sürümde UPN suffix'i kayıtlı domain ile aynı olmalı.
 3. AD parolasını yalnız yerel panelde girin. Bağlan ve bilgileri getir düğmesine basın. Parola alanı hemen temizlenir; sunucu parolayı kaydetmez.
 4. Son başarılı okumanın zamanı ve sayılar görüntülenir. Kullanıcı/grup/bilgisayar listelerinde arama ve sayfalama yapabilirsiniz.
-5. Güvenlik grubunun Politikada kullan düğmesi yeni politika formuna SID taşır. Kaydetmeden politika oluşturulmaz.
+5. Güvenlik grubunun Politikada kullan düğmesi yeni politika formunda grup adını seçer. Politika formundan da grup adı aranabilir ve birden fazla grup seçilebilir; SID değerleri içeride saklanır. Kaydetmeden politika oluşturulmaz.
 
 Domain Admin hesabı okunabilir ancak dizin okuması için bu yetki zorunlu değildir. AD'de yazma, domain join, GPO değişikliği veya hesap oluşturma yapılmaz. Her yenilemede parola yeniden girilir; otomatik runtime hesabı/secret kasası bu sürümde yoktur.
 
@@ -14,7 +14,7 @@ Domain Admin hesabı okunabilir ancak dizin okuması için bu yetki zorunlu değ
 
 Windows System.DirectoryServices.Protocols, AuthType.Kerberos, ProtocolVersion 3, Signing=true ve Sealing=true kullanılır. LDAP 389 üzerinde SASL koruması vardır; LDAP Basic veya NTLM'e düşüş yoktur. Bu yol ayrı CA/AD CS/LDAPS sertifikası gerektirmez. DNS ve saat uyumu, LDAP/Kerberos ağ erişimi ve uygun AD kullanıcı yetkisi gerekir. DC DNS adı kayıtlı domain altında olmalı ve çözümlenen bütün adresler kaydedilmiş DC IP'leriyle eşleşmelidir. Sorgular LDAP_SERVER_DOMAIN_SCOPE_OID (1.2.840.113556.1.4.1339) kritik kontrolüyle tek domain naming context içinde tutulur. Referral chasing kapalıdır; RootDSE domain eşleşmesi kontrol edilir.
 
-Kimlik bilgileri Python subprocess stdin üzerinden JSON ile taşınır; komut satırına, ortam değişkenine veya geçici dosyaya yazılmaz. Ham subprocess stderr/AD hata açıklamaları API'ye ya da GitHub'a aktarılmaz. Windows işlemleri kapatılır. Bellek sıfırlama garantisi verilmez; Python/.NET stringleri immutable olabilir. Yönetim sunucusu yalnız loopback'te dinler ve mevcut token/Host/Origin kontrollerini kullanır. LAN'a reverse proxy ile açmayın; üretim HTTPS/RBAC ayrı aşamadır.
+Kimlik bilgileri Python subprocess stdin üzerinden JSON ile taşınır; komut satırına, ortam değişkenine veya geçici dosyaya yazılmaz. Ham subprocess stderr/AD hata açıklamaları API'ye ya da GitHub'a aktarılmaz. Windows işlemleri kapatılır. Bellek sıfırlama garantisi verilmez; Python/.NET stringleri immutable olabilir. Yönetim sunucusu yalnız loopback'te dinler ve kullanıcı oturumu, Write yetkisi ve CSRF/Host/Origin kontrollerini kullanır. Üretim HTTPS dağıtımı ayrı aşamadır.
 
 ## Katalog sınırları
 
