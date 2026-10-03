@@ -1,0 +1,14 @@
+# Reference fragment, not a complete executable Packer build template.
+# Place this export block inside a configured vsphere-iso source after
+# the guest provisioning and clean-image gates have been implemented.
+# No customer or administrator credentials belong in this file.
+export {
+  force            = false
+  name             = "KANAME-version"
+  output_directory = "./output/kaname-ovf"
+  manifest         = "sha256"
+  output_format    = "ovf"
+  image_files      = false
+}
+# Do not export MAC or VM UUID; every import must create a new instance.
+# Whole-image builds have not been executed for this development release.

@@ -1,0 +1,21 @@
+name: KANAME foundation checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit-and-boundaries:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tested PKI dependency
+        run: python -m pip install cryptography==46.0.0
+      - name: Core, PKI and HTTP boundary tests
+        run: python -m unittest discover -s tests -t . -v
+      - name: Syntax validation
+        run: python -m compileall -q kaname tools tests

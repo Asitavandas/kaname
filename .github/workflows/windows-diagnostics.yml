@@ -1,0 +1,32 @@
+name: KANAME Windows diagnostics
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/windows-diagnostics.yml'
+      - 'tools/windows_diagnose.py'
+      - 'tools/windows_diagnose.ps1'
+      - 'tools/windows_baseline.json'
+permissions:
+  contents: read
+concurrency:
+  group: kaname-windows-diagnostics
+  cancel-in-progress: false
+jobs:
+  inspect-existing-installation:
+    if: github.repository == 'Asitavandas/kaname' && github.event.repository.private == true
+    runs-on: [self-hosted, Windows, X64, kaname-windows]
+    timeout-minutes: 5
+    env:
+      KANAME_LOCAL_ROOT: 'C:\Users\Administrator\KANAME'
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - name: Checkout reviewed diagnostic code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+      - name: Inspect existing KANAME without exporting secrets
+        run: '& .\tools\windows_diagnose.ps1 -Root $env:KANAME_LOCAL_ROOT'

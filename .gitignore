@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+kaname-state/
+output/
+*.vmdk
+*.ova
+*.key
+*.keytab
+*.pfx
+*.p12
+*.pem
+*.der
+*.csr
+*.crl
