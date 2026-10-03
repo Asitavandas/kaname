@@ -1,0 +1,36 @@
+name: KANAME Windows validation
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/windows-validation.yml'
+      - 'kaname/**'
+      - 'tests/**'
+      - 'tools/**'
+permissions:
+  contents: read
+concurrency:
+  group: kaname-windows-validation
+  cancel-in-progress: false
+jobs:
+  test-installed-python:
+    if: github.repository == 'Asitavandas/kaname' && github.event.repository.private == true
+    runs-on: [self-hosted, Windows, X64, kaname-windows]
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - name: Checkout KANAME test source
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+      - name: Test with installed KANAME interpreter and temporary fixture state
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $python = 'C:\Users\Administrator\KANAME\.venv\Scripts\python.exe'
+          if (-not (Test-Path -LiteralPath $python -PathType Leaf)) { throw 'KANAME interpreter is missing.' }
+          & $python --version
+          & $python -m unittest discover -s tests -t . -v
+          if ($LASTEXITCODE -ne 0) { throw 'KANAME Windows validation failed.' }
