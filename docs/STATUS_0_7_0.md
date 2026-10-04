@@ -18,10 +18,20 @@ Başarılı tam sorgu kullanıcı ekleme/silmeyi ve üyelik değişikliklerini y
 
 ## Doğrulama
 
-Test sonuçları yayın kontrolünden sonra bu belgeye eklenecek. Gerçek müşteri AD bilgileri CI'ye alınmaz. Ubuntu müşteri VM'i ve fiziksel switch/AP kabulü henüz yapılmadı.
+Kaynak hazırlama testinde Windows: 258 test, 256 başarılı/2 atlandı; Linux: 258 test, 250 başarılı/8 Windows özel testi atlandı. Native FreeRADIUS/EAP-TLS: 24 senaryo başarılı (iki farklı sırada allow/deny çakışma reddi dahil). Tarayıcıda geciken AD ayar yanıtının DC alanını boşaltma yarışı görüldü; form yüklenirken yazma bekletilerek düzeltildi. Son yayın kontrolleri ve Windows kurulum sonucu aşağıya eklenecek. Gerçek müşteri AD bilgileri CI'ye alınmaz. Ubuntu müşteri VM'i ve fiziksel switch/AP kabulü henüz yapılmadı.
 
 ## Kullanıcı kabulü
 
 Ctrl+F5 ile paneli yenileyin. Önce VLAN adlarını kontrol edin. AD bağlantısını bir kez kaydedin; istenirse CN/OU/DC konumu ve otomatik eşitlemeyi seçin, Şimdi eşitle'ye basın. RADIUS cihazına secret üretip kaydedin ve aynı değeri cihazınıza manuel girin. Bu aşamada gerçek cihaz erişimi beklemeyin.
 
 Sürüm tamamlanınca sorular veya değiştirmek/düzenlemek istenen yerler sorulur; yanıt gelmeden sonraki sürüme geçilmez.
+
+## Yayına hazır kaynak kontrolleri
+
+- Kaynak: 20f73500309ba8b7b8ecccf4fbd1bde53dda3a7b.
+- [Windows](https://github.com/Asitavandas/kaname/actions/runs/37198767411): 258 test, 256 başarılı/2 atlandı; DPAPI round-trip/tamper/purpose ve gerçek .NET scoped loopback LDAP dahil.
+- [Linux](https://github.com/Asitavandas/kaname/actions/runs/37198767377): 258 test, 250 başarılı/8 Windows özel testi atlandı.
+- [Chromium](https://github.com/Asitavandas/kaname/actions/runs/37198767432): yeni yönetim akışları, şifreli kayıt, çakışma kaydının engellenmesi ve düzeltilmesi, read-only reveal reddi, eski oturum gecikmesi başarılı.
+- [Native RADIUS](https://github.com/Asitavandas/kaname/actions/runs/37198767439): 24 başarılı senaryo; rapor [RADIUS_PROOF_0_7_0.json](RADIUS_PROOF_0_7_0.json).
+
+Windows update gate ve koruma sonucu yayın tamamlanınca bu kayda eklenecek.
