@@ -26,7 +26,8 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     browser=await chromium.launch({headless:true,...(process.env.KANAME_CHROMIUM ? {executablePath:process.env.KANAME_CHROMIUM} : {})});
     const page=await browser.newPage({viewport:{width:1440,height:1000}});
     const errors=[];
-    page.on('pageerror',err=>errors.push(err.message));
+    page.on('pageerror',err=>{errors.push(err.message);console.log('KANAME_UI_SCRIPT_ERROR '+err.message);});
+    page.on('response',async response=>{if(response.status()>=400&&new URL(response.url()).pathname.startsWith('/api/')){let code='';try{code=(await response.json()).error;}catch(_){}console.log('KANAME_UI_HTTP '+new URL(response.url()).pathname+' '+response.status()+' '+code);}});
     async function navigate(view){console.log('KANAME_UI_STAGE '+view);const button=page.locator('[data-view="'+view+'"]');const group=button.locator('xpath=ancestor::details');if(!await group.evaluate(x=>x.open))await group.locator('summary').click();await button.click();}
     await page.goto(`http://127.0.0.1:${port}`);
     await page.locator('#login-user').fill('admin');
@@ -87,7 +88,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.equal(await page.locator('#ad-password').inputValue(),fixturePassword);
     await page.locator('#ad-user').fill('administrator@kurum.example');
     await page.locator('#directory-save').click();
-    await page.waitForFunction(()=>document.querySelector('#ad-credential-status').textContent.includes('korumalı kaydedilmiş'));
+    await page.waitForFunction(()=>document.querySelector('#ad-credential-status').textContent.includes('korumalı kaydedilmiş')).catch(async error=>{console.log('KANAME_UI_AD_FEEDBACK '+await page.locator('#ad-feedback').textContent());console.log('KANAME_UI_AD_FIELDS '+JSON.stringify(await page.evaluate(()=>({host:document.querySelector('#ad-host').value,user:document.querySelector('#ad-user').value,sync:document.querySelector('#ad-sync-minutes').value,check:document.querySelector('#ad-check-minutes').value,scope:document.querySelector('#ad-ou').value,cn:document.querySelector('#ad-cn').value,dc:document.querySelector('#ad-dc').value}))));throw error;});
     const failRoute=route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'AD_SEARCH_FAILED',diagnostic:{stage:'groups_decode',reason:'VALUE_CONVERSION'}})});
     await page.route('**/api/directory/sync',failRoute);
     await page.locator('#directory-sync').click();
