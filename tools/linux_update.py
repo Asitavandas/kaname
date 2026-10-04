@@ -125,12 +125,16 @@ def _update(source, digest):
         raise ValueError('Root-owned product directory required')
     # A standard venv contains interpreter symlinks; validate mutable source
     # separately rather than rejecting legitimate system Python links.
+    _PHASE = 'source_layout'
     safe_tree(PRODUCT/'source', owner=0)
+    _PHASE = 'settings_layout'
     safe_tree(SETTINGS)
     identity = pwd.getpwnam('kaname-lab')
+    _PHASE = 'state_layout'
     safe_tree(STATE)
     if STATE.stat().st_uid != identity.pw_uid or STATE.stat().st_mode & 0o077:
         raise ValueError('Private installed state required')
+    _PHASE = 'service_layout'
     if UNIT.is_symlink() or not UNIT.is_file() or UNIT.stat().st_uid != 0 or UNIT.stat().st_mode & 0o022:
         raise ValueError('Trusted installed service required')
     text = UNIT.read_text()
@@ -139,10 +143,12 @@ def _update(source, digest):
         raise ValueError('Existing lab service layout required')
     import ipaddress
     listen = str(ipaddress.IPv4Address(listen[0]))
+    _PHASE = 'version_layout'
     version = re.findall(rb'VERSION = "([0-9A-Za-z.\-]+)"', files['kaname/__init__.py'])
     if len(version) != 1:
         raise ValueError('Source version missing')
     version = version[0].decode('ascii')
+    _PHASE = 'service_status'
     active = subprocess.run(['systemctl','is-active','--quiet','kaname-lab.service'], timeout=10).returncode == 0
     if not active:
         raise ValueError('Start or repair the existing panel before upgrading')

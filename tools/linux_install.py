@@ -151,6 +151,9 @@ def install(args):
     files = verified_files(source, args.source_digest)
     if os.geteuid() != 0:
         raise ValueError('Local sudo is required only for this installation')
+    # Root-generated Python cache/venv directories must stay non-writable by
+    # other identities even when the launching CI shell uses umask 0002.
+    os.umask(0o022)
     release = Path('/etc/os-release').read_text()
     if not re.search(r'^ID=ubuntu$', release, re.M) or not re.search(r'^VERSION_ID="24\.04"$', release, re.M):
         raise ValueError('This lab installer targets Ubuntu 24.04 only')
