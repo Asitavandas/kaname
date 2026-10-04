@@ -62,6 +62,22 @@ class Store:
             revision = db.execute('SELECT revision FROM state WHERE id=1').fetchone()[0]
             if revision != expected_revision:
                 raise ConflictError('State changed; refresh before saving')
+            if policies is not None:
+                from .policy import PolicyConflictError, policy_conflicts
+                catalog = self.directory_catalog()
+                conflicts = policy_conflicts(value, catalog)
+                if conflicts:
+                    raise PolicyConflictError(conflicts)
+                if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='runtime_settings'").fetchone():
+                    row = db.execute("SELECT payload FROM runtime_settings WHERE name='network'").fetchone()
+                    if row and any(p['vlan'] is not None and p['vlan'] not in {v['id'] for v in json.loads(row[0])['vlans']} for p in value):
+                        from .models import ValidationError
+                        raise ValidationError('VLAN_NOT_DEFINED')
+            elif db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='runtime_settings'").fetchone():
+                row = db.execute("SELECT payload FROM runtime_settings WHERE name='network'").fetchone()
+                if row and value['radius_clients'] != json.loads(row[0])['radius_clients']:
+                    from .models import ValidationError
+                    raise ValidationError('RADIUS_CLIENTS_MANAGED')
             db.execute(f'UPDATE state SET {section}=?, revision=? WHERE id=1',
                        (json.dumps(value, ensure_ascii=False, allow_nan=False), revision + 1))
             db.execute('INSERT INTO audit(event, revision) VALUES (?,?)',

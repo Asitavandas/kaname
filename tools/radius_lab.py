@@ -505,7 +505,12 @@ def run_lab(prefix):
                 case('unbound-certificate', cert='unbound', reason='CERTIFICATE_UNBOUND',
                      identity='host/privileged-admin')
                 case('explicit-deny', reason='POLICY_DENY',
-                     change=lambda d: d.update(policies=[policy(action='deny', vlan=None), policy(id='later')]))
+                     change=lambda d: d.update(policies=[policy(action='deny', vlan=None)]))
+
+                case('conflicting-allow-deny', reason='POLICY_CONFLICT',
+                     change=lambda d: d.update(policies=[policy(), policy(id='deny', action='deny', vlan=None)]))
+                case('conflicting-deny-allow', reason='POLICY_CONFLICT',
+                     change=lambda d: d.update(policies=[policy(id='deny', action='deny', vlan=None), policy()]))
 
                 def as_user(data):
                     data['accounts'][GUID]['kind'] = 'user'
@@ -544,7 +549,7 @@ def run_lab(prefix):
                               capture_output=True, check=True).stdout.decode().splitlines()
     if len(packages) != 3 or any(line.endswith('=') for line in packages):
         raise RuntimeError('Native dependency version evidence is incomplete')
-    return {'version': '0.6.0-dev.1', 'freeradius_version': '3.2.10', 'test_packages': packages,
+    return {'version': '0.7.0-dev.1', 'freeradius_version': '3.2.10', 'test_packages': packages,
             'freeradius_source_commit': FREE_RADIUS_COMMIT,
             'transport': 'loopback UDP with native FreeRADIUS and eapol_test',
             'tls_version': '1.2', 'fixture_ad_only': True, 'real_ad_tested': False,

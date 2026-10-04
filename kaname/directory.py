@@ -25,8 +25,29 @@ class DirectoryError(Exception):
         super().__init__(code)
 
 
+def validate_search_base(value, domain):
+    """A bounded OU/CN/DC DN in this domain, never a raw LDAP filter."""
+    if type(value) is not str or len(value) > 2048 or any(ord(c) < 32 for c in value):
+        raise ValidationError('AD_SCOPE_INVALID')
+    value = value.strip()
+    if not value:
+        return ''
+    # Accept escaped DN separators and UTF-8 names, but no multivalued RDNs.
+    parts = re.split(r'(?<!\\),', value)
+    normalized = []
+    for part in parts:
+        match = re.fullmatch(r'\s*(OU|CN|DC)\s*=\s*((?:\\(?:[0-9A-Fa-f]{2}|[,=+<>#;"\\ ])|[^,\\+<>;"=])+?)\s*', part, re.I)
+        if not match:
+            raise ValidationError('AD_SCOPE_INVALID')
+        normalized.append(match[1].upper() + '=' + match[2])
+    dc = ['DC=' + x for x in domain.split('.')]
+    if len(normalized) < len(dc) or [x.casefold() for x in normalized[-len(dc):]] != [x.casefold() for x in dc] or any(x.startswith('DC=') for x in normalized[:-len(dc)]):
+        raise ValidationError('AD_SCOPE_INVALID')
+    return ','.join(normalized)
+
+
 def validate_connection(value, config):
-    keys(value, {'dc_fqdn', 'username', 'password'}, {'dc_fqdn', 'username', 'password'})
+    keys(value, {'dc_fqdn', 'username', 'password', 'search_base'}, {'dc_fqdn', 'username', 'password'})
     host = dns_name(value['dc_fqdn'])
     domain = config['ad_domain']
     if not host.endswith('.' + domain):
@@ -37,7 +58,8 @@ def validate_connection(value, config):
     password = value['password']
     if type(password) is not str or not 1 <= len(password) <= 1024 or '\0' in password:
         raise ValidationError('Invalid credential')
-    return {'dc_fqdn': host, 'domain': domain, 'username': username, 'password': password}
+    return {'dc_fqdn': host, 'domain': domain, 'username': username, 'password': password,
+            'search_base': validate_search_base(value.get('search_base', ''), domain)}
 
 
 def validate_catalog(value, domain=None, dc_fqdn=None):
@@ -110,8 +132,9 @@ def validate_catalog(value, domain=None, dc_fqdn=None):
     return result
 
 
-def read_windows_directory(value, config):
+def read_windows_directory(value, config, *, probe=False):
     request = validate_connection(value, config)
+    request['probe'] = probe
     if os.name != 'nt':
         raise DirectoryError('AD_PLATFORM_UNSUPPORTED')
     try:
@@ -136,7 +159,18 @@ def read_windows_directory(value, config):
         raise DirectoryError('AD_PROTOCOL_UNAVAILABLE') from None
     finally:
         request['password'] = ''
+    if probe:
+        try:
+            result = json.loads(completed.stdout.decode('utf-8-sig'))
+            if completed.returncode == 0 and result == {'probe': 'ok', 'domain': request['domain'], 'dc_fqdn': request['dc_fqdn']}:
+                return result
+        except (ValueError, UnicodeError):
+            pass
     return decode_helper_response(completed.stdout, completed.returncode, config['ad_domain'], value['dc_fqdn'].lower())
+
+
+def check_windows_directory(value, config):
+    return read_windows_directory(value, config, probe=True)
 
 
 def decode_helper_response(stdout, returncode, domain, dc_fqdn):

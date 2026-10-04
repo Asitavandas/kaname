@@ -1,5 +1,5 @@
 # Read-only AD adapter. Credential JSON arrives on stdin; nothing is written to disk.
-param([switch]$SelfTest, [int]$FixturePort=0)
+param([switch]$SelfTest, [int]$FixturePort=0, [switch]$ScopedFixture)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2
 [Console]::InputEncoding = New-Object System.Text.UTF8Encoding($false)
@@ -117,13 +117,13 @@ function Build-Catalog($users, $groups, $computers) {
     foreach ($kind in @($users, $groups, $computers)) { foreach ($record in $kind) { [void]$record.Remove('_dn') } }
     return @{users=@($users); groups=@($groups); computers=@($computers); membership_schema=1; memberships=@($edges.ToArray())}
 }
-function Read-Objects([string]$kind, [string]$filter, [string]$base) {
+function Read-Objects([string]$kind, [string]$filter, [string]$base, [string]$scope='Subtree') {
     $script:stage = $kind + '_prepare'
     $objects = New-Object 'System.Collections.Generic.List[object]'
     $search = New-Object System.DirectoryServices.Protocols.SearchRequest
     $search.DistinguishedName = $base
     $search.Filter = $filter
-    $search.Scope = [System.DirectoryServices.Protocols.SearchScope]::Subtree
+    $search.Scope = [System.DirectoryServices.Protocols.SearchScope]::$scope
     $search.TimeLimit = [TimeSpan]::FromSeconds(10)
     foreach ($attribute in @('objectGUID','objectSid','sAMAccountName','displayName','name','userAccountControl','primaryGroupID','groupType')) {
         [void]$search.Attributes.Add($attribute)
@@ -164,8 +164,57 @@ function Read-Objects([string]$kind, [string]$filter, [string]$base) {
     } while ($page.Cookie.Length -gt 0)
     return ,$objects.ToArray()
 }
+function Escape-Filter([string]$value) {
+    return $value.Replace('\','\5c').Replace('*','\2a').Replace('(','\28').Replace(')','\29').Replace([string][char]0,'\00')
+}
+function Read-ScopedCatalog([string]$base, [string]$domainBase) {
+    # Start at the chosen group container; follow group members within the same
+    # authenticated domain, including users in other OUs and nested groups.
+    $groups = New-Object 'System.Collections.Generic.List[object]'
+    $users = New-Object 'System.Collections.Generic.List[object]'
+    $computers = New-Object 'System.Collections.Generic.List[object]'
+    $known = @{}
+    foreach ($record in (Read-Objects 'groups' '(objectCategory=group)' $base)) {
+        $known[$record._dn]=$true; $groups.Add($record)
+    }
+    for ($i=0; $i -lt $groups.Count; $i++) {
+        $group = $groups[$i]
+        foreach ($dn in $group._members) {
+            # Ignore foreign-domain references; Build-Catalog reports them as unresolved.
+            if (-not $dn.EndsWith(','+$domainBase, [StringComparison]::OrdinalIgnoreCase) -or $known.ContainsKey($dn)) { continue }
+            $known[$dn]=$true
+            $found=$false
+            foreach ($kind in @('groups','users','computers')) {
+                $filter = switch ($kind) { 'groups' {'(objectCategory=group)'} 'users' {'(&(objectCategory=person)(objectClass=user))'} 'computers' {'(objectCategory=computer)'} }
+                $records = Read-Objects $kind $filter $dn 'Base'
+                foreach ($record in $records) {
+                    switch ($kind) { 'groups' {$groups.Add($record)} 'users' {$users.Add($record)} 'computers' {$computers.Add($record)} }
+                    $found=$true
+                }
+                if ($found) { break }
+            }
+        }
+        # Primary members have no member link. Resolve them in the domain,
+        # restricted to this group's RID and domain SID.
+        if ($group.sid -match '^S-1-5-21-\d+-\d+-\d+-(\d+)$') {
+            $rid=$Matches[1]
+            foreach ($kind in @('users','computers')) {
+                $filter = if ($kind -eq 'users') { '(&(objectCategory=person)(objectClass=user)(primaryGroupID='+$rid+'))' } else { '(&(objectCategory=computer)(primaryGroupID='+$rid+'))' }
+                foreach ($record in (Read-Objects $kind $filter $domainBase)) {
+                    if (-not $known.ContainsKey($record._dn)) {
+                        $known[$record._dn]=$true
+                        if ($kind -eq 'users') { $users.Add($record) } else { $computers.Add($record) }
+                    }
+                }
+            }
+        }
+        if ($users.Count -gt 10000 -or $groups.Count -gt 10000 -or $computers.Count -gt 10000) { throw 'AD_DIRECTORY_LIMIT' }
+    }
+    return Build-Catalog $users.ToArray() $groups.ToArray() $computers.ToArray()
+}
 try {
     if ($FixturePort -ne 0 -and (-not $SelfTest -or $FixturePort -lt 1024 -or $FixturePort -gt 65535)) { throw 'Invalid fixture mode' }
+    if ($ScopedFixture -and (-not $SelfTest -or $FixturePort -eq 0)) { throw 'Invalid fixture mode' }
     if ($SelfTest) {
         Add-Type -AssemblyName System.DirectoryServices.Protocols
         $identifier = New-Object System.DirectoryServices.Protocols.LdapDirectoryIdentifier('dc01.example.invalid', 389, $true, $false)
@@ -226,6 +275,12 @@ try {
             $connection.SessionOptions.ReferralChasing = [System.DirectoryServices.Protocols.ReferralChasingOptions]::None
             $connection.Timeout = [TimeSpan]::FromSeconds(5)
             $failure = 'AD_SEARCH_FAILED'
+            if ($ScopedFixture) {
+                $catalog = Read-ScopedCatalog 'OU=Network,DC=fixture,DC=invalid' 'DC=fixture,DC=invalid'
+                if ($catalog.users.Count -ne 2 -or $catalog.groups.Count -ne 2 -or $catalog.computers.Count -ne 0 -or $catalog.memberships.Count -ne 3 -or $catalog.groups[0].unresolved_members -ne 1) { throw 'Scoped fixture failed' }
+                @{self_test='passed'; fixture='scoped-ldap'; external_network_called=$false; counts=@{users=$catalog.users.Count; groups=$catalog.groups.Count; computers=$catalog.computers.Count}} | ConvertTo-Json -Compress
+                exit 0
+            }
             $users = Read-Objects 'users' '(&(objectCategory=person)(objectClass=user))' 'DC=fixture,DC=invalid'
             $groups = Read-Objects 'groups' '(objectCategory=group)' 'DC=fixture,DC=invalid'
             $computers = Read-Objects 'computers' '(objectCategory=computer)' 'DC=fixture,DC=invalid'
@@ -268,10 +323,18 @@ try {
     $failure = 'AD_DOMAIN_MISMATCH'
     if ($base -ine $expectedBase) { throw 'AD_DOMAIN_MISMATCH' }
     $failure = 'AD_SEARCH_FAILED'
+    if ($request.PSObject.Properties['probe'] -and $request.probe -eq $true) {
+        @{probe='ok'; domain=[string]$request.domain; dc_fqdn=[string]$request.dc_fqdn} | ConvertTo-Json -Compress
+        exit 0
+    }
+    if ($request.PSObject.Properties['search_base'] -and $request.search_base) {
+        $catalog = Read-ScopedCatalog ([string]$request.search_base) $base
+    } else {
     $users = Read-Objects 'users' '(&(objectCategory=person)(objectClass=user))' $base
     $groups = Read-Objects 'groups' '(objectCategory=group)' $base
     $computers = Read-Objects 'computers' '(objectCategory=computer)' $base
     $catalog = Build-Catalog $users $groups $computers
+    }
     $catalog.domain = [string]$request.domain; $catalog.dc_fqdn = [string]$request.dc_fqdn; $catalog.transport = 'kerberos-sign-seal'
     $script:stage = 'serialize'
     $catalog | ConvertTo-Json -Depth 8 -Compress

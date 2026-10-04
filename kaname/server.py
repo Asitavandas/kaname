@@ -15,9 +15,12 @@ from urllib.parse import parse_qs, urlsplit
 from . import VERSION
 from .models import (ValidationError, address, array, boolean, enum, keys,
                      strict_json, text)
-from .policy import VerifiedIdentity, evaluate, radius_vlan_attributes
+from .policy import VerifiedIdentity, evaluate, radius_vlan_attributes, policy_conflicts, PolicyConflictError
 from .store import ConflictError, Store
-from .directory import DirectoryError, read_windows_directory, validate_connection
+from .directory import DirectoryError, read_windows_directory, check_windows_directory, validate_connection
+from .operations import Operations
+from .directory_sync import DirectorySync
+from .vault import VaultError
 from .admin import AdminStore, AdminError, COOKIE, TTL, RESOURCES, permits
 
 STATIC = Path(__file__).parent / 'static'
@@ -53,9 +56,16 @@ class DevelopmentServer(ThreadingHTTPServer):
         self.directory_lock = threading.Lock()
         self.directory_next_attempt = 0.0
         self.directory_reader = read_windows_directory
+        self.directory_health_reader = check_windows_directory
+        self.operations = Operations(self.store)
         super().__init__(('127.0.0.1', port), Handler)
         self.origins = {f'http://127.0.0.1:{self.server_port}', f'http://localhost:{self.server_port}'}
         self.hosts = {f'127.0.0.1:{self.server_port}', f'localhost:{self.server_port}'}
+        self.directory_sync = DirectorySync(self)
+
+    def server_close(self):
+        self.directory_sync.close()
+        super().server_close()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -163,6 +173,9 @@ class Handler(BaseHTTPRequestHandler):
         if permits(self.actor, 'directory.catalog') or permits(self.actor, 'directory.connection'):
             result['directory_public'] = value['directory_public']
             result['directory_context'] = {'configured': bool(config), 'domain': config.get('ad_domain', '')}
+            result['directory_health'] = value['directory_health']
+        if permits(self.actor, 'policies.rules'):
+            result['policy_conflicts'] = value['policy_conflicts']
         return result
 
     def do_GET(self):
@@ -186,12 +199,27 @@ class Handler(BaseHTTPRequestHandler):
             value = self.server.store.snapshot()
             value['pki_public'] = self.server.store.public_pki_status()
             value['directory_public'] = self.server.store.directory_status()
+            value['directory_public']['automatic_sync_enabled'] = self.server.operations.directory()['automatic_sync']
+            value['directory_health'] = self.server.operations.health()
+            value['policy_conflicts'] = policy_conflicts(value['policies'], self.server.store.directory_catalog())
             value.update(product='KANAME', version=VERSION, runtime_ready=False,
                          integrations={'ad': 'catalog-only' if value['directory_public']['catalog_available'] else 'pending', 'pki': 'pending', 'radius': 'pending', 'ovf': 'not-built'})
             self.respond(200, self.state_projection(value))
         elif self.path == '/api/audit' and self.guard(resource='audit.events'):
             self.respond(200, {'events': self.server.store.audit()})
-        elif urlsplit(self.path).path == '/api/policies/groups' and self.guard(resource='policies.rules'):
+        elif self.path == '/api/network' and self.guard():
+            if not any(permits(self.actor, r) for r in ('network.vlans', 'network.radius', 'policies.rules')):
+                self.respond(403, {'error': 'FORBIDDEN'}); return
+            result = self.server.operations.network()
+            if not (permits(self.actor, 'network.vlans') or permits(self.actor, 'policies.rules')): result.pop('vlans')
+            if not permits(self.actor, 'network.radius'):
+                for field in ('radius_clients', 'authentication_port', 'accounting_port'): result.pop(field)
+            self.respond(200, result)
+        elif self.path == '/api/directory/settings' and self.guard(resource='directory.connection'):
+            self.respond(200, self.server.operations.directory())
+        elif urlsplit(self.path).path == '/api/policies/groups' and self.guard():
+            if not any(permits(self.actor, r) for r in ('policies.rules', 'simulate.scenarios')):
+                self.respond(403, {'error': 'FORBIDDEN'}); return
             try:
                 query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
                 if len(self.path) > 1024 or set(query) - {'offset', 'q'} or any(len(v) != 1 for v in query.values()): raise ValueError()
@@ -219,7 +247,7 @@ class Handler(BaseHTTPRequestHandler):
             except LookupError: self.respond(404, {'error': 'CATALOG_OBJECT_NOT_FOUND'})
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
             except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
-        elif urlsplit(self.path).path not in {'/api/state', '/api/audit', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups'}:
+        elif urlsplit(self.path).path not in {'/api/state', '/api/audit', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/directory/settings'}:
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
@@ -235,7 +263,7 @@ class Handler(BaseHTTPRequestHandler):
             except (ValidationError, ValueError, TypeError, KeyError): self.respond(400, {'error': 'INVALID_INPUT'})
             except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
             return
-        resources = {'/api/config': None, '/api/policies': 'policies.rules', '/api/simulate': 'simulate.scenarios', '/api/directory/sync': 'directory.connection', '/api/system/users/save': 'system.administrators', '/api/system/users/delete': 'system.administrators', '/api/system/profiles/save': 'system.profiles', '/api/system/profiles/delete': 'system.profiles', '/api/auth/logout': None, '/api/auth/password': None}
+        resources = {'/api/config': None, '/api/policies': 'policies.rules', '/api/simulate': 'simulate.scenarios', '/api/directory/sync': 'directory.connection', '/api/directory/settings': 'directory.connection', '/api/network/vlans': 'network.vlans', '/api/network/radius': 'network.radius', '/api/network/secret/generate': 'network.radius', '/api/network/secret/reveal': 'network.radius', '/api/system/users/save': 'system.administrators', '/api/system/users/delete': 'system.administrators', '/api/system/profiles/save': 'system.profiles', '/api/system/profiles/delete': 'system.profiles', '/api/auth/logout': None, '/api/auth/password': None}
         if not self.guard(write=True, resource=resources.get(self.path), permission_write=self.path != '/api/simulate'):
             return
         if self.path not in resources:
@@ -266,29 +294,32 @@ class Handler(BaseHTTPRequestHandler):
                 elif self.path == '/api/system/users/delete': self.server.admin.delete(self.actor, value, 'user')
                 else: self.server.admin.delete(self.actor, value, 'profile')
                 self.respond(200, {'saved': True})
+            elif self.path == '/api/directory/settings':
+                keys(value, {'expected_revision', 'settings'}, {'expected_revision', 'settings'})
+                try: result = self.server.operations.save_directory(value['expected_revision'], value['settings'])
+                finally: value['settings']['password'] = ''
+                self.respond(200, result)
             elif self.path == '/api/directory/sync':
-                keys(value, {'expected_revision', 'connection'}, {'expected_revision', 'connection'})
-                current = self.server.store.snapshot()
-                if current['config'] is None:
-                    self.respond(409, {'error': 'CONFIG_REQUIRED'})
-                    return
-                if value['expected_revision'] != current['revision'] or type(value['expected_revision']) is not int:
-                    raise ConflictError()
-                validate_connection(value['connection'], current['config'])
-                if not self.server.directory_lock.acquire(blocking=False):
-                    self.respond(429, {'error': 'AD_QUERY_BUSY'})
-                    return
-                try:
-                    if time.monotonic() < self.server.directory_next_attempt:
-                        self.respond(429, {'error': 'AD_RETRY_LATER'})
-                        return
-                    self.server.directory_next_attempt = time.monotonic() + 10
-                    catalog = self.server.directory_reader(value['connection'], current['config'])
-                    status = self.server.store.save_directory(current['revision'], catalog)
-                    self.respond(200, {'directory_public': status, 'network_enforced': False, 'credentials_saved': False})
-                finally:
-                    value['connection']['password'] = ''
-                    self.server.directory_lock.release()
+                keys(value, {'expected_revision', 'connection'}, {'expected_revision'})
+                status = self.server.directory_sync.read(value['expected_revision'], value.get('connection'))
+                self.respond(200, {'directory_public': status, 'network_enforced': False,
+                                   'credentials_saved': self.server.operations.directory()['credentials_saved']})
+            elif self.path in {'/api/network/vlans', '/api/network/radius'}:
+                part = self.path.rsplit('/', 1)[1]
+                fields = {'vlans'} if part == 'vlans' else {'radius_clients', 'authentication_port', 'accounting_port'}
+                keys(value, fields | {'expected_revision'}, fields | {'expected_revision'})
+                network = self.server.operations.network()
+                data = {k: network[k] for k in ('vlans', 'radius_clients', 'authentication_port', 'accounting_port')}
+                data['radius_clients'] = [{k: c[k] for k in ('name', 'ip')} | {'secret': ''} for c in data['radius_clients']]
+                data.update({k: value[k] for k in fields})
+                self.server.operations.save_network(value['expected_revision'], data)
+                self.respond(200, {'saved': True, 'runtime_applied': False})
+            elif self.path == '/api/network/secret/generate':
+                keys(value, set(), set())
+                self.respond(200, {'secret': self.server.operations.generate_secret()})
+            elif self.path == '/api/network/secret/reveal':
+                keys(value, {'ip'}, {'ip'})
+                self.respond(200, {'secret': self.server.operations.radius_secret(value['ip'])})
             elif self.path == '/api/simulate':
                 required = {'authenticated', 'directory_available', 'account_enabled', 'domain_device', 'group_sids', 'access_type', 'nas_ip', 'eap_method'}
                 keys(value, required, required)
@@ -315,15 +346,22 @@ class Handler(BaseHTTPRequestHandler):
                 keys(value, {'expected_revision', section}, {'expected_revision', section})
                 revision = self.server.store.save(value['expected_revision'], **{section: value[section]})
                 self.respond(200, {'revision': revision, 'runtime_applied': False})
+        except PolicyConflictError as exc:
+            self.respond(409, {'error': 'POLICY_CONFLICT', 'conflicts': exc.conflicts})
         except ConflictError:
             self.respond(409, {'error': 'REVISION_CONFLICT'})
         except DirectoryError as exc:
-            self.respond(503, {'error': exc.code, **({'diagnostic': exc.diagnostic} if exc.diagnostic else {})})
+            self.respond(429 if exc.code in {'AD_QUERY_BUSY', 'AD_RETRY_LATER'} else 503, {'error': exc.code, **({'diagnostic': exc.diagnostic} if exc.diagnostic else {})})
+        except VaultError:
+            self.respond(503, {'error': 'SECRET_STORE_UNAVAILABLE'})
         except AdminError as exc:
             self.respond(401 if exc.code == 'UNAUTHORIZED' else 403 if exc.code in {'FORBIDDEN', 'DELEGATION_DENIED'} else 409 if exc.code == 'PROFILE_IN_USE' else 400, {'error': exc.code})
         except sqlite3.IntegrityError:
             self.respond(409 if self.path.startswith('/api/system/') else 503, {'error': 'ADMIN_NAME_EXISTS' if self.path.startswith('/api/system/') else 'STORE_UNAVAILABLE'})
-        except (ValidationError, ValueError, TypeError, KeyError):
+        except ValidationError as exc:
+            allowed = {'AD_SCOPE_INVALID', 'AD_PASSWORD_REQUIRED', 'CONFIG_REQUIRED', 'VLAN_IN_USE', 'VLAN_NOT_DEFINED', 'RADIUS_CLIENTS_MANAGED', 'RADIUS_SECRET_INVALID', 'RADIUS_PORT_CONFLICT', 'RADIUS_SECRET_MISSING'}
+            self.respond(400, {'error': str(exc) if str(exc) in allowed else 'INVALID_INPUT'})
+        except (ValueError, TypeError, KeyError):
             self.respond(400, {'error': 'INVALID_INPUT'})
         except (sqlite3.Error, OSError):
             self.respond(503, {'error': 'STORE_UNAVAILABLE'})

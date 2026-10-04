@@ -40,6 +40,58 @@ class Decision:
     vlan: int | None = None
 
 
+class PolicyConflictError(ValueError):
+    def __init__(self, conflicts):
+        self.conflicts = conflicts
+        super().__init__('POLICY_CONFLICT')
+
+
+def policy_conflicts(policies, catalog=None):
+    """Detect shared conditions and observed cross-group membership overlaps.
+
+    Separate AD groups may coexist in future. Runtime evaluation remains
+    order-independent and denies conflicting decisions even after AD changes.
+    """
+    policies = validate_policies(policies)
+    members = {}
+    if catalog and catalog.get('membership_schema') == 1:
+        from collections import defaultdict
+        children = defaultdict(set)
+        for edge in catalog['memberships']:
+            children[edge['group_sid']].add(edge['member_sid'])
+        accounts = {a['sid'] for kind in ('users', 'computers') for a in catalog[kind]}
+        for group in {g for p in policies for g in p['conditions']['group_sids']}:
+            seen, queue = set(), [group]
+            while queue:
+                node = queue.pop()
+                if node in seen: continue
+                seen.add(node); queue.extend(children[node] - seen)
+            members[group] = seen.intersection(accounts)
+    member_sets = {}
+    for policy in policies:
+        key = frozenset(policy['conditions']['group_sids'])
+        if key not in member_sets:
+            member_sets[key] = set().union(*(members.get(g, set()) for g in key))
+    conflicts = []
+    active = [p for p in policies if p['enabled']]
+    for index, left in enumerate(active):
+        for right in active[index + 1:]:
+            lc, rc = left['conditions'], right['conditions']
+            if any(lc[k] and rc[k] and not set(lc[k]).intersection(rc[k]) for k in ('access_types', 'nas_ips')):
+                continue
+            lg, rg = set(lc['group_sids']), set(rc['group_sids'])
+            if lg and rg and not lg.intersection(rg) and not member_sets[frozenset(lg)].intersection(member_sets[frozenset(rg)]):
+                continue
+            # Constraint mismatches can create allow/deny conflicts too.
+            same = (left['action'], left['vlan'], set(left['constraints']['eap_methods']), left['constraints']['require_domain_device']) == (right['action'], right['vlan'], set(right['constraints']['eap_methods']), right['constraints']['require_domain_device'])
+            if not same:
+                conflicts.append({'policy_ids': [left['id'], right['id']], 'policy_names': [left['name'], right['name']],
+                                  'reason': 'OVERLAPPING_DECISIONS'})
+                if len(conflicts) >= 50:
+                    return conflicts
+    return conflicts
+
+
 def evaluate(policies, identity):
     policies = validate_policies(policies)
     if not isinstance(identity, VerifiedIdentity):
@@ -50,7 +102,8 @@ def evaluate(policies, identity):
         return Decision('deny', 'DIRECTORY_UNAVAILABLE')
     if not identity.account_enabled:
         return Decision('deny', 'ACCOUNT_DISABLED')
-    for policy in policies:
+    decisions = []
+    for policy in sorted(policies, key=lambda x: x['id']):
         if not policy['enabled']:
             continue
         c = policy['conditions']
@@ -62,13 +115,18 @@ def evaluate(policies, identity):
             continue
         r = policy['constraints']
         if identity.eap_method not in r['eap_methods']:
-            return Decision('deny', 'EAP_CONSTRAINT_FAILED', policy['id'])
-        if r['require_domain_device'] and not identity.domain_device:
-            return Decision('deny', 'DOMAIN_DEVICE_REQUIRED', policy['id'])
-        if policy['action'] == 'deny':
-            return Decision('deny', 'POLICY_DENY', policy['id'])
-        return Decision('allow', 'POLICY_ALLOW', policy['id'], policy['vlan'])
-    return Decision('deny', 'NO_MATCHING_POLICY')
+            decisions.append(Decision('deny', 'EAP_CONSTRAINT_FAILED', policy['id']))
+        elif r['require_domain_device'] and not identity.domain_device:
+            decisions.append(Decision('deny', 'DOMAIN_DEVICE_REQUIRED', policy['id']))
+        elif policy['action'] == 'deny':
+            decisions.append(Decision('deny', 'POLICY_DENY', policy['id']))
+        else:
+            decisions.append(Decision('allow', 'POLICY_ALLOW', policy['id'], policy['vlan']))
+    if not decisions:
+        return Decision('deny', 'NO_MATCHING_POLICY')
+    if len({(d.action, d.vlan) for d in decisions}) > 1:
+        return Decision('deny', 'POLICY_CONFLICT')
+    return decisions[0]
 
 
 def radius_vlan_attributes(decision):

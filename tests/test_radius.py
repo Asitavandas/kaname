@@ -130,9 +130,9 @@ class RadiusAuthorizationTests(unittest.TestCase):
         self.assertEqual(self.decide(self.service(b=binding(kind='user'), a=account(kind='user'),
                                                 policies=[p])).action, 'allow')
 
-    def test_deny_order_constraints_and_nas_conditions_still_apply(self):
+    def test_conflicts_constraints_and_nas_conditions_still_apply(self):
         self.assertEqual(self.decide(self.service(policies=[policy(action='deny', vlan=None),
-                                                          policy(id='later')])).reason, 'POLICY_DENY')
+                                                          policy(id='later')])).reason, 'POLICY_CONFLICT')
         p = policy(constraints={'eap_methods': ['PEAP-TLS'], 'require_domain_device': True})
         self.assertEqual(self.decide(self.service(policies=[p])).reason, 'EAP_CONSTRAINT_FAILED')
         self.assertEqual(self.decide(self.service(), nas_ip='127.0.0.2').reason, 'NO_MATCHING_POLICY')

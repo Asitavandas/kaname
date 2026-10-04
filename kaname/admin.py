@@ -22,6 +22,7 @@ RESOURCES = {
     'directory.connection': ['User&Authentication', 'Active Directory'],
     'directory.catalog': ['User&Authentication', 'Users/User Groups'],
     'system.administrators': ['System', 'Administrators'], 'system.profiles': ['System', 'Admin Profiles'],
+    'network.vlans': ['Network', 'VLANs'], 'network.radius': ['Network', 'RADIUS Clients'],
 }
 LEVELS = {'none': 0, 'read': 1, 'write': 2}
 COOKIE = 'kaname_session'

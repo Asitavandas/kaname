@@ -77,3 +77,11 @@
 - OVF appliance sözleşmesi, hazırlanmış temiz VMX export sarmalayıcısı ve manifest/struktur denetleyicisi eklendi.
 - 70 otomatik test, CI tarifi ve tarayıcı akış test betiği eklendi.
 - AD, PKI, RADIUS runtime ve gerçek OVF henüz teslim edilmedi; hazır olma endpoint'i 503 döner.
+
+## 0.7.0-dev.1
+
+- Named manual VLAN inventory and VLAN selectors, preserving existing assignments.
+- Order-independent policy engine, conflict rejection before save with named bottom-right warnings; edit/delete controls, no ordering or enable toggles. Existing disabled rules remain archived.
+- Read-only AD OU/CN/DC scope, protected saved connection credentials, manual and periodic sync, independent authenticated health probes and panel alerts. Failed/partial reads preserve the last catalog; successful reads replace added/deleted users and memberships.
+- Named security groups in decision simulation. No AD membership writes, SMTP, switch/AP management, timeout or retry fields.
+- RADIUS client source IPs, generated/revealable encrypted per-client shared secrets; configurable server authentication/accounting UDP ports, defaults 1812/1813. Production listener/accounting and OVF remain pending.

@@ -23,11 +23,11 @@ class PolicyTests(unittest.TestCase):
     def test_domain_constraint_does_not_fall_through(self):
         fallback = policy(id='fallback', constraints={'eap_methods':['EAP-TLS'], 'require_domain_device': False})
         result = evaluate([policy(), fallback], identity(domain_device=False))
-        self.assertEqual((result.action, result.policy_id, result.reason), ('deny','corporate','DOMAIN_DEVICE_REQUIRED'))
+        self.assertEqual((result.action, result.policy_id, result.reason), ('deny',None,'POLICY_CONFLICT'))
 
     def test_eap_constraint_does_not_fall_through(self):
         fallback = policy(id='fallback', constraints={'eap_methods':['PEAP-MSCHAPV2'], 'require_domain_device':False})
-        self.assertEqual(evaluate([policy(), fallback], identity(eap_method='PEAP-MSCHAPV2')).reason, 'EAP_CONSTRAINT_FAILED')
+        self.assertEqual(evaluate([policy(), fallback], identity(eap_method='PEAP-MSCHAPV2')).reason, 'POLICY_CONFLICT')
 
     def test_unmatched_condition_continues(self):
         first = policy(conditions={'group_sids':['S-1-5-21-1-2-3-4'], 'access_types':[], 'nas_ips':[]})
@@ -36,16 +36,16 @@ class PolicyTests(unittest.TestCase):
     def test_disabled_policy_is_ignored(self):
         self.assertEqual(evaluate([policy(enabled=False),policy(id='next')], identity()).policy_id, 'next')
 
-    def test_first_deny_wins(self):
+    def test_deny_allow_overlap_is_conflict(self):
         result = evaluate([policy(action='deny',vlan=None),policy(id='next')], identity())
-        self.assertEqual(result.reason, 'POLICY_DENY')
+        self.assertEqual(result.reason, 'POLICY_CONFLICT')
 
-    def test_first_allow_wins(self):
-        self.assertEqual(evaluate([policy(),policy(id='deny',action='deny',vlan=None)], identity()).action, 'allow')
+    def test_allow_deny_overlap_is_conflict(self):
+        self.assertEqual(evaluate([policy(),policy(id='deny',action='deny',vlan=None)], identity()).action, 'deny')
 
-    def test_order_changes_decision(self):
+    def test_order_does_not_change_decision(self):
         allow,deny=policy(),policy(id='deny',action='deny',vlan=None)
-        self.assertNotEqual(evaluate([allow,deny],identity()).action,evaluate([deny,allow],identity()).action)
+        self.assertEqual(evaluate([allow,deny],identity()),evaluate([deny,allow],identity()))
 
     def test_group_membership_matches_any_selected_group(self):
         p=policy();p['conditions']['group_sids'].append('S-1-5-21-5-6-7-8')
