@@ -49,3 +49,5 @@ Bu kodun üretildiği ortamda AD domain, switch/AP, FreeRADIUS runtime, hypervis
 ## 0.8 kabulü ve 0.9 bağımlılığı
 
 Ubuntu 0.8 lab kurulumu, gerçek AD eşitlemesi ve güncellenmiş kullanıcı/grup üyelikleri operatörce kabul edildi. Panel görsel değişikliği ertelendi. 0.9 kaynak aşaması görüntüleme kataloğundan bağımsız canlı GUID/tokenGroups yetki sorgusu ve kalıcı sertifika bağ okuyucusudur. Gerçek AD tokenGroups tanılaması, doğrulanmış geçici kodu servis hesabıyla çalıştırır; kurulu paneli yükseltmez. Sonraki bağımlılık AD kimliğiyle doğrulanmış endpoint enrollment ve güven dağıtımı; ardından kontrollü FreeRADIUS servis apply ve manuel switch/AP üzerinden fiziksel EAP-TLS/VLAN kabulüdür.
+
+0.9 gerçek AD tokenGroups sorgusu operatörce başarılı doğrulandı. Günlük server/panel geliştirmesi ve otomatik işletim sistemi testleri Ubuntu odaklı yürür; Windows server validation/diagnostics otomatik tetikleyicileri kapatıldı. Windows istemcinin gerçek kablolu/kablosuz 802.1X davranışı, istemci sertifika/trust dağıtımı ve VLAN kabulü test planında kalır.

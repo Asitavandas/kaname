@@ -25,7 +25,11 @@ Eski self-hosted Windows validation kuyruğu son teslimin Windows kanıtı deği
 
 Yerel sudo ile stage içindeki `tools/linux_authorization_check.py --source-digest 581299c83b145c2de31cd6049595508ce42ce54b567bdfb1b24fefa29bbfce97` çalıştırılır. Araç mevcut saved AD ayarını kullanarak servis hesabıyla tek GUID/tokenGroups sorgusunu kontrol eder; çalışan panel source/state reset, restart veya paket kurma yapmaz. Katalog yalnız örnek GUID seçmek içindir; izin bilgisi gerçek AD'den yeniden okunur.
 
-Beklenen çıktı: checked=true ve bulunan hesap için account_found=true. Hesap enabled/kind ve security_group_count ayrıca bildirilir; gerçek grup sayısı için sabit bir beklenen sayı yoktur. AD private bilgileri/password/UUID/SID çıktıya yazılmaz. Bu gerçek AD security-token sorgusu sonucu henüz operatörden gelmedi.
+Beklenen çıktı: checked=true ve bulunan hesap için account_found=true. Hesap enabled/kind ve security_group_count ayrıca bildirilir; gerçek grup sayısı için sabit bir beklenen sayı yoktur. AD private bilgileri/password/UUID/SID çıktıya yazılmaz.
+
+Operatör 4 Ekim 2026'da başarılı gerçek AD çıktısını paylaştı: checked=true, account_found=true, account_enabled=true, account_kind=computer, security_group_count=1, authorization_source=live-kerberos-tokenGroups, catalog_used_for_authorization=false. Bu sayı yalnız seçilen bilgisayar hesabının güvenlik grubu sayısıdır; tüm domain'in grup sayısı değildir. radius_started=false ve panel_updated=false; çalışan panel 0.8 olarak korunur. Canlı AD güvenlik token sorgusu kabul edildi; fiziksel EAP-TLS ve endpoint enrollment kabulü değildir.
+
+Operatör sunucu geliştirme/test hedefinin Ubuntu olmasını istedi. Windows validation ve Windows installation diagnostics push tetikleyicileri kaldırıldı. Windows sunucu/panel işleri günlük pipeline'da otomatik çalışmaz; arşiv workflow'ları yalnız açıkça manuel tetiklenirse çalışır. Windows endpoint üzerinde gerçek 802.1X supplicant/trust/EAPOL testi erişim kabulünün ayrı parçası olarak kalır.
 
 ## Sonraki bağımlılıklar
 

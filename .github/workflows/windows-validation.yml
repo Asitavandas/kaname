@@ -1,13 +1,6 @@
 name: KANAME Windows validation
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/windows-validation.yml'
-      - 'kaname/**'
-      - 'tests/**'
-      - 'tools/**'
 permissions:
   contents: read
 concurrency:
