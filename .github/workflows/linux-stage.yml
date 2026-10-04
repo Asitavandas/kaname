@@ -20,9 +20,11 @@ jobs:
       - name: Native OpenLDAP parser dependencies on disposable CI host
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y python3-ldap python3-cryptography
+          sudo apt-get install -y python3-ldap python3-venv
+          /usr/bin/python3 -m venv --system-site-packages "$RUNNER_TEMP/kaname-native-venv"
+          "$RUNNER_TEMP/kaname-native-venv/bin/python" -m pip install --only-binary=:all: cryptography==46.0.0
       - name: Native LDAP wire and mandatory protection tests without customer AD
-        run: /usr/bin/python3 -m unittest tests.test_linux_directory tests.test_radius_live -v
+        run: '"$RUNNER_TEMP/kaname-native-venv/bin/python" -m unittest tests.test_linux_directory tests.test_radius_live -v'
       - name: Real installer and non-root HTTPS service on disposable VM (fixture DC only)
         run: sudo --preserve-env=RUNNER_ENVIRONMENT /usr/bin/python3 -m tools.linux_install_smoke
   stage-for-local-install:
