@@ -77,6 +77,13 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.match(await page.locator('#audit-list').textContent(),/policies_saved/);
     await navigate('certificates');
     assert.match(await page.locator('#pki-info').textContent(),/[Hh]enüz CA oluşturulmadı/);
+    await page.locator('#pki-password').fill('fixture-browser-ca-passphrase');
+    await page.locator('#pki-confirm').fill('fixture-browser-ca-passphrase');
+    await page.locator('#pki-init-form button[type="submit"]').click();
+    await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('HTTPS'));
+    assert.equal(await page.locator('#pki-password').inputValue(),'');
+    assert.equal(await page.locator('#pki-confirm').inputValue(),'');
+    assert.match(await page.locator('#pki-info').textContent(),/[Hh]enüz CA oluşturulmadı/);
     await navigate('directory');
     assert.equal(await page.locator('#ad-domain').inputValue(),'kurum.example');
     await page.locator('#ad-host').fill('dc01.kurum.example');
@@ -223,6 +230,8 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#logout').click();
     await login('reader');
     assert.equal(await page.locator('#fqdn').isDisabled(),true);
+    await navigate('certificates');
+    assert.equal(await page.locator('#pki-write').isVisible(),false);
     await navigate('policies');
     assert.equal(await page.locator('#add-policy').isDisabled(),true);
     const denied=await page.evaluate(async()=>{const r=await fetch('/api/policies',{method:'POST',headers:{'Content-Type':'application/json','X-Kaname-CSRF':csrf},body:JSON.stringify({expected_revision:state.revision,policies:[]})});return r.status;});

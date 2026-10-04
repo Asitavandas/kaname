@@ -129,11 +129,15 @@ class PKIService:
             );
             ''')
 
-    def _audit(self, db, event):
+    def _audit(self, db, event, actor=None):
+        if actor is not None:
+            if type(actor) is not str or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', actor):
+                raise PKIError('Invalid operator identity')
+            event += ':actor:' + actor
         revision = db.execute('SELECT revision FROM state WHERE id=1').fetchone()[0]
         db.execute('INSERT INTO audit(event,revision) VALUES (?,?)', (event, revision))
 
-    def initialize(self, password, *, now=None):
+    def initialize(self, password, *, now=None, actor=None):
         password_bytes(password)
         now = instant(now)
         # Check before expensive key generation; transaction also checks races.
@@ -160,7 +164,7 @@ class PKIService:
                        (instance, root.public_bytes(PEM), private_pem(root_key, password),
                         issuer.public_bytes(PEM), private_pem(issuer_key, password),
                         json.dumps(data), crl.public_bytes(PEM), 1))
-            self._audit(db, 'pki_ca_initialized')
+            self._audit(db, 'pki_ca_initialized', actor)
         return data
 
     def _authority(self, db, password, now):
@@ -255,7 +259,7 @@ class PKIService:
             builder = builder.add_revoked_certificate(revoked)
         return builder.sign(key, hashes.SHA256())
 
-    def revoke(self, serial, password, *, reason='key_compromise', now=None):
+    def revoke(self, serial, password, *, reason='key_compromise', now=None, actor=None):
         if type(serial) is str:
             serial = serial.lower()
         if type(serial) is not str or not re.fullmatch(r'[1-9a-f][0-9a-f]{0,39}', serial) or type(reason) is not str or reason not in REASONS:
@@ -280,10 +284,10 @@ class PKIService:
             rows = db.execute('SELECT serial,revoked_at,reason FROM pki_certificates WHERE revoked_at IS NOT NULL ORDER BY serial').fetchall()
             crl = self._build_crl(issuer, key, rows, number + 1, now)
             db.execute('UPDATE pki_authority SET crl=?,crl_number=? WHERE id=1', (crl.public_bytes(PEM), number + 1))
-            self._audit(db, 'pki_radius_revoked:' + serial)
+            self._audit(db, 'pki_certificate_revoked:' + serial, actor)
         return {'serial': serial, 'already_revoked': False, 'crl_number': number + 1}
 
-    def refresh_crl(self, password, *, now=None):
+    def refresh_crl(self, password, *, now=None, actor=None):
         now = instant(now)
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -291,7 +295,7 @@ class PKIService:
             rows = db.execute('SELECT serial,revoked_at,reason FROM pki_certificates WHERE revoked_at IS NOT NULL ORDER BY serial').fetchall()
             crl = self._build_crl(issuer, key, rows, number + 1, now)
             db.execute('UPDATE pki_authority SET crl=?,crl_number=? WHERE id=1', (crl.public_bytes(PEM), number + 1))
-            self._audit(db, 'pki_crl_refreshed')
+            self._audit(db, 'pki_crl_refreshed', actor)
         return crl.public_bytes(PEM)
 
     def public_bundle(self):

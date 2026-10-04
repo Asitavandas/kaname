@@ -6,6 +6,7 @@ import os
 import secrets
 import sqlite3
 import ssl
+import sys
 import threading
 import time
 from dataclasses import asdict
@@ -80,6 +81,7 @@ class DevelopmentServer(ThreadingHTTPServer):
             self.directory_reader = read_linux_directory
             self.directory_health_reader = check_linux_directory
         self.operations = Operations(self.store)
+        self.enrollment_lock = threading.Lock()
         super().__init__((str(endpoint), port), Handler)
         if context:
             self.socket = context.wrap_socket(self.socket, server_side=True, do_handshake_on_connect=False)
@@ -192,6 +194,55 @@ class Handler(BaseHTTPRequestHandler):
         raw = self.rfile.read(size); self.body_read = True
         return strict_json(raw)
 
+    def pki_write(self, value):
+        from .enrollment import EnrollmentError, EnrollmentService
+        from .pki import PKIError, PKIService, password_bytes
+        try:
+            if not self.server.tls:
+                raise EnrollmentError('PKI_HTTPS_REQUIRED')
+            if sys.platform != 'linux':
+                raise EnrollmentError('AD_PLATFORM_UNSUPPORTED')
+            if type(value) is not dict:
+                raise EnrollmentError('ENROLLMENT_INPUT_INVALID')
+            if not self.server.enrollment_lock.acquire(blocking=False):
+                raise EnrollmentError('ENROLLMENT_BUSY')
+            try:
+                secret = password_bytes(text(value.get('ca_password'), 128).encode('utf-8'))
+                pki = PKIService(self.server.store.root)
+                if self.path == '/api/pki/initialize':
+                    keys(value, {'ca_password', 'confirm'}, {'ca_password', 'confirm'})
+                    if not hmac.compare_digest(secret, text(value['confirm'], 128).encode('utf-8')):
+                        raise PKIError('Confirmation mismatch')
+                    result = pki.initialize(secret, actor=self.actor['id'])
+                elif self.path == '/api/pki/enroll-user':
+                    fields = {'csr', 'username', 'password', 'ca_password', 'expected_revision', 'days'}
+                    keys(value, fields, fields)
+                    if type(value['csr']) is not str or not 1 <= len(value['csr']) <= 65536:
+                        raise EnrollmentError('CSR_INVALID')
+                    result = EnrollmentService(self.server.operations).issue_user(
+                        value['csr'].encode('ascii'), value['username'], value['password'], secret,
+                        expected_revision=value['expected_revision'], days=value['days'], actor=self.actor['id'])
+                elif self.path == '/api/pki/revoke':
+                    keys(value, {'serial', 'reason', 'ca_password'}, {'serial', 'reason', 'ca_password'})
+                    result = pki.revoke(value['serial'], secret, reason=value['reason'], actor=self.actor['id'])
+                else:
+                    keys(value, {'ca_password'}, {'ca_password'})
+                    pki.refresh_crl(secret, actor=self.actor['id'])
+                    result = {'refreshed': True, 'radius_connected': False}
+                self.respond(200, result)
+            finally:
+                self.server.enrollment_lock.release()
+        except EnrollmentError as error:
+            self.respond(429 if error.code in {'ENROLLMENT_BUSY', 'ENROLLMENT_RETRY_LATER'} else
+                403 if error.code == 'PKI_HTTPS_REQUIRED' else 409 if error.code in {'CSR_ALREADY_USED', 'REVISION_CONFLICT'} else 400,
+                {'error': error.code})
+        except PKIError:
+            self.respond(400, {'error': 'PKI_OPERATION_FAILED'})
+        finally:
+            if type(value) is dict:
+                for name in ('ca_password', 'password', 'confirm'):
+                    if name in value: value[name] = ''
+
     def state_projection(self, value):
         if self.actor['maintenance']:
             return value
@@ -229,6 +280,8 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == '/api/state' and self.guard():
             value = self.server.store.snapshot()
             value['pki_public'] = self.server.store.public_pki_status()
+            value['pki_public']['user_enrollment_available'] = self.server.tls and sys.platform == 'linux'
+            value['pki_public']['machine_enrollment_enabled'] = False
             value['directory_public'] = self.server.store.directory_status()
             value['directory_public']['automatic_sync_enabled'] = self.server.operations.directory()['automatic_sync']
             value['directory_health'] = self.server.operations.health()
@@ -246,6 +299,39 @@ class Handler(BaseHTTPRequestHandler):
             if not permits(self.actor, 'network.radius'):
                 for field in ('radius_clients', 'authentication_port', 'accounting_port'): result.pop(field)
             self.respond(200, result)
+        elif urlsplit(self.path).path == '/api/pki/certificates' and self.guard(resource='certificates.authority'):
+            try:
+                query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                if len(self.path) > 256 or set(query) - {'offset'} or any(len(v) != 1 for v in query.values()): raise ValueError()
+                from .enrollment import EnrollmentService
+                self.respond(200, EnrollmentService.certificates(self.server.store, offset=int(query.get('offset', ['0'])[0])))
+            except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
+            except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
+        elif urlsplit(self.path).path == '/api/pki/public' and self.guard(resource='certificates.authority'):
+            try:
+                query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                if set(query) != {'name'} or len(query['name']) != 1 or query['name'][0] not in {'root-ca.pem', 'issuer-ca.pem', 'issuer-crl.pem'}: raise ValueError()
+                name = query['name'][0]
+                column = {'root-ca.pem':'root_cert', 'issuer-ca.pem':'issuer_cert', 'issuer-crl.pem':'crl'}[name]
+                with self.server.store.connect() as db:
+                    exists = db.execute("SELECT 1 FROM sqlite_master WHERE name='pki_authority' AND type='table'").fetchone()
+                    row = db.execute('SELECT ' + column + ' FROM pki_authority WHERE id=1').fetchone() if exists else None
+                if row is None: raise ValueError()
+                self.respond(200, {'name': name, 'pem': row[0].decode('ascii')})
+            except (ValueError, TypeError): self.respond(400, {'error': 'PKI_OPERATION_FAILED'})
+            except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
+        elif urlsplit(self.path).path == '/api/pki/certificate' and self.guard(resource='certificates.authority'):
+            try:
+                from .radius import serial_number
+                query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                if len(self.path) > 128 or set(query) != {'serial'} or len(query['serial']) != 1: raise ValueError()
+                serial = serial_number(query['serial'][0])
+                with self.server.store.connect() as db:
+                    exists = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='pki_certificates'").fetchone()
+                    row = db.execute('SELECT certificate FROM pki_certificates WHERE serial=?', (serial,)).fetchone() if exists else None
+                self.respond(200 if row else 404, {'serial': serial, 'pem': row[0].decode('ascii')} if row else {'error': 'CERTIFICATE_NOT_FOUND'})
+            except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
+            except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
         elif self.path == '/api/directory/settings' and self.guard(resource='directory.connection'):
             self.respond(200, self.server.operations.directory())
         elif urlsplit(self.path).path == '/api/policies/groups' and self.guard():
@@ -278,7 +364,7 @@ class Handler(BaseHTTPRequestHandler):
             except LookupError: self.respond(404, {'error': 'CATALOG_OBJECT_NOT_FOUND'})
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
             except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
-        elif urlsplit(self.path).path not in {'/api/state', '/api/audit', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/directory/settings'}:
+        elif urlsplit(self.path).path not in {'/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/directory/settings'}:
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
@@ -295,6 +381,7 @@ class Handler(BaseHTTPRequestHandler):
             except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
             return
         resources = {'/api/config': None, '/api/policies': 'policies.rules', '/api/simulate': 'simulate.scenarios', '/api/directory/sync': 'directory.connection', '/api/directory/settings': 'directory.connection', '/api/network/vlans': 'network.vlans', '/api/network/radius': 'network.radius', '/api/network/secret/generate': 'network.radius', '/api/network/secret/reveal': 'network.radius', '/api/system/users/save': 'system.administrators', '/api/system/users/delete': 'system.administrators', '/api/system/profiles/save': 'system.profiles', '/api/system/profiles/delete': 'system.profiles', '/api/auth/logout': None, '/api/auth/password': None}
+        resources.update({path: 'certificates.authority' for path in ('/api/pki/initialize', '/api/pki/enroll-user', '/api/pki/revoke', '/api/pki/refresh-crl')})
         if not self.guard(write=True, resource=resources.get(self.path), permission_write=self.path != '/api/simulate'):
             return
         if self.path not in resources:
@@ -310,7 +397,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             raw = self.rfile.read(size); self.body_read = True
             value = strict_json(raw)
-            if self.path == '/api/auth/logout':
+            if self.path.startswith('/api/pki/'):
+                self.pki_write(value)
+            elif self.path == '/api/auth/logout':
                 keys(value, set(), set()); self.server.admin.logout(self.actor)
                 self.respond(200, {'logged_out': True}, cookie=self.session_cookie(remove=True))
             elif self.path == '/api/auth/password':

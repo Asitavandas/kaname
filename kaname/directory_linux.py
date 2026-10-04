@@ -2,6 +2,7 @@
 import ipaddress
 import json
 import os
+import re
 import signal
 import socket
 import subprocess
@@ -14,8 +15,17 @@ from .models import strict_json
 from .radius import CurrentDirectoryAccount, object_id
 
 
-def read_linux_directory(value, config, *, probe=False, object_guid=None):
+def read_linux_directory(value, config, *, probe=False, object_guid=None, authenticate_self=False):
     request = validate_connection(value, config)
+    if authenticate_self:
+        if probe or object_guid is not None:
+            raise DirectoryError('AD_INPUT_INVALID')
+        # First lab enrollment supports samAccountName@configured-domain only.
+        # No enterprise aliases, escaped principals, machine accounts or SPNs.
+        sam = request['username'].split('@')[0]
+        if not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,19}', sam):
+            raise DirectoryError('AD_INPUT_INVALID')
+        request['authenticate_self'] = True
     if object_guid is not None:
         object_id(object_guid)
         if probe:
@@ -61,6 +71,23 @@ def read_linux_directory(value, config, *, probe=False, object_guid=None):
             pass
     if object_guid is not None:
         return decode_account_response(output, process.returncode, request, object_guid)
+    if authenticate_self:
+        try:
+            if process.returncode:
+                from .directory import ERRORS
+                failure = strict_json(output)
+                if type(failure) is dict and set(failure) == {'error'} and failure['error'] in ERRORS:
+                    raise DirectoryError(failure['error'])
+                raise ValueError()
+            result = strict_json(output)
+            guid = result['account']['object_guid']
+            object_id(guid)
+            account = decode_account_response(output, process.returncode, request, guid)
+            if account is None or account.kind != 'user' or not account.enabled:
+                raise ValueError()
+            return account
+        except (ValueError, TypeError, KeyError):
+            raise DirectoryError('AD_INVALID_RESPONSE') from None
     return decode_helper_response(output, process.returncode, config['ad_domain'], request['dc_fqdn'])
 
 
@@ -99,3 +126,8 @@ def lookup_linux_account(value, config, object_guid):
 
 def check_linux_directory(value, config):
     return read_linux_directory(value, config, probe=True)
+
+
+def authenticate_linux_user(value, config):
+    """Prove this user's password to the KDC, resolve only that principal."""
+    return read_linux_directory(value, config, authenticate_self=True)

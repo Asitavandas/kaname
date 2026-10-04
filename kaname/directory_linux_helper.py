@@ -212,6 +212,41 @@ class Reader:
         result['security_group_sids'] = sorted(groups)
         return result
 
+    def authenticated_user(self, domain, sam, configuration_dn=None):
+        if not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,19}', sam):
+            raise DirectoryError('AD_INPUT_INVALID')
+        base = ','.join('DC=' + x for x in domain.split('.'))
+        self.remaining()
+        authz = self.connection.whoami_s()
+        if type(authz) is not str or len(authz) > 256:
+            raise DirectoryError('AD_INVALID_RESPONSE')
+        authenticated_sid = None
+        if authz.startswith('u:S-'):
+            authenticated_sid = account_sid(authz[2:])
+        else:
+            # Resolve the NetBIOS name of this precise domain from the DC's
+            # configuration partition; never infer it from the DNS prefix.
+            named = re.fullmatch(r'u:([A-Za-z0-9_-]{1,15})\\([A-Za-z0-9_][A-Za-z0-9_.-]{0,19})', authz)
+            if not named or named[2].casefold() != sam.casefold() or type(configuration_dn) is not str or not configuration_dn.casefold().startswith('cn=configuration,') or len(configuration_dn) > 2048:
+                raise DirectoryError('AD_INVALID_RESPONSE')
+            refs, _ = self.search('CN=Partitions,' + configuration_dn, self.ldap.SCOPE_SUBTREE,
+                '(&(objectClass=crossRef)(nCName=' + base + '))', ['nCName', 'nETBIOSName'])
+            if len(refs) != 1 or attribute(refs[0][1], 'ncname').casefold() != base.casefold() or attribute(refs[0][1], 'netbiosname').casefold() != named[1].casefold():
+                raise DirectoryError('AD_INVALID_RESPONSE')
+        rows, _ = self.search(base, self.ldap.SCOPE_SUBTREE,
+            '(&(objectClass=user)(!(objectClass=computer))(sAMAccountName=' + sam + '))',
+            ['objectGUID', 'sAMAccountName'])
+        if len(rows) != 1 or not rows[0][0].casefold().endswith(',' + base.casefold()):
+            raise DirectoryError('AD_INVALID_RESPONSE')
+        attrs = rows[0][1]
+        identifiers = attrs.get('objectguid', [])
+        if len(identifiers) != 1 or len(identifiers[0]) != 16 or attribute(attrs, 'samaccountname').casefold() != sam.casefold():
+            raise DirectoryError('AD_INVALID_RESPONSE')
+        account = self.account(domain, str(uuid.UUID(bytes_le=identifiers[0])))
+        if account is None or account['kind'] != 'user' or not account['enabled'] or (authenticated_sid is not None and account['sid'] != authenticated_sid):
+            raise DirectoryError('AD_CREDENTIALS_REJECTED')
+        return account
+
     def catalog(self, domain, dc, search_base=''):
         domain_base = ','.join('DC=' + x for x in domain.split('.'))
         if not search_base:
@@ -282,6 +317,17 @@ def protected_connection(ldap, sasl, dc):
     return connection
 
 
+def verify_ticket_identity(env, principal):
+    try:
+        tickets = subprocess.run(['/usr/bin/klist', '-c', env['KRB5CCNAME']],
+            capture_output=True, env=env, timeout=5, check=False)
+        principals = re.findall(rb'^Default principal: (.+)$', tickets.stdout, re.M)
+        if tickets.returncode or len(tickets.stdout) > 16384 or len(principals) != 1 or principals[0].decode('ascii').casefold() != principal.casefold():
+            raise DirectoryError('AD_INVALID_RESPONSE')
+    except (OSError, subprocess.TimeoutExpired, UnicodeError):
+        raise DirectoryError('AD_BIND_FAILED') from None
+
+
 def run(request):
     try:
         import ldap
@@ -315,12 +361,19 @@ def run(request):
         code = 'AD_CREDENTIALS_REJECTED' if any(x in result.stderr for x in
                 (b'Preauthentication failed', b'Password incorrect', b'Client not found')) else 'AD_BIND_FAILED'
         raise DirectoryError(code)
+    if request.get('authenticate_self'):
+        # Do not trust the submitted login name if the KDC canonicalized it.
+        # Both kinit and klist use the same private FILE cache and fixed locale.
+        verify_ticket_identity(env, principal)
     # Environment is confined to this disposable subprocess, not the panel.
     os.environ.update({k: env[k] for k in ('KRB5_CONFIG', 'KRB5CCNAME', 'LC_ALL')})
     connection = None
     try:
         connection = protected_connection(ldap, ldap.sasl, request['dc_fqdn'])
-        rows = connection.search_s('', ldap.SCOPE_BASE, '(objectClass=*)', ['defaultNamingContext', 'dnsHostName'])
+        root_attributes = ['defaultNamingContext', 'dnsHostName']
+        if request.get('authenticate_self'):
+            root_attributes.append('configurationNamingContext')
+        rows = connection.search_s('', ldap.SCOPE_BASE, '(objectClass=*)', root_attributes)
         if len(rows) != 1 or rows[0][0] != '':
             raise DirectoryError('AD_DOMAIN_MISMATCH')
         attrs = {key.lower(): values for key, values in rows[0][1].items()}
@@ -330,6 +383,10 @@ def run(request):
         if request['probe']:
             return {'probe': 'ok', 'domain': request['domain'], 'dc_fqdn': request['dc_fqdn']}
         reader = Reader(connection, ldap, (ValueLessRequestControl, SimplePagedResultsControl))
+        if request.get('authenticate_self'):
+            return {'domain': request['domain'], 'dc_fqdn': request['dc_fqdn'],
+                    'account': reader.authenticated_user(request['domain'], principal.split('@')[0],
+                        attribute(attrs, 'configurationnamingcontext'))}
         if request.get('object_guid') is not None:
             return {'domain': request['domain'], 'dc_fqdn': request['dc_fqdn'],
                     'account': reader.account(request['domain'], request['object_guid'])}

@@ -2,8 +2,10 @@
 
 Bağımsız Active Directory tabanlı kablolu/kablosuz 802.1X erişim yönetimi.
 
-**Kaynak geliştirme sürümü: 0.9.0-dev.1 — canlı AD yetkilendirme ve sertifika bağ kayıt katmanı.**
-Mevcut panel, politika ve dahili PKI temeli korunur. Windows'taki yerel panelden Kerberos signing/sealing ile kullanıcı, bilgisayar ve gruplar okunabilir; son okumadaki doğrudan, primary ve iç içe üyelikler incelenebilir. AD bağlantı parolası korumalı saklanır; filtreli ve periyodik eşitleme desteklenir. Yeni izole laboratuvar native FreeRADIUS/eapol_test ile gerçek TLS ve RADIUS paketlerini kullanır; AD kimlikleri test verisidir. Üretim RADIUS hizmeti, istemci enrollment veya açılabilir OVF bu sürümde yoktur. Paneldeki ağ/politika kayıtları taslaktır; kullanıcı ağında izin/ret kararı uygulanmaz. Linux GSSAPI okuyucusu ve non-root HTTPS lab servis kurulumu eklendi; Ubuntu 0.8 kurulumu, gerçek AD eşitlemesi ve üyelik güncellemesi operatörce kabul edildi. Windows kurulu 0.7 paneli korunur. 0.9 kaynağı henüz kurulu Ubuntu paneline uygulanmaz; canlı RADIUS yetkilendirmesi için GUID/tokenGroups okuyucusu ve salt okunur sertifika bağ deposu ekler.
+**Kaynak geliştirme sürümü: 0.10.0-dev.1 — doğrulanmış AD kullanıcı sertifikaları ve panelden sertifika yönetimi.**
+Ubuntu geliştirme hedefidir. Mevcut politika, VLAN, RADIUS istemci ve AD eşitleme ayarları korunur. Privileged HTTPS kayıt akışı, imzalı endpoint CSR'sini kullanıcının kendi Kerberos kimliği, güvenli LDAP Who Am I ve canlı GUID/tokenGroups sorgusuyla doğrular; sertifika ve değişmez AD bağı aynı transaction'da kaydedilir. Panelden CA oluşturma, kullanıcı sertifikası üretme/indirme, açık trust/CRL indirme ve iptal mümkündür. Endpoint anahtarı panele gönderilmez. Kullanıcı sertifikası domain bilgisayarı kanıtı değildir; mevcut require_domain_device kuralları kullanıcı sertifikasını reddeder.
+
+Çalışan Ubuntu paneli yerel doğrulanmış güncelleme uygulanana kadar 0.8 olarak kalır; Windows kurulumu korunur ve otomatik Windows sunucu testleri kapalıdır. Müşteri ağında RADIUS/accounting, bilgisayar enrollment, otomatik trust/GPO dağıtımı ve açılabilir OVF henüz etkin değildir. [0.10 kullanım ve kabul sınırları](docs/STATUS_0_10_0.md).
 
 ## Başlatma
 

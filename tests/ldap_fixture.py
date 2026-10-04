@@ -117,6 +117,12 @@ class LDAPFixture:
                     operation, content, next_offset = parse(packet, offset)
                     if operation == 96:  # anonymous bind, fixture only
                         conn.sendall(done(message_id, tag=97))
+                    elif operation == 119 and self.mode == 'account-user':
+                        oid_tag, oid, _ = parse(content)
+                        if oid_tag != 128 or oid != b'1.3.6.1.4.1.4203.1.11.3':
+                            raise ValueError('Unexpected fixture extended operation')
+                        value = number(0, tag=10) + octet('') + octet('') + tlv(139,b'u:S-1-5-21-1-2-3-1001')
+                        conn.sendall(tlv(48,number(message_id)+tlv(120,value)))
                     elif operation == 99:
                         self.searches += 1
                         domain_scope = False
@@ -197,7 +203,7 @@ class LDAPFixture:
     def account_response(self, conn, message_id, base, scope):
         """BASE computed attributes for a synthetic live account; no Kerberos."""
         dn = 'CN=fixture-1001,DC=fixture,DC=invalid'
-        attrs = {'objectGUID': [uuid.UUID(int=1001).bytes_le]}
+        attrs = {'objectGUID': [uuid.UUID(int=1001).bytes_le], 'sAMAccountName': ['alice']}
         if scope == 0:
             attrs.update(objectSid=[sid(21, 1, 2, 3, 1001)], objectClass=['top', 'person', 'user', 'computer'],
                          userAccountControl=['4096'], accountExpires=['0'], primaryGroupID=['513'],
@@ -206,6 +212,8 @@ class LDAPFixture:
             if self.mode == 'account-disabled': attrs['userAccountControl'] = ['4098']
             if self.mode == 'account-group-removed': attrs['tokenGroups'] = [sid(21, 1, 2, 3, 513)]
             if self.mode == 'account-incomplete': del attrs['tokenGroups']
+            if self.mode == 'account-user':
+                attrs.update(objectClass=['top', 'person', 'user'], userAccountControl=['512'])
         if self.mode != 'account-deleted':
             conn.sendall(entry(message_id, attrs, dn))
         conn.sendall(done(message_id))

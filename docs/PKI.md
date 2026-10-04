@@ -1,3 +1,5 @@
+0.10 kullanıcı enrollment ve HTTPS panel yönetimi: [STATUS_0_10_0](STATUS_0_10_0.md). Aşağıdaki 0.2 notları sunucu CSR/CA/CRL temelinin tarihsel kapsamını anlatır. Bilgisayar enrollment ve RADIUS servis apply bu sürümde de kapalıdır.
+
 # KANAME — yerel dahili CA denemesi
 
 0.2.0-dev.1 kendi root ve imzalayan CA'sını üretir. Ayrı CA sunucusuna bağlanmaz. Bu aşamada yalnız KANAME'nin kayıtlı DNS adı için RADIUS **sunucu** sertifikası imzalanır. Kullanıcı/bilgisayar enrollment, AD kimliğine bağlama, HTTPS/RADIUS çalışma zamanı ve otomatik güven dağıtımı henüz yoktur.

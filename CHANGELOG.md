@@ -1,5 +1,16 @@
 # Değişiklikler
 
+## 0.10.0-dev.1 — doğrulanmış kullanıcı enrollment ve sertifika yönetimi
+
+- Ubuntu HTTPS panelinden dahili CA, kullanıcı CSR üretimi/kayıt, sertifika/trust/CRL indirme ve iptal; mevcut sertifika/CA üzerine yazma yok.
+- KDC ticket principal ve aynı sealed LDAP oturumunun Who Am I kimliği doğrulanır; NetBIOS domain adı gerçek configuration crossRef üzerinden okunur. Caller GUID/SID/CN/SAN kimlik kaynağı değildir.
+- Kullanıcının kendi geçici AD parolası, canlı GUID/SID/tür hesabı kontrolü; kaydedilmiş connector parolası kullanıcı kimlik kanıtı olamaz.
+- CSR imzası/key/uzantı sınırı, tekrar CSR/public-key ret, kalıcı 30 saniye giriş aralığı, paralel kayıt kapısı, transaction ve actor audit.
+- Yeni clientAuth sertifikası ve registry bağı atomik; iptal signed CRL ve registry ret ile doğrulanır. Kullanıcı sertifikası domain-device politikasını aşamaz.
+- Endpoint üzerinde şifreli özel anahtar ve CSR oluşturan offline araç; anahtar sunucuya gönderilmez.
+- Yerel sudo lab updater: hash doğrulama, stop/backup, TLS health, ayar/admin/CA/secret-key koruma ve kod rollback. Sistemin DNS/firewall/servis tanımı veya RADIUS listener değişmez.
+- Bilgisayar enrollment, otomatik yenileme/GPO/trust dağıtımı, production RADIUS apply ve OVF sonraki aşamadadır.
+
 ## 0.9.0-dev.1 — canlı AD yetkilendirme temeli
 
 - Operatör Ubuntu 0.8 kurulumu, gerçek AD eşitlemesi ve kullanıcı/üyelik güncellemesini kabul etti.

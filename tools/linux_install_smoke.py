@@ -60,16 +60,44 @@ def main():
             import time
             for attempt in range(20):
                 try:
-                    status, _, _ = request('POST', '/api/auth/login', {'username': 'admin', 'password': 'fixture-password-changed'})
+                    status, actor, cookie = request('POST', '/api/auth/login', {'username': 'admin', 'password': 'fixture-password-changed'})
                     if status == 200: break
                 except OSError: time.sleep(0.5)
             else: raise AssertionError('Restart lost the edited admin password or service health')
+            headers = {'Cookie': cookie.split(';',1)[0], 'X-Kaname-CSRF': actor['csrf']}
+            status, ca, _ = request('POST','/api/pki/initialize',
+                {'ca_password':'fixture-ca-upgrade-passphrase', 'confirm':'fixture-ca-upgrade-passphrase'},headers)
+            assert status == 200
+            subprocess.run(['/usr/bin/python3',str(stage/'tools/linux_update.py'),
+                '--source-digest',prepared['source_digest']],check=True,timeout=120)
+            status, actor, cookie = request('POST','/api/auth/login',{'username':'admin','password':'fixture-password-changed'})
+            assert status == 200
+            status, updated, _ = request('GET','/api/state',extra={'Cookie':cookie.split(';',1)[0]})
+            assert status == 200 and updated['pki_public']['root']['fingerprint_sha256'] == ca['root']['fingerprint_sha256']
+            # Deliberate post-swap health failure must restore the exact prior
+            # source directory and keep state/CA/admin credentials intact.
+            from unittest.mock import patch
+            from . import linux_update
+            previous_inode=Path('/opt/kaname-lab/source').stat().st_ino
+            with patch('tools.linux_update.health',return_value=False), patch('tools.linux_update.time.sleep',return_value=None):
+                try: linux_update.update(stage,prepared['source_digest'])
+                except ValueError: pass
+                else: raise AssertionError('Injected upgrade failure did not reject')
+            assert Path('/opt/kaname-lab/source').stat().st_ino == previous_inode
+            for attempt in range(20):
+                try:
+                    status, _, _=request('POST','/api/auth/login',{'username':'admin','password':'fixture-password-changed'})
+                    if status==200:break
+                except OSError:time.sleep(0.5)
+            else:raise AssertionError('Code rollback failed to restore the prior panel')
             user = subprocess.check_output(['systemctl', 'show', 'kaname-lab.service', '--property=User', '--value'], text=True).strip()
             assert user == 'kaname-lab'
             for binary in ('kinit',):
                 assert Path('/usr/bin/' + binary).is_file()
             print(json.dumps({'installation_fixture': 'passed', 'tls_verified': True, 'non_root_service': True,
                 'changed_password_survives_restart': True, 'real_ad_called': False, 'radius_started': False}))
+            print(json.dumps({'upgrade_fixture':'passed', 'existing_ca_preserved':True,'changed_password_preserved':True,
+                             'state_backup_created':True,'rollback_after_health_failure':True,'real_ad_called':False,'radius_started':False}))
     except Exception:
         subprocess.run(['journalctl', '-u', 'kaname-lab.service', '-n', '40', '--no-pager'], check=False)
         raise
