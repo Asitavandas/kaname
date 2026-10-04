@@ -101,7 +101,9 @@ class NativeLinuxLDAPTests(unittest.TestCase):
         native = ldap.initialize('ldap://dc01.example.invalid:389')
         native.set_option(ldap.OPT_X_SASL_NOCANON, 1)
         native.set_option(ldap.OPT_X_SASL_SECPROPS, 'minssf=56,maxssf=256,noplain,noanonymous')
-        self.assertEqual(1, native.get_option(ldap.OPT_X_SASL_NOCANON))
+        self.assertTrue(native.get_option(ldap.OPT_X_SASL_NOCANON))
+        native.set_option(ldap.OPT_X_SASL_NOCANON, 0)
+        self.assertFalse(native.get_option(ldap.OPT_X_SASL_NOCANON))
         self.assertGreaterEqual(native.get_option(ldap.OPT_X_SASL_SSF_MIN), 56)
 
     def fixture_reader(self, mode):
