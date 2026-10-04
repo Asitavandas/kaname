@@ -2,7 +2,9 @@
 
 Bağımsız Active Directory tabanlı kablolu/kablosuz 802.1X erişim yönetimi.
 
-**Kaynak geliştirme sürümü: 0.10.0-dev.1 — doğrulanmış AD kullanıcı sertifikaları ve panelden sertifika yönetimi.**
+**Kaynak geliştirme sürümü: 0.10.1-dev.1 — kompakt bakır/krem panel.**
+
+Arayüz yenilendi: #F5EFEB arka plan, #2B2B2B sol menü ve #C88565 menü yazıları/ikonları. Türkçe gezinme, genel bakış, menü araması, sertifika sekmeleri ve kapatıldığında parolaları/CSR alanını temizleyen sağ form paneli bulunur. API ve AD/politika/CA davranışı korunur. Yalnız PEM CSR dosyası forma alınır; özel anahtar dosyası reddedilir. [Tema kapsamı ve doğrulama](docs/PANEL_0_10_1.md).
 Ubuntu geliştirme hedefidir. Mevcut politika, VLAN, RADIUS istemci ve AD eşitleme ayarları korunur. Privileged HTTPS kayıt akışı, imzalı endpoint CSR'sini kullanıcının kendi Kerberos kimliği, güvenli LDAP Who Am I ve canlı GUID/tokenGroups sorgusuyla doğrular; sertifika ve değişmez AD bağı aynı transaction'da kaydedilir. Panelden CA oluşturma, kullanıcı sertifikası üretme/indirme, açık trust/CRL indirme ve iptal mümkündür. Endpoint anahtarı panele gönderilmez. Kullanıcı sertifikası domain bilgisayarı kanıtı değildir; mevcut require_domain_device kuralları kullanıcı sertifikasını reddeder.
 
 Çalışan Ubuntu paneli yerel doğrulanmış güncelleme uygulanana kadar 0.8 olarak kalır; Windows kurulumu korunur ve otomatik Windows sunucu testleri kapalıdır. Müşteri ağında RADIUS/accounting, bilgisayar enrollment, otomatik trust/GPO dağıtımı ve açılabilir OVF henüz etkin değildir. [0.10 kullanım ve kabul sınırları](docs/STATUS_0_10_0.md).

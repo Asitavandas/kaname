@@ -1,3 +1,10 @@
+## 0.10.1-dev.1 — 2026-10-05
+
+- Kullanıcı onaylı kompakt bakır/krem tema ve Türkçe gezinme.
+- Genel bakış, menüde arama, sertifika sekmeleri ve geçici form paneli.
+- PEM CSR seçimi, private key dosyası reddi ve form kapatırken sırların temizlenmesi.
+- Aynı API/AD/politika/CA sınırları; müşteri AD sertifika testi ertelendi.
+
 # Değişiklikler
 
 ## 0.10.0-dev.1 — doğrulanmış kullanıcı enrollment ve sertifika yönetimi

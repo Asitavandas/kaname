@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
     paths: ['kaname/**', 'tools/ui_smoke.cjs', 'tests/test_directory.py', '.github/workflows/ui.yml']
+  pull_request:
+    paths: ['kaname/**', 'tools/ui_smoke.cjs', '.github/workflows/ui.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -25,3 +27,12 @@ jobs:
         run: node tools/ui_smoke.cjs
         env:
           KANAME_PYTHON: python
+          KANAME_UI_ARTIFACTS: ui-artifacts
+      - name: Upload disposable-fixture panel screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: kaname-copper-panel
+          path: ui-artifacts
+          if-no-files-found: ignore
+          retention-days: 7
