@@ -29,6 +29,8 @@ Kullanıcı sertifikası bir domain bilgisayarının kanıtı değildir. require
 
 Updater Ubuntu 24.04/kaname-lab mevcut layout'uyla sınırlıdır. Manifest doğrulanır ve root-owned snapshot kopyalanır; dependency import önce non-root servis kimliğiyle kontrol edilir. Çalışan servis durdurulur; private state/settings ve eski source root-only backup altına alınır. Kod değiştirilir, aynı sertifika ile doğrulanan HTTPS health ve config/admin/profile/CA keys/secret-store key digest koruması kontrol edilir. Başarısız health durumunda eski source yeniden başlatılır. Eski DB üzerine restore yaparak yeni kullanıcı/AD değişiklikleri silinmez; additive schema eski kodla uyumludur. Backup müşteri secrets içerir ve root-only korunmalıdır.
 
+Native kurulum testi root-owned fakat 777 izinli eski __pycache__ dizinlerini ortaya çıkardı. Kaynak .py dosyalarının güvenlik şartı gevşetilmez: old bytecode root-only backup/bytecode altına, içeriği çalıştırılmadan/symlink'leri takip edilmeden taşınır. Rollback source bu güvenilmeyen cache'i yeniden yükleyemez. Yeni bootstrap komutları -B ile bytecode yazmaz; unit'teki mevcut PYTHONDONTWRITEBYTECODE korunur. Root update launcher yalnız stdlib kullanır, mutable runner helper modülünü root olarak import etmez. Eşzamanlı upgrade root-only dosya kilidiyle reddedilir.
+
 Native LDAP tests gerçek OpenLDAP BER/Who Am I/BASE tokenGroups parser'ını loopback anonymous fixture'da test eder; bu müşteri Kerberos'u değildir. Unit/TLS tests injection sadece disposable fixtures kullanır. Gerçek AD self-auth/Who Am I kabulü kullanıcı tarafından yapılana kadar pending'dir. Loopback RADIUS fixture'i önceki gerçek sertifika/TLS/policy testlerini korur; customer user enrollment veya production network service kabulü ilan edilmez.
 
 ## Referanslar

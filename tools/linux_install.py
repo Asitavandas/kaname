@@ -208,9 +208,9 @@ def install(args):
         (SETTINGS / 'hosts.before').chmod(0o600)
         # Keep the existing inode and permissions, including mounted /etc/hosts.
         host_path.write_text(next_hosts)
-    checked(['/usr/sbin/runuser', '-u', ACCOUNT, '--', python, '-m', 'tools.linux_initialize',
+    checked(['/usr/sbin/runuser', '-u', ACCOUNT, '--', python, '-B', '-m', 'tools.linux_initialize',
              '--state-dir', str(STATE), '--domain', domain, '--dc-ip', dc, '--name', name], cwd=PRODUCT / 'source')
-    certificate = checked([python, '-m', 'tools.linux_initialize', '--state-dir', str(STATE),
+    certificate = checked([python, '-B', '-m', 'tools.linux_initialize', '--state-dir', str(STATE),
                             '--domain', domain, '--dc-ip', dc, '--name', name,
                             '--certificate-dir', str(SETTINGS), '--listen', listen], cwd=PRODUCT / 'source', capture_output=True, text=True)
     fingerprint = json.loads(certificate.stdout)['certificate_sha256']

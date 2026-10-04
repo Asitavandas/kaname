@@ -12,6 +12,7 @@ import re
 import shutil
 import sqlite3
 import ssl
+import stat
 import subprocess
 import sys
 import tempfile
@@ -61,14 +62,45 @@ def verified_files(source, expected):
     return result
 
 
-def safe_tree(root, *, owner=None):
+def safe_tree(root, *, owner=None, quarantine_bytecode=False):
     if root.is_symlink() or not root.is_dir():
         raise ValueError('Unsafe installed directory')
-    for path in [root, *root.rglob('*')]:
+    paths = []
+    for directory, dirs, files in os.walk(root, followlinks=False):
+        paths.append(Path(directory))
+        for name in list(dirs):
+            child=Path(directory)/name
+            if quarantine_bytecode and name=='__pycache__':
+                if child.is_symlink() or not child.is_dir() or child.stat().st_uid != owner:
+                    raise ValueError('Untrusted top-level bytecode path')
+                # Contents are untrusted and are never executed. The entire
+                # directory is detached after service stop, before code swap.
+                dirs.remove(name)
+            elif child.is_symlink():
+                raise ValueError('Unsafe installed path')
+        paths.extend(Path(directory)/name for name in files)
+    for path in paths:
         if path.is_symlink() or (not path.is_dir() and not path.is_file()):
             raise ValueError('Unsafe installed path')
         if owner is not None and (path.stat().st_uid != owner or path.stat().st_mode & 0o022):
             raise ValueError('Installed code must be root owned and not writable by others')
+
+
+def quarantine_caches(source, backup, *, owner=0):
+    count=0
+    for directory, dirs, _ in os.walk(source, followlinks=False):
+        for name in list(dirs):
+            if name != '__pycache__':continue
+            path=Path(directory)/name
+            if path.is_symlink() or path.stat().st_uid != owner:
+                raise ValueError('Untrusted bytecode directory')
+            target=backup/'bytecode'/path.relative_to(source)
+            target.parent.mkdir(parents=True,exist_ok=True,mode=0o700)
+            os.rename(path,target)
+            # Detached artifacts remain root-only forensic backups, not imports.
+            target.chmod(0o700)
+            dirs.remove(name);count+=1
+    return count
 
 
 def control_digest(root):
@@ -126,7 +158,7 @@ def _update(source, digest):
     # A standard venv contains interpreter symlinks; validate mutable source
     # separately rather than rejecting legitimate system Python links.
     _PHASE = 'source_layout'
-    safe_tree(PRODUCT/'source', owner=0)
+    safe_tree(PRODUCT/'source', owner=0, quarantine_bytecode=True)
     _PHASE = 'settings_layout'
     safe_tree(SETTINGS)
     identity = pwd.getpwnam('kaname-lab')
@@ -163,7 +195,11 @@ def _update(source, digest):
             'import sys;sys.path.insert(0,sys.argv[1]);import kaname.enrollment;import kaname.server',str(candidate),cwd=PRODUCT)
         _PHASE = 'backup_prepare'
         backup = PRODUCT / 'backups' / ('upgrade-' + uuid.uuid4().hex)
-        backup.parent.mkdir(mode=0o700, exist_ok=True); backup.mkdir(mode=0o700)
+        backup.parent.mkdir(mode=0o700, exist_ok=True)
+        parent=backup.parent
+        if parent.is_symlink() or not parent.is_dir() or parent.stat().st_uid != 0 or parent.stat().st_mode & 0o077:
+            raise ValueError('Private root-owned backup directory required')
+        backup.mkdir(mode=0o700)
         _PHASE = 'service_stop'
         command('systemctl','stop','kaname-lab.service')
         swapped = False
@@ -175,7 +211,9 @@ def _update(source, digest):
             shutil.copy2(UNIT, backup/'kaname-lab.service')
             _PHASE = 'code_swap'
             os.rename(PRODUCT/'source',backup/'source')
-            try: os.rename(candidate, PRODUCT/'source')
+            try:
+                bytecode_count=quarantine_caches(backup/'source',backup)
+                os.rename(candidate, PRODUCT/'source')
             except Exception:
                 os.rename(backup/'source',PRODUCT/'source'); raise
             swapped = True
@@ -202,7 +240,7 @@ def _update(source, digest):
             raise
     return {'updated': True, 'version':version, 'https_verified':True, 'backup_created':True,
             'configuration_preserved':True, 'administrators_preserved':True,
-            'radius_started':False, 'windows_changed':False}
+            'bytecode_directories_quarantined':bytecode_count,'radius_started':False, 'windows_changed':False}
 
 
 def update(source, digest):
@@ -211,8 +249,8 @@ def update(source, digest):
         raise ValueError('Local sudo required')
     descriptor = os.open('/run/kaname-lab-update.lock', os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     with os.fdopen(descriptor, 'r+') as lock:
-        stat = os.fstat(lock.fileno())
-        if stat.st_uid != 0 or stat.st_nlink != 1 or stat.st_mode & 0o077:
+        identity = os.fstat(lock.fileno())
+        if not stat.S_ISREG(identity.st_mode) or identity.st_uid != 0 or identity.st_nlink != 1 or identity.st_mode & 0o077:
             raise ValueError('Private root-owned upgrade lock required')
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         return _update(source, digest)

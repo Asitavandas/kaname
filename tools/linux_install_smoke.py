@@ -68,14 +68,14 @@ def main():
             status, ca, _ = request('POST','/api/pki/initialize',
                 {'ca_password':'fixture-ca-upgrade-passphrase', 'confirm':'fixture-ca-upgrade-passphrase'},headers)
             assert status == 200
-            # Metadata of this disposable CI fixture only, never customer state.
-            source_root=Path('/opt/kaname-lab/source')
-            violations=[{'path':p.relative_to(source_root).as_posix(),'uid':p.stat().st_uid,
-                'mode':oct(p.stat().st_mode & 0o777),'symlink':p.is_symlink()} for p in [source_root,*source_root.rglob('*')]
-                if p.is_symlink() or p.stat().st_uid != 0 or p.stat().st_mode & 0o022]
-            print(json.dumps({'source_integrity_fixture':violations}),flush=True)
+            # Reproduce legacy cache permissions without executing its contents.
+            cache=Path('/opt/kaname-lab/source/kaname/__pycache__')
+            cache.mkdir(exist_ok=True);cache.chmod(0o777)
+            (cache/'fixture-untrusted.pyc').write_bytes(b'never execute fixture cache')
             subprocess.run(['/usr/bin/python3',str(stage/'tools/linux_update.py'),
                 '--source-digest',prepared['source_digest']],check=True,timeout=120)
+            assert not cache.exists()
+            assert list(Path('/opt/kaname-lab/backups').glob('upgrade-*/bytecode/kaname/__pycache__/fixture-untrusted.pyc'))
             status, actor, cookie = request('POST','/api/auth/login',{'username':'admin','password':'fixture-password-changed'})
             assert status == 200
             status, updated, _ = request('GET','/api/state',extra={'Cookie':cookie.split(';',1)[0]})
@@ -103,7 +103,7 @@ def main():
             print(json.dumps({'installation_fixture': 'passed', 'tls_verified': True, 'non_root_service': True,
                 'changed_password_survives_restart': True, 'real_ad_called': False, 'radius_started': False}))
             print(json.dumps({'upgrade_fixture':'passed', 'existing_ca_preserved':True,'changed_password_preserved':True,
-                             'state_backup_created':True,'rollback_after_health_failure':True,'real_ad_called':False,'radius_started':False}))
+                             'state_backup_created':True,'legacy_bytecode_quarantined':True,'rollback_after_health_failure':True,'real_ad_called':False,'radius_started':False}))
     except Exception:
         subprocess.run(['journalctl', '-u', 'kaname-lab.service', '-n', '40', '--no-pager'], check=False)
         raise
