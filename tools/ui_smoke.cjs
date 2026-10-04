@@ -28,20 +28,35 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     const errors=[];
     page.on('pageerror',err=>{errors.push(err.message);console.log('KANAME_UI_SCRIPT_ERROR '+err.message);});
     page.on('response',async response=>{if(response.status()>=400&&new URL(response.url()).pathname.startsWith('/api/')){let code='';try{code=(await response.json()).error;}catch(_){}console.log('KANAME_UI_HTTP '+new URL(response.url()).pathname+' '+response.status()+' '+code);}});
-    async function navigate(view){console.log('KANAME_UI_STAGE '+view);const button=page.locator('[data-view="'+view+'"]');const group=button.locator('xpath=ancestor::details');if(!await group.evaluate(x=>x.open))await group.locator('summary').click();await button.click();}
+    async function navigate(view){console.log('KANAME_UI_STAGE '+view);await page.locator('[data-view="'+view+'"] ').click();}
     await page.goto(`http://127.0.0.1:${port}`);
     await page.locator('#login-user').fill('admin');
     await page.locator('#login-password').fill('Kaname');
     await page.locator('#unlock').click();
     await page.locator('#workspace').waitFor({state:'visible'});
     const colors=await page.evaluate(()=>({background:getComputedStyle(document.body).backgroundColor,sidebar:getComputedStyle(document.querySelector('aside')).backgroundColor,nav:getComputedStyle(document.querySelector('[data-view="overview"]')).color}));
-    assert.deepEqual(colors,{background:'rgb(245, 239, 235)',sidebar:'rgb(43, 43, 43)',nav:'rgb(200, 133, 101)'});
-    await page.locator('[data-nav-group="configuration"] > summary').click();
-    await page.locator('[data-nav-group="configuration"] > summary').click();
-    assert.equal(await page.locator('[data-view="setup"]').isVisible(),false);
-    await page.locator('[data-nav-group="authentication"] > summary').click();
+    assert.deepEqual(colors,{background:'rgb(244, 246, 251)',sidebar:'rgb(255, 255, 255)',nav:'rgb(34, 91, 210)'});
+    assert.deepEqual(await page.locator('[data-nav-section]').evaluateAll(groups=>groups.map(g=>g.dataset.navSection)),['Hazırla','Kullanıcılar','Erişim','Kontrol et','Yönetim']);
+    assert.equal(await page.locator('[data-view="setup"]').isVisible(),true);
     assert.equal(await page.locator('[data-view="directory"]').isVisible(),true);
-    assert.equal(await page.locator('[data-nav-group="configuration"]').evaluate(x=>x.open),false);
+    assert.equal(await page.locator('[data-view="overview"]').getAttribute('aria-current'),'page');
+    await page.locator('#page-search').fill('Kullanıcılar ve gruplar');await page.locator('#page-go').click();
+    await page.locator('#identities').waitFor({state:'visible'});
+    assert.equal(await page.locator('[data-view="identities"]').getAttribute('aria-current'),'page');
+    await navigate('overview');
+    if(process.env.KANAME_UI_ARTIFACTS){
+      fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-empty.png'),fullPage:true,animations:'disabled'});
+      await page.setViewportSize({width:390,height:844});
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
+      await page.locator('#nav-toggle').click();
+      assert.equal(await page.locator('#nav-toggle').getAttribute('aria-expanded'),'true');
+      await page.locator('[data-view="directory"]').click();
+      assert.equal(await page.locator('#nav-toggle').getAttribute('aria-expanded'),'false');
+      await page.locator('#nav-toggle').click();await page.keyboard.press('Escape');
+      assert.equal(await page.locator('#nav-scrim').isVisible(),false);
+      await page.setViewportSize({width:1440,height:1000});await navigate('overview');
+    }
     await navigate('setup');
     await page.locator('#fqdn').fill('kaname.kurum.example');
     await page.locator('#next').click();
@@ -126,13 +141,13 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     page.off('request',countEnrollment);
     if(process.env.KANAME_UI_ARTIFACTS){
       fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});
-      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'certificates-desktop.png'),fullPage:true});
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'certificates-desktop.png'),fullPage:true,animations:'disabled'});
       await page.locator('#pki-new').click();
-      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'certificate-drawer.png'),fullPage:true});
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'certificate-drawer.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:390,height:844});
       const fits=await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth);
       assert.equal(fits,true,'Mobile page must not overflow horizontally');
-      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'certificates-mobile.png'),fullPage:true});
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'certificates-mobile.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:1440,height:1000});
       await page.locator('#pki-close').click();
     }
@@ -166,6 +181,29 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.match(await page.locator('#directory-groups-list').textContent(),/<script>alert\(1\)<\/script>/);
     assert.equal(await page.locator('#directory-groups-list script').count(),0);
     assert.ok(!fs.readFileSync(path.join(temp,'kaname.sqlite3')).includes(fixturePassword));
+    assert.equal(await page.locator('#identity-panel-users').isVisible(),true);
+    await page.locator('#identity-tab-users').focus();await page.keyboard.press('ArrowRight');
+    assert.equal(await page.locator('#identity-panel-groups').isVisible(),true);
+    await page.keyboard.press('Home');assert.equal(await page.locator('#identity-panel-users').isVisible(),true);
+    if(process.env.KANAME_UI_ARTIFACTS){
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'users-desktop.png'),fullPage:true,animations:'disabled'});
+      await page.setViewportSize({width:390,height:844});
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'users-mobile.png'),fullPage:true,animations:'disabled'});
+      await page.setViewportSize({width:1440,height:1000});
+      await navigate('overview');
+      assert.equal(await page.locator('#overview-users').textContent(),'2');
+      assert.equal(await page.locator('#overview-groups').textContent(),'4');
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-desktop.png'),fullPage:true,animations:'disabled'});
+      await page.setViewportSize({width:390,height:844});
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-mobile.png'),fullPage:true,animations:'disabled'});
+      await page.setViewportSize({width:1440,height:1000});await navigate('identities');
+    }
+
+    await page.locator('#directory-users-query').fill('Alice');await page.locator('#directory-users-search').click();
+    await page.waitForFunction(()=>document.querySelectorAll('#directory-users-list .policy-row').length===1);
+    await page.locator('#directory-users-query').fill('');await page.locator('#directory-users-search').click();
+    await page.waitForFunction(()=>document.querySelectorAll('#directory-users-list .policy-row').length===2);
     await page.locator('#directory-users-list [data-object-id="00000000-0000-0000-0000-000000000001"]').click();
     await page.waitForFunction(()=>document.querySelector('#detail-title').textContent.includes('Alice')&&document.querySelector('#detail-list').textContent.includes('Parent'));
     assert.match(await page.locator('#detail-list').textContent(),/Primary group/);
@@ -175,6 +213,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.match(await page.locator('#detail-list').textContent(),/Alice/);
     assert.equal(await page.locator('#detail-list .policy-row').count(),2);
     await page.locator('#detail-close').click();
+    await page.locator('#identity-tab-groups').click();
     await page.locator('#directory-groups-list [data-object-id="00000000-0000-0000-0000-000000000006"]').click();
     await page.waitForFunction(()=>document.querySelector('#detail-title').textContent.includes('Parent')&&document.querySelector('#detail-list').textContent.includes('Alice'));
     assert.match(await page.locator('#detail-status').textContent(),/2 iç içe grup/);
@@ -185,11 +224,13 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#detail-close').click();
     const legacyDetail=async route=>{const response=await route.fetch();const value=await response.json();await route.fulfill({response,json:{...value,membership_available:false,items:[],total:0}});};
     await page.route('**/api/directory/detail?*',legacyDetail);
+    await page.locator('#identity-tab-users').click();
     await page.locator('#directory-users-list [data-object-id="00000000-0000-0000-0000-000000000001"]').click();
     await page.waitForFunction(()=>document.querySelector('#detail-status').textContent.includes('bu eski katalogda'));
     assert.equal(await page.locator('#detail-list').textContent(),'');
     await page.locator('#detail-close').click();
     await page.unroute('**/api/directory/detail?*',legacyDetail);
+    await page.locator('#identity-tab-groups').click();
     const distribution=page.locator('#directory-groups-list .policy-row').filter({hasText:'Department'});
     assert.equal(await distribution.getByText('Politikada kullan',{exact:true}).count(),0);
     await page.locator('#directory-groups-list .policy-row').filter({hasText:'<script>alert(1)</script>'}).getByText('Politikada kullan',{exact:true}).click();
@@ -338,7 +379,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#admin-profiles-list .policy-row').filter({hasText:'RenamedOperator'}).getByText('Sil',{exact:true}).click();
     await page.waitForFunction(()=>!document.querySelector('#admin-profiles-list').textContent.includes('RenamedOperator'));
     assert.ok(!fs.readFileSync(path.join(temp,'administrators.sqlite3')).includes('BrowserUserPassword42'));
-    if(process.env.KANAME_SCREENSHOT)await page.screenshot({path:process.env.KANAME_SCREENSHOT,fullPage:true});
+    if(process.env.KANAME_SCREENSHOT)await page.screenshot({path:process.env.KANAME_SCREENSHOT,fullPage:true,animations:'disabled'});
     assert.deepEqual(errors,[]);
     console.log('PASS: username/password login, session reload, profile/user CRUD, ReadOnly server rejection, custom tab and state restrictions, draft, policy, simulation, audit, accordion navigation, separated profiles/AD/catalog screens, reciprocal direct/primary/nested membership details, directory import, encrypted saved AD credentials, named VLAN inventory, blocked conflict save and recovery, configurable RADIUS ports, encrypted shared secrets and server-side reveal restriction, group-name simulation. No real AD was contacted.');
   } finally {
