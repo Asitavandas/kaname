@@ -70,6 +70,12 @@ class DirectorySync:
         settings = self.server.operations.directory()
         if not settings['credentials_saved']:
             return
+        health = self.server.operations.health()
+        if health.get('state') == 'error' and health.get('error') == 'AD_CREDENTIALS_REJECTED':
+            # Prevent periodic stale-password attempts from locking an AD
+            # account. Saving credentials resets health to pending; a manual
+            # successful read also clears the persisted pause.
+            return
         # No automatic LDAP call at installation; user must save connection settings.
         key = tuple(sorted(settings.items()))
         if key != self.settings_key:

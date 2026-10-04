@@ -1,0 +1,49 @@
+name: KANAME Linux source preparation
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['kaname/**', 'tools/linux_*.py', 'tests/test_linux*.py', '.github/workflows/linux-stage.yml']
+permissions:
+  contents: read
+concurrency:
+  group: kaname-linux-preparation
+  cancel-in-progress: false
+jobs:
+  native-adapter-checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Native OpenLDAP parser dependencies on disposable CI host
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y python3-ldap python3-cryptography
+      - name: Native LDAP wire and mandatory protection tests without customer AD
+        run: /usr/bin/python3 -m unittest tests.test_linux_directory -v
+  stage-for-local-install:
+    needs: native-adapter-checks
+    if: github.repository == 'Asitavandas/kaname' && github.event.repository.private == true
+    runs-on: [self-hosted, Linux, kaname-linux]
+    timeout-minutes: 10
+    env:
+      ACTUAL_RUNNER: ${{ runner.name }}
+    steps:
+      - name: Verify runner name
+        run: test "$ACTUAL_RUNNER" = kaname-linux01
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Isolated fixture dependency and regression tests
+        run: |
+          python -m venv "$RUNNER_TEMP/kaname-fixture-venv"
+          "$RUNNER_TEMP/kaname-fixture-venv/bin/python" -m pip install --only-binary=:all: cryptography==46.0.0
+          "$RUNNER_TEMP/kaname-fixture-venv/bin/python" -m unittest discover -s tests -t . -q
+      - name: Prepare tested generic source in runner home (no sudo or AD calls)
+        run: |
+          "$RUNNER_TEMP/kaname-fixture-venv/bin/python" -m tools.linux_prepare --destination "$HOME/kaname-stage-${GITHUB_SHA:0:12}"

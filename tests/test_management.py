@@ -195,6 +195,31 @@ class SyncAndHTTPTests(unittest.TestCase):
     def close(self):
         self.server.shutdown(); self.server.server_close(); self.thread.join()
 
+    def test_bad_credentials_pause_periodic_attempts_across_restart_until_saved(self):
+        self.server.directory_sync.stop.set()
+        calls = []
+        def rejected(value, config):
+            calls.append(1)
+            raise DirectoryError('AD_CREDENTIALS_REJECTED')
+        self.server.directory_health_reader = rejected
+        scheduler = self.server.directory_sync
+        scheduler.settings_key = tuple(sorted(self.server.operations.directory().items()))
+        scheduler.next_sync = float('inf')
+        scheduler.next_check = -1
+        with self.assertRaises(DirectoryError): scheduler.tick()
+        self.assertEqual(1, len(calls))
+        for _ in range(5):
+            scheduler.next_check = -1; self.server.directory_next_attempt = 0
+            scheduler.tick()
+        self.assertEqual(1, len(calls))
+        self.assertEqual('AD_CREDENTIALS_REJECTED', Operations(Store(self.temp.name)).health()['error'])
+        revision = self.server.store.snapshot()['revision']
+        self.server.operations.save_directory(revision, settings())
+        self.server.directory_health_reader = lambda value, config: calls.append(1) or {'probe': 'ok'}
+        scheduler.tick()
+        self.assertEqual(2, len(calls))
+        self.assertEqual('connected', self.server.operations.health()['state'])
+
     def call(self, method, path, value=None, token=True):
         h = {'Content-Type': 'application/json', 'Origin': f'http://127.0.0.1:{self.server.server_port}'}
         if token: h['Authorization'] = 'Bearer ' + self.server.token

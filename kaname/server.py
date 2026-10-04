@@ -1,9 +1,11 @@
 """Local-only development panel. Not the production appliance HTTP stack."""
 import hmac
+import ipaddress
 import json
 import os
 import secrets
 import sqlite3
+import ssl
 import threading
 import time
 from dataclasses import asdict
@@ -13,7 +15,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from . import VERSION
-from .models import (ValidationError, address, array, boolean, enum, keys,
+from .models import (ValidationError, address, array, boolean, dns_name, enum, keys,
                      strict_json, text)
 from .policy import VerifiedIdentity, evaluate, radius_vlan_attributes, policy_conflicts, PolicyConflictError
 from .store import ConflictError, Store
@@ -49,18 +51,44 @@ def development_token(root):
 class DevelopmentServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, root, port=8765, token=None):
+    def __init__(self, root, port=8765, token=None, *, listen='127.0.0.1', tls_cert=None, tls_key=None, public_name=None):
+        endpoint = ipaddress.ip_address(listen)
+        if endpoint.version != 4 or endpoint.is_unspecified or endpoint.is_multicast:
+            raise ValueError('An explicit unicast IPv4 listen address is required')
+        if bool(tls_cert) != bool(tls_key) or (not endpoint.is_loopback and not tls_cert):
+            raise ValueError('TLS certificate and key are required for LAN access')
+        if public_name:
+            public_name = dns_name(public_name)
+            if not tls_cert:
+                raise ValueError('Public name requires TLS')
+        self.tls = bool(tls_cert)
+        context = None
+        if self.tls:
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            context.minimum_version = ssl.TLSVersion.TLSv1_2
+            context.load_cert_chain(tls_cert, tls_key)
         self.store = Store(root)
         self.token = token or development_token(self.store.root)
         self.admin = AdminStore(self.store)
         self.directory_lock = threading.Lock()
         self.directory_next_attempt = 0.0
-        self.directory_reader = read_windows_directory
-        self.directory_health_reader = check_windows_directory
+        if os.name == 'nt':
+            self.directory_reader = read_windows_directory
+            self.directory_health_reader = check_windows_directory
+        else:
+            from .directory_linux import read_linux_directory, check_linux_directory
+            self.directory_reader = read_linux_directory
+            self.directory_health_reader = check_linux_directory
         self.operations = Operations(self.store)
-        super().__init__(('127.0.0.1', port), Handler)
-        self.origins = {f'http://127.0.0.1:{self.server_port}', f'http://localhost:{self.server_port}'}
+        super().__init__((str(endpoint), port), Handler)
+        if context:
+            self.socket = context.wrap_socket(self.socket, server_side=True, do_handshake_on_connect=False)
+        scheme = 'https' if self.tls else 'http'
         self.hosts = {f'127.0.0.1:{self.server_port}', f'localhost:{self.server_port}'}
+        self.hosts.add(f'{endpoint}:{self.server_port}')
+        if public_name:
+            self.hosts.add(f'{public_name}:{self.server_port}')
+        self.origins = {scheme + '://' + host for host in self.hosts}
         self.directory_sync = DirectorySync(self)
 
     def server_close(self):
@@ -125,6 +153,9 @@ class Handler(BaseHTTPRequestHandler):
         authorization = self.headers.get('Authorization', '')
         token = authorization.removeprefix('Bearer ')
         if authorization.startswith('Bearer ') and hmac.compare_digest(token.encode('utf-8'), self.server.token.encode('ascii')):
+            if not ipaddress.ip_address(self.client_address[0]).is_loopback:
+                self.respond(403, {'error': 'MAINTENANCE_LOOPBACK_REQUIRED'})
+                return False
             # Existing private loopback maintenance key remains usable by CLI
             # checks/updater; browser login never accepts or displays it.
             self.actor = {'id': 'maintenance', 'username': 'maintenance', 'profile_id': '', 'profile_name': 'Maintenance', 'permissions': {k: 'write' for k in RESOURCES}, 'maintenance': True}
@@ -150,7 +181,7 @@ class Handler(BaseHTTPRequestHandler):
         return True
 
     def session_cookie(self, value='', remove=False):
-        return f'{COOKIE}={value}; Path=/; HttpOnly; SameSite=Strict; Max-Age={0 if remove else TTL}'
+        return f'{COOKIE}={value}; Path=/; HttpOnly; SameSite=Strict; Max-Age={0 if remove else TTL}' + ('; Secure' if self.server.tls else '')
 
     def read_body(self):
         if self.headers.get('Transfer-Encoding') or self.headers.get_content_type() != 'application/json':

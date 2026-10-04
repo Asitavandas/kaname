@@ -1,7 +1,10 @@
 """Revision-controlled SQLite configuration with atomic append-only audit."""
 import json
+import importlib.util
 import os
+import shutil
 import sqlite3
+import sys
 from datetime import datetime, timezone
 from contextlib import contextmanager
 from pathlib import Path
@@ -136,7 +139,9 @@ class Store:
 
     def directory_status(self):
         catalog = self.directory_catalog()
+        linux_reader = sys.platform == 'linux' and importlib.util.find_spec('ldap') is not None and shutil.which('kinit') is not None
         result = {'catalog_available': catalog is not None, 'windows_reader_available': os.name == 'nt',
+                  'reader_available': os.name == 'nt' or linux_reader,
                   'runtime_auth_ready': False, 'automatic_sync_enabled': False,
                   'membership_available': catalog is not None and catalog.get('membership_schema') == 1}
         if catalog:

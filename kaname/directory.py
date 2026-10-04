@@ -13,7 +13,7 @@ from .models import ValidationError, boolean, dns_name, integer, keys, text
 TRANSPORT = 'kerberos-sign-seal'
 ERRORS = {'AD_BIND_FAILED', 'AD_CREDENTIALS_REJECTED', 'AD_DOMAIN_MISMATCH',
           'AD_DIRECTORY_LIMIT', 'AD_SEARCH_FAILED', 'AD_PROTOCOL_UNAVAILABLE',
-          'AD_PROTECTION_REQUIRED', 'AD_INPUT_INVALID'}
+          'AD_PROTECTION_REQUIRED', 'AD_INPUT_INVALID', 'AD_TIMEOUT', 'AD_INVALID_RESPONSE'}
 STAGES = {'input', 'bind', 'rootdse', 'serialize', 'groups_members', 'memberships'} | {kind + '_' + step for kind in ('users', 'groups', 'computers') for step in ('prepare', 'search', 'decode', 'page')}
 REASONS = {'UNKNOWN', 'LDAP_RESULT', 'ACCESS_DENIED', 'LDAP_CONNECTION', 'VALUE_CONVERSION', 'ATTRIBUTE_MISSING', 'BINARY_ATTRIBUTE_INVALID', 'PROPERTY_ACCESS', 'METHOD_BINDING', 'REFERRAL_RETURNED', 'MEMBERSHIP_RANGE_INVALID'}
 

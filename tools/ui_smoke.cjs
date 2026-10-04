@@ -13,7 +13,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
   const python = process.env.CODEX_PRIMARY_RUNTIME_PYTHON || process.env.KANAME_PYTHON || 'python3';
   // Port 0 is accepted by DevelopmentServer; production CLI intentionally rejects it.
   // Directory fixture is confined to this disposable test server; no real AD.
-  const child = spawn(python, ['-u', '-c', 'import sys; from kaname.server import DevelopmentServer; from tests.test_membership import membership_catalog as catalog; s=DevelopmentServer(sys.argv[1],0); s.directory_reader=lambda v,c:{**catalog(),"domain":c["ad_domain"],"dc_fqdn":v["dc_fqdn"]}; original=s.store.directory_status; s.store.directory_status=lambda:{**original(),"windows_reader_available":True}; print(s.server_port,flush=True); s.serve_forever()', temp], {cwd: root, stdio:['ignore','pipe','pipe']});
+  const child = spawn(python, ['-u', '-c', 'import sys; from kaname.server import DevelopmentServer; from tests.test_membership import membership_catalog as catalog; s=DevelopmentServer(sys.argv[1],0); s.directory_reader=lambda v,c:{**catalog(),"domain":c["ad_domain"],"dc_fqdn":v["dc_fqdn"]}; original=s.store.directory_status; s.store.directory_status=lambda:{**original(),"windows_reader_available":True,"reader_available":True}; print(s.server_port,flush=True); s.serve_forever()', temp], {cwd: root, stdio:['ignore','pipe','pipe']});
   let browser;
   try {
     const port = await new Promise((resolve,reject) => {

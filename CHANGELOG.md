@@ -1,5 +1,14 @@
 # Değişiklikler
 
+## 0.8.0-dev.1 — Ubuntu AD/HTTPS laboratuvarı
+
+- Linux kinit/GSSAPI okuyucusu, zorunlu SASL sealing, private kısa ömürlü ticket, sayfalı/OU kapsamlı katalog ve primary/nested üyelikler eklendi. Domain join veya AD yazma yok.
+- TLS olmayan LAN paneli reddedilir; HTTPS origin/host/CSRF, Secure cookie ve loopback bakım sınırı eklendi. Yerel HTTP geliştirme davranışı korunur.
+- Generic kaynaklar root kullanmadan runner üzerinde test/stage edilir; yerel sudo ilk kurulum aracı non-root systemd servisi ve bağımsız Ubuntu state hazırlayabilir. Gerçek domain/IP kaynak veya CI parametresine yazılmaz.
+- Hatalı AD kimlik bilgisinde otomatik denemeler durur; tekrar kaydetme/başarılı manuel okuma beklenir.
+- Windows 0.7 update yalnız manuel ve sabit yayın kaynağıyla çalışır; mevcut Windows state ve parolalar değiştirilmez.
+- Gerçek AD, sudo ilk kurulum, production RADIUS/accounting/enrollment ve açılabilir OVF henüz kabul edilmedi.
+
 ## 0.6.0-dev.1 — gerçek EAP-TLS/RADIUS protokol laboratuvarı
 
 - Native FreeRADIUS 3.2.10 ve eapol_test ile geçici loopback protokol testi eklendi; panelin simülasyon endpoint'i kullanılmaz.
