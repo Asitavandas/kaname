@@ -141,6 +141,9 @@ class LDAPFixture:
                             _, _, pos = parse(content, pos)
                         _, filter_data, _ = parse(content, pos)
                         self.search_records.append((base.decode(), int.from_bytes(search_scope, 'big')))
+                        if self.mode.startswith('account-'):
+                            self.account_response(conn, message_id, base.decode(), int.from_bytes(search_scope, 'big'))
+                            continue
                         if self.mode == 'scoped':
                             self.scoped_response(conn, message_id, base.decode(), filter_data)
                             continue
@@ -190,6 +193,22 @@ class LDAPFixture:
             pass
         except Exception as exc:
             self.errors.append(type(exc).__name__)
+
+    def account_response(self, conn, message_id, base, scope):
+        """BASE computed attributes for a synthetic live account; no Kerberos."""
+        dn = 'CN=fixture-1001,DC=fixture,DC=invalid'
+        attrs = {'objectGUID': [uuid.UUID(int=1001).bytes_le]}
+        if scope == 0:
+            attrs.update(objectSid=[sid(21, 1, 2, 3, 1001)], objectClass=['top', 'person', 'user', 'computer'],
+                         userAccountControl=['4096'], accountExpires=['0'], primaryGroupID=['513'],
+                         **{'msDS-User-Account-Control-Computed': ['0'],
+                            'tokenGroups': [sid(21, 1, 2, 3, 513), sid(21, 1, 2, 3, 1100)]})
+            if self.mode == 'account-disabled': attrs['userAccountControl'] = ['4098']
+            if self.mode == 'account-group-removed': attrs['tokenGroups'] = [sid(21, 1, 2, 3, 513)]
+            if self.mode == 'account-incomplete': del attrs['tokenGroups']
+        if self.mode != 'account-deleted':
+            conn.sendall(entry(message_id, attrs, dn))
+        conn.sendall(done(message_id))
 
     def scoped_response(self, conn, message_id, base, filter_data):
         domain = 'DC=fixture,DC=invalid'

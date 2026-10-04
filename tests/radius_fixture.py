@@ -9,6 +9,8 @@ from pathlib import Path
 
 from kaname.models import strict_json
 from kaname.policy import Decision
+from kaname.radius_registry import CertificateRegistry
+from kaname.store import Store
 from kaname.radius import (CertificateBinding, CertificateReference, CurrentDirectoryAccount,
                            DirectoryUnavailable, TLSAuthorization, freeradius_result)
 
@@ -58,7 +60,8 @@ def authorize(pairs, root):
                     row['security_group_sids'] = frozenset(row['security_group_sids'])
                     return CurrentDirectoryAccount(**row)
 
-            service = TLSAuthorization(data['policies'], registry=Registry(), directory=Directory())
+            registry = CertificateRegistry(Store(root / 'state')) if data.get('persistent_registry') is True else Registry()
+            service = TLSAuthorization(data['policies'], registry=registry, directory=Directory())
             decision = service.authorize(cert, nas_ip=data['nas_ip'], access_type=data['access_type'])
         reply, config = freeradius_result(decision)
         event = {'case': data['case'], 'action': decision.action, 'reason': decision.reason,

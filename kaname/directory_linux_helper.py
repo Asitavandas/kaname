@@ -6,9 +6,12 @@ import subprocess
 import sys
 import time
 import uuid
+from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .directory import DirectoryError, TRANSPORT, validate_catalog
+from .radius import CurrentDirectoryAccount, account_sid, object_id
 
 DOMAIN_SCOPE = '1.2.840.113556.1.4.1339'
 PAGED = '1.2.840.113556.1.4.319'
@@ -147,6 +150,68 @@ class Reader:
             result.append(record)
         return result
 
+    def account(self, domain, guid, *, now=None):
+        """Resolve immutable GUID, then BASE-read computed tokenGroups.
+
+        Missing or ranged tokenGroups are incomplete, never an empty group set.
+        This intentionally requires a DC able to compute transitive memberships.
+        """
+        object_id(guid)
+        base = ','.join('DC=' + x for x in domain.split('.'))
+        escaped = ''.join('\\' + format(x, '02x') for x in uuid.UUID(guid).bytes_le)
+        filter_value = '(&(objectGUID=' + escaped + ')(objectClass=user))'
+        rows, _ = self.search(base, self.ldap.SCOPE_SUBTREE, filter_value, ['objectGUID'])
+        if not rows:
+            return None
+        if len(rows) != 1 or not rows[0][0].casefold().endswith(',' + base.casefold()):
+            raise DirectoryError('AD_INVALID_RESPONSE')
+        dn = rows[0][0]
+        attributes = ['objectGUID', 'objectSid', 'objectClass', 'userAccountControl',
+                      'msDS-User-Account-Control-Computed', 'accountExpires', 'primaryGroupID', 'tokenGroups']
+        rows, _ = self.search(dn, self.ldap.SCOPE_BASE, filter_value, attributes)
+        if not rows:
+            return None  # Object deleted or changed between the two reads.
+        if len(rows) != 1 or rows[0][0].casefold() != dn.casefold():
+            raise DirectoryError('AD_INVALID_RESPONSE')
+        attrs = rows[0][1]
+        identifiers = attrs.get('objectguid', [])
+        sids = attrs.get('objectsid', [])
+        if len(identifiers) != 1 or identifiers[0] != uuid.UUID(guid).bytes_le or len(sids) != 1:
+            raise DirectoryError('AD_INVALID_RESPONSE')
+        classes = attrs.get('objectclass', [])
+        if not classes or any(type(x) is not bytes for x in classes) or b'user' not in {x.lower() for x in classes}:
+            raise DirectoryError('AD_INVALID_RESPONSE')
+        kind = 'computer' if b'computer' in {x.lower() for x in classes} else 'user'
+        sid = account_sid(sid_from_bytes(sids[0]))
+
+        def decimal(name, maximum):
+            value = attribute(attrs, name)
+            if not re.fullmatch(r'[0-9]{1,20}', value) or int(value) > maximum:
+                raise DirectoryError('AD_INVALID_RESPONSE')
+            return int(value)
+
+        flags = decimal('useraccountcontrol', 0xffffffff)
+        computed = decimal('msds-user-account-control-computed', 0xffffffff)
+        expires = decimal('accountexpires', 2**63 - 1)
+        primary = decimal('primarygroupid', 0xffffffff)
+        if (kind == 'user' and (not flags & 0x200 or flags & 0x3800)) or (kind == 'computer' and not flags & 0x3000):
+            raise DirectoryError('AD_INVALID_RESPONSE')
+        if any(x.startswith('tokengroups;') for x in attrs):
+            raise DirectoryError('AD_INVALID_RESPONSE')
+        tokens = attrs.get('tokengroups')
+        if type(tokens) is not list or not 1 <= len(tokens) <= 256:
+            raise DirectoryError('AD_INVALID_RESPONSE')
+        groups = frozenset(sid_from_bytes(x) for x in tokens)
+        if len(groups) != len(tokens) or sid.rsplit('-', 1)[0] + '-' + str(primary) not in groups:
+            raise DirectoryError('AD_INVALID_RESPONSE')
+        now = datetime.now(timezone.utc) if now is None else now
+        delta = now - datetime(1601, 1, 1, tzinfo=timezone.utc)
+        ticks = (delta.days * 86400 + delta.seconds) * 10_000_000 + delta.microseconds * 10
+        enabled = not flags & 2 and not computed & 0x10 and (expires in (0, 2**63 - 1) or expires > ticks)
+        result = asdict(CurrentDirectoryAccount(domain, guid, sid, kind, bool(enabled), groups))
+        result['security_group_sids'] = sorted(groups)
+        return result
+
     def catalog(self, domain, dc, search_base=''):
         domain_base = ','.join('DC=' + x for x in domain.split('.'))
         if not search_base:
@@ -264,7 +329,11 @@ def run(request):
             raise DirectoryError('AD_DOMAIN_MISMATCH')
         if request['probe']:
             return {'probe': 'ok', 'domain': request['domain'], 'dc_fqdn': request['dc_fqdn']}
-        return Reader(connection, ldap, (ValueLessRequestControl, SimplePagedResultsControl)).catalog(
+        reader = Reader(connection, ldap, (ValueLessRequestControl, SimplePagedResultsControl))
+        if request.get('object_guid') is not None:
+            return {'domain': request['domain'], 'dc_fqdn': request['dc_fqdn'],
+                    'account': reader.account(request['domain'], request['object_guid'])}
+        return reader.catalog(
             request['domain'], request['dc_fqdn'], request['search_base'])
     except ldap.INVALID_CREDENTIALS:
         raise DirectoryError('AD_CREDENTIALS_REJECTED') from None

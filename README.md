@@ -2,8 +2,8 @@
 
 Bağımsız Active Directory tabanlı kablolu/kablosuz 802.1X erişim yönetimi.
 
-**Geliştirme sürümü: 0.8.0-dev.1 — Ubuntu Kerberos AD okuyucusu ve HTTPS laboratuvar servis kurulumu.**
-Mevcut panel, politika ve dahili PKI temeli korunur. Windows'taki yerel panelden Kerberos signing/sealing ile kullanıcı, bilgisayar ve gruplar okunabilir; son okumadaki doğrudan, primary ve iç içe üyelikler incelenebilir. AD bağlantı parolası korumalı saklanır; filtreli ve periyodik eşitleme desteklenir. Yeni izole laboratuvar native FreeRADIUS/eapol_test ile gerçek TLS ve RADIUS paketlerini kullanır; AD kimlikleri test verisidir. Üretim RADIUS hizmeti, istemci enrollment veya açılabilir OVF bu sürümde yoktur. Paneldeki ağ/politika kayıtları taslaktır; kullanıcı ağında izin/ret kararı uygulanmaz. Linux GSSAPI okuyucusu ve non-root HTTPS lab servis kurulumu eklendi; gerçek müşteri AD ve kurulum kabulü bekliyor. Windows kurulu 0.7 paneli korunur.
+**Kaynak geliştirme sürümü: 0.9.0-dev.1 — canlı AD yetkilendirme ve sertifika bağ kayıt katmanı.**
+Mevcut panel, politika ve dahili PKI temeli korunur. Windows'taki yerel panelden Kerberos signing/sealing ile kullanıcı, bilgisayar ve gruplar okunabilir; son okumadaki doğrudan, primary ve iç içe üyelikler incelenebilir. AD bağlantı parolası korumalı saklanır; filtreli ve periyodik eşitleme desteklenir. Yeni izole laboratuvar native FreeRADIUS/eapol_test ile gerçek TLS ve RADIUS paketlerini kullanır; AD kimlikleri test verisidir. Üretim RADIUS hizmeti, istemci enrollment veya açılabilir OVF bu sürümde yoktur. Paneldeki ağ/politika kayıtları taslaktır; kullanıcı ağında izin/ret kararı uygulanmaz. Linux GSSAPI okuyucusu ve non-root HTTPS lab servis kurulumu eklendi; Ubuntu 0.8 kurulumu, gerçek AD eşitlemesi ve üyelik güncellemesi operatörce kabul edildi. Windows kurulu 0.7 paneli korunur. 0.9 kaynağı henüz kurulu Ubuntu paneline uygulanmaz; canlı RADIUS yetkilendirmesi için GUID/tokenGroups okuyucusu ve salt okunur sertifika bağ deposu ekler.
 
 ## Başlatma
 
@@ -99,3 +99,5 @@ Kaynak paketini yeniden üretmek için: `python3 -m tools.package_source /absolu
 0.7 kullanım ve doğrulama kapsamı: [STATUS_0_7_0](docs/STATUS_0_7_0.md). Periyodik AD işleri panel süreci çalışırken yürür. Üretim boot servisi ve açılabilir OVF sonraki aşamadır.
 
 Ubuntu 0.8 laboratuvar kurulumu ve kabul sınırı: [LINUX_SETUP_0_8_0](docs/LINUX_SETUP_0_8_0.md). Bu ilk kurulum aracıdır; mevcut kurulumları silmez/resetlemez. Üretim RADIUS ve OVF kabulü ayrı aşamadır.
+
+0.9 kaynak ve gerçek AD yetki sorgusu kontrolü: [STATUS_0_9_0](docs/STATUS_0_9_0.md). Çalışan Ubuntu 0.8 paneli güncellenmez; tanılama mevcut bağlantıyı kullanır ve özet sonuç dışında kimlik bilgisi yazdırmaz.

@@ -108,7 +108,8 @@ class TLSAuthorization:
 
     Missing directory objects are returned as None. A binding must come from
     authenticated enrollment, never a user-selected name/UPN or outer EAP
-    identity. No production provider/registry is enabled in this milestone.
+    identity. Linux live provider and read-only persistent registry are available;
+    network service and authenticated endpoint enrollment are still separate.
     """
     def __init__(self, policies, *, registry=None, directory=None):
         self.policies = validate_policies(policies)
@@ -139,6 +140,11 @@ class TLSAuthorization:
             if (account.domain, account.object_guid, account.sid, account.kind) != (
                     binding.domain, binding.object_guid, binding.sid, binding.kind):
                 return Decision('deny', 'ACCOUNT_BINDING_MISMATCH')
+            # A live AD read can take seconds. Re-check revocation/disable after
+            # that read so an invalidated registration cannot reuse an old bind.
+            latest = self.registry.lookup(certificate)
+            if type(latest) is not CertificateBinding or latest != binding:
+                return Decision('deny', 'CERTIFICATE_BINDING_CHANGED')
             identity = VerifiedIdentity(True, True, account.enabled, account.kind == 'computer',
                                         account.security_group_sids, access_type, nas_ip, 'EAP-TLS')
             return evaluate(self.policies, identity)

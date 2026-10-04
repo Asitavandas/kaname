@@ -34,3 +34,8 @@ Sonrasında HTTPS panelde AD okuma hesabı kaydedilmeli; gerçek Kerberos/GSSAPI
 Bu teslim Linux laboratuvar paneli ve AD okuyucusudur. Üretim RADIUS dinleyicisi/accounting, istemci sertifika enrollment ve açılabilir OVF henüz tamamlanmadı. Switch/AP ayarları operatör tarafından manuel yapılır.
 
 Sürüm kabulü sonrasında sorular ve değişiklik istekleri alınacak; operatör yanıtı gelmeden sonraki sürüme geçilmeyecek.
+
+
+## Operatör kabulü — 4 Ekim 2026
+
+Operatör ilk Ubuntu kurulumunda installed=true ve active çıktısını paylaştı. Sonrasında panelde AD eşitlemesinin başarılı olduğunu ve kullanıcılar/üyeliklerin güncellendiğini bildirdi. Şimdilik soru olmadığını, değişiklik isteklerini ayrıca ileteceğini söyledi. HTTPS lab kurulumu ve gerçek AD katalog kabulü tamamlandı. Bu kabul RADIUS üzerinden gerçek cihaz kimlik doğrulaması değildir.

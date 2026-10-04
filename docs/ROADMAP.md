@@ -5,7 +5,7 @@ Güncelleme: 2026-10-04. Aşamalar bağımlılık sırasıyla ilerler; süreler 
 | Aşama | Çıktı | Kabul kapısı | Durum |
 |---|---|---|---|
 | 0. Başlangıç | Bağımsız repo yapısı, taslak panel, politika motoru, SQLite, OVF sözleşmesi/araçları | Otomatik testler; API simülasyonu gerçek auth olarak kullanılamaz | 0.1 temeli korundu |
-| 1. Protokol kanıtı | Gerçek FreeRADIUS + AD adaptörü + dahili PKI enrollment denemesi | Manuel hazırlanmış switch/AP üzerinden gerçek kablolu ve kablosuz EAP-TLS | CA/server CSR/CRL, Windows AD katalog ve 0.6 native loopback EAP-TLS/policy/VLAN temeli var; live Linux AD/enrollment/fiziksel kabul bekliyor |
+| 1. Protokol kanıtı | Gerçek FreeRADIUS + AD adaptörü + dahili PKI enrollment denemesi | Manuel hazırlanmış switch/AP üzerinden gerçek kablolu ve kablosuz EAP-TLS | CA/server CSR/CRL, Windows AD katalog ve 0.6 native loopback EAP-TLS/policy/VLAN temeli var; Ubuntu HTTPS/gerçek AD katalog eşitlemesi kabul edildi; canlı yetki sorgusu, enrollment ve fiziksel 802.1X kabulü bekliyor |
 | 2. Kimlik yaşam döngüsü | AD grup/hesap sorgusu, cihaz/kullanıcı sertifika eşlemesi, yenileme/iptal | Yanlış grup, kapalı hesap, iptal/expired sertifika, AD kesintisi ret testleri | Planlandı |
 | 3. Gerçek wizard | DNS/saat/AD testleri, CA/trust, RADIUS secret, GPO/profil çıktıları, kontrollü apply | Başlangıçtan ilk erişime kadar panelden uygulanabilir akış; rollback | Planlandı |
 | 4. Günlük yönetim | Kullanıcı/grup seçimi, policy edit, accounting, arama/teşhis, RBAC, audit | Kim yaptı/neyi değiştirdi; oturum ve hata korelasyonu | 0.5 yerel oturum/RBAC, akordiyon menüler, ayrılmış System/AD ekranları ve kullanıcı/grup üyelik inceleme tamamlandı; accounting/üretim audit/apply bekliyor |
@@ -45,3 +45,7 @@ Switch/AP yönetim API, SSH, SNMP, firmware, roaming, host-mode ve vendor yönet
 ## Geliştirme ortamının mevcut sınırı
 
 Bu kodun üretildiği ortamda AD domain, switch/AP, FreeRADIUS runtime, hypervisor, Packer, QEMU veya VMware OVF Tool yoktu. 3 Ekim'de kullanıcının Windows geliştirme makinesine GitHub self-hosted runner ile bağlanıldı ve mevcut kurulum/testler doğrulandı. Windows gerçek AD katalog okuması operatörce başarılı bulundu; henüz RADIUS üzerinden gerçek AD kimlik doğrulaması, temiz Linux appliance diski, import ve boot doğrulanmadı. Bunlar kaynak testiyle değiştirilemez ve appliance release kapısı olarak kalır.
+
+## 0.8 kabulü ve 0.9 bağımlılığı
+
+Ubuntu 0.8 lab kurulumu, gerçek AD eşitlemesi ve güncellenmiş kullanıcı/grup üyelikleri operatörce kabul edildi. Panel görsel değişikliği ertelendi. 0.9 kaynak aşaması görüntüleme kataloğundan bağımsız canlı GUID/tokenGroups yetki sorgusu ve kalıcı sertifika bağ okuyucusudur. Gerçek AD tokenGroups tanılaması, doğrulanmış geçici kodu servis hesabıyla çalıştırır; kurulu paneli yükseltmez. Sonraki bağımlılık AD kimliğiyle doğrulanmış endpoint enrollment ve güven dağıtımı; ardından kontrollü FreeRADIUS servis apply ve manuel switch/AP üzerinden fiziksel EAP-TLS/VLAN kabulüdür.

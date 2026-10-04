@@ -27,6 +27,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 
 from kaname.pki import PKIService
+from kaname import VERSION
 from tests.test_radius import DOMAIN, GUID, SID, GROUP, policy
 
 FREE_RADIUS_COMMIT = '9071ea041b9172e52eabbba91619afaf3a238795'
@@ -87,6 +88,10 @@ def material(root):
                     purpose=ExtendedKeyUsageOID.SERVER_AUTH if name == 'wrong-purpose'
                     else ExtendedKeyUsageOID.CLIENT_AUTH)
         objects[name] = cert
+        if name != 'revoked':
+            with pki.store.connect() as db:
+                db.execute('INSERT INTO pki_certificates(serial,certificate) VALUES (?,?)',
+                           (format(cert.serial_number, 'x'), cert.public_bytes(PEM)))
         private_file(certs / (name + '.pem'), cert.public_bytes(PEM) + row[0])
         private_file(certs / (name + '-key.pem'), key.private_bytes(
             PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
@@ -128,7 +133,7 @@ def material(root):
 def fixture(info):
     def bind(kind):
         return {'domain': DOMAIN, 'object_guid': GUID, 'sid': SID, 'kind': kind, 'active': True}
-    return {'lab_only': True, 'issuer_sha256': info['issuer_sha256'], 'issuer_dn': info['issuer_dn'],
+    return {'lab_only': True, 'persistent_registry': True, 'issuer_sha256': info['issuer_sha256'], 'issuer_dn': info['issuer_dn'],
             'nas_ip': '127.0.0.1', 'access_type': 'wired', 'directory_available': True,
             'case': 'valid-computer', 'policies': [policy()],
             'bindings': {info['serials'][name]: bind('user' if name == 'user' else 'computer')
@@ -481,6 +486,17 @@ def run_lab(prefix):
                     data['case'] = name
                     if change:
                         change(data)
+                    # Synthetic enrollment rows only in this disposable state.
+                    # The runtime registry itself has no public writer/API.
+                    with PKIService(root / 'state').store.connect() as db:
+                        db.execute('''CREATE TABLE IF NOT EXISTS radius_certificate_bindings(
+                            issuer_sha256 TEXT,serial TEXT,domain TEXT,object_guid TEXT,sid TEXT,kind TEXT,
+                            active INTEGER,PRIMARY KEY(issuer_sha256,serial))''')
+                        db.execute('DELETE FROM radius_certificate_bindings')
+                        for serial, b in data['bindings'].items():
+                            db.execute('INSERT INTO radius_certificate_bindings VALUES (?,?,?,?,?,?,?)',
+                                       (info['issuer_sha256'], serial, b['domain'], b['object_guid'],
+                                        b['sid'], b['kind'], int(b['active'])))
                     target = root / 'fixture.json'
                     staging = root / 'fixture-next.json'
                     private_file(staging, json.dumps(data))
@@ -549,12 +565,13 @@ def run_lab(prefix):
                               capture_output=True, check=True).stdout.decode().splitlines()
     if len(packages) != 3 or any(line.endswith('=') for line in packages):
         raise RuntimeError('Native dependency version evidence is incomplete')
-    return {'version': '0.7.0-dev.1', 'freeradius_version': '3.2.10', 'test_packages': packages,
+    return {'version': VERSION, 'freeradius_version': '3.2.10', 'test_packages': packages,
             'freeradius_source_commit': FREE_RADIUS_COMMIT,
             'transport': 'loopback UDP with native FreeRADIUS and eapol_test',
             'tls_version': '1.2', 'fixture_ad_only': True, 'real_ad_tested': False,
             'physical_wired_wireless_tested': False, 'client_enrollment_enabled': False,
             'production_radius_enabled': False, 'secrets_exported': False,
+            'persistent_registry_tested': True,
             'case_count': len(facts), 'cases': facts}
 
 

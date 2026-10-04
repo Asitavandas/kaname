@@ -1,5 +1,16 @@
 # Değişiklikler
 
+## 0.9.0-dev.1 — canlı AD yetkilendirme temeli
+
+- Operatör Ubuntu 0.8 kurulumu, gerçek AD eşitlemesi ve kullanıcı/üyelik güncellemesini kabul etti.
+- Immutable objectGUID ile tek hesap sorgusu ve BASE kapsamlı computed tokenGroups okuması; güncel güvenlik üyeliği, disabled/lockout/accountExpires kontrolü.
+- Eksik, duplicate, ranged, taşan veya yanlış SID/GUID yanıtları ret; görüntüleme kataloğu ve eski başarılı sorgu erişim fallback'i değildir.
+- Kayıtlı bağlantıyı kullanan sınırlı canlı sağlayıcı; eşzamanlı değişiklik, kesinti ve hatalı parola durumu izin vermez. Credential rejection kalıcı otomatik deneme duraklatmasına bağlanır.
+- Salt okunur kalıcı sertifika bağ deposu: pinned issuer + serial, sertifika imzası/client EKU/geçerlilik/iptal ve AD GUID/SID/tür bağı.
+- Native EAP-TLS protokol fixture'i gerçek registry okuyucusunu kullanır; fixture enrollment ve AD müşteri kimliği değildir.
+- Yerel sudo tanılama aracı: doğrulanmış geçici koddan service user'a düşerek bir gerçek AD güvenlik token sorgusu; panel güncellemesi/restart, paket kurulumu veya RADIUS açılması yok.
+- Ağ servisi apply, authenticated endpoint enrollment ve OVF bu kaynağın dışında kalır.
+
 ## 0.8.0-dev.1 — Ubuntu AD/HTTPS laboratuvarı
 
 - Linux kinit/GSSAPI okuyucusu, zorunlu SASL sealing, private kısa ömürlü ticket, sayfalı/OU kapsamlı katalog ve primary/nested üyelikler eklendi. Domain join veya AD yazma yok.
