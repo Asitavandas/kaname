@@ -23,15 +23,17 @@ jobs:
           sudo apt-get install -y python3-ldap python3-cryptography
       - name: Native LDAP wire and mandatory protection tests without customer AD
         run: /usr/bin/python3 -m unittest tests.test_linux_directory -v
+      - name: Real installer and non-root HTTPS service on disposable VM (fixture DC only)
+        run: sudo --preserve-env=RUNNER_ENVIRONMENT /usr/bin/python3 -m tools.linux_install_smoke
   stage-for-local-install:
     needs: native-adapter-checks
     if: github.repository == 'Asitavandas/kaname' && github.event.repository.private == true
     runs-on: [self-hosted, Linux, kaname-linux]
     timeout-minutes: 10
-    env:
-      ACTUAL_RUNNER: ${{ runner.name }}
     steps:
       - name: Verify runner name
+        env:
+          ACTUAL_RUNNER: ${{ runner.name }}
         run: test "$ACTUAL_RUNNER" = kaname-linux01
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
