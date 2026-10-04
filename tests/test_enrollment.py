@@ -258,12 +258,14 @@ class NativeSelfIdentityTests(unittest.TestCase):
         import ldap
         from ldap.controls.simple import ValueLessRequestControl
         from ldap.controls.libldap import SimplePagedResultsControl
-        with LDAPFixture('account-user') as fixture:
-            session = ldap.initialize('ldap://127.0.0.1:' + str(fixture.port)); session.simple_bind_s('', '')
-            try:
-                reader = Reader(session, ldap, (ValueLessRequestControl, SimplePagedResultsControl))
-                result = reader.authenticated_user('fixture.invalid','alice')
-                self.assertEqual('user', result['kind'])
-                self.assertEqual([2,2,0], [x[1] for x in fixture.search_records])
-                self.assertEqual([], fixture.errors)
-            finally: session.unbind_s()
+        for mode in ('account-user','account-user-named'):
+            with LDAPFixture(mode) as fixture:
+                session = ldap.initialize('ldap://127.0.0.1:' + str(fixture.port)); session.simple_bind_s('', '')
+                try:
+                    reader = Reader(session, ldap, (ValueLessRequestControl, SimplePagedResultsControl))
+                    result = reader.authenticated_user('fixture.invalid','alice','CN=Configuration,DC=fixture,DC=invalid')
+                    self.assertEqual('user', result['kind'])
+                    self.assertEqual([2,2,2,0] if mode.endswith('-named') else [2,2,0], [x[1] for x in fixture.search_records])
+                    self.assertTrue(all(fixture.domain_scope_controls))
+                    self.assertEqual([], fixture.errors)
+                finally: session.unbind_s()

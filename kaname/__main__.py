@@ -22,7 +22,7 @@ def main():
         scheme = 'https' if server.tls else 'http'
         print(f'KANAME laboratory panel: {scheme}://{args.listen}:{server.server_port}')
         print('Panel login: username and password. See README for the first-install account.')
-        print('Laboratory only. Protected AD catalog adapters are available; enrollment, production RADIUS and OVF are pending.')
+        print('Laboratory only. HTTPS user enrollment is available; machine enrollment, production RADIUS and OVF are pending.')
         try:
             server.serve_forever()
         except KeyboardInterrupt:
