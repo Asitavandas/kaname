@@ -14,9 +14,8 @@ concurrency:
   group: kaname-windows-validation
   cancel-in-progress: false
 jobs:
-  test-installed-python:
-    if: github.repository == 'Asitavandas/kaname' && github.event.repository.private == true
-    runs-on: [self-hosted, Windows, X64, kaname-windows]
+  test-windows-fixtures:
+    runs-on: windows-2025
     timeout-minutes: 10
     defaults:
       run:
@@ -26,11 +25,14 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - name: Test with installed KANAME interpreter and temporary fixture state
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Test on disposable Windows with temporary fixture state
         run: |
           $ErrorActionPreference = 'Stop'
-          $python = 'C:\Users\Administrator\KANAME\.venv\Scripts\python.exe'
-          if (-not (Test-Path -LiteralPath $python -PathType Leaf)) { throw 'KANAME interpreter is missing.' }
-          & $python --version
-          & $python -m unittest discover -s tests -t . -v
+          python --version
+          python -m pip install --only-binary=:all: cryptography==46.0.0
+          if ($LASTEXITCODE -ne 0) { throw 'KANAME test dependency failed.' }
+          python -m unittest discover -s tests -t . -v
           if ($LASTEXITCODE -ne 0) { throw 'KANAME Windows validation failed.' }
