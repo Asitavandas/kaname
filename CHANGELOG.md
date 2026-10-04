@@ -1,5 +1,13 @@
 ## 0.10.1-dev.1 — 2026-10-05
 
+## 0.11.0-dev.1 — 2026-10-05
+
+- Rebuild the panel around visible, ordered navigation: prepare, users, access, verify, then administration. Add page context, a mobile menu, and direct section search.
+- Replace the copper theme with a clean light workspace, blue actions, and a navy/lime overview. Display actual directory counts, saved policy counts, and preparation status without implying live network enforcement.
+- Put users and groups in separate keyboard-accessible tabs; make accounts and status easier to scan. Keep AD read-only, server-side search, membership drill-down, and policy actions.
+- Preserve API, permissions, secrets, PKI, and updater behavior; real customer AD enrollment remains deferred. Browser verification covers navigation, mobile menu, tab keyboard behavior, server-side search, and existing permission boundaries.
+
+
 - Kullanıcı onaylı kompakt bakır/krem tema ve Türkçe gezinme.
 - Genel bakış, menüde arama, sertifika sekmeleri ve geçici form paneli.
 - PEM CSR seçimi, private key dosyası reddi ve form kapatırken sırların temizlenmesi.
