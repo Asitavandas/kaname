@@ -1,14 +1,14 @@
-# AD okuma laboratuvarı — 0.5.0-dev.1
+# AD okuma laboratuvarı — 0.7.0-dev.1
 
 Bu sürüm Windows'taki yerel geliştirme panelinden gerçek AD dizin okumayı denemek içindir. Linux appliance okuyucusu sonraki uygulama adımıdır; OVF hazır sayılmaz.
 
 1. Kurulum ekranında gerçek AD DNS domain adını ve DC IP adreslerini kaydedin.
 2. User&Authentication → Active Directory ekranını açın. DC'nin tam DNS adını ve `kullanici@domain` biçiminde kullanıcıyı girin. İlk sürümde UPN suffix'i kayıtlı domain ile aynı olmalı.
-3. AD parolasını yalnız yerel panelde girin. Bağlan ve bilgileri getir düğmesine basın. Parola alanı hemen temizlenir; sunucu parolayı kaydetmez.
+3. AD parolasını yalnız yerel panelde girin. İsteğe bağlı CN/OU/DC konumunu, eşitleme ve kontrol aralığını ayarlayıp Bağlantıyı kaydet düğmesine basın. Parola korumalı saklanır; alan temizlenir ve GET yanıtında geri verilmez. Şimdi eşitle kayıtlı bağlantıyı kullanır.
 4. Son başarılı okumanın zamanı ve sayılar görüntülenir. User&Authentication → Users/User Groups ekranında Users ve User Groups listeleri birlikte gösterilir. Her liste ayrı aranır ve sayfalanır. Adına tıklayınca üyelik detayları açılır.
 5. Güvenlik grubunun Politikada kullan düğmesi yeni politika formunda grup adını seçer. Politika formundan da grup adı aranabilir ve birden fazla grup seçilebilir; SID değerleri içeride saklanır. Kaydetmeden politika oluşturulmaz.
 
-Domain Admin hesabı okunabilir ancak dizin okuması için bu yetki zorunlu değildir. AD'de yazma, domain join, GPO değişikliği veya hesap oluşturma yapılmaz. Her yenilemede parola yeniden girilir; otomatik runtime hesabı/secret kasası bu sürümde yoktur.
+Domain Admin hesabı okunabilir ancak dizin okuması için bu yetki zorunlu değildir. AD'de yazma, domain join, GPO değişikliği veya hesap oluşturma yapılmaz. Parola boş bırakılarak mevcut kayıt korunabilir; kullanıcı/DC değişirse parola tekrar girilir. Windows DPAPI kullanıcı kapsamını kullanır; panel aynı Windows hesabıyla çalışmalıdır. Periyodik işler panel süreci çalışırken yürür. Filtre boşsa tüm domain, doluysa o konumdaki gruplar ve aynı domain içindeki üyeleri okunur.
 
 ## Bağlantı koruması
 

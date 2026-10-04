@@ -2,12 +2,12 @@
 
 Bağımsız Active Directory tabanlı kablolu/kablosuz 802.1X erişim yönetimi.
 
-**Geliştirme sürümü: 0.6.0-dev.1 — native FreeRADIUS/EAP-TLS protokol laboratuvarı ve sertifikaya bağlı politika sınırı.**
-Mevcut panel, politika ve dahili PKI temeli korunur. Windows'taki yerel panelden Kerberos signing/sealing ile kullanıcı, bilgisayar ve gruplar okunabilir; son okumadaki doğrudan, primary ve iç içe üyelikler incelenebilir. Parola kaydedilmez. Yeni izole laboratuvar native FreeRADIUS/eapol_test ile gerçek TLS ve RADIUS paketlerini kullanır; AD kimlikleri test verisidir. Üretim RADIUS hizmeti, istemci enrollment veya açılabilir OVF bu sürümde yoktur. Paneldeki ağ/politika kayıtları taslaktır; kullanıcı ağında izin/ret kararı uygulanmaz. Linux appliance live AD okuyucusu henüz bağlı değildir.
+**Geliştirme sürümü: 0.7.0-dev.1 — VLAN/RADIUS yönetimi, sırasız politikalar ve korumalı periyodik AD okuma.**
+Mevcut panel, politika ve dahili PKI temeli korunur. Windows'taki yerel panelden Kerberos signing/sealing ile kullanıcı, bilgisayar ve gruplar okunabilir; son okumadaki doğrudan, primary ve iç içe üyelikler incelenebilir. AD bağlantı parolası korumalı saklanır; filtreli ve periyodik eşitleme desteklenir. Yeni izole laboratuvar native FreeRADIUS/eapol_test ile gerçek TLS ve RADIUS paketlerini kullanır; AD kimlikleri test verisidir. Üretim RADIUS hizmeti, istemci enrollment veya açılabilir OVF bu sürümde yoktur. Paneldeki ağ/politika kayıtları taslaktır; kullanıcı ağında izin/ret kararı uygulanmaz. Linux appliance live AD okuyucusu henüz bağlı değildir.
 
 ## Başlatma
 
-Python 3.12 veya üzeri gerekir. Panel ve politika çekirdeği ek Python paketi olmadan çalışır. Dahili PKI ve tam test seti için `cryptography==46.0.0` gerekir; bu sürüm geliştirme ortamında doğrulanan sürümdür. Nihai appliance bu bağımlılıkları içinde taşıyacak. ZIP'i açın, terminali bu README'nin bulunduğu `kaname` klasöründe açın:
+Python 3.12 veya üzeri gerekir. Panel ve politika çekirdeği ek Python paketi olmadan çalışır; Linux geliştirme ortamında korumalı bağlantı kaydı için cryptography gerekir. Windows kayıtları DPAPI kullanır. Dahili PKI ve tam test seti için `cryptography==46.0.0` gerekir; bu sürüm geliştirme ortamında doğrulanan sürümdür. Nihai appliance bu bağımlılıkları içinde taşıyacak. ZIP'i açın, terminali bu README'nin bulunduğu `kaname` klasöründe açın:
 
 ```bash
 python3 -m kaname
@@ -36,12 +36,13 @@ python3 -m kaname --port 8876 --state-dir ./kaname-state
 | Alan | Mevcut davranış |
 |---|---|
 | Kurulum | Ürün DNS adı, AD domain/DC bilgileri, RADIUS istemci ad/IP bilgileri ve kablolu/kablosuz seçimleri dört adımda taslak olarak kaydedilir. |
-| Politikalar | AD grup adını listeden seçme (SID içeride saklanır), erişim türü, NAS IP, EAP yöntemi, domain cihazı şartı, izin/ret ve VLAN modeli; panelde ekleme, sıralama, etkinleştirme, silme. |
+| Politikalar | AD grup adını listeden seçme (SID içeride saklanır), erişim türü, NAS IP, EAP yöntemi, domain cihazı şartı, izin/ret ve VLAN modeli; panelde ekleme/düzenleme/silme; sıra bağımsız karar ve çakışan kayıtları engelleme. |
 | System | Yerel kullanıcı/parola girişi, düzenlenebilir/silinebilir yönetici hesapları ve SuperAdmin/Admin_ReadOnly/Custom profiller; menü ve sekme düzeyinde sunucu tarafında yetki denetimi. |
 | Karar testi | Örnek kimliklerle politika değerlendirmesi ve VLAN özniteliklerinin gösterimi. Gerçek doğrulama kanıtı üretmez. |
 | Kayıt | SQLite kalıcılığı, çakışan sürüm kaydını engelleme ve yapılandırmayla aynı transaction içinde audit. |
 | Dahili PKI | Yerel konsoldan benzersiz root/issuer CA, şifreli anahtarlar, kayıtlı FQDN için server-only sertifika, iptal ve imzalı CRL. Panel yalnız açık CA bilgilerini gösterir. |
-| Active Directory | User&Authentication → Active Directory altında bağlantı; Users/User Groups altında aynı ekranda iki ayrı liste ve tıklanabilir üyelik detayları. Kerberos korumalı LDAP, nesne/üye sayfalama, primary ve iç içe üyelik; politikaya yalnız security grubu seçimi. Domain Admin parolası saklanmaz; AD değişikliği yapılmaz. |
+| Active Directory | User&Authentication → Active Directory altında bağlantı; Users/User Groups altında aynı ekranda iki ayrı liste ve tıklanabilir üyelik detayları. Kerberos korumalı LDAP, nesne/üye sayfalama, primary ve iç içe üyelik; politikaya yalnız security grubu seçimi. Kayıtlı bağlantı parolası korumalı saklanır; OU/CN/DC konumu, manuel/periyodik eşitleme ve bağlantı uyarıları vardır. AD değişikliği yapılmaz. |
+| Network | Ad/ID/açıklamalı VLAN tanımları; RADIUS cihaz kaynak IP ve korumalı shared secret; Authentication/Accounting UDP portları varsayılan 1812/1813. Cihaz ayarları manuel uygulanır. |
 | RADIUS protokol laboratuvarı | İzole loopback ortamında native EAP-TLS, sertifika-kimlik eşlemesi, politika motoru ve bütünlüğü doğrulanan gerçek Accept/Reject/VLAN yanıtları. Dizin verisi fixture'dır; production service veya enrollment açılmaz. |
 | OVF araçları | Hazırlanmış temiz VMware VMX'inin dışa aktarımı için sarmalayıcı ve yerel OVF/VMDK/SHA256 manifest denetleyicisi. |
 
@@ -94,3 +95,5 @@ OVF bütün hypervisor'larda aynı şekilde içe aktarılmaz. Diğer hedefler i�
 `kaname/` ürün çekirdeği ve paneldir; `tools/` paketleme/denetleme araçları; `appliance/` hedef sözleşmesi; `tests/` otomatik testlerdir. Geliştirme HTTP sunucusu üretim sunucusu olarak kullanılmayacaktır.
 
 Kaynak paketini yeniden üretmek için: `python3 -m tools.package_source /absolute/output/KANAME-source.zip`. ZIP içindeki `SOURCE_MANIFEST.json` bütün kaynak dosyalarının SHA256 değerlerini içerir.
+
+0.7 kullanım ve doğrulama kapsamı: [STATUS_0_7_0](docs/STATUS_0_7_0.md). Periyodik AD işleri panel süreci çalışırken yürür. Üretim boot servisi ve açılabilir OVF sonraki aşamadır.

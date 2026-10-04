@@ -27,7 +27,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     const page=await browser.newPage({viewport:{width:1440,height:1000}});
     const errors=[];
     page.on('pageerror',err=>errors.push(err.message));
-    async function navigate(view){const button=page.locator('[data-view="'+view+'"]');const group=button.locator('xpath=ancestor::details');if(!await group.evaluate(x=>x.open))await group.locator('summary').click();await button.click();}
+    async function navigate(view){console.log('KANAME_UI_STAGE '+view);const button=page.locator('[data-view="'+view+'"]');const group=button.locator('xpath=ancestor::details');if(!await group.evaluate(x=>x.open))await group.locator('summary').click();await button.click();}
     await page.goto(`http://127.0.0.1:${port}`);
     await page.locator('#login-user').fill('admin');
     await page.locator('#login-password').fill('Kaname');
@@ -284,4 +284,4 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     if(child.exitCode===null)await new Promise(resolve=>child.once('exit',resolve));
     fs.rmSync(temp,{recursive:true,force:true});
   }
-})().catch(error=>{console.error(error.message);process.exitCode=1;});
+})().catch(error=>{console.error(error.stack);process.exitCode=1;});
