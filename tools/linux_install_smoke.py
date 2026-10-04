@@ -68,6 +68,12 @@ def main():
             status, ca, _ = request('POST','/api/pki/initialize',
                 {'ca_password':'fixture-ca-upgrade-passphrase', 'confirm':'fixture-ca-upgrade-passphrase'},headers)
             assert status == 200
+            # Metadata of this disposable CI fixture only, never customer state.
+            source_root=Path('/opt/kaname-lab/source')
+            violations=[{'path':p.relative_to(source_root).as_posix(),'uid':p.stat().st_uid,
+                'mode':oct(p.stat().st_mode & 0o777),'symlink':p.is_symlink()} for p in [source_root,*source_root.rglob('*')]
+                if p.is_symlink() or p.stat().st_uid != 0 or p.stat().st_mode & 0o022]
+            print(json.dumps({'source_integrity_fixture':violations}),flush=True)
             subprocess.run(['/usr/bin/python3',str(stage/'tools/linux_update.py'),
                 '--source-digest',prepared['source_digest']],check=True,timeout=120)
             status, actor, cookie = request('POST','/api/auth/login',{'username':'admin','password':'fixture-password-changed'})
