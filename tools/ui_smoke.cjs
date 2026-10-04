@@ -113,6 +113,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#pki-csr-file').setInputFiles({name:'private-key.pem',mimeType:'text/plain',buffer:Buffer.from('-----BEGIN PRIVATE KEY-----\nfixture\n-----END PRIVATE KEY-----')});
     await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('Yalnız PEM CSR'));
     assert.equal(await page.locator('#pki-csr').inputValue(),'');
+    assert.match(await page.locator('#pki-feedback').textContent(),/Yalnız PEM CSR/);
     await page.locator('#pki-csr-file').setInputFiles({name:'request.pem',mimeType:'text/plain',buffer:Buffer.from('-----BEGIN CERTIFICATE REQUEST-----\nUI_TEXT_ONLY\n-----END CERTIFICATE REQUEST-----')});
     await page.waitForFunction(()=>document.querySelector('#pki-csr').value.includes('UI_TEXT_ONLY'));
     await page.locator('#pki-password').fill('fixture-ca-pass');
