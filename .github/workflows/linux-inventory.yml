@@ -1,0 +1,83 @@
+name: KANAME Linux inventory
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/linux-inventory.yml']
+permissions:
+  contents: read
+concurrency:
+  group: kaname-linux-inventory
+  cancel-in-progress: false
+jobs:
+  inspect:
+    if: github.repository == 'Asitavandas/kaname' && github.event.repository.private == true
+    runs-on: [self-hosted, Linux, kaname-linux]
+    timeout-minutes: 5
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Confirm intended runner
+        env:
+          ACTUAL_RUNNER: ${{ runner.name }}
+        run: |
+          set -euo pipefail
+          test "$ACTUAL_RUNNER" = kaname-linux01
+          printf 'Runner: %s\n' "$ACTUAL_RUNNER"
+          id
+          printf 'Working directory: %s\n' "$PWD"
+      - name: Read system and network facts
+        run: |
+          set -euo pipefail
+          cat /etc/os-release
+          uname -srmo
+          hostname
+          hostname -I
+          getconf _NPROCESSORS_ONLN
+          free -h
+          df -h / /home
+          if command -v resolvectl >/dev/null; then resolvectl dns || true; fi
+          if command -v ss >/dev/null; then
+            printf 'Listeners on planned KANAME ports (no process details):\n'
+            ss -H -lntu | awk '$5 ~ /:(1812|1813|8765)$/ {print}'
+          fi
+      - name: Read installed tool capabilities
+        run: |
+          set -euo pipefail
+          for tool in python3 git openssl curl kinit ldapsearch realm adcli net winbindd ntlm_auth freeradius radiusd radtest eapol_test node npm docker podman qemu-img ovftool; do
+            if command -v "$tool" >/dev/null; then
+              printf '%s: %s\n' "$tool" "$(command -v "$tool")"
+            else
+              printf '%s: absent\n' "$tool"
+            fi
+          done
+          if command -v python3 >/dev/null; then
+            python3 --version
+            python3 - <<'PY'
+          import importlib.metadata
+          import importlib.util
+          import json
+          import sqlite3
+          result = {"sqlite": sqlite3.sqlite_version}
+          for package in ("cryptography", "ldap3", "gssapi"):
+              try:
+                  result[package] = importlib.metadata.version(package)
+              except importlib.metadata.PackageNotFoundError:
+                  result[package] = None
+          result["venv_available"] = importlib.util.find_spec("venv") is not None
+          result["pip_available"] = importlib.util.find_spec("pip") is not None
+          print(json.dumps(result, sort_keys=True))
+          PY
+          fi
+          if command -v git >/dev/null; then git --version; fi
+          if command -v openssl >/dev/null; then openssl version; fi
+          if command -v dpkg-query >/dev/null; then
+            dpkg-query -W -f='${binary:Package} ${db:Status-Abbrev} ${Version}\n' python3-venv python3-pip libkrb5-dev krb5-user ldap-utils libldap2-dev libsasl2-dev freeradius freeradius-utils samba winbind sssd-ad realmd adcli 2>/dev/null || true
+          fi
+          if command -v systemctl >/dev/null; then
+            for service in kaname.service freeradius.service winbind.service sssd.service; do
+              printf '%s: ' "$service"
+              systemctl is-active "$service" || true
+            done
+          fi
