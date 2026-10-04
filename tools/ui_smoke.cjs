@@ -46,7 +46,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await navigate('overview');
     if(process.env.KANAME_UI_ARTIFACTS){
       fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});
-      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-empty.png'),fullPage:true});
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-empty.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:390,height:844});
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
       await page.locator('#nav-toggle').click();
@@ -141,13 +141,13 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     page.off('request',countEnrollment);
     if(process.env.KANAME_UI_ARTIFACTS){
       fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});
-      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'certificates-desktop.png'),fullPage:true});
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'certificates-desktop.png'),fullPage:true,animations:'disabled'});
       await page.locator('#pki-new').click();
-      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'certificate-drawer.png'),fullPage:true});
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'certificate-drawer.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:390,height:844});
       const fits=await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth);
       assert.equal(fits,true,'Mobile page must not overflow horizontally');
-      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'certificates-mobile.png'),fullPage:true});
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'certificates-mobile.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:1440,height:1000});
       await page.locator('#pki-close').click();
     }
@@ -186,17 +186,17 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.equal(await page.locator('#identity-panel-groups').isVisible(),true);
     await page.keyboard.press('Home');assert.equal(await page.locator('#identity-panel-users').isVisible(),true);
     if(process.env.KANAME_UI_ARTIFACTS){
-      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'users-desktop.png'),fullPage:true});
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'users-desktop.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:390,height:844});
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
-      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'users-mobile.png'),fullPage:true});
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'users-mobile.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:1440,height:1000});
       await navigate('overview');
       assert.equal(await page.locator('#overview-users').textContent(),'2');
       assert.equal(await page.locator('#overview-groups').textContent(),'4');
-      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-desktop.png'),fullPage:true});
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-desktop.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:390,height:844});
-      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-mobile.png'),fullPage:true});
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-mobile.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:1440,height:1000});await navigate('identities');
     }
 
@@ -379,7 +379,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#admin-profiles-list .policy-row').filter({hasText:'RenamedOperator'}).getByText('Sil',{exact:true}).click();
     await page.waitForFunction(()=>!document.querySelector('#admin-profiles-list').textContent.includes('RenamedOperator'));
     assert.ok(!fs.readFileSync(path.join(temp,'administrators.sqlite3')).includes('BrowserUserPassword42'));
-    if(process.env.KANAME_SCREENSHOT)await page.screenshot({path:process.env.KANAME_SCREENSHOT,fullPage:true});
+    if(process.env.KANAME_SCREENSHOT)await page.screenshot({path:process.env.KANAME_SCREENSHOT,fullPage:true,animations:'disabled'});
     assert.deepEqual(errors,[]);
     console.log('PASS: username/password login, session reload, profile/user CRUD, ReadOnly server rejection, custom tab and state restrictions, draft, policy, simulation, audit, accordion navigation, separated profiles/AD/catalog screens, reciprocal direct/primary/nested membership details, directory import, encrypted saved AD credentials, named VLAN inventory, blocked conflict save and recovery, configurable RADIUS ports, encrypted shared secrets and server-side reveal restriction, group-name simulation. No real AD was contacted.');
   } finally {
