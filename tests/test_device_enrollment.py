@@ -179,6 +179,10 @@ class DeviceTests(unittest.TestCase):
             self.assertIn(b'AllSigned',archive.read('Install-AuthWire.ps1'))
             self.assertIn(b'Authenticode',archive.read('README.txt'))
             self.assertIn(b'authwire.lab.example',archive.read('config.json'))
+            installer=archive.read('Install-AuthWire.ps1')
+            self.assertNotIn(b'__AUTHWIRE_ASSET_HASHES__',installer)
+            self.assertIn(__import__('hashlib').sha256(archive.read('config.json')).hexdigest().encode(),installer)
+            self.assertIn(b'modified after signing',installer)
         self.reject('DEVICE_TLS_NAME_MISMATCH',lambda:self.service.package(self.profile['id'],hostname='wrong.lab.example',port=8765,tls_pem=(tlsdir/'web.crt').read_bytes()))
 
     def test_machine_sam_ldap_resolution_no_caller_guid(self):
@@ -193,3 +197,23 @@ class DeviceTests(unittest.TestCase):
         self.assertEqual((GUID,'computer'),(account['object_guid'],account['kind']))
         self.assertIn('(sAMAccountName=PC01$)',calls[0])
         with self.assertRaises(DirectoryError):reader.computer('lab.example','*)(objectClass=*)')
+
+    def test_expired_uninstalled_request_can_recover_with_new_key_and_fresh_ad(self):
+        old,_=self.enrollment()
+        future=datetime.now(timezone.utc)+timedelta(days=91)
+        with patch('kaname.device_enrollment.instant',return_value=future):
+            new,_=self.enrollment(ec.generate_private_key(ec.SECP256R1()))
+        self.assertNotEqual(old['serial'],new['serial'])
+        self.assertGreaterEqual(len(self.connections),4)
+
+    def test_crl_refresh_is_automatic_and_cached_signer_checks_vault_changes(self):
+        self.enrollment()
+        with self.service.store.connect() as db:before=db.execute('SELECT crl_number FROM pki_authority').fetchone()[0]
+        with patch('kaname.device_enrollment.instant',return_value=datetime.now(timezone.utc)+timedelta(days=8)):
+            self.service.maintenance()
+        with self.service.store.connect() as db:self.assertEqual(before+1,db.execute('SELECT crl_number FROM pki_authority').fetchone()[0])
+        if __import__('os').name=='posix':
+            with patch('kaname.device_enrollment.instant',return_value=datetime.now(timezone.utc)+timedelta(days=8)):
+                self.assertTrue(self.service.status()['signer_ready'])
+                keyfile=Path(self.temp.name)/'secret-store.key';keyfile.write_bytes(b'x'*32)
+                self.assertFalse(self.service.status()['signer_ready'])

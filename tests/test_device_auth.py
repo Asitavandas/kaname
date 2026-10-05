@@ -115,3 +115,8 @@ class NativeKerberosTests(unittest.TestCase):
             if substituted=='message':envelope['message']=encode(b'{"csr":"attacker"}')
             else:path='/api/device/receipt'
             with self.assertRaises(EnrollmentError):service.verify(path,envelope)
+
+    def test_ntlm_never_negotiates_even_with_a_valid_acceptor_keytab(self):
+        service=KerberosSessions(self.root,'authwire.lab.example','lab.example')
+        with self.assertRaises(EnrollmentError) as error:service.start({'token':encode(b'NTLMSSP\x00'+b'\x01\x00\x00\x00'+b'\x00'*32)})
+        self.assertEqual('DEVICE_AUTH_REJECTED',error.exception.code)

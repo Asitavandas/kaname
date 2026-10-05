@@ -47,7 +47,15 @@ SuppressDefaults=TRUE
     [IO.File]::WriteAllText((Join-Path $temp 'proof.txt'),[Convert]::ToBase64String($proof),[Text.Encoding]::ASCII)
     python -m tools.device_fixture --root $temp --step issue
     if($LASTEXITCODE -ne 0) { throw 'Native key challenge proof rejected' }
-    & "$env:SystemRoot\System32\certreq.exe" -accept -machine -q (Join-Path $temp 'issued.pem') | Out-Null
+    # Match the GPO installer: trust this disposable fixture CA before accept.
+    $fixtureTrust = @()
+    foreach($entry in @(@('root-ca.pem','Root'),@('issuer-ca.pem','CA'))) {
+        $ca = New-Object Security.Cryptography.X509Certificates.X509Certificate2((Join-Path $temp $entry[0]))
+        $caStore = New-Object Security.Cryptography.X509Certificates.X509Store($entry[1],'LocalMachine')
+        try { $caStore.Open('ReadWrite');$caStore.Add($ca) } finally { $caStore.Close() }
+        $fixtureTrust += @{store=$entry[1];thumbprint=$ca.Thumbprint};$ca.Dispose()
+    }
+    & "$env:SystemRoot\System32\certreq.exe" -accept -machine -q (Join-Path $temp 'issued.pem')
     if($LASTEXITCODE -ne 0) { throw 'Native machine certificate installation failed' }
     $leaf=New-Object Security.Cryptography.X509Certificates.X509Certificate2((Join-Path $temp 'issued.pem'))
     $installed=Get-Item ('Cert:\LocalMachine\My\'+$leaf.Thumbprint)
@@ -63,5 +71,8 @@ SuppressDefaults=TRUE
     if($leaf) { Remove-Item ('Cert:\LocalMachine\My\'+$leaf.Thumbprint) -ErrorAction SilentlyContinue;$leaf.Dispose() }
     if($private) { $private.Dispose() }
     if($key) { $key.Delete();$key.Dispose() }
+    foreach($ca in @($fixtureTrust)) {
+        if($ca) { Remove-Item ('Cert:\LocalMachine\'+$ca.store+'\'+$ca.thumbprint) -ErrorAction SilentlyContinue }
+    }
     Remove-Item $temp -Recurse -Force
 }

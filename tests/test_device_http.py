@@ -12,6 +12,9 @@ class DeviceHTTPTests(EnrollmentHTTPTests):
             self.assertEqual(403,status) # browser Origin also explicitly refused
         status,body,_=self.request('POST','/api/device/session',{'token':'TlRMTVNTUA=='})
         self.assertEqual(403,status)
+        status,body,_=self.request('POST','/api/device/issue',{'id':'0'*64,'message':'e30=','mic':'AA=='},
+            {'Origin':'','X-Remote-User':'PC01$@LAB.EXAMPLE',**self.login()})
+        self.assertEqual(403,status);self.assertEqual('DEVICE_SESSION_EXPIRED',body['error'])
 
     def test_profile_and_signer_admin_require_session_csrf_write_and_https(self):
         self.assertEqual(401,self.request('GET','/api/device-admin/status')[0])

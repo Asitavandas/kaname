@@ -391,7 +391,7 @@ class Handler(BaseHTTPRequestHandler):
             value = self.server.store.snapshot()
             value['pki_public'] = self.server.store.public_pki_status()
             value['pki_public']['user_enrollment_available'] = self.server.tls and sys.platform == 'linux'
-            value['pki_public']['machine_enrollment_enabled'] = False
+            value['pki_public']['machine_enrollment_enabled'] = bool(self.server.devices and self.server.device_sessions and self.server.device_sessions.readiness() and self.server.devices.status()['signer_ready'])
             value['directory_public'] = self.server.store.directory_status()
             value['directory_public']['automatic_sync_enabled'] = self.server.operations.directory()['automatic_sync']
             value['directory_health'] = self.server.operations.health()

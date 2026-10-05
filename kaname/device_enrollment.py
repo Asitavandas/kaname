@@ -112,10 +112,17 @@ class DeviceEnrollment:
                 raise ValueError()
             if not root.not_valid_before_utc <= now < root.not_valid_after_utc or not issuer.not_valid_before_utc <= now < issuer.not_valid_after_utc:
                 raise ValueError()
-            if not issuer.extensions.get_extension_for_class(x509.BasicConstraints).value.ca or not issuer.extensions.get_extension_for_class(x509.KeyUsage).value.key_cert_sign:
-                raise ValueError()
+            for cert,length in ((root,1),(issuer,0)):
+                constraints = cert.extensions.get_extension_for_class(x509.BasicConstraints)
+                usage = cert.extensions.get_extension_for_class(x509.KeyUsage)
+                if not constraints.critical or not constraints.value.ca or constraints.value.path_length != length:
+                    raise ValueError()
+                if not usage.critical or not usage.value.key_cert_sign or not usage.value.crl_sign:
+                    raise ValueError()
+                if not isinstance(cert.public_key(),rsa.RSAPublicKey) or cert.public_key().key_size != 3072 or not isinstance(cert.signature_hash_algorithm,hashes.SHA256):
+                    raise ValueError()
             crl = x509.load_pem_x509_crl(authority[2])
-            if not crl.is_signature_valid(issuer.public_key()) or crl.extensions.get_extension_for_class(x509.CRLNumber).value.crl_number != authority[3]:
+            if not crl.is_signature_valid(issuer.public_key()) or crl.issuer != issuer.subject or crl.last_update_utc > now or crl.extensions.get_extension_for_class(x509.CRLNumber).value.crl_number != authority[3]:
                 raise ValueError()
             return issuer, key, authority[3]
         except Exception:
@@ -369,7 +376,9 @@ class DeviceEnrollment:
             db.execute('BEGIN IMMEDIATE')
             due = db.execute('''SELECT r.serial FROM device_retirements r JOIN pki_certificates c ON c.serial=r.serial
                 WHERE r.retire_at<=? AND c.revoked_at IS NULL''',(now.isoformat(),)).fetchall()
-            if not due:
+            authority = db.execute('SELECT crl FROM pki_authority WHERE id=1').fetchone()
+            refresh_due = bool(authority) and x509.load_pem_x509_crl(authority[0]).next_update_utc <= now+timedelta(hours=12)
+            if not due and not refresh_due:
                 return
             issuer, key, number = self._issuer(db,now)
             for serial, in due:
@@ -378,6 +387,8 @@ class DeviceEnrollment:
             rows = db.execute('SELECT serial,revoked_at,reason FROM pki_certificates WHERE revoked_at IS NOT NULL ORDER BY serial').fetchall()
             crl = self.pki._build_crl(issuer,key,rows,number+1,now)
             db.execute('UPDATE pki_authority SET crl=?,crl_number=? WHERE id=1',(crl.public_bytes(PEM),number+1))
+            if not due:
+                self.pki._audit(db,'device_crl_refreshed')
 
     def package(self, profile_id, *, hostname, port, tls_pem):
         profile = self.profile(profile_id)
@@ -397,6 +408,9 @@ class DeviceEnrollment:
             files[name] = (directory/name).read_bytes()
         files['config.json'] = json.dumps({'url':f'https://{hostname}:{port}', 'spn':'HTTP/'+hostname,
             'domain':profile['domain'], 'profile_id':profile_id, 'tls_sha256':tls_cert.fingerprint(hashes.SHA256()).hex()},indent=2).encode()
+        asset_hashes = json.dumps({name:digest(data) for name,data in sorted(files.items())
+            if name.endswith('.pem') or name=='config.json'},sort_keys=True,separators=(',',':'))
+        files['Install-AuthWire.ps1'] = files['Install-AuthWire.ps1'].replace(b'__AUTHWIRE_ASSET_HASHES__',asset_hashes.encode())
         files['README.txt'] = ('AuthWire certificate deployment pilot\r\n'
             '1. Sign BOTH .ps1 files with your trusted enterprise Authenticode publisher.\r\n'
             '2. Put the whole package in an administrator-write-only SYSVOL/share.\r\n'
