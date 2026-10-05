@@ -15,8 +15,12 @@ from .models import strict_json
 from .radius import CurrentDirectoryAccount, object_id
 
 
-def read_linux_directory(value, config, *, probe=False, object_guid=None, authenticate_self=False):
+def read_linux_directory(value, config, *, probe=False, object_guid=None, authenticate_self=False, computer_sam=None):
     request = validate_connection(value, config)
+    if computer_sam is not None:
+        if probe or object_guid is not None or authenticate_self or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,19}\$', computer_sam):
+            raise DirectoryError('AD_INPUT_INVALID')
+        request['computer_sam'] = computer_sam
     if authenticate_self:
         if probe or object_guid is not None:
             raise DirectoryError('AD_INPUT_INVALID')
@@ -71,6 +75,18 @@ def read_linux_directory(value, config, *, probe=False, object_guid=None, authen
             pass
     if object_guid is not None:
         return decode_account_response(output, process.returncode, request, object_guid)
+    if computer_sam is not None:
+        try:
+            if process.returncode:
+                failure = strict_json(output)
+                from .directory import ERRORS
+                if type(failure) is dict and set(failure) == {'error'} and failure['error'] in ERRORS:
+                    raise DirectoryError(failure['error'])
+                raise ValueError()
+            guid = strict_json(output)['account']['object_guid']
+            return decode_account_response(output, process.returncode, request, guid)
+        except (ValueError, TypeError, KeyError):
+            raise DirectoryError('AD_INVALID_RESPONSE') from None
     if authenticate_self:
         try:
             if process.returncode:

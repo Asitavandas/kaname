@@ -22,7 +22,7 @@ def main():
         scheme = 'https' if server.tls else 'http'
         print(f'AuthWire laboratory panel: {scheme}://{args.listen}:{server.server_port}')
         print('Panel login: username and password. See README for the first-install account.')
-        print('Laboratory only. HTTPS user enrollment is available; machine enrollment, production RADIUS and OVF are pending.')
+        print('Laboratory only. HTTPS user enrollment and the central-setup computer enrollment pilot are available; production RADIUS and OVF remain pending.')
         try:
             server.serve_forever()
         except KeyboardInterrupt:

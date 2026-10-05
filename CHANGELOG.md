@@ -1,3 +1,12 @@
+## 0.12.0-dev.1 — 2026-10-05
+
+- Add computer certificate profiles with AD security group scope, custom 2–365 day validity and renewal window.
+- Add Kerberos-only HTTP sessions with signed application messages, live computer SID/GUID/group lookup, challenge/key proof and transactional idempotent issuance.
+- Seal only the unattended issuer key in the private vault; retain encrypted root and existing CA/password/config/admin compatibility.
+- Add installation receipts, new-key renewal, predecessor overlap/retirement and automatic signed CRL refresh. A certificate is not marked installed at issuance.
+- Add a Windows SYSTEM/CNG client, public-only GPO package, enterprise signing requirement and separate central keytab setup tool. Profiles start disabled; no RADIUS or 802.1X activation.
+- Validate MIT Kerberos replay/integrity/NTLM rejection, native Windows requests/key proof/installation, HTTPS browser flows and a 1000-device synthetic directory fixture. Customer AD/SYSTEM SSPI/GPO and Windows certificate selection remain pilot acceptance items.
+
 ## 0.10.1-dev.1 — 2026-10-05
 
 ## 0.11.1-dev.1 — 2026-10-05

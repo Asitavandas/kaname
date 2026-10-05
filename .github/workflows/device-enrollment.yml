@@ -1,0 +1,44 @@
+name: AuthWire device enrollment pilot checks
+on:
+  push:
+    branches: [main, 'feat/bulk-enrollment-0.12']
+    paths: ['kaname/**', 'tests/test_device*.py', 'tools/device_*.ps1', '.github/workflows/device-enrollment.yml']
+  pull_request:
+    paths: ['kaname/**', 'tests/test_device*.py', 'tools/device_*.ps1', '.github/workflows/device-enrollment.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-kerberos:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Disposable MIT KDC and GSSAPI dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y python3-gssapi python3-ldap python3-venv krb5-kdc krb5-admin-server krb5-user
+          /usr/bin/python3 -m venv --system-site-packages "$RUNNER_TEMP/authwire-native"
+          "$RUNNER_TEMP/authwire-native/bin/python" -m pip install cryptography==46.0.0
+      - name: Actual mutual Kerberos, replay/integrity and issuance boundaries
+        run: '"$RUNNER_TEMP/authwire-native/bin/python" -m unittest tests.test_device_auth tests.test_device_enrollment tests.test_device_http -v'
+        env:
+          AUTHWIRE_REQUIRE_KERBEROS: '1'
+      - name: 1000-device synthetic directory load fixture
+        run: '"$RUNNER_TEMP/authwire-native/bin/python" -m tools.device_load_smoke --devices 1000'
+  windows-client:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - run: python -m pip install cryptography==46.0.0
+      - name: Native CNG request, nonexportable key, proof and machine-store install
+        run: |
+          & .\tools\device_windows_smoke.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Native endpoint fixture failed' }

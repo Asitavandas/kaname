@@ -34,6 +34,8 @@ class CertificateRegistry:
                     FROM radius_certificate_bindings b JOIN pki_certificates c ON c.serial=b.serial
                     WHERE b.issuer_sha256=? AND b.serial=?''',
                     (reference.issuer_sha256, reference.serial)).fetchone()
+                retirement = db.execute('SELECT retire_at FROM device_retirements WHERE serial=?',
+                    (reference.serial,)).fetchone() if 'device_retirements' in tables else None
             if authority is None or row is None or row[6] is not None or row[4] not in (0, 1):
                 return None
             issuer = x509.load_pem_x509_certificate(authority[0])
@@ -42,6 +44,8 @@ class CertificateRegistry:
             cert = x509.load_pem_x509_certificate(row[5])
             cert.verify_directly_issued_by(issuer)
             now = datetime.now(timezone.utc)
+            if retirement and now >= datetime.fromisoformat(retirement[0]):
+                return None
             if format(cert.serial_number, 'x') != reference.serial or not cert.not_valid_before_utc <= now < cert.not_valid_after_utc:
                 return None
             if cert.extensions.get_extension_for_class(x509.BasicConstraints).value.ca:
