@@ -10,7 +10,7 @@ manuel tetiklenir ve 0.7 yayın commit'ini kullanır; Linux dosyaları Windows'a
 
 linux-stage workflow'u disposable Ubuntu CI'de native python-ldap ile loopback
 LDAP sayfalama, critical domain-scope, binary SID/GUID, referral reddi, member-range,
-seçilmiş OU dışındaki direct/nested/primary üyeleri doğrular. Bu fixture anonim
+seçilmiş OU sınırlarını ve birden fazla OU birleşimini doğrular; kapsam dışındaki üyeler içeri alınmaz (0.12.1 güncel davranışı). Bu fixture anonim
 loopback bind kullanır; gerçek GSSAPI/AD kimlik doğrulaması olarak sunulmaz.
 Runtime okuyucusu yalnız kinit + GSSAPI bind kullanır ve SASL SSF >= 56 ister.
 Simple Bind, NTLM, referral chasing ve domain join yolu bulunmaz.

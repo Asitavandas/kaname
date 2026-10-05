@@ -27,6 +27,7 @@ jobs:
       - name: 1000-device synthetic directory load fixture
         run: '"$RUNNER_TEMP/authwire-native/bin/python" -m tools.device_load_smoke --devices 1000'
   windows-client:
+    if: false # Windows work is paused; the panel runs on Linux.
     runs-on: windows-2025
     timeout-minutes: 10
     defaults:

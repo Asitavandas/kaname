@@ -3,12 +3,12 @@ import json
 import secrets
 
 from .models import address, boolean, integer, keys, text, ValidationError
-from .directory import validate_connection, validate_search_base
+from .directory import validate_connection, validate_search_scopes
 from .store import ConflictError
 from .vault import Vault
 
 
-DIRECTORY_DEFAULTS = {'dc_fqdn': '', 'username': '', 'search_base': '', 'sync_minutes': 15,
+DIRECTORY_DEFAULTS = {'name': 'LDAP Server', 'dc_fqdn': '', 'username': '', 'search_base': '', 'sync_minutes': 15,
                       'check_minutes': 5, 'automatic_sync': False}
 
 
@@ -125,11 +125,11 @@ class Operations:
             return {**DIRECTORY_DEFAULTS, 'credentials_saved': False}
         with self.store.connect() as db:
             saved = db.execute("SELECT 1 FROM protected_secrets WHERE name='directory' ").fetchone() is not None
-        return {**result, 'credentials_saved': saved}
+        return {**DIRECTORY_DEFAULTS, **result, 'credentials_saved': saved}
 
     def save_directory(self, expected, value):
         fields = set(DIRECTORY_DEFAULTS) | {'password'}
-        keys(value, fields, fields)
+        keys(value, fields, fields - {'name'})
         config = self.store.snapshot()['config']
         if config is None:
             raise ValidationError('CONFIG_REQUIRED')
@@ -140,7 +140,8 @@ class Operations:
         connection = validate_connection({k: value[k] for k in ('dc_fqdn', 'username', 'password')} if password else
                                          {'dc_fqdn': value['dc_fqdn'], 'username': value['username'], 'password': 'unchanged'}, config)
         result = {k: connection[k] for k in ('dc_fqdn', 'username')}
-        result.update(domain=config['ad_domain'], search_base=validate_search_base(value['search_base'], config['ad_domain']),
+        result.update(name=text(value.get('name', previous['name']), 128),
+                      domain=config['ad_domain'], search_base=validate_search_scopes(value['search_base'], config['ad_domain']),
                       sync_minutes=integer(value['sync_minutes'], 1, 1440), check_minutes=integer(value['check_minutes'], 1, 1440),
                       automatic_sync=boolean(value['automatic_sync']))
         cipher = self.vault.seal('directory', password) if password else None
@@ -160,6 +161,16 @@ class Operations:
         with self.store.connect() as db:
             cipher = db.execute("SELECT ciphertext FROM protected_secrets WHERE name='directory'").fetchone()[0]
         return {k: settings[k] for k in ('dc_fqdn', 'username', 'search_base')} | {'password': self.vault.open('directory', cipher)}
+
+    def directory_probe_connection(self, value):
+        keys(value, {'dc_fqdn', 'username', 'password', 'search_base'}, {'dc_fqdn', 'username', 'password', 'search_base'})
+        result = dict(value)
+        if result['password'] == '':
+            saved = self.directory()
+            if not saved['credentials_saved'] or any(result[k] != saved[k] for k in ('dc_fqdn', 'username')):
+                raise ValidationError('AD_PASSWORD_REQUIRED')
+            result['password'] = self.directory_connection()['password']
+        return result
 
     def health(self):
         return self._public('directory_health', {'state': 'unconfigured', 'error': '', 'checked_at': '', 'last_success': ''})

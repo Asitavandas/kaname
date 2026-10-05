@@ -152,7 +152,10 @@ class LDAPFixture:
                             self.account_response(conn, message_id, base.decode(), int.from_bytes(search_scope, 'big'))
                             continue
                         if self.mode == 'scoped':
-                            self.scoped_response(conn, message_id, base.decode(), filter_data)
+                            self.legacy_scoped_response(conn, message_id, base.decode(), filter_data)
+                            continue
+                        if self.mode == 'ou-scoped':
+                            self.scoped_response(conn, message_id, base.decode(), filter_data, int.from_bytes(search_scope, "big"))
                             continue
                         ranged = re.search(rb'member;range=(\d+)-\d+', content)
                         if ranged:
@@ -222,7 +225,44 @@ class LDAPFixture:
             conn.sendall(entry(message_id, attrs, dn))
         conn.sendall(done(message_id))
 
-    def scoped_response(self, conn, message_id, base, filter_data):
+    def scoped_response(self, conn, message_id, base, filter_data, scope):
+        domain = 'DC=fixture,DC=invalid'
+        network = 'OU=Network,' + domain
+        other = 'OU=Other,' + domain
+        group_dn = 'CN=Access,' + network
+        nested_dn = 'CN=Child,' + other
+        inside_dn = 'CN=Inside,' + network
+        alice_dn = 'CN=Alice,OU=Users,' + domain
+        bob_dn = 'CN=Bob,OU=Elsewhere,' + domain
+        containers = [network, other, 'OU=Users,' + domain, 'OU=Elsewhere,' + domain]
+        if b'organizationalUnit' in filter_data:
+            selected = [dn for dn in containers if dn.split(',')[0][3:].encode() in filter_data]
+            if b'Ambiguous' in filter_data:
+                selected = ['OU=Ambiguous,OU=Network,' + domain, 'OU=Ambiguous,OU=Other,' + domain]
+            for dn in selected:
+                conn.sendall(entry(message_id, {'objectClass': ['organizationalUnit']}, dn))
+        elif scope == 0:
+            if base in containers:
+                conn.sendall(entry(message_id, {'objectClass': ['organizationalUnit']}, base))
+        else:
+            objects = [(1100, group_dn, 'group', [inside_dn, nested_dn, 'CN=Foreign,DC=other,DC=invalid'], 0),
+                       (1101, nested_dn, 'group', [alice_dn], 0),
+                       (1000, inside_dn, 'user', [], 513),
+                       (1001, alice_dn, 'user', [], 513),
+                       (1002, bob_dn, 'user', [], 1100),
+                       (1003, 'CN=PC01,' + network, 'computer', [], 513)]
+            kind = 'group' if b'group' in filter_data else 'user' if b'person' in filter_data else 'computer'
+            for index, dn, object_kind, members, primary_id in objects:
+                if object_kind != kind or not (dn.lower() == base.lower() or dn.lower().endswith(',' + base.lower())):
+                    continue
+                attrs = {'objectSid': [sid(21, 1, 2, 3, index)], 'objectGUID': [uuid.UUID(int=index).bytes_le],
+                         'sAMAccountName': [f'fixture-{index}'], 'name': [f'Fixture {index}'],
+                         'userAccountControl': ['512'], 'primaryGroupID': [str(primary_id)], 'groupType': ['-2147483646']}
+                if kind == 'group': attrs['member'] = members
+                conn.sendall(entry(message_id, attrs, dn))
+        conn.sendall(done(message_id, cookie=b''))
+
+    def legacy_scoped_response(self, conn, message_id, base, filter_data):
         domain = 'DC=fixture,DC=invalid'
         group_dn = 'CN=Access,OU=Network,' + domain
         nested_dn = 'CN=Child,OU=Other,' + domain
