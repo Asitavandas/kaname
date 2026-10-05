@@ -4,11 +4,11 @@ Bu sürüm Windows'taki yerel geliştirme panelinden gerçek AD dizin okumayı d
 
 1. Kurulum ekranında gerçek AD DNS domain adını ve DC IP adreslerini kaydedin.
 2. User&Authentication → Active Directory ekranını açın. DC'nin tam DNS adını ve `kullanici@domain` biçiminde kullanıcıyı girin. İlk sürümde UPN suffix'i kayıtlı domain ile aynı olmalı.
-3. AD parolasını yalnız yerel panelde girin. İsteğe bağlı CN/OU/DC konumunu, eşitleme ve kontrol aralığını ayarlayıp Bağlantıyı kaydet düğmesine basın. Parola korumalı saklanır; alan temizlenir ve GET yanıtında geri verilmez. Şimdi eşitle kayıtlı bağlantıyı kullanır.
+3. AD parolasını yalnız yerel panelde girin. LDAP Servers ekranında Name ve LDAP Server alanlarını, Distinguished Name içindeki OU kapsamını, eşitleme ve kontrol aralığını ayarlayıp Bağlantıyı kaydet düğmesine basın. Parola korumalı saklanır; alan temizlenir ve GET yanıtında geri verilmez. Şimdi eşitle kayıtlı bağlantıyı kullanır.
 4. Son başarılı okumanın zamanı ve sayılar görüntülenir. User&Authentication → Users/User Groups ekranında Users ve User Groups listeleri birlikte gösterilir. Her liste ayrı aranır ve sayfalanır. Adına tıklayınca üyelik detayları açılır.
 5. Güvenlik grubunun Politikada kullan düğmesi yeni politika formunda grup adını seçer. Politika formundan da grup adı aranabilir ve birden fazla grup seçilebilir; SID değerleri içeride saklanır. Kaydetmeden politika oluşturulmaz.
 
-Domain Admin hesabı okunabilir ancak dizin okuması için bu yetki zorunlu değildir. AD'de yazma, domain join, GPO değişikliği veya hesap oluşturma yapılmaz. Parola boş bırakılarak mevcut kayıt korunabilir; kullanıcı/DC değişirse parola tekrar girilir. Windows DPAPI kullanıcı kapsamını kullanır; panel aynı Windows hesabıyla çalışmalıdır. Periyodik işler panel süreci çalışırken yürür. Filtre boşsa tüm domain, doluysa o konumdaki gruplar ve aynı domain içindeki üyeleri okunur.
+Domain Admin hesabı okunabilir ancak dizin okuması için bu yetki zorunlu değildir. AD'de yazma, domain join, GPO değişikliği veya hesap oluşturma yapılmaz. Parola boş bırakılarak mevcut kayıt korunabilir; kullanıcı/DC değişirse parola tekrar girilir. Windows DPAPI kullanıcı kapsamını kullanır; panel aynı Windows hesabıyla çalışmalıdır. Periyodik işler panel süreci çalışırken yürür. Kapsam boşsa veya domain DN’si girilirse tüm domain okunur. Bir OU adı veya tam/relative DN girildiğinde yalnız o konumun altındaki kullanıcı, grup ve bilgisayarlar okunur. Birden fazla konum için her satıra ayrı bir OU adı veya DN girin (en fazla 16). OU adı tekil olmalıdır; bulunamazsa veya aynı adda birden fazla OU varsa okuma açık hatayla durur. Nested ve primary üyelikler yalnız seçilen konumlar içindeki nesneler arasında çözülür; dış üyeler unresolved olarak gösterilir. Konumlar virgülle değil satır sonuyla ayrılır; DN içindeki virgüller hiyerarşiyi belirtir.
 
 ## Bağlantı koruması
 
@@ -35,3 +35,7 @@ Fixture API/tarayıcı testleri credential, kalıcılık, CSRF/Origin, XSS ve ba
 Domain-scope kaynakları:
 - https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ldap/ldap-server-domain-scope-oid
 - https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/ldap-paged-queries-subordinate-referrals-not-chased
+
+## LDAP Servers bağlantı testleri
+
+Test connectivity yalnız DNS ve izin verilen DC IP’lerinde TCP 389 erişimini kontrol eder; parola kullanmaz. Test user credentials Kerberos korumalı bağlantıyı ve formda verilen OU kapsamının varlığını doğrular; kayıtlı kataloğu değiştirmez. Boş parola yalnız aynı kayıtlı sunucu ve kullanıcı için saklanan parolayı kullanır. Her iki işlem directory.connection Write yetkisi ve normal panel CSRF doğrulaması gerektirir. Şimdi eşitle kayıtlı kapsamı kullanır; form değişikliği önce kaydedilmelidir.

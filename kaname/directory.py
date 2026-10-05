@@ -13,8 +13,9 @@ from .models import ValidationError, boolean, dns_name, integer, keys, text
 TRANSPORT = 'kerberos-sign-seal'
 ERRORS = {'AD_BIND_FAILED', 'AD_CREDENTIALS_REJECTED', 'AD_DOMAIN_MISMATCH',
           'AD_DIRECTORY_LIMIT', 'AD_SEARCH_FAILED', 'AD_PROTOCOL_UNAVAILABLE',
-          'AD_PROTECTION_REQUIRED', 'AD_INPUT_INVALID', 'AD_TIMEOUT', 'AD_INVALID_RESPONSE'}
-STAGES = {'input', 'bind', 'rootdse', 'serialize', 'groups_members', 'memberships'} | {kind + '_' + step for kind in ('users', 'groups', 'computers') for step in ('prepare', 'search', 'decode', 'page')}
+          'AD_PROTECTION_REQUIRED', 'AD_INPUT_INVALID', 'AD_TIMEOUT', 'AD_INVALID_RESPONSE',
+          'AD_SCOPE_NOT_FOUND', 'AD_SCOPE_AMBIGUOUS', 'AD_SCOPE_INVALID', 'AD_CONNECT_FAILED'}
+STAGES = {'input', 'bind', 'rootdse', 'serialize', 'groups_members', 'memberships'} | {kind + '_' + step for kind in ('users', 'groups', 'computers', 'ous', 'scopes') for step in ('prepare', 'search', 'decode', 'page')}
 REASONS = {'UNKNOWN', 'LDAP_RESULT', 'ACCESS_DENIED', 'LDAP_CONNECTION', 'VALUE_CONVERSION', 'ATTRIBUTE_MISSING', 'BINARY_ATTRIBUTE_INVALID', 'PROPERTY_ACCESS', 'METHOD_BINDING', 'REFERRAL_RETURNED', 'MEMBERSHIP_RANGE_INVALID'}
 
 
@@ -59,7 +60,68 @@ def validate_connection(value, config):
     if type(password) is not str or not 1 <= len(password) <= 1024 or '\0' in password:
         raise ValidationError('Invalid credential')
     return {'dc_fqdn': host, 'domain': domain, 'username': username, 'password': password,
-            'search_base': validate_search_base(value.get('search_base', ''), domain)}
+            'search_base': validate_search_scopes(value.get('search_base', ''), domain)}
+
+
+def validate_search_scopes(value, domain):
+    """One DN or OU name per line; never silently discard an invalid scope."""
+    if type(value) is not str or len(value) > 32768 or any(ord(c) < 32 and c not in '\r\n' for c in value):
+        raise ValidationError('AD_SCOPE_INVALID')
+    lines = value.splitlines()
+    if len(lines) > 16 or any(not line.strip() for line in lines) and value.strip():
+        raise ValidationError('AD_SCOPE_INVALID')
+    normalized, seen = [], set()
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        if '=' in line:
+            if not re.search(r'(?:^|,)\s*DC\s*=', line, re.I):
+                line += ',' + ','.join('DC=' + x for x in domain.split('.'))
+            line = validate_search_base(line, domain)
+        elif len(line) > 256 or any(c in line for c in ',\\+<>;"()*'):
+            raise ValidationError('AD_SCOPE_INVALID')
+        folded = line.casefold()
+        if folded not in seen:
+            normalized.append(line); seen.add(folded)
+    return '\n'.join(normalized)
+
+
+def dn_within(dn, base):
+    """Compare complete RDN boundaries, including escaped commas/backslashes."""
+    def parts(value):
+        result, current, escaped = [], [], False
+        for char in value:
+            if char == ',' and not escaped:
+                result.append(''.join(current).strip().casefold()); current = []
+            else:
+                current.append(char)
+            escaped = char == '\\' and not escaped
+        result.append(''.join(current).strip().casefold())
+        return result
+    actual, expected = parts(dn), parts(base)
+    return len(actual) >= len(expected) and actual[-len(expected):] == expected
+
+
+def check_directory_connectivity(value, config):
+    """Bounded TCP probe to configured DC IPs only; no password or LDAP bind."""
+    keys(value, {'dc_fqdn'}, {'dc_fqdn'})
+    host = dns_name(value['dc_fqdn'])
+    if not host.endswith('.' + config['ad_domain']):
+        raise ValidationError('AD_DOMAIN_MISMATCH')
+    try:
+        addresses = {str(ipaddress.ip_address(r[4][0])) for r in socket.getaddrinfo(host, 389, type=socket.SOCK_STREAM)}
+    except (OSError, ValueError):
+        raise DirectoryError('AD_DNS_FAILED') from None
+    if not addresses or len(addresses) > 4 or not addresses <= {str(ipaddress.ip_address(x)) for x in config['dc_ips']}:
+        raise DirectoryError('AD_DC_IP_MISMATCH')
+    for address in sorted(addresses):
+        try:
+            with socket.create_connection((address, 389), timeout=2):
+                return {'connected': True, 'port': 389, 'authenticated': False}
+        except OSError:
+            continue
+    raise DirectoryError('AD_CONNECT_FAILED')
 
 
 def validate_catalog(value, domain=None, dc_fqdn=None):

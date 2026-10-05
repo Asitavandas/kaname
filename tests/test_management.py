@@ -9,7 +9,7 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from kaname.directory import DirectoryError, validate_search_base
+from kaname.directory import DirectoryError, validate_search_base, validate_search_scopes, dn_within, check_directory_connectivity
 from kaname.models import ValidationError
 from kaname.operations import Operations
 from kaname.policy import PolicyConflictError, evaluate, policy_conflicts
@@ -86,7 +86,7 @@ class ConflictTests(unittest.TestCase):
 
 class OperationsTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'nt', 'Windows protected .NET LDAP scoped wire fixture')
-    def test_windows_scoped_groups_include_nested_and_outside_ou_primary_users(self):
+    def test_windows_scoped_catalog_excludes_outside_ou_members(self):
         import subprocess
         from pathlib import Path
         from .ldap_fixture import LDAPFixture
@@ -97,11 +97,32 @@ class OperationsTests(unittest.TestCase):
             value = json.loads(result.stdout.decode('utf-8-sig'))
             self.assertEqual(0, result.returncode, str(value))
             self.assertEqual('scoped-ldap', value['fixture'])
-            self.assertEqual({'users': 2, 'groups': 2, 'computers': 0}, value['counts'])
+            self.assertEqual({'users': 1, 'groups': 1, 'computers': 1}, value['counts'])
             self.assertTrue(all(fixture.domain_scope_controls))
             self.assertIn(('OU=Network,DC=fixture,DC=invalid', 2), fixture.search_records)
-            self.assertIn(('CN=Alice,OU=Users,DC=fixture,DC=invalid', 0), fixture.search_records)
+            self.assertEqual({'OU=Network,DC=fixture,DC=invalid'}, {base for base, _ in fixture.search_records})
             self.assertEqual([], fixture.errors)
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows protected .NET LDAP multi-OU wire fixture')
+    def test_windows_multiple_ou_names_and_missing_ambiguous_scopes(self):
+        import subprocess
+        from pathlib import Path
+        from .ldap_fixture import LDAPFixture
+        executable = Path(os.environ['SystemRoot']) / 'System32/WindowsPowerShell/v1.0/powershell.exe'
+        script = Path(__file__).parents[1] / 'kaname/directory_windows.ps1'
+        for scope, error in [('Network\nOU=Other,DC=fixture,DC=invalid', None),
+                             ('Missing', 'AD_SCOPE_NOT_FOUND'), ('Ambiguous', 'AD_SCOPE_AMBIGUOUS')]:
+            with self.subTest(scope=scope), LDAPFixture('scoped') as fixture:
+                result = subprocess.run([str(executable), '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', str(script), '-SelfTest', '-FixturePort', str(fixture.port), '-ScopedFixture', '-FixtureScope', scope], capture_output=True, timeout=25)
+                value = json.loads(result.stdout.decode('utf-8-sig'))
+                if error:
+                    self.assertNotEqual(0, result.returncode)
+                    self.assertEqual(error, value['error'])
+                else:
+                    self.assertEqual(0, result.returncode, str(value))
+                    self.assertEqual({'users': 1, 'groups': 2, 'computers': 1}, value['counts'])
+                self.assertEqual([], fixture.errors)
+                self.assertNotIn(('CN=Alice,OU=Users,DC=fixture,DC=invalid', 0), fixture.search_records)
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
@@ -179,6 +200,35 @@ class OperationsTests(unittest.TestCase):
         self.assertEqual('CN=A\\, B,OU=Network,DC=lab,DC=example', validate_search_base('CN=A\\, B,OU=Network,DC=lab,DC=example', 'lab.example'))
         for value in ['OU=Network,DC=other,DC=example', '(objectClass=*)', 'OU=X,DC=child,DC=lab,DC=example', 'CN=A+OU=B,DC=lab,DC=example', 'OU=A\0,DC=lab,DC=example']:
             with self.subTest(value=value), self.assertRaises(ValidationError): validate_search_base(value, 'lab.example')
+
+    def test_ldap_name_and_multiple_scopes_survive_restart_with_saved_password(self):
+        self.ops.save_directory(1, settings())
+        self.ops.save_directory(2, settings(name='Corporate LDAP', password='', search_base='Network\nOU=People'))
+        loaded = Operations(Store(self.temp.name))
+        self.assertEqual('Corporate LDAP', loaded.directory()['name'])
+        self.assertEqual('Network\nOU=People,DC=lab,DC=example', loaded.directory_connection()['search_base'])
+        self.assertEqual(connection()['password'], loaded.directory_connection()['password'])
+
+    def test_scope_validation_accepts_names_relative_dn_and_lines_but_rejects_injection(self):
+        self.assertEqual('Network\nOU=People,DC=lab,DC=example', validate_search_scopes(' Network \n OU=People ', 'lab.example'))
+        self.assertEqual('Network', validate_search_scopes('Network\nnetwork', 'lab.example'))
+        for value in ['Network,People', '(objectClass=*)', 'OU=X,DC=other,DC=example', 'OU=A+CN=B', 'Network\n\nPeople', 'X\n' * 17, 'Network\t']:
+            with self.subTest(value=value), self.assertRaises(ValidationError): validate_search_scopes(value, 'lab.example')
+        self.assertTrue(dn_within(r'CN=A\, B,OU=Network,DC=lab,DC=example', 'OU=Network,DC=lab,DC=example'))
+        self.assertFalse(dn_within('CN=X,OU=NotNetwork,DC=lab,DC=example', 'OU=Network,DC=lab,DC=example'))
+        self.assertFalse(dn_within(r'CN=X\,OU=Network,DC=lab,DC=example', 'OU=Network,DC=lab,DC=example'))
+
+    def test_connectivity_checks_all_resolved_ips_before_opening_any_socket(self):
+        dns = [(0, 0, 0, '', ('192.0.2.10', 389)), (0, 0, 0, '', ('192.0.2.99', 389))]
+        with patch('kaname.directory.socket.getaddrinfo', return_value=dns), patch('kaname.directory.socket.create_connection') as connect:
+            with self.assertRaises(DirectoryError) as caught:
+                check_directory_connectivity({'dc_fqdn': 'dc01.lab.example'}, config())
+            self.assertEqual('AD_DC_IP_MISMATCH', caught.exception.code)
+            connect.assert_not_called()
+        with patch('kaname.directory.socket.getaddrinfo', return_value=dns[:1]), patch('kaname.directory.socket.create_connection') as connect:
+            self.assertEqual({'connected': True, 'port': 389, 'authenticated': False}, check_directory_connectivity({'dc_fqdn': 'dc01.lab.example'}, config()))
+            self.assertEqual(('192.0.2.10', 389), connect.call_args.args[0])
+
 
 
 class SyncAndHTTPTests(unittest.TestCase):
@@ -293,8 +343,47 @@ class SyncAndHTTPTests(unittest.TestCase):
         self.assertEqual(['Corporate', 'Other'], value['conflicts'][0]['policy_names'])
         self.assertEqual(before, self.server.store.snapshot())
 
+    def test_credentials_test_uses_saved_password_without_replacing_catalog(self):
+        self.server.directory_sync.read(2)
+        before = self.server.store.directory_catalog()
+        self.server.directory_next_attempt = 0
+        observed = []
+        self.server.directory_health_reader = lambda value, _: observed.append(dict(value)) or {'probe': 'ok'}
+        value = {'expected_revision': 2, 'connection': connection() | {'password': '', 'search_base': 'Network\nOU=Other'}}
+        code, result = self.call('POST', '/api/directory/test-credentials', value)
+        self.assertEqual(200, code)
+        self.assertEqual({'authenticated': True, 'scope_verified': True, 'catalog_changed': False}, result)
+        self.assertEqual(connection()['password'], observed[0]['password'])
+        self.assertEqual('Network\nOU=Other', observed[0]['search_base'])
+        self.assertEqual(before, self.server.store.directory_catalog())
+        value['connection']['username'] = 'different@lab.example'
+        self.assertEqual(400, self.call('POST', '/api/directory/test-credentials', value)[0])
+
+    def test_scope_failure_preserves_catalog_and_returns_fixed_error(self):
+        self.server.directory_sync.read(2)
+        before = self.server.store.directory_catalog()
+        self.server.directory_next_attempt = 0
+        def missing(*_): raise DirectoryError('AD_SCOPE_NOT_FOUND')
+        self.server.directory_reader = missing
+        code, value = self.call('POST', '/api/directory/sync', {'expected_revision': 2})
+        self.assertEqual(503, code)
+        self.assertEqual('AD_SCOPE_NOT_FOUND', value['error'])
+        self.assertEqual(before, self.server.store.directory_catalog())
+
+    def test_connectivity_http_does_not_authenticate_or_replace_health(self):
+        before = self.server.operations.health()
+        payload = {'expected_revision': 2, 'connection': {'dc_fqdn': 'dc01.lab.example'}}
+        with patch('kaname.directory_sync.check_directory_connectivity', return_value={'connected': True, 'port': 389, 'authenticated': False}) as probe:
+            self.assertEqual(200, self.call('POST', '/api/directory/connectivity', payload)[0])
+            probe.assert_called_once()
+        self.assertEqual(before, self.server.operations.health())
+        self.assertFalse(self.server.store.directory_status()['catalog_available'])
+        self.assertEqual(429, self.call('POST', '/api/directory/connectivity', payload)[0])
+        payload['expected_revision'] = 1
+        self.assertEqual(409, self.call('POST', '/api/directory/connectivity', payload)[0])
+
     def test_new_endpoints_require_authentication(self):
         for path in ['/api/network', '/api/directory/settings', '/api/policies/groups']:
             self.assertEqual(401, self.call('GET', path, token=False)[0])
-        for path in ['/api/network/secret/reveal', '/api/network/secret/generate', '/api/network/vlans', '/api/directory/settings']:
+        for path in ['/api/network/secret/reveal', '/api/network/secret/generate', '/api/network/vlans', '/api/directory/settings', '/api/directory/connectivity', '/api/directory/test-credentials']:
             self.assertEqual(401, self.call('POST', path, {}, token=False)[0])

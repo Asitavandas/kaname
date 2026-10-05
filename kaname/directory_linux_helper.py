@@ -10,7 +10,7 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .directory import DirectoryError, TRANSPORT, validate_catalog
+from .directory import DirectoryError, TRANSPORT, validate_catalog, validate_search_scopes, dn_within
 from .radius import CurrentDirectoryAccount, account_sid, object_id
 
 DOMAIN_SCOPE = '1.2.840.113556.1.4.1339'
@@ -265,34 +265,44 @@ class Reader:
             raise DirectoryError('AD_CREDENTIALS_REJECTED')
         return account
 
+    def resolve_scopes(self, domain, search_base):
+        domain_base = ','.join('DC=' + x for x in domain.split('.'))
+        scopes = validate_search_scopes(search_base, domain).splitlines() or [domain_base]
+        resolved = []
+        for scope in scopes:
+            if '=' not in scope:
+                escaped = ''.join({'\\': r'\5c', '*': r'\2a', '(': r'\28', ')': r'\29', '\0': r'\00'}.get(c, c) for c in scope)
+                matches = [dn for dn, _ in self.raw_objects(domain_base,
+                    '(&(objectClass=organizationalUnit)(ou=' + escaped + '))')]
+                if not matches:
+                    raise DirectoryError('AD_SCOPE_NOT_FOUND')
+                if len(matches) != 1:
+                    raise DirectoryError('AD_SCOPE_AMBIGUOUS')
+                scope = matches[0]
+            if not dn_within(scope, domain_base):
+                raise DirectoryError('AD_SCOPE_INVALID')
+            if scope.casefold() != domain_base.casefold():
+                rows, _ = self.search(scope, self.ldap.SCOPE_BASE, '(objectClass=*)', ['objectClass'])
+                if len(rows) != 1 or not dn_within(rows[0][0], scope) or not dn_within(scope, rows[0][0]):
+                    raise DirectoryError('AD_SCOPE_NOT_FOUND')
+            if not any(dn_within(scope, x) for x in resolved):
+                resolved = [x for x in resolved if not dn_within(x, scope)] + [scope]
+        return resolved
+
     def catalog(self, domain, dc, search_base=''):
         domain_base = ','.join('DC=' + x for x in domain.split('.'))
-        if not search_base:
-            collections = {kind: self.objects(kind, domain_base) for kind in FILTERS}
-        else:
-            collections = {'users': [], 'groups': self.objects('groups', search_base), 'computers': []}
-            known = {x['_dn'].casefold() for x in collections['groups']}
-            index = 0
-            while index < len(collections['groups']):
-                group = collections['groups'][index]; index += 1
-                for dn in group['_members']:
-                    if not dn.casefold().endswith(',' + domain_base.casefold()) or dn.casefold() in known:
-                        continue
-                    known.add(dn.casefold())
-                    for kind in ('groups', 'users', 'computers'):
-                        records = self.objects(kind, dn, scope=self.ldap.SCOPE_BASE)
-                        if records:
-                            collections[kind].extend(records)
-                            break
-                if re.fullmatch(r'S-1-5-21-\d+-\d+-\d+-\d+', group['sid']):
-                    rid = group['sid'].rsplit('-', 1)[1]
-                    for kind in ('users', 'computers'):
-                        # RID is derived from validated binary SID, never user filter text.
-                        filter_value = '(&' + FILTERS[kind] + '(primaryGroupID=' + rid + '))'
-                        for record in self.objects(kind, domain_base, filter_value):
-                            if record['_dn'].casefold() not in known:
-                                known.add(record['_dn'].casefold()); collections[kind].append(record)
-                if any(len(x) > 10000 for x in collections.values()):
+        scopes = self.resolve_scopes(domain, search_base)
+        collections = {kind: [] for kind in FILTERS}
+        seen = set()
+        for base in scopes:
+            for kind in FILTERS:
+                for record in self.objects(kind, base):
+                    if not dn_within(record['_dn'], base):
+                        raise DirectoryError('AD_SCOPE_INVALID')
+                    if record['guid'] in seen:
+                        raise DirectoryError('AD_INVALID_RESPONSE')
+                    seen.add(record['guid']); collections[kind].append(record)
+                if len(collections[kind]) > 10000:
                     raise DirectoryError('AD_DIRECTORY_LIMIT')
         all_records = [x for records in collections.values() for x in records]
         by_dn = {x['_dn'].casefold(): x['sid'] for x in all_records}
@@ -398,9 +408,10 @@ def run(request):
         expected = ','.join('DC=' + x for x in request['domain'].split('.'))
         if attribute(attrs, 'defaultnamingcontext').casefold() != expected.casefold() or attribute(attrs, 'dnshostname').lower() != request['dc_fqdn']:
             raise DirectoryError('AD_DOMAIN_MISMATCH')
-        if request['probe']:
-            return {'probe': 'ok', 'domain': request['domain'], 'dc_fqdn': request['dc_fqdn']}
         reader = Reader(connection, ldap, (ValueLessRequestControl, SimplePagedResultsControl))
+        if request['probe']:
+            reader.resolve_scopes(request['domain'], request['search_base'])
+            return {'probe': 'ok', 'domain': request['domain'], 'dc_fqdn': request['dc_fqdn']}
         if request.get('computer_sam') is not None:
             return {'domain': request['domain'], 'dc_fqdn': request['dc_fqdn'],
                     'account': reader.computer(request['domain'], request['computer_sam'])}

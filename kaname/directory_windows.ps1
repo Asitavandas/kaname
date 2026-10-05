@@ -1,5 +1,5 @@
 # Read-only AD adapter. Credential JSON arrives on stdin; nothing is written to disk.
-param([switch]$SelfTest, [int]$FixturePort=0, [switch]$ScopedFixture)
+param([switch]$SelfTest, [int]$FixturePort=0, [switch]$ScopedFixture, [string]$FixtureScope='')
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2
 [Console]::InputEncoding = New-Object System.Text.UTF8Encoding($false)
@@ -145,10 +145,10 @@ function Read-Objects([string]$kind, [string]$filter, [string]$base, [string]$sc
         if ($response.References.Count -ne 0) { throw 'REFERRAL_RETURNED' }
         foreach ($entry in $response.Entries) {
             $script:stage = $kind + '_decode'
-            $record = Convert-Object $entry $kind
+            $record = if ($kind -in @('ous','scopes')) { @{_dn=$entry.DistinguishedName} } else { Convert-Object $entry $kind }
             $record._dn = $entry.DistinguishedName
             if ($kind -eq 'groups') { $record._members = Read-Members $entry }
-            else {
+            elseif ($kind -in @('users','computers')) {
                 $primary = Attribute-Text $entry 'primaryGroupID'
                 if (-not $primary -or $primary -notmatch '^\d+$' -or [int64]$primary -gt 4294967295) { throw 'ATTRIBUTE_MISSING' }
                 $record._primary = $record.sid.Substring(0, $record.sid.LastIndexOf('-') + 1) + $primary
@@ -167,54 +167,74 @@ function Read-Objects([string]$kind, [string]$filter, [string]$base, [string]$sc
 function Escape-Filter([string]$value) {
     return $value.Replace('\','\5c').Replace('*','\2a').Replace('(','\28').Replace(')','\29').Replace([string][char]0,'\00')
 }
-function Read-ScopedCatalog([string]$base, [string]$domainBase) {
-    # Start at the chosen group container; follow group members within the same
-    # authenticated domain, including users in other OUs and nested groups.
-    $groups = New-Object 'System.Collections.Generic.List[object]'
-    $users = New-Object 'System.Collections.Generic.List[object]'
-    $computers = New-Object 'System.Collections.Generic.List[object]'
-    $known = @{}
-    foreach ($record in (Read-Objects 'groups' '(objectCategory=group)' $base)) {
-        $known[$record._dn]=$true; $groups.Add($record)
+function DN-Parts([string]$dn) {
+    $parts = New-Object 'System.Collections.Generic.List[string]'
+    $current='';$escaped=$false
+    foreach ($char in $dn.ToCharArray()) {
+        if ($char -eq ',' -and -not $escaped) { $parts.Add($current.Trim().ToLowerInvariant());$current='' }
+        else { $current += $char }
+        $escaped = ($char -eq '\' -and -not $escaped)
     }
-    for ($i=0; $i -lt $groups.Count; $i++) {
-        $group = $groups[$i]
-        foreach ($dn in $group._members) {
-            # Ignore foreign-domain references; Build-Catalog reports them as unresolved.
-            if (-not $dn.EndsWith(','+$domainBase, [StringComparison]::OrdinalIgnoreCase) -or $known.ContainsKey($dn)) { continue }
-            $known[$dn]=$true
-            $found=$false
-            foreach ($kind in @('groups','users','computers')) {
-                $filter = switch ($kind) { 'groups' {'(objectCategory=group)'} 'users' {'(&(objectCategory=person)(objectClass=user))'} 'computers' {'(objectCategory=computer)'} }
-                $records = Read-Objects $kind $filter $dn 'Base'
-                foreach ($record in $records) {
-                    switch ($kind) { 'groups' {$groups.Add($record)} 'users' {$users.Add($record)} 'computers' {$computers.Add($record)} }
-                    $found=$true
-                }
-                if ($found) { break }
-            }
+    $parts.Add($current.Trim().ToLowerInvariant())
+    return ,$parts.ToArray()
+}
+function DN-Within([string]$dn,[string]$base) {
+    $actual=DN-Parts $dn;$expected=DN-Parts $base
+    if ($actual.Count -lt $expected.Count) { return $false }
+    for ($i=1;$i -le $expected.Count;$i++) { if ($actual[$actual.Count-$i] -cne $expected[$expected.Count-$i]) { return $false } }
+    return $true
+}
+function Resolve-SearchBases([string]$scope,[string]$domainBase) {
+    $lines=@($scope -split '\r?\n' | Where-Object { $_.Trim() })
+    if (-not $lines.Count) { $lines=@($domainBase) }
+    $resolved=New-Object 'System.Collections.Generic.List[string]'
+    foreach ($line in $lines) {
+        $base=$line.Trim()
+        if (-not $base.Contains('=')) {
+            $matches=@(Read-Objects 'ous' ('(&(objectClass=organizationalUnit)(ou='+(Escape-Filter $base)+'))') $domainBase)
+            if ($matches.Count -eq 0) { throw 'AD_SCOPE_NOT_FOUND' }
+            if ($matches.Count -ne 1) { throw 'AD_SCOPE_AMBIGUOUS' }
+            $base=$matches[0]._dn
         }
-        # Primary members have no member link. Resolve them in the domain,
-        # restricted to this group's RID and domain SID.
-        if ($group.sid -match '^S-1-5-21-\d+-\d+-\d+-(\d+)$') {
-            $rid=$Matches[1]
-            foreach ($kind in @('users','computers')) {
-                $filter = if ($kind -eq 'users') { '(&(objectCategory=person)(objectClass=user)(primaryGroupID='+$rid+'))' } else { '(&(objectCategory=computer)(primaryGroupID='+$rid+'))' }
-                foreach ($record in (Read-Objects $kind $filter $domainBase)) {
-                    if (-not $known.ContainsKey($record._dn)) {
-                        $known[$record._dn]=$true
-                        if ($kind -eq 'users') { $users.Add($record) } else { $computers.Add($record) }
-                    }
-                }
-            }
+        if (-not (DN-Within $base $domainBase)) { throw 'AD_SCOPE_INVALID' }
+        if ($base -ine $domainBase) {
+            $matches=@(Read-Objects 'scopes' '(objectClass=*)' $base 'Base')
+            if ($matches.Count -ne 1 -or -not (DN-Within $matches[0]._dn $base) -or -not (DN-Within $base $matches[0]._dn)) { throw 'AD_SCOPE_NOT_FOUND' }
         }
-        if ($users.Count -gt 10000 -or $groups.Count -gt 10000 -or $computers.Count -gt 10000) { throw 'AD_DIRECTORY_LIMIT' }
+        $covered=$false
+        foreach ($old in @($resolved)) { if (DN-Within $base $old) { $covered=$true } }
+        if (-not $covered) {
+            for ($i=$resolved.Count-1;$i -ge 0;$i--) { if (DN-Within $resolved[$i] $base) { $resolved.RemoveAt($i) } }
+            $resolved.Add($base)
+        }
+    }
+    return ,$resolved.ToArray()
+}
+function Read-ScopedCatalog([string]$scope, [string]$domainBase) {
+    $scopes=Resolve-SearchBases $scope $domainBase
+    $groups=New-Object 'System.Collections.Generic.List[object]'
+    $users=New-Object 'System.Collections.Generic.List[object]'
+    $computers=New-Object 'System.Collections.Generic.List[object]'
+    $known=@{}
+    foreach ($base in $scopes) {
+        foreach ($kind in @('users','groups','computers')) {
+            $filter=switch ($kind) { 'groups' {'(objectCategory=group)'} 'users' {'(&(objectCategory=person)(objectClass=user))'} 'computers' {'(objectCategory=computer)'} }
+            foreach ($record in (Read-Objects $kind $filter $base)) {
+                if (-not (DN-Within $record._dn $base)) { throw 'AD_SCOPE_INVALID' }
+                if ($known.ContainsKey($record.guid)) { throw 'AD_SEARCH_FAILED' }
+                $known[$record.guid]=$true
+                switch ($kind) { 'users' {$users.Add($record)} 'groups' {$groups.Add($record)} 'computers' {$computers.Add($record)} }
+            }
+            if ($users.Count -gt 10000 -or $groups.Count -gt 10000 -or $computers.Count -gt 10000) { throw 'AD_DIRECTORY_LIMIT' }
+        }
     }
     return Build-Catalog $users.ToArray() $groups.ToArray() $computers.ToArray()
 }
+
 try {
     if ($FixturePort -ne 0 -and (-not $SelfTest -or $FixturePort -lt 1024 -or $FixturePort -gt 65535)) { throw 'Invalid fixture mode' }
     if ($ScopedFixture -and (-not $SelfTest -or $FixturePort -eq 0)) { throw 'Invalid fixture mode' }
+    if ($FixtureScope -and (-not $SelfTest -or -not $ScopedFixture)) { throw 'Invalid fixture mode' }
     if ($SelfTest) {
         Add-Type -AssemblyName System.DirectoryServices.Protocols
         $identifier = New-Object System.DirectoryServices.Protocols.LdapDirectoryIdentifier('dc01.example.invalid', 389, $true, $false)
@@ -276,8 +296,9 @@ try {
             $connection.Timeout = [TimeSpan]::FromSeconds(5)
             $failure = 'AD_SEARCH_FAILED'
             if ($ScopedFixture) {
-                $catalog = Read-ScopedCatalog 'OU=Network,DC=fixture,DC=invalid' 'DC=fixture,DC=invalid'
-                if ($catalog.users.Count -ne 2 -or $catalog.groups.Count -ne 2 -or $catalog.computers.Count -ne 0 -or $catalog.memberships.Count -ne 3 -or $catalog.groups[0].unresolved_members -ne 1) { throw 'Scoped fixture failed' }
+                $scope = if ($FixtureScope) { $FixtureScope } else { 'OU=Network,DC=fixture,DC=invalid' }
+                $catalog = Read-ScopedCatalog $scope 'DC=fixture,DC=invalid'
+                if (-not $FixtureScope -and ($catalog.users.Count -ne 1 -or $catalog.groups.Count -ne 1 -or $catalog.computers.Count -ne 1 -or $catalog.memberships.Count -ne 1 -or $catalog.groups[0].unresolved_members -ne 2)) { throw 'Scoped fixture failed' }
                 @{self_test='passed'; fixture='scoped-ldap'; external_network_called=$false; counts=@{users=$catalog.users.Count; groups=$catalog.groups.Count; computers=$catalog.computers.Count}} | ConvertTo-Json -Compress
                 exit 0
             }
@@ -324,6 +345,7 @@ try {
     if ($base -ine $expectedBase) { throw 'AD_DOMAIN_MISMATCH' }
     $failure = 'AD_SEARCH_FAILED'
     if ($request.PSObject.Properties['probe'] -and $request.probe -eq $true) {
+        $null = Resolve-SearchBases ([string]$request.search_base) $base
         @{probe='ok'; domain=[string]$request.domain; dc_fqdn=[string]$request.dc_fqdn} | ConvertTo-Json -Compress
         exit 0
     }
@@ -343,7 +365,7 @@ try {
     $exception = $_.Exception
     while ($exception.InnerException) { $exception = $exception.InnerException }
     if ($exception.GetType().FullName -eq 'System.DirectoryServices.Protocols.LdapException' -and $exception.ErrorCode -eq 49) { $errorCode = 'AD_CREDENTIALS_REJECTED' }
-    if ($_.Exception.Message -eq 'AD_DIRECTORY_LIMIT') { $errorCode = 'AD_DIRECTORY_LIMIT' }
+    if ($_.Exception.Message -in @('AD_DIRECTORY_LIMIT','AD_SCOPE_INVALID','AD_SCOPE_NOT_FOUND','AD_SCOPE_AMBIGUOUS')) { $errorCode = $_.Exception.Message }
     $reason = 'UNKNOWN'
     if ($_.FullyQualifiedErrorId -in @('PropertyNotFoundStrict', 'PropertyAssignmentException')) { $reason = 'PROPERTY_ACCESS' }
     if ($_.FullyQualifiedErrorId -in @('MethodNotFound', 'MethodException', 'MethodArgumentConversionInvalidCastArgument')) { $reason = 'METHOD_BINDING' }

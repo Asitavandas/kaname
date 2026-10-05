@@ -492,7 +492,7 @@ class Handler(BaseHTTPRequestHandler):
             except (ValidationError, ValueError, TypeError, KeyError): self.respond(400, {'error': 'INVALID_INPUT'})
             except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
             return
-        resources = {'/api/config': None, '/api/policies': 'policies.rules', '/api/simulate': 'simulate.scenarios', '/api/directory/sync': 'directory.connection', '/api/directory/settings': 'directory.connection', '/api/network/vlans': 'network.vlans', '/api/network/radius': 'network.radius', '/api/network/secret/generate': 'network.radius', '/api/network/secret/reveal': 'network.radius', '/api/system/users/save': 'system.administrators', '/api/system/users/delete': 'system.administrators', '/api/system/profiles/save': 'system.profiles', '/api/system/profiles/delete': 'system.profiles', '/api/auth/logout': None, '/api/auth/password': None}
+        resources = {'/api/config': None, '/api/policies': 'policies.rules', '/api/simulate': 'simulate.scenarios', '/api/directory/sync': 'directory.connection', '/api/directory/settings': 'directory.connection', '/api/directory/connectivity': 'directory.connection', '/api/directory/test-credentials': 'directory.connection', '/api/network/vlans': 'network.vlans', '/api/network/radius': 'network.radius', '/api/network/secret/generate': 'network.radius', '/api/network/secret/reveal': 'network.radius', '/api/system/users/save': 'system.administrators', '/api/system/users/delete': 'system.administrators', '/api/system/profiles/save': 'system.profiles', '/api/system/profiles/delete': 'system.profiles', '/api/auth/logout': None, '/api/auth/password': None}
         resources.update({path: 'certificates.authority' for path in ('/api/pki/initialize', '/api/pki/enroll-user', '/api/pki/revoke', '/api/pki/refresh-crl')})
         resources.update({path:'certificates.authority' for path in
             ('/api/device-admin/profile','/api/device-admin/unlock','/api/device-admin/lock')})
@@ -535,6 +535,20 @@ class Handler(BaseHTTPRequestHandler):
                 try: result = self.server.operations.save_directory(value['expected_revision'], value['settings'])
                 finally: value['settings']['password'] = ''
                 self.respond(200, result)
+            elif self.path == '/api/directory/connectivity':
+                keys(value, {'expected_revision', 'connection'}, {'expected_revision', 'connection'})
+                result = self.server.directory_sync.connectivity(value['expected_revision'], value['connection'])
+                self.respond(200, result)
+            elif self.path == '/api/directory/test-credentials':
+                keys(value, {'expected_revision', 'connection'}, {'expected_revision', 'connection'})
+                connection = None
+                try:
+                    connection = self.server.operations.directory_probe_connection(value['connection'])
+                    self.server.directory_sync.read(value['expected_revision'], connection, probe=True, update_health=False)
+                    self.respond(200, {'authenticated': True, 'scope_verified': True, 'catalog_changed': False})
+                finally:
+                    if connection is not None: connection['password'] = ''
+                    if type(value['connection']) is dict: value['connection']['password'] = ''
             elif self.path == '/api/directory/sync':
                 keys(value, {'expected_revision', 'connection'}, {'expected_revision'})
                 status = self.server.directory_sync.read(value['expected_revision'], value.get('connection'))

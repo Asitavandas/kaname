@@ -4,7 +4,7 @@ Yeni ürün adı AuthWire. Bağımsız Active Directory tabanlı kablolu/kablosu
 
 ![AuthWire amblemi](kaname/static/authwire-logo.png)
 
-**Kaynak geliştirme sürümü: 0.12.0-dev.1 — toplu bilgisayar sertifika kaydı ve otomatik yenileme pilotu.**
+**Kaynak geliştirme sürümü: 0.12.1-dev.1 — LDAP Servers arayüzü ve kesin çoklu OU kapsamı; toplu bilgisayar sertifika pilotu.**
 
 Görünür menü Hazırla → Kullanıcılar → Erişim → Kontrol et sırasını izler. Açık çalışma alanı, mavi işlemler ve lacivert/lime kontrol merkezi; yetkiye bağlı gerçek dizin/kural sayıları, kullanıcı/grup sekmeleri, sunucuda arama ve mobil menü içerir. AD salt okunur; API, yetki ve CA davranışı korunur. Mevcut sertifika formları kapatılınca parolalar ve geçici CSR temizlenir. [Arayüz kapsamı ve doğrulama](docs/PANEL_0_11_0.md).
 Ubuntu geliştirme hedefidir. Mevcut politika, VLAN, RADIUS istemci ve AD eşitleme ayarları korunur. Privileged HTTPS kayıt akışı, imzalı endpoint CSR'sini kullanıcının kendi Kerberos kimliği, güvenli LDAP Who Am I ve canlı GUID/tokenGroups sorgusuyla doğrular; sertifika ve değişmez AD bağı aynı transaction'da kaydedilir. Panelden CA oluşturma, kullanıcı sertifikası üretme/indirme, açık trust/CRL indirme ve iptal mümkündür. Endpoint anahtarı panele gönderilmez. Kullanıcı sertifikası domain bilgisayarı kanıtı değildir; mevcut require_domain_device kuralları kullanıcı sertifikasını reddeder.
@@ -47,7 +47,7 @@ python3 -m kaname --port 8876 --state-dir ./kaname-state
 | Karar testi | Örnek kimliklerle politika değerlendirmesi ve VLAN özniteliklerinin gösterimi. Gerçek doğrulama kanıtı üretmez. |
 | Kayıt | SQLite kalıcılığı, çakışan sürüm kaydını engelleme ve yapılandırmayla aynı transaction içinde audit. |
 | Dahili PKI | Yerel konsoldan benzersiz root/issuer CA, şifreli anahtarlar, kayıtlı FQDN için server-only sertifika, iptal ve imzalı CRL. Panel yalnız açık CA bilgilerini gösterir. |
-| Active Directory | User&Authentication → Active Directory altında bağlantı; Users/User Groups altında aynı ekranda iki ayrı liste ve tıklanabilir üyelik detayları. Kerberos korumalı LDAP, nesne/üye sayfalama, primary ve iç içe üyelik; politikaya yalnız security grubu seçimi. Kayıtlı bağlantı parolası korumalı saklanır; OU/CN/DC konumu, manuel/periyodik eşitleme ve bağlantı uyarıları vardır. AD değişikliği yapılmaz. |
+| Active Directory | LDAP Servers altında bağlantı; Users/User Groups altında aynı ekranda iki ayrı liste ve tıklanabilir üyelik detayları. Kerberos korumalı LDAP, nesne/üye sayfalama, primary ve iç içe üyelik; politikaya yalnız security grubu seçimi. Kayıtlı bağlantı parolası korumalı saklanır; tek/çoklu OU adı veya DN kapsamı, ayrı erişim/kullanıcı bilgisi testleri, manuel/periyodik eşitleme ve bağlantı uyarıları vardır. AD değişikliği yapılmaz. |
 | Network | Ad/ID/açıklamalı VLAN tanımları; RADIUS cihaz kaynak IP ve korumalı shared secret; Authentication/Accounting UDP portları varsayılan 1812/1813. Cihaz ayarları manuel uygulanır. |
 | RADIUS protokol laboratuvarı | İzole loopback ortamında native EAP-TLS, sertifika-kimlik eşlemesi, politika motoru ve bütünlüğü doğrulanan gerçek Accept/Reject/VLAN yanıtları. Dizin verisi fixture'dır; production service veya enrollment açılmaz. |
 | OVF araçları | Hazırlanmış temiz VMware VMX'inin dışa aktarımı için sarmalayıcı ve yerel OVF/VMDK/SHA256 manifest denetleyicisi. |

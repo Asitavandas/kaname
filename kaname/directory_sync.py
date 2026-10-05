@@ -2,7 +2,7 @@
 import threading
 import time
 
-from .directory import DirectoryError, validate_connection, validate_catalog
+from .directory import DirectoryError, validate_connection, validate_catalog, check_directory_connectivity
 from .models import ValidationError
 from .store import ConflictError
 from .vault import VaultError
@@ -22,7 +22,7 @@ class DirectorySync:
         self.stop.set()
         self.thread.join(timeout=65)
 
-    def read(self, expected_revision, connection=None, *, probe=False):
+    def read(self, expected_revision, connection=None, *, probe=False, update_health=True):
         server = self.server
         current = server.store.snapshot()
         if current['config'] is None:
@@ -46,23 +46,41 @@ class DirectorySync:
                 except (ValueError, TypeError, KeyError):
                     raise DirectoryError('AD_INVALID_RESPONSE') from None
                 status = server.store.save_directory(current['revision'], value)
-            server.operations.record_health(expected_revision=current['revision'])
+            if update_health: server.operations.record_health(expected_revision=current['revision'])
             if not probe:
                 self.next_sync = time.monotonic() + server.operations.directory()['sync_minutes'] * 60
-            self.next_check = time.monotonic() + server.operations.directory()['check_minutes'] * 60
+            if update_health: self.next_check = time.monotonic() + server.operations.directory()['check_minutes'] * 60
             return status
         except DirectoryError as error:
-            if error.code not in {'AD_QUERY_BUSY', 'AD_RETRY_LATER'}:
+            if update_health and error.code not in {'AD_QUERY_BUSY', 'AD_RETRY_LATER'}:
                 try: server.operations.record_health(error.code, expected_revision=current['revision'])
                 except ConflictError: pass
             raise
         except VaultError:
-            try: server.operations.record_health('SECRET_STORE_UNAVAILABLE', expected_revision=current['revision'])
+            try:
+                if update_health: server.operations.record_health('SECRET_STORE_UNAVAILABLE', expected_revision=current['revision'])
             except ConflictError: pass
             raise
         finally:
             if connection is not None:
                 connection['password'] = ''
+            server.directory_lock.release()
+
+    def connectivity(self, expected_revision, connection):
+        server = self.server
+        current = server.store.snapshot()
+        if current['config'] is None:
+            raise ValidationError('CONFIG_REQUIRED')
+        if type(expected_revision) is not int or expected_revision != current['revision']:
+            raise ConflictError()
+        if not server.directory_lock.acquire(blocking=False):
+            raise DirectoryError('AD_QUERY_BUSY')
+        try:
+            if time.monotonic() < server.directory_next_attempt:
+                raise DirectoryError('AD_RETRY_LATER')
+            server.directory_next_attempt = time.monotonic() + 10
+            return check_directory_connectivity(connection, current['config'])
+        finally:
             server.directory_lock.release()
 
     def tick(self, now=None):

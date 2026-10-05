@@ -163,6 +163,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     }
     await page.unroute('**/api/state',uiOnlyAuthority);
     await navigate('directory');
+    await page.locator('.ldap-schedule').evaluate(el=>el.open=true);
     assert.equal(await page.locator('#ad-domain').inputValue(),'kurum.example');
     await page.locator('#ad-host').fill('dc01.kurum.example');
     const fixturePassword='UI_FIXTURE_PASSWORD_NOT_REAL';
@@ -173,7 +174,33 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.equal(await page.locator('#ad-password').inputValue(),fixturePassword);
     await page.locator('#ad-user').fill('administrator@kurum.example');
     await page.locator('#directory-save').click();
-    await page.waitForFunction(()=>document.querySelector('#ad-credential-status').textContent.includes('korumalı kaydedilmiş')).catch(async error=>{console.log('KANAME_UI_AD_FEEDBACK '+await page.locator('#ad-feedback').textContent());console.log('KANAME_UI_AD_FIELDS '+JSON.stringify(await page.evaluate(()=>({host:document.querySelector('#ad-host').value,user:document.querySelector('#ad-user').value,sync:document.querySelector('#ad-sync-minutes').value,check:document.querySelector('#ad-check-minutes').value,scope:document.querySelector('#ad-ou').value,cn:document.querySelector('#ad-cn').value,dc:document.querySelector('#ad-dc').value}))));throw error;});
+    await page.waitForFunction(()=>document.querySelector('#ad-credential-status').textContent.includes('korumalı kaydedilmiş')).catch(async error=>{console.log('KANAME_UI_AD_FEEDBACK '+await page.locator('#ad-feedback').textContent());console.log('KANAME_UI_AD_FIELDS '+JSON.stringify(await page.evaluate(()=>({host:document.querySelector('#ad-host').value,user:document.querySelector('#ad-user').value,sync:document.querySelector('#ad-sync-minutes').value,check:document.querySelector('#ad-check-minutes').value,scope:document.querySelector('#ad-ou').value,name:document.querySelector('#ad-name').value}))));throw error;});
+    assert.equal(await page.locator('#page-title').textContent(),'LDAP Servers');
+    assert.equal(await page.locator('#ad-port').inputValue(),'389');
+    assert.equal(await page.locator('#ad-identifier').inputValue(),'sAMAccountName');
+    await page.locator('#ad-name').fill('Corporate LDAP');
+    await page.locator('#ad-ou').fill('Network\nOU=People');
+    await page.locator('#directory-save').click();
+    await page.waitForFunction(()=>document.querySelector('#ad-feedback').textContent.includes('OU kapsamı kaydedildi'));
+    assert.equal(await page.locator('#ad-ou').inputValue(),'Network\nOU=People,DC=kurum,DC=example');
+    await navigate('overview');await navigate('directory');
+    await page.waitForFunction(()=>document.querySelector('#ad-name').value==='Corporate LDAP');
+    assert.equal(await page.locator('#ad-ou').inputValue(),'Network\nOU=People,DC=kurum,DC=example');
+    let tcpTests=0,credentialTests=0;
+    const tcpRoute=route=>{tcpTests++;assert.deepEqual(route.request().postDataJSON().connection,{dc_fqdn:'dc01.kurum.example'});return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({connected:true,port:389,authenticated:false})});};
+    const credentialRoute=route=>{credentialTests++;assert.equal(route.request().postDataJSON().connection.search_base,'Network\nOU=People,DC=kurum,DC=example');return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({authenticated:true,scope_verified:true,catalog_changed:false})});};
+    await page.route('**/api/directory/connectivity',tcpRoute);await page.route('**/api/directory/test-credentials',credentialRoute);
+    await page.locator('#directory-connectivity').click();await page.waitForFunction(()=>document.querySelector('#ad-feedback').textContent.includes('389 üzerinden erişildi'));
+    await page.locator('#directory-test-credentials').click();await page.waitForFunction(()=>document.querySelector('#ad-feedback').textContent.includes('OU kapsamı doğrulandı'));
+    assert.equal(tcpTests,1);assert.equal(credentialTests,1);
+    await page.unroute('**/api/directory/connectivity',tcpRoute);await page.unroute('**/api/directory/test-credentials',credentialRoute);
+    if(process.env.KANAME_UI_ARTIFACTS){
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'ldap-servers-desktop.png'),fullPage:true,animations:'disabled'});
+      await page.setViewportSize({width:390,height:844});
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'LDAP form must fit mobile viewport');
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'ldap-servers-mobile.png'),fullPage:true,animations:'disabled'});
+      await page.setViewportSize({width:1440,height:1000});
+    }
     const failRoute=route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'AD_SEARCH_FAILED',diagnostic:{stage:'groups_decode',reason:'VALUE_CONVERSION'}})});
     await page.route('**/api/directory/sync',failRoute);
     await page.locator('#directory-sync').click();
