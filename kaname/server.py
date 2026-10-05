@@ -27,7 +27,7 @@ from .vault import VaultError
 from .admin import AdminStore, AdminError, COOKIE, TTL, RESOURCES, permits
 
 STATIC = Path(__file__).parent / 'static'
-ASSETS = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
+ASSETS = {'/device.js': ('device.js','application/javascript'), '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
           '/styles.css': ('styles.css', 'text/css'),
           '/authwire-logo.png': ('authwire-logo.png', 'image/png')}
 
@@ -82,6 +82,11 @@ class DevelopmentServer(ThreadingHTTPServer):
             self.directory_reader = read_linux_directory
             self.directory_health_reader = check_linux_directory
         self.operations = Operations(self.store)
+        self.public_name = public_name
+        self.web_certificate = Path(tls_cert).read_bytes() if tls_cert else b''
+        self.devices = None
+        self.device_sessions = None
+        self.device_init_lock = threading.Lock()
         self.enrollment_lock = threading.Lock()
         super().__init__((str(endpoint), port), Handler)
         if context:
@@ -93,8 +98,23 @@ class DevelopmentServer(ThreadingHTTPServer):
             self.hosts.add(f'{public_name}:{self.server_port}')
         self.origins = {scheme + '://' + host for host in self.hosts}
         self.directory_sync = DirectorySync(self)
+        self.device_stop = threading.Event()
+        self.device_worker = threading.Thread(target=self.device_maintenance,daemon=True)
+        self.device_worker.start()
+
+    def device_maintenance(self):
+        while not self.device_stop.wait(30):
+            if self.devices is not None:
+                try:
+                    self.devices.maintenance()
+                except Exception:
+                    # Registry retirement deadlines still fail closed when the
+                    # signer is locked; never drop/update a failed CRL.
+                    pass
 
     def server_close(self):
+        self.device_stop.set()
+        self.device_worker.join(timeout=4)
         self.directory_sync.close()
         super().server_close()
 
@@ -195,6 +215,74 @@ class Handler(BaseHTTPRequestHandler):
         raw = self.rfile.read(size); self.body_read = True
         return strict_json(raw)
 
+    def device_services(self):
+        # Lazy PKI imports retain the stdlib-only configuration panel/install
+        # behavior on systems where optional certificate dependencies are absent.
+        with self.server.device_init_lock:
+            if self.server.devices is None:
+                from .device_enrollment import DeviceEnrollment
+                from .device_auth import KerberosSessions
+                self.server.devices = DeviceEnrollment(self.server.operations)
+                config = self.server.store.snapshot()['config'] or {}
+                self.server.device_sessions = KerberosSessions(self.server.store.root,
+                    self.server.public_name, config.get('ad_domain'))
+            else:
+                config = self.server.store.snapshot()['config'] or {}
+                if self.server.device_sessions.domain != config.get('ad_domain'):
+                    from .device_auth import KerberosSessions
+                    self.server.device_sessions = KerberosSessions(self.server.store.root,
+                        self.server.public_name,config.get('ad_domain'))
+        return self.server.devices, self.server.device_sessions
+
+    def device_post(self):
+        if not self.server.tls or self.headers.get('Host') not in self.server.hosts or self.headers.get('Origin'):
+            self.respond(403, {'error': 'DEVICE_HTTPS_REQUIRED'}); return
+        try:
+            from .enrollment import EnrollmentError
+            devices, sessions = self.device_services()
+            value = self.read_body()
+            if self.path == '/api/device/session':
+                self.respond(200, sessions.start(value)); return
+            principal, message, context = sessions.verify(self.path, value)
+            result = {'/api/device/challenge': devices.challenge,
+                '/api/device/issue': devices.issue, '/api/device/receipt': devices.receipt}[self.path](principal, message)
+            self.respond(200, sessions.response(self.path, context, result))
+            if self.path == '/api/device/receipt':
+                sessions.end(value['id'],context)
+        except EnrollmentError as error:
+            self.respond(429 if error.code in {'DEVICE_BUSY','DEVICE_RETRY_LATER'} else
+                503 if error.code in {'DEVICE_KERBEROS_NOT_READY','DEVICE_SIGNER_LOCKED','DEVICE_SIGNER_UNAVAILABLE','DEVICE_DIRECTORY_UNAVAILABLE'} else 403,
+                {'error': error.code})
+        except (ValueError, TypeError, KeyError, UnicodeError):
+            self.respond(400, {'error': 'DEVICE_INPUT_INVALID'})
+        except (ImportError, OSError, sqlite3.Error):
+            self.respond(503, {'error': 'DEVICE_SERVICE_UNAVAILABLE'})
+
+    def device_admin_post(self, value):
+        from .enrollment import EnrollmentError
+        from .pki import PKIError, password_bytes
+        try:
+            if not self.server.tls:
+                raise EnrollmentError('PKI_HTTPS_REQUIRED')
+            devices, _ = self.device_services()
+            if self.path == '/api/device-admin/profile':
+                result = devices.save_profile(value, self.actor['id'])
+            elif self.path == '/api/device-admin/unlock':
+                keys(value, {'ca_password'}, {'ca_password'})
+                secret = password_bytes(text(value['ca_password'],128).encode('utf-8'))
+                result = devices.unlock_signer(secret,self.actor['id'])
+            else:
+                keys(value,set(),set())
+                result = devices.lock_signer(self.actor['id'])
+            self.respond(200, result)
+        except EnrollmentError as error:
+            self.respond(409 if error.code == 'REVISION_CONFLICT' else 400, {'error':error.code})
+        except PKIError:
+            self.respond(400, {'error':'PKI_OPERATION_FAILED'})
+        finally:
+            if type(value) is dict and 'ca_password' in value:
+                value['ca_password'] = ''
+
     def pki_write(self, value):
         from .enrollment import EnrollmentError, EnrollmentService
         from .pki import PKIError, PKIService, password_bytes
@@ -264,6 +352,27 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.headers.get('Host') not in self.server.hosts:
             self.respond(403, {'error': 'INVALID_HOST'})
+            return
+        if urlsplit(self.path).path in {'/api/device-admin/status','/api/device-admin/package'}:
+            if not self.guard(resource='certificates.authority'): return
+            try:
+                devices,sessions = self.device_services()
+                query = parse_qs(urlsplit(self.path).query,keep_blank_values=True)
+                if len(self.path)>256 or any(len(v)!=1 for v in query.values()): raise ValueError()
+                if urlsplit(self.path).path.endswith('/status'):
+                    if set(query)-{'offset'}: raise ValueError()
+                    result = devices.status(offset=int(query.get('offset',['0'])[0]))
+                    result.update(https_ready=self.server.tls, dns_ready=bool(self.server.public_name),
+                        kerberos_ready=sessions.readiness(), signing_required=True,
+                        service_spn='HTTP/'+self.server.public_name if self.server.public_name else None)
+                    self.respond(200,result)
+                else:
+                    if not permits(self.actor,'certificates.authority',True): self.respond(403,{'error':'FORBIDDEN'}); return
+                    keys(query,{'profile_id'},{'profile_id'})
+                    self.respond(200,devices.package(query['profile_id'][0],hostname=self.server.public_name,
+                        port=self.server.server_port,tls_pem=self.server.web_certificate),'application/zip')
+            except (ValueError,TypeError,KeyError,ImportError,OSError,sqlite3.Error):
+                self.respond(400,{'error':'DEVICE_SETUP_REQUIRED'})
             return
         if self.path in ASSETS:
             filename, mime = ASSETS[self.path]
@@ -336,7 +445,7 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == '/api/directory/settings' and self.guard(resource='directory.connection'):
             self.respond(200, self.server.operations.directory())
         elif urlsplit(self.path).path == '/api/policies/groups' and self.guard():
-            if not any(permits(self.actor, r) for r in ('policies.rules', 'simulate.scenarios')):
+            if not any(permits(self.actor, r) for r in ('policies.rules', 'simulate.scenarios','certificates.authority')):
                 self.respond(403, {'error': 'FORBIDDEN'}); return
             try:
                 query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
@@ -369,6 +478,8 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
+        if self.path in {'/api/device/session','/api/device/challenge','/api/device/issue','/api/device/receipt'}:
+            self.device_post(); return
         if self.path == '/api/auth/login':
             if not self.guard(write=True, public=True): return
             try:
@@ -383,6 +494,8 @@ class Handler(BaseHTTPRequestHandler):
             return
         resources = {'/api/config': None, '/api/policies': 'policies.rules', '/api/simulate': 'simulate.scenarios', '/api/directory/sync': 'directory.connection', '/api/directory/settings': 'directory.connection', '/api/network/vlans': 'network.vlans', '/api/network/radius': 'network.radius', '/api/network/secret/generate': 'network.radius', '/api/network/secret/reveal': 'network.radius', '/api/system/users/save': 'system.administrators', '/api/system/users/delete': 'system.administrators', '/api/system/profiles/save': 'system.profiles', '/api/system/profiles/delete': 'system.profiles', '/api/auth/logout': None, '/api/auth/password': None}
         resources.update({path: 'certificates.authority' for path in ('/api/pki/initialize', '/api/pki/enroll-user', '/api/pki/revoke', '/api/pki/refresh-crl')})
+        resources.update({path:'certificates.authority' for path in
+            ('/api/device-admin/profile','/api/device-admin/unlock','/api/device-admin/lock')})
         if not self.guard(write=True, resource=resources.get(self.path), permission_write=self.path != '/api/simulate'):
             return
         if self.path not in resources:
@@ -398,7 +511,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             raw = self.rfile.read(size); self.body_read = True
             value = strict_json(raw)
-            if self.path.startswith('/api/pki/'):
+            if self.path.startswith('/api/device-admin/'):
+                self.device_admin_post(value)
+            elif self.path.startswith('/api/pki/'):
                 self.pki_write(value)
             elif self.path == '/api/auth/logout':
                 keys(value, set(), set()); self.server.admin.logout(self.actor)

@@ -212,6 +212,24 @@ class Reader:
         result['security_group_sids'] = sorted(groups)
         return result
 
+    def computer(self, domain, sam):
+        # The caller obtained this SAM from a verified Kerberos initiator.
+        if not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,19}\$', sam):
+            raise DirectoryError('AD_INPUT_INVALID')
+        base = ','.join('DC=' + x for x in domain.split('.'))
+        rows, _ = self.search(base, self.ldap.SCOPE_SUBTREE,
+            '(&(objectClass=computer)(sAMAccountName=' + sam + '))', ['objectGUID', 'sAMAccountName'])
+        if len(rows) != 1 or not rows[0][0].casefold().endswith(',' + base.casefold()):
+            raise DirectoryError('AD_INVALID_RESPONSE')
+        attrs = rows[0][1]
+        guids = attrs.get('objectguid', [])
+        if len(guids) != 1 or len(guids[0]) != 16 or attribute(attrs, 'samaccountname').casefold() != sam.casefold():
+            raise DirectoryError('AD_INVALID_RESPONSE')
+        result = self.account(domain, str(uuid.UUID(bytes_le=guids[0])))
+        if result is None or result['kind'] != 'computer':
+            raise DirectoryError('AD_INVALID_RESPONSE')
+        return result
+
     def authenticated_user(self, domain, sam, configuration_dn=None):
         if not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,19}', sam):
             raise DirectoryError('AD_INPUT_INVALID')
@@ -383,6 +401,9 @@ def run(request):
         if request['probe']:
             return {'probe': 'ok', 'domain': request['domain'], 'dc_fqdn': request['dc_fqdn']}
         reader = Reader(connection, ldap, (ValueLessRequestControl, SimplePagedResultsControl))
+        if request.get('computer_sam') is not None:
+            return {'domain': request['domain'], 'dc_fqdn': request['dc_fqdn'],
+                    'account': reader.computer(request['domain'], request['computer_sam'])}
         if request.get('authenticate_self'):
             return {'domain': request['domain'], 'dc_fqdn': request['dc_fqdn'],
                     'account': reader.authenticated_user(request['domain'], principal.split('@')[0],

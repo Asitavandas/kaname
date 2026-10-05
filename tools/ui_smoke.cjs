@@ -123,7 +123,8 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.keyboard.press('ArrowRight');
     assert.equal(await page.locator('#pki-panel-revocations').isVisible(),true);
     await page.keyboard.press('Home');
-    assert.equal(await page.locator('#pki-panel-users').isVisible(),true);
+    assert.equal(await page.locator('#pki-panel-bulk').isVisible(),true);
+    await page.locator('#pki-tab-users').click();
     let enrollRequests=0;
     const countEnrollment=request=>{if(new URL(request.url()).pathname==='/api/pki/enroll-user')enrollRequests++;};
     page.on('request',countEnrollment);
