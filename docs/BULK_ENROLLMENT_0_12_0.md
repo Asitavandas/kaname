@@ -73,7 +73,7 @@ Profil/grup değişikliği gelecek kayıt/yenileme yetkisini ve yeni cert süres
 
 ## Doğrulama ve pilot kabulü
 
-Yerel 1.000 cihaz / 4 worker sentetik AD testi: 1.000 farklı sertifika ve kurulum makbuzu, 10.848 saniye duvar, 14.352 saniye process CPU. Bu gerçek AD, Windows GPO veya ağ gecikmesi kapasite sonucu değildir. İlk denemede bulunan SQLite beklemesi, her istekte pahalı RSA private-key doğrulamasını tekrar etmeden, değişim kontrollü anahtar cache’iyle giderildi; anahtar doğrulaması atlanmaz.
+Yerel 1.000 cihaz / 4 worker sentetik AD testi: 1.000 farklı sertifika ve kurulum makbuzu, 10.848 saniye duvar, 14.352 saniye process CPU. Bu gerçek AD, Windows GPO veya ağ gecikmesi kapasite sonucu değildir. İlk denemede bulunan SQLite beklemesi, her istekte pahalı RSA private-key doğrulamasını tekrar etmeden, değişim kontrollü anahtar cache’iyle giderildi; anahtar doğrulaması atlanmaz. Daha yavaş CI hostunda yeniden görülen writer starvation için yalnız cihaz akışındaki SQLite yazıcıları ayrıca sıraya alınır; canlı AD sorguları dört worker ile sınırlandırılmış kalır.
 
 CI ayrı olarak gerçek MIT KDC/GSSAPI karşılıklı doğrulama/MIC/replay/NTLM ret testlerini; Windows yerel CNG nonexportable CSR/key-proof/makine deposu kurulumunu; HTTPS profil/GPO/signer/mobil/logout akışlarını çalıştırır. Sentetik hesaplar gerçek AD pilotunun yerine geçmez.
 

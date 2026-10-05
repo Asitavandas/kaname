@@ -15,6 +15,7 @@ import threading
 import time
 import uuid
 import zipfile
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -50,6 +51,7 @@ class DeviceEnrollment:
         self.store, self.pki = enrollment.store, enrollment.pki
         self.vault = Vault(self.store.root)
         self.gate = threading.BoundedSemaphore(4)
+        self.write_lock = threading.Lock()
         self.signer_lock = threading.Lock()
         self.signer_cache = None
         with self.store.connect() as db:
@@ -71,9 +73,17 @@ class DeviceEnrollment:
                 CREATE TABLE IF NOT EXISTS device_rate (principal TEXT PRIMARY KEY, window REAL NOT NULL, attempts INTEGER NOT NULL);
             ''')
 
+    @contextmanager
+    def transaction(self):
+        # At most four authenticated device workers wait here. Serialize SQLite
+        # writers explicitly; busy_timeout alone can starve a writer under load.
+        with self.write_lock:
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                yield db
+
     def unlock_signer(self, password, actor):
-        with self.store.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
+        with self.transaction() as db:
             _, issuer, key, _ = self.pki._authority(db, password, instant())
             pem = key.private_bytes(PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()).decode('ascii')
             sealed = self.vault.seal('device-issuer-key', pem)
@@ -82,7 +92,7 @@ class DeviceEnrollment:
         return {'enabled': True, 'root_key_unlocked': False}
 
     def lock_signer(self, actor):
-        with self.store.connect() as db:
+        with self.transaction() as db:
             db.execute('DELETE FROM device_signer')
             self.pki._audit(db, 'device_signer_disabled', actor)
         with self.signer_lock:
@@ -143,8 +153,7 @@ class DeviceEnrollment:
         config = self.store.snapshot()['config']
         if not config:
             raise EnrollmentError('DEVICE_DIRECTORY_NOT_READY')
-        with self.store.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
+        with self.transaction() as db:
             configured = db.execute('SELECT config FROM state WHERE id=1').fetchone()[0]
             if not configured or json.loads(configured)['ad_domain'] != config['ad_domain']:
                 raise EnrollmentError('REVISION_CONFLICT')
@@ -228,8 +237,7 @@ class DeviceEnrollment:
             payload = json.dumps({'purpose':'AuthWire device enrollment', 'challenge': identity,
                 'principal': principal.casefold(), 'profile': profile['id'], 'version': profile['version'],
                 'csr_sha256': digest(csr.public_bytes(serialization.Encoding.DER)), 'nonce':secrets.token_hex(32)}, separators=(',', ':'))
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
+            with self.transaction() as db:
                 self._issuer(db, now)
                 db.execute('DELETE FROM device_challenges WHERE expires<?', (time.time(),))
                 db.execute('DELETE FROM device_rate WHERE window<?', (time.time()-3600,))
@@ -290,8 +298,7 @@ class DeviceEnrollment:
         try:
             account, revision, settings = self._authorize(principal, profile)
             now = instant()
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
+            with self.transaction() as db:
                 if time.time() >= challenge[6]:
                     raise EnrollmentError('DEVICE_CHALLENGE_REJECTED')
                 if db.execute('SELECT revision FROM state WHERE id=1').fetchone()[0] != revision or self.operations.directory() != settings:
@@ -350,8 +357,7 @@ class DeviceEnrollment:
         from .radius import serial_number
         serial = serial_number(value['serial'])
         now = instant()
-        with self.store.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
+        with self.transaction() as db:
             row = db.execute('''SELECT d.principal,d.profile_id,d.receipt_payload,d.installed_at,c.certificate,c.revoked_at FROM
                 device_issuances d JOIN pki_certificates c ON c.serial=d.serial WHERE d.serial=?''',(serial,)).fetchone()
             if not row or row[0] != principal.casefold() or row[5]:
@@ -372,8 +378,7 @@ class DeviceEnrollment:
 
     def maintenance(self):
         now = instant()
-        with self.store.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
+        with self.transaction() as db:
             due = db.execute('''SELECT r.serial FROM device_retirements r JOIN pki_certificates c ON c.serial=r.serial
                 WHERE r.retire_at<=? AND c.revoked_at IS NULL''',(now.isoformat(),)).fetchall()
             authority = db.execute('SELECT crl FROM pki_authority WHERE id=1').fetchone()
