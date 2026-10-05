@@ -148,9 +148,9 @@ class PKIService:
         root_key = rsa.generate_private_key(65537, 3072)
         issuer_key = rsa.generate_private_key(65537, 3072)
         suffix = instance[:8]
-        root = make_ca(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'KANAME Root ' + suffix)]),
+        root = make_ca(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'AuthWire Root ' + suffix)]),
                        root_key, None, root_key, now, 3650, 1)
-        issuer = make_ca(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'KANAME Issuer ' + suffix)]),
+        issuer = make_ca(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'AuthWire Issuer ' + suffix)]),
                          issuer_key, root, root_key, now, 1095, 0)
         data = {'initialized': True, 'mode': 'local-lab', 'instance_id': instance,
                 'root': describe(root), 'issuer': describe(issuer),
@@ -221,7 +221,7 @@ class PKIService:
                 raise PKIError('Lab certificate capacity reached')
             public = csr.public_key()
             cert = (x509.CertificateBuilder()
-                    .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, fqdn if len(fqdn) <= 64 else 'KANAME RADIUS')]))
+                    .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, fqdn if len(fqdn) <= 64 else 'AuthWire RADIUS')]))
                     .issuer_name(issuer.subject).public_key(public).serial_number(x509.random_serial_number())
                     .not_valid_before(max(now - timedelta(minutes=5), issuer.not_valid_before_utc))
                     .not_valid_after(end)
@@ -315,7 +315,7 @@ def write_new(path, data):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='KANAME local lab CA; no client enrollment')
+    parser = argparse.ArgumentParser(description='AuthWire local lab CA; no client enrollment')
     parser.add_argument('--state-dir', default='kaname-state')
     commands = parser.add_subparsers(dest='command', required=True)
     commands.add_parser('init')

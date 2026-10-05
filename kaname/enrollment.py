@@ -138,7 +138,7 @@ class EnrollmentService:
                 if end - now < timedelta(days=1):
                     raise PKIError('Issuer renewal required')
                 cert = (x509.CertificateBuilder()
-                    .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'KANAME user ' + account.object_guid)]))
+                    .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'AuthWire user ' + account.object_guid)]))
                     .issuer_name(issuer.subject).public_key(csr.public_key()).serial_number(x509.random_serial_number())
                     .not_valid_before(max(now - timedelta(minutes=5), issuer.not_valid_before_utc)).not_valid_after(end)
                     .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)

@@ -1,8 +1,10 @@
-# KANAME
+# AuthWire
 
-Bağımsız Active Directory tabanlı kablolu/kablosuz 802.1X erişim yönetimi.
+Yeni ürün adı AuthWire. Bağımsız Active Directory tabanlı kablolu/kablosuz 802.1X erişim yönetimi.
 
-**Kaynak geliştirme sürümü: 0.11.0-dev.1 — sıralı menü ve kullanıcı odaklı çalışma alanı.**
+![AuthWire amblemi](kaname/static/authwire-logo.png)
+
+**Kaynak geliştirme sürümü: 0.11.1-dev.1 — sıralı menü ve kullanıcı odaklı çalışma alanı.**
 
 Görünür menü Hazırla → Kullanıcılar → Erişim → Kontrol et sırasını izler. Açık çalışma alanı, mavi işlemler ve lacivert/lime kontrol merkezi; yetkiye bağlı gerçek dizin/kural sayıları, kullanıcı/grup sekmeleri, sunucuda arama ve mobil menü içerir. AD salt okunur; API, yetki ve CA davranışı korunur. Mevcut sertifika formları kapatılınca parolalar ve geçici CSR temizlenir. [Arayüz kapsamı ve doğrulama](docs/PANEL_0_11_0.md).
 Ubuntu geliştirme hedefidir. Mevcut politika, VLAN, RADIUS istemci ve AD eşitleme ayarları korunur. Privileged HTTPS kayıt akışı, imzalı endpoint CSR'sini kullanıcının kendi Kerberos kimliği, güvenli LDAP Who Am I ve canlı GUID/tokenGroups sorgusuyla doğrular; sertifika ve değişmez AD bağı aynı transaction'da kaydedilir. Panelden CA oluşturma, kullanıcı sertifikası üretme/indirme, açık trust/CRL indirme ve iptal mümkündür. Endpoint anahtarı panele gönderilmez. Kullanıcı sertifikası domain bilgisayarı kanıtı değildir; mevcut require_domain_device kuralları kullanıcı sertifikasını reddeder.
@@ -98,7 +100,7 @@ OVF bütün hypervisor'larda aynı şekilde içe aktarılmaz. Diğer hedefler i�
 
 `kaname/` ürün çekirdeği ve paneldir; `tools/` paketleme/denetleme araçları; `appliance/` hedef sözleşmesi; `tests/` otomatik testlerdir. Geliştirme HTTP sunucusu üretim sunucusu olarak kullanılmayacaktır.
 
-Kaynak paketini yeniden üretmek için: `python3 -m tools.package_source /absolute/output/KANAME-source.zip`. ZIP içindeki `SOURCE_MANIFEST.json` bütün kaynak dosyalarının SHA256 değerlerini içerir.
+Kaynak paketini yeniden üretmek için: `python3 -m tools.package_source /absolute/output/AuthWire-source.zip`. ZIP içindeki `SOURCE_MANIFEST.json` bütün kaynak dosyalarının SHA256 değerlerini içerir.
 
 0.7 kullanım ve doğrulama kapsamı: [STATUS_0_7_0](docs/STATUS_0_7_0.md). Periyodik AD işleri panel süreci çalışırken yürür. Üretim boot servisi ve açılabilir OVF sonraki aşamadır.
 

@@ -15,7 +15,7 @@ class DirectorySync:
         self.next_sync = 0.0
         self.next_check = 0.0
         self.settings_key = None
-        self.thread = threading.Thread(target=self._loop, name='KANAME-AD-scheduler', daemon=True)
+        self.thread = threading.Thread(target=self._loop, name='AuthWire-AD-scheduler', daemon=True)
         self.thread.start()
 
     def close(self):

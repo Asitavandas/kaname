@@ -20,7 +20,7 @@ def prepare(source, destination):
             if path.is_symlink():
                 raise ValueError('Source symlink refused')
             if path.is_file():
-                if path.suffix not in {'.py', '.ps1', '.js', '.css', '.html'}:
+                if path.suffix not in {'.py', '.ps1', '.js', '.css', '.html'} and path.relative_to(source).as_posix() != 'kaname/static/authwire-logo.png':
                     continue
                 files[path.relative_to(source).as_posix()] = path.read_bytes()
     files['pyproject.toml'] = (source / 'pyproject.toml').read_bytes()

@@ -46,7 +46,7 @@ def main():
                     return response.status, json.loads(response.read()), response.getheader('Set-Cookie')
                 finally: connection.close()
             status, health, _ = request('GET', '/healthz')
-            assert status == 200 and health['product'] == 'KANAME'
+            assert status == 200 and health['product'] == 'AuthWire'
             status, actor, cookie = request('POST', '/api/auth/login', {'username': 'admin', 'password': 'Kaname'})
             assert status == 200 and '; Secure' in cookie
             cookie = cookie.split(';', 1)[0]

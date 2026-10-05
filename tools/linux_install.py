@@ -97,12 +97,12 @@ def hosts_with_dc(content, fqdn, ip):
             if fields[0] != ip:
                 raise ValueError('Existing DC hosts entry differs; automatic replacement refused')
             return content
-    return content.rstrip('\n') + '\n' + ip + '\t' + fqdn + ' # KANAME lab AD controller\n'
+    return content.rstrip('\n') + '\n' + ip + '\t' + fqdn + ' # AuthWire lab AD controller\n'
 
 
 def unit_text(listen, name):
     return f'''[Unit]
-Description=KANAME laboratory HTTPS panel and read-only AD synchronization
+Description=AuthWire laboratory HTTPS panel and read-only AD synchronization
 After=network-online.target
 Wants=network-online.target
 
@@ -228,7 +228,7 @@ def install(args):
             connection.request('GET', '/healthz')
             response = connection.getresponse()
             status = json.loads(response.read(4096))
-            if response.status == 200 and status.get('product') == 'KANAME':
+            if response.status == 200 and status.get('product') in {'KANAME', 'AuthWire'}:
                 healthy = True; break
         except (OSError, ValueError, http.client.HTTPException):
             time.sleep(0.5)
@@ -243,7 +243,7 @@ def install(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='First-install only KANAME Ubuntu laboratory bootstrap')
+    parser = argparse.ArgumentParser(description='First-install only AuthWire Ubuntu laboratory bootstrap')
     parser.add_argument('--source-digest', required=True)
     parser.add_argument('--domain', required=True)
     parser.add_argument('--dc-ip', required=True)
@@ -256,7 +256,7 @@ def main():
     except Exception as error:
         # No credentials are accepted by this installer. Partial OS package
         # installations are not described as a transactional rollback.
-        print('KANAME installation did not complete. Existing state was not reset.', file=__import__('sys').stderr)
+        print('AuthWire installation did not complete. Existing state was not reset.', file=__import__('sys').stderr)
         print(type(error).__name__ + ': ' + str(error), file=__import__('sys').stderr)
         raise SystemExit(1)
 

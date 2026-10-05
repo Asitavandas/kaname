@@ -28,7 +28,8 @@ from .admin import AdminStore, AdminError, COOKIE, TTL, RESOURCES, permits
 
 STATIC = Path(__file__).parent / 'static'
 ASSETS = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
-          '/styles.css': ('styles.css', 'text/css')}
+          '/styles.css': ('styles.css', 'text/css'),
+          '/authwire-logo.png': ('authwire-logo.png', 'image/png')}
 
 
 def development_token(root):
@@ -99,7 +100,7 @@ class DevelopmentServer(ThreadingHTTPServer):
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = 'KANAME-dev'
+    server_version = 'AuthWire-dev'
     sys_version = ''
 
     def setup(self):
@@ -268,7 +269,7 @@ class Handler(BaseHTTPRequestHandler):
             filename, mime = ASSETS[self.path]
             self.respond(200, (STATIC / filename).read_bytes(), mime)
         elif self.path == '/healthz':
-            self.respond(200, {'product': 'KANAME', 'version': VERSION, 'mode': 'development'})
+            self.respond(200, {'product': 'AuthWire', 'version': VERSION, 'mode': 'development'})
         elif self.path == '/readyz':
             self.respond(503, {'ready': False, 'reason': 'AD_PKI_RADIUS_NOT_CONNECTED'})
         elif self.path == '/api/auth/session' and self.guard():
@@ -286,7 +287,7 @@ class Handler(BaseHTTPRequestHandler):
             value['directory_public']['automatic_sync_enabled'] = self.server.operations.directory()['automatic_sync']
             value['directory_health'] = self.server.operations.health()
             value['policy_conflicts'] = policy_conflicts(value['policies'], self.server.store.directory_catalog())
-            value.update(product='KANAME', version=VERSION, runtime_ready=False,
+            value.update(product='AuthWire', version=VERSION, runtime_ready=False,
                          integrations={'ad': 'catalog-only' if value['directory_public']['catalog_available'] else 'pending', 'pki': 'pending', 'radius': 'pending', 'ovf': 'not-built'})
             self.respond(200, self.state_projection(value))
         elif self.path == '/api/audit' and self.guard(resource='audit.events'):

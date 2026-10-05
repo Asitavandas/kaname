@@ -1,3 +1,3 @@
-"""KANAME standalone foundation. No authentication traffic is enforced yet."""
+"""AuthWire standalone foundation. No authentication traffic is enforced yet."""
 
-VERSION = "0.11.0-dev.1"
+VERSION = "0.11.1-dev.1"

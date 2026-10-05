@@ -1,9 +1,28 @@
 import os
 import tempfile
 import unittest
+import json
+from unittest.mock import patch
 from pathlib import Path
 
-from tools.linux_update import safe_tree, quarantine_caches
+from tools.linux_update import safe_tree, quarantine_caches, health
+
+
+class RebrandHealthTests(unittest.TestCase):
+    def checked(self, product, version='fixture-version'):
+        with patch('tools.linux_update.ssl.create_default_context'), patch('tools.linux_update.http.client.HTTPSConnection') as connect:
+            response = connect.return_value.getresponse.return_value
+            response.status = 200
+            response.read.return_value = json.dumps({'product': product, 'version': version}).encode()
+            return health('127.0.0.1', 'fixture-version')
+
+    def test_old_and_new_identity_allow_upgrade_and_rollback(self):
+        for name in ('KANAME', 'AuthWire'):
+            with self.subTest(name=name): self.assertTrue(self.checked(name))
+
+    def test_rebrand_does_not_accept_another_product_or_wrong_version(self):
+        self.assertFalse(self.checked('Another'))
+        self.assertFalse(self.checked('AuthWire', 'wrong-version'))
 
 
 @unittest.skipUnless(os.name=='posix','POSIX source permissions')

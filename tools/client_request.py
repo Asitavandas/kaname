@@ -18,7 +18,7 @@ def create(directory, password):
     target.mkdir(mode=0o700)  # Never overwrite an endpoint's existing key.
     key = ec.generate_private_key(ec.SECP256R1())
     csr = (x509.CertificateSigningRequestBuilder()
-           .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'KANAME user request')]))
+           .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'AuthWire user request')]))
            .sign(key, hashes.SHA256()))
     write_new(target / 'client-key.pem', private_pem(key, password))
     write_new(target / 'client-request.pem', csr.public_bytes(serialization.Encoding.PEM))
@@ -26,7 +26,7 @@ def create(directory, password):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Run on the endpoint; only send the CSR to KANAME')
+    parser = argparse.ArgumentParser(description='Run on the endpoint; only send the CSR to AuthWire')
     parser.add_argument('--directory', required=True)
     args = parser.parse_args()
     try:

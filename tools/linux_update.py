@@ -137,7 +137,7 @@ def health(listen, version):
         connection.request('GET', '/healthz')
         response = connection.getresponse()
         value = json.loads(response.read(4096))
-        return response.status == 200 and value.get('product') == 'KANAME' and value.get('version') == version
+        return response.status == 200 and value.get('product') in {'KANAME', 'AuthWire'} and value.get('version') == version
     finally: connection.close()
 
 

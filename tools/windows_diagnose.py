@@ -172,7 +172,7 @@ def diagnose(root, port=8765):
     report['access_token_valid'] = token is not None
     report['database'], snapshot = database_facts(root)
     code, health = get_json('/healthz', port=port)
-    product = code == 200 and isinstance(health, dict) and health.get('product') == 'KANAME'
+    product = code == 200 and isinstance(health, dict) and health.get('product') in {'KANAME', 'AuthWire'}
     report['panel'] = {'http_status': code, 'kaname_responding': product}
     if product:
         report['panel']['matches_source_version'] = health.get('version') == report['source_version']
@@ -180,7 +180,7 @@ def diagnose(root, port=8765):
         report['panel']['expected_development_readiness'] = ready_code == 503 and isinstance(ready, dict) and ready.get('reason') == 'AD_PKI_RADIUS_NOT_CONNECTED'
         if token:
             state_code, state = get_json('/api/state', token=token, port=port)
-            authenticated = state_code == 200 and isinstance(state, dict) and state.get('product') == 'KANAME'
+            authenticated = state_code == 200 and isinstance(state, dict) and state.get('product') in {'KANAME', 'AuthWire'}
             report['panel']['token_accepted'] = authenticated
             report['panel']['state_http_status'] = state_code
             report['panel']['matches_local_state'] = authenticated and snapshot is not None and all(state.get(k) == v for k, v in snapshot.items())

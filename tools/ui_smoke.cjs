@@ -34,6 +34,15 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#login-password').fill('Kaname');
     await page.locator('#unlock').click();
     await page.locator('#workspace').waitFor({state:'visible'});
+    assert.equal(await page.title(),'AuthWire • Kontrol merkezi');
+    assert.match(await page.locator('.brand').textContent(),/AuthWire/);
+    assert.equal(await page.evaluate(()=>document.body.innerText.includes('KANAME')),false);
+    await page.waitForFunction(()=>[...document.querySelectorAll('img[src="/authwire-logo.png"]')].every(img=>img.complete&&img.naturalWidth>0));
+    const logoResponse=await page.request.get(new URL('/authwire-logo.png',page.url()).href);
+    assert.equal(logoResponse.status(),200);
+    assert.match(logoResponse.headers()['content-type'],/image\/png/);
+    const healthResponse=await page.request.get(new URL('/healthz',page.url()).href);assert.equal((await healthResponse.json()).product,'AuthWire');
+
     const colors=await page.evaluate(()=>({background:getComputedStyle(document.body).backgroundColor,sidebar:getComputedStyle(document.querySelector('aside')).backgroundColor,nav:getComputedStyle(document.querySelector('[data-view="overview"]')).color}));
     assert.deepEqual(colors,{background:'rgb(244, 246, 251)',sidebar:'rgb(255, 255, 255)',nav:'rgb(34, 91, 210)'});
     assert.deepEqual(await page.locator('[data-nav-section]').evaluateAll(groups=>groups.map(g=>g.dataset.navSection)),['Hazırla','Kullanıcılar','Erişim','Kontrol et','Yönetim']);
