@@ -105,7 +105,7 @@ def wait_panel(version, token):
     deadline = time.monotonic() + 25
     while time.monotonic() < deadline:
         code, health = get_json('/healthz')
-        if code == 200 and isinstance(health, dict) and health.get('product') == 'KANAME' and health.get('version') == version:
+        if code == 200 and isinstance(health, dict) and health.get('product') in {'KANAME', 'AuthWire'} and health.get('version') == version:
             status, state = get_json('/api/state', token=token)
             if status == 200:
                 return state
@@ -185,7 +185,7 @@ def upgrade(root, source):
     if not token:
         raise ValueError('Existing access token is not usable')
     status, active = get_json('/api/state', token=token)
-    if status != 200 or not isinstance(active, dict) or active.get('product') != 'KANAME':
+    if status != 200 or not isinstance(active, dict) or active.get('product') not in {'KANAME', 'AuthWire'}:
         raise ValueError('Existing panel could not be authenticated')
     existing = snapshot(root)[0]
     if not existing or active.get('revision') != existing[0] or active.get('config') != (json.loads(existing[1]) if existing[1] else None) or active.get('policies') != json.loads(existing[2]):

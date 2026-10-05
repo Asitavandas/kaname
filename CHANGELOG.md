@@ -1,5 +1,13 @@
 ## 0.10.1-dev.1 — 2026-10-05
 
+## 0.11.1-dev.1 — 2026-10-05
+
+- Rename visible panel branding, titles, help, status product and new certificate/request subjects to AuthWire. Existing keys, certificates, credentials and installed paths are preserved.
+- Add the supplied metallic Λ/W monogram as a self-hosted transparent PNG in navigation, login, overview and the browser icon. The tested source manifest includes and verifies this asset.
+- Accept both legacy KANAME and AuthWire health identities during Linux update and rollback; old installations remain compatible.
+- Verify logo delivery, visible naming, source inclusion and health compatibility alongside existing browser and update checks.
+
+
 ## 0.11.0-dev.1 — 2026-10-05
 
 - Rebuild the panel around visible, ordered navigation: prepare, users, access, verify, then administration. Add page context, a mobile menu, and direct section search.

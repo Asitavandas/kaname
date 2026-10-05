@@ -4,7 +4,7 @@ from .server import DevelopmentServer
 
 
 def main():
-    parser = argparse.ArgumentParser(description='KANAME local development panel')
+    parser = argparse.ArgumentParser(description='AuthWire local development panel')
     parser.add_argument('--state-dir', default='kaname-state')
     parser.add_argument('--port', type=int, default=8765)
     parser.add_argument('--listen', default='127.0.0.1')
@@ -20,7 +20,7 @@ def main():
     with DevelopmentServer(args.state_dir, args.port, listen=args.listen, tls_cert=args.tls_cert,
                            tls_key=args.tls_key, public_name=args.public_name) as server:
         scheme = 'https' if server.tls else 'http'
-        print(f'KANAME laboratory panel: {scheme}://{args.listen}:{server.server_port}')
+        print(f'AuthWire laboratory panel: {scheme}://{args.listen}:{server.server_port}')
         print('Panel login: username and password. See README for the first-install account.')
         print('Laboratory only. HTTPS user enrollment is available; machine enrollment, production RADIUS and OVF are pending.')
         try:

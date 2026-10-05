@@ -33,7 +33,7 @@ def package(source, destination):
         files.append((relative.as_posix(), path.read_bytes()))
     if not ROOT_FILES <= {name for name, _ in files}:
         raise ValueError('Source root is incomplete')
-    manifest = {'product': 'KANAME', 'version': VERSION, 'artifact': 'source-only',
+    manifest = {'product': 'AuthWire', 'version': VERSION, 'artifact': 'source-only',
                 'files': {name: hashlib.sha256(data).hexdigest() for name, data in files}}
     files.append(('SOURCE_MANIFEST.json', (json.dumps(manifest, ensure_ascii=False, indent=2) + '\n').encode()))
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -61,7 +61,7 @@ def package(source, destination):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='KANAME source ZIP')
+    parser = argparse.ArgumentParser(description='AuthWire source ZIP')
     parser.add_argument('destination')
     args = parser.parse_args()
     print(json.dumps(package(Path(__file__).parent.parent, args.destination), indent=2))

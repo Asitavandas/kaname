@@ -39,6 +39,18 @@ class LinuxInstallTests(unittest.TestCase):
             server = destination / 'kaname/server.py'; server.write_bytes(server.read_bytes() + b'\n# tampered\n')
             with self.assertRaises(ValueError): verified_files(destination, result['source_digest'])
 
+    def test_authwire_logo_is_staged_and_tampering_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(__file__).parents[1]
+            destination = Path(temporary) / 'stage'
+            result = prepare(source, destination)
+            files = verified_files(destination, result['source_digest'])
+            name = 'kaname/static/authwire-logo.png'
+            self.assertEqual((source / name).read_bytes(), files[name])
+            self.assertTrue(files[name].startswith(b'\x89PNG\r\n\x1a\n'))
+            (destination / name).write_bytes(files[name] + b'tampered')
+            with self.assertRaises(ValueError): verified_files(destination, result['source_digest'])
+
     def test_host_mapping_preserves_unrelated_lines_and_rejects_conflicts(self):
         original = '127.0.0.1 localhost\n192.0.2.20 other.lab.example\n'
         updated = hosts_with_dc(original, 'dc01.lab.example', '192.0.2.10')
