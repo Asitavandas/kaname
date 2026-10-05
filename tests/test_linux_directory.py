@@ -162,7 +162,7 @@ class NativeLinuxLDAPTests(unittest.TestCase):
                 self.assertTrue(all(fixture.domain_scope_controls))
 
     def test_native_scoped_catalog_excludes_outside_nested_and_primary_members(self):
-        reader, fixture = self.fixture_reader('scoped')
+        reader, fixture = self.fixture_reader('ou-scoped')
         value = reader.catalog('fixture.invalid', 'dc01.fixture.invalid', 'OU=Network,DC=fixture,DC=invalid')
         self.assertEqual((1, 1, 1), tuple(len(value[x]) for x in ('users', 'groups', 'computers')))
         self.assertEqual(1, len(value['memberships']))
@@ -171,7 +171,7 @@ class NativeLinuxLDAPTests(unittest.TestCase):
         self.assertEqual({'OU=Network,DC=fixture,DC=invalid'}, {base for base, _ in fixture.search_records})
 
     def test_native_multiple_ous_include_union_and_resolve_names(self):
-        reader, fixture = self.fixture_reader('scoped')
+        reader, fixture = self.fixture_reader('ou-scoped')
         value = reader.catalog('fixture.invalid', 'dc01.fixture.invalid', 'Network\nOU=Other')
         self.assertEqual((1, 2, 1), tuple(len(value[x]) for x in ('users', 'groups', 'computers')))
         self.assertEqual(2, len(value['memberships']))
@@ -183,18 +183,18 @@ class NativeLinuxLDAPTests(unittest.TestCase):
         for scope, code in [('Missing', 'AD_SCOPE_NOT_FOUND'), ('Ambiguous', 'AD_SCOPE_AMBIGUOUS'),
                             ('OU=Missing', 'AD_SCOPE_NOT_FOUND'), ('Network\nMissing', 'AD_SCOPE_NOT_FOUND')]:
             with self.subTest(scope=scope):
-                reader, fixture = self.fixture_reader('scoped')
+                reader, fixture = self.fixture_reader('ou-scoped')
                 with self.assertRaises(DirectoryError) as caught:
                     reader.catalog('fixture.invalid', 'dc01.fixture.invalid', scope)
                 self.assertEqual(code, caught.exception.code)
                 self.assertNotIn(('CN=Alice,OU=Users,DC=fixture,DC=invalid', 0), fixture.search_records)
 
     def test_native_overlapping_scopes_are_read_once_and_root_is_explicit(self):
-        reader, fixture = self.fixture_reader('scoped')
+        reader, fixture = self.fixture_reader('ou-scoped')
         value = reader.catalog('fixture.invalid', 'dc01.fixture.invalid', 'Network\nOU=Network,DC=fixture,DC=invalid')
         self.assertEqual(1, len(value['users']))
         self.assertEqual(3, sum(scope == 2 and base.startswith('OU=Network,') for base, scope in fixture.search_records))
-        reader, fixture = self.fixture_reader('scoped')
+        reader, fixture = self.fixture_reader('ou-scoped')
         value = reader.catalog('fixture.invalid', 'dc01.fixture.invalid', 'Network\nDC=fixture,DC=invalid')
         self.assertEqual(3, len(value['users']))
         self.assertIn('primary', {edge['type'] for edge in value['memberships']})

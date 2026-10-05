@@ -1,7 +1,7 @@
 ## 0.12.1-dev.1
 - Rename directory setup to LDAP Servers and match the reference form, with separate connectivity and protected credentials/scope tests.
 - Accept one or multiple OU names or DNs (one per line). Resolve names uniquely and reject missing, ambiguous or foreign scopes.
-- Read users, groups and computers strictly inside the selected subtree union on Linux and Windows. Outside group members remain unresolved; overlapping scopes are read once.
+- Read users, groups and computers strictly inside the selected subtree union on Linux. Outside group members remain unresolved; overlapping scopes are read once.
 - Preserve existing saved credentials and the last successful catalog on failed reads.
 
 ## 0.12.0-dev.1 — 2026-10-05

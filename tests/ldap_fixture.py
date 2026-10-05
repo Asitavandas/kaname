@@ -151,7 +151,10 @@ class LDAPFixture:
                         if self.mode.startswith('account-'):
                             self.account_response(conn, message_id, base.decode(), int.from_bytes(search_scope, 'big'))
                             continue
-                        if self.mode.startswith('scoped'):
+                        if self.mode == 'scoped':
+                            self.legacy_scoped_response(conn, message_id, base.decode(), filter_data)
+                            continue
+                        if self.mode == 'ou-scoped':
                             self.scoped_response(conn, message_id, base.decode(), filter_data, int.from_bytes(search_scope, "big"))
                             continue
                         ranged = re.search(rb'member;range=(\d+)-\d+', content)
@@ -257,4 +260,30 @@ class LDAPFixture:
                          'userAccountControl': ['512'], 'primaryGroupID': [str(primary_id)], 'groupType': ['-2147483646']}
                 if kind == 'group': attrs['member'] = members
                 conn.sendall(entry(message_id, attrs, dn))
+        conn.sendall(done(message_id, cookie=b''))
+
+    def legacy_scoped_response(self, conn, message_id, base, filter_data):
+        domain = 'DC=fixture,DC=invalid'
+        group_dn = 'CN=Access,OU=Network,' + domain
+        nested_dn = 'CN=Child,OU=Other,' + domain
+        alice_dn = 'CN=Alice,OU=Users,' + domain
+        bob_dn = 'CN=Bob,OU=Elsewhere,' + domain
+        is_group = b'group' in filter_data
+        is_user = b'person' in filter_data
+        primary = b'primaryGroupID' in filter_data
+        result = []
+        if is_group and base == 'OU=Network,' + domain:
+            result = [(1100, group_dn, 'group', [nested_dn, 'CN=Foreign,DC=other,DC=invalid'], 0)]
+        elif is_group and base == nested_dn:
+            result = [(1101, nested_dn, 'group', [alice_dn], 0)]
+        elif is_user and base == alice_dn:
+            result = [(1001, alice_dn, 'user', [], 513)]
+        elif is_user and primary and b'1100' in filter_data:
+            result = [(1002, bob_dn, 'user', [], 1100)]
+        for index, dn, kind, members, primary_id in result:
+            attrs = {'objectSid': [sid(21, 1, 2, 3, index)], 'objectGUID': [uuid.UUID(int=index).bytes_le],
+                     'sAMAccountName': [f'fixture-{index}'], 'name': [f'Fixture {index}'],
+                     'userAccountControl': ['512'], 'primaryGroupID': [str(primary_id)], 'groupType': ['-2147483646']}
+            if kind == 'group': attrs['member'] = members
+            conn.sendall(entry(message_id, attrs, dn))
         conn.sendall(done(message_id, cookie=b''))

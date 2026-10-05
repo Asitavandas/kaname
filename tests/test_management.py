@@ -86,7 +86,7 @@ class ConflictTests(unittest.TestCase):
 
 class OperationsTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'nt', 'Windows protected .NET LDAP scoped wire fixture')
-    def test_windows_scoped_catalog_excludes_outside_ou_members(self):
+    def test_windows_scoped_groups_include_nested_and_outside_ou_primary_users(self):
         import subprocess
         from pathlib import Path
         from .ldap_fixture import LDAPFixture
@@ -97,32 +97,11 @@ class OperationsTests(unittest.TestCase):
             value = json.loads(result.stdout.decode('utf-8-sig'))
             self.assertEqual(0, result.returncode, str(value))
             self.assertEqual('scoped-ldap', value['fixture'])
-            self.assertEqual({'users': 1, 'groups': 1, 'computers': 1}, value['counts'])
+            self.assertEqual({'users': 2, 'groups': 2, 'computers': 0}, value['counts'])
             self.assertTrue(all(fixture.domain_scope_controls))
             self.assertIn(('OU=Network,DC=fixture,DC=invalid', 2), fixture.search_records)
-            self.assertEqual({'OU=Network,DC=fixture,DC=invalid'}, {base for base, _ in fixture.search_records})
+            self.assertIn(('CN=Alice,OU=Users,DC=fixture,DC=invalid', 0), fixture.search_records)
             self.assertEqual([], fixture.errors)
-
-    @unittest.skipUnless(os.name == 'nt', 'Windows protected .NET LDAP multi-OU wire fixture')
-    def test_windows_multiple_ou_names_and_missing_ambiguous_scopes(self):
-        import subprocess
-        from pathlib import Path
-        from .ldap_fixture import LDAPFixture
-        executable = Path(os.environ['SystemRoot']) / 'System32/WindowsPowerShell/v1.0/powershell.exe'
-        script = Path(__file__).parents[1] / 'kaname/directory_windows.ps1'
-        for scope, error in [('Network\nOU=Other,DC=fixture,DC=invalid', None),
-                             ('Missing', 'AD_SCOPE_NOT_FOUND'), ('Ambiguous', 'AD_SCOPE_AMBIGUOUS')]:
-            with self.subTest(scope=scope), LDAPFixture('scoped') as fixture:
-                result = subprocess.run([str(executable), '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', str(script), '-SelfTest', '-FixturePort', str(fixture.port), '-ScopedFixture', '-FixtureScope', scope], capture_output=True, timeout=25)
-                value = json.loads(result.stdout.decode('utf-8-sig'))
-                if error:
-                    self.assertNotEqual(0, result.returncode)
-                    self.assertEqual(error, value['error'])
-                else:
-                    self.assertEqual(0, result.returncode, str(value))
-                    self.assertEqual({'users': 1, 'groups': 2, 'computers': 1}, value['counts'])
-                self.assertEqual([], fixture.errors)
-                self.assertNotIn(('CN=Alice,OU=Users,DC=fixture,DC=invalid', 0), fixture.search_records)
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)

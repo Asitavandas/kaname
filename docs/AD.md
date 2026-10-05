@@ -39,3 +39,5 @@ Domain-scope kaynakları:
 ## LDAP Servers bağlantı testleri
 
 Test connectivity yalnız DNS ve izin verilen DC IP’lerinde TCP 389 erişimini kontrol eder; parola kullanmaz. Test user credentials Kerberos korumalı bağlantıyı ve formda verilen OU kapsamının varlığını doğrular; kayıtlı kataloğu değiştirmez. Boş parola yalnız aynı kayıtlı sunucu ve kullanıcı için saklanan parolayı kullanır. Her iki işlem directory.connection Write yetkisi ve normal panel CSRF doğrulaması gerektirir. Şimdi eşitle kayıtlı kapsamı kullanır; form değişikliği önce kaydedilmelidir.
+
+0.12.1 LDAP Servers ve çoklu OU düzenlemesi Linux paneli içindir. Mevcut Windows panel okuyucusu ve kurulumu korunur; otomatik Windows işleri duraklatılmıştır.
