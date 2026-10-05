@@ -290,7 +290,6 @@ class Reader:
         return resolved
 
     def catalog(self, domain, dc, search_base=''):
-        domain_base = ','.join('DC=' + x for x in domain.split('.'))
         scopes = self.resolve_scopes(domain, search_base)
         collections = {kind: [] for kind in FILTERS}
         seen = set()
@@ -436,7 +435,10 @@ def run(request):
 
 def main():
     try:
-        request = json.loads(sys.stdin.buffer.read(32768))
+        payload = sys.stdin.buffer.read(262145)
+        if len(payload) > 262144:
+            raise DirectoryError('AD_INPUT_INVALID')
+        request = json.loads(payload)
         value = run(request)
         print(json.dumps(value, ensure_ascii=True)); return 0
     except DirectoryError as error:

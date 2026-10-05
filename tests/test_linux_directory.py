@@ -1,4 +1,5 @@
 import importlib.util
+import io
 import json
 import os
 import subprocess
@@ -92,6 +93,20 @@ class LinuxProtectionTests(unittest.TestCase):
             self.assertEqual('AD_TIMEOUT', caught.exception.code)
             self.assertEqual(999999, kill.call_args.args[0])
         self.assertFalse(seen['directory'].exists())
+
+    def test_multi_ou_unicode_request_is_not_truncated_at_old_stdin_limit(self):
+        from kaname.directory_linux_helper import main
+        scope = '\n'.join('OU=' + ('Ş' * 1800) + str(i) + ',DC=lab,DC=example' for i in range(16))
+        request = connection() | {'search_base': scope}
+        payload = json.dumps(request, ensure_ascii=True).encode()
+        self.assertGreater(len(payload), 32768)
+        with patch('kaname.directory_linux_helper.sys.stdin', types.SimpleNamespace(buffer=io.BytesIO(payload))), patch('kaname.directory_linux_helper.sys.stdout', io.StringIO()), patch('kaname.directory_linux_helper.run', return_value={'probe': 'ok'}) as run:
+            self.assertEqual(0, main())
+            self.assertEqual(scope, run.call_args.args[0]['search_base'])
+        with patch('kaname.directory_linux_helper.sys.stdin', types.SimpleNamespace(buffer=io.BytesIO(b' ' * 262145))), patch('kaname.directory_linux_helper.sys.stdout', new_callable=io.StringIO) as output, patch('kaname.directory_linux_helper.run') as run:
+            self.assertEqual(1, main())
+            self.assertEqual('AD_INPUT_INVALID', json.loads(output.getvalue())['error'])
+            run.assert_not_called()
 
 
 @unittest.skipUnless(importlib.util.find_spec('ldap'), 'Native python-ldap installed in Linux adapter CI')

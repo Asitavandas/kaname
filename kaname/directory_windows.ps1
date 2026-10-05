@@ -191,14 +191,14 @@ function Resolve-SearchBases([string]$scope,[string]$domainBase) {
     foreach ($line in $lines) {
         $base=$line.Trim()
         if (-not $base.Contains('=')) {
-            $matches=@(Read-Objects 'ous' ('(&(objectClass=organizationalUnit)(ou='+(Escape-Filter $base)+'))') $domainBase)
+            $matches=Read-Objects 'ous' ('(&(objectClass=organizationalUnit)(ou='+(Escape-Filter $base)+'))') $domainBase
             if ($matches.Count -eq 0) { throw 'AD_SCOPE_NOT_FOUND' }
             if ($matches.Count -ne 1) { throw 'AD_SCOPE_AMBIGUOUS' }
             $base=$matches[0]._dn
         }
         if (-not (DN-Within $base $domainBase)) { throw 'AD_SCOPE_INVALID' }
         if ($base -ine $domainBase) {
-            $matches=@(Read-Objects 'scopes' '(objectClass=*)' $base 'Base')
+            $matches=Read-Objects 'scopes' '(objectClass=*)' $base 'Base'
             if ($matches.Count -ne 1 -or -not (DN-Within $matches[0]._dn $base) -or -not (DN-Within $base $matches[0]._dn)) { throw 'AD_SCOPE_NOT_FOUND' }
         }
         $covered=$false
