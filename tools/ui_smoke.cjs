@@ -38,10 +38,10 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.match(await page.locator('.brand').textContent(),/AuthWire/);
     assert.equal(await page.evaluate(()=>document.body.innerText.includes('KANAME')),false);
     await page.waitForFunction(()=>[...document.querySelectorAll('img[src="/authwire-logo.png"]')].every(img=>img.complete&&img.naturalWidth>0));
-    const logoResponse=await page.request.get('/authwire-logo.png');
+    const logoResponse=await page.request.get(new URL('/authwire-logo.png',page.url()).href);
     assert.equal(logoResponse.status(),200);
     assert.match(logoResponse.headers()['content-type'],/image\/png/);
-    const healthResponse=await page.request.get('/healthz');assert.equal((await healthResponse.json()).product,'AuthWire');
+    const healthResponse=await page.request.get(new URL('/healthz',page.url()).href);assert.equal((await healthResponse.json()).product,'AuthWire');
 
     const colors=await page.evaluate(()=>({background:getComputedStyle(document.body).backgroundColor,sidebar:getComputedStyle(document.querySelector('aside')).backgroundColor,nav:getComputedStyle(document.querySelector('[data-view="overview"]')).color}));
     assert.deepEqual(colors,{background:'rgb(244, 246, 251)',sidebar:'rgb(255, 255, 255)',nav:'rgb(34, 91, 210)'});
