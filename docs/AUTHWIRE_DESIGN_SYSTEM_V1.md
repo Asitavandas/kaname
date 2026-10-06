@@ -38,6 +38,9 @@ replace the status text.
   fields, validation, and permission-controlled actions.
 - Tables and existing directory lists use the same muted headings, light hover,
   copper accents, semantic statuses, and compact operation controls.
+- Informational toasts dismiss after five seconds. Errors remain until dismissed.
+  While the certificate drawer is open its feedback is shown inline, so global
+  notifications cannot cover the form controls.
 - The certificate drawer is up to 520 px wide. Narrow layouts overlay it and
   keep forms readable instead of compressing the page beside the drawer.
 - Mobile navigation remains accessible through the menu button and closes on
