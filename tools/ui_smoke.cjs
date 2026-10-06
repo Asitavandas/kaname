@@ -362,7 +362,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.waitForFunction(()=>document.querySelector('#radius-instructions').textContent.includes('UDP 2812'));
     assert.equal(await page.locator('#radius-account-port').inputValue(),'1813');
     await navigate('simulate');
-    await page.waitForFunction(()=>document.querySelector('#sim-group').options.length===3);
+    await page.waitForFunction(()=>document.querySelector('#sim-group').options.length===4);
     await page.locator('#sim-group').selectOption('S-1-5-21-1-2-3-1100');
     assert.match(await page.locator('#sim-group option:checked').textContent(),/script/);
     let releaseSystem;
