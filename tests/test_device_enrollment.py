@@ -93,7 +93,10 @@ class DeviceTests(unittest.TestCase):
         self.assertEqual(result,restarted.issue(PRINCIPAL,value))
         self.assertEqual(1,self.count())
         self.receipt(result)
-        self.assertEqual('installed',self.service.status()['devices'][0]['status'])
+        status=self.service.status()['devices'][0]
+        self.assertEqual('installed',status['status'])
+        self.assertEqual(PRINCIPAL.casefold(),status['principal'])
+        self.assertEqual('pc01',status['display_name'])
         audits=len(self.service.store.audit()); self.receipt(result)
         self.assertEqual(audits,len(self.service.store.audit()))
         self.assertTrue(all(x['password']=='' for x in self.connections))
