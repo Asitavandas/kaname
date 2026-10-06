@@ -69,6 +69,9 @@ $startup = New-ScheduledTaskTrigger -AtStartup
 # Register-ScheduledTask rejects their PSTypeName on supported Windows clients.
 $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 10)
+$existingTask = Get-ScheduledTask -TaskName 'AuthWire Certificate Enrollment' -ErrorAction SilentlyContinue
 $null = Register-ScheduledTask -TaskName 'AuthWire Certificate Enrollment' -Action $action -Trigger @($daily,$evening,$startup) -Principal $principal -Settings $settings -Force
-Start-ScheduledTask -TaskName 'AuthWire Certificate Enrollment'
+# First installation happens after the current boot's AtStartup event, so start once.
+# On later boots the pre-existing task has already been triggered by AtStartup; do not launch a duplicate instance.
+if(!$existingTask) { Start-ScheduledTask -TaskName 'AuthWire Certificate Enrollment' }
 # No supplicant policy, port control or RADIUS changes in this package.
