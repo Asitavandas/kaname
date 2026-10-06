@@ -12,6 +12,20 @@ from pathlib import Path
 from .models import integer, validate_config, validate_policies
 
 
+def _directory_display(value, kind=None):
+    """Return a UI-safe copy without changing the stored AD identity."""
+    object_kind = kind or value.get('kind')
+    if object_kind != 'computers':
+        return value
+    result = dict(value)
+    suffix = chr(36)
+    for field in ('name', 'sam'):
+        text = result.get(field)
+        if isinstance(text, str) and text.endswith(suffix):
+            result[field] = text[:-1]
+    return result
+
+
 class ConflictError(ValueError):
     pass
 
@@ -159,7 +173,8 @@ class Store:
         if catalog is None:
             return {'items': [], 'total': 0, 'offset': offset, 'catalog_available': False}
         items = [x for x in catalog[kind] if (not security_only or x.get('security_enabled', True)) and (not query or any(query.casefold() in x[k].casefold() for k in ('name', 'sam', 'sid')))]
-        return {'items': items[offset:offset + limit], 'total': len(items), 'offset': offset, 'catalog_available': True}
+        visible = [_directory_display(x, kind) for x in items[offset:offset + limit]]
+        return {'items': visible, 'total': len(items), 'offset': offset, 'catalog_available': True}
 
     def directory_detail(self, kind, object_id, offset=0, query=''):
         import uuid
@@ -171,10 +186,11 @@ class Store:
         catalog = self.directory_catalog()
         target = next((x for x in catalog[kind] if x['guid'] == object_id), None) if catalog else None
         if target is None: raise LookupError('Catalog object not found')
-        result = {'object': target, 'kind': kind, 'offset': offset, 'synced_at': catalog['synced_at'],
+        result = {'object': _directory_display(target, kind), 'kind': kind, 'offset': offset, 'synced_at': catalog['synced_at'],
                   'membership_available': catalog.get('membership_schema') == 1, 'scope': 'single-domain-snapshot'}
         if not result['membership_available']: return {**result, 'items': [], 'total': 0}
         items, coverage = related(catalog, kind, target)
         items = [x for x in items if not query or any(query.casefold() in x[k].casefold() for k in ('name', 'sam', 'sid'))]
         items.sort(key=lambda x: (x['name'].casefold(), x['sam'].casefold(), x['guid']))
-        return {**result, **coverage, 'items': items[offset:offset + 100], 'total': len(items)}
+        visible = [_directory_display(x) for x in items[offset:offset + 100]]
+        return {**result, **coverage, 'items': visible, 'total': len(items)}
