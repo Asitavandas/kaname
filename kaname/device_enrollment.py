@@ -189,11 +189,12 @@ class DeviceEnrollment:
                     signer_ready = True
                 except EnrollmentError:
                     pass
-            total = db.execute('SELECT count(*) FROM device_issuances').fetchone()[0]
+            total = db.execute('''SELECT count(*) FROM device_issuances d
+                JOIN pki_certificates c ON c.serial=d.serial WHERE c.archived_at IS NULL''').fetchone()[0]
             rows = db.execute('''SELECT d.serial,d.profile_id,d.principal,d.installed_at,d.last_seen,d.renew_at,
                 c.certificate,c.revoked_at,b.object_guid FROM device_issuances d
                 JOIN pki_certificates c ON c.serial=d.serial JOIN radius_certificate_bindings b ON b.serial=d.serial
-                ORDER BY d.rowid DESC LIMIT 100 OFFSET ?''', (offset,)).fetchall()
+                WHERE c.archived_at IS NULL ORDER BY d.rowid DESC LIMIT 100 OFFSET ?''', (offset,)).fetchall()
         devices = []
         for serial, profile, principal, installed, seen, renew, pem, revoked, guid in rows:
             cert = x509.load_pem_x509_certificate(pem)
@@ -205,6 +206,26 @@ class DeviceEnrollment:
                 'renew_at': renew, 'not_after': cert.not_valid_after_utc.isoformat()})
         return {'profiles': profiles, 'devices': devices, 'total': total, 'offset': offset,
                 'signer_enabled': signer, 'signer_ready':signer_ready, 'radius_changed': False}
+
+    def request_renewal(self, serial, actor):
+        from .radius import serial_number
+        serial = serial_number(serial)
+        now = instant()
+        with self.transaction() as db:
+            row = db.execute('''SELECT d.installed_at,c.certificate,c.revoked_at FROM device_issuances d
+                JOIN pki_certificates c ON c.serial=d.serial WHERE d.serial=?''', (serial,)).fetchone()
+            if row is None:
+                raise EnrollmentError('DEVICE_CERTIFICATE_NOT_FOUND')
+            if row[2] is not None:
+                raise EnrollmentError('DEVICE_CERTIFICATE_REVOKED')
+            if row[0] is None:
+                raise EnrollmentError('DEVICE_INSTALLATION_PENDING')
+            cert = x509.load_pem_x509_certificate(row[1])
+            if not cert.not_valid_before_utc <= now < cert.not_valid_after_utc:
+                raise EnrollmentError('DEVICE_CERTIFICATE_EXPIRED')
+            db.execute('UPDATE device_issuances SET renew_at=? WHERE serial=?', (now.isoformat(), serial))
+            self.pki._audit(db, 'device_renewal_requested:' + serial, actor)
+        return {'serial': serial, 'renewal_due': True, 'renew_at': now.isoformat()}
 
     def _authorize(self, principal, profile):
         match = re.fullmatch(r'([A-Za-z0-9_][A-Za-z0-9_.-]{0,19}\$)@' + re.escape(profile['domain']), principal, re.I)
@@ -361,11 +382,11 @@ class DeviceEnrollment:
         serial = serial_number(value['serial'])
         now = instant()
         with self.transaction() as db:
-            row = db.execute('''SELECT d.principal,d.profile_id,d.receipt_payload,d.installed_at,c.certificate,c.revoked_at FROM
+            row = db.execute('''SELECT d.principal,d.profile_id,d.receipt_payload,d.installed_at,d.renew_at,c.certificate,c.revoked_at FROM
                 device_issuances d JOIN pki_certificates c ON c.serial=d.serial WHERE d.serial=?''',(serial,)).fetchone()
-            if not row or row[0] != principal.casefold() or row[5]:
+            if not row or row[0] != principal.casefold() or row[6]:
                 raise EnrollmentError('DEVICE_IDENTITY_REJECTED')
-            cert = x509.load_pem_x509_certificate(row[4])
+            cert = x509.load_pem_x509_certificate(row[5])
             if not cert.not_valid_before_utc <= now < cert.not_valid_after_utc:
                 raise EnrollmentError('DEVICE_CERTIFICATE_EXPIRED')
             self.proof(cert.public_key(),row[2].encode(),value['proof'])
@@ -377,7 +398,8 @@ class DeviceEnrollment:
                     deadline = min(now+timedelta(hours=24),previous.not_valid_after_utc)
                     db.execute('INSERT OR IGNORE INTO device_retirements VALUES (?,?)',(old[0],deadline.isoformat()))
                 self.pki._audit(db,'device_certificate_installed:'+serial)
-        return {'installed':True,'serial':serial}
+            renew_now = now >= datetime.fromisoformat(row[4])
+        return {'installed':True,'serial':serial,'renew_now':renew_now}
 
     def maintenance(self):
         now = instant()
