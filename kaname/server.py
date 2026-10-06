@@ -325,7 +325,7 @@ class Handler(BaseHTTPRequestHandler):
                         keys(value, {'ca_password'}, {'ca_password'})
                         pki.refresh_crl(secret, actor=self.actor['id'])
                         result = {'refreshed': True, 'radius_connected': False}
-                    self.respond(200, result)
+                self.respond(200, result)
             finally:
                 self.server.enrollment_lock.release()
         except EnrollmentError as error:
