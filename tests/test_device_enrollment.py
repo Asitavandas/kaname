@@ -222,6 +222,9 @@ class DeviceTests(unittest.TestCase):
             self.assertIn(b'modified after signing',installer)
             self.assertNotIn(b"New-CimInstance -Namespace 'Root/Microsoft/Windows/TaskScheduler'",installer)
             self.assertEqual(3,installer.count(b'New-ScheduledTaskTrigger'))
+            self.assertIn(b"Get-ScheduledTask -TaskName 'AuthWire Certificate Enrollment'",installer)
+            self.assertIn(b"if(!$existingTask) { Start-ScheduledTask -TaskName 'AuthWire Certificate Enrollment' }",installer)
+            self.assertEqual(1,installer.count(b"Start-ScheduledTask -TaskName 'AuthWire Certificate Enrollment'"))
             self.assertIn(b'renew_now',archive.read('AuthWire-Client.ps1'))
         self.reject('DEVICE_TLS_NAME_MISMATCH',lambda:self.service.package(self.profile['id'],hostname='wrong.lab.example',port=8765,tls_pem=(tlsdir/'web.crt').read_bytes()))
 
