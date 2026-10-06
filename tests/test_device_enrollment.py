@@ -222,6 +222,7 @@ class DeviceTests(unittest.TestCase):
             self.assertIn(b'modified after signing',installer)
             self.assertNotIn(b"New-CimInstance -Namespace 'Root/Microsoft/Windows/TaskScheduler'",installer)
             self.assertEqual(3,installer.count(b'New-ScheduledTaskTrigger'))
+            self.assertIn(b'renew_now',archive.read('AuthWire-Client.ps1'))
         self.reject('DEVICE_TLS_NAME_MISMATCH',lambda:self.service.package(self.profile['id'],hostname='wrong.lab.example',port=8765,tls_pem=(tlsdir/'web.crt').read_bytes()))
 
     def test_machine_sam_ldap_resolution_no_caller_guid(self):
