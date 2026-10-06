@@ -173,10 +173,11 @@ class EnrollmentService:
                 return {'items': [], 'total': 0, 'offset': offset, 'radius_connected': False}
             columns = {x[1] for x in db.execute('PRAGMA table_info(pki_certificates)')}
             visible = 'archived_at IS NULL' if 'archived_at' in columns else '1=1'
+            joined_visible = 'c.archived_at IS NULL' if 'archived_at' in columns else '1=1'
             total = db.execute('SELECT count(*) FROM pki_certificates WHERE ' + visible).fetchone()[0]
             query = f'''SELECT c.serial,c.certificate,c.revoked_at,b.kind,b.object_guid
                 FROM pki_certificates c LEFT JOIN radius_certificate_bindings b ON b.serial=c.serial
-                WHERE c.{visible} ORDER BY c.rowid DESC LIMIT 100 OFFSET ?''' if 'radius_certificate_bindings' in tables else f'''
+                WHERE {joined_visible} ORDER BY c.rowid DESC LIMIT 100 OFFSET ?''' if 'radius_certificate_bindings' in tables else f'''
                 SELECT serial,certificate,revoked_at,NULL,NULL FROM pki_certificates
                 WHERE {visible} ORDER BY rowid DESC LIMIT 100 OFFSET ?'''
             rows = db.execute(query, (offset,)).fetchall()
