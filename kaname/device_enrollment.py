@@ -199,7 +199,10 @@ class DeviceEnrollment:
             cert = x509.load_pem_x509_certificate(pem)
             state = 'revoked' if revoked else 'expired' if now >= cert.not_valid_after_utc else 'issued' if not installed else 'renewal_due' if now >= datetime.fromisoformat(renew) else 'installed'
             account_name = principal.split('@', 1)[0]
-            display_name = account_name[:-1] if account_name.endswith('
+            display_name = account_name[:-1] if account_name.endswith(chr(36)) else account_name
+            devices.append({'serial': serial, 'profile_id': profile, 'principal': principal, 'display_name': display_name,
+                'object_guid': guid, 'status': state, 'installed_at': installed, 'last_seen': seen,
+                'renew_at': renew, 'not_after': cert.not_valid_after_utc.isoformat()})
         return {'profiles': profiles, 'devices': devices, 'total': total, 'offset': offset,
                 'signer_enabled': signer, 'signer_ready':signer_ready, 'radius_changed': False}
 
