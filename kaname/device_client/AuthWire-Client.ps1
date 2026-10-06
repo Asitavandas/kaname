@@ -128,9 +128,9 @@ try {
         $existing = Get-Item ('Cert:\LocalMachine\My\'+$installed.thumbprint) -ErrorAction SilentlyContinue
         if($existing -and $existing.HasPrivateKey -and [DateTimeOffset]::UtcNow -lt [DateTimeOffset]::Parse($installed.renew_at)) {
             $private = [Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($existing)
-            $null = Protected-Post '/api/device/receipt' @{serial=$installed.serial; proof=(Key-Proof $installed.receipt_payload)}
+            $serverState = Protected-Post '/api/device/receipt' @{serial=$installed.serial; proof=(Key-Proof $installed.receipt_payload)}
             Remove-Item $retryFile -ErrorAction SilentlyContinue
-            return
+            if(!$serverState.renew_now) { return }
         }
     }
     if(!(Test-Path $pendingFile)) {
