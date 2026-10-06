@@ -13,7 +13,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
   const python = process.env.CODEX_PRIMARY_RUNTIME_PYTHON || process.env.KANAME_PYTHON || 'python3';
   // Port 0 is accepted by DevelopmentServer; production CLI intentionally rejects it.
   // Directory fixture is confined to this disposable test server; no real AD.
-  const child = spawn(python, ['-u', '-c', 'import sys; from kaname.server import DevelopmentServer; from tests.test_membership import membership_catalog as catalog; s=DevelopmentServer(sys.argv[1],0); s.directory_reader=lambda v,c:{**catalog(),"domain":c["ad_domain"],"dc_fqdn":v["dc_fqdn"]}; original=s.store.directory_status; s.store.directory_status=lambda:{**original(),"windows_reader_available":True,"reader_available":True}; print(s.server_port,flush=True); s.serve_forever()', temp], {cwd: root, stdio:['ignore','pipe','pipe']});
+  const child = spawn(python, ['-u', '-c', 'import sys; from kaname.server import DevelopmentServer; from tests.test_membership import computer_membership_catalog as catalog; s=DevelopmentServer(sys.argv[1],0); s.directory_reader=lambda v,c:{**catalog(),"domain":c["ad_domain"],"dc_fqdn":v["dc_fqdn"]}; original=s.store.directory_status; s.store.directory_status=lambda:{**original(),"windows_reader_available":True,"reader_available":True}; print(s.server_port,flush=True); s.serve_forever()', temp], {cwd: root, stdio:['ignore','pipe','pipe']});
   let browser;
   try {
     const port = await new Promise((resolve,reject) => {
@@ -209,12 +209,12 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.waitForFunction(()=>!document.querySelector('#directory-sync').disabled);
     await page.unroute('**/api/directory/sync',failRoute);
     await page.locator('#directory-sync').click();
-    await page.waitForFunction(()=>document.querySelector('#directory-status').textContent.includes('4 grup'));
+    await page.waitForFunction(()=>document.querySelector('#directory-status').textContent.includes('5 grup'));
     
     await page.waitForFunction(()=>!document.querySelector('#directory-sync').disabled);
     assert.equal(await page.locator('#ad-password').inputValue(),'');
     await navigate('identities');
-    await page.waitForFunction(()=>document.querySelectorAll('#directory-users-list .policy-row').length===2&&document.querySelectorAll('#directory-groups-list .policy-row').length===4);
+    await page.waitForFunction(()=>document.querySelectorAll('#directory-users-list .policy-row').length===2&&document.querySelectorAll('#directory-groups-list .policy-row').length===5);
     assert.match(await page.locator('#directory-groups-list').textContent(),/<script>alert\(1\)<\/script>/);
     assert.equal(await page.locator('#directory-groups-list script').count(),0);
     assert.ok(!fs.readFileSync(path.join(temp,'kaname.sqlite3')).includes(fixturePassword));
@@ -230,7 +230,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
       await page.setViewportSize({width:1440,height:1000});
       await navigate('overview');
       assert.equal(await page.locator('#overview-users').textContent(),'2');
-      assert.equal(await page.locator('#overview-groups').textContent(),'4');
+      assert.equal(await page.locator('#overview-groups').textContent(),'5');
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-desktop.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:390,height:844});
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-mobile.png'),fullPage:true,animations:'disabled'});
@@ -259,6 +259,48 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#detail-search').click();
     await page.waitForFunction(()=>document.querySelector('#detail-list').textContent.includes('Bu aramada sonuç yok'));
     await page.locator('#detail-close').click();
+    await page.locator('#identity-tab-groups').focus();await page.keyboard.press('ArrowRight');
+    assert.equal(await page.locator('#identity-panel-computers').isVisible(),true);
+    assert.equal(await page.locator('#identity-computers-total').textContent(),'6');
+    await page.waitForFunction(()=>document.querySelectorAll('#directory-computers-list .policy-row').length===6);
+    assert.equal(await page.locator('#directory-computers-list script').count(),0);
+    await page.locator('#directory-computers-query').fill('LAB-PC05$');
+    await page.locator('#directory-computers-search').click();
+    await page.waitForFunction(()=>document.querySelectorAll('#directory-computers-list .policy-row').length===1);
+    assert.match(await page.locator('#directory-computers-list').textContent(),/Bilgisayar · Kapalı hesap/);
+    await page.locator('#directory-computers-query').fill('');await page.locator('#directory-computers-search').click();
+    await page.waitForFunction(()=>document.querySelectorAll('#directory-computers-list .policy-row').length===6);
+    await page.locator('#identity-tab-groups').click();
+    await page.locator('#directory-groups-list [data-object-id="00000000-0000-0000-0000-000000000008"]').click();
+    await page.waitForFunction(()=>document.querySelector('#detail-title').textContent.includes('Domain Computers')&&document.querySelectorAll('#detail-list .policy-row').length===6);
+    assert.match(await page.locator('#detail-count').textContent(),/6 sonuç/);
+    assert.match(await page.locator('#detail-list').textContent(),/Primary group/);
+    assert.match(await page.locator('#detail-list').textContent(),/Bilgisayar · Kapalı hesap/);
+    assert.equal(await page.locator('#detail-list script').count(),0);
+    if(process.env.KANAME_UI_ARTIFACTS){
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'domain-computers-members.png'),fullPage:true,animations:'disabled'});
+      await page.locator('#detail-close').click();
+      await page.locator('#identity-tab-computers').click();
+      await page.setViewportSize({width:390,height:844});
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'computers-mobile.png'),fullPage:true,animations:'disabled'});
+      await page.setViewportSize({width:1440,height:1000});
+      await page.locator('#directory-computers-list [data-object-id="00000000-0000-0000-0000-000000000007"]').click();
+    }else{
+      await page.locator('#detail-list [data-object-id="00000000-0000-0000-0000-000000000007"]').click();
+    }
+    await page.waitForFunction(()=>document.querySelector('#detail-title').textContent.includes('PC · Üye olduğu gruplar')&&document.querySelector('#detail-list').textContent.includes('Domain Computers'));
+    assert.match(await page.locator('#detail-list').textContent(),/Parent/);
+    await page.locator('#detail-list [data-object-id="00000000-0000-0000-0000-000000000008"]').click();
+    await page.waitForFunction(()=>document.querySelector('#detail-title').textContent.includes('Domain Computers')&&document.querySelectorAll('#detail-list .policy-row').length===6);
+    await page.locator('#detail-query').fill('LAB-PC01$');await page.locator('#detail-search').click();
+    await page.waitForFunction(()=>document.querySelectorAll('#detail-list .policy-row').length===1);
+    assert.match(await page.locator('#detail-list').textContent(),/LAB-PC01/);
+    await page.locator('#detail-close').click();
+    await page.locator('#identity-tab-computers').focus();await page.keyboard.press('ArrowRight');
+    assert.equal(await page.locator('#identity-panel-users').isVisible(),true);
+    await page.keyboard.press('End');assert.equal(await page.locator('#identity-panel-computers').isVisible(),true);
+    await page.keyboard.press('Home');assert.equal(await page.locator('#identity-panel-users').isVisible(),true);
     const legacyDetail=async route=>{const response=await route.fetch();const value=await response.json();await route.fulfill({response,json:{...value,membership_available:false,items:[],total:0}});};
     await page.route('**/api/directory/detail?*',legacyDetail);
     await page.locator('#identity-tab-users').click();

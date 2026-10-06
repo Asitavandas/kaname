@@ -1,3 +1,8 @@
+## 0.12.2-dev.1 — 2026-10-06
+- Show computer accounts alongside users in group member details, including primary and nested memberships.
+- Add a searchable computer catalog tab and computer-to-group drill-down with account status and pagination.
+- Preserve the selected LDAP scopes and read-only AD behavior; no Windows deployment or RADIUS activation.
+
 ## 0.12.1-dev.1
 - Rename directory setup to LDAP Servers and match the reference form, with separate connectivity and protected credentials/scope tests.
 - Accept one or multiple OU names or DNs (one per line). Resolve names uniquely and reject missing, ambiguous or foreign scopes.

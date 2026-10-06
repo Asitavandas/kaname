@@ -164,7 +164,7 @@ class Store:
     def directory_detail(self, kind, object_id, offset=0, query=''):
         import uuid
         from .membership import related
-        if kind not in {'users', 'groups'}: raise ValueError('Invalid detail kind')
+        if kind not in {'users', 'groups', 'computers'}: raise ValueError('Invalid detail kind')
         integer(offset, 0, 10000)
         if type(object_id) is not str or str(uuid.UUID(object_id)) != object_id: raise ValueError('Invalid object identity')
         if type(query) is not str or len(query) > 128 or any(ord(c) < 32 for c in query): raise ValueError('Invalid directory query')
