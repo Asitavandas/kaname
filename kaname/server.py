@@ -271,6 +271,9 @@ class Handler(BaseHTTPRequestHandler):
                 keys(value, {'ca_password'}, {'ca_password'})
                 secret = password_bytes(text(value['ca_password'],128).encode('utf-8'))
                 result = devices.unlock_signer(secret,self.actor['id'])
+            elif self.path == '/api/device-admin/renew-now':
+                keys(value, {'serial'}, {'serial'})
+                result = devices.request_renewal(value['serial'], self.actor['id'])
             else:
                 keys(value,set(),set())
                 result = devices.lock_signer(self.actor['id'])
@@ -296,29 +299,33 @@ class Handler(BaseHTTPRequestHandler):
             if not self.server.enrollment_lock.acquire(blocking=False):
                 raise EnrollmentError('ENROLLMENT_BUSY')
             try:
-                secret = password_bytes(text(value.get('ca_password'), 128).encode('utf-8'))
                 pki = PKIService(self.server.store.root)
-                if self.path == '/api/pki/initialize':
-                    keys(value, {'ca_password', 'confirm'}, {'ca_password', 'confirm'})
-                    if not hmac.compare_digest(secret, text(value['confirm'], 128).encode('utf-8')):
-                        raise PKIError('Confirmation mismatch')
-                    result = pki.initialize(secret, actor=self.actor['id'])
-                elif self.path == '/api/pki/enroll-user':
-                    fields = {'csr', 'username', 'password', 'ca_password', 'expected_revision', 'days'}
-                    keys(value, fields, fields)
-                    if type(value['csr']) is not str or not 1 <= len(value['csr']) <= 65536:
-                        raise EnrollmentError('CSR_INVALID')
-                    result = EnrollmentService(self.server.operations).issue_user(
-                        value['csr'].encode('ascii'), value['username'], value['password'], secret,
-                        expected_revision=value['expected_revision'], days=value['days'], actor=self.actor['id'])
-                elif self.path == '/api/pki/revoke':
-                    keys(value, {'serial', 'reason', 'ca_password'}, {'serial', 'reason', 'ca_password'})
-                    result = pki.revoke(value['serial'], secret, reason=value['reason'], actor=self.actor['id'])
+                if self.path == '/api/pki/archive':
+                    keys(value, {'serial'}, {'serial'})
+                    result = pki.archive_revoked(value['serial'], actor=self.actor['id'])
                 else:
-                    keys(value, {'ca_password'}, {'ca_password'})
-                    pki.refresh_crl(secret, actor=self.actor['id'])
-                    result = {'refreshed': True, 'radius_connected': False}
-                self.respond(200, result)
+                    secret = password_bytes(text(value.get('ca_password'), 128).encode('utf-8'))
+                    if self.path == '/api/pki/initialize':
+                        keys(value, {'ca_password', 'confirm'}, {'ca_password', 'confirm'})
+                        if not hmac.compare_digest(secret, text(value['confirm'], 128).encode('utf-8')):
+                            raise PKIError('Confirmation mismatch')
+                        result = pki.initialize(secret, actor=self.actor['id'])
+                    elif self.path == '/api/pki/enroll-user':
+                        fields = {'csr', 'username', 'password', 'ca_password', 'expected_revision', 'days'}
+                        keys(value, fields, fields)
+                        if type(value['csr']) is not str or not 1 <= len(value['csr']) <= 65536:
+                            raise EnrollmentError('CSR_INVALID')
+                        result = EnrollmentService(self.server.operations).issue_user(
+                            value['csr'].encode('ascii'), value['username'], value['password'], secret,
+                            expected_revision=value['expected_revision'], days=value['days'], actor=self.actor['id'])
+                    elif self.path == '/api/pki/revoke':
+                        keys(value, {'serial', 'reason', 'ca_password'}, {'serial', 'reason', 'ca_password'})
+                        result = pki.revoke(value['serial'], secret, reason=value['reason'], actor=self.actor['id'])
+                    else:
+                        keys(value, {'ca_password'}, {'ca_password'})
+                        pki.refresh_crl(secret, actor=self.actor['id'])
+                        result = {'refreshed': True, 'radius_connected': False}
+                    self.respond(200, result)
             finally:
                 self.server.enrollment_lock.release()
         except EnrollmentError as error:
@@ -493,9 +500,9 @@ class Handler(BaseHTTPRequestHandler):
             except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
             return
         resources = {'/api/config': None, '/api/policies': 'policies.rules', '/api/simulate': 'simulate.scenarios', '/api/directory/sync': 'directory.connection', '/api/directory/settings': 'directory.connection', '/api/directory/connectivity': 'directory.connection', '/api/directory/test-credentials': 'directory.connection', '/api/network/vlans': 'network.vlans', '/api/network/radius': 'network.radius', '/api/network/secret/generate': 'network.radius', '/api/network/secret/reveal': 'network.radius', '/api/system/users/save': 'system.administrators', '/api/system/users/delete': 'system.administrators', '/api/system/profiles/save': 'system.profiles', '/api/system/profiles/delete': 'system.profiles', '/api/auth/logout': None, '/api/auth/password': None}
-        resources.update({path: 'certificates.authority' for path in ('/api/pki/initialize', '/api/pki/enroll-user', '/api/pki/revoke', '/api/pki/refresh-crl')})
+        resources.update({path: 'certificates.authority' for path in ('/api/pki/initialize', '/api/pki/enroll-user', '/api/pki/revoke', '/api/pki/refresh-crl', '/api/pki/archive')})
         resources.update({path:'certificates.authority' for path in
-            ('/api/device-admin/profile','/api/device-admin/unlock','/api/device-admin/lock')})
+            ('/api/device-admin/profile','/api/device-admin/unlock','/api/device-admin/lock','/api/device-admin/renew-now')})
         if not self.guard(write=True, resource=resources.get(self.path), permission_write=self.path != '/api/simulate'):
             return
         if self.path not in resources:
