@@ -1,6 +1,6 @@
 [project]
 name = "kaname"
-version = "0.12.1.dev1"
+version = "0.12.2.dev1"
 description = "Standalone on-premises network access control foundation"
 requires-python = ">=3.12"
 dependencies = []

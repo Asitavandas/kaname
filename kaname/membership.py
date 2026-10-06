@@ -16,7 +16,7 @@ def related(catalog, kind, target):
     def remember(sid, relation):
         if priority[relation] > priority.get(relations.get(sid), -1): relations[sid] = relation
 
-    if kind == 'users':
+    if kind in {'users', 'computers'}:
         queue = deque()
         for group, relation in parents[target['sid']]:
             remember(group, relation); queue.append(group)
@@ -27,7 +27,7 @@ def related(catalog, kind, target):
             visited.add(group)
             for parent, _ in parents[group]:
                 remember(parent, 'indirect'); queue.append(parent)
-        return [{**groups[sid], 'membership': relation} for sid, relation in relations.items()], {
+        return [{**groups[sid], 'kind': 'groups', 'membership': relation} for sid, relation in relations.items()], {
             'primary_group_unresolved': target['primary_group_unresolved'], 'unresolved_members': 0,
             'computer_members': 0, 'nested_groups': 0,
         }
@@ -40,8 +40,12 @@ def related(catalog, kind, target):
         for member, relation in children[group]:
             if member in users: remember(member, relation if group == target['sid'] else 'indirect')
             elif member in groups: queue.append(member)
-            elif member in computers: computer_members.add(member)
-    return [{**users[sid], 'membership': relation} for sid, relation in relations.items()], {
+            elif member in computers:
+                computer_members.add(member)
+                remember(member, relation if group == target['sid'] else 'indirect')
+    accounts = {**users, **computers}
+    return [{**accounts[sid], 'kind': 'computers' if sid in computers else 'users',
+             'membership': relation} for sid, relation in relations.items()], {
         'primary_group_unresolved': False, 'unresolved_members': unresolved,
         'computer_members': len(computer_members), 'nested_groups': len(visited) - 1,
     }
