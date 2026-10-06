@@ -20,6 +20,8 @@ class DeviceHTTPTests(EnrollmentHTTPTests):
         self.assertEqual(401,self.request('GET','/api/device-admin/status')[0])
         headers=self.login()
         self.assertEqual(403,self.request('POST','/api/device-admin/profile',{}, {'Cookie':headers['Cookie']})[0])
+        self.assertEqual(403,self.request('POST','/api/device-admin/renew-now',{'serial':'1'}, {'Cookie':headers['Cookie']})[0])
+        self.assertEqual(403,self.request('POST','/api/pki/archive',{'serial':'1'}, {'Cookie':headers['Cookie']})[0])
         with patch('kaname.server.permits',return_value=False):
             self.assertEqual(403,self.request('GET','/api/device-admin/status',headers=headers)[0])
         with patch.object(self.server,'tls',False):

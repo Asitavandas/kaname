@@ -124,10 +124,13 @@ class PKIService:
             );
             CREATE TABLE IF NOT EXISTS pki_certificates (
                 serial TEXT PRIMARY KEY, certificate BLOB NOT NULL,
-                revoked_at TEXT, reason TEXT,
+                revoked_at TEXT, reason TEXT, archived_at TEXT,
                 CHECK((revoked_at IS NULL AND reason IS NULL) OR (revoked_at IS NOT NULL AND reason IS NOT NULL))
             );
             ''')
+            columns = {row[1] for row in db.execute('PRAGMA table_info(pki_certificates)')}
+            if 'archived_at' not in columns:
+                db.execute('ALTER TABLE pki_certificates ADD COLUMN archived_at TEXT')
 
     def _audit(self, db, event, actor=None):
         if actor is not None:
@@ -286,6 +289,25 @@ class PKIService:
             db.execute('UPDATE pki_authority SET crl=?,crl_number=? WHERE id=1', (crl.public_bytes(PEM), number + 1))
             self._audit(db, 'pki_certificate_revoked:' + serial, actor)
         return {'serial': serial, 'already_revoked': False, 'crl_number': number + 1}
+
+    def archive_revoked(self, serial, *, actor=None, now=None):
+        if type(serial) is str:
+            serial = serial.lower()
+        if type(serial) is not str or not re.fullmatch(r'[1-9a-f][0-9a-f]{0,39}', serial):
+            raise PKIError('Invalid certificate serial')
+        now = instant(now)
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute('SELECT revoked_at,archived_at FROM pki_certificates WHERE serial=?', (serial,)).fetchone()
+            if row is None:
+                raise PKIError('Unknown issued certificate')
+            if row[0] is None:
+                raise PKIError('Only revoked certificates can be archived')
+            if row[1] is not None:
+                return {'serial': serial, 'already_archived': True}
+            db.execute('UPDATE pki_certificates SET archived_at=? WHERE serial=?', (now.isoformat(), serial))
+            self._audit(db, 'pki_certificate_archived:' + serial, actor)
+        return {'serial': serial, 'already_archived': False}
 
     def refresh_crl(self, password, *, now=None, actor=None):
         now = instant(now)
