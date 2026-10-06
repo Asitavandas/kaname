@@ -44,8 +44,16 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     const healthResponse=await page.request.get(new URL('/healthz',page.url()).href);assert.equal((await healthResponse.json()).product,'AuthWire');
 
     const colors=await page.evaluate(()=>({background:getComputedStyle(document.body).backgroundColor,sidebar:getComputedStyle(document.querySelector('aside')).backgroundColor,nav:getComputedStyle(document.querySelector('[data-view="overview"]')).color}));
-    assert.deepEqual(colors,{background:'rgb(244, 246, 251)',sidebar:'rgb(255, 255, 255)',nav:'rgb(34, 91, 210)'});
-    assert.deepEqual(await page.locator('[data-nav-section]').evaluateAll(groups=>groups.map(g=>g.dataset.navSection)),['Hazırla','Kullanıcılar','Erişim','Kontrol et','Yönetim']);
+    assert.deepEqual(colors,{background:'rgb(245, 239, 235)',sidebar:'rgb(43, 43, 43)',nav:'rgb(242, 222, 212)'});
+    assert.match(await page.locator('#overview-directory-health').textContent(),/Bekliyor/);
+    assert.match(await page.locator('#overview-authority-health').textContent(),/Bekliyor/);
+    for(const width of [1366,1920]){
+      await page.setViewportSize({width,height:900});
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'Desktop page must fit '+width);
+      assert.equal(await page.locator('[data-view="profiles"]').isVisible(),true);
+    }
+    await page.setViewportSize({width:1440,height:1000});
+    assert.deepEqual(await page.locator('[data-nav-section]').evaluateAll(groups=>groups.map(g=>g.dataset.navSection)),['Erişim','Sertifikalar','RADIUS','İzleme','Yönetim']);
     assert.equal(await page.locator('[data-view="setup"]').isVisible(),true);
     assert.equal(await page.locator('[data-view="directory"]').isVisible(),true);
     assert.equal(await page.locator('[data-view="overview"]').getAttribute('aria-current'),'page');
