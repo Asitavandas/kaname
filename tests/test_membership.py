@@ -57,7 +57,7 @@ class MembershipTests(unittest.TestCase):
 
     def test_group_details_match_user_details_and_include_primary_members(self):
         self.assertEqual({'alice': 'primary', 'bob': 'primary'}, {x['sam']: x['membership'] for x in self.detail('groups', 1)['items']})
-        self.assertEqual({'alice': 'indirect', 'PC$': 'indirect'}, {x['sam']: x['membership'] for x in self.detail('groups', 3)['items']})
+        self.assertEqual({'alice': 'indirect', 'PC': 'indirect'}, {x['sam']: x['membership'] for x in self.detail('groups', 3)['items']})
         self.assertEqual(1, self.detail('groups')['computer_members'])
         self.assertEqual(1, self.detail('groups', 3)['unresolved_members'])
         self.assertEqual(2, self.detail('groups', 3)['nested_groups'])
@@ -172,7 +172,9 @@ class MembershipTests(unittest.TestCase):
         self.assertEqual(100, len(self.detail('groups', 4)['items']))
         self.assertEqual(7, len(self.detail('groups', 4, offset=100)['items']))
         self.assertEqual(107, self.store.directory_page('computers')['total'])
-        self.assertEqual('PC100$', self.store.directory_page('computers', query='pc100$')['items'][0]['sam'])
+        page = self.store.directory_page('computers', query='pc100'+chr(36))
+        self.assertEqual('PC100', page['items'][0]['sam'])
+        self.assertFalse(page['items'][0]['sam'].endswith(chr(36)))
 
 
 class MembershipHTTPTests(unittest.TestCase):
