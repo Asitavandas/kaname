@@ -186,6 +186,8 @@ class DeviceTests(unittest.TestCase):
             self.assertNotIn(b'__AUTHWIRE_ASSET_HASHES__',installer)
             self.assertIn(__import__('hashlib').sha256(archive.read('config.json')).hexdigest().encode(),installer)
             self.assertIn(b'modified after signing',installer)
+            self.assertNotIn(b'MSFT_TaskEventTrigger',installer)
+            self.assertEqual(3,installer.count(b'New-ScheduledTaskTrigger'))
         self.reject('DEVICE_TLS_NAME_MISMATCH',lambda:self.service.package(self.profile['id'],hostname='wrong.lab.example',port=8765,tls_pem=(tlsdir/'web.crt').read_bytes()))
 
     def test_machine_sam_ldap_resolution_no_caller_guid(self):
