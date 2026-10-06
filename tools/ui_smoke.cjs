@@ -183,7 +183,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#ad-user').fill('administrator@kurum.example');
     await page.locator('#directory-save').click();
     await page.waitForFunction(()=>document.querySelector('#ad-credential-status').textContent.includes('korumalı kaydedilmiş')).catch(async error=>{console.log('KANAME_UI_AD_FEEDBACK '+await page.locator('#ad-feedback').textContent());console.log('KANAME_UI_AD_FIELDS '+JSON.stringify(await page.evaluate(()=>({host:document.querySelector('#ad-host').value,user:document.querySelector('#ad-user').value,sync:document.querySelector('#ad-sync-minutes').value,check:document.querySelector('#ad-check-minutes').value,scope:document.querySelector('#ad-ou').value,name:document.querySelector('#ad-name').value}))));throw error;});
-    assert.equal(await page.locator('#page-title').textContent(),'LDAP Servers');
+    assert.equal(await page.locator('#page-title').textContent(),'LDAP sunucuları');
     assert.equal(await page.locator('#ad-port').inputValue(),'389');
     assert.equal(await page.locator('#ad-identifier').inputValue(),'sAMAccountName');
     await page.locator('#ad-name').fill('Corporate LDAP');
