@@ -64,12 +64,12 @@ foreach($entry in @(@('root-ca.pem','Root'),@('issuer-ca.pem','CA'),@('https-tru
 $action = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -Argument ('-NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+(Join-Path $target 'AuthWire-Client.ps1')+'"')
 $daily = New-ScheduledTaskTrigger -Daily -At '09:00'; $evening = New-ScheduledTaskTrigger -Daily -At '21:00'
 $startup = New-ScheduledTaskTrigger -AtStartup
-$network = New-CimInstance -Namespace 'Root/Microsoft/Windows/TaskScheduler' -ClassName 'MSFT_TaskEventTrigger' -ClientOnly -Property @{
-    Enabled=$true
-    Subscription='<QueryList><Query Id="0" Path="Microsoft-Windows-NetworkProfile/Operational"><Select Path="Microsoft-Windows-NetworkProfile/Operational">*[System[EventID=10000]]</Select></Query></QueryList>'
-}
+# Startup + StartWhenAvailable + RunOnlyIfNetworkAvailable reliably defers
+# enrollment until networking is available. Avoid raw MSFT_TaskEventTrigger
+# CIM instances because Register-ScheduledTask rejects their PSTypeName on
+# supported Windows client versions.
 $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 10)
-$null = Register-ScheduledTask -TaskName 'AuthWire Certificate Enrollment' -Action $action -Trigger @($daily,$evening,$startup,$network) -Principal $principal -Settings $settings -Force
+$null = Register-ScheduledTask -TaskName 'AuthWire Certificate Enrollment' -Action $action -Trigger @($daily,$evening,$startup) -Principal $principal -Settings $settings -Force
 Start-ScheduledTask -TaskName 'AuthWire Certificate Enrollment'
 # No supplicant policy, port control or RADIUS changes in this package.
