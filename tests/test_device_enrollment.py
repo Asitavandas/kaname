@@ -18,7 +18,7 @@ from cryptography.hazmat.primitives.asymmetric import ec, rsa, padding
 from kaname.device_enrollment import DeviceEnrollment
 from kaname.directory import DirectoryError
 from kaname.directory_linux_helper import Reader
-from kaname.enrollment import EnrollmentError
+from kaname.enrollment import EnrollmentError, EnrollmentService
 from kaname.operations import Operations
 from kaname.pki import PKIService
 from kaname.radius import CertificateReference
@@ -100,6 +100,40 @@ class DeviceTests(unittest.TestCase):
         audits=len(self.service.store.audit()); self.receipt(result)
         self.assertEqual(audits,len(self.service.store.audit()))
         self.assertTrue(all(x['password']=='' for x in self.connections))
+
+    def test_admin_requested_renewal_keeps_current_certificate_until_cutover(self):
+        first,_=self.enrollment()
+        self.receipt(first)
+        requested=self.service.request_renewal(first['serial'],'test')
+        self.assertTrue(requested['renewal_due'])
+        self.assertEqual('renewal_due',self.service.status()['devices'][0]['status'])
+        self.assertTrue(self.receipt(first)['renew_now'])
+        second_key=ec.generate_private_key(ec.SECP256R1())
+        second,_=self.enrollment(key=second_key)
+        self.assertNotEqual(first['serial'],second['serial'])
+        self.receipt(second,key=second_key)
+        self.assertEqual('installed',self.service.status()['devices'][0]['status'])
+        with self.service.store.connect() as db:
+            old=db.execute('SELECT revoked_at FROM pki_certificates WHERE serial=?',(first['serial'],)).fetchone()
+            retirement=db.execute('SELECT retire_at FROM device_retirements WHERE serial=?',(first['serial'],)).fetchone()
+        self.assertIsNone(old[0])
+        self.assertIsNotNone(retirement)
+
+    def test_archived_revoked_certificate_is_hidden_but_retained_in_crl_and_audit(self):
+        result,_=self.enrollment()
+        self.receipt(result)
+        self.service.pki.revoke(result['serial'],PASSWORD,reason='superseded',actor='test')
+        self.assertEqual('revoked',self.service.status()['devices'][0]['status'])
+        archived=self.service.pki.archive_revoked(result['serial'],actor='test')
+        self.assertFalse(archived['already_archived'])
+        self.assertEqual(0,self.service.status()['total'])
+        self.assertEqual(0,EnrollmentService.certificates(self.service.store)['total'])
+        with self.service.store.connect() as db:
+            row=db.execute('SELECT revoked_at,archived_at FROM pki_certificates WHERE serial=?',(result['serial'],)).fetchone()
+        self.assertIsNotNone(row[0]); self.assertIsNotNone(row[1])
+        crl=x509.load_pem_x509_crl(self.service.pki.public_bundle()['issuer-crl.pem'])
+        self.assertIn(int(result['serial'],16),[item.serial_number for item in crl])
+        self.assertTrue(any('pki_certificate_archived:'+result['serial'] in item['event'] for item in self.service.store.audit()))
 
     def test_only_issuer_key_is_sealed_and_lock_prevents_issuance(self):
         with self.service.store.connect() as db:
