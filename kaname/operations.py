@@ -2,7 +2,7 @@
 import json
 import secrets
 
-from .models import address, boolean, integer, keys, text, ValidationError
+from .models import address, boolean, enum, integer, keys, text, ValidationError
 from .directory import validate_connection, validate_search_scopes
 from .store import ConflictError
 from .vault import Vault
@@ -82,7 +82,6 @@ class Operations:
             raise ValidationError('Invalid clients')
         for item in value['radius_clients']:
             keys(item, {'name', 'ip', 'secret', 'access_type'}, {'name', 'ip', 'secret', 'access_type'})
-            from .models import enum
             client = {'name': text(item['name']), 'ip': address(item['ip']),
                       'access_type': enum(item['access_type'], {'wired', 'wireless'})}
             secret = item['secret']
