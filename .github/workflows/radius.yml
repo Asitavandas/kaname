@@ -2,7 +2,7 @@ name: KANAME real RADIUS protocol proof
 on:
   push:
     branches: [main]
-    paths: ['kaname/**', 'tools/radius_lab.py', 'tools/radius_runtime.py', 'tools/radius_initialize.py', 'tests/radius_fixture.py', 'tests/test_radius.py', 'tests/test_radius_production.py', '.github/workflows/radius.yml']
+    paths: ['kaname/**', 'tools/radius_lab.py', 'tools/radius_runtime.py', 'tools/radius_initialize.py', 'tools/radius_service.py', 'tools/radius_install.py', 'tools/radius_prepare.py', 'tests/radius_fixture.py', 'tests/test_radius.py', 'tests/test_radius_production.py', '.github/workflows/radius.yml']
   pull_request:
     paths: ['kaname/**', 'tools/radius_lab.py', 'tools/radius_runtime.py', 'tools/radius_initialize.py', 'tests/radius_fixture.py', 'tests/test_radius.py', 'tests/test_radius_production.py', '.github/workflows/radius.yml']
   workflow_dispatch:
