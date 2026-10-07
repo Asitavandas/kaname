@@ -6,6 +6,7 @@ state keeps them sealed. This module never starts a listener by itself.
 import argparse
 import os
 from pathlib import Path
+import re
 import subprocess
 
 from cryptography import x509
@@ -19,7 +20,6 @@ from kaname.store import Store
 
 
 STATE = Path('/var/lib/kaname-lab')
-PRODUCT = Path('/opt/kaname-lab')
 
 
 def private_file(path, content):
@@ -111,6 +111,10 @@ def generate(output, prefix, state=STATE):
             secret = ''
     private_file(output / 'clients.conf', ''.join(client_lines))
 
+    source = Path(__file__).resolve().parents[1]
+    for path in (output, prefix, source):
+        if not re.fullmatch(r'[A-Za-z0-9_./-]+', str(path)):
+            raise ValueError('RADIUS runtime path contains unsafe characters')
     prefix_text = str(prefix)
     module_dir = str(modules[0].parent)
     private_file(output / 'dictionary', '$INCLUDE ' + str(dictionary) + '\n')
@@ -180,7 +184,7 @@ $INCLUDE sites-enabled/
 }
 ''')
     private_file(mods / 'python3', f'''python3 authwire_authorize {{
- python_path = "{PRODUCT}/source"
+ python_path = "{source}"
  module = kaname.radius_adapter
  mod_authorize = ${{.module}}
  func_authorize = authorize
