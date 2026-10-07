@@ -152,6 +152,12 @@ try {
             Remove-Item $retryFile -ErrorAction SilentlyContinue
             if(!$serverState.renew_now) { return }
             $private.Dispose(); $private = $null
+            # The server intentionally closes a Kerberos application session after
+            # every receipt. Renewal must therefore establish a fresh protected
+            # session before challenge/issue instead of reusing the closed one.
+            $session.Dispose(); $session = New-Object AuthWireSspi($config.spn)
+            $answer = Post-Json '/api/device/session' @{token=[Convert]::ToBase64String($session.Start())}
+            $session.Finish([Convert]::FromBase64String($answer.token)); $sessionId = $answer.id
         }
     }
     if(!(Test-Path $pendingFile)) {
@@ -228,9 +234,11 @@ SuppressDefaults=TRUE
     # bounded backoff; jitter also distributes online/domain-startup spikes.
     $attempts = if($retry) { [Math]::Min(8,[int]$retry.attempts+1) } else { 1 }
     $minutes = [Math]::Min(720,[Math]::Pow(2,$attempts)*5)+(Get-Random -Minimum 0 -Maximum 16)
-    Save-State 'retry.json' @{attempts=$attempts;next_attempt=[DateTimeOffset]::UtcNow.AddMinutes($minutes).ToString('o')}
+    $retryState = @{attempts=$attempts;next_attempt=[DateTimeOffset]::UtcNow.AddMinutes($minutes).ToString('o');stage=$stage}
+    if($serverError) { $retryState['server_error'] = $serverError }
+    Save-State 'retry.json' $retryState
     $status = @{state='retry_pending';error='ENROLLMENT_OR_INSTALL_FAILED';stage=$stage;checked_at=[DateTimeOffset]::UtcNow.ToString('o')}
-    if($serverError) { $status.server_error = $serverError }
+    if($serverError) { $status['server_error'] = $serverError }
     Save-State 'status.json' $status
     Write-Error 'AuthWire enrollment/renewal failed. Check HTTPS DNS/trust, DC access, time, SPN/keytab and profile eligibility.' -ErrorAction Continue
     exit 1
