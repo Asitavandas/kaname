@@ -20,5 +20,5 @@ def identity(**changes):
 
 def config():
     return {'appliance_fqdn': 'kaname.lab.example', 'ad_domain': 'lab.example',
-            'dc_ips': ['192.0.2.10'], 'radius_clients': [{'name': 'SW1', 'ip': '192.0.2.2'}],
+            'dc_ips': ['192.0.2.10'], 'radius_clients': [{'name': 'SW1', 'ip': '192.0.2.2', 'access_type': 'wired'}],
             'access_modes': ['wired', 'wireless']}

@@ -1,3 +1,3 @@
-"""AuthWire standalone foundation. No authentication traffic is enforced yet."""
+"""AuthWire foundation with opt-in production EAP-TLS RADIUS service."""
 
-VERSION = "0.12.2-dev.3"
+VERSION = "0.13.0-dev.1"

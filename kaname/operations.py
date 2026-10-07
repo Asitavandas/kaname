@@ -2,7 +2,7 @@
 import json
 import secrets
 
-from .models import address, boolean, integer, keys, text, ValidationError
+from .models import address, boolean, enum, integer, keys, text, ValidationError
 from .directory import validate_connection, validate_search_scopes
 from .store import ConflictError
 from .vault import Vault
@@ -47,6 +47,8 @@ class Operations:
                    'authentication_port': 1812, 'accounting_port': 1813}
         result = self._public('network', default)
         result = {**result, 'vlans': list(result['vlans']), 'radius_clients': [dict(x) for x in result['radius_clients']]}
+        for client in result['radius_clients']:
+            client.setdefault('access_type', 'wired')
         # Preserve legacy VLAN assignments with an editable name; never erase policy data.
         for vlan in sorted({x['vlan'] for x in state['policies'] if x['vlan'] is not None}):
             if not any(x['id'] == vlan for x in result['vlans']):
@@ -79,8 +81,9 @@ class Operations:
         if type(value['radius_clients']) is not list or len(value['radius_clients']) > 256:
             raise ValidationError('Invalid clients')
         for item in value['radius_clients']:
-            keys(item, {'name', 'ip', 'secret'}, {'name', 'ip', 'secret'})
-            client = {'name': text(item['name']), 'ip': address(item['ip'])}
+            keys(item, {'name', 'ip', 'secret', 'access_type'}, {'name', 'ip', 'secret', 'access_type'})
+            client = {'name': text(item['name']), 'ip': address(item['ip']),
+                      'access_type': enum(item['access_type'], {'wired', 'wireless'})}
             secret = item['secret']
             if type(secret) is not str or (secret and (not 16 <= len(secret) <= 128 or any(ord(c) < 33 or ord(c) > 126 for c in secret))):
                 raise ValidationError('RADIUS_SECRET_INVALID')
@@ -108,14 +111,15 @@ class Operations:
             self._audit(db, 'network_saved', revision)
         return self.network()
 
-    def radius_secret(self, ip):
+    def radius_secret(self, ip, *, audit=True):
         name = 'radius:' + address(ip)
         with self.store.connect() as db:
             row = db.execute('SELECT ciphertext FROM protected_secrets WHERE name=?', (name,)).fetchone()
             if row is None:
                 raise ValidationError('RADIUS_SECRET_MISSING')
-            revision = db.execute('SELECT revision FROM state WHERE id=1').fetchone()[0]
-            db.execute('INSERT INTO audit(event,revision) VALUES (?,?)', ('radius_secret_viewed', revision))
+            if audit:
+                revision = db.execute('SELECT revision FROM state WHERE id=1').fetchone()[0]
+                db.execute('INSERT INTO audit(event,revision) VALUES (?,?)', ('radius_secret_viewed', revision))
         return self.vault.open(name, row[0])
 
     def directory(self):
