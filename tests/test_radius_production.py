@@ -14,6 +14,8 @@ from kaname.store import Store
 from kaname.pki import PKIService
 from tools.radius_initialize import initialize
 from tools.radius_runtime import generate
+from tools.radius_prepare import prepare
+from tools.radius_install import verified_runtime, unit_text
 from .helpers import config, policy
 
 
@@ -94,6 +96,7 @@ class RuntimeTests(unittest.TestCase):
         (self.prefix / 'share/freeradius/dictionary').write_text('# fixture\n')
         (self.prefix / 'sbin').mkdir()
         (self.prefix / 'sbin/radiusd').write_text('fixture\n')
+        (self.prefix / 'sbin/radiusd').chmod(0o755)
         (self.prefix / 'lib').mkdir()
         (self.prefix / 'lib/rlm_python3.so').write_bytes(b'fixture')
 
@@ -106,6 +109,19 @@ class RuntimeTests(unittest.TestCase):
         self.assertTrue(self.radius['serial'])
         with self.assertRaises(ValueError):
             initialize(self.state, PASSWORD, 30)
+
+    def test_staged_runtime_manifest_and_unit_bind_are_deterministic(self):
+        staged = self.root / 'staged'
+        result = prepare(self.prefix, staged)
+        files, raw = verified_runtime(staged, result['runtime_digest'])
+        self.assertIn('sbin/radiusd', files)
+        self.assertTrue(raw)
+        unit = unit_text('192.0.2.20')
+        self.assertIn('--listen-ip 192.0.2.20', unit)
+        self.assertNotIn('--listen-ip 0.0.0.0', unit)
+        (staged / 'sbin/radiusd').write_bytes(b'tampered')
+        with self.assertRaises(ValueError):
+            verified_runtime(staged, result['runtime_digest'])
 
     def test_runtime_contains_secret_only_ephemerally_and_materializes_packet_source(self):
         before = list(self.store.audit())
