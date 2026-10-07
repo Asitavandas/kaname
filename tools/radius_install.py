@@ -67,7 +67,7 @@ def verified_runtime(source, expected_digest):
 
 
 def unit_text(listen_ip):
-    return '''[Unit]
+    return f'''[Unit]
 Description=AuthWire EAP-TLS RADIUS authentication service
 After=network-online.target kaname-lab.service
 Wants=network-online.target
