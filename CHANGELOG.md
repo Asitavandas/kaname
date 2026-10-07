@@ -1,3 +1,8 @@
+## 0.13.0-dev.4 — 2026-10-08
+- Fix production FreeRADIUS relocation by supplying the installed dictionary directory explicitly instead of the CI build-time path.
+- Migrate an existing disabled AuthWire RADIUS systemd unit during the verified Linux update without starting RADIUS or changing firewall/network devices.
+- Add regression coverage for the systemd ExecStart dictionary path, updater migration idempotence, and native configuration validation with an explicit dictionary directory.
+
 ## 0.12.2-dev.1 — 2026-10-06
 - Show computer accounts alongside users in group member details, including primary and nested memberships.
 - Add a searchable computer catalog tab and computer-to-group drill-down with account status and pagination.
