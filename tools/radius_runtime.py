@@ -117,14 +117,14 @@ def generate(output, prefix, state=STATE):
     private_file(output / 'radiusd.conf', f'''prefix = {prefix_text}
 name = authwire-radius
 raddbdir = {output}
-confdir = ${raddbdir}
-modconfdir = ${raddbdir}
-certdir = ${raddbdir}/certs
-cadir = ${raddbdir}/ca
+confdir = ${{raddbdir}}
+modconfdir = ${{raddbdir}}
+certdir = ${{raddbdir}}/certs
+cadir = ${{raddbdir}}/ca
 libdir = {module_dir}
 logdir = /run/authwire-radius
 run_dir = /run/authwire-radius
-pidfile = ${run_dir}/radiusd.pid
+pidfile = ${{run_dir}}/radiusd.pid
 max_request_time = 10
 cleanup_delay = 1
 max_requests = 1024
@@ -182,7 +182,7 @@ $INCLUDE sites-enabled/
     private_file(mods / 'python3', f'''python3 authwire_authorize {{
  python_path = "{PRODUCT}/source"
  module = kaname.radius_adapter
- mod_authorize = ${.module}
+ mod_authorize = ${{.module}}
  func_authorize = authorize
 }}
 ''')
