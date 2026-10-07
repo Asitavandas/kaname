@@ -148,6 +148,7 @@ class RuntimeTests(unittest.TestCase):
         self.assertTrue(raw)
         unit = unit_text('192.0.2.20')
         self.assertIn('--listen-ip 192.0.2.20', unit)
+        self.assertIn('ExecStart=/opt/authwire-radius/sbin/radiusd -f -D /opt/authwire-radius/share/freeradius -d /run/authwire-radius', unit)
         self.assertNotIn('--listen-ip 0.0.0.0', unit)
         (staged / 'sbin/radiusd').write_bytes(b'tampered')
         with self.assertRaises(ValueError):
@@ -178,7 +179,7 @@ class RuntimeTests(unittest.TestCase):
         env = dict(os.environ)
         env['LD_LIBRARY_PATH'] = str(Path(prefix) / 'lib')
         result = subprocess.run(
-            [str(Path(prefix) / 'sbin/radiusd'), '-XC', '-d', str(runtime)],
+            [str(Path(prefix) / 'sbin/radiusd'), '-XC', '-D', str(Path(prefix) / 'share/freeradius'), '-d', str(runtime)],
             env=env, capture_output=True, text=True, timeout=20)
         if result.returncode != 0:
             safe = '\n'.join(line for line in (result.stdout + result.stderr).splitlines()

@@ -85,7 +85,7 @@ Environment=LD_LIBRARY_PATH=/opt/authwire-radius/lib
 RuntimeDirectory=authwire-radius
 RuntimeDirectoryMode=0700
 ExecStartPre=/opt/kaname-lab/venv/bin/python -B -m tools.radius_runtime --output /run/authwire-radius --prefix /opt/authwire-radius --state-dir /var/lib/kaname-lab --listen-ip {listen_ip}
-ExecStart=/opt/authwire-radius/sbin/radiusd -f -d /run/authwire-radius
+ExecStart=/opt/authwire-radius/sbin/radiusd -f -D /opt/authwire-radius/share/freeradius -d /run/authwire-radius
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=20

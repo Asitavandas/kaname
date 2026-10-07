@@ -1,7 +1,7 @@
 """Local sudo lab upgrade: verified source, stopped-state backup, code rollback.
 
 Preserves existing service, HTTPS identity, administrators, AD secrets and CA.
-No packages, DNS, firewall, network devices or RADIUS listeners are changed.
+No packages, DNS, firewall, network devices or RADIUS listeners are changed.\nA disabled legacy AuthWire RADIUS unit may be migrated to the relocatable dictionary path.
 """
 import argparse
 import hashlib
@@ -24,6 +24,9 @@ PRODUCT = Path('/opt/kaname-lab')
 STATE = Path('/var/lib/kaname-lab')
 SETTINGS = Path('/etc/kaname-lab')
 UNIT = Path('/etc/systemd/system/kaname-lab.service')
+RADIUS_UNIT = Path('/etc/systemd/system/authwire-radius.service')
+RADIUS_EXEC_OLD = 'ExecStart=/opt/authwire-radius/sbin/radiusd -f -d /run/authwire-radius\n'
+RADIUS_EXEC_NEW = 'ExecStart=/opt/authwire-radius/sbin/radiusd -f -D /opt/authwire-radius/share/freeradius -d /run/authwire-radius\n'
 _PHASE = 'preflight'
 
 
@@ -131,6 +134,29 @@ def command(*args, cwd=None):
     return subprocess.run(list(args), check=True, capture_output=True, timeout=90, cwd=cwd)
 
 
+def radius_unit_upgrade(text):
+    old_count, new_count = text.count(RADIUS_EXEC_OLD), text.count(RADIUS_EXEC_NEW)
+    if old_count == 1 and new_count == 0:
+        return text.replace(RADIUS_EXEC_OLD, RADIUS_EXEC_NEW), True
+    if old_count == 0 and new_count == 1:
+        return text, False
+    raise ValueError('Unexpected AuthWire RADIUS service ExecStart layout')
+
+
+def atomic_text(path, content, mode=0o644):
+    temporary = path.with_name('.' + path.name + '.update-' + uuid.uuid4().hex)
+    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, mode)
+    try:
+        with os.fdopen(descriptor, 'w') as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
 def health(listen, version, client_sha256):
     context = ssl.create_default_context(cafile=str(SETTINGS / 'web.crt'))
     connection = http.client.HTTPSConnection(listen, 8765, context=context, timeout=3)
@@ -177,6 +203,22 @@ def _update(source, digest):
         raise ValueError('Existing lab service layout required')
     import ipaddress
     listen = str(ipaddress.IPv4Address(listen[0]))
+    radius_unit_before = radius_unit_after = None
+    radius_unit_changed = False
+    if RADIUS_UNIT.exists() or RADIUS_UNIT.is_symlink():
+        _PHASE = 'radius_unit_layout'
+        if (RADIUS_UNIT.is_symlink() or not RADIUS_UNIT.is_file() or RADIUS_UNIT.stat().st_uid != 0 or
+                RADIUS_UNIT.stat().st_mode & 0o022):
+            raise ValueError('Trusted AuthWire RADIUS service unit required')
+        radius_unit_before = RADIUS_UNIT.read_text()
+        radius_unit_after, radius_unit_changed = radius_unit_upgrade(radius_unit_before)
+        if radius_unit_changed:
+            radius_active = subprocess.run(
+                ['systemctl','is-active','--quiet','authwire-radius.service'], timeout=10).returncode == 0
+            radius_enabled = subprocess.run(
+                ['systemctl','is-enabled','--quiet','authwire-radius.service'], timeout=10).returncode == 0
+            if radius_active or radius_enabled:
+                raise ValueError('Legacy AuthWire RADIUS service must be disabled before unit migration')
     _PHASE = 'version_layout'
     version = re.findall(rb'VERSION = "([0-9A-Za-z.\-]+)"', files['kaname/__init__.py'])
     if len(version) != 1:
@@ -214,6 +256,8 @@ def _update(source, digest):
             shutil.copytree(STATE, backup/'state'); (backup/'state').chmod(0o700)
             shutil.copytree(SETTINGS, backup/'settings'); (backup/'settings').chmod(0o700)
             shutil.copy2(UNIT, backup/'kaname-lab.service')
+            if radius_unit_before is not None:
+                shutil.copy2(RADIUS_UNIT, backup/'authwire-radius.service')
             _PHASE = 'code_swap'
             os.rename(PRODUCT/'source',backup/'source')
             try:
@@ -222,6 +266,11 @@ def _update(source, digest):
             except Exception:
                 os.rename(backup/'source',PRODUCT/'source'); raise
             swapped = True
+            if radius_unit_changed:
+                _PHASE = 'radius_unit_upgrade'
+                atomic_text(RADIUS_UNIT, radius_unit_after)
+                command('systemd-analyze','verify',str(RADIUS_UNIT))
+                command('systemctl','daemon-reload')
             _PHASE = 'service_start'
             command('systemctl','start','kaname-lab.service')
             _PHASE = 'https_health'
@@ -235,6 +284,9 @@ def _update(source, digest):
             if control_digest(STATE) != before:
                 raise ValueError('Configuration/administrator preservation check failed')
         except Exception:
+            if radius_unit_changed and (backup/'authwire-radius.service').is_file():
+                atomic_text(RADIUS_UNIT, (backup/'authwire-radius.service').read_text())
+                command('systemctl','daemon-reload')
             if swapped:
                 command('systemctl','stop','kaname-lab.service')
                 os.rename(PRODUCT/'source', backup/'failed-source')
@@ -246,6 +298,7 @@ def _update(source, digest):
     return {'updated': True, 'version':version, 'https_verified':True, 'backup_created':True,
             'configuration_preserved':True, 'administrators_preserved':True,
             'bytecode_directories_quarantined':bytecode_count,'radius_started':False,
+            'radius_unit_updated': radius_unit_changed,
             'windows_changed': previous_client_sha256 != client_sha256,
             'windows_client_source_verified': True, 'windows_client_sha256': client_sha256}
 
