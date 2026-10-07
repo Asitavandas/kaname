@@ -5,7 +5,7 @@ import json
 from unittest.mock import patch
 from pathlib import Path
 
-from tools.linux_update import safe_tree, quarantine_caches, health
+from tools.linux_update import safe_tree, quarantine_caches, health, radius_unit_upgrade
 
 
 class RebrandHealthTests(unittest.TestCase):
@@ -57,3 +57,20 @@ class SourceUpgradeGuardTests(unittest.TestCase):
             elsewhere=Path(d)/'elsewhere';elsewhere.mkdir()
             (root/'__pycache__').symlink_to(elsewhere,target_is_directory=True)
             with self.assertRaises(ValueError):safe_tree(root,owner=os.getuid(),quarantine_bytecode=True)
+
+
+class RadiusUnitMigrationTests(unittest.TestCase):
+    def test_legacy_execstart_gets_explicit_dictionary_directory(self):
+        old = 'ExecStart=/opt/authwire-radius/sbin/radiusd -f -d /run/authwire-radius\n'
+        updated, changed = radius_unit_upgrade('[Service]\n' + old)
+        self.assertTrue(changed)
+        self.assertIn(' -D /opt/authwire-radius/share/freeradius -d /run/authwire-radius', updated)
+
+    def test_current_execstart_is_idempotent_and_unknown_layout_is_rejected(self):
+        current = ('[Service]\nExecStart=/opt/authwire-radius/sbin/radiusd -f '
+                   '-D /opt/authwire-radius/share/freeradius -d /run/authwire-radius\n')
+        updated, changed = radius_unit_upgrade(current)
+        self.assertFalse(changed)
+        self.assertEqual(current, updated)
+        with self.assertRaises(ValueError):
+            radius_unit_upgrade('[Service]\nExecStart=/custom/radiusd\n')
