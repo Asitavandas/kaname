@@ -50,3 +50,44 @@ jobs:
         env:
           AUTHWIRE_RADIUS_PREFIX: ${{ runner.temp }}/kaname-freeradius
         run: python -m unittest tests.test_radius_production -q
+      - name: Package tested relocatable FreeRADIUS runtime
+        if: github.repository == 'Asitavandas/kaname' && github.event.repository.private == true && github.ref == 'refs/heads/main'
+        run: |
+          cd "$RUNNER_TEMP"
+          tar --dereference -C "$RUNNER_TEMP/kaname-freeradius" -czf authwire-freeradius-3.2.10.tar.gz lib sbin share
+          sha256sum authwire-freeradius-3.2.10.tar.gz > authwire-freeradius-3.2.10.sha256
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: github.repository == 'Asitavandas/kaname' && github.event.repository.private == true && github.ref == 'refs/heads/main'
+        with:
+          name: authwire-freeradius-runtime-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/authwire-freeradius-3.2.10.tar.gz
+            ${{ runner.temp }}/authwire-freeradius-3.2.10.sha256
+          retention-days: 3
+          compression-level: 0
+  stage-production-runtime:
+    needs: real-eap-tls
+    if: github.repository == 'Asitavandas/kaname' && github.event.repository.private == true && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, Linux, kaname-linux]
+    timeout-minutes: 10
+    steps:
+      - name: Verify runner name
+        env:
+          ACTUAL_RUNNER: ${{ runner.name }}
+        run: test "$ACTUAL_RUNNER" = kaname-linux01
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: authwire-freeradius-runtime-${{ github.sha }}
+          path: ${{ runner.temp }}/authwire-radius-artifact
+      - name: Verify and stage tested FreeRADIUS runtime
+        run: |
+          cd "$RUNNER_TEMP/authwire-radius-artifact"
+          sha256sum -c authwire-freeradius-3.2.10.sha256
+          mkdir "$RUNNER_TEMP/authwire-radius-prefix"
+          tar -xzf authwire-freeradius-3.2.10.tar.gz -C "$RUNNER_TEMP/authwire-radius-prefix"
+          python -m tools.radius_prepare \
+            --source "$RUNNER_TEMP/authwire-radius-prefix" \
+            --destination "$HOME/authwire-radius-stage-${GITHUB_SHA:0:12}"
