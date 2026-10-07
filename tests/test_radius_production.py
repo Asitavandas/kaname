@@ -1,5 +1,6 @@
 """Production RADIUS adapter/runtime boundaries; no LAN listener is started."""
 import os
+import subprocess
 import tempfile
 import types
 import unittest
@@ -120,6 +121,23 @@ class RuntimeTests(unittest.TestCase):
         module = (self.runtime / 'mods-enabled/python3').read_text()
         self.assertIn('module = kaname.radius_adapter', module)
         self.assertEqual(0, (self.runtime / 'clients.conf').stat().st_mode & 0o077)
+
+    def test_native_freeradius_accepts_generated_production_config_when_prefix_is_supplied(self):
+        prefix = os.environ.get('AUTHWIRE_RADIUS_PREFIX')
+        if not prefix:
+            self.skipTest('Pinned FreeRADIUS prefix not supplied')
+        runtime = self.root / 'native-runtime'
+        runtime.mkdir(mode=0o700)
+        generate(runtime, Path(prefix), self.state)
+        env = dict(os.environ)
+        env['LD_LIBRARY_PATH'] = str(Path(prefix) / 'lib')
+        result = subprocess.run(
+            [str(Path(prefix) / 'sbin/radiusd'), '-XC', '-d', str(runtime)],
+            env=env, capture_output=True, text=True, timeout=20)
+        if result.returncode != 0:
+            safe = '\n'.join(line for line in (result.stdout + result.stderr).splitlines()
+                             if 'secret' not in line.lower() and 'password' not in line.lower())
+            self.fail('Generated production FreeRADIUS config rejected:\n' + safe[-4000:])
 
 
 if __name__ == '__main__':
