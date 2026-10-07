@@ -2,7 +2,7 @@ name: KANAME real RADIUS protocol proof
 on:
   push:
     branches: [main]
-    paths: ['kaname/**', 'tools/radius_lab.py', 'tests/radius_fixture.py', 'tests/test_radius.py', '.github/workflows/radius.yml']
+    paths: ['kaname/**', 'tools/radius_lab.py', 'tools/radius_runtime.py', 'tools/radius_initialize.py', 'tests/radius_fixture.py', 'tests/test_radius.py', 'tests/test_radius_production.py', '.github/workflows/radius.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -44,3 +44,7 @@ jobs:
       - name: Native loopback EAP-TLS, policy and authenticated VLAN responses
         run: |
           python -m tools.radius_lab --radius-prefix "$RUNNER_TEMP/kaname-freeradius" --report "$RUNNER_TEMP/kaname-radius-proof.json"
+      - name: Production RADIUS runtime config parses with pinned FreeRADIUS
+        env:
+          AUTHWIRE_RADIUS_PREFIX: ${{ runner.temp }}/kaname-freeradius
+        run: python -m unittest tests.test_radius_production -q
