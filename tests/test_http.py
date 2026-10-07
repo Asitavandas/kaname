@@ -1,3 +1,4 @@
+import hashlib
 import http.client
 import json
 import secrets
@@ -5,6 +6,7 @@ import tempfile
 import threading
 import unittest
 from dataclasses import asdict
+from pathlib import Path
 from kaname.server import DevelopmentServer
 from .helpers import config, policy, identity
 
@@ -32,7 +34,11 @@ class HTTPTests(unittest.TestCase):
         r=connection.getresponse();return r.status,r.read(),dict(r.headers)
 
     def test_health_is_not_readiness(self):
-        self.assertEqual(self.request('GET','/healthz',token=False)[0],200)
+        status,body,_=self.request('GET','/healthz',token=False)
+        self.assertEqual(status,200)
+        health=json.loads(body)
+        client=Path(__file__).parents[1]/'kaname'/'device_client'/'AuthWire-Client.ps1'
+        self.assertEqual(hashlib.sha256(client.read_bytes()).hexdigest(),health['device_client_sha256'])
         status,body,_=self.request('GET','/readyz',token=False)
         self.assertEqual(status,503);self.assertFalse(json.loads(body)['ready'])
 
