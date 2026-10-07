@@ -2,6 +2,7 @@ import json
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 from kaname.store import Store, ConflictError
 from kaname.models import ValidationError
 from .helpers import config, policy
@@ -61,3 +62,11 @@ class StoreTests(unittest.TestCase):
     def test_policy_order_persists(self):
         rows=[policy(id='b'),policy(id='a')];self.store.save(0,policies=rows)
         self.assertEqual([x['id'] for x in self.store.snapshot()['policies']],['b','a'])
+
+
+    def test_store_owner_check_uses_effective_uid(self):
+        owner = self.store.root.stat().st_uid
+        with patch('kaname.store.os.getuid', return_value=owner + 1000), \
+             patch('kaname.store.os.geteuid', return_value=owner):
+            reopened = Store(self.temp.name)
+        self.assertEqual(reopened.root, self.store.root)
