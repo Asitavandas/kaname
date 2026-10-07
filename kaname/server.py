@@ -1,4 +1,5 @@
 """Local-only development panel. Not the production appliance HTTP stack."""
+import hashlib
 import hmac
 import ipaddress
 import json
@@ -385,7 +386,9 @@ class Handler(BaseHTTPRequestHandler):
             filename, mime = ASSETS[self.path]
             self.respond(200, (STATIC / filename).read_bytes(), mime)
         elif self.path == '/healthz':
-            self.respond(200, {'product': 'AuthWire', 'version': VERSION, 'mode': 'development'})
+            client = Path(__file__).parent / 'device_client' / 'AuthWire-Client.ps1'
+            self.respond(200, {'product': 'AuthWire', 'version': VERSION, 'mode': 'development',
+                'device_client_sha256': hashlib.sha256(client.read_bytes()).hexdigest()})
         elif self.path == '/readyz':
             self.respond(503, {'ready': False, 'reason': 'AD_PKI_RADIUS_NOT_CONNECTED'})
         elif self.path == '/api/auth/session' and self.guard():
