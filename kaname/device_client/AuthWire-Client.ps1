@@ -72,6 +72,8 @@ $mutex = New-Object Threading.Mutex($false, 'Global\AuthWire-Certificate-Client'
 if (!$mutex.WaitOne(0)) { $mutex.Dispose(); return }
 $session = $null
 $private = $null
+$stage = 'bootstrap'
+$serverError = $null
 function Save-State($name, $data) {
     $target = Join-Path $directory $name
     $temporary = $target + '.tmp'
@@ -86,7 +88,23 @@ function Post-Json($path, $data) {
     $bytes = [Text.Encoding]::UTF8.GetBytes(($data | ConvertTo-Json -Compress -Depth 8))
     $request.ContentLength = $bytes.Length
     $stream = $request.GetRequestStream(); try { $stream.Write($bytes,0,$bytes.Length) } finally { $stream.Dispose() }
-    $response = $request.GetResponse()
+    try {
+        $response = $request.GetResponse()
+    } catch [Net.WebException] {
+        $webResponse = $_.Exception.Response
+        if($webResponse) {
+            try {
+                $reader = New-Object IO.StreamReader($webResponse.GetResponseStream())
+                try {
+                    $body = $reader.ReadToEnd() | ConvertFrom-Json
+                    $errorCode = [string]$body.error
+                    if($errorCode -and $errorCode.Length -le 64 -and $errorCode -notmatch '[^A-Z0-9_]') { $script:serverError = $errorCode }
+                } finally { $reader.Dispose() }
+            } catch {}
+            finally { $webResponse.Dispose() }
+        }
+        throw
+    }
     try { $reader = New-Object IO.StreamReader($response.GetResponseStream()); try { $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() } }
     finally { $response.Dispose() }
 }
@@ -118,6 +136,7 @@ try {
             }
         }
     }
+    $stage = 'session'
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     [AuthWireTls]::Pin = $config.tls_sha256
     $session = New-Object AuthWireSspi($config.spn)
@@ -127,13 +146,16 @@ try {
     if($installed -and !(Test-Path $pendingFile)) {
         $existing = Get-Item ('Cert:\LocalMachine\My\'+$installed.thumbprint) -ErrorAction SilentlyContinue
         if($existing -and $existing.HasPrivateKey -and [DateTimeOffset]::UtcNow -lt [DateTimeOffset]::Parse($installed.renew_at)) {
+            $stage = 'renewal_check'
             $private = [Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($existing)
             $serverState = Protected-Post '/api/device/receipt' @{serial=$installed.serial; proof=(Key-Proof $installed.receipt_payload)}
             Remove-Item $retryFile -ErrorAction SilentlyContinue
             if(!$serverState.renew_now) { return }
+            $private.Dispose(); $private = $null
         }
     }
     if(!(Test-Path $pendingFile)) {
+        $stage = 'csr'
         $container = 'AuthWire-'+[Guid]::NewGuid().ToString()
         $inf = @"
 [Version]
@@ -157,10 +179,12 @@ SuppressDefaults=TRUE
         $csr = (Get-Content $csrFile -Raw).Replace('BEGIN NEW CERTIFICATE REQUEST','BEGIN CERTIFICATE REQUEST').Replace('END NEW CERTIFICATE REQUEST','END CERTIFICATE REQUEST')
         Save-State 'pending.json' @{container=$container;csr=$csr}
     }
+    $stage = 'challenge'
     $pending = Get-Content $pendingFile -Raw | ConvertFrom-Json
     $key = [Security.Cryptography.CngKey]::Open($pending.container,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::MachineKey)
     $private = New-Object Security.Cryptography.RSACng($key)
     $challenge = Protected-Post '/api/device/challenge' @{profile_id=$config.profile_id;csr=$pending.csr}
+    $stage = 'issue'
     $issued = Protected-Post '/api/device/issue' @{challenge_id=$challenge.challenge_id;csr=$pending.csr;proof=(Key-Proof $challenge.payload)}
     $certFile = Join-Path $directory 'issued.pem'
     [IO.File]::WriteAllText($certFile,$issued.certificate,[Text.Encoding]::ASCII)
@@ -170,6 +194,7 @@ SuppressDefaults=TRUE
         $actual = $public.ExportParameters($false); $expected = $private.ExportParameters($false)
         if([Convert]::ToBase64String($actual.Modulus) -cne [Convert]::ToBase64String($expected.Modulus) -or [Convert]::ToBase64String($actual.Exponent) -cne [Convert]::ToBase64String($expected.Exponent)) { throw 'Certificate key mismatch.' }
     } finally { $public.Dispose() }
+    $stage = 'validate_certificate'
     $chain = New-Object Security.Cryptography.X509Certificates.X509Chain
     $chain.ChainPolicy.RevocationMode = [Security.Cryptography.X509Certificates.X509RevocationMode]::NoCheck
     $expectedIssuer = New-Object Security.Cryptography.X509Certificates.X509Certificate2((Join-Path $directory 'issuer-ca.pem'))
@@ -179,6 +204,7 @@ SuppressDefaults=TRUE
     try {
         if(!$chain.Build($cert) -or $chain.ChainElements.Count -ne 3 -or $chain.ChainElements[1].Certificate.Thumbprint -ne $expectedIssuer.Thumbprint -or $chain.ChainElements[2].Certificate.Thumbprint -ne $expectedRoot.Thumbprint) { throw 'Certificate chain mismatch.' }
     } finally { $chain.Dispose(); $expectedIssuer.Dispose(); $expectedRoot.Dispose() }
+    $stage = 'install_certificate'
     $alreadyInstalled = Get-Item ('Cert:\LocalMachine\My\'+$cert.Thumbprint) -ErrorAction SilentlyContinue
     if(!$alreadyInstalled -or !$alreadyInstalled.HasPrivateKey) {
         & "$env:SystemRoot\System32\certreq.exe" -accept -machine -q $certFile | Out-Null
@@ -187,6 +213,7 @@ SuppressDefaults=TRUE
     $verified = Get-Item ('Cert:\LocalMachine\My\'+$cert.Thumbprint)
     if(!$verified.HasPrivateKey) { throw 'Installed private key is unavailable.' }
     $private.Dispose(); $private = [Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($verified)
+    $stage = 'final_receipt'
     $receipt = Protected-Post '/api/device/receipt' @{serial=$issued.serial;proof=(Key-Proof $issued.receipt_payload)}
     if(!$receipt.installed) { throw 'Installation receipt rejected.' }
     $previous = @()
@@ -202,7 +229,9 @@ SuppressDefaults=TRUE
     $attempts = if($retry) { [Math]::Min(8,[int]$retry.attempts+1) } else { 1 }
     $minutes = [Math]::Min(720,[Math]::Pow(2,$attempts)*5)+(Get-Random -Minimum 0 -Maximum 16)
     Save-State 'retry.json' @{attempts=$attempts;next_attempt=[DateTimeOffset]::UtcNow.AddMinutes($minutes).ToString('o')}
-    Save-State 'status.json' @{state='retry_pending';error='ENROLLMENT_OR_INSTALL_FAILED';checked_at=[DateTimeOffset]::UtcNow.ToString('o')}
+    $status = @{state='retry_pending';error='ENROLLMENT_OR_INSTALL_FAILED';stage=$stage;checked_at=[DateTimeOffset]::UtcNow.ToString('o')}
+    if($serverError) { $status.server_error = $serverError }
+    Save-State 'status.json' $status
     Write-Error 'AuthWire enrollment/renewal failed. Check HTTPS DNS/trust, DC access, time, SPN/keytab and profile eligibility.' -ErrorAction Continue
     exit 1
 } finally {
