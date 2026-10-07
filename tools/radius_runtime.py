@@ -98,7 +98,7 @@ def generate(output, prefix, state=STATE):
 
     client_lines = []
     for index, client in enumerate(clients, 1):
-        secret = operations.radius_secret(client['ip'])
+        secret = operations.radius_secret(client['ip'], audit=False)
         try:
             client_lines.append(f'''client authwire_{index:03d} {{
  ipaddr = {client["ip"]}
