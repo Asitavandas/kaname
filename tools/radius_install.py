@@ -137,7 +137,8 @@ def install(source, digest):
         (candidate / 'RADIUS_RUNTIME_MANIFEST.json').write_bytes(manifest)
         (candidate / 'RADIUS_RUNTIME_MANIFEST.json').chmod(0o644)
         # Refuse a runtime that cannot load its external shared libraries.
-        check = subprocess.run(['ldd', str(candidate / 'sbin/radiusd')], capture_output=True, text=True, timeout=15)
+        env = dict(os.environ); env['LD_LIBRARY_PATH'] = str(candidate / 'lib')
+        check = subprocess.run(['ldd', str(candidate / 'sbin/radiusd')], env=env, capture_output=True, text=True, timeout=15)
         if check.returncode != 0 or 'not found' in check.stdout or 'not found' in check.stderr:
             raise ValueError('FreeRADIUS runtime dependency missing on this Ubuntu host')
         os.rename(candidate, PRODUCT)
