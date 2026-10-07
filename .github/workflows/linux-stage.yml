@@ -45,11 +45,19 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
-      - name: Isolated fixture dependency and regression tests
+      - name: Self-hosted staging integrity checks
         run: |
           python -m venv "$RUNNER_TEMP/kaname-fixture-venv"
           "$RUNNER_TEMP/kaname-fixture-venv/bin/python" -m pip install --only-binary=:all: cryptography==46.0.0
-          "$RUNNER_TEMP/kaname-fixture-venv/bin/python" -m unittest discover -s tests -t . -q
+          # Full HTTP/browser/device regressions already run on disposable hosted runners.
+          # Keep the self-hosted deployment gate deterministic and filesystem-local.
+          "$RUNNER_TEMP/kaname-fixture-venv/bin/python" -m unittest \
+            tests.test_store \
+            tests.test_pki \
+            tests.test_enrollment \
+            tests.test_device_enrollment \
+            tests.test_linux_update -q
+          "$RUNNER_TEMP/kaname-fixture-venv/bin/python" -m compileall -q kaname tools
       - name: Prepare tested generic source in runner home (no sudo or AD calls)
         run: |
           "$RUNNER_TEMP/kaname-fixture-venv/bin/python" -m tools.linux_prepare --destination "$HOME/kaname-stage-${GITHUB_SHA:0:12}"
