@@ -38,7 +38,8 @@ class AdapterTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.store = Store(self.temp.name)
-        self.store.save(0, config=config(), policies=[policy()])
+        self.store.save(0, config=config())
+        self.store.save(self.store.snapshot()['revision'], policies=[policy()])
         self.ops = Operations(self.store)
         self.ops.save_network(self.store.snapshot()['revision'], network('wireless'))
         PKIService(self.temp.name).initialize(PASSWORD)
@@ -85,7 +86,8 @@ class RuntimeTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.state = self.root / 'state'
         self.store = Store(self.state)
-        self.store.save(0, config=config(), policies=[policy()])
+        self.store.save(0, config=config())
+        self.store.save(self.store.snapshot()['revision'], policies=[policy()])
         self.ops = Operations(self.store)
         self.ops.save_network(self.store.snapshot()['revision'], network())
         PKIService(self.state).initialize(PASSWORD)
