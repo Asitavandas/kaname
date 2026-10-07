@@ -5,6 +5,7 @@ listener, alter firewall rules, or change network devices.
 """
 import argparse
 import hashlib
+import ipaddress
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -19,6 +20,7 @@ import tempfile
 
 PRODUCT = Path('/opt/authwire-radius')
 UNIT = Path('/etc/systemd/system/authwire-radius.service')
+PANEL_UNIT = Path('/etc/systemd/system/kaname-lab.service')
 ACCOUNT = 'kaname-lab'
 EXPECTED_COMMIT = '9071ea041b9172e52eabbba91619afaf3a238795'
 
@@ -64,7 +66,7 @@ def verified_runtime(source, expected_digest):
     return files, raw
 
 
-def unit_text():
+def unit_text(listen_ip):
     return '''[Unit]
 Description=AuthWire EAP-TLS RADIUS authentication service
 After=network-online.target kaname-lab.service
@@ -82,7 +84,7 @@ Environment=PYTHONPATH=/opt/kaname-lab/source:/opt/kaname-lab/venv/lib/python3.1
 Environment=LD_LIBRARY_PATH=/opt/authwire-radius/lib
 RuntimeDirectory=authwire-radius
 RuntimeDirectoryMode=0700
-ExecStartPre=/opt/kaname-lab/venv/bin/python -B -m tools.radius_runtime --output /run/authwire-radius --prefix /opt/authwire-radius --state-dir /var/lib/kaname-lab
+ExecStartPre=/opt/kaname-lab/venv/bin/python -B -m tools.radius_runtime --output /run/authwire-radius --prefix /opt/authwire-radius --state-dir /var/lib/kaname-lab --listen-ip {listen_ip}
 ExecStart=/opt/authwire-radius/sbin/radiusd -f -d /run/authwire-radius
 Restart=on-failure
 RestartSec=5
@@ -121,6 +123,15 @@ def install(source, digest):
     if 'ID=ubuntu' not in Path('/etc/os-release').read_text() or 'VERSION_ID="24.04"' not in Path('/etc/os-release').read_text():
         raise ValueError('Ubuntu 24.04 required')
     pwd.getpwnam(ACCOUNT)
+    if PANEL_UNIT.is_symlink() or not PANEL_UNIT.is_file() or PANEL_UNIT.stat().st_uid != 0 or PANEL_UNIT.stat().st_mode & 0o022:
+        raise ValueError('Trusted AuthWire panel service required')
+    panel_text = PANEL_UNIT.read_text()
+    listen = re.findall(r'--listen ([0-9.]+) --port 8765', panel_text)
+    if len(listen) != 1:
+        raise ValueError('AuthWire panel listen address not found')
+    listen_ip = str(ipaddress.IPv4Address(listen[0]))
+    if ipaddress.ip_address(listen_ip).is_unspecified or ipaddress.ip_address(listen_ip).is_multicast:
+        raise ValueError('Unsafe AuthWire panel listen address')
     if PRODUCT.exists() or PRODUCT.is_symlink() or UNIT.exists() or UNIT.is_symlink():
         raise ValueError('Existing AuthWire RADIUS installation found; automatic overwrite refused')
     files, manifest = verified_runtime(source, digest)
@@ -146,7 +157,7 @@ def install(source, digest):
     try:
         descriptor = os.open(UNIT, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o644)
         with os.fdopen(descriptor, 'w') as handle:
-            handle.write(unit_text())
+            handle.write(unit_text(listen_ip))
         subprocess.run(['systemd-analyze', 'verify', str(UNIT)], check=True, capture_output=True, timeout=20)
         subprocess.run(['systemctl', 'daemon-reload'], check=True, capture_output=True, timeout=20)
         subprocess.run(['systemctl', 'disable', 'authwire-radius.service'], capture_output=True, timeout=20)
@@ -162,7 +173,7 @@ def install(source, digest):
     if enabled or active:
         raise ValueError('RADIUS service unexpectedly enabled or active')
     return {'installed': True, 'upstream_commit': EXPECTED_COMMIT, 'runtime_digest': digest,
-            'service_enabled': False, 'service_started': False, 'firewall_changed': False,
+            'service_enabled': False, 'service_started': False, 'listen_ip': listen_ip, 'firewall_changed': False,
             'network_devices_changed': False}
 
 
