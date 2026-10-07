@@ -72,6 +72,8 @@ $mutex = New-Object Threading.Mutex($false, 'Global\AuthWire-Certificate-Client'
 if (!$mutex.WaitOne(0)) { $mutex.Dispose(); return }
 $session = $null
 $private = $null
+$stage = 'bootstrap'
+$serverError = $null
 function Save-State($name, $data) {
     $target = Join-Path $directory $name
     $temporary = $target + '.tmp'
@@ -86,7 +88,157 @@ function Post-Json($path, $data) {
     $bytes = [Text.Encoding]::UTF8.GetBytes(($data | ConvertTo-Json -Compress -Depth 8))
     $request.ContentLength = $bytes.Length
     $stream = $request.GetRequestStream(); try { $stream.Write($bytes,0,$bytes.Length) } finally { $stream.Dispose() }
-    $response = $request.GetResponse()
+    try {
+        $response = $request.GetResponse()
+    } catch [Net.WebException] {
+        $webResponse = $_.Exception.Response
+        if($webResponse) {
+            try {
+                $reader = New-Object IO.StreamReader($webResponse.GetResponseStream())
+                try {
+                    $body = $reader.ReadToEnd() | ConvertFrom-Json
+                    if($body.error -and [string]$body.error -match '^[A-Z0-9_]{1,64}
+}
+function Protected-Post($path, $data) {
+    $json = [Text.Encoding]::UTF8.GetBytes(($data | ConvertTo-Json -Compress -Depth 8))
+    $signed = [Text.Encoding]::UTF8.GetBytes($path+"`n"+([Text.Encoding]::UTF8.GetString($json)))
+    $response = Post-Json $path @{id=$sessionId; message=[Convert]::ToBase64String($json); mic=[Convert]::ToBase64String($session.Sign($signed))}
+    $raw = [Convert]::FromBase64String($response.message)
+    $session.Verify([Text.Encoding]::UTF8.GetBytes($path+"`n"+([Text.Encoding]::UTF8.GetString($raw))), [Convert]::FromBase64String($response.mic))
+    [Text.Encoding]::UTF8.GetString($raw) | ConvertFrom-Json
+}
+function Key-Proof($payload) { [Convert]::ToBase64String($private.SignData([Convert]::FromBase64String($payload),[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)) }
+try {
+    if (!$NoJitter) { Start-Sleep -Seconds (Get-Random -Minimum 0 -Maximum 121) }
+    $retryFile = Join-Path $directory 'retry.json'
+    $retry = if(Test-Path $retryFile) { Get-Content $retryFile -Raw | ConvertFrom-Json } else { $null }
+    if($retry -and [DateTimeOffset]::UtcNow -lt [DateTimeOffset]::Parse($retry.next_attempt)) { return }
+    $installedFile = Join-Path $directory 'installed.json'
+    $installed = if(Test-Path $installedFile) { Get-Content $installedFile -Raw | ConvertFrom-Json } else { $null }
+    # Remove only this client's verified predecessor after successful cutover.
+    # A reboot/offline return performs cleanup before enrollment networking.
+    if($installed) {
+        foreach($old in @($installed.previous)) {
+            if($old -and [DateTimeOffset]::UtcNow -ge [DateTimeOffset]::Parse($old.remove_at) -and $old.thumbprint -ne $installed.thumbprint) {
+                Remove-Item ('Cert:\LocalMachine\My\'+$old.thumbprint) -ErrorAction SilentlyContinue
+                if($old.container) {
+                    try { $oldKey = [Security.Cryptography.CngKey]::Open($old.container,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::MachineKey);$oldKey.Delete();$oldKey.Dispose() } catch {}
+                }
+            }
+        }
+    }
+    $stage = 'session'
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    [AuthWireTls]::Pin = $config.tls_sha256
+    $session = New-Object AuthWireSspi($config.spn)
+    $answer = Post-Json '/api/device/session' @{token=[Convert]::ToBase64String($session.Start())}
+    $session.Finish([Convert]::FromBase64String($answer.token)); $sessionId = $answer.id
+    $pendingFile = Join-Path $directory 'pending.json'
+    if($installed -and !(Test-Path $pendingFile)) {
+        $existing = Get-Item ('Cert:\LocalMachine\My\'+$installed.thumbprint) -ErrorAction SilentlyContinue
+        if($existing -and $existing.HasPrivateKey -and [DateTimeOffset]::UtcNow -lt [DateTimeOffset]::Parse($installed.renew_at)) {
+            $stage = 'renewal_check'
+            $private = [Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($existing)
+            $serverState = Protected-Post '/api/device/receipt' @{serial=$installed.serial; proof=(Key-Proof $installed.receipt_payload)}
+            Remove-Item $retryFile -ErrorAction SilentlyContinue
+            if(!$serverState.renew_now) { return }
+            # Release the predecessor private-key handle before creating and binding
+            # the replacement CNG key/certificate.
+            $private.Dispose(); $private = $null
+        }
+    }
+    if(!(Test-Path $pendingFile)) {
+        $stage = 'csr'
+        $container = 'AuthWire-'+[Guid]::NewGuid().ToString()
+        $inf = @"
+[Version]
+Signature="`$Windows NT`$"
+[NewRequest]
+Subject="CN=AuthWire computer request"
+KeyAlgorithm=RSA
+KeyLength=2048
+HashAlgorithm=sha256
+Exportable=FALSE
+MachineKeySet=TRUE
+ProviderName="Microsoft Software Key Storage Provider"
+KeyContainer="$container"
+RequestType=PKCS10
+SuppressDefaults=TRUE
+"@
+        $infFile = Join-Path $directory 'request.inf'; $csrFile = Join-Path $directory 'request.pem'
+        [IO.File]::WriteAllText($infFile,$inf,[Text.Encoding]::ASCII)
+        & "$env:SystemRoot\System32\certreq.exe" -new -machine -q -f $infFile $csrFile | Out-Null
+        if($LASTEXITCODE -ne 0) { throw 'CSR generation failed.' }
+        $csr = (Get-Content $csrFile -Raw).Replace('BEGIN NEW CERTIFICATE REQUEST','BEGIN CERTIFICATE REQUEST').Replace('END NEW CERTIFICATE REQUEST','END CERTIFICATE REQUEST')
+        Save-State 'pending.json' @{container=$container;csr=$csr}
+    }
+    $stage = 'challenge'
+    $pending = Get-Content $pendingFile -Raw | ConvertFrom-Json
+    $key = [Security.Cryptography.CngKey]::Open($pending.container,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::MachineKey)
+    $private = New-Object Security.Cryptography.RSACng($key)
+    $challenge = Protected-Post '/api/device/challenge' @{profile_id=$config.profile_id;csr=$pending.csr}
+    $stage = 'issue'
+    $issued = Protected-Post '/api/device/issue' @{challenge_id=$challenge.challenge_id;csr=$pending.csr;proof=(Key-Proof $challenge.payload)}
+    $certFile = Join-Path $directory 'issued.pem'
+    [IO.File]::WriteAllText($certFile,$issued.certificate,[Text.Encoding]::ASCII)
+    $cert = New-Object Security.Cryptography.X509Certificates.X509Certificate2($certFile)
+    $public = [Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPublicKey($cert)
+    try {
+        $actual = $public.ExportParameters($false); $expected = $private.ExportParameters($false)
+        if([Convert]::ToBase64String($actual.Modulus) -cne [Convert]::ToBase64String($expected.Modulus) -or [Convert]::ToBase64String($actual.Exponent) -cne [Convert]::ToBase64String($expected.Exponent)) { throw 'Certificate key mismatch.' }
+    } finally { $public.Dispose() }
+    $stage = 'validate_certificate'
+    $chain = New-Object Security.Cryptography.X509Certificates.X509Chain
+    $chain.ChainPolicy.RevocationMode = [Security.Cryptography.X509Certificates.X509RevocationMode]::NoCheck
+    $expectedIssuer = New-Object Security.Cryptography.X509Certificates.X509Certificate2((Join-Path $directory 'issuer-ca.pem'))
+    $expectedRoot = New-Object Security.Cryptography.X509Certificates.X509Certificate2((Join-Path $directory 'root-ca.pem'))
+    $null = $chain.ChainPolicy.ExtraStore.Add($expectedIssuer)
+    $null = $chain.ChainPolicy.ApplicationPolicy.Add((New-Object Security.Cryptography.Oid('1.3.6.1.5.5.7.3.2')))
+    try {
+        if(!$chain.Build($cert) -or $chain.ChainElements.Count -ne 3 -or $chain.ChainElements[1].Certificate.Thumbprint -ne $expectedIssuer.Thumbprint -or $chain.ChainElements[2].Certificate.Thumbprint -ne $expectedRoot.Thumbprint) { throw 'Certificate chain mismatch.' }
+    } finally { $chain.Dispose(); $expectedIssuer.Dispose(); $expectedRoot.Dispose() }
+    $stage = 'install_certificate'
+    $alreadyInstalled = Get-Item ('Cert:\LocalMachine\My\'+$cert.Thumbprint) -ErrorAction SilentlyContinue
+    if(!$alreadyInstalled -or !$alreadyInstalled.HasPrivateKey) {
+        & "$env:SystemRoot\System32\certreq.exe" -accept -machine -q $certFile | Out-Null
+        if($LASTEXITCODE -ne 0) { throw 'Certificate installation failed.' }
+    }
+    $verified = Get-Item ('Cert:\LocalMachine\My\'+$cert.Thumbprint)
+    if(!$verified.HasPrivateKey) { throw 'Installed private key is unavailable.' }
+    $private.Dispose(); $private = [Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($verified)
+    $stage = 'final_receipt'
+    $receipt = Protected-Post '/api/device/receipt' @{serial=$issued.serial;proof=(Key-Proof $issued.receipt_payload)}
+    if(!$receipt.installed) { throw 'Installation receipt rejected.' }
+    $previous = @()
+    if($installed -and $installed.thumbprint -ne $cert.Thumbprint) {
+        $previous = @(@{thumbprint=$installed.thumbprint;container=$installed.container;remove_at=[DateTimeOffset]::UtcNow.AddHours(12).ToString('o')})
+    }
+    Save-State 'installed.json' @{serial=$issued.serial;thumbprint=$cert.Thumbprint;container=$pending.container;renew_at=$issued.renew_at;receipt_payload=$issued.receipt_payload;previous=$previous}
+    Remove-Item $pendingFile,$retryFile -ErrorAction SilentlyContinue
+    Save-State 'status.json' @{state='installed';last_success=[DateTimeOffset]::UtcNow.ToString('o');serial=$issued.serial}
+} catch {
+    # Persist no ticket, body, credential or raw exception. Task retries with
+    # bounded backoff; jitter also distributes online/domain-startup spikes.
+    $attempts = if($retry) { [Math]::Min(8,[int]$retry.attempts+1) } else { 1 }
+    $minutes = [Math]::Min(720,[Math]::Pow(2,$attempts)*5)+(Get-Random -Minimum 0 -Maximum 16)
+    Save-State 'retry.json' @{attempts=$attempts;next_attempt=[DateTimeOffset]::UtcNow.AddMinutes($minutes).ToString('o')}
+    $status = @{state='retry_pending';error='ENROLLMENT_OR_INSTALL_FAILED';stage=$stage;checked_at=[DateTimeOffset]::UtcNow.ToString('o')}
+    if($serverError) { $status.server_error = $serverError }
+    Save-State 'status.json' $status
+    Write-Error 'AuthWire enrollment/renewal failed. Check HTTPS DNS/trust, DC access, time, SPN/keytab and profile eligibility.' -ErrorAction Continue
+    exit 1
+} finally {
+    if($private) { $private.Dispose() }
+    if($session) { $session.Dispose() }
+    $mutex.ReleaseMutex(); $mutex.Dispose()
+}
+) { $script:serverError = [string]$body.error }
+                } finally { $reader.Dispose() }
+            } catch {}
+            finally { $webResponse.Dispose() }
+        }
+        throw
+    }
     try { $reader = New-Object IO.StreamReader($response.GetResponseStream()); try { $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() } }
     finally { $response.Dispose() }
 }
