@@ -16,6 +16,7 @@ from tools.radius_initialize import initialize
 from tools.radius_runtime import generate
 from tools.radius_prepare import prepare
 from tools.radius_install import verified_runtime, unit_text
+from tools import radius_service
 from .helpers import config, policy
 
 
@@ -77,6 +78,33 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual('192.0.2.2', observed['nas_ip'])
         self.assertEqual('wireless', observed['access_type'])
         self.assertEqual('12ab', observed['serial'])
+
+
+@unittest.skipUnless(os.name == 'posix', 'POSIX identity switching')
+class ServicePrivilegeTests(unittest.TestCase):
+    def test_root_state_identity_drops_and_restores_effective_ids(self):
+        account = types.SimpleNamespace(pw_uid=1234, pw_gid=2345)
+        calls = []
+        with patch.object(radius_service.os, 'geteuid', return_value=0), \
+             patch.object(radius_service.os, 'getegid', return_value=0), \
+             patch.object(radius_service.pwd, 'getpwnam', return_value=account), \
+             patch.object(radius_service.os, 'setegid', side_effect=lambda value: calls.append(('gid', value))), \
+             patch.object(radius_service.os, 'seteuid', side_effect=lambda value: calls.append(('uid', value))):
+            with radius_service._state_identity():
+                calls.append(('inside', True))
+        self.assertEqual([
+            ('gid', 2345), ('uid', 1234), ('inside', True),
+            ('uid', 0), ('gid', 0)
+        ], calls)
+
+    def test_non_root_state_identity_is_a_noop(self):
+        with patch.object(radius_service.os, 'geteuid', return_value=1000), \
+             patch.object(radius_service.os, 'seteuid') as seteuid, \
+             patch.object(radius_service.os, 'setegid') as setegid:
+            with radius_service._state_identity():
+                pass
+        seteuid.assert_not_called()
+        setegid.assert_not_called()
 
 
 @unittest.skipUnless(os.name == 'posix', 'POSIX runtime permissions and openssl')

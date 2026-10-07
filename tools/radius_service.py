@@ -1,8 +1,10 @@
 """Explicit local control for the AuthWire production RADIUS service."""
 import argparse
+from contextlib import contextmanager
 import json
 import os
 from pathlib import Path
+import pwd
 import re
 import subprocess
 import sys
@@ -15,16 +17,40 @@ from kaname.store import Store
 STATE = Path('/var/lib/kaname-lab')
 UNIT = Path('/etc/systemd/system/authwire-radius.service')
 RUNTIME = Path('/opt/authwire-radius')
+ACCOUNT = 'kaname-lab'
 
 
 def command(*args, check=True):
     return subprocess.run(list(args), check=check, capture_output=True, text=True, timeout=30)
 
 
+@contextmanager
+def _state_identity():
+    """Read protected AuthWire state as the service account while retaining root for systemd."""
+    if os.name != 'posix' or os.geteuid() != 0:
+        yield
+        return
+    account = pwd.getpwnam(ACCOUNT)
+    original_uid, original_gid = os.geteuid(), os.getegid()
+    uid_changed = gid_changed = False
+    try:
+        os.setegid(account.pw_gid)
+        gid_changed = True
+        os.seteuid(account.pw_uid)
+        uid_changed = True
+        yield
+    finally:
+        if uid_changed:
+            os.seteuid(original_uid)
+        if gid_changed:
+            os.setegid(original_gid)
+
+
 def status():
     active = command('systemctl', 'is-active', '--quiet', 'authwire-radius.service', check=False).returncode == 0
     enabled = command('systemctl', 'is-enabled', '--quiet', 'authwire-radius.service', check=False).returncode == 0
-    network = Operations(Store(STATE)).network()
+    with _state_identity():
+        network = Operations(Store(STATE)).network()
     return {'installed': UNIT.is_file() and RUNTIME.is_dir(), 'active': active, 'enabled': enabled,
             'authentication_port': network['authentication_port'], 'accounting_enabled': False,
             'firewall_managed': False}
@@ -39,32 +65,33 @@ def _preflight():
         raise ValueError('Trusted AuthWire RADIUS runtime required')
     if command('systemctl', 'is-active', '--quiet', 'kaname-lab.service', check=False).returncode != 0:
         raise ValueError('AuthWire panel service must be active')
-    store = Store(STATE)
-    operations = Operations(store)
-    network = operations.network()
-    if not network['radius_clients'] or any(not c.get('secret_saved') for c in network['radius_clients']):
-        raise ValueError('Every RADIUS client requires a saved shared secret')
-    if any(c.get('access_type') not in {'wired', 'wireless'} for c in network['radius_clients']):
-        raise ValueError('Every RADIUS client requires a trusted access type')
-    directory = operations.directory()
-    if not directory['credentials_saved']:
-        raise ValueError('Saved AD read-only credentials are required')
-    health = operations.health()
-    if health.get('state') != 'connected':
-        raise ValueError('AD connection health must be connected before RADIUS enable')
-    with store.connect() as db:
-        tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-        if 'radius_certificate_bindings' not in tables:
-            raise ValueError('Certificate binding registry is not initialized')
-        bound = db.execute('''SELECT count(*) FROM radius_certificate_bindings b
-            JOIN pki_certificates c ON c.serial=b.serial
-            WHERE b.active=1 AND c.revoked_at IS NULL''').fetchone()[0]
-    if bound < 1:
-        raise ValueError('At least one active enrolled device certificate is required')
-    server_key = STATE / 'radius/server-key.pem'
-    server_cert = STATE / 'radius/server.pem'
-    if server_key.is_symlink() or server_cert.is_symlink() or not server_key.is_file() or not server_cert.is_file():
-        raise ValueError('RADIUS server certificate is not initialized')
+    with _state_identity():
+        store = Store(STATE)
+        operations = Operations(store)
+        network = operations.network()
+        if not network['radius_clients'] or any(not c.get('secret_saved') for c in network['radius_clients']):
+            raise ValueError('Every RADIUS client requires a saved shared secret')
+        if any(c.get('access_type') not in {'wired', 'wireless'} for c in network['radius_clients']):
+            raise ValueError('Every RADIUS client requires a trusted access type')
+        directory = operations.directory()
+        if not directory['credentials_saved']:
+            raise ValueError('Saved AD read-only credentials are required')
+        health = operations.health()
+        if health.get('state') != 'connected':
+            raise ValueError('AD connection health must be connected before RADIUS enable')
+        with store.connect() as db:
+            tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            if 'radius_certificate_bindings' not in tables:
+                raise ValueError('Certificate binding registry is not initialized')
+            bound = db.execute('''SELECT count(*) FROM radius_certificate_bindings b
+                JOIN pki_certificates c ON c.serial=b.serial
+                WHERE b.active=1 AND c.revoked_at IS NULL''').fetchone()[0]
+        if bound < 1:
+            raise ValueError('At least one active enrolled device certificate is required')
+        server_key = STATE / 'radius/server-key.pem'
+        server_cert = STATE / 'radius/server.pem'
+        if server_key.is_symlink() or server_cert.is_symlink() or not server_key.is_file() or not server_cert.is_file():
+            raise ValueError('RADIUS server certificate is not initialized')
     unit = UNIT.read_text()
     listen = re.findall(r'--listen-ip ([0-9.]+)', unit)
     if len(listen) != 1:
