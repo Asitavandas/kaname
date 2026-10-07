@@ -231,6 +231,9 @@ class DeviceTests(unittest.TestCase):
             self.assertIn(b"$session.Dispose(); $session = New-Object AuthWireSspi($config.spn)",client)
             self.assertIn(b"$retryState['server_error']",client)
             self.assertIn(b"$status['server_error']",client)
+            self.assertIn(b'AtomicReplace',client)
+            self.assertNotIn(b'[IO.File]::Replace($temporary,$target,$null)',client)
+            self.assertIn(b"$stage = 'persist_installed'",client)
         self.reject('DEVICE_TLS_NAME_MISMATCH',lambda:self.service.package(self.profile['id'],hostname='wrong.lab.example',port=8765,tls_pem=(tlsdir/'web.crt').read_bytes()))
 
     def test_machine_sam_ldap_resolution_no_caller_guid(self):

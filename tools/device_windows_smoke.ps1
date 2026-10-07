@@ -10,6 +10,14 @@ foreach($name in @('AuthWire-Client.ps1','Install-AuthWire.ps1')) {
 $temp=Join-Path $env:TEMP ('authwire-ci-'+[Guid]::NewGuid())
 $null=New-Item $temp -ItemType Directory
 $null=New-Item (Join-Path $temp 'CI_FIXTURE_ONLY') -ItemType File
+# Regression: production state files already exist on renewal, so replacement
+# must overwrite them atomically on Windows PowerShell 5.1.
+$stateFile=Join-Path $temp 'state.json';$stateTemp=$stateFile+'.tmp'
+[IO.File]::WriteAllText($stateTemp,'{"value":1}',[Text.Encoding]::UTF8)
+[AuthWireTls]::AtomicReplace($stateTemp,$stateFile)
+[IO.File]::WriteAllText($stateTemp,'{"value":2}',[Text.Encoding]::UTF8)
+[AuthWireTls]::AtomicReplace($stateTemp,$stateFile)
+if((Get-Content $stateFile -Raw) -ne '{"value":2}') { throw 'Atomic state overwrite failed' }
 $container='AuthWire-CI-'+[Guid]::NewGuid();$key=$null;$private=$null;$leaf=$null;$renewKey=$null;$renewPrivate=$null;$renewLeaf=$null
 try {
     # Identical native CertReq settings to the unattended client.

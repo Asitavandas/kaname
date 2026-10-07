@@ -4,11 +4,17 @@ param([switch]$ValidateOnly, [switch]$NoJitter)
 $ErrorActionPreference = 'Stop'
 Add-Type -TypeDefinition @'
 using System;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
 public static class AuthWireTls {
+ [DllImport("kernel32.dll", SetLastError=true, CharSet=CharSet.Unicode)] static extern bool MoveFileEx(string existing,string replacement,uint flags);
+ const uint MOVEFILE_REPLACE_EXISTING=0x1, MOVEFILE_WRITE_THROUGH=0x8;
+ public static void AtomicReplace(string source,string destination) {
+  if(!MoveFileEx(source,destination,MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH)) throw new Win32Exception(Marshal.GetLastWin32Error());
+ }
  public static string Pin;
  public static bool Validate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors errors) {
   if(errors != SslPolicyErrors.None || certificate == null) return false;
@@ -78,7 +84,7 @@ function Save-State($name, $data) {
     $target = Join-Path $directory $name
     $temporary = $target + '.tmp'
     [IO.File]::WriteAllText($temporary, ($data | ConvertTo-Json -Depth 6), (New-Object Text.UTF8Encoding($false)))
-    if (Test-Path $target) { [IO.File]::Replace($temporary,$target,$null) } else { [IO.File]::Move($temporary,$target) }
+    [AuthWireTls]::AtomicReplace($temporary,$target)
 }
 function Post-Json($path, $data) {
     $request = [Net.HttpWebRequest]::Create($config.url+$path)
@@ -226,6 +232,7 @@ SuppressDefaults=TRUE
     if($installed -and $installed.thumbprint -ne $cert.Thumbprint) {
         $previous = @(@{thumbprint=$installed.thumbprint;container=$installed.container;remove_at=[DateTimeOffset]::UtcNow.AddHours(12).ToString('o')})
     }
+    $stage = 'persist_installed'
     Save-State 'installed.json' @{serial=$issued.serial;thumbprint=$cert.Thumbprint;container=$pending.container;renew_at=$issued.renew_at;receipt_payload=$issued.receipt_payload;previous=$previous}
     Remove-Item $pendingFile,$retryFile -ErrorAction SilentlyContinue
     Save-State 'status.json' @{state='installed';last_success=[DateTimeOffset]::UtcNow.ToString('o');serial=$issued.serial}
