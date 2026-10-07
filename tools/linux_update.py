@@ -57,7 +57,8 @@ def verified_files(source, expected):
         if hashlib.sha256(data).hexdigest() != digest:
             raise ValueError('Source file changed; nothing installed')
         result[name] = data
-    if not {'kaname/server.py', 'kaname/__main__.py', 'tools/linux_install.py', 'tools/linux_initialize.py'} <= set(result):
+    if not {'kaname/server.py', 'kaname/__main__.py', 'kaname/device_client/AuthWire-Client.ps1',
+            'kaname/device_client/Install-AuthWire.ps1', 'tools/linux_install.py', 'tools/linux_initialize.py'} <= set(result):
         raise ValueError('Incomplete source')
     return result
 
@@ -130,14 +131,15 @@ def command(*args, cwd=None):
     return subprocess.run(list(args), check=True, capture_output=True, timeout=90, cwd=cwd)
 
 
-def health(listen, version):
+def health(listen, version, client_sha256):
     context = ssl.create_default_context(cafile=str(SETTINGS / 'web.crt'))
     connection = http.client.HTTPSConnection(listen, 8765, context=context, timeout=3)
     try:
         connection.request('GET', '/healthz')
         response = connection.getresponse()
         value = json.loads(response.read(4096))
-        return response.status == 200 and value.get('product') in {'KANAME', 'AuthWire'} and value.get('version') == version
+        return (response.status == 200 and value.get('product') in {'KANAME', 'AuthWire'} and
+                value.get('version') == version and value.get('device_client_sha256') == client_sha256)
     finally: connection.close()
 
 
@@ -180,6 +182,9 @@ def _update(source, digest):
     if len(version) != 1:
         raise ValueError('Source version missing')
     version = version[0].decode('ascii')
+    client_sha256 = hashlib.sha256(files['kaname/device_client/AuthWire-Client.ps1']).hexdigest()
+    installed_client = PRODUCT/'source'/'kaname'/'device_client'/'AuthWire-Client.ps1'
+    previous_client_sha256 = hashlib.sha256(installed_client.read_bytes()).hexdigest() if installed_client.is_file() else None
     _PHASE = 'service_status'
     active = subprocess.run(['systemctl','is-active','--quiet','kaname-lab.service'], timeout=10).returncode == 0
     if not active:
@@ -222,7 +227,7 @@ def _update(source, digest):
             _PHASE = 'https_health'
             for _ in range(30):
                 try:
-                    if health(listen, version): break
+                    if health(listen, version, client_sha256): break
                 except (OSError, ValueError): pass
                 time.sleep(0.5)
             else: raise ValueError('Updated HTTPS health check failed')
@@ -240,7 +245,9 @@ def _update(source, digest):
             raise
     return {'updated': True, 'version':version, 'https_verified':True, 'backup_created':True,
             'configuration_preserved':True, 'administrators_preserved':True,
-            'bytecode_directories_quarantined':bytecode_count,'radius_started':False, 'windows_changed':False}
+            'bytecode_directories_quarantined':bytecode_count,'radius_started':False,
+            'windows_changed': previous_client_sha256 != client_sha256,
+            'windows_client_source_verified': True, 'windows_client_sha256': client_sha256}
 
 
 def update(source, digest):

@@ -9,12 +9,13 @@ from tools.linux_update import safe_tree, quarantine_caches, health
 
 
 class RebrandHealthTests(unittest.TestCase):
-    def checked(self, product, version='fixture-version'):
+    def checked(self, product, version='fixture-version', client_sha256='fixture-client'):
         with patch('tools.linux_update.ssl.create_default_context'), patch('tools.linux_update.http.client.HTTPSConnection') as connect:
             response = connect.return_value.getresponse.return_value
             response.status = 200
-            response.read.return_value = json.dumps({'product': product, 'version': version}).encode()
-            return health('127.0.0.1', 'fixture-version')
+            response.read.return_value = json.dumps({'product': product, 'version': version,
+                'device_client_sha256': client_sha256}).encode()
+            return health('127.0.0.1', 'fixture-version', 'fixture-client')
 
     def test_old_and_new_identity_allow_upgrade_and_rollback(self):
         for name in ('KANAME', 'AuthWire'):
@@ -23,6 +24,7 @@ class RebrandHealthTests(unittest.TestCase):
     def test_rebrand_does_not_accept_another_product_or_wrong_version(self):
         self.assertFalse(self.checked('Another'))
         self.assertFalse(self.checked('AuthWire', 'wrong-version'))
+        self.assertFalse(self.checked('AuthWire', client_sha256='stale-client'))
 
 
 @unittest.skipUnless(os.name=='posix','POSIX source permissions')
