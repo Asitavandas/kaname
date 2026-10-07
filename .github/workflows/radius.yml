@@ -88,6 +88,6 @@ jobs:
           sha256sum -c authwire-freeradius-3.2.10.sha256
           mkdir "$RUNNER_TEMP/authwire-radius-prefix"
           tar -xzf authwire-freeradius-3.2.10.tar.gz -C "$RUNNER_TEMP/authwire-radius-prefix"
-          python -m tools.radius_prepare \
+          /usr/bin/python3 -B -m tools.radius_prepare \
             --source "$RUNNER_TEMP/authwire-radius-prefix" \
             --destination "$HOME/authwire-radius-stage-${GITHUB_SHA:0:12}"
