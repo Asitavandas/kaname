@@ -29,7 +29,7 @@ def settings(**changes):
 
 def network(**changes):
     result = {'vlans': [{'id': 120, 'name': 'Corporate', 'description': ''}],
-              'radius_clients': [{'name': 'SW1', 'ip': '192.0.2.2', 'secret': 'RADIUS_SECRET_SENTINEL_42'}],
+              'radius_clients': [{'name': 'SW1', 'ip': '192.0.2.2', 'access_type': 'wired', 'secret': 'RADIUS_SECRET_SENTINEL_42'}],
               'authentication_port': 1812, 'accounting_port': 1813}
     result.update(changes)
     return result
@@ -112,7 +112,7 @@ class OperationsTests(unittest.TestCase):
         self.store.save(1, policies=[policy()])
         n = self.ops.network()
         self.assertEqual((1812, 1813), (n['authentication_port'], n['accounting_port']))
-        self.assertEqual(120, n['vlans'][0]['id']); self.assertFalse(n['radius_clients'][0]['secret_saved'])
+        self.assertEqual(120, n['vlans'][0]['id']); self.assertEqual('wired', n['radius_clients'][0]['access_type']); self.assertFalse(n['radius_clients'][0]['secret_saved'])
 
     def test_network_secret_is_encrypted_and_reveal_is_explicit(self):
         self.ops.save_network(1, network())
