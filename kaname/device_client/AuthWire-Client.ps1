@@ -97,7 +97,16 @@ function Post-Json($path, $data) {
                 $reader = New-Object IO.StreamReader($webResponse.GetResponseStream())
                 try {
                     $body = $reader.ReadToEnd() | ConvertFrom-Json
-                    if($body.error -and [string]$body.error -match '^[A-Z0-9_]{1,64}
+                    $errorCode = [string]$body.error
+                    if($errorCode -and $errorCode.Length -le 64 -and $errorCode -notmatch '[^A-Z0-9_]') { $script:serverError = $errorCode }
+                } finally { $reader.Dispose() }
+            } catch {}
+            finally { $webResponse.Dispose() }
+        }
+        throw
+    }
+    try { $reader = New-Object IO.StreamReader($response.GetResponseStream()); try { $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() } }
+    finally { $response.Dispose() }
 }
 function Protected-Post($path, $data) {
     $json = [Text.Encoding]::UTF8.GetBytes(($data | ConvertTo-Json -Compress -Depth 8))
