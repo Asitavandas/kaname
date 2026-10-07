@@ -116,6 +116,20 @@ class NativeKerberosTests(unittest.TestCase):
             else:path='/api/device/receipt'
             with self.assertRaises(EnrollmentError):service.verify(path,envelope)
 
+    def test_receipt_session_end_requires_fresh_application_session(self):
+        service,client,identity=self.session();path='/api/device/receipt';raw=b'{"serial":"fixture"}'
+        envelope={'id':identity,'message':encode(raw),'mic':encode(client.get_signature(path.encode()+b'\n'+raw))}
+        principal,body,context=service.verify(path,envelope)
+        self.assertEqual('PC01$@LAB.EXAMPLE',principal)
+        self.assertEqual({'serial':'fixture'},body)
+        result=service.response(path,context,{'installed':True,'renew_now':True})
+        message=base64.b64decode(result['message'])
+        client.verify_signature(path.encode()+b'\n'+message,base64.b64decode(result['mic']))
+        service.end(identity,context)
+        with self.assertRaises(EnrollmentError) as error:
+            service.verify('/api/device/challenge',envelope)
+        self.assertEqual('DEVICE_SESSION_EXPIRED',error.exception.code)
+
     def test_ntlm_never_negotiates_even_with_a_valid_acceptor_keytab(self):
         service=KerberosSessions(self.root,'authwire.lab.example','lab.example')
         with self.assertRaises(EnrollmentError) as error:service.start({'token':encode(b'NTLMSSP\x00'+b'\x01\x00\x00\x00'+b'\x00'*32)})
