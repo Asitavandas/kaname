@@ -91,8 +91,9 @@ def validate_config(value):
         raise ValidationError("Invalid RADIUS client list")
     result = []
     for client in clients:
-        keys(client, {'name', 'ip'}, {'name', 'ip'})
-        result.append({'name': text(client['name']), 'ip': address(client['ip'])})
+        keys(client, {'name', 'ip', 'access_type'}, {'name', 'ip'})
+        result.append({'name': text(client['name']), 'ip': address(client['ip']),
+                       'access_type': enum(client.get('access_type', 'wired'), {'wired', 'wireless'})})
     if len({x['ip'] for x in result}) != len(result):
         raise ValidationError("Duplicate RADIUS source IP")
     return {'appliance_fqdn': dns_name(value['appliance_fqdn']),
