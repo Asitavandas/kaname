@@ -10,7 +10,7 @@ foreach($name in @('AuthWire-Client.ps1','Install-AuthWire.ps1')) {
 $temp=Join-Path $env:TEMP ('authwire-ci-'+[Guid]::NewGuid())
 $null=New-Item $temp -ItemType Directory
 $null=New-Item (Join-Path $temp 'CI_FIXTURE_ONLY') -ItemType File
-$container='AuthWire-CI-'+[Guid]::NewGuid();$key=$null;$private=$null;$leaf=$null
+$container='AuthWire-CI-'+[Guid]::NewGuid();$key=$null;$private=$null;$leaf=$null;$renewKey=$null;$renewPrivate=$null;$renewLeaf=$null
 try {
     # Identical native CertReq settings to the unattended client.
     $inf=@"
@@ -66,9 +66,55 @@ SuppressDefaults=TRUE
     [IO.File]::WriteAllText((Join-Path $temp 'receipt-proof.txt'),[Convert]::ToBase64String($proof),[Text.Encoding]::ASCII)
     python -m tools.device_fixture --root $temp --step receipt
     if($LASTEXITCODE -ne 0) { throw 'Installed private-key receipt rejected' }
-    Write-Output 'Native Windows CSR, nonexportable CNG key, proof and machine-store receipt passed. Domain SSPI pilot remains required.'
+
+    # Force the same server-side renewal condition as the panel's "Renew now".
+    python -m tools.device_fixture --root $temp --step renew
+    if($LASTEXITCODE -ne 0) { throw 'Server renewal request fixture failed' }
+
+    # Release the predecessor signing handle before replacement-key creation,
+    # matching the unattended renewal client.
+    if($private) { $private.Dispose(); $private=$null }
+
+    $renewContainer='AuthWire-CI-Renew-'+[Guid]::NewGuid()
+    $renewInf=$inf.Replace('KeyContainer="'+$container+'"','KeyContainer="'+$renewContainer+'"')
+    $renewInfFile=Join-Path $temp 'renew-request.inf';$renewCsrFile=Join-Path $temp 'renew-request.pem'
+    [IO.File]::WriteAllText($renewInfFile,$renewInf,[Text.Encoding]::ASCII)
+    & "$env:SystemRoot\System32\certreq.exe" -new -machine -q -f $renewInfFile $renewCsrFile | Out-Null
+    if($LASTEXITCODE -ne 0) { throw 'Renewal CNG CSR creation failed' }
+    $renewCsr=(Get-Content $renewCsrFile -Raw).Replace('BEGIN NEW CERTIFICATE REQUEST','BEGIN CERTIFICATE REQUEST').Replace('END NEW CERTIFICATE REQUEST','END CERTIFICATE REQUEST')
+    [IO.File]::WriteAllText($renewCsrFile,$renewCsr,[Text.Encoding]::ASCII)
+    $renewKey=[Security.Cryptography.CngKey]::Open($renewContainer,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::MachineKey)
+    if($renewKey.ExportPolicy -ne [Security.Cryptography.CngExportPolicies]::None) { throw 'Renewal private key export permitted' }
+    $renewPrivate=New-Object Security.Cryptography.RSACng($renewKey)
+
+    python -m tools.device_fixture --root $temp --step renew-challenge
+    if($LASTEXITCODE -ne 0) { throw 'Renewal challenge failed' }
+    $renewChallenge=Get-Content (Join-Path $temp 'renew-challenge.json') -Raw | ConvertFrom-Json
+    $renewProof=$renewPrivate.SignData([Convert]::FromBase64String($renewChallenge.payload),[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)
+    [IO.File]::WriteAllText((Join-Path $temp 'renew-proof.txt'),[Convert]::ToBase64String($renewProof),[Text.Encoding]::ASCII)
+
+    python -m tools.device_fixture --root $temp --step renew-issue
+    if($LASTEXITCODE -ne 0) { throw 'Renewal issuance failed' }
+    & "$env:SystemRoot\System32\certreq.exe" -accept -machine -q (Join-Path $temp 'renew-issued.pem')
+    if($LASTEXITCODE -ne 0) { throw 'Renewal machine certificate installation failed' }
+    $renewLeaf=New-Object Security.Cryptography.X509Certificates.X509Certificate2((Join-Path $temp 'renew-issued.pem'))
+    $renewInstalled=Get-Item ('Cert:\LocalMachine\My\'+$renewLeaf.Thumbprint)
+    if(!$renewInstalled.HasPrivateKey) { throw 'Renewal leaf lacks the CNG private key' }
+    $renewIssued=Get-Content (Join-Path $temp 'renew-issued.json') -Raw | ConvertFrom-Json
+    $renewInstalledPrivate=[Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($renewInstalled)
+    try { $renewReceiptProof=$renewInstalledPrivate.SignData([Convert]::FromBase64String($renewIssued.receipt_payload),[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1) } finally { $renewInstalledPrivate.Dispose() }
+    [IO.File]::WriteAllText((Join-Path $temp 'renew-receipt-proof.txt'),[Convert]::ToBase64String($renewReceiptProof),[Text.Encoding]::ASCII)
+    python -m tools.device_fixture --root $temp --step renew-receipt
+    if($LASTEXITCODE -ne 0) { throw 'Renewal installed-key receipt rejected' }
+
+    # Successful cutover must not destroy the predecessor immediately.
+    if(!(Get-Item ('Cert:\LocalMachine\My\'+$leaf.Thumbprint) -ErrorAction SilentlyContinue)) { throw 'Predecessor certificate removed before retirement window' }
+    Write-Output 'Native Windows initial enrollment and second CNG certificate renewal both passed.'
 } finally {
+    if($renewLeaf) { Remove-Item ('Cert:\LocalMachine\My\'+$renewLeaf.Thumbprint) -ErrorAction SilentlyContinue;$renewLeaf.Dispose() }
     if($leaf) { Remove-Item ('Cert:\LocalMachine\My\'+$leaf.Thumbprint) -ErrorAction SilentlyContinue;$leaf.Dispose() }
+    if($renewPrivate) { $renewPrivate.Dispose() }
+    if($renewKey) { $renewKey.Delete();$renewKey.Dispose() }
     if($private) { $private.Dispose() }
     if($key) { $key.Delete();$key.Dispose() }
     foreach($ca in @($fixtureTrust)) {
