@@ -37,7 +37,7 @@ class Store:
             raise ValueError('State directory cannot be a symbolic link')
         self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
         if os.name == 'posix':
-            if self.root.stat().st_uid != os.getuid():
+            if self.root.stat().st_uid != os.geteuid():
                 raise ValueError('State directory owner mismatch')
             self.root.chmod(0o700)
         self.path = self.root / 'kaname.sqlite3'
