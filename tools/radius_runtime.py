@@ -4,6 +4,7 @@ Secrets are decrypted only into the systemd RuntimeDirectory. Persistent product
 state keeps them sealed. This module never starts a listener by itself.
 """
 import argparse
+import ipaddress
 import os
 from pathlib import Path
 import re
@@ -54,8 +55,12 @@ def _server_material(state, fqdn):
     return key_path.read_bytes(), cert_path.read_bytes()
 
 
-def generate(output, prefix, state=STATE):
+def generate(output, prefix, state=STATE, listen_ip='127.0.0.1'):
     output, prefix, state = Path(output), Path(prefix), Path(state)
+    listen = ipaddress.ip_address(listen_ip)
+    if listen.version != 4 or listen.is_unspecified or listen.is_multicast:
+        raise ValueError('A specific unicast IPv4 RADIUS listen address is required')
+    listen_ip = str(listen)
     if output.is_symlink() or not output.is_dir() or output.stat().st_mode & 0o077:
         raise ValueError('Private runtime directory required')
     if prefix.is_symlink() or not prefix.is_dir():
@@ -196,7 +201,7 @@ $INCLUDE sites-enabled/
     private_file(sites / 'authwire', f'''server authwire-radius {{
  listen {{
   type = auth
-  ipaddr = 0.0.0.0
+  ipaddr = {listen_ip}
   port = {auth_port}
  }}
  authorize {{
@@ -222,7 +227,7 @@ server authwire-cert-check {{
 }}
 ''')
     return {'generated': True, 'authentication_port': auth_port, 'clients': len(clients),
-            'accounting_enabled': False, 'fqdn': fqdn}
+            'accounting_enabled': False, 'fqdn': fqdn, 'listen_ip': listen_ip}
 
 
 def main():
@@ -230,8 +235,9 @@ def main():
     parser.add_argument('--output', required=True)
     parser.add_argument('--prefix', required=True)
     parser.add_argument('--state-dir', default=str(STATE))
+    parser.add_argument('--listen-ip', required=True)
     args = parser.parse_args()
-    print(generate(args.output, args.prefix, args.state_dir))
+    print(generate(args.output, args.prefix, args.state_dir, args.listen_ip))
 
 
 if __name__ == '__main__':
