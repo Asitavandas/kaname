@@ -570,7 +570,7 @@ class Handler(BaseHTTPRequestHandler):
                 keys(value, fields | {'expected_revision'}, fields | {'expected_revision'})
                 network = self.server.operations.network()
                 data = {k: network[k] for k in ('vlans', 'radius_clients', 'authentication_port', 'accounting_port')}
-                data['radius_clients'] = [{k: c[k] for k in ('name', 'ip')} | {'secret': ''} for c in data['radius_clients']]
+                data['radius_clients'] = [{k: c[k] for k in ('name', 'ip', 'access_type')} | {'secret': ''} for c in data['radius_clients']]
                 data.update({k: value[k] for k in fields})
                 self.server.operations.save_network(value['expected_revision'], data)
                 self.respond(200, {'saved': True, 'runtime_applied': False})
