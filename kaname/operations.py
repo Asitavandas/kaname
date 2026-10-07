@@ -111,14 +111,15 @@ class Operations:
             self._audit(db, 'network_saved', revision)
         return self.network()
 
-    def radius_secret(self, ip):
+    def radius_secret(self, ip, *, audit=True):
         name = 'radius:' + address(ip)
         with self.store.connect() as db:
             row = db.execute('SELECT ciphertext FROM protected_secrets WHERE name=?', (name,)).fetchone()
             if row is None:
                 raise ValidationError('RADIUS_SECRET_MISSING')
-            revision = db.execute('SELECT revision FROM state WHERE id=1').fetchone()[0]
-            db.execute('INSERT INTO audit(event,revision) VALUES (?,?)', ('radius_secret_viewed', revision))
+            if audit:
+                revision = db.execute('SELECT revision FROM state WHERE id=1').fetchone()[0]
+                db.execute('INSERT INTO audit(event,revision) VALUES (?,?)', ('radius_secret_viewed', revision))
         return self.vault.open(name, row[0])
 
     def directory(self):
