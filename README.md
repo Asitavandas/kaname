@@ -4,7 +4,11 @@ Yeni ürün adı AuthWire. Bağımsız Active Directory tabanlı kablolu/kablosu
 
 ![AuthWire amblemi](kaname/static/authwire-logo.png)
 
-**Kaynak geliştirme sürümü: 0.12.1-dev.1 — LDAP Servers arayüzü ve kesin çoklu OU kapsamı; toplu bilgisayar sertifika pilotu.**
+**Panel hazırlığı: 0.14.0-dev.1 — gelişmiş kimlik taslakları ve ağ cihaz envanteri.**
+
+[Bu sürümün kapsamı ve doğrulama sınırları](docs/PANEL_PREPARATION_0_14_0.md).
+
+**Önceki temel sürüm: 0.12.1-dev.1 — LDAP Servers arayüzü ve kesin çoklu OU kapsamı; toplu bilgisayar sertifika pilotu.**
 
 Görünür menü Hazırla → Kullanıcılar → Erişim → Kontrol et sırasını izler. Açık çalışma alanı, mavi işlemler ve lacivert/lime kontrol merkezi; yetkiye bağlı gerçek dizin/kural sayıları, kullanıcı/grup sekmeleri, sunucuda arama ve mobil menü içerir. AD salt okunur; API, yetki ve CA davranışı korunur. Mevcut sertifika formları kapatılınca parolalar ve geçici CSR temizlenir. [Arayüz kapsamı ve doğrulama](docs/PANEL_0_11_0.md).
 Ubuntu geliştirme hedefidir. Mevcut politika, VLAN, RADIUS istemci ve AD eşitleme ayarları korunur. Privileged HTTPS kayıt akışı, imzalı endpoint CSR'sini kullanıcının kendi Kerberos kimliği, güvenli LDAP Who Am I ve canlı GUID/tokenGroups sorgusuyla doğrular; sertifika ve değişmez AD bağı aynı transaction'da kaydedilir. Panelden CA oluşturma, kullanıcı sertifikası üretme/indirme, açık trust/CRL indirme ve iptal mümkündür. Endpoint anahtarı panele gönderilmez. Kullanıcı sertifikası domain bilgisayarı kanıtı değildir; mevcut require_domain_device kuralları kullanıcı sertifikasını reddeder.
@@ -107,3 +111,4 @@ Kaynak paketini yeniden üretmek için: `python3 -m tools.package_source /absolu
 Ubuntu 0.8 laboratuvar kurulumu ve kabul sınırı: [LINUX_SETUP_0_8_0](docs/LINUX_SETUP_0_8_0.md). Bu ilk kurulum aracıdır; mevcut kurulumları silmez/resetlemez. Üretim RADIUS ve OVF kabulü ayrı aşamadır.
 
 0.9 kaynak ve gerçek AD yetki sorgusu kontrolü: [STATUS_0_9_0](docs/STATUS_0_9_0.md). Çalışan Ubuntu 0.8 paneli güncellenmez; tanılama mevcut bağlantıyı kullanır ve özet sonuç dışında kimlik bilgisi yazdırmaz.
+

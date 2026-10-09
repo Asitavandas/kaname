@@ -120,6 +120,38 @@ class AdministratorHTTPTests(unittest.TestCase):
             code, value, _ = self.call('POST', '/api/auth/login', {'username': name, 'password': password}, auth=None)
             self.assertEqual((401, {'error': 'LOGIN_FAILED'}), (code, value))
 
+    def test_planning_routes_are_permission_and_csrf_protected(self):
+        from .test_planning import device
+        self.user(); pair = self.login('reader')
+        for path in ['/api/network/devices', '/api/policies/drafts', '/api/policies/targets?kind=user']:
+            self.assertEqual(200, self.call('GET', path, auth=pair)[0], path)
+        for path in ['/api/network/devices/save', '/api/network/devices/delete', '/api/policies/drafts/save', '/api/policies/drafts/delete']:
+            self.assertEqual(403, self.call('POST', path, {}, auth=pair)[0], path)
+        profile = self.create_profile('RadiusOnly', {'network.radius': 'write'})
+        self.user('radiusonly', profile); pair = self.login('radiusonly')
+        self.assertEqual(403, self.call('GET', '/api/network/devices', auth=pair)[0])
+        self.assertEqual(403, self.call('POST', '/api/network/devices/save', {}, auth=pair)[0])
+        before = self.server.store.snapshot()
+        data = {'expected_revision': before['revision'], 'item': device()}
+        self.assertEqual(403, self.call('POST', '/api/network/devices/save', data, auth=(self.auth[0], 'wrong-csrf'))[0])
+        status, value, _ = self.call('POST', '/api/network/devices/save', data)
+        self.assertEqual(200, status); self.assertFalse(value['connection_enabled'])
+        self.assertEqual(409, self.call('POST', '/api/network/devices/save', data)[0])
+        self.assertEqual(before['config'], self.server.store.snapshot()['config'])
+        self.assertEqual(before['policies'], self.server.store.snapshot()['policies'])
+
+    def test_draft_http_crud_never_changes_runtime_policy(self):
+        from .test_planning import draft
+        before = self.server.store.snapshot()
+        status, value, _ = self.call('POST', '/api/policies/drafts/save', {
+            'expected_revision': before['revision'], 'item': draft(selector_type='everyone', target_ids=[], vlan=None)})
+        self.assertEqual(200, status); self.assertEqual('draft', value['items'][0]['status'])
+        self.assertTrue(value['items'][0]['domain_matches'])
+        self.assertEqual(200, self.call('POST', '/api/policies/drafts/delete', {
+            'expected_revision': value['revision'], 'id': value['items'][0]['id']})[0])
+        self.assertEqual([], self.call('GET', '/api/policies/drafts')[1]['items'])
+        self.assertEqual(before['policies'], self.server.store.snapshot()['policies'])
+
     def test_readonly_reads_but_cannot_mutate_any_management_route(self):
         self.user(); pair = self.login('reader')
         for path in ['/api/state', '/api/audit', '/api/system', '/api/directory/catalog', '/api/policies/groups']:
@@ -256,3 +288,4 @@ class AdministratorHTTPTests(unittest.TestCase):
         self.assertEqual(429, self.call('POST', '/api/auth/login', {'username': 'admin', 'password': 'Kaname'}, auth=None)[0])
         with self.server.admin.connect() as db: db.execute('UPDATE admin_login_rate SET started=?', (time.time() - 61,))
         self.assertEqual(200, self.call('POST', '/api/auth/login', {'username': 'admin', 'password': 'Kaname'}, auth=None)[0])
+
