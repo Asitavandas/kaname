@@ -1,4 +1,11 @@
 ## 0.13.0-dev.4 — 2026-10-08
+
+## 0.14.0-dev.1 — 9 Ekim 2026
+
+- User / Computer / Group / OU / Everyone için ayrı gelişmiş kural taslakları; mevcut RADIUS politikası korunur.
+- Ağ cihaz envanteri: ekle/düzenle/sil, arama, mod filtresi, marka/model/IP/konum.
+- Manual / Read Only / Managed / Import ve Direct / Cloud bağlantı tercihleri. Henüz cihaz IO veya credential kaydı yoktur.
+- Revision ve atomic audit koruması; bağımsız network.devices yetkisi; HTTP ve browser fixture kontrolleri.
 - Fix production FreeRADIUS relocation by supplying the installed dictionary directory explicitly instead of the CI build-time path.
 - Migrate an existing disabled AuthWire RADIUS systemd unit during the verified Linux update without starting RADIUS or changing firewall/network devices.
 - Add regression coverage for the systemd ExecStart dictionary path, updater migration idempotence, and native configuration validation with an explicit dictionary directory.
@@ -164,3 +171,4 @@
 - Read-only AD OU/CN/DC scope, protected saved connection credentials, manual and periodic sync, independent authenticated health probes and panel alerts. Failed/partial reads preserve the last catalog; successful reads replace added/deleted users and memberships.
 - Named security groups in decision simulation. No AD membership writes, SMTP, switch/AP management, timeout or retry fields.
 - RADIUS client source IPs, generated/revealable encrypted per-client shared secrets; configurable server authentication/accounting UDP ports, defaults 1812/1813. Production listener/accounting and OVF remain pending.
+

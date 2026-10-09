@@ -22,6 +22,7 @@ RESOURCES = {
     'directory.connection': ['User&Authentication', 'Active Directory'],
     'directory.catalog': ['User&Authentication', 'Users/User Groups'],
     'system.administrators': ['System', 'Administrators'], 'system.profiles': ['System', 'Admin Profiles'],
+    'network.devices': ['Network', 'Device Inventory'],
     'network.vlans': ['Network', 'VLANs'], 'network.radius': ['Network', 'RADIUS Clients'],
 }
 LEVELS = {'none': 0, 'read': 1, 'write': 2}
@@ -282,3 +283,4 @@ class AdminStore:
             db.execute('DELETE FROM admin_sessions WHERE user_id=?', (actor['id'],))
             db.execute('UPDATE admin_meta SET revision=revision+1 WHERE id=1')
             self.record(db, 'admin_password_changed', actor['id'], actor['id'])
+

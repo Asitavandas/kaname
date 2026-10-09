@@ -23,6 +23,7 @@ from .policy import VerifiedIdentity, evaluate, radius_vlan_attributes, policy_c
 from .store import ConflictError, Store
 from .directory import DirectoryError, read_windows_directory, check_windows_directory, validate_connection
 from .operations import Operations
+from .planning import Planning
 from .directory_sync import DirectorySync
 from .vault import VaultError
 from .admin import AdminStore, AdminError, COOKIE, TTL, RESOURCES, permits
@@ -30,6 +31,7 @@ from .admin import AdminStore, AdminError, COOKIE, TTL, RESOURCES, permits
 STATIC = Path(__file__).parent / 'static'
 ASSETS = {'/device.js': ('device.js','application/javascript'), '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
           '/styles.css': ('styles.css', 'text/css'),
+          '/planning.js': ('planning.js', 'application/javascript'),
           '/authwire-logo.png': ('authwire-logo.png', 'image/png')}
 
 
@@ -83,6 +85,7 @@ class DevelopmentServer(ThreadingHTTPServer):
             self.directory_reader = read_linux_directory
             self.directory_health_reader = check_linux_directory
         self.operations = Operations(self.store)
+        self.planning = Planning(self.operations)
         self.public_name = public_name
         self.web_certificate = Path(tls_cert).read_bytes() if tls_cert else b''
         self.devices = None
@@ -411,6 +414,18 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(200, self.state_projection(value))
         elif self.path == '/api/audit' and self.guard(resource='audit.events'):
             self.respond(200, {'events': self.server.store.audit()})
+        elif self.path == '/api/network/devices' and self.guard(resource='network.devices'):
+            self.respond(200, self.server.planning.devices())
+        elif self.path == '/api/policies/drafts' and self.guard(resource='policies.rules'):
+            self.respond(200, self.server.planning.drafts())
+        elif urlsplit(self.path).path == '/api/policies/targets' and self.guard(resource='policies.rules'):
+            try:
+                query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                if len(self.path) > 1024 or set(query) - {'kind', 'offset', 'q'} or any(len(v) != 1 for v in query.values()):
+                    raise ValueError()
+                self.respond(200, self.server.planning.targets(query.get('kind', [''])[0], int(query.get('offset', ['0'])[0]), query.get('q', [''])[0]))
+            except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
+            except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
         elif self.path == '/api/network' and self.guard():
             if not any(permits(self.actor, r) for r in ('network.vlans', 'network.radius', 'policies.rules')):
                 self.respond(403, {'error': 'FORBIDDEN'}); return
@@ -484,7 +499,7 @@ class Handler(BaseHTTPRequestHandler):
             except LookupError: self.respond(404, {'error': 'CATALOG_OBJECT_NOT_FOUND'})
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
             except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
-        elif urlsplit(self.path).path not in {'/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/directory/settings'}:
+        elif urlsplit(self.path).path not in {'/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/directory/settings'}:
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
@@ -503,6 +518,8 @@ class Handler(BaseHTTPRequestHandler):
             except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
             return
         resources = {'/api/config': None, '/api/policies': 'policies.rules', '/api/simulate': 'simulate.scenarios', '/api/directory/sync': 'directory.connection', '/api/directory/settings': 'directory.connection', '/api/directory/connectivity': 'directory.connection', '/api/directory/test-credentials': 'directory.connection', '/api/network/vlans': 'network.vlans', '/api/network/radius': 'network.radius', '/api/network/secret/generate': 'network.radius', '/api/network/secret/reveal': 'network.radius', '/api/system/users/save': 'system.administrators', '/api/system/users/delete': 'system.administrators', '/api/system/profiles/save': 'system.profiles', '/api/system/profiles/delete': 'system.profiles', '/api/auth/logout': None, '/api/auth/password': None}
+        resources.update({'/api/network/devices/save': 'network.devices', '/api/network/devices/delete': 'network.devices',
+                          '/api/policies/drafts/save': 'policies.rules', '/api/policies/drafts/delete': 'policies.rules'})
         resources.update({path: 'certificates.authority' for path in ('/api/pki/initialize', '/api/pki/enroll-user', '/api/pki/revoke', '/api/pki/refresh-crl', '/api/pki/archive')})
         resources.update({path:'certificates.authority' for path in
             ('/api/device-admin/profile','/api/device-admin/unlock','/api/device-admin/lock','/api/device-admin/renew-now')})
@@ -564,6 +581,13 @@ class Handler(BaseHTTPRequestHandler):
                 status = self.server.directory_sync.read(value['expected_revision'], value.get('connection'))
                 self.respond(200, {'directory_public': status, 'network_enforced': False,
                                    'credentials_saved': self.server.operations.directory()['credentials_saved']})
+            elif self.path in {'/api/network/devices/save', '/api/network/devices/delete', '/api/policies/drafts/save', '/api/policies/drafts/delete'}:
+                deleting = self.path.endswith('/delete')
+                field = 'id' if deleting else 'item'
+                keys(value, {'expected_revision', field}, {'expected_revision', field})
+                device = self.path.startswith('/api/network/')
+                operation = (self.server.planning.delete_device if deleting else self.server.planning.save_device) if device else (self.server.planning.delete_draft if deleting else self.server.planning.save_draft)
+                self.respond(200, operation(value['expected_revision'], value[field]))
             elif self.path in {'/api/network/vlans', '/api/network/radius'}:
                 part = self.path.rsplit('/', 1)[1]
                 fields = {'vlans'} if part == 'vlans' else {'radius_clients', 'authentication_port', 'accounting_port'}
@@ -619,9 +643,10 @@ class Handler(BaseHTTPRequestHandler):
         except sqlite3.IntegrityError:
             self.respond(409 if self.path.startswith('/api/system/') else 503, {'error': 'ADMIN_NAME_EXISTS' if self.path.startswith('/api/system/') else 'STORE_UNAVAILABLE'})
         except ValidationError as exc:
-            allowed = {'AD_SCOPE_INVALID', 'AD_PASSWORD_REQUIRED', 'CONFIG_REQUIRED', 'VLAN_IN_USE', 'VLAN_NOT_DEFINED', 'RADIUS_CLIENTS_MANAGED', 'RADIUS_SECRET_INVALID', 'RADIUS_PORT_CONFLICT', 'RADIUS_SECRET_MISSING'}
+            allowed = {'DEVICE_IP_EXISTS', 'DEVICE_MODE_CONNECTION_INVALID', 'PLANNING_ITEM_NOT_FOUND', 'DRAFT_TARGET_REQUIRED', 'CATALOG_OBJECT_NOT_FOUND', 'AD_SCOPE_INVALID', 'AD_PASSWORD_REQUIRED', 'CONFIG_REQUIRED', 'VLAN_IN_USE', 'VLAN_NOT_DEFINED', 'RADIUS_CLIENTS_MANAGED', 'RADIUS_SECRET_INVALID', 'RADIUS_PORT_CONFLICT', 'RADIUS_SECRET_MISSING'}
             self.respond(400, {'error': str(exc) if str(exc) in allowed else 'INVALID_INPUT'})
         except (ValueError, TypeError, KeyError):
             self.respond(400, {'error': 'INVALID_INPUT'})
         except (sqlite3.Error, OSError):
             self.respond(503, {'error': 'STORE_UNAVAILABLE'})
+
