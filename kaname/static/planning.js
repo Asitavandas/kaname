@@ -5,6 +5,7 @@ const modeNames={manual:'Manual',read_only:'Read Only',managed:'Managed',import:
 const selectorNames={user:'Kullanıcı',computer:'Bilgisayar',group:'Grup',ou:'OU',everyone:'Tüm doğrulanmış kimlikler'};
 function planningControls(){
   for(const [id,resource,loaded] of [['inventory-save','network.devices',inventory],['draft-save','policies.rules',drafts]])$(id).disabled=planningBusy||!loaded||!can(resource,true);
+  for(const [id,resource]of [['inventory-list','network.devices'],['draft-list','policies.rules'],['draft-selected','policies.rules']])$(id).querySelectorAll('button').forEach(x=>x.disabled=planningBusy||!can(resource,true));
   for(const id of ['inventory-refresh','draft-target-search','draft-target-previous','draft-target-next'])$(id).disabled=planningBusy||$(id).dataset.unavailable==='true';
 }
 function resetPlanning(){
