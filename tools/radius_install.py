@@ -23,6 +23,7 @@ UNIT = Path('/etc/systemd/system/authwire-radius.service')
 PANEL_UNIT = Path('/etc/systemd/system/kaname-lab.service')
 ACCOUNT = 'kaname-lab'
 EXPECTED_COMMIT = '9071ea041b9172e52eabbba91619afaf3a238795'
+EXPECTED_PATCHES = ['58bafac6e5d4eb098d533cc0e7fe2fd41a73d213']
 
 
 def verified_runtime(source, expected_digest):
@@ -36,9 +37,10 @@ def verified_runtime(source, expected_digest):
     if hashlib.sha256(raw).hexdigest() != expected_digest:
         raise ValueError('RADIUS runtime manifest changed')
     manifest = json.loads(raw)
-    if set(manifest) != {'artifact', 'upstream_commit', 'files'} or manifest['artifact'] != 'authwire-freeradius-runtime':
+    if set(manifest) != {'artifact', 'upstream_commit', 'upstream_patches', 'files'} or manifest['artifact'] != 'authwire-freeradius-runtime':
         raise ValueError('Invalid RADIUS runtime manifest')
-    if manifest['upstream_commit'] != EXPECTED_COMMIT or type(manifest['files']) is not dict:
+    if (manifest['upstream_commit'] != EXPECTED_COMMIT or manifest['upstream_patches'] != EXPECTED_PATCHES
+            or type(manifest['files']) is not dict):
         raise ValueError('Unexpected FreeRADIUS source revision')
     files = {}
     for name, metadata in manifest['files'].items():
@@ -172,7 +174,8 @@ def install(source, digest):
     active = subprocess.run(['systemctl', 'is-active', '--quiet', 'authwire-radius.service'], timeout=10).returncode == 0
     if enabled or active:
         raise ValueError('RADIUS service unexpectedly enabled or active')
-    return {'installed': True, 'upstream_commit': EXPECTED_COMMIT, 'runtime_digest': digest,
+    return {'installed': True, 'upstream_commit': EXPECTED_COMMIT, 'upstream_patches': EXPECTED_PATCHES,
+            'runtime_digest': digest,
             'service_enabled': False, 'service_started': False, 'listen_ip': listen_ip, 'firewall_changed': False,
             'network_devices_changed': False}
 
@@ -193,3 +196,4 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
+

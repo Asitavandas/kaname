@@ -2,9 +2,9 @@ name: KANAME real RADIUS protocol proof
 on:
   push:
     branches: [main]
-    paths: ['kaname/**', 'tools/radius_lab.py', 'tools/radius_runtime.py', 'tools/radius_initialize.py', 'tools/radius_service.py', 'tools/radius_install.py', 'tools/radius_prepare.py', 'tests/radius_fixture.py', 'tests/test_radius.py', 'tests/test_radius_production.py', '.github/workflows/radius.yml']
+    paths: ['kaname/**', 'tools/radius_*.py', 'patches/freeradius-*.patch', 'tests/radius_fixture.py', 'tests/test_radius*.py', '.github/workflows/radius.yml']
   pull_request:
-    paths: ['kaname/**', 'tools/radius_lab.py', 'tools/radius_runtime.py', 'tools/radius_initialize.py', 'tests/radius_fixture.py', 'tests/test_radius.py', 'tests/test_radius_production.py', '.github/workflows/radius.yml']
+    paths: ['kaname/**', 'tools/radius_*.py', 'patches/freeradius-*.patch', 'tests/radius_fixture.py', 'tests/test_radius*.py', '.github/workflows/radius.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -23,6 +23,11 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
+      - name: Apply pinned upstream Python attribute parser correction
+        working-directory: upstream-freeradius
+        run: |
+          git apply --check ../patches/freeradius-python3-normal-mode.patch
+          git apply ../patches/freeradius-python3-normal-mode.patch
       - name: Ephemeral build and supplicant dependencies
         run: |
           sudo apt-get update -qq
@@ -35,7 +40,7 @@ jobs:
             ${{ runner.temp }}/kaname-freeradius/lib
             ${{ runner.temp }}/kaname-freeradius/sbin
             ${{ runner.temp }}/kaname-freeradius/share
-          key: kaname-freeradius-9071ea041b9172e52eabbba91619afaf3a238795-${{ runner.os }}-${{ runner.arch }}-noble-python312-v1
+          key: kaname-freeradius-9071ea041b9172e52eabbba91619afaf3a238795-${{ runner.os }}-${{ runner.arch }}-noble-python312-${{ hashFiles('patches/freeradius-python3-normal-mode.patch') }}-v2
       - name: Build pinned security-updated FreeRADIUS; no service installation
         if: steps.native-build.outputs.cache-hit != 'true'
         working-directory: upstream-freeradius
@@ -43,13 +48,15 @@ jobs:
           ./configure --prefix="$RUNNER_TEMP/kaname-freeradius" --with-rlm-python3-config-bin=/usr/bin/python3-config > "$RUNNER_TEMP/kaname-radius-configure.log" 2>&1
           make -j2 > "$RUNNER_TEMP/kaname-radius-build.log" 2>&1
           make install > "$RUNNER_TEMP/kaname-radius-install.log" 2>&1
-      - name: Native loopback EAP-TLS, policy and authenticated VLAN responses
+      - name: Normal-mode native loopback EAP-TLS, policy and authenticated VLAN responses
         run: |
           python -m tools.radius_lab --radius-prefix "$RUNNER_TEMP/kaname-freeradius" --report "$RUNNER_TEMP/kaname-radius-proof.json"
+      - name: Debug-mode comparison with the same validation and policy cases
+        run: python -m tools.radius_lab --debug --radius-prefix "$RUNNER_TEMP/kaname-freeradius" --report "$RUNNER_TEMP/kaname-radius-debug-proof.json"
       - name: Production RADIUS runtime config parses with pinned FreeRADIUS
         env:
           AUTHWIRE_RADIUS_PREFIX: ${{ runner.temp }}/kaname-freeradius
-        run: python -m unittest tests.test_radius_production -q
+        run: python -m unittest tests.test_radius_production tests.test_radius_module_update -q
       - name: Package tested relocatable FreeRADIUS runtime
         if: github.repository == 'Asitavandas/kaname' && github.event.repository.private == true && github.ref == 'refs/heads/main'
         run: |
@@ -91,3 +98,4 @@ jobs:
           /usr/bin/python3 -B "$GITHUB_WORKSPACE/tools/radius_prepare.py" \
             --source "$RUNNER_TEMP/authwire-radius-prefix" \
             --destination "$HOME/authwire-radius-stage-${GITHUB_SHA:0:12}"
+
