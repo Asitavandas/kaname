@@ -38,7 +38,7 @@ The operator requested ongoing tracking and no new report delivery today.
 
 | ID | Latest change | Work still open |
 | --- | --- | --- |
-| B01 | Panel stability investigation in progress: intermittent reload/login complaints. | Stable panel acceptance; complete setup/apply/recovery UX. |
+| B01 | Panel session recovery fix deployed; server API and protected-state verification completed. | Operator browser acceptance; complete setup/apply/recovery UX. |
 | B02 | Live AD identity and pilot group were accepted on real wired/wireless sessions. | Intentional wrong-group, disabled/deleted account, unavailable AD and capacity tests. |
 | B03 | Real RADIUS server name/CA validation completed on wired and wireless Windows profiles. | Revocation, expired/wrong issuer, CA/issuer and signing maintenance acceptance. |
 | B04 | Enrollment task, successful last result, installation record, valid certificate/private key and confirmed receipt observed for the pilot. | Interrupted/duplicate requests and negative enrollment scenarios. |
@@ -89,19 +89,30 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   longer running. Its unit had `Requires=kaname-lab.service`; stopping the panel
   propagated a clean stop to RADIUS. The panel updater did not account for that
   effective systemd dependency. Panel and native module are healthy/unchanged,
-  but service restoration and final protected-state comparison are pending.
-  The operator was given an immediate `sudo systemctl start authwire-radius.service`
-  recovery command; do not claim it was executed until confirmed.
-- Permanent correction tested and prepared: PR 29 merged as
+  and RADIUS service restoration was subsequently confirmed by the guarded unit
+  repair at 18:31. The initial RADIUS PID was not preserved; a new process was
+  started. Authentication configuration and protected state were preserved.
+- **Completed: permanent service dependency repair and server verification.**
+  PR 29 merged as
   `b7e46991e17d3602d6424c1e59a179fda8b07f14`. Foundation CI ran 421 tests
   successfully (25 environment-dependent skips); native RADIUS proof and real
-  disposable systemd lifecycle checks passed. Live unit application and final
-  protected-state/API comparison are pending the operator's guarded sudo command.
+  disposable systemd lifecycle checks passed. The operator applied the guarded repair at 18:31: unit backup created,
+  stop dependency removed, RADIUS started successfully, and UDP
+  10.35.50.246:1812 confirmed. All 17 protected-state/file comparisons matched
+  backup `upgrade-c2af2627005f44268e12dfebc9b120a8`, including policies, CA,
+  certificates, enrollment signer/profiles/bindings, sealed secrets, administrators,
+  web/RADIUS keys and certificates, Windows client, native module and remaining
+  service commands/hardening. All 15 authenticated API reads returned HTTP 200;
+  endpoint medians 2.6-25.1 ms, maximum 60.0 ms (server-local). Final output:
+  `REPAIR_FINISHED verified=true radius_active=true protected_state_preserved=true
+  panel_api_healthy=true`. Browser behavior after one Ctrl+F5 reload remains
+  pending operator feedback; do not claim the intermittent client symptom is
+  conclusively resolved until that acceptance.
   Retain `After` and a `Wants` startup
   dependency, remove panel stop propagation, refuse future panel upgrades while
   an active RADIUS service has a stopping dependency, and verify its PID after
   an upgrade. Migration preserves the remaining unit and authentication settings.
-  A disposable systemd regression fixture reproduces old behavior and checks
+  The passing disposable systemd regression fixture reproduced old behavior and checked
   RADIUS PID survival across panel stop/restart. Never retest this by stopping
   the customer's live panel without independent authorization and need.
 
