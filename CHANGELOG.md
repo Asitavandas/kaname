@@ -1,3 +1,16 @@
+## 0.14.0-dev.3 — 12 Ekim 2026
+
+- Geçici panel veri yükleme hatalarında geçerli oturum korunur; parola tekrar
+  istenmeden yeniden yükleme düğmesiyle devam edilir.
+- Giriş işlemi ve arka plan yenilemesi aynı anda tek istek zinciri çalıştırır.
+  Önceki oturumdan geç gelen yanıt yeni oturumu kapatamaz.
+- İstekler sınırlı süre bekler; başarısız yazma işlemleri otomatik tekrarlanmaz.
+  İsteğe bağlı audit/grup listesi hataları başarılı girişe engel olmaz.
+- Dokuz hata enjeksiyonlu tarayıcı senaryosu eklendi. RADIUS, sertifikalar,
+  mevcut politika/VLAN koşulları ve Windows istemci kaynakları değişmez.
+- Kablolu/kablosuz saha sonuçları ve açık negatif/yaşam döngüsü testleri
+  `docs/CURRENT_STATUS.md` kaydında ayrı takip edilir.
+
 ## 0.13.0-dev.4 — 2026-10-08
 
 ## 0.14.0-dev.1 — 9 Ekim 2026
