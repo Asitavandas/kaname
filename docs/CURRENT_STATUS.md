@@ -67,12 +67,22 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   Current HTTPS certificate is self-signed for kaname.vizyonveri.local and
   10.35.50.246, valid through October 2027. This is distinct from RADIUS CA trust;
   neither CA nor RADIUS server certificate should be reset to address it.
-- Frontend issues under investigation: startup catches any data/list failure and
-  resets the session view; unbounded fetch; overlapping background polls; generic
-  error recovery creates additional requests; login transitions do not invalidate
-  obsolete unauthorized responses. Fault-injection coverage is being added.
-- Panel fix status: **in progress, not yet deployed or accepted**. Update this
-  row with exact source/CI/deployment evidence after completing the fix.
+- Frontend defects corrected in PR 28 / source merge
+  `11b4950cb475dce20054606a2839499c05cc7566` (0.14.0-dev.3): transient startup
+  state/list errors no longer demand another password; fetch has bounded wait;
+  login and polling are single flight; generic errors no longer trigger extra
+  refresh requests; obsolete session responses cannot close a newer session.
+- Completed validation: all nine browser fault-injection scenarios passed,
+  existing panel/device/planning browser flows passed, and foundation CI ran
+  409 Python tests successfully with 25 environment-dependent skips. Native
+  RADIUS protocol and Windows enrollment/renewal fixture gates also passed.
+  Main staging passed 112 filesystem-local checks (four skips); source manifest
+  `2323abf4fde7a2169313f19ed766ffa425b03a47b2040bccdb33fc1c3af76392`.
+- Panel fix status: **tested and prepared; production application pending local
+  sudo, not yet deployed or accepted**. A guarded one-time update will measure
+  authenticated API latency before/after and verify RADIUS PID/module/unit,
+  certificate registry, client secrets and Windows client preservation. Client
+  HTTPS trust errors from 10.35.50.54 still require identification and correction.
 
 ## Preservation requirements
 
