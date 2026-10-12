@@ -92,7 +92,12 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   but service restoration and final protected-state comparison are pending.
   The operator was given an immediate `sudo systemctl start authwire-radius.service`
   recovery command; do not claim it was executed until confirmed.
-- Permanent correction in progress: retain `After` and a `Wants` startup
+- Permanent correction tested and prepared: PR 29 merged as
+  `b7e46991e17d3602d6424c1e59a179fda8b07f14`. Foundation CI ran 421 tests
+  successfully (25 environment-dependent skips); native RADIUS proof and real
+  disposable systemd lifecycle checks passed. Live unit application and final
+  protected-state/API comparison are pending the operator's guarded sudo command.
+  Retain `After` and a `Wants` startup
   dependency, remove panel stop propagation, refuse future panel upgrades while
   an active RADIUS service has a stopping dependency, and verify its PID after
   an upgrade. Migration preserves the remaining unit and authentication settings.
