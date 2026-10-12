@@ -177,8 +177,7 @@ max_requests = 128
 hostname_lookups = no
 proxy_requests = no
 log {{
- destination = files
- file = ${{logdir}}/radius.log
+ destination = stdout
  auth = no
  auth_badpass = no
  auth_goodpass = no
