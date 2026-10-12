@@ -66,7 +66,9 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Journal contained repeated `SSLV3_ALERT_CERTIFICATE_UNKNOWN` from 10.35.50.54.
   Current HTTPS certificate is self-signed for kaname.vizyonveri.local and
   10.35.50.246, valid through October 2027. This is distinct from RADIUS CA trust;
-  neither CA nor RADIUS server certificate should be reset to address it.
+  neither CA nor RADIUS server certificate should be reset to address it. The
+  operator subsequently confirmed 10.35.50.54 is unrelated to panel use; exclude
+  these messages from the diagnosis and do not change client certificate trust.
 - Frontend defects corrected in PR 28 / source merge
   `11b4950cb475dce20054606a2839499c05cc7566` (0.14.0-dev.3): transient startup
   state/list errors no longer demand another password; fetch has bounded wait;
@@ -78,11 +80,25 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   RADIUS protocol and Windows enrollment/renewal fixture gates also passed.
   Main staging passed 112 filesystem-local checks (four skips); source manifest
   `2323abf4fde7a2169313f19ed766ffa425b03a47b2040bccdb33fc1c3af76392`.
-- Panel fix status: **tested and prepared; production application pending local
-  sudo, not yet deployed or accepted**. A guarded one-time update will measure
-  authenticated API latency before/after and verify RADIUS PID/module/unit,
-  certificate registry, client secrets and Windows client preservation. Client
-  HTTPS trust errors from 10.35.50.54 still require identification and correction.
+- Panel fix status: **0.14.0-dev.3 deployed; final acceptance pending**. The
+  operator ran the guarded update at approximately 18:14. Update and trusted HTTPS
+  checks passed, and configuration, administrators and Windows client source
+  preservation passed. Before update, all 15 authenticated API reads returned
+  HTTP 200; endpoint medians were 2.4-8.0 ms, maximum 8.3 ms (server-local).
+- Deployment incident: the post-update guard correctly detected RADIUS was no
+  longer running. Its unit had `Requires=kaname-lab.service`; stopping the panel
+  propagated a clean stop to RADIUS. The panel updater did not account for that
+  effective systemd dependency. Panel and native module are healthy/unchanged,
+  but service restoration and final protected-state comparison are pending.
+  The operator was given an immediate `sudo systemctl start authwire-radius.service`
+  recovery command; do not claim it was executed until confirmed.
+- Permanent correction in progress: retain `After` and a `Wants` startup
+  dependency, remove panel stop propagation, refuse future panel upgrades while
+  an active RADIUS service has a stopping dependency, and verify its PID after
+  an upgrade. Migration preserves the remaining unit and authentication settings.
+  A disposable systemd regression fixture reproduces old behavior and checks
+  RADIUS PID survival across panel stop/restart. Never retest this by stopping
+  the customer's live panel without independent authorization and need.
 
 ## Preservation requirements
 

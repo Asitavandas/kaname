@@ -134,6 +134,25 @@ def command(*args, cwd=None):
     return subprocess.run(list(args), check=True, capture_output=True, timeout=90, cwd=cwd)
 
 
+def radius_process_guard():
+    """Refuse panel stop if systemd would also stop an active RADIUS service."""
+    active = subprocess.run(['systemctl', 'is-active', '--quiet', 'authwire-radius.service'],
+                            capture_output=True, timeout=10)
+    if active.returncode in (3, 4):
+        return None
+    if active.returncode != 0:
+        raise ValueError('RADIUS service state could not be verified')
+    dependencies = command('systemctl', 'show', 'authwire-radius.service',
+                           '--property=Requires,BindsTo,PartOf', '--value').stdout.decode().split()
+    if 'kaname-lab.service' in dependencies:
+        raise ValueError('Migrate RADIUS panel stop dependency before panel update')
+    pid = command('systemctl', 'show', 'authwire-radius.service',
+                  '--property=MainPID', '--value').stdout.decode().strip()
+    if not pid.isdecimal() or int(pid) == 0:
+        raise ValueError('Active RADIUS process could not be verified')
+    return pid
+
+
 def radius_unit_upgrade(text):
     old_count, new_count = text.count(RADIUS_EXEC_OLD), text.count(RADIUS_EXEC_NEW)
     if old_count == 1 and new_count == 0:
@@ -219,6 +238,8 @@ def _update(source, digest):
                 ['systemctl','is-enabled','--quiet','authwire-radius.service'], timeout=10).returncode == 0
             if radius_active or radius_enabled:
                 raise ValueError('Legacy AuthWire RADIUS service must be disabled before unit migration')
+    _PHASE = 'radius_dependency_guard'
+    radius_pid_before = radius_process_guard()
     _PHASE = 'version_layout'
     version = re.findall(rb'VERSION = "([0-9A-Za-z.\-]+)"', files['kaname/__init__.py'])
     if len(version) != 1:
@@ -248,6 +269,8 @@ def _update(source, digest):
             raise ValueError('Private root-owned backup directory required')
         backup.mkdir(mode=0o700)
         _PHASE = 'service_stop'
+        if radius_pid_before is not None and radius_process_guard() != radius_pid_before:
+            raise ValueError('RADIUS process changed during update preparation')
         command('systemctl','stop','kaname-lab.service')
         swapped = False
         try:
@@ -283,6 +306,8 @@ def _update(source, digest):
             _PHASE = 'preservation_check'
             if control_digest(STATE) != before:
                 raise ValueError('Configuration/administrator preservation check failed')
+            if radius_pid_before is not None and radius_process_guard() != radius_pid_before:
+                raise ValueError('RADIUS process preservation check failed')
         except Exception:
             if radius_unit_changed and (backup/'authwire-radius.service').is_file():
                 atomic_text(RADIUS_UNIT, (backup/'authwire-radius.service').read_text())
@@ -299,6 +324,7 @@ def _update(source, digest):
             'configuration_preserved':True, 'administrators_preserved':True,
             'bytecode_directories_quarantined':bytecode_count,'radius_started':False,
             'radius_unit_updated': radius_unit_changed,
+            'radius_process_preserved': True if radius_pid_before is not None else None,
             'windows_changed': previous_client_sha256 != client_sha256,
             'windows_client_source_verified': True, 'windows_client_sha256': client_sha256}
 

@@ -29,6 +29,8 @@ jobs:
         run: '"$RUNNER_TEMP/kaname-native-venv/bin/python" -m unittest tests.test_linux_directory tests.test_radius_live tests.test_enrollment tests.test_enrollment_http -v'
       - name: Real installer and non-root HTTPS service on disposable VM (fixture DC only)
         run: sudo --preserve-env=RUNNER_ENVIRONMENT /usr/bin/python3 -m tools.linux_install_smoke
+      - name: Reproduce and repair panel/RADIUS stop dependency on disposable systemd
+        run: sudo --preserve-env=RUNNER_ENVIRONMENT /usr/bin/python3 -m tools.radius_unit_systemd_check
   stage-for-local-install:
     needs: native-adapter-checks
     if: github.repository == 'Asitavandas/kaname' && github.event.repository.private == true && github.ref == 'refs/heads/main'
@@ -58,6 +60,7 @@ jobs:
             tests.test_device_enrollment \
             tests.test_radius_production \
             tests.test_radius_module_update \
+            tests.test_radius_unit_update \
             tests.test_linux_update -q
           "$RUNNER_TEMP/kaname-fixture-venv/bin/python" -m compileall -q kaname tools
       - name: Prepare tested generic source in runner home (no sudo or AD calls)

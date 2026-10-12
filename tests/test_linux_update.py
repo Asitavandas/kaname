@@ -5,7 +5,7 @@ import json
 from unittest.mock import patch
 from pathlib import Path
 
-from tools.linux_update import safe_tree, quarantine_caches, health, radius_unit_upgrade
+from tools.linux_update import safe_tree, quarantine_caches, health, radius_unit_upgrade, radius_process_guard
 
 
 class RebrandHealthTests(unittest.TestCase):
@@ -74,3 +74,43 @@ class RadiusUnitMigrationTests(unittest.TestCase):
         self.assertEqual(current, updated)
         with self.assertRaises(ValueError):
             radius_unit_upgrade('[Service]\nExecStart=/custom/radiusd\n')
+
+
+class RadiusStopPropagationGuardTests(unittest.TestCase):
+    def test_effective_requires_bindsto_and_partof_refuse_active_panel_update(self):
+        import subprocess
+        for field in ('Requires', 'BindsTo', 'PartOf'):
+            with self.subTest(field=field), \
+                 patch('tools.linux_update.subprocess.run', return_value=subprocess.CompletedProcess([], 0)), \
+                 patch('tools.linux_update.command', return_value=subprocess.CompletedProcess([], 0, b'kaname-lab.service\n')) as command:
+                with self.assertRaisesRegex(ValueError, 'stop dependency'):
+                    radius_process_guard()
+                self.assertEqual(1, command.call_count)
+                self.assertIn('--property=Requires,BindsTo,PartOf', command.call_args.args)
+
+    def test_wants_after_does_not_block_running_radius(self):
+        import subprocess
+        with patch('tools.linux_update.subprocess.run', return_value=subprocess.CompletedProcess([], 0)), \
+             patch('tools.linux_update.command', side_effect=[
+                 subprocess.CompletedProcess([], 0, b'system.slice sysinit.target\n'),
+                 subprocess.CompletedProcess([], 0, b'1234\n')]):
+            self.assertEqual('1234', radius_process_guard())
+
+    def test_inactive_or_absent_radius_is_not_started(self):
+        import subprocess
+        for code in (3, 4):
+            with self.subTest(code=code), \
+                 patch('tools.linux_update.subprocess.run', return_value=subprocess.CompletedProcess([], code)), \
+                 patch('tools.linux_update.command') as command:
+                self.assertIsNone(radius_process_guard())
+                command.assert_not_called()
+
+    def test_unknown_service_status_or_invalid_active_pid_refuses_update(self):
+        import subprocess
+        with patch('tools.linux_update.subprocess.run', return_value=subprocess.CompletedProcess([], 1)):
+            with self.assertRaises(ValueError): radius_process_guard()
+        for pid in (b'0\n', b'unknown\n'):
+            with patch('tools.linux_update.subprocess.run', return_value=subprocess.CompletedProcess([], 0)), \
+                 patch('tools.linux_update.command', side_effect=[subprocess.CompletedProcess([], 0, b''),
+                     subprocess.CompletedProcess([], 0, pid)]):
+                with self.assertRaises(ValueError): radius_process_guard()
