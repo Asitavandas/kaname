@@ -15,6 +15,26 @@ from .models import strict_json
 from .radius import CurrentDirectoryAccount, object_id
 
 
+def _helper_python():
+    if sys.executable:
+        return sys.executable
+    # Embedded FreeRADIUS Python has no executable. Only the protected installed
+    # appliance may select its existing venv; do not search PATH or caller input.
+    source = Path(__file__).resolve().parent.parent
+    candidate = source.parent / 'venv/bin/python'
+    if source != Path('/opt/kaname-lab/source') or not candidate.is_file():
+        raise DirectoryError('AD_PROTOCOL_UNAVAILABLE')
+    try:
+        for path in (candidate, candidate.parent, candidate.parent.parent,
+                     candidate.parent.parent.parent, candidate.resolve()):
+            identity = path.stat()
+            if identity.st_uid != 0 or identity.st_mode & 0o022:
+                raise DirectoryError('AD_PROTOCOL_UNAVAILABLE')
+    except OSError:
+        raise DirectoryError('AD_PROTOCOL_UNAVAILABLE') from None
+    return str(candidate)
+
+
 def read_linux_directory(value, config, *, probe=False, object_guid=None, authenticate_self=False, computer_sam=None):
     request = validate_connection(value, config)
     if computer_sam is not None:
@@ -51,7 +71,7 @@ def read_linux_directory(value, config, *, probe=False, object_guid=None, authen
         request.update(probe=probe, cache_dir=temporary)
         payload = json.dumps(request, ensure_ascii=True).encode()
         try:
-            process = subprocess.Popen([sys.executable, '-m', 'kaname.directory_linux_helper'],
+            process = subprocess.Popen([_helper_python(), '-B', '-m', 'kaname.directory_linux_helper'],
                                        cwd=Path(__file__).resolve().parent.parent,
                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                        stderr=subprocess.DEVNULL, start_new_session=True)
@@ -147,3 +167,4 @@ def check_linux_directory(value, config):
 def authenticate_linux_user(value, config):
     """Prove this user's password to the KDC, resolve only that principal."""
     return read_linux_directory(value, config, authenticate_self=True)
+

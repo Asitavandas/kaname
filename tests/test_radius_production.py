@@ -1,4 +1,5 @@
 """Production RADIUS adapter/runtime boundaries; no LAN listener is started."""
+import json
 import os
 import subprocess
 import tempfile
@@ -167,6 +168,7 @@ class RuntimeTests(unittest.TestCase):
         self.assertIn('Packet-Src-IP-Address := "%{Packet-Src-IP-Address}"', site)
         module = (self.runtime / 'mods-enabled/python3').read_text()
         self.assertIn('module = kaname.radius_adapter', module)
+        self.assertIn('python_path_mode = prepend', module)
         self.assertEqual(0, (self.runtime / 'clients.conf').stat().st_mode & 0o077)
 
     def test_native_freeradius_accepts_generated_production_config_when_prefix_is_supplied(self):
@@ -186,6 +188,42 @@ class RuntimeTests(unittest.TestCase):
                              if 'secret' not in line.lower() and 'password' not in line.lower())
             self.fail('Generated production FreeRADIUS config rejected:\n' + safe[-4000:])
 
+    def test_native_module_imports_generators_crypto_instead_of_distro_package(self):
+        import cryptography
+        prefix = os.environ.get('AUTHWIRE_RADIUS_PREFIX')
+        if not prefix:
+            self.skipTest('Pinned FreeRADIUS prefix not supplied')
+        runtime = self.root / 'native-environment'
+        runtime.mkdir(mode=0o700)
+        generate(runtime, Path(prefix), self.state)
+        metadata = runtime / 'environment.json'
+        shim = runtime / 'environment_probe.py'
+        shim.write_text('import json,sys,cryptography\n'
+            'from pathlib import Path\nfrom cryptography import x509\n'
+            'Path('+repr(str(metadata))+').write_text(json.dumps({'
+            '"version":cryptography.__version__,"file":cryptography.__file__,'
+            '"utc_dates":hasattr(x509.Certificate,"not_valid_before_utc")}))\n'
+            'def authorize(pairs):\n import radiusd\n return radiusd.RLM_MODULE_OK\n')
+        module_path = runtime / 'mods-enabled/python3'
+        module = module_path.read_text().replace('module = kaname.radius_adapter',
+                                                'module = environment_probe')
+        module = module.replace('python_path = "', 'python_path = "'+str(runtime)+':', 1)
+        module_path.write_text(module)
+        env = dict(os.environ)
+        env['LD_LIBRARY_PATH'] = str(Path(prefix) / 'lib')
+        # The embedded interpreter must work even when its Python environment
+        # differs from the interpreter running this test/config generator.
+        env.pop('PYTHONPATH', None)
+        result = subprocess.run([str(Path(prefix)/'sbin/radiusd'), '-XC',
+            '-D', str(Path(prefix)/'share/freeradius'), '-d', str(runtime)],
+            env=env, capture_output=True, timeout=20)
+        self.assertEqual(0, result.returncode, 'Native environment probe failed')
+        value = json.loads(metadata.read_text())
+        self.assertEqual(cryptography.__version__, value['version'])
+        self.assertEqual(Path(cryptography.__file__).resolve(), Path(value['file']).resolve())
+        self.assertTrue(value['utc_dates'])
+
 
 if __name__ == '__main__':
     unittest.main()
+
