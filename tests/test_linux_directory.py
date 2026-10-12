@@ -73,6 +73,37 @@ class LinuxProtectionTests(unittest.TestCase):
         self.assertNotIn(connection()['password'], str(args) + str(kwargs))
         self.assertTrue(kwargs['start_new_session'])
 
+    def test_embedded_interpreter_uses_protected_installed_helper(self):
+        process = types.SimpleNamespace(
+            communicate=lambda data, timeout: (json.dumps(catalog()).encode(), None), returncode=0)
+        trusted = types.SimpleNamespace(st_uid=0, st_mode=0o755)
+        with patch('kaname.directory_linux.sys.executable', ''), \
+             patch('kaname.directory_linux.__file__', '/opt/kaname-lab/source/kaname/directory_linux.py'), \
+             patch.object(Path, 'is_file', return_value=True), \
+             patch.object(Path, 'stat', return_value=trusted), \
+             patch('kaname.directory_linux.socket.getaddrinfo', return_value=[(0,0,0,'',('192.0.2.10',389))]), \
+             patch('kaname.directory_linux.subprocess.Popen', return_value=process) as popen:
+            self.assertEqual(catalog(), read_linux_directory(connection(), config()))
+        self.assertEqual(['/opt/kaname-lab/venv/bin/python', '-B', '-m',
+                          'kaname.directory_linux_helper'], popen.call_args.args[0])
+        self.assertNotIn(connection()['password'], str(popen.call_args))
+
+    def test_embedded_helper_refuses_uninstalled_or_writable_interpreter(self):
+        from kaname.directory_linux import _helper_python
+        with patch('kaname.directory_linux.sys.executable', ''):
+            with self.assertRaises(DirectoryError) as caught:
+                _helper_python()
+            self.assertEqual('AD_PROTOCOL_UNAVAILABLE', caught.exception.code)
+        with patch('kaname.directory_linux.sys.executable', ''), \
+             patch('kaname.directory_linux.__file__', '/opt/kaname-lab/source/kaname/directory_linux.py'), \
+             patch.object(Path, 'is_file', return_value=True):
+            for identity in (types.SimpleNamespace(st_uid=1000, st_mode=0o755),
+                             types.SimpleNamespace(st_uid=0, st_mode=0o777)):
+                with patch.object(Path, 'stat', return_value=identity):
+                    with self.assertRaises(DirectoryError) as caught:
+                        _helper_python()
+                    self.assertEqual('AD_PROTOCOL_UNAVAILABLE', caught.exception.code)
+
     @unittest.skipUnless(os.name == 'posix', 'POSIX subprocess isolation')
     def test_helper_timeout_kills_process_group_and_cleans_ticket_directory(self):
         seen = {}
@@ -198,3 +229,4 @@ class NativeLinuxLDAPTests(unittest.TestCase):
         value = reader.catalog('fixture.invalid', 'dc01.fixture.invalid', 'Network\nDC=fixture,DC=invalid')
         self.assertEqual(3, len(value['users']))
         self.assertIn('primary', {edge['type'] for edge in value['memberships']})
+

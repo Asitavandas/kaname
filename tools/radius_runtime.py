@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import subprocess
 
+import cryptography
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509.oid import ExtendedKeyUsageOID
@@ -117,7 +118,11 @@ def generate(output, prefix, state=STATE, listen_ip='127.0.0.1'):
     private_file(output / 'clients.conf', ''.join(client_lines))
 
     source = Path(__file__).resolve().parents[1]
-    for path in (output, prefix, source):
+    # rlm_python3 ignores the venv interpreter's PYTHONPATH and defaults to
+    # appending module paths after distro packages. Pin the same dependency
+    # directory used by this generator, before importing the authorization code.
+    dependencies = Path(cryptography.__file__).resolve().parent.parent
+    for path in (output, prefix, source, dependencies):
         if not re.fullmatch(r'[A-Za-z0-9_./-]+', str(path)):
             raise ValueError('RADIUS runtime path contains unsafe characters')
     prefix_text = str(prefix)
@@ -189,7 +194,8 @@ $INCLUDE sites-enabled/
 }
 ''')
     private_file(mods / 'python3', f'''python3 authwire_authorize {{
- python_path = "{source}"
+ python_path = "{source}:{dependencies}"
+ python_path_mode = prepend
  module = kaname.radius_adapter
  mod_authorize = ${{.module}}
  func_authorize = authorize
@@ -242,3 +248,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
