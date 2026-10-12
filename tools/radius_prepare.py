@@ -8,6 +8,7 @@ import tempfile
 
 
 UPSTREAM_COMMIT = '9071ea041b9172e52eabbba91619afaf3a238795'
+UPSTREAM_PATCHES = ['58bafac6e5d4eb098d533cc0e7fe2fd41a73d213']
 
 
 def prepare(source, destination):
@@ -45,6 +46,7 @@ def prepare(source, destination):
     manifest = json.dumps({
         'artifact': 'authwire-freeradius-runtime',
         'upstream_commit': UPSTREAM_COMMIT,
+        'upstream_patches': UPSTREAM_PATCHES,
         'files': {name: {'sha256': row['sha256'], 'mode': row['mode']}
                   for name, row in sorted(files.items())},
     }, sort_keys=True, separators=(',', ':')).encode()
@@ -63,7 +65,7 @@ def prepare(source, destination):
         (pending / 'RADIUS_RUNTIME_MANIFEST.json').write_bytes(manifest)
         os.rename(pending, destination)
     return {'staged': True, 'runtime_digest': digest, 'files': len(files),
-            'upstream_commit': UPSTREAM_COMMIT}
+            'upstream_commit': UPSTREAM_COMMIT, 'upstream_patches': UPSTREAM_PATCHES}
 
 
 def main():
@@ -76,3 +78,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

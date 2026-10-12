@@ -1,0 +1,31 @@
+From: AuthWire upstream backport
+Subject: Parse Python attribute values outside the debug macro
+
+Backport FreeRADIUS 58bafac6e5d4eb098d533cc0e7fe2fd41a73d213 to
+release_3_2_10 (9071ea041b9172e52eabbba91619afaf3a238795).
+Retain the existing secret-value redaction in success and error messages.
+
+diff --git a/src/modules/rlm_python3/rlm_python3.c b/src/modules/rlm_python3/rlm_python3.c
+--- a/src/modules/rlm_python3/rlm_python3.c
++++ b/src/modules/rlm_python3/rlm_python3.c
+@@ -371,11 +371,16 @@ static void mod_vptuple(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **vps, PyO
+ 			quote = "'";
+ 			s2p = s2;
+ 		}
+-		DEBUG("%s - %s'%s:%s' %s %s%s%s", funcname,
+-			fr_pair_value_from_str(vp, s2, -1) < 0 ? "Failed: " : "",
+-			list_name, s1, fr_int2str(fr_tokens, op, "="), quote, s2p, quote);
+ 
+-		radius_pairmove(current, vps, vp, false);
++		if (fr_pair_value_from_str(vp, s2, -1) >= 0) {
++			RDEBUG("%s - '%s:%s' %s %s%s%s", funcname,
++			       list_name, s1, fr_int2str(fr_tokens, op, "="), quote, s2p, quote);
++			radius_pairmove(current, vps, vp, false);
++		} else {
++			REDEBUG("FAILED converting attribute %s with value %s - %s",
++				s1, s2p, fr_strerror());
++			talloc_free(vp);
++		}
+ 	}
+ }
+ 

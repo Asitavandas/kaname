@@ -21,6 +21,7 @@ import threading
 import time
 from datetime import datetime, timedelta, timezone
 
+import cryptography
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -234,7 +235,8 @@ $INCLUDE sites-enabled/
 }
 ''')
     private_file(mods / 'python3', f'''python3 kaname_lab {{
- python_path = "{repo}:{shim}"
+ python_path = "{repo}:{shim}:{Path(cryptography.__file__).resolve().parent.parent}"
+ python_path_mode = prepend
  module = kaname_lab_module
  mod_authorize = ${{.module}}
  func_authorize = authorize
@@ -454,7 +456,7 @@ def drop_case(port, secret, name, *, source='127.0.0.1', mac='invalid', non_eap=
             'silently_discarded': not non_eap}
 
 
-def run_lab(prefix):
+def run_lab(prefix, *, debug=False):
     if os.name != 'posix' or not shutil.which('eapol_test'):
         raise RuntimeError('Linux and native eapol_test are required')
     binary = prefix / 'sbin' / 'radiusd'
@@ -476,7 +478,8 @@ def run_lab(prefix):
         relay = None
         try:
             with log.open('wb') as handle:
-                process = subprocess.Popen([str(binary), '-X', '-d', str(root)],
+                mode = ['-X'] if debug else ['-f']
+                process = subprocess.Popen([str(binary), *mode, '-d', str(root)],
                                            stdout=handle, stderr=subprocess.STDOUT)
                 wait_ready(process, log)
                 relay = Relay(port, secret)
@@ -567,6 +570,8 @@ def run_lab(prefix):
         raise RuntimeError('Native dependency version evidence is incomplete')
     return {'version': VERSION, 'freeradius_version': '3.2.10', 'test_packages': packages,
             'freeradius_source_commit': FREE_RADIUS_COMMIT,
+            'server_mode': 'debug' if debug else 'normal',
+            'upstream_patches': ['58bafac6e5d4eb098d533cc0e7fe2fd41a73d213'],
             'transport': 'loopback UDP with native FreeRADIUS and eapol_test',
             'tls_version': '1.2', 'fixture_ad_only': True, 'real_ad_tested': False,
             'physical_wired_wireless_tested': False, 'client_enrollment_enabled': False,
@@ -579,8 +584,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--radius-prefix', type=Path, required=True)
     parser.add_argument('--report', type=Path, required=True)
+    parser.add_argument('--debug', action='store_true', help='Also support the explicit debug-mode comparison')
     args = parser.parse_args()
-    result = run_lab(args.radius_prefix.resolve())
+    result = run_lab(args.radius_prefix.resolve(), debug=args.debug)
     private_file(args.report, json.dumps(result, indent=2) + '\n')
     print('KANAME_RADIUS_REPORT_BEGIN')
     print(json.dumps(result, indent=2))
@@ -589,3 +595,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

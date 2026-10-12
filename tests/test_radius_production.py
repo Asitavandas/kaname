@@ -130,6 +130,7 @@ class RuntimeTests(unittest.TestCase):
         (self.prefix / 'sbin/radiusd').chmod(0o755)
         (self.prefix / 'lib').mkdir()
         (self.prefix / 'lib/rlm_python3.so').write_bytes(b'fixture')
+        (self.prefix / 'lib/rlm_python3.so').chmod(0o755)
 
         self.runtime = self.root / 'runtime'
         self.runtime.mkdir(mode=0o700)
@@ -145,6 +146,7 @@ class RuntimeTests(unittest.TestCase):
         staged = self.root / 'staged'
         result = prepare(self.prefix, staged)
         files, raw = verified_runtime(staged, result['runtime_digest'])
+        self.assertEqual(['58bafac6e5d4eb098d533cc0e7fe2fd41a73d213'], json.loads(raw)['upstream_patches'])
         self.assertIn('sbin/radiusd', files)
         self.assertTrue(raw)
         unit = unit_text('192.0.2.20')
@@ -222,6 +224,17 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(cryptography.__version__, value['version'])
         self.assertEqual(Path(cryptography.__file__).resolve(), Path(value['file']).resolve())
         self.assertTrue(value['utc_dates'])
+
+    def test_native_python_attributes_apply_in_normal_and_debug_modes(self):
+        from tools.radius_native_check import check
+        prefix = os.environ.get('AUTHWIRE_RADIUS_PREFIX')
+        if not prefix:
+            self.skipTest('Pinned FreeRADIUS prefix not supplied')
+        for debug in (False, True):
+            with self.subTest(debug=debug):
+                result = check(prefix, debug=debug)
+                self.assertTrue(result['native_reply_check_passed'])
+                self.assertEqual([2, 3], [case['radius_code'] for case in result['cases']])
 
 
 if __name__ == '__main__':

@@ -57,8 +57,10 @@ jobs:
             tests.test_enrollment \
             tests.test_device_enrollment \
             tests.test_radius_production \
+            tests.test_radius_module_update \
             tests.test_linux_update -q
           "$RUNNER_TEMP/kaname-fixture-venv/bin/python" -m compileall -q kaname tools
       - name: Prepare tested generic source in runner home (no sudo or AD calls)
         run: |
           "$RUNNER_TEMP/kaname-fixture-venv/bin/python" -m tools.linux_prepare --destination "$HOME/kaname-stage-${GITHUB_SHA:0:12}"
+
