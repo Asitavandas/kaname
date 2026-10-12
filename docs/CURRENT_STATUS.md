@@ -116,6 +116,28 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   RADIUS PID survival across panel stop/restart. Never retest this by stopping
   the customer's live panel without independent authorization and need.
 
+## Next agreed field session — 13 October 2026 morning
+
+- Operator will bring a domain-joined Windows computer with no AuthWire client
+  certificate installed. Its hostname and current enrollment/GPO scope will be
+  confirmed at the session; no AD, policy or GPO changes were made in advance.
+- First establish the certificate-free baseline and confirm rejection on the
+  existing enterprise 802.1X network. Domain membership alone is not sufficient
+  for EAP-TLS. Existing guest access is outside this test and will not be repeated.
+- Then exercise controlled enrollment and positive access, followed by the
+  outstanding wrong-group, disabled-account and revoked-certificate cases on this
+  separate test computer/certificate. Keep working pilot 2GL13ZU unchanged and
+  restore temporary account/group changes after each case.
+- **User EAP-TLS remains an explicit open item.** User certificate issuance,
+  AD binding and live authorization exist in source, but automated user
+  distribution/renewal and real wired/wireless user authentication have not been
+  accepted. Include them in the next report; do not close them with computer
+  pilot evidence. Windows machineOrUser switching also needs separate acceptance.
+- Simultaneous machine-and-user authentication (for example TEAP chaining) is not
+  implemented and is not silently added to the current EAP-TLS release scope.
+- Operator will observe panel behavior and send grouped notes if symptoms recur;
+  browser acceptance remains open. No reminder or unattended live test is scheduled.
+
 ## Preservation requirements
 
 Keep RADIUS process/unit/native module, policy conditions/VLANs, RADIUS client
