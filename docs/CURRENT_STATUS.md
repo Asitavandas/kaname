@@ -1,6 +1,6 @@
 # AuthWire current work record
 
-Updated: 12 October 2026, Europe/Istanbul. This record supplements the 9 October
+Updated: 13 October 2026, Europe/Istanbul. This record supplements the 9 October
 `AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-09.docx` / `.pdf`; those reports are a
 dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking and no new report delivery today.
@@ -133,16 +133,17 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   This trust-only action did not issue an AuthWire client certificate; last
   measured AuthWire machine certificate count was zero. Correct machine EAP-TLS
   wired profile and actual negative access test remain pending.
-- Server connection at session start: Desktop Commander segmentiq is offline
-  (last seen approximately 16 hours earlier). This does not establish RADIUS
-  health; production service/PKI readiness is pending remote reconnection.
-- **Open blocking readiness issue at 17:06 on 13 October:** operator read the
+- Server connection at session start was unavailable; Desktop Commander
+  segmentiq reconnected at approximately 17:08. Production service and CRL
+  readiness were subsequently verified; remote connectivity alone was not used
+  as evidence of RADIUS health.
+- **Blocking readiness issue found at 17:06, resolved at 18:02 on 13 October:** operator read the
   running RADIUS CRL: lastUpdate 12 October 06:02:58 UTC, nextUpdate 13 October
   06:02:58 UTC (09:02:58 Istanbul), already expired. Do not accept a failed
   connection as the missing-client-certificate test while this is unresolved.
   Desktop Commander reconnected; RADIUS was directly confirmed active, PID
-  1100697. Database CRL versus runtime copy/date/signature comparison is pending
-  the prepared read-only guarded sudo diagnostic. Existing CA, keys, certificates,
+  1100697. The subsequent read-only guarded diagnostic compared database and
+  runtime CRL dates, numbers and signatures. Existing CA, keys, certificates,
   policies and VLANs have not been changed to address this issue.
 - CRL diagnostic at 17:13 confirmed current, correctly signed database CRL #18
   (13 October 06:03:23 UTC through 14 October 06:03:23 UTC, two revoked entries)
@@ -151,7 +152,7 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   Root cause: the database auto-refresh was not published to the active runtime;
   native X509 cache refresh was not configured. Immediate restart instruction
   given but not yet confirmed; observed PID still 1100697 at 17:31.
-- Permanent CRL correction under test (0.14.0-dev.4): signed, pinned, monotonic
+- **Completed: permanent CRL correction deployed (0.14.0-dev.4).** signed, pinned, monotonic
   atomic publication as the existing service user; minute timer respecting a
   deliberately stopped RADIUS; native X509 refresh at the supported 300-second
   interval. No CA/endpoint certificate reissue, policy reset or relaxed validation.
@@ -162,9 +163,20 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   enrollment/renewal fixtures. Main staging ran 141 filesystem checks (four skips)
   and produced 98-file manifest
   `359722b02776194d1622d620366c36896108d860e86d68068367fb9f42328718`.
-  Guarded deployment launcher `/tmp/authwire-crl-deploy-20261013-8d27.py` is ready;
-  production installation and final current-runtime/state checks remain pending
-  the operator's local sudo command. Native-module and Windows source unchanged.
+  Operator applied the guarded deployment at 18:02. Source upgrade verified
+  HTTPS and preserved the active RADIUS process during the panel upgrade.
+  Timer installation then performed the required initial RADIUS restart to
+  activate the 300-second native X509 refresh; no periodic restart is configured.
+  Database and runtime CRL were identical, signature-valid and current: #18,
+  lastUpdate 13 October 06:03:23 UTC, nextUpdate 14 October 06:03:23 UTC,
+  two revoked entries. All 17 protected file/state comparisons passed.
+  Configuration, policies, CA material, certificates, secrets, administrators,
+  primary RADIUS unit/native module and Windows source were preserved.
+  Direct read-only follow-up at 18:06 confirmed the minute timer actually
+  triggered, its oneshot completed with Result=success, and RADIUS remained
+  active with PID 1142921. The successful oneshot being inactive afterward is
+  expected. CRL publication/cache readiness blocker is closed; the VV06
+  missing-client-certificate field test itself remains open.
 - First establish the certificate-free baseline and confirm rejection on the
   existing enterprise 802.1X network. Domain membership alone is not sufficient
   for EAP-TLS. Existing guest access is outside this test and will not be repeated.
