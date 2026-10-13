@@ -155,8 +155,16 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   atomic publication as the existing service user; minute timer respecting a
   deliberately stopped RADIUS; native X509 refresh at the supported 300-second
   interval. No CA/endpoint certificate reissue, policy reset or relaxed validation.
-  Source implementation is not deployment/acceptance evidence. Actual native
-  cache and sandbox fixtures plus production installation still pending.
+  PR 30 merged as `477a57d265a4dbfb9f6fb43f522648fdf277dca9` after all source
+  gates passed: 438 foundation tests (25 environment skips), native EAP-TLS CRL
+  cache proof (same process, real 300-second interval, native reject before policy),
+  non-root systemd timer sandbox and stopped-service boundary, browser and Windows
+  enrollment/renewal fixtures. Main staging ran 141 filesystem checks (four skips)
+  and produced 98-file manifest
+  `359722b02776194d1622d620366c36896108d860e86d68068367fb9f42328718`.
+  Guarded deployment launcher `/tmp/authwire-crl-deploy-20261013-8d27.py` is ready;
+  production installation and final current-runtime/state checks remain pending
+  the operator's local sudo command. Native-module and Windows source unchanged.
 - First establish the certificate-free baseline and confirm rejection on the
   existing enterprise 802.1X network. Domain membership alone is not sufficient
   for EAP-TLS. Existing guest access is outside this test and will not be repeated.
