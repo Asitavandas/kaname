@@ -239,6 +239,19 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   VV06 was not performed; dynamic policy VLAN changes remain evidenced by
   the earlier 2GL13ZU wired/wireless pilot tests. Wrong-group, disabled account,
   revoked certificate and lifecycle acceptance remain open.
+- **Wrong-group negative phase observed at 19:55:51, reported at 20:01.**
+  After the instructed VV06-only pilot group removal and a fresh wired attempt,
+  Windows reported Connected / Authentication failed. Fresh event 15514 has
+  host/AuthWire computer 69b0d5cd-db61-4627-9db7-fcc5230152a3, switch peer
+  64E881346361, reason 0x50005 and error 0x80420105 (server rejected the
+  credential). Unlike the earlier missing-certificate failure, a certificate
+  identity was selected. This is the expected client-side result of the
+  controlled group-out test. Exact backend decision reason was not read;
+  do not equate the generic Windows text with certificate revocation or expiry.
+  Operator reported no errors/output from DC commands; membership restoration
+  and positive recovery must be verified before closing the full wrong-group
+  acceptance case. Only VV06 membership was instructed to change.
+
 - Then exercise controlled enrollment and positive access, followed by the
   outstanding wrong-group, disabled-account and revoked-certificate cases on this
   separate test computer/certificate. Keep working pilot 2GL13ZU unchanged and
