@@ -126,6 +126,13 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   enrollment task, and dot3svc stopped. Certificate purpose of the self-issued
   VV06 certificate was not established. Server-trust and supplicant preparation
   are required before the no-client-certificate rejection test can be accepted. No AD, policy or GPO changes were made in advance.
+- **Completed VV06 preparation at 16:52:** operator imported the pinned public
+  Root CA into LocalMachine Root after file thumbprint verification.
+  RootTrusted=true; Subject CN=KANAME Root 6796fa84; SHA1
+  C789A0595ADB95A6BE4534D01B1D205F6C37DE18. dot3svc is Running.
+  This trust-only action did not issue an AuthWire client certificate; last
+  measured AuthWire machine certificate count was zero. Correct machine EAP-TLS
+  wired profile and actual negative access test remain pending.
 - Server connection at session start: Desktop Commander segmentiq is offline
   (last seen approximately 16 hours earlier). This does not establish RADIUS
   health; production service/PKI readiness is pending remote reconnection.
