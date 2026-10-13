@@ -192,8 +192,13 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator requested a brief Linux shutdown at 18:12. Pre-shutdown disk sync
   completed; panel/RADIUS/minute timer were enabled and active. Actual shutdown
   and subsequent boot are not yet confirmed. At 19:19 Desktop Commander was
-  offline; this alone does not indicate server/RADIUS failure. Post-boot service
-  and current CRL readiness must be checked before VV06 enrollment/positive access.
+  offline; this alone did not indicate server/RADIUS failure.
+  **Completed: post-boot service/CRL readiness at 19:23.** Operator reported
+  kaname-lab.service, authwire-radius.service and authwire-radius-crl-sync.timer
+  all active/enabled. Runtime CRL #18 (0x12) lastUpdate 13 October 06:03:23 UTC,
+  nextUpdate 14 October 06:03:23 UTC, still current. This verifies readiness
+  after the planned shutdown; full boot/lifecycle and endpoint reconnect
+  acceptance remain separate from these service-state observations.
 - Then exercise controlled enrollment and positive access, followed by the
   outstanding wrong-group, disabled-account and revoked-certificate cases on this
   separate test computer/certificate. Keep working pilot 2GL13ZU unchanged and
