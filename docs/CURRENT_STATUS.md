@@ -207,6 +207,15 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   is the next scoped action; not yet confirmed. Link location and actual
   enrollment Startup script registration need verification before reboot.
   Do not infer installer deployment from the GPO name or copied SYSVOL files.
+- GPMC screenshots at 19:33 confirm AuthWire-Pilot-Trust is linked to the
+  vizyonveri.local domain root, Link Enabled=Yes, Enforced=No, WMI filter none.
+  Security filtering remains AuthWire-Pilot-Computers only. Computer Startup
+  has two entries invoking the same signed Install-AuthWire.ps1 in the existing
+  GPO SYSVOL path: bare powershell.exe and the full System32 WindowsPowerShell
+  v1.0 path, both with AllSigned. Operator instructed to remove the redundant
+  bare-path entry and retain the full-path entry/parameters. Cleanup, VV06 pilot
+  membership, new machine-token reboot and automatic enrollment are not yet
+  confirmed. Do not mark the GPO distribution/second-device enrollment passed.
 - Then exercise controlled enrollment and positive access, followed by the
   outstanding wrong-group, disabled-account and revoked-certificate cases on this
   separate test computer/certificate. Keep working pilot 2GL13ZU unchanged and
