@@ -136,6 +136,14 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Server connection at session start: Desktop Commander segmentiq is offline
   (last seen approximately 16 hours earlier). This does not establish RADIUS
   health; production service/PKI readiness is pending remote reconnection.
+- **Open blocking readiness issue at 17:06 on 13 October:** operator read the
+  running RADIUS CRL: lastUpdate 12 October 06:02:58 UTC, nextUpdate 13 October
+  06:02:58 UTC (09:02:58 Istanbul), already expired. Do not accept a failed
+  connection as the missing-client-certificate test while this is unresolved.
+  Desktop Commander reconnected; RADIUS was directly confirmed active, PID
+  1100697. Database CRL versus runtime copy/date/signature comparison is pending
+  the prepared read-only guarded sudo diagnostic. Existing CA, keys, certificates,
+  policies and VLANs have not been changed to address this issue.
 - First establish the certificate-free baseline and confirm rejection on the
   existing enterprise 802.1X network. Domain membership alone is not sufficient
   for EAP-TLS. Existing guest access is outside this test and will not be repeated.
