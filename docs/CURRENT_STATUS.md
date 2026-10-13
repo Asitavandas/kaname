@@ -46,7 +46,7 @@ The operator requested ongoing tracking and no new report delivery today.
 | B06 | No forced renewal or full OS reboot recovery acceptance executed in this session. | Renewal, offline/reboot recovery, old/new selection and expired recovery. |
 | B07 | Normal production service active; actual switch/AP EAP-TLS and VLAN reply path completed. | Deliberate negative authorization acceptance and full boot behavior; accounting remains off. |
 | B08 | Real permit and dynamic VLAN/DHCP behavior completed on switch and AP. | Deliberate policy deny and negative state transitions. |
-| B09 | Pilot PC/port, Windows trust/profile, positive access and dynamic VLAN completed. VV06 missing-client-certificate wired test completed on 13 October. | Wrong-group and OS reboot acceptance remain open; VV06 enrollment/positive access is next. |
+| B09 | Pilot PC/port, Windows trust/profile, positive access and dynamic VLAN completed. VV06 missing-client-certificate wired test completed on 13 October. | Wrong-group and OS reboot acceptance remain open; VV06 task/certificate installation completed; positive access is next. |
 | B10 | AP/SSID/source/secret, manual Windows machine EAP-TLS profile, positive connection and dynamic VLAN completed (3 of original 4 rows). | Intentional negative trust/identity tests remain open; reconnect was exercised during VLAN testing. |
 | B11 | No accounting expansion in this session. | Accounting, session correlation and retention. |
 | B12 | Updates retained configuration, administrators and certificates with backups. | Full restore/rollback and clean appliance import/boot acceptance. |
@@ -216,6 +216,17 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   bare-path entry and retain the full-path entry/parameters. Cleanup, VV06 pilot
   membership, new machine-token reboot and automatic enrollment are not yet
   confirmed. Do not mark the GPO distribution/second-device enrollment passed.
+- **Completed: VV06 automatic enrollment/task and machine certificate installation
+  observed at 19:45.** LastRunTime 13 October 19:39:42; initial LastTaskResult
+  267009 (0x41301, task running), later 0. Certificate count increased from 0
+  to 1; Subject CN=AuthWire computer 69b0d5cd-db61-4627-9db7-fcc5230152a3,
+  Issuer CN=KANAME Issuer 6796fa84, HasPrivateKey=true, expiry 11 January 2027
+  19:43:27 Europe/Istanbul. This is a distinct identity from pilot 2GL13ZU.
+  Ethernet disconnected when the final read was captured does not invalidate
+  stored task result/certificate evidence. Certificate serial and server receipt
+  row were not independently read in this step. Positive switch port 6 access
+  and policy VLAN/DHCP on VV06 remain pending; do not close full lifecycle,
+  SYSVOL hash/signature inventory or user-authentication acceptance.
 - Then exercise controlled enrollment and positive access, followed by the
   outstanding wrong-group, disabled-account and revoked-certificate cases on this
   separate test computer/certificate. Keep working pilot 2GL13ZU unchanged and
