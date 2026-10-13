@@ -120,9 +120,12 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 
 - Operator will bring a domain-joined Windows computer with no AuthWire client
   certificate installed. Operator identified the new computer as **VV06** at 11:14 on 13 October,
-  reporting domain membership and no installed certificate. These claims await
-  the Windows read-only baseline check; current enrollment/GPO scope is still
-  unverified. No AD, policy or GPO changes were made in advance.
+  reporting domain membership and no installed certificate. Read-only baseline confirmed at 11:22: domain vizyonveri.local,
+  PartOfDomain=true, one personal machine certificate (Subject/Issuer CN=VV06),
+  zero AuthWire machine certificates, AuthWire Root CA not trusted, no AuthWire
+  enrollment task, and dot3svc stopped. Certificate purpose of the self-issued
+  VV06 certificate was not established. Server-trust and supplicant preparation
+  are required before the no-client-certificate rejection test can be accepted. No AD, policy or GPO changes were made in advance.
 - Server connection at session start: Desktop Commander segmentiq is offline
   (last seen approximately 16 hours earlier). This does not establish RADIUS
   health; production service/PKI readiness is pending remote reconnection.
