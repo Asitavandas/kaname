@@ -46,7 +46,7 @@ The operator requested ongoing tracking and no new report delivery today.
 | B06 | No forced renewal or full OS reboot recovery acceptance executed in this session. | Renewal, offline/reboot recovery, old/new selection and expired recovery. |
 | B07 | Normal production service active; actual switch/AP EAP-TLS and VLAN reply path completed. | Deliberate negative authorization acceptance and full boot behavior; accounting remains off. |
 | B08 | Real permit and dynamic VLAN/DHCP behavior completed on switch and AP. | Deliberate policy deny and negative state transitions. |
-| B09 | Pilot PC/port, Windows trust/profile, positive access and dynamic VLAN completed (3 of original 4 rows). | Combined negative certificate/group and OS reboot row remains open. |
+| B09 | Pilot PC/port, Windows trust/profile, positive access and dynamic VLAN completed. VV06 missing-client-certificate wired test completed on 13 October. | Wrong-group and OS reboot acceptance remain open; VV06 enrollment/positive access is next. |
 | B10 | AP/SSID/source/secret, manual Windows machine EAP-TLS profile, positive connection and dynamic VLAN completed (3 of original 4 rows). | Intentional negative trust/identity tests remain open; reconnect was exercised during VLAN testing. |
 | B11 | No accounting expansion in this session. | Accounting, session correlation and retention. |
 | B12 | Updates retained configuration, administrators and certificates with backups. | Full restore/rollback and clean appliance import/boot acceptance. |
@@ -132,7 +132,8 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   C789A0595ADB95A6BE4534D01B1D205F6C37DE18. dot3svc is Running.
   This trust-only action did not issue an AuthWire client certificate; last
   measured AuthWire machine certificate count was zero. Correct machine EAP-TLS
-  wired profile and actual negative access test remain pending.
+  wired profile preparation was followed by the actual missing-certificate
+  negative test at 19:15; results are recorded below.
 - Server connection at session start was unavailable; Desktop Commander
   segmentiq reconnected at approximately 17:08. Production service and CRL
   readiness were subsequently verified; remote connectivity alone was not used
@@ -177,9 +178,22 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   active with PID 1142921. The successful oneshot being inactive afterward is
   expected. CRL publication/cache readiness blocker is closed; the VV06
   missing-client-certificate field test itself remains open.
-- First establish the certificate-free baseline and confirm rejection on the
-  existing enterprise 802.1X network. Domain membership alone is not sufficient
-  for EAP-TLS. Existing guest access is outside this test and will not be repeated.
+- **Completed: VV06 wired missing-client-certificate negative test at 19:15:44
+  on 13 October.** WiredService=Running, AuthWireMachineCertificateCount=0.
+  Physical Realtek Ethernet MAC 38-CA-84-DB-FF-E6, interface
+  415933d5-5010-4a7a-b8bf-0e537e0bc7f2, switch peer 64E881346361.
+  Windows reported Connected / Authentication failed; fresh event 15514:
+  identity NULL, 0x80420014, "A certificate could not be found that can be used
+  with this Extensible Authentication Protocol." Event 15506 then applied a
+  600-second suppression period. This establishes supplicant-side failure due
+  to unavailable usable client certificate; it is not evidence of a RADIUS
+  Access-Reject or an evaluated policy deny. Root trust/domain membership did
+  not provide an EAP-TLS client credential. Guest access was not retested.
+- Operator requested a brief Linux shutdown at 18:12. Pre-shutdown disk sync
+  completed; panel/RADIUS/minute timer were enabled and active. Actual shutdown
+  and subsequent boot are not yet confirmed. At 19:19 Desktop Commander was
+  offline; this alone does not indicate server/RADIUS failure. Post-boot service
+  and current CRL readiness must be checked before VV06 enrollment/positive access.
 - Then exercise controlled enrollment and positive access, followed by the
   outstanding wrong-group, disabled-account and revoked-certificate cases on this
   separate test computer/certificate. Keep working pilot 2GL13ZU unchanged and
