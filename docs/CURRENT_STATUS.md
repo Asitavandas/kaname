@@ -39,14 +39,14 @@ The operator requested ongoing tracking and no new report delivery today.
 | ID | Latest change | Work still open |
 | --- | --- | --- |
 | B01 | Panel session recovery fix deployed; server API and protected-state verification completed. | Operator browser acceptance; complete setup/apply/recovery UX. |
-| B02 | Live AD identity and pilot group were accepted on real wired/wireless sessions. | Intentional wrong-group, disabled/deleted account, unavailable AD and capacity tests. |
+| B02 | Live AD identity/pilot group accepted on wired/wireless; VV06 controlled pilot-group removal/rejection and restoration/success completed. | Disabled/deleted account, unavailable AD and capacity tests. |
 | B03 | Real RADIUS server name/CA validation completed on wired and wireless Windows profiles. | Revocation, expired/wrong issuer, CA/issuer and signing maintenance acceptance. |
 | B04 | Enrollment task, successful last result, installation record, valid certificate/private key and confirmed receipt observed for the pilot. | Interrupted/duplicate requests and negative enrollment scenarios. |
 | B05 | Pilot task and installed client confirmed. Client source hash remained unchanged through server updates. | Fresh SYSVOL package/signature/hash comparison where not yet recorded. |
 | B06 | No forced renewal or full OS reboot recovery acceptance executed in this session. | Renewal, offline/reboot recovery, old/new selection and expired recovery. |
-| B07 | Normal production service active; actual switch/AP EAP-TLS and VLAN reply path completed. | Deliberate negative authorization acceptance and full boot behavior; accounting remains off. |
-| B08 | Real permit and dynamic VLAN/DHCP behavior completed on switch and AP. | Deliberate policy deny and negative state transitions. |
-| B09 | Pilot PC/port, Windows trust/profile, positive access and dynamic VLAN completed. VV06 missing-client-certificate wired test completed on 13 October. | Wrong-group and OS reboot acceptance remain open; VV06 task/certificate installation and subsequent positive wired access completed. |
+| B07 | Normal production service active; actual switch/AP EAP-TLS/VLAN and VV06 group-out rejection/recovery completed. | Disabled/revoked identity negatives and full boot behavior; accounting remains off. |
+| B08 | Real permit and dynamic VLAN/DHCP completed on switch/AP; pilot-group scope rejection/recovery completed on VV06. | Other explicit deny conditions and negative state transitions. |
+| B09 | Pilot PC/port, Windows trust/profile, positive access and dynamic VLAN completed. VV06 missing-client-certificate wired test completed on 13 October. | Wrong-group acceptance completed with recovery; full OS reboot/lifecycle row remains open. |
 | B10 | AP/SSID/source/secret, manual Windows machine EAP-TLS profile, positive connection and dynamic VLAN completed (3 of original 4 rows). | Intentional negative trust/identity tests remain open; reconnect was exercised during VLAN testing. |
 | B11 | No accounting expansion in this session. | Accounting, session correlation and retention. |
 | B12 | Updates retained configuration, administrators and certificates with backups. | Full restore/rollback and clean appliance import/boot acceptance. |
@@ -251,6 +251,18 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   Operator reported no errors/output from DC commands; membership restoration
   and positive recovery must be verified before closing the full wrong-group
   acceptance case. Only VV06 membership was instructed to change.
+
+- **Completed: controlled VV06 wrong-group rejection and recovery at 20:05.**
+  After the instructed pilot membership restoration and a fresh physical wired
+  reconnect/service reset, Ethernet MAC 38-CA-84-DB-FF-E6 again reported
+  Connected / Authentication succeeded. The group-out phase at 19:55:51
+  failed and the restored phase succeeded using the same machine certificate.
+  This closes the scoped wired field acceptance case; exact backend decision
+  reason and an independent AD membership listing were not captured. No policy,
+  certificate, VLAN or working 2GL13ZU change was instructed.
+  Next controlled case is temporarily disabling only the VV06 AD computer
+  account, checking fresh rejection, then re-enabling and verifying recovery.
+  That disabled-account case has not yet been executed.
 
 - Then exercise controlled enrollment and positive access, followed by the
   outstanding wrong-group, disabled-account and revoked-certificate cases on this
