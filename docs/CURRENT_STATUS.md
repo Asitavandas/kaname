@@ -199,6 +199,14 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   nextUpdate 14 October 06:03:23 UTC, still current. This verifies readiness
   after the planned shutdown; full boot/lifecycle and endpoint reconnect
   acceptance remain separate from these service-state observations.
+- Enrollment scope check at 19:29: VV06 is
+  CN=VV06,CN=Computers,DC=vizyonveri,DC=local; direct MemberOf list is empty.
+  Existing GPO e5a9ab39-3709-49cb-837a-0208d2eb3b12 is
+  AuthWire-Pilot-Trust, AllSettingsEnabled. AuthWire-Pilot-Computers has
+  GpoApply; Authenticated Users has GpoRead only. Computer pilot group addition
+  is the next scoped action; not yet confirmed. Link location and actual
+  enrollment Startup script registration need verification before reboot.
+  Do not infer installer deployment from the GPO name or copied SYSVOL files.
 - Then exercise controlled enrollment and positive access, followed by the
   outstanding wrong-group, disabled-account and revoked-certificate cases on this
   separate test computer/certificate. Keep working pilot 2GL13ZU unchanged and
