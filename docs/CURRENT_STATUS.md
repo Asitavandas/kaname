@@ -119,8 +119,13 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 ## Next agreed field session — 13 October 2026 morning
 
 - Operator will bring a domain-joined Windows computer with no AuthWire client
-  certificate installed. Its hostname and current enrollment/GPO scope will be
-  confirmed at the session; no AD, policy or GPO changes were made in advance.
+  certificate installed. Operator identified the new computer as **VV06** at 11:14 on 13 October,
+  reporting domain membership and no installed certificate. These claims await
+  the Windows read-only baseline check; current enrollment/GPO scope is still
+  unverified. No AD, policy or GPO changes were made in advance.
+- Server connection at session start: Desktop Commander segmentiq is offline
+  (last seen approximately 16 hours earlier). This does not establish RADIUS
+  health; production service/PKI readiness is pending remote reconnection.
 - First establish the certificate-free baseline and confirm rejection on the
   existing enterprise 802.1X network. Domain membership alone is not sufficient
   for EAP-TLS. Existing guest access is outside this test and will not be repeated.
