@@ -56,7 +56,7 @@ jobs:
       - name: Production RADIUS runtime config parses with pinned FreeRADIUS
         env:
           AUTHWIRE_RADIUS_PREFIX: ${{ runner.temp }}/kaname-freeradius
-        run: python -m unittest tests.test_radius_production tests.test_radius_module_update -q
+        run: python -m unittest tests.test_radius_production tests.test_radius_module_update tests.test_radius_crl_sync tests.test_radius_crl_install -q
       - name: Package tested relocatable FreeRADIUS runtime
         if: github.repository == 'Asitavandas/kaname' && github.event.repository.private == true && github.ref == 'refs/heads/main'
         run: |

@@ -30,6 +30,7 @@ from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 from kaname.pki import PKIService
 from kaname import VERSION
 from tests.test_radius import DOMAIN, GUID, SID, GROUP, policy
+from tools.radius_crl_sync import sync as sync_crl
 
 FREE_RADIUS_COMMIT = '9071ea041b9172e52eabbba91619afaf3a238795'
 PEM = serialization.Encoding.PEM
@@ -103,6 +104,15 @@ def material(root):
         db.execute('INSERT INTO pki_certificates(serial,certificate) VALUES (?,?)',
                    (format(revoked.serial_number, 'x'), revoked.public_bytes(PEM)))
     pki.revoke(format(revoked.serial_number, 'x'), password)
+    # A signed CRL-only revocation for the hot-cache proof. Keep the registry's
+    # computer row active so a native TLS reject cannot be explained by policy.
+    with pki.store.connect() as db:
+        revoked_rows = db.execute('SELECT serial,revoked_at,reason FROM pki_certificates WHERE revoked_at IS NOT NULL').fetchall()
+        number = db.execute('SELECT crl_number FROM pki_authority').fetchone()[0]
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    hot_rows = revoked_rows + [(format(objects['computer'].serial_number,'x'),now.isoformat(),'superseded')]
+    hot = pki._build_crl(issuer,issuer_key,hot_rows,number+1,now)
+    private_file(root/'crl-native-revoked.pem',hot.public_bytes(PEM))
     for filename, content in pki.public_bundle().items():
         private_file(certs / filename, content)
     # A completely unrelated signing CA demonstrates native trust rejection.
@@ -214,6 +224,7 @@ $INCLUDE sites-enabled/
   certificate_file = ${certdir}/server.pem
   ca_file = ${certdir}/root-ca.pem
   ca_path = ${cadir}
+  ca_path_reload_interval = 300
   auto_chain = no
   check_crl = yes
   allow_expired_crl = no
@@ -480,6 +491,7 @@ def run_lab(prefix, *, debug=False):
                 mode = ['-X'] if debug else ['-f']
                 process = subprocess.Popen([str(binary), *mode, '-d', str(root)],
                                            stdout=handle, stderr=subprocess.STDOUT)
+                process_started = time.monotonic()
                 wait_ready(process, log)
                 relay = Relay(port, secret)
 
@@ -552,6 +564,29 @@ def run_lab(prefix, *, debug=False):
                     ('unknown-nas-source', {'source': '127.0.0.2', 'mac': 'valid'}),
                     ('non-eap-request', {'mac': 'valid', 'non_eap': True})):
                     facts.append(drop_case(port, secret, name, **options))
+                if not debug:
+                    case('crl-before-publication',expected=2,reason='POLICY_ALLOW')
+                    raw = (root/'crl-native-revoked.pem').read_bytes()
+                    crl = x509.load_pem_x509_crl(raw)
+                    number = crl.extensions.get_extension_for_class(x509.CRLNumber).value.crl_number
+                    with PKIService(root/'state').store.connect() as db:
+                        db.execute('UPDATE pki_authority SET crl=?,crl_number=?',(raw,number))
+                    publication = sync_crl(root/'state',root/'ca')
+                    if publication['changed'] is not True:
+                        raise AssertionError('Fresh CRL was not published')
+                    # 3.2.10 clamps the native interval to >=300 seconds. Test
+                    # that real interval without patching clocks or TLS code.
+                    while time.monotonic() < process_started+306:
+                        if process.poll() is not None:
+                            raise AssertionError('RADIUS exited during CRL cache proof')
+                        time.sleep(0.2)
+                    case('crl-after-publication',expected=3)
+                    events = [json.loads(line) for line in (root/'decisions.jsonl').read_text().splitlines()]
+                    if any(e['case']=='crl-after-publication' for e in events):
+                        raise AssertionError('CRL reject reached policy; native cache proof missing')
+                    if process.poll() is not None:
+                        raise AssertionError('RADIUS did not retain the running process')
+                    facts[-1].update(native_crl_cache_reloaded=True,radius_process_preserved=True)
         finally:
             if relay:
                 relay.close()
