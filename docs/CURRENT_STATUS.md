@@ -144,6 +144,19 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   1100697. Database CRL versus runtime copy/date/signature comparison is pending
   the prepared read-only guarded sudo diagnostic. Existing CA, keys, certificates,
   policies and VLANs have not been changed to address this issue.
+- CRL diagnostic at 17:13 confirmed current, correctly signed database CRL #18
+  (13 October 06:03:23 UTC through 14 October 06:03:23 UTC, two revoked entries)
+  versus expired runtime #16 (12 October 06:02:58 UTC through 13 October
+  06:02:58 UTC, two entries). Signer enabled and authority currently valid.
+  Root cause: the database auto-refresh was not published to the active runtime;
+  native X509 cache refresh was not configured. Immediate restart instruction
+  given but not yet confirmed; observed PID still 1100697 at 17:31.
+- Permanent CRL correction under test (0.14.0-dev.4): signed, pinned, monotonic
+  atomic publication as the existing service user; minute timer respecting a
+  deliberately stopped RADIUS; native X509 refresh at the supported 300-second
+  interval. No CA/endpoint certificate reissue, policy reset or relaxed validation.
+  Source implementation is not deployment/acceptance evidence. Actual native
+  cache and sandbox fixtures plus production installation still pending.
 - First establish the certificate-free baseline and confirm rejection on the
   existing enterprise 802.1X network. Domain membership alone is not sufficient
   for EAP-TLS. Existing guest access is outside this test and will not be repeated.

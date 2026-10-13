@@ -169,6 +169,7 @@ class RuntimeTests(unittest.TestCase):
         site = (self.runtime / 'sites-enabled/authwire').read_text()
         self.assertIn('Packet-Src-IP-Address := "%{Packet-Src-IP-Address}"', site)
         module = (self.runtime / 'mods-enabled/python3').read_text()
+        self.assertIn('ca_path_reload_interval = 300', (self.runtime/'mods-enabled/eap').read_text())
         self.assertIn('module = kaname.radius_adapter', module)
         self.assertIn('python_path_mode = prepend', module)
         self.assertEqual(0, (self.runtime / 'clients.conf').stat().st_mode & 0o077)

@@ -1,3 +1,13 @@
+## 0.14.0-dev.4 — 13 Ekim 2026
+
+- Güncel imzalı CRL, servis hesabıyla çalışan zamanlayıcı üzerinden RADIUS
+  çalışma dizinine atomik olarak aktarılır. Geçersiz, süresi dolmuş veya geriye
+  alınmış listeler reddedilir; güven kökleri ve kalıcı kayıtlar değiştirilmez.
+- FreeRADIUS X509 deposu 300 saniyelik aralıkla yeni oturumlarda yenilenir.
+  İlk kurulumdan sonra CRL aktarımı için servis yeniden başlatılmaz.
+- İmza/tarih/rollback/dosya güvenliği ve timer kurulum kontrolleri; gerçek native
+  EAP-TLS CRL önbelleği yenileme protokol kanıtı eklendi.
+
 ## 0.14.0-dev.3 — 12 Ekim 2026
 
 - Geçici panel veri yükleme hatalarında geçerli oturum korunur; parola tekrar

@@ -176,6 +176,7 @@ $INCLUDE sites-enabled/
   certificate_file = ${certdir}/server.pem
   ca_file = ${cadir}/root-ca.pem
   ca_path = ${cadir}
+  ca_path_reload_interval = 300
   auto_chain = no
   check_crl = yes
   allow_expired_crl = no
