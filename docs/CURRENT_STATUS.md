@@ -278,6 +278,24 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   output were not captured; generic Windows error alone is not a revocation
   or expiry diagnosis. Evidence: image(20261014-130352).png and
   image(20261014-130403).png, inspected directly.
+- **Completed: revocation-test preflight at 16:13 on 14 October.**
+  Operator screenshots identify the VV06 LocalMachine machine certificate:
+  Subject CN=AuthWire computer 69b0d5cd-db61-4627-9db7-fcc5230152a3;
+  Windows SerialNumber 0D9C3EE3C0B676CB323C1EC8314B62EE3E20A1D9;
+  canonical AuthWire serial d9c3ee3c0b676cb323c1ec8314b62ee3e20a1d9;
+  thumbprint 216819A5BF9A13A2A75609EA84FBFA316A39B453;
+  HasPrivateKey=true, expiry 11 January 2027 19:43:27 Europe/Istanbul.
+  Current physical Ethernet still reports Authentication succeeded.
+  Runtime CRL advanced to #20 (0x14), lastUpdate 14 October 06:03:32 UTC,
+  nextUpdate 15 October 06:03:32 UTC (09:03:32 Istanbul), currently valid.
+  This is next-day runtime publication evidence; no fresh signature/DB-equality
+  or process-preservation comparison was captured in these screenshots.
+  PKI revoke API expects canonical hex without leading zero; identify the
+  exact certificate before the irreversible leaf revocation. Target is only
+  VV06, with cessation_of_operation reason for the controlled test. Keep the
+  certificate installed until the negative attempt so missing-cert failure
+  cannot substitute for revocation rejection. Actual revocation/rejection and
+  controlled fresh enrollment are still pending.
 - Next: revoked-certificate test on VV06 only, then controlled fresh enrollment.
   First identify the actual current client certificate serial/thumbprint and
   verify current CRL readiness. No certificate has yet been revoked for this
