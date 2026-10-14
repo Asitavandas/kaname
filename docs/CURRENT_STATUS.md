@@ -312,6 +312,29 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 revocation observation — 14 October 2026, 18:57
+
+- Operator reports VV06 Authentication failed following the instructed
+  certificate-revocation sequence. Runtime CRL is #21 (0x15), lastUpdate
+  14 October 15:45:14 UTC (18:45:14 Istanbul), nextUpdate 15 October
+  15:45:14 UTC (18:45:14 Istanbul), currently valid. This is the expected
+  rejection/new-CRL observation; exact target entry/signature and a fresh
+  Windows certificate-identity event are not yet captured, so final acceptance
+  remains pending those checks.
+- Desktop Commander reconnected after the requested server restart.
+  Direct read at 18:58 confirms normal RADIUS active, PID 1274, Result=success;
+  minute CRL timer active, last trigger 18:58:03, and sync oneshot Result=success
+  (inactive after completion is normal). No assistant restart was performed.
+- Source inspection for recovery: existing Windows client reports receipt for
+  its installed certificate before deciding renewal. A revoked installed leaf
+  receipt is rejected and handled as retry_pending; ordinary task reruns do not
+  automatically create a fresh CSR in this case. Server issuance accepts a new
+  key/CSR after a previously revoked leaf using fresh Kerberos/live AD/profile
+  checks. Recovery will require a scoped administrative client-state reset,
+  with guarded local backup and a new SYSTEM-task enrollment on an allowed
+  bootstrap network. Do not clear config/trust, reuse the old CSR/key, un-revoke
+  the old certificate or change working pilot 2GL13ZU.
+
 ## Pause checkpoint — 14 October 2026, 16:19 Europe/Istanbul
 
 - Operator requested a Linux shutdown/start before executing the VV06
