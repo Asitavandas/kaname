@@ -312,6 +312,27 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## Pause checkpoint — 14 October 2026, 16:19 Europe/Istanbul
+
+- Operator requested a Linux shutdown/start before executing the VV06
+  certificate-revocation test. No revocation has yet been reported.
+- Completed and retained: wired/wireless positive EAP-TLS/VLAN pilots, CRL
+  synchronization fix, VV06 missing-certificate negative, GPO task/client
+  certificate installation, positive wired/DHCP, pilot-group-out and disabled
+  computer-account rejection with successful restoration.
+- Exact next revocation target remains canonical serial
+  d9c3ee3c0b676cb323c1ec8314b62ee3e20a1d9, VV06 GUID
+  69b0d5cd-db61-4627-9db7-fcc5230152a3. Keep this certificate installed for
+  the negative test; subsequent recovery uses fresh controlled enrollment.
+- Last runtime CRL evidence is #20, valid until 15 October 09:03:32 Istanbul.
+  Recheck active services/current CRL after boot before the panel revocation.
+- Remote Desktop Commander reconnected for this checkpoint. Direct Linux
+  os.sync completed successfully; kaname-lab.service, authwire-radius.service
+  and authwire-radius-crl-sync.timer were each active/enabled. No service stop,
+  certificate/policy mutation or shutdown was performed by the assistant.
+- Work record and source are persisted in Git. This sync is not a newly
+  created full data backup. Existing update backup remains the prior backup.
+
 ## Preservation requirements
 
 Keep RADIUS process/unit/native module, policy conditions/VLANs, RADIUS client
