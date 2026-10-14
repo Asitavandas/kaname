@@ -1,6 +1,6 @@
 # AuthWire current work record
 
-Updated: 13 October 2026, Europe/Istanbul. This record supplements the 9 October
+Updated: 14 October 2026, Europe/Istanbul. This record supplements the 9 October
 `AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-09.docx` / `.pdf`; those reports are a
 dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking and no new report delivery today.
@@ -39,14 +39,14 @@ The operator requested ongoing tracking and no new report delivery today.
 | ID | Latest change | Work still open |
 | --- | --- | --- |
 | B01 | Panel session recovery fix deployed; server API and protected-state verification completed. | Operator browser acceptance; complete setup/apply/recovery UX. |
-| B02 | Live AD identity/pilot group accepted on wired/wireless; VV06 controlled pilot-group removal/rejection and restoration/success completed. | Disabled/deleted account, unavailable AD and capacity tests. |
+| B02 | Live AD identity/pilot group accepted on wired/wireless; VV06 pilot-group removal and disabled-computer-account rejection/recovery completed. | Deleted account, unavailable AD and capacity tests. |
 | B03 | Real RADIUS server name/CA validation completed on wired and wireless Windows profiles. | Revocation, expired/wrong issuer, CA/issuer and signing maintenance acceptance. |
 | B04 | Enrollment task, successful last result, installation record, valid certificate/private key and confirmed receipt observed for the pilot. | Interrupted/duplicate requests and negative enrollment scenarios. |
 | B05 | Pilot task and installed client confirmed. Client source hash remained unchanged through server updates. | Fresh SYSVOL package/signature/hash comparison where not yet recorded. |
 | B06 | No forced renewal or full OS reboot recovery acceptance executed in this session. | Renewal, offline/reboot recovery, old/new selection and expired recovery. |
-| B07 | Normal production service active; actual switch/AP EAP-TLS/VLAN and VV06 group-out rejection/recovery completed. | Disabled/revoked identity negatives and full boot behavior; accounting remains off. |
-| B08 | Real permit and dynamic VLAN/DHCP completed on switch/AP; pilot-group scope rejection/recovery completed on VV06. | Other explicit deny conditions and negative state transitions. |
-| B09 | Pilot PC/port, Windows trust/profile, positive access and dynamic VLAN completed. VV06 missing-client-certificate wired test completed on 13 October. | Wrong-group acceptance completed with recovery; full OS reboot/lifecycle row remains open. |
+| B07 | Normal production service active; actual switch/AP EAP-TLS/VLAN, VV06 group-out and disabled-account rejection/recovery completed. | Revoked-certificate negative and full boot behavior; accounting remains off. |
+| B08 | Real permit and dynamic VLAN/DHCP completed on switch/AP; pilot-group and disabled-account rejection/recovery completed on VV06. | Other explicit deny conditions and negative state transitions. |
+| B09 | Wired positive/VLAN tests and VV06 missing-cert, wrong-group and disabled-account negatives completed, including recovery for reversible AD changes. | Revoked-certificate and full OS reboot/lifecycle acceptance remain open. |
 | B10 | AP/SSID/source/secret, manual Windows machine EAP-TLS profile, positive connection and dynamic VLAN completed (3 of original 4 rows). | Intentional negative trust/identity tests remain open; reconnect was exercised during VLAN testing. |
 | B11 | No accounting expansion in this session. | Accounting, session correlation and retention. |
 | B12 | Updates retained configuration, administrators and certificates with backups. | Full restore/rollback and clean appliance import/boot acceptance. |
@@ -116,7 +116,7 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   RADIUS PID survival across panel stop/restart. Never retest this by stopping
   the customer's live panel without independent authorization and need.
 
-## Next agreed field session — 13 October 2026 morning
+## VV06 field session — 13–14 October 2026
 
 - Operator will bring a domain-joined Windows computer with no AuthWire client
   certificate installed. Operator identified the new computer as **VV06** at 11:14 on 13 October,
@@ -262,12 +262,28 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   certificate, VLAN or working 2GL13ZU change was instructed.
   Next controlled case is temporarily disabling only the VV06 AD computer
   account, checking fresh rejection, then re-enabling and verifying recovery.
-  That disabled-account case has not yet been executed.
+  The disabled-account case was subsequently completed on 14 October, as
+  recorded below.
 
-- Then exercise controlled enrollment and positive access, followed by the
-  outstanding wrong-group, disabled-account and revoked-certificate cases on this
-  separate test computer/certificate. Keep working pilot 2GL13ZU unchanged and
-  restore temporary account/group changes after each case.
+- **Completed: VV06 disabled AD computer account rejection and recovery on
+  14 October.** Operator labeled the first screenshot as account disabled:
+  Ethernet MAC 38-CA-84-DB-FF-E6 / GUID 415933d5-5010-4a7a-b8bf-0e537e0bc7f2
+  reported Connected / Authentication failed. Fresh event 15514 at 15:56:34
+  identifies host/AuthWire computer 69b0d5cd-db61-4627-9db7-fcc5230152a3,
+  peer 64E881346361, reason 0x50005, error 0x80420105. The second screenshot,
+  after account re-enabling and dot3svc reset, shows the same physical Ethernet
+  Connected / Authentication succeeded. This closes the controlled wired
+  account-disabled rejection/recovery field case using operator-described AD
+  states. Exact backend decision reason and Enabled=false/true AD command
+  output were not captured; generic Windows error alone is not a revocation
+  or expiry diagnosis. Evidence: image(20261014-130352).png and
+  image(20261014-130403).png, inspected directly.
+- Next: revoked-certificate test on VV06 only, then controlled fresh enrollment.
+  First identify the actual current client certificate serial/thumbprint and
+  verify current CRL readiness. No certificate has yet been revoked for this
+  case; do not mark it completed. Desktop Commander was offline at the 16:06
+  follow-up, so no fresh server/CRL inspection could be performed remotely.
+  Keep working pilot 2GL13ZU unchanged and preserve policy/client/CA settings.
 - **User EAP-TLS remains an explicit open item.** User certificate issuance,
   AD binding and live authorization exist in source, but automated user
   distribution/renewal and real wired/wireless user authentication have not been
