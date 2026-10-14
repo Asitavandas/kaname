@@ -40,13 +40,13 @@ The operator requested ongoing tracking and no new report delivery today.
 | --- | --- | --- |
 | B01 | Panel session recovery fix deployed; server API and protected-state verification completed. | Operator browser acceptance; complete setup/apply/recovery UX. |
 | B02 | Live AD identity/pilot group accepted on wired/wireless; VV06 pilot-group removal and disabled-computer-account rejection/recovery completed. | Deleted account, unavailable AD and capacity tests. |
-| B03 | Real RADIUS server name/CA validation completed on wired and wireless Windows profiles. | Revocation, expired/wrong issuer, CA/issuer and signing maintenance acceptance. |
+| B03 | Server name/CA validation completed on wired/wireless; VV06 wired revoked-certificate rejection and signed/current runtime CRL membership verified. | Expired/wrong issuer, CA/issuer rotation and remaining signing maintenance acceptance. |
 | B04 | Enrollment task, successful last result, installation record, valid certificate/private key and confirmed receipt observed for the pilot. | Interrupted/duplicate requests and negative enrollment scenarios. |
 | B05 | Pilot task and installed client confirmed. Client source hash remained unchanged through server updates. | Fresh SYSVOL package/signature/hash comparison where not yet recorded. |
 | B06 | No forced renewal or full OS reboot recovery acceptance executed in this session. | Renewal, offline/reboot recovery, old/new selection and expired recovery. |
-| B07 | Normal production service active; actual switch/AP EAP-TLS/VLAN, VV06 group-out and disabled-account rejection/recovery completed. | Revoked-certificate negative and full boot behavior; accounting remains off. |
+| B07 | Normal production service active; actual switch/AP EAP-TLS/VLAN, VV06 group-out and disabled-account rejection/recovery completed. | Full boot/lifecycle acceptance and accounting remain open. |
 | B08 | Real permit and dynamic VLAN/DHCP completed on switch/AP; pilot-group and disabled-account rejection/recovery completed on VV06. | Other explicit deny conditions and negative state transitions. |
-| B09 | Wired positive/VLAN tests and VV06 missing-cert, wrong-group and disabled-account negatives completed, including recovery for reversible AD changes. | Revoked-certificate and full OS reboot/lifecycle acceptance remain open. |
+| B09 | Wired positive/VLAN tests and VV06 missing-cert, wrong-group and disabled-account negatives completed, including recovery for reversible AD changes. | Post-revocation fresh enrollment and full OS reboot/lifecycle acceptance remain open. |
 | B10 | AP/SSID/source/secret, manual Windows machine EAP-TLS profile, positive connection and dynamic VLAN completed (3 of original 4 rows). | Intentional negative trust/identity tests remain open; reconnect was exercised during VLAN testing. |
 | B11 | No accounting expansion in this session. | Accounting, session correlation and retention. |
 | B12 | Updates retained configuration, administrators and certificates with backups. | Full restore/rollback and clean appliance import/boot acceptance. |
@@ -311,6 +311,34 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   implemented and is not silently added to the current EAP-TLS release scope.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
+
+## VV06 revocation acceptance — 14 October 2026, 19:06
+
+- **Completed: VV06 wired revoked-certificate rejection.** Operator ran the
+  targeted read-only CRL check: crl_number=21, currently_valid=true,
+  signature_valid=true, vv06_in_crl=true for canonical serial
+  d9c3ee3c0b676cb323c1ec8314b62ee3e20a1d9. The runtime Issuer public key and
+  issuer name were used to verify the signature.
+- Fresh Windows screenshot image(20261014-160552).png shows event 15514
+  at 19:02:55, physical Realtek Ethernet GUID
+  415933d5-5010-4a7a-b8bf-0e537e0bc7f2, MAC 38CA84DBFFE6, peer
+  64E881346361, host/AuthWire computer 69b0d5cd-db61-4627-9db7-fcc5230152a3,
+  reason 0x50005, error 0x40420110, generic account-related failure text.
+  Do not relabel that text as independent proof that the AD account is disabled.
+  Controlled revocation, exact signed/runtime CRL membership and fresh matching
+  endpoint rejection jointly close the field negative case. Actual rejection
+  layer (native CRL versus registry callback) was not independently instrumented.
+- **Open: controlled fresh enrollment after revocation.** VV06 must use the
+  ordinary domain/bootstrap network. Keep the account enabled/in the pilot
+  group. Prepare an elevated, VV06-only guarded state reset: refuse running
+  enrollment/pending request or mismatched installed serial/thumbprint; verify
+  client Authenticode signature; temporarily disable the existing task, back up
+  only installed/retry/status metadata under the protected ProgramData AuthWire
+  folder, then enable/start the same SYSTEM task for a fresh key/CSR. Preserve
+  config/trust, GPO, server settings and the old installed leaf until the new
+  certificate/receipt is verified. This is explicit administrative recovery,
+  not automatic revival of the revoked certificate or a production recovery UX
+  acceptance. No recovery state mutation has been confirmed yet.
 
 ## VV06 revocation observation — 14 October 2026, 18:57
 
