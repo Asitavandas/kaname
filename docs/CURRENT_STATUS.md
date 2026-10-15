@@ -312,6 +312,19 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 controlled dispatch result — 15 October 2026, 13:15
+
+- Operator executed the existing-task RunEx dispatch and reported TaskState=
+  Running, LastRunTime=13:12:58, LastTaskResult=267009 (running),
+  PendingRequest=false, InstalledRecord=true. This is actual task execution
+  and a recreated installed.json, not merely an accepted launch request.
+- Inspect the certificate referenced by current installed.json thumbprint and
+  current status/finished task result before accepting fresh enrollment or
+  removing the old revoked leaf. New serial/thumbprint have not yet been read.
+- Persistent scheduled-task settings were not changed by the supplied RunEx
+  method. Ordinary condition-based scheduling reliability/precise queue cause
+  remains open; do not label one-run dispatch as a permanent scheduler repair.
+
 ## VV06 scheduler follow-up — 15 October 2026, 13:07
 
 - Current bootstrap reachability is confirmed: Wi-Fi source 10.35.50.69,
