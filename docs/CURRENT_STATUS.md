@@ -318,6 +318,46 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 reboot failure and switch port review — 15 October 2026, 15:46
+
+- Corrected-network automatic reboot acceptance is NOT complete. Operator's
+  15:41 submission shows physical Ethernet Connected / Authentication failed;
+  enrollment task Running, LastRunTime=15:38:01, LastTaskResult=267009.
+  Boot timestamp, fresh Wired-AutoConfig error and final task result were not
+  supplied. Preserve earlier manual Ready/0 recovery as a separate passed case.
+- Direct server check at 12:42:45Z: panel active/running PID1238 Result=success,
+  RADIUS active/running PID1274 Result=success, minute CRL timer active/waiting,
+  CRL sync oneshot inactive after Result=success (normal). No restart performed.
+- Directly inspected operator port 6 screenshots image(20261015-124409).png
+  and image(20261015-124444).png. Actual settings:
+  Enabled, no port profile, Client-based 802.1X;
+  MAC authentication off; Unauthenticated User Guest Access ON;
+  Port isolation off; untrusted network protections enabled;
+  Untagged Default Network shows Select;
+  Untagged Guest Network VLAN70;
+  Selected Wired Networks with All networks checked and static tagged
+  VLAN1,110,120,130,140,200; VLAN70 guest disabled in tagged selection.
+  Connected VV06 MAC38:ca:84:db:ff:e6 currently displays VLAN70 Guest.
+- Primary-source review: current Instant On cloud guide documents guest fallback
+  on failed 802.1X and per-client authentication. 1930 hardware management guide
+  states static tagged/untagged membership conflicting with the RADIUS-indicated
+  tag status can cause authentication failure; a non-member port can join the
+  returned VLAN dynamically. Hardware behavior is a strong hypothesis here,
+  not a captured server/switch failure reason.
+- Scoped correction proposed for ordinary untagged VV06 endpoint: retain
+  Client-based authentication and intended VLAN70 guest fallback; clear all
+  static tagged networks from port6 only, explicitly set its Untagged Default
+  Network to VLAN110 TEST110 for the current test. Do not make the PC port an
+  all-VLAN trunk or change NIC VLAN tagging. Keep existing uplink VLAN carriage,
+  other ports, RADIUS policy/CA/certificates and protections unchanged.
+- Guest fallback being enabled is not itself proof of a defect; observed
+  VLAN70 can be the consequence of failed authentication. If Windows keeps a
+  previous VLAN110 lease while actually in guest70, IP reachability may fail.
+- Next after operator saves scoped port correction: fresh wired reconnect,
+  current auth state first, then DHCP/IP and FQDN TCP if auth succeeds.
+  If authentication still fails, capture fresh physical-interface 15514/15506
+  before further changes. Automatic reboot/task acceptance remains open.
+
 ## VV06 existing-certificate task recovered — 15 October 2026, 15:38
 
 - **Completed: normal existing SYSTEM-task run after VLAN carriage correction.**
