@@ -312,6 +312,27 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## Gateway/interface and endpoint route matched — 15 October 2026, 15:21
+
+- Directly inspected image(20261015-122053).png from FortiGate VIZYONVERI-FW:
+  10.10.110.1/24 is assigned to TEST110, interface index 46.
+  VRF 0 route 10.10.110.0/24 is directly connected through TEST110.
+  FortiGate ARP maps 10.10.110.4 to 38:ca:84:db:ff:e6 on TEST110,
+  matching VV06's actual physical MAC.
+- Windows Find-NetRoute to 10.35.50.246 selects Ethernet, source 10.10.110.4,
+  destination 0.0.0.0/0, next hop 10.10.110.1. The inspected route does not
+  select one of the unplugged VPN virtual adapters.
+- Basic gateway/interface and reciprocal neighbor data align. These observations
+  do not explain the earlier empty capture or prove successful IP forwarding.
+  Preserve EAP-TLS/profile and avoid changing gateway/VLAN based on speculation.
+- Next: FortiGate route lookup to AuthWire, read-only policy lookup for tuple
+  10.10.110.4:55000 -> 10.35.50.246:8765 TCP with actual ingress TEST110,
+  plus FortiGate server-neighbor entry. Policy lookup is configuration evaluation,
+  not independent proof a real packet arrived/was allowed.
+- Compare server neighbor MAC to actual Linux ens33 MAC. Endpoint gateway ping
+  remains a distinct local-in check; verify TEST110 PING setting if needed,
+  rather than assuming the transit ACCEPT/ALL policy grants local-in traffic.
+
 ## FortiGate capture empty — 15 October 2026, 15:16
 
 - Operator reports FortiGate capture stopped with Ctrl+C:
