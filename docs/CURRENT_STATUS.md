@@ -312,6 +312,26 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## FortiGate capture empty — 15 October 2026, 15:16
+
+- Operator reports FortiGate capture stopped with Ctrl+C:
+  0 packets received by filter, 0 packets dropped by kernel.
+  No matching ingress/egress headers were supplied for the instructed
+  combined client ICMP/server TCP filter.
+- This is not proof of a specific deny rule or a bad Windows EAP-TLS profile.
+  Capture timing, actual gateway device, VDOM/HA context, endpoint selected
+  route, alternate path and capture visibility remain to be established.
+  Do not disable hardware offload or reset switch/authentication based only
+  on an empty trace.
+- Next read-only cross-check in the VLAN 110 FortiGate VDOM:
+  interface IP ownership for 10.10.110.1, route lookup to 10.10.110.4,
+  ARP entry for VV06 (expected 38:ca:84:db:ff:e6 if directly connected).
+  Separately inspect Windows Find-NetRoute toward 10.35.50.246 with explicit
+  Format-List so mixed table formatting does not hide route fields.
+- Existing gateway neighbor on VV06 is 90-6C-AC-A7-D2-D1 Reachable.
+  Its ownership has not yet been independently matched to the FortiGate.
+  No configuration/security changes have been performed.
+
 ## VV06 gateway ARP resolved — 15 October 2026, 15:12
 
 - Current physical Ethernet authentication succeeds. IPv4 10.10.110.4/24 is
