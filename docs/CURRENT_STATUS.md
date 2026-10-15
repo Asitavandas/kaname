@@ -322,6 +322,36 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## Controlled normal renewal test prepared — 15 October 2026, 16:20
+
+- After completed reboot acceptance, operator authorized continuing to normal
+  certificate renewal. Fresh main-source review confirms supported panel action
+  Certificates -> Devices -> installed VV06 -> "Şimdi yenile", endpoint
+  POST /api/device-admin/renew-now. request_renewal validates installed/current/
+  unrevoked leaf, updates only that issuance renew_at and records actor audit.
+  It does not revoke/delete the old certificate, change profile/global lifetime
+  or restart RADIUS.
+- Existing target baseline: VV06 identity69b0d5cd-db61-4627-9db7-fcc5230152a3,
+  installed canonical serial6fc12360e627e5b92b0d60ab103def6cb40fe624,
+  thumb68B32BBD470847950BAE5629B853739F819150B5, expiry13Jan2027 13:07:32 local.
+  Other pilot2GL13ZU and revoked predecessor d9c3... are outside scope.
+- Verified client behavior: initial healthy receipt reports renew_now, then
+  client establishes a fresh Kerberos session before new CSR/challenge/issue,
+  installs/verifies the new leaf/private key and final receipt, and preserves
+  the predecessor for a12-hour local overlap before normal cleanup.
+- Test uses an explicitly advanced due time through the supported admin action,
+  not proof that a natural90-day calendar boundary elapsed. Capture baseline
+  serial/thumb, request renewal only once for installed VV06, launch the existing
+  SYSTEM task normally, wait for actual completion, then read installed-selected
+  new certificate plus task result and retry presence. No metadata reset,
+  date manipulation, private-key export or server deployment is indicated.
+- Renewal has NOT yet been requested/executed in field. After installation,
+  verify changed serial/thumb and public key, active new registry/receipt and
+  wired access with actual selected-certificate evidence where available.
+  Do not equate installing a new certificate while old remains valid with
+  independent proof that a reconnect selected the new leaf.
+- No formal report requested/delivered. Continue updating this work record.
+
 ## Completed: VV06 automatic reboot acceptance — 15 October 2026, 16:15
 
 - Operator supplied actual endpoint correlation:
