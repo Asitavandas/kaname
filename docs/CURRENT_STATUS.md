@@ -312,6 +312,29 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 VLAN 110 firewall prerequisite — 15 October 2026, 14:12
+
+- Explicit endpoint queries to internal DNS 10.35.50.70 timed out for both
+  kaname.vizyonveri.local A and domain-controller SRV records.
+  Direct-IP TCP 10.35.50.246:8765 also failed with source 10.10.110.4.
+  Ping timed out as well; ICMP alone is not used as service-health evidence.
+- Operator confirmed no firewall access rule exists from 10.10.110.0 network
+  to 10.35.50.0 network and will configure access then repeat the same tests.
+  Current evidence strongly supports missing inter-VLAN access as the DNS/
+  HTTPS bootstrap prerequisite failure. Exact rule effect awaits retest.
+- Working machine-certificate EAP-TLS/VLAN authorization does not establish
+  endpoint HTTPS enrollment or domain-controller reachability: the RADIUS
+  conversation is between switch and server, whereas task requests originate
+  from VV06 in its assigned VLAN.
+- Recommend scoped destinations/services for this pilot: internal DNS
+  10.35.50.70 UDP/TCP 53, AuthWire 10.35.50.246 TCP 8765, and required AD
+  connectivity to the actual DC according to the existing domain firewall policy.
+  Do not request unrestricted access between both entire networks.
+- Firewall/DHCP configuration is performed by the operator. No RADIUS,
+  certificate, task, policy/VLAN or server configuration has been changed.
+  Post-change DNS/HTTPS/DC discovery and an actual successful existing task
+  run remain pending; no second enrollment/reset is needed for this test.
+
 ## VV06 VLAN 110 DNS/DC discovery failure — 15 October 2026, 14:05
 
 - Endpoint Ethernet DNS servers are 10.35.50.70 and public resolver 1.1.1.1.
