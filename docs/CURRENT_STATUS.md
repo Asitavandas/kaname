@@ -6,6 +6,59 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Panel reload/session follow-up — 15 October 2026, evening
+
+- Operator postpones VV06 computer-certificate field tests until Monday
+  morning19 October2026; selected renewed leaf and delayed cleanup remain
+  pending. The user-authentication pilot is retained.
+- Opened both screenshots: image(20261015-193101).png shows Certificates with
+  STORE_UNAVAILABLE; image(20261015-193338).png shows credentials during F5.
+  Current source displays the credential form before async cookie validation.
+  It also writes admin_sessions.last_seen on every authenticated request.
+- Existing error handling discards SQLite error codes and messages. A read-only
+  journal signal scan found no database-specific diagnostic; the exact
+  historical storage error cannot be established from this screenshot.
+  TLS certificate-unknown records exist but do not explain a JSON storage
+  response from an already loaded panel. No TLS trust settings changed.
+- PR32 https://github.com/Asitavandas/kaname/pull/32, tested source head
+  e21e08ec4b54b3647e600899c665bc4aed4bb1da, version0.14.0-dev.6:
+  hide credentials in initial HTML until cookie validation finishes; show
+  neutral loading/recovery, actual401 still requires login.
+- New logins: absolute12h and idle2h; preserve existing absolute expiry fields.
+  Validate account enabled/version/permissions and session expiry every time,
+  persist activity at most once per minute. Background panel reads count as
+  activity as before; idle cutoff has up to60s touch granularity.
+- SQLite busy/locked responses now distinct STORE_BUSY; fixed area/method/
+  numeric-code-only diagnostics exclude SQL, query values, exception text and
+  secrets. Only GET503/STORE_BUSY receives at most two retries (200/600ms)
+  within the original deadline. No password/POST/write/service-action replay,
+  no retry of general storage/network failures. No journal-mode migration.
+- Local and hosted foundation:460 tests,25 environment skips. Administrator/
+  Services focused suite43 pass, including an actual reserved SQLite writer
+  during an active session read. Browser11 session fault cases pass, including
+  delayed F5, bounded busy GETs and exactly one busy POST; full Services UI
+  regression also passes. Windows enrollment, Kerberos and hardened installer
+  gates pass. Native normal/debug EAP-TLS/VLAN/CRL and runtime parsing gates\n  also passed before merge.
+- Application changes limited to panel admin.py/server.py, static loading/
+  API behavior and version metadata. Signed Windows client, PKI, enrollment,
+  live AD authorization, policy/VLAN and native RADIUS code unchanged.
+- Current production remains dev.5 until operator executes the prepared guarded
+  update. Require fresh private backup including broker/history/unit, read-only
+  DB integrity/API checks and exact protected files/state + RADIUS/broker PID
+  preservation. Do not mark deployment or live user acceptance completed yet.
+
+- PR32 merged as40d69fff4c849d207d368e42bea64401dd552156.
+  Linux source104 files exactly match the tested Git tree; expected manifest
+  0679cb615cfc05179363a28807c208f0235efdb14d08b616d0517e2b862accee,
+  stage /home/kaname-runner/kaname-stage-40d69fff4c84.
+  Guarded launcher /home/segmentiq/authwire-panel-update-dev6-20261015.py,
+  SHA25627ebd35feadd8d8b0522819d7f12889d734c06b5d0eb91f70034b18c5b450e45.
+  Prepared checkpoint is retained alongside this record. Launcher additionally
+  backs up service broker code/history/unit using the pinned backup helper.
+- Direct pre-installation service read: panel PID149888, RADIUS PID1274,
+  broker PID149955, all active. Installation and post-update operator reload/
+  intermittent-error observation remain pending.
+
 ## Services screen and controlled CRL action accepted — 15 October 2026, 18:48 Istanbul
 
 - **Completed: first-phase Services feature implementation, deployment and
