@@ -7,6 +7,10 @@ The operator requested ongoing tracking and no new report delivery today.
 
 ## Completed field results
 
+- **Completed: VV06 controlled normal renewal and key rotation.** Supported
+  per-device panel renewal completed via the existing SYSTEM client with a
+  distinct certificate/public key, private key available and installation state
+  confirmed. Post-renewal reconnect/selected-leaf and timed cleanup remain open.
 - **Completed: VV06 automatic startup authentication and certificate-task check.**
   On 15 October boot16:05:50, existing task started16:06:02 without manual launch,
   completed Ready/0, RanAfterBoot=True and retry.json absent; wired authentication
@@ -53,7 +57,7 @@ The operator requested ongoing tracking and no new report delivery today.
 | B03 | Server name/CA validation completed on wired/wireless; VV06 wired revoked-certificate rejection and signed/current runtime CRL membership verified. | Expired/wrong issuer, CA/issuer rotation and remaining signing maintenance acceptance. |
 | B04 | Enrollment task, successful last result, installation record, valid certificate/private key and confirmed receipt observed for the pilot. | Interrupted/duplicate requests and negative enrollment scenarios. |
 | B05 | Pilot task and installed client confirmed. Client source hash remained unchanged through server updates. | Fresh SYSVOL package/signature/hash comparison where not yet recorded. |
-| B06 | VV06 controlled post-revocation fresh enrollment, wired access, manual task recovery and automatic corrected-network reboot/task acceptance completed. | Ordinary certificate renewal, daily-trigger/extended scheduler reliability, offline recovery, old/new key lifecycle and expired recovery. |
+| B06 | VV06 controlled post-revocation fresh enrollment, wired access, manual task recovery and automatic corrected-network reboot/task acceptance completed. | Post-renewal access/selected-leaf proof, natural calendar renewal, daily-trigger reliability, offline/expired recovery and delayed predecessor cleanup; controlled renewal/new key installed successfully. |
 | B07 | Normal service, actual switch/AP EAP-TLS/VLAN, VV06 group/disabled-account recovery and corrected-network reboot wired/task acceptance completed. | Remaining lifecycle acceptance, other failure scenarios and accounting. |
 | B08 | Real permit and dynamic VLAN/DHCP completed on switch/AP; pilot-group and disabled-account rejection/recovery completed on VV06. | Other explicit deny conditions and negative state transitions. |
 | B09 | Wired positives, VV06 missing-cert/group/disabled/revoked negatives, controlled fresh-certificate recovery and automatic post-fix reboot wired/task acceptance completed. | Remaining lifecycle/negative scenarios; this does not close ordinary renewal or all offline recovery. |
@@ -321,6 +325,36 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   implemented and is not silently added to the current EAP-TLS release scope.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
+
+## Completed: VV06 renewed certificate and key rotation — 15 October 2026, 16:33
+
+- Operator supplied installed-selected current machine certificate:
+  Subject CN=AuthWire computer69b0d5cd-db61-4627-9db7-fcc5230152a3;
+  canonical serial5899e122009871b0d5536890bee81e4f0499e605;
+  thumb4CFD8321AE08D6074B99AF5C194151AD5F99F454;
+  HasPrivateKey=True; CertificateChanged=True; PublicKeyChanged=True;
+  OldCertificatePresent=True; NotAfter13 January2027 16:26:42 local.
+- **Completed: supported per-device due-time request -> normal SYSTEM client
+  renewal -> new leaf and new key -> installed receipt state.** Prior same-run
+  task Ready/0, no pending/retry and fresh installed status support completion.
+  This is controlled renewal via "Şimdi yenile", not elapsed natural lifetime.
+- Old valid predecessor6fc12360e627e5b92b0d60ab103def6cb40fe624 /
+  thumb68B32BBD470847950BAE5629B853739F819150B5 remains as intended overlap.
+  Fresh source receipt/maintenance review additionally confirms server-side
+  predecessor retirement deadline up to24h (capped by expiry), independently
+  of the client's12h local certificate/key cleanup eligibility.
+  Do not revoke/remove the old leaf or manipulate time for this normal test.
+- No normal production RADIUS authorization logging currently prints the leaf
+  serial; changing it/restarting live RADIUS is not warranted solely to obtain
+  selection proof. Passive handshake parsing may be unable to reveal client
+  certificate under TLS1.3; no parser/capture script was deployed.
+- Next immediate field check: ordinary wired reauthentication, DHCP/VLAN and
+  AuthWire reachability after renewal while preserving normal overlap.
+  A successful reconnect with both old/new still eligible proves post-renewal
+  access, not by itself which serial Windows selected. Keep selected-new-leaf
+  and delayed retirement/cleanup acceptance explicitly separate.
+- No key export, temporary certificate-store move, old-leaf removal, CA/policy
+  change or server service restart was performed for this verification.
 
 ## VV06 renewal task completed; new leaf verification pending — 15 October 2026, 16:31
 
