@@ -43,10 +43,10 @@ The operator requested ongoing tracking and no new report delivery today.
 | B03 | Server name/CA validation completed on wired/wireless; VV06 wired revoked-certificate rejection and signed/current runtime CRL membership verified. | Expired/wrong issuer, CA/issuer rotation and remaining signing maintenance acceptance. |
 | B04 | Enrollment task, successful last result, installation record, valid certificate/private key and confirmed receipt observed for the pilot. | Interrupted/duplicate requests and negative enrollment scenarios. |
 | B05 | Pilot task and installed client confirmed. Client source hash remained unchanged through server updates. | Fresh SYSVOL package/signature/hash comparison where not yet recorded. |
-| B06 | No forced renewal or full OS reboot recovery acceptance executed in this session. | Renewal, offline/reboot recovery, old/new selection and expired recovery. |
+| B06 | Controlled post-revocation fresh enrollment and new certificate/private key verified on VV06; subsequent VLAN 110 address observed. | Fresh wired authentication confirmation, ordinary renewal/scheduler reliability, offline/reboot recovery, key lifecycle and expired recovery. |
 | B07 | Normal production service active; actual switch/AP EAP-TLS/VLAN, VV06 group-out and disabled-account rejection/recovery completed. | Full boot/lifecycle acceptance and accounting remain open. |
 | B08 | Real permit and dynamic VLAN/DHCP completed on switch/AP; pilot-group and disabled-account rejection/recovery completed on VV06. | Other explicit deny conditions and negative state transitions. |
-| B09 | Wired positive/VLAN tests and VV06 missing-cert, wrong-group and disabled-account negatives completed, including recovery for reversible AD changes. | Post-revocation fresh enrollment and full OS reboot/lifecycle acceptance remain open. |
+| B09 | Wired positive/VLAN tests and VV06 missing-cert, wrong-group and disabled-account negatives completed, including recovery for reversible AD changes. | Fresh post-revocation wired authentication confirmation and full OS reboot/lifecycle acceptance remain open; new enrollment is verified. |
 | B10 | AP/SSID/source/secret, manual Windows machine EAP-TLS profile, positive connection and dynamic VLAN completed (3 of original 4 rows). | Intentional negative trust/identity tests remain open; reconnect was exercised during VLAN testing. |
 | B11 | No accounting expansion in this session. | Accounting, session correlation and retention. |
 | B12 | Updates retained configuration, administrators and certificates with backups. | Full restore/rollback and clean appliance import/boot acceptance. |
@@ -311,6 +311,21 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   implemented and is not silently added to the current EAP-TLS release scope.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
+
+## VV06 recovery network observation — 15 October 2026, 13:45
+
+- **Completed: post-recovery IPv4 address observation.** Operator supplied
+  Ethernet 10.10.110.4/24, gateway 10.10.110.1, AddressState=Preferred,
+  with Wi-Fi disconnected. This matches the established VLAN 110 subnet.
+- New certificate installation is already verified separately. This submission
+  contains no current netsh authentication state or fresh 15505 success event;
+  an IP address alone does not establish successful EAP-TLS or which certificate
+  was selected. Keep fresh wired authentication acceptance pending.
+- Guarded removal of the old revoked leaf was instructed, but no cleanup output
+  was supplied. Do not record removal or private-key cleanup as confirmed.
+- Next: read current physical Ethernet authentication state and latest matching
+  Wired-AutoConfig success/failure events. Do not reset certificate metadata,
+  task settings, RADIUS service, policies, VLANs or CA material for this read.
 
 ## VV06 fresh certificate verified — 15 October 2026, 13:35
 
