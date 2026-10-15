@@ -312,6 +312,28 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 fresh certificate verified — 15 October 2026, 13:35
+
+- **Completed: controlled fresh enrollment after revocation, endpoint evidence.**
+  Operator reports TaskState=Ready, LastTaskResult=0; current installed record
+  resolves to Subject CN=AuthWire computer
+  69b0d5cd-db61-4627-9db7-fcc5230152a3, serial
+  6fc12360e627e5b92b0d60ab103def6cb40fe624, thumbprint
+  68B32BBD470847950BAE5629B853739F819150B5, HasPrivateKey=true, expiry
+  13 January 2027 13:07:32 Europe/Istanbul.
+  status.json state=installed, serial matches the new leaf, reported
+  last_success=2026-10-15T10:05:31.9905999+00:00.
+- These recorded times do not establish that the 13:12:58 RunEx dispatch
+  created this leaf: last_success precedes that task start. Preserve the raw
+  observations; do not infer an exact issuance/dispatch chronology or permanent
+  scheduler fix from them. The distinct new certificate/private-key and
+  installed receipt state establish the recovery milestone.
+- Next: guarded removal of only the old revoked Windows certificate with
+  thumbprint 216819A5BF9A13A2A75609EA84FBFA316A39B453, after checking new
+  leaf identity/private-key. Keep the server old serial revoked. No CNG key
+  container deletion or CA/trust/policy changes are part of this step.
+  Fresh wired port 6 EAP-TLS/DHCP using the new leaf remains pending.
+
 ## VV06 controlled dispatch result — 15 October 2026, 13:15
 
 - Operator executed the existing-task RunEx dispatch and reported TaskState=
