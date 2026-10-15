@@ -3,7 +3,49 @@
 Updated: 15 October 2026, Europe/Istanbul. This record supplements the 9 October
 `AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-09.docx` / `.pdf`; those reports are a
 dated baseline. Use this record when producing their next requested revision.
-The operator requested ongoing tracking and no new report delivery today.
+The operator requested ongoing tracking; on 15 October at16:52 requested a
+pause checkpoint and an updated report with red check marks against 9 October.
+
+## Pause checkpoint and report revision — 15 October 2026, 16:52
+
+- Operator requested a pause, saved final state and a current report marking
+  changes since 9 October with red check marks. No new field test is required
+  before this pause.
+- Direct Linux read at16:53 confirms installed VERSION=0.14.0-dev.4,
+  kaname-lab.service active/enabled PID1238 Result=success,
+  authwire-radius.service active/enabled PID1274 Result=success, and
+  authwire-radius-crl-sync.timer active/enabled. os.sync completed successfully.
+  No service stop/restart, configuration, certificate, CA or policy mutation.
+- Current completed checkpoint includes controlled normal VV06 renewal/new key,
+  confirmed installed state, post-renewal wired Authentication succeeded,
+  10.10.110.4/24 gateway10.10.110.1 and TCP8765 reachability to10.35.50.246.
+  Preserve old/new overlap. Exact EAP-selected renewed leaf, local12h cleanup
+  and separate server retirement (up to24h) remain open.
+- Source/work record are in Git and previous guarded upgrade backups remain
+  the previously confirmed backups. Disk sync is not a new full backup.
+  The connected segmentiq user cannot read root-protected state/config; sudo
+  requires an interactive password. A new current data backup has NOT been
+  executed or verified.
+- Prepared /home/segmentiq/authwire-pause-backup-20261015.py,
+  SHA256 f3defafe3faed08d5cae48b982f74217c8a24a15107c25ced267a26a84958f43.
+  It uses read-only SQLite online backup/integrity checks, private root-only
+  output under /var/backups/authwire, verifies unchanged live state during
+  capture and archive readability; includes configuration/state, deployed
+  source/venv/native RADIUS and effective local units/drop-ins. It stops no
+  services and prints no protected payloads. Syntax and isolated SQLite/
+  inventory smoke checks passed; operator sudo execution is still needed.
+  It is a local checkpoint, not an independently tested restore or off-host
+  disaster-recovery copy; B12 restore acceptance remains open.
+- Next session: read current services/CRL and selected installed metadata;
+  observe normal task execution after cleanup eligibility, verify intended old
+  certificate/key cleanup and successful access with the renewed leaf. Do not
+  repeat completed reboot/renewal tests or manually delete/revoke the valid old
+  certificate merely to force a result.
+- User authentication remains explicitly planned: machine EAP-TLS is the
+  accepted pilot. User EAP-TLS deployment, live user/group authorization and
+  pre/post-login behavior require their own scoped pilot; TEAP chaining has
+  no implementation acceptance. Panel browser feedback, wireless negatives,
+  daily/offline lifecycle, accounting and restore/rollback remain separate.
 
 ## Completed field results
 
