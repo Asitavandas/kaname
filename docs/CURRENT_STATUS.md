@@ -312,6 +312,29 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 VLAN 110 DNS/DC discovery failure — 15 October 2026, 14:05
+
+- Endpoint Ethernet DNS servers are 10.35.50.70 and public resolver 1.1.1.1.
+  Test-NetConnection by FQDN warned that kaname.vizyonveri.local name
+  resolution failed; nltest forced DC discovery returned 1355 / ERROR_NO_SUCH_DOMAIN.
+  No endpoint TCP result was supplied. DNS/DC discovery is currently unhealthy;
+  failed discovery alone does not mean VV06 lost domain membership.
+- Direct read-only DNS queries from AuthWire Linux to 10.35.50.70 succeeded:
+  authoritative NOERROR A kaname.vizyonveri.local -> 10.35.50.246;
+  authoritative NOERROR SRV _ldap._tcp.dc._msdcs.vizyonveri.local ->
+  dc01.vizyonveri.local, port 389. Thus these records exist and the DNS server
+  answers from the Linux management-network vantage. This does not prove
+  VLAN 110 DNS reachability or identify a specific firewall rule.
+- Session-stage enrollment failure is consistent with endpoint DNS/DC failure,
+  but exact original SSPI/HTTPS exception remains unobserved.
+- Next: explicit endpoint queries against 10.35.50.70 for both records, plus
+  direct-IP TCP 8765 reachability to 10.35.50.246. Check VLAN 110 DNS routing/
+  ACL and DHCP resolver configuration against results. Domain clients should
+  receive internal AD DNS servers; public recursive forwarding belongs on the
+  internal DNS service, not as an alternate domain-client resolver.
+- Do not alter EAP-TLS validation, certificates, task, RADIUS policies or broadly
+  open VLAN routing. No configuration mutation has been performed.
+
 ## VV06 session-stage diagnosis — 15 October 2026, 14:01
 
 - Endpoint status: state=retry_pending, error=ENROLLMENT_OR_INSTALL_FAILED,
