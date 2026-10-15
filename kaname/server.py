@@ -24,12 +24,14 @@ from .store import ConflictError, Store
 from .directory import DirectoryError, read_windows_directory, check_windows_directory, validate_connection
 from .operations import Operations
 from .planning import Planning
+from .services import Services, ServiceError, validate as validate_service_action
 from .directory_sync import DirectorySync
 from .vault import VaultError
 from .admin import AdminStore, AdminError, COOKIE, TTL, RESOURCES, permits
 
 STATIC = Path(__file__).parent / 'static'
 ASSETS = {'/device.js': ('device.js','application/javascript'), '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
+          '/services.js': ('services.js','application/javascript'),
           '/styles.css': ('styles.css', 'text/css'),
           '/planning.js': ('planning.js', 'application/javascript'),
           '/authwire-logo.png': ('authwire-logo.png', 'image/png')}
@@ -86,6 +88,7 @@ class DevelopmentServer(ThreadingHTTPServer):
             self.directory_health_reader = check_linux_directory
         self.operations = Operations(self.store)
         self.planning = Planning(self.operations)
+        self.services = Services()
         self.public_name = public_name
         self.web_certificate = Path(tls_cert).read_bytes() if tls_cert else b''
         self.devices = None
@@ -396,6 +399,9 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(503, {'ready': False, 'reason': 'AD_PKI_RADIUS_NOT_CONNECTED'})
         elif self.path == '/api/auth/session' and self.guard():
             self.respond(200, {**self.server.admin.public_actor(self.actor), 'csrf': self.actor.get('csrf', '')})
+        elif self.path == '/api/services' and self.guard(resource='system.services'):
+            try:self.respond(200,self.server.services.status())
+            except ServiceError as error:self.respond(503,{'error':error.code})
         elif self.path == '/api/system' and self.guard():
             if not (permits(self.actor, 'system.administrators') or permits(self.actor, 'system.profiles')):
                 self.respond(403, {'error': 'FORBIDDEN'}); return
@@ -499,10 +505,28 @@ class Handler(BaseHTTPRequestHandler):
             except LookupError: self.respond(404, {'error': 'CATALOG_OBJECT_NOT_FOUND'})
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
             except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
-        elif urlsplit(self.path).path not in {'/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/directory/settings'}:
+        elif urlsplit(self.path).path not in {'/api/services', '/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/directory/settings'}:
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
+        if self.path == '/api/services/action':
+            if not self.guard(write=True,resource='system.services'):return
+            if self.actor['maintenance']:
+                self.respond(403,{'error':'SERVICES_SESSION_REQUIRED'});return
+            try:
+                value=self.read_body();validate_service_action(value)
+                # Durable intent precedes the broker call; config revision is unchanged.
+                with self.server.store.connect() as db:
+                    revision=db.execute('SELECT revision FROM state WHERE id=1').fetchone()[0]
+                    event='service_action_requested:'+json.dumps({**{k:value[k] for k in ('request_id','service','action')},'actor':self.actor['username']},ensure_ascii=True,separators=(',',':'))
+                    db.execute('INSERT INTO audit(event,revision) VALUES (?,?)',(event,revision))
+                self.respond(202,self.server.services.action(value,self.actor))
+            except ServiceError as error:
+                status=409 if error.code in {'SERVICE_BUSY','REQUEST_ID_CONFLICT','RADIUS_NOT_RUNNING'} else 400 if error.code in {'INVALID_INPUT','CONFIRMATION_REQUIRED','ACTION_NOT_ALLOWED'} else 503
+                self.respond(status,{'error':error.code})
+            except (AdminError,ValidationError,ValueError,TypeError,KeyError):self.respond(400,{'error':'INVALID_INPUT'})
+            except sqlite3.Error:self.respond(503,{'error':'STORE_UNAVAILABLE'})
+            return
         if self.path in {'/api/device/session','/api/device/challenge','/api/device/issue','/api/device/receipt'}:
             self.device_post(); return
         if self.path == '/api/auth/login':

@@ -2,10 +2,10 @@ name: KANAME Linux source preparation
 on:
   workflow_dispatch:
   pull_request:
-    paths: ['kaname/**', 'tools/radius_*.py', 'tests/test_linux*.py', 'tests/test_management.py', 'tests/test_radius_production.py', 'tests/ldap_fixture.py', '.github/workflows/linux-stage.yml']
+    paths: ['kaname/**', 'tools/radius_*.py', 'tools/service_control*.py', 'tests/test_service_control.py', 'tests/test_linux*.py', 'tests/test_management.py', 'tests/test_radius_production.py', 'tests/ldap_fixture.py', '.github/workflows/linux-stage.yml']
   push:
     branches: [main]
-    paths: ['kaname/**', 'tools/linux_*.py', 'tools/radius_*.py', 'tests/test_linux*.py', 'tests/test_radius_live.py', 'tests/test_radius_production.py', 'tests/ldap_fixture.py', '.github/workflows/linux-stage.yml']
+    paths: ['kaname/**', 'tools/linux_*.py', 'tools/radius_*.py', 'tools/service_control*.py', 'tests/test_service_control.py', 'tests/test_linux*.py', 'tests/test_radius_live.py', 'tests/test_radius_production.py', 'tests/ldap_fixture.py', '.github/workflows/linux-stage.yml']
 permissions:
   contents: read
 concurrency:
@@ -31,6 +31,8 @@ jobs:
         run: sudo --preserve-env=RUNNER_ENVIRONMENT /usr/bin/python3 -m tools.linux_install_smoke
       - name: Reproduce and repair panel/RADIUS stop dependency on disposable systemd
         run: sudo --preserve-env=RUNNER_ENVIRONMENT /usr/bin/python3 -m tools.radius_unit_systemd_check
+      - name: Restricted service controls on disposable systemd
+        run: sudo --preserve-env=RUNNER_ENVIRONMENT /usr/bin/python3 -m tools.service_control_systemd_check
       - name: Non-root CRL timer sandbox and stopped-service boundary on disposable systemd
         run: sudo --preserve-env=RUNNER_ENVIRONMENT /usr/bin/python3 -m tools.radius_crl_timer_check
   stage-for-local-install:

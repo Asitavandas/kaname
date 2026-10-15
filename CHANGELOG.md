@@ -1,3 +1,12 @@
+# 0.14.0-dev.5
+
+- Add System Services view with separate read/write permission and guarded
+  RADIUS start/stop/restart, CRL sync and timer controls.
+- Preserve unprivileged web hardening through a fixed-scope local Unix broker;
+  retain boot settings, durable operation history, idempotency and update locks.
+- Validate operation outcomes, expose safe metrics and keep panel self-stop out
+  of scope. Existing policy, CA, native RADIUS and Windows client are unchanged.
+
 ## 0.14.0-dev.4 — 13 Ekim 2026
 
 - Güncel imzalı CRL, servis hesabıyla çalışan zamanlayıcı üzerinden RADIUS

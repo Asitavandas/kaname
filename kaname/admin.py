@@ -24,6 +24,7 @@ RESOURCES = {
     'system.administrators': ['System', 'Administrators'], 'system.profiles': ['System', 'Admin Profiles'],
     'network.devices': ['Network', 'Device Inventory'],
     'network.vlans': ['Network', 'VLANs'], 'network.radius': ['Network', 'RADIUS Clients'],
+    'system.services': ['System', 'Servisler'],
 }
 LEVELS = {'none': 0, 'read': 1, 'write': 2}
 COOKIE = 'kaname_session'

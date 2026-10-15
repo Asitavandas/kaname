@@ -6,6 +6,21 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Services screen work started — 15 October 2026, 17:37
+
+- Operator authorized implementation today and remote continuation; afterward
+  return to VV06 certificate lifecycle and the existing user-authentication plan.
+- Scope: B07 core service operations, related B01 access/UI, B11 operation audit
+  and B12 installation. Separate Unix broker preserves web hardening and fixed
+  RADIUS/CRL controls; panel is read-only in this stage.
+- Isolated source under development at 0.14.0-dev.5. Initial foundation run:
+  455 tests, 25 environment skips; service-specific boundary tests passed.
+  Real disposable systemd/browser and installation acceptance still pending.
+- Customer remains on 0.14.0-dev.4; no deployment/service mutation performed.
+  Windows signed client hash remains
+  86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15.
+  New pause backup still has no operator success output.
+
 ## Current dated report revision — 15 October 2026
 
 - Operator-requested updated report delivered as a separate dated revision;

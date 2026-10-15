@@ -2,9 +2,9 @@ name: KANAME browser checks
 on:
   push:
     branches: [main]
-    paths: ['kaname/**', 'tools/ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', 'tests/test_directory.py', '.github/workflows/ui.yml']
+    paths: ['kaname/**', 'tools/ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/services_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', 'tests/test_directory.py', '.github/workflows/ui.yml']
   pull_request:
-    paths: ['kaname/**', 'tools/ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', '.github/workflows/ui.yml']
+    paths: ['kaname/**', 'tools/ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/services_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', '.github/workflows/ui.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -29,6 +29,7 @@ jobs:
           node tools/session_ui_smoke.cjs
           node tools/device_ui_smoke.cjs
           node tools/planning_ui_smoke.cjs
+          node tools/services_ui_smoke.cjs
         env:
           KANAME_PYTHON: python
           KANAME_UI_ARTIFACTS: ui-artifacts
