@@ -1,6 +1,6 @@
 # AuthWire current work record
 
-Updated: 14 October 2026, Europe/Istanbul. This record supplements the 9 October
+Updated: 15 October 2026, Europe/Istanbul. This record supplements the 9 October
 `AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-09.docx` / `.pdf`; those reports are a
 dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking and no new report delivery today.
@@ -116,7 +116,7 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   RADIUS PID survival across panel stop/restart. Never retest this by stopping
   the customer's live panel without independent authorization and need.
 
-## VV06 field session — 13–14 October 2026
+## VV06 field session — 13–15 October 2026
 
 - Operator will bring a domain-joined Windows computer with no AuthWire client
   certificate installed. Operator identified the new computer as **VV06** at 11:14 on 13 October,
@@ -311,6 +311,28 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   implemented and is not silently added to the current EAP-TLS release scope.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
+
+## VV06 recovery attempt — 15 October 2026, 12:46
+
+- Operator screenshots image(20261015-094606).png and
+  image(20261015-094614).png were directly inspected. Recovery block printed
+  backup C:\ProgramData\AuthWire\Recovery-20261015-124104 and task-start message.
+  Task LastRunTime=15 October 12:41:05, LastTaskResult=0.
+- **Recovery is not yet verified.** The supplied certificate result contains
+  only the original revoked serial 0D9C3EE3C0B676CB323C1EC8314B62EE3E20A1D9,
+  thumbprint 216819A5BF9A13A2A75609EA84FBFA316A39B453, private key present,
+  expiry 11 January 2027 19:43:27. No new leaf was shown by the fixed-subject
+  query. Do not delete the old leaf or mark fresh enrollment successful solely
+  from task exit 0 or the task-start message.
+- Inspect current task state/action and selected status/retry/installed metadata
+  without printing receipt_payload, config contents or pending CSR/key material.
+  Source has intentional successful early returns for ValidateOnly, held global
+  mutex and future retry deadline; actual cause is not established. An updated
+  installed record would also require reading the certificate by its recorded
+  thumbprint rather than assuming the original subject filter finds it.
+- No second reset, additional key/CSR or certificate deletion has been executed.
+  Future mutating recovery commands should be invoked as one script block so
+  a guard exception aborts the whole operation in an interactive shell.
 
 ## VV06 revocation acceptance — 14 October 2026, 19:06
 
