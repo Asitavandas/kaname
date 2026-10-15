@@ -322,6 +322,31 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 renewal run in progress — 15 October 2026, 16:28
+
+- Operator baseline installed record remains canonical serial
+  6fc12360e627e5b92b0d60ab103def6cb40fe624,
+  thumb68B32BBD470847950BAE5629B853739F819150B5,
+  renew_at=2026-12-14T10:07:32Z (client-local schedule before server-side request).
+- Current task Running, LastRunTime=15 October16:23:16,
+  LastTaskResult=267009 (running). Installed-selected certificate still the
+  same baseline leaf, HasPrivateKey=True, expiry13Jan2027 13:07:32 local.
+  retry.json absent. No new serial/key or completed renewal is established.
+  Operator has not separately supplied the panel renewal-request confirmation.
+- Direct server13:28:16Z: panel active PID1238 Result=success and RADIUS active
+  PID1274 Result=success. Request logging is intentionally disabled by
+  Handler.log_message, so absence of API URLs in journal is not proof of no
+  client request. Server is threaded with deferred TLS handshake and bounded
+  per-connection read timeout; no immediate server-threading change indicated.
+- Sanitized13:22-13:29Z journal count550,22 certificate_unknown TLS traces all
+  associated with unrelated10.35.50.54; exclude them per operator instruction.
+  No target-VV06 application error was established by this journal read.
+- Next fresh endpoint read without a second task start: current timestamp,
+  task state/run/result, whitelisted status timestamps/stage/server_error,
+  pending.json existence and retry metadata if present. Old status entries
+  may predate this running request; correlate timestamps before diagnosis.
+  Do not stop task/RADIUS, clear state or revoke/remove the current certificate.
+
 ## Controlled normal renewal test prepared — 15 October 2026, 16:20
 
 - After completed reboot acceptance, operator authorized continuing to normal
