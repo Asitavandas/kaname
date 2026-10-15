@@ -6,6 +6,52 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Services feature merged and installation prepared — 15 October 2026
+
+- PR31 https://github.com/Asitavandas/kaname/pull/31 merged as
+  3eaa628ae5ea348ee2c1f41ac4cfeb3e4230b454; tested PR head
+  47bb8faa2474feab7182fbf553846239b1ee25b5. Source version0.14.0-dev.5.
+  All required PR gates passed: 456 foundation tests (25 environment skips),
+  browser including Services and panel-session regressions, real hardened
+  broker/systemd start-stop-restart/UDP verification, Windows enrollment,
+  Kerberos, and native normal/debug EAP-TLS/VLAN/CRL checks.
+- Root broker remains fixed to four local AuthWire units; panel is read-only,
+  RADIUS has start/stop/restart, CRL has sync and timer start/stop. Separate
+  system.services read/write permission, Origin/CSRF/session/confirmation,
+  durable bounded operation history, recent-UUID deduplication and upgrade
+  locks are implemented. No arbitrary unit, shell or panel self-stop.
+- Main Linux preparation38758704460 succeeded. Self-hosted stage ran141
+  filesystem tests (four skips), then prepared104 source files with digest
+  dcf0957a545bf526c999cf849033868e9e32271a080d5e00004261d9b32ce3c4.
+  Local exact PR tree and manifest match. Actual private runner location:
+  /home/kaname-runner/kaname-stage-3eaa628ae5ea.
+- Prepared guarded deployment launcher:
+  /home/segmentiq/authwire-services-deploy-20261015.py,
+  SHA256 5531aca52ff42c60b5f04898a6414b6d1030c29c57810e97f6026f2b3cb91c47.
+  It verifies staged source and unchanged authentication code, takes the
+  separately pinned current-data backup before updating, invokes the trusted
+  existing updater, installs the guarded broker, and compares protected files
+  and the RADIUS PID. No customer service action is automatically tested.
+- **Installation and field acceptance are pending operator sudo execution.**
+  Desktop Commander still runs as segmentiq and cannot supply the sudo
+  password. No customer source/service change was performed by the assistant.
+  Last direct customer check: panel PID1238, RADIUS PID1274, timer active/enabled;
+  signed Windows client hash remains86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15.
+  The protected runner stage cannot be read by segmentiq; CI verified its
+  manifest and the root launcher re-verifies every file before applying it.
+- Expect PAUSE_BACKUP_CREATED, SERVICES_SOURCE_UPDATED,
+  SERVICES_CONTROL_INSTALLED and SERVICES_DEPLOY_FINISHED verified=true.
+  Only then mark current-data backup/deployment done. Existing report copies
+  remain the dated pre-feature revision; no replacement report requested.
+- After installation: inspect System > Services with one Ctrl+F5, confirm four
+  live rows and privileges, then capture the controlled RADIUS action/reconnect
+  acceptance separately. B07 feature source is complete; installation/field
+  acceptance remain open. B11 accounting is unchanged.
+- Return immediately afterward to the prior B06 checkpoint: selected renewed
+  VV06 certificate and natural delayed12h local/24h server cleanup. Preserve
+  overlap; do not delete/revoke the valid old certificate to force success.
+  User EAP-TLS pilot remains the next explicit roadmap item.
+
 ## Services screen work started — 15 October 2026, 17:37
 
 - Operator authorized implementation today and remote continuation; afterward
