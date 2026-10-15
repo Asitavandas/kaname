@@ -6,6 +6,28 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Services screen and controlled CRL action accepted — 15 October 2026, 18:48 Istanbul
+
+- **Completed: first-phase Services feature implementation, deployment and
+  operator field acceptance.** Uploaded image(20261015-154802).png was opened
+  and visually inspected; screen last check18:44:39.
+- Screen shows RADIUS and AuthWire panel Running, boot enabled; CRL timer
+  Running/boot enabled. CRL sync shows waiting with last execution successful,
+  which is normal for this oneshot.
+- Operation history explicitly shows: CRL synchronization / Sync now /
+  Successful / admin / 15.10.2026 18:42:21. This closes the requested controlled
+  UI action/history verification. It does not claim a customer RADIUS restart
+  test or every privileged-action/error path has been exercised on customer
+  equipment; those were covered on disposable CI fixtures.
+- RADIUS uptime24h44m versus panel9m is consistent with prior PID preservation
+  evidence. No new RADIUS stop/restart requested for this acceptance.
+- Return to the existing roadmap: VV06 B06 proof of the selected renewed leaf
+  and later normal predecessor cleanup. Keep valid overlapping certificate/
+  key material until normal cleanup eligibility; do not delete manually or
+  advance time. User-authentication pilot remains explicitly scheduled after
+  computer-certificate lifecycle acceptance. Existing work evidence preserved.
+- No new formal report generated; the ongoing work record is updated.
+
 ## Services installed and live status verified — 15 October 2026, 18:36 Istanbul
 
 - **Completed: deployment of Services version0.14.0-dev.5.** Operator's corrected
