@@ -312,6 +312,27 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 session-stage diagnosis — 15 October 2026, 14:01
+
+- Endpoint status: state=retry_pending, error=ENROLLMENT_OR_INSTALL_FAILED,
+  stage=session, no server_error, checked_at=2026-10-15T10:50:08.6893421Z.
+  Retry attempts=1, next_attempt=2026-10-15T11:05:08.6366804Z
+  (14:05:08 Europe/Istanbul). This is an earliest retry eligibility deadline,
+  not a guaranteed task trigger at that time.
+- Client source shows session includes machine Kerberos credential acquisition,
+  initial SSPI token, pinned/validated HTTPS POST /api/device/session, response
+  parsing and mutual-authentication completion. No specific failure within
+  these operations is established by the coarse stage. Blank server_error
+  does not prove no server contact.
+- Read-only Linux verification at 13:58:44 showed panel and RADIUS active/running
+  with Result=success and CRL timer active/waiting. A service-journal query for
+  13:47-13:52 local returned zero records; it supplies no independent request
+  or TLS/Kerberos failure evidence and cannot establish that no request arrived.
+- Next endpoint read-only diagnosis: Ethernet IPv4 DNS configuration, current
+  FQDN TCP 8765 reachability/source and forced domain-controller discovery on
+  VLAN 110. Preserve client state, pinned TLS/mutual Kerberos, task conditions,
+  certificate, RADIUS and policy configuration pending evidence.
+
 ## VV06 post-boot task failure — 15 October 2026, 13:58
 
 - After the elevated read, operator reported existing enrollment task Ready,
