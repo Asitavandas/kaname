@@ -312,6 +312,24 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 Linux capture observation — 15 October 2026, 14:52
+
+- Operator supplied bounded Linux ens33 TCP 8765 SYN/RST capture output:
+  0 packets captured, 1 packet received by filter, 0 dropped by kernel.
+  No packet header was delivered in the submitted output. Do not silently
+  replace the filter count with zero or treat this as conclusive proof that
+  no packet reached Linux.
+- A concurrent VV06 TCP test was instructed; no paired Windows output/timestamp
+  was supplied in this submission. Confirm effective traffic path with an
+  observation on FortiGate during a fresh VV06 test.
+- Next: FortiGate CLI header-only sniffer on any interface for server
+  10.35.50.246 TCP 8765, verbosity 4 to show interfaces, count 0, local timestamps;
+  operator stops with Ctrl+C after the test/about 30 seconds. This changes no
+  policy or offload setting. Filter avoids original-source requirement to
+  preserve visibility if SNAT is present.
+- Packet capture/actual matched-policy evidence remains pending. Do not infer
+  exact FortiGate deny, wrong route, wrong VLAN or host rejection without it.
+
 ## VV06 TCP failure with UFW inactive — 15 October 2026, 14:47
 
 - Operator reports intended FortiGate rule is ACCEPT with service ALL.
