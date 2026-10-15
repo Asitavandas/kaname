@@ -123,6 +123,7 @@ def main():
         subprocess.run(['systemctl','stop',tag+'-broker.service'],capture_output=True,timeout=30)
         subprocess.run(['systemctl','stop',*mapping.values()],capture_output=True,timeout=30)
         for path in paths:path.unlink(missing_ok=True)
-        command('systemctl','daemon-reload');shutil.rmtree(folder)
+        command('systemctl','daemon-reload')
+        if folder.exists():shutil.rmtree(folder)
 
 if __name__=='__main__':main()
