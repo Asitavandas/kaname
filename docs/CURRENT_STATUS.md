@@ -318,6 +318,30 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## Instant On access correction confirmed by operator — 15 October 2026, 16:03
+
+- Operator explicitly confirms the preceding network access-control action
+  definitely resolved the problem and requests continuing acceptance.
+  Record this as operator-confirmed recovery following Instant On destination-
+  restriction investigation. Exact final Access Control field values and scope
+  were not supplied; do not invent a specific whitelist/global toggle or say
+  guest isolation was removed.
+- Retain the important distinction between static VLAN tag membership and
+  network destination ACLs: adding multiple tagged networks can bypass the
+  restriction per the prior UI warning, so earlier success after adding VLANs
+  does not by itself prove missing VLAN carriage was the sole root cause.
+- Scoped corrected-network automatic reboot acceptance remains the next test:
+  before reboot inspect any existing retry.json next_attempt. If the deadline
+  is in the future, wait until eligible rather than deleting retry metadata or
+  accepting an exit0 early-return as successful session work.
+- Reboot only VV06, Ethernet on corrected port6 and Wi-Fi off; no manual task
+  launch or RunEx. After startup read actual LastBootUpTime, wired auth/IP,
+  task state/LastRunTime/result, RunAfterBoot comparison and retry-file presence.
+  Preserve certificates, task conditions/action and all server/RADIUS settings.
+- Completed prior evidence stays separate: controlled fresh cert + wired
+  recovery, restored TCP/DC discovery and manually requested Ready/0 with
+  retry removal. Final corrected-network unattended reboot acceptance is pending.
+
 ## Internal-only reachability failure with Internet working — 15 October 2026, 15:57
 
 - After the proposed port changes, operator reports a VLAN110-subnet address,
