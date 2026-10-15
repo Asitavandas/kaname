@@ -312,6 +312,25 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 TCP failure with UFW inactive — 15 October 2026, 14:47
+
+- Operator reports intended FortiGate rule is ACCEPT with service ALL.
+  VV06 retest still fails from 10.10.110.4 to 10.35.50.246 TCP 8765.
+  A matching configuration row alone does not establish which policy actually
+  handled the connection, its interfaces/order, NAT or return-path behavior.
+- Operator root read sudo ufw status numbered returns Status: inactive.
+  Correct the earlier inference: systemctl reporting ufw.service active only
+  described its service unit and did not establish active UFW filtering.
+  No assistant firewall disable/enable or rule mutation occurred.
+- Direct Linux recheck still shows panel active/running Result=success,
+  listener 10.35.50.246:8765 and route to VV06 via 10.35.50.254 on ens33.
+  tcpdump and timeout are installed at /usr/bin/tcpdump and /usr/bin/timeout.
+- Next: operator-run bounded 30-second Linux packet-header observation on ens33
+  for server TCP 8765 SYN/RST while running one VV06 TCP test. Match the server
+  address/port rather than requiring the original client source, so a possible
+  FortiGate SNAT does not conceal arrivals. Do not print payloads or change
+  certificate/task/RADIUS/firewall settings. Arrival/response evidence is still pending.
+
 ## VV06 DNS restored, HTTPS still blocked — 15 October 2026, 14:37
 
 - Attached image(20261015-113624).png was directly inspected. Explicit VV06 DNS
