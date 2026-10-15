@@ -7,12 +7,16 @@ The operator requested ongoing tracking and no new report delivery today.
 
 ## Completed field results
 
+- **Completed: VV06 automatic startup authentication and certificate-task check.**
+  On 15 October boot16:05:50, existing task started16:06:02 without manual launch,
+  completed Ready/0, RanAfterBoot=True and retry.json absent; wired authentication
+  succeeded. Corrected-network endpoint reboot acceptance is closed.
 - **Completed: VV06 controlled post-revocation certificate recovery, wired access
   and existing-certificate task recovery.** New certificate/private key verified;
   wired EAP-TLS/VLAN 110 restored. Operator corrected missing VLAN carriage on
   the connected switch port; FQDN TCP/DC discovery then passed and normal task
-  completed Ready/0 with retry.json removed. Automatic post-fix reboot task
-  acceptance remains separately open.
+  completed Ready/0 with retry.json removed. Automatic post-fix reboot/task
+  acceptance subsequently passed at16:15 (see dedicated record).
 - **Completed: wired positive EAP-TLS pilot and dynamic policy VLAN assignment.**
   Windows computer 2GL13ZU, Realtek Ethernet, HPE Instant On 1930 VV-SW,
   source 10.35.50.253, port 6. Windows reported Authentication succeeded.
@@ -49,10 +53,10 @@ The operator requested ongoing tracking and no new report delivery today.
 | B03 | Server name/CA validation completed on wired/wireless; VV06 wired revoked-certificate rejection and signed/current runtime CRL membership verified. | Expired/wrong issuer, CA/issuer rotation and remaining signing maintenance acceptance. |
 | B04 | Enrollment task, successful last result, installation record, valid certificate/private key and confirmed receipt observed for the pilot. | Interrupted/duplicate requests and negative enrollment scenarios. |
 | B05 | Pilot task and installed client confirmed. Client source hash remained unchanged through server updates. | Fresh SYSVOL package/signature/hash comparison where not yet recorded. |
-| B06 | Controlled post-revocation fresh enrollment, new certificate/private key and restored wired authentication/VLAN 110 access completed on VV06. | Automatic task execution after corrected-network reboot, ordinary renewal/scheduler reliability, offline recovery, key lifecycle and expired recovery; endpoint reboot access and manual task/receipt recovery passed. |
-| B07 | Normal production service active; actual switch/AP EAP-TLS/VLAN, VV06 group-out and disabled-account rejection/recovery completed. | Post-boot task execution, remaining lifecycle acceptance and accounting remain open; VV06 reboot wired access passed. |
+| B06 | VV06 controlled post-revocation fresh enrollment, wired access, manual task recovery and automatic corrected-network reboot/task acceptance completed. | Ordinary certificate renewal, daily-trigger/extended scheduler reliability, offline recovery, old/new key lifecycle and expired recovery. |
+| B07 | Normal service, actual switch/AP EAP-TLS/VLAN, VV06 group/disabled-account recovery and corrected-network reboot wired/task acceptance completed. | Remaining lifecycle acceptance, other failure scenarios and accounting. |
 | B08 | Real permit and dynamic VLAN/DHCP completed on switch/AP; pilot-group and disabled-account rejection/recovery completed on VV06. | Other explicit deny conditions and negative state transitions. |
-| B09 | Wired positive/VLAN tests and VV06 missing-cert, wrong-group and disabled-account negatives completed, including recovery for reversible AD changes. | VV06 OS reboot wired access and controlled post-revocation recovery completed. Post-boot enrollment-task execution and remaining lifecycle acceptance stay open. |
+| B09 | Wired positives, VV06 missing-cert/group/disabled/revoked negatives, controlled fresh-certificate recovery and automatic post-fix reboot wired/task acceptance completed. | Remaining lifecycle/negative scenarios; this does not close ordinary renewal or all offline recovery. |
 | B10 | AP/SSID/source/secret, manual Windows machine EAP-TLS profile, positive connection and dynamic VLAN completed (3 of original 4 rows). | Intentional negative trust/identity tests remain open; reconnect was exercised during VLAN testing. |
 | B11 | No accounting expansion in this session. | Accounting, session correlation and retention. |
 | B12 | Updates retained configuration, administrators and certificates with backups. | Full restore/rollback and clean appliance import/boot acceptance. |
@@ -317,6 +321,30 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   implemented and is not silently added to the current EAP-TLS release scope.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
+
+## Completed: VV06 automatic reboot acceptance — 15 October 2026, 16:15
+
+- Operator supplied actual endpoint correlation:
+  LastBootUpTime=15 October16:05:50;
+  LastRunTime=15 October16:06:02;
+  RanAfterBoot=True; LastTaskResult=0; RetryFileExists=False.
+  Prior current-state submission shows task Ready and physical Realtek Ethernet
+  Connected / Authentication succeeded, GUID415933d5-5010-4a7a-b8bf-0e537e0bc7f2.
+- Existing SYSTEM task started12 seconds after boot and subsequently completed
+  successfully; this is a start offset, not a12-second total execution duration.
+  Operator was explicitly instructed not to manually launch the task.
+  Retry eligibility16:01:03 had already passed before boot.
+- **Completed: corrected-network automatic endpoint boot -> wired EAP-TLS
+  access -> existing certificate task/session check without manual dispatch.**
+  Preserve working switch/network restrictions correction, guest separation,
+  endpoint profile/certificates and unchanged RADIUS/CA/policies.
+- This does not prove a new renewal certificate or key rotation: the existing
+  certificate health-check path was exercised. Ordinary renewal, daily09/21
+  triggers/extended scheduling, offline/expired recovery and key retirement
+  remain separate roadmap items; broader historical queue-cause diagnosis is
+  not retrospectively established by one successful startup.
+- No new source deployment, certificate issuance/reset, task-condition change,
+  server restart or formal report delivery was performed for this acceptance.
 
 ## Corrected-network reboot follow-up — 15 October 2026, 16:13
 
