@@ -312,6 +312,27 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 gateway ARP resolved — 15 October 2026, 15:12
+
+- Current physical Ethernet authentication succeeds. IPv4 10.10.110.4/24 is
+  Preferred with PrefixOrigin=Dhcp; three probes to 10.10.110.1 timed out.
+  The supplied earlier default-route table was not legible enough to establish
+  additional route fields independently.
+- Standalone neighbor read: InterfaceAlias=Ethernet, IPAddress=10.10.110.1,
+  LinkLayerAddress=90-6C-AC-A7-D2-D1, State=Reachable. This establishes a resolved
+  gateway neighbor/basic ARP exchange. It does not prove intended VLAN tagging,
+  absence of proxy ARP/IP conflict, correct FortiGate ownership of that MAC,
+  or permitted IP/ICMP/forwarding traffic.
+- Keep machine EAP-TLS/certificate/policy intact. No evidence currently calls
+  for changing authentication mode or disabling validation.
+- Next: actual FortiGate ingress/egress header capture during VV06 gateway ping
+  and TCP 8765 test; filter includes client ICMP plus server TCP to retain
+  visibility across possible SNAT. Confirm the gateway VLAN/interface and
+  actual matched policy from capture/log evidence rather than the configured
+  ACCEPT/ALL row alone. Local-in ICMP and forwarded TCP are distinct decisions.
+- Pending: Forward Traffic/matched-policy or sniffer output, restored AuthWire
+  HTTPS connectivity and successful post-boot enrollment receipt/task execution.
+
 ## VV06 gateway reachability branch — 15 October 2026, 15:08
 
 - Operator reports VV06 cannot ping its own gateway in the affected network,
