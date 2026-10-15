@@ -7,6 +7,12 @@ The operator requested ongoing tracking and no new report delivery today.
 
 ## Completed field results
 
+- **Completed: VV06 controlled post-revocation certificate recovery, wired access
+  and existing-certificate task recovery.** New certificate/private key verified;
+  wired EAP-TLS/VLAN 110 restored. Operator corrected missing VLAN carriage on
+  the connected switch port; FQDN TCP/DC discovery then passed and normal task
+  completed Ready/0 with retry.json removed. Automatic post-fix reboot task
+  acceptance remains separately open.
 - **Completed: wired positive EAP-TLS pilot and dynamic policy VLAN assignment.**
   Windows computer 2GL13ZU, Realtek Ethernet, HPE Instant On 1930 VV-SW,
   source 10.35.50.253, port 6. Windows reported Authentication succeeded.
@@ -43,7 +49,7 @@ The operator requested ongoing tracking and no new report delivery today.
 | B03 | Server name/CA validation completed on wired/wireless; VV06 wired revoked-certificate rejection and signed/current runtime CRL membership verified. | Expired/wrong issuer, CA/issuer rotation and remaining signing maintenance acceptance. |
 | B04 | Enrollment task, successful last result, installation record, valid certificate/private key and confirmed receipt observed for the pilot. | Interrupted/duplicate requests and negative enrollment scenarios. |
 | B05 | Pilot task and installed client confirmed. Client source hash remained unchanged through server updates. | Fresh SYSVOL package/signature/hash comparison where not yet recorded. |
-| B06 | Controlled post-revocation fresh enrollment, new certificate/private key and restored wired authentication/VLAN 110 access completed on VV06. | Post-boot task result, ordinary renewal/scheduler reliability, offline recovery, key lifecycle and expired recovery; endpoint reboot access passed. |
+| B06 | Controlled post-revocation fresh enrollment, new certificate/private key and restored wired authentication/VLAN 110 access completed on VV06. | Automatic task execution after corrected-network reboot, ordinary renewal/scheduler reliability, offline recovery, key lifecycle and expired recovery; endpoint reboot access and manual task/receipt recovery passed. |
 | B07 | Normal production service active; actual switch/AP EAP-TLS/VLAN, VV06 group-out and disabled-account rejection/recovery completed. | Post-boot task execution, remaining lifecycle acceptance and accounting remain open; VV06 reboot wired access passed. |
 | B08 | Real permit and dynamic VLAN/DHCP completed on switch/AP; pilot-group and disabled-account rejection/recovery completed on VV06. | Other explicit deny conditions and negative state transitions. |
 | B09 | Wired positive/VLAN tests and VV06 missing-cert, wrong-group and disabled-account negatives completed, including recovery for reversible AD changes. | VV06 OS reboot wired access and controlled post-revocation recovery completed. Post-boot enrollment-task execution and remaining lifecycle acceptance stay open. |
@@ -311,6 +317,31 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   implemented and is not silently added to the current EAP-TLS release scope.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
+
+## VV06 existing-certificate task recovered — 15 October 2026, 15:38
+
+- **Completed: normal existing SYSTEM-task run after VLAN carriage correction.**
+  Operator reports AuthWire Certificate Enrollment Ready,
+  LastRunTime=15 October 2026 15:27:27, LastTaskResult=0 and retry.json absent
+  (False). Before this same run retry.json existed; intermediate state was
+  Running/267009. Thus the result is completion, not merely an accepted start.
+- Combined with restored FQDN TCP 8765/DC discovery, the task result and
+  retry-file removal match successful existing-certificate session/receipt
+  handling in the unchanged signed client. No fresh certificate serial,
+  renewal issuance or private-key rotation was observed or claimed.
+  An old status.json retry_pending entry can remain in this healthy-check
+  branch; do not demand its removal or reset enrollment state.
+- Root cause recorded from operator: required VLAN not carried on the
+  computer-connected switch port; adding it restored access.
+  No Windows EAP-TLS profile correction was required.
+- This run was manually requested through ordinary Start-ScheduledTask and
+  retained SYSTEM principal, signed action and persistent conditions/triggers.
+  It does not close the corrected-network automatic reboot execution test
+  or establish permanent resolution of every earlier queued-task condition.
+- Next: reboot only VV06 with Ethernet on corrected test port and Wi-Fi off,
+  do not manually launch the task, then read wired auth/IP and Ready/result0
+  with LastRunTime after the actual boot and no retry.json.
+  Preserve server/RADIUS, policy/VLAN/certificates and the working pilot 2GL13ZU.
 
 ## VLAN carriage corrected and network retest passed — 15 October 2026, 15:33
 
