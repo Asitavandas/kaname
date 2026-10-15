@@ -6,6 +6,34 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Services installed and live status verified — 15 October 2026, 18:36 Istanbul
+
+- **Completed: deployment of Services version0.14.0-dev.5.** Operator's corrected
+  guarded launcher emitted SERVICES_SOURCE_UPDATED, SERVICES_CONTROL_INSTALLED
+  and SERVICES_DEPLOY_FINISHED verified=true.
+- Fresh private backup:
+  /var/backups/authwire/authwire-pause-20261015T153357Z.tar.gz,
+  SHA256 8a665495f55b63742c3d5f6abdf73424e05141597f00289067f6951b54243284.
+  Archive read, SQLite integrity and stable live state verified. Restore untested.
+- Protected authentication source, primary service units, native module, keys/
+  certificates and signed Windows client preserved; configuration and
+  administrator preservation passed. RADIUS process remains PID1274.
+- Broker installed/enabled/active; query as actual kaname-lab identity succeeded
+  for all four controlled/observed units. Broker source SHA256
+  dd84bd794a6a9ce8bdfd348868c9bb6b91573d643831ae26bf2522c3936c65f4.
+  Deployment performed no RADIUS control action.
+- Direct read confirms panel active/enabled PID149888, RADIUS active/enabled
+  PID1274, CRL timer active/enabled/waiting, broker active/enabled PID149955.
+  CRL sync oneshot inactive/dead with Result=success is expected idle state.
+- **Pending: operator Services screen acceptance and a controlled CRL sync
+  action through the panel, with audit history/result verified.** Do not mark
+  that UI/control field test passed from installation output alone. Panel
+  itself is read-only in this first service-control phase. No RADIUS restart
+  field acceptance has been performed or is required merely to inspect status.
+- After Services acceptance, resume B06 selected renewed VV06 leaf and delayed
+  cleanup checks, then the planned user-authentication pilot. Preserve all
+  existing wired/wireless, EAP-TLS, VLAN and CRL acceptance evidence.
+
 ## Services deployment backup completed; permission boundary repaired — 15 October 2026, 18:29–18:40 Istanbul
 
 - Operator executed the guarded deployment. Full private checkpoint was created:
