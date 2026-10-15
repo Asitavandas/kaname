@@ -312,6 +312,28 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 scheduler follow-up — 15 October 2026, 13:07
+
+- Current bootstrap reachability is confirmed: Wi-Fi source 10.35.50.69,
+  AuthWire TCP 8765 reachable, network vizyonveri.local is DomainAuthenticated
+  with Internet IPv4 connectivity. Task network profile Name/Id are empty;
+  RunOnlyIfNetworkAvailable=true, DisallowStartIfOnBatteries=true,
+  StopIfGoingOnBatteries=true, RunOnlyIfIdle=false, StartWhenAvailable=true,
+  MultipleInstances=IgnoreNew. Win32_Battery Primary BatteryStatus=2.
+  Microsoft documents that battery status 2 indicates access to AC power.
+- Thus lack of current HTTPS TCP reachability or reported battery discharge
+  is not established as the queue cause. Exact Windows scheduler queue cause
+  remains unresolved. Avoid changing broad power/network conditions without
+  evidence or claiming the installer is permanently fixed.
+- Next controlled attempt: invoke the existing enabled SYSTEM task via
+  Task Scheduler RunEx with only TASK_RUN_IGNORE_CONSTRAINTS (2), after checking
+  its principal/enabled/AllowDemandStart and current state. Preserve persistent
+  task settings/action, signed client, config/trust and all server settings.
+  No task stop, state reset or additional certificate removal is part of this
+  attempt. Report actual post-request task state, not a success-start message.
+  This one-run dispatch is not yet performed/verified; new certificate and
+  normal periodic scheduling acceptance are still open.
+
 ## VV06 queued enrollment — 15 October 2026, 12:55
 
 - Operator read-only diagnostic: Computer=VV06, TaskState=Queued,
