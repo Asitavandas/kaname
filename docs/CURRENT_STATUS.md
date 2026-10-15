@@ -318,6 +318,28 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## Corrected-network reboot follow-up — 15 October 2026, 16:13
+
+- Before instructed reboot, endpoint retry eligibility time was
+  15 October 16:01:03.7029914 Europe/Istanbul (13:01:03.7029914Z).
+  Operator submitted it at16:06:47; earliest-retry time had passed, so continuation
+  was authorized without deleting retry.json or forcing task constraints.
+- Latest endpoint output after reboot instruction: physical Realtek Ethernet
+  GUID415933d5-5010-4a7a-b8bf-0e537e0bc7f2, MAC38-CA-84-DB-FF-E6,
+  Connected / Authentication succeeded; enrollment task Ready,
+  LastRunTime=15 October16:06:02, LastTaskResult=0.
+- LastBootUpTime and retry.json existence were omitted from this submission.
+  Do not close full unattended post-boot task acceptance yet: compare the
+  actual endpoint boot timestamp with LastRunTime and check retry removal.
+  Task time is before the16:06:47 continuation-message timestamp; this alone
+  does not prove a stale result or clock fault. Endpoint boot/run comparison,
+  rather than assumptions about cross-device clocks, is the appropriate check.
+- Next single read-only object: actual LastBootUpTime, current LastRunTime,
+  RanAfterBoot boolean, LastTaskResult and RetryFileExists. Do not restart,
+  manually launch the task, clear metadata or change current working network
+  settings for this check. Current wired positive and task exit0 observations
+  are retained as successful observations with this final evidence boundary.
+
 ## Instant On access correction confirmed by operator — 15 October 2026, 16:03
 
 - Operator explicitly confirms the preceding network access-control action
