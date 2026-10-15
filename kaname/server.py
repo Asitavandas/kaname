@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import ipaddress
 import json
+import logging
 import os
 import secrets
 import sqlite3
@@ -197,7 +198,9 @@ class Handler(BaseHTTPRequestHandler):
                 session = ''
             try:
                 self.actor = self.server.admin.authenticate(session)
-            except (sqlite3.Error, ValueError, TypeError, ValidationError):
+            except sqlite3.Error as error:
+                self.store_error(error); return False
+            except (ValueError, TypeError, ValidationError):
                 self.respond(503, {'error': 'STORE_UNAVAILABLE'}); return False
         if self.actor is None:
             self.respond(401, {'error': 'UNAUTHORIZED'})
@@ -363,7 +366,26 @@ class Handler(BaseHTTPRequestHandler):
             result['policy_conflicts'] = value['policy_conflicts']
         return result
 
+    def store_error(self, error):
+        # Fixed labels only: never SQL, parameters, URLs, exception text or secrets.
+        code = getattr(error, 'sqlite_errorcode', None)
+        base = (code & 255) if type(code) is int else None
+        busy = base in (sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED)
+        path = urlsplit(self.path).path
+        area = 'session' if path.startswith('/api/auth/') else 'certificates' if path.startswith(('/api/pki/', '/api/device-admin/')) else 'panel'
+        logging.getLogger('authwire.panel').warning(json.dumps({
+            'event': 'PANEL_DATABASE_ERROR', 'area': area,
+            'method': 'GET' if self.command == 'GET' else 'POST',
+            'sqlite_code': code if type(code) is int else None, 'transient': busy}))
+        self.respond(503, {'error': 'STORE_BUSY' if busy else 'STORE_UNAVAILABLE'})
+
     def do_GET(self):
+        try:
+            self.get_response()
+        except sqlite3.Error as error:
+            self.store_error(error)
+
+    def get_response(self):
         if self.headers.get('Host') not in self.server.hosts:
             self.respond(403, {'error': 'INVALID_HOST'})
             return
@@ -385,7 +407,9 @@ class Handler(BaseHTTPRequestHandler):
                     keys(query,{'profile_id'},{'profile_id'})
                     self.respond(200,devices.package(query['profile_id'][0],hostname=self.server.public_name,
                         port=self.server.server_port,tls_pem=self.server.web_certificate),'application/zip')
-            except (ValueError,TypeError,KeyError,ImportError,OSError,sqlite3.Error):
+            except sqlite3.Error as error:
+                self.store_error(error)
+            except (ValueError,TypeError,KeyError,ImportError,OSError):
                 self.respond(400,{'error':'DEVICE_SETUP_REQUIRED'})
             return
         if self.path in ASSETS:
@@ -431,7 +455,7 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError()
                 self.respond(200, self.server.planning.targets(query.get('kind', [''])[0], int(query.get('offset', ['0'])[0]), query.get('q', [''])[0]))
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
-            except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
+            except sqlite3.Error as error: self.store_error(error)
         elif self.path == '/api/network' and self.guard():
             if not any(permits(self.actor, r) for r in ('network.vlans', 'network.radius', 'policies.rules')):
                 self.respond(403, {'error': 'FORBIDDEN'}); return
@@ -447,7 +471,7 @@ class Handler(BaseHTTPRequestHandler):
                 from .enrollment import EnrollmentService
                 self.respond(200, EnrollmentService.certificates(self.server.store, offset=int(query.get('offset', ['0'])[0])))
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
-            except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
+            except sqlite3.Error as error: self.store_error(error)
         elif urlsplit(self.path).path == '/api/pki/public' and self.guard(resource='certificates.authority'):
             try:
                 query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
@@ -460,7 +484,7 @@ class Handler(BaseHTTPRequestHandler):
                 if row is None: raise ValueError()
                 self.respond(200, {'name': name, 'pem': row[0].decode('ascii')})
             except (ValueError, TypeError): self.respond(400, {'error': 'PKI_OPERATION_FAILED'})
-            except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
+            except sqlite3.Error as error: self.store_error(error)
         elif urlsplit(self.path).path == '/api/pki/certificate' and self.guard(resource='certificates.authority'):
             try:
                 from .radius import serial_number
@@ -472,7 +496,7 @@ class Handler(BaseHTTPRequestHandler):
                     row = db.execute('SELECT certificate FROM pki_certificates WHERE serial=?', (serial,)).fetchone() if exists else None
                 self.respond(200 if row else 404, {'serial': serial, 'pem': row[0].decode('ascii')} if row else {'error': 'CERTIFICATE_NOT_FOUND'})
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
-            except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
+            except sqlite3.Error as error: self.store_error(error)
         elif self.path == '/api/directory/settings' and self.guard(resource='directory.connection'):
             self.respond(200, self.server.operations.directory())
         elif urlsplit(self.path).path == '/api/policies/groups' and self.guard():
@@ -495,8 +519,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(200, value)
             except (ValueError, TypeError):
                 self.respond(400, {'error': 'INVALID_INPUT'})
-            except sqlite3.Error:
-                self.respond(503, {'error': 'STORE_UNAVAILABLE'})
+            except sqlite3.Error as error:
+                self.store_error(error)
         elif urlsplit(self.path).path == '/api/directory/detail' and self.guard(resource='directory.catalog'):
             try:
                 query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
@@ -504,7 +528,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(200, self.server.store.directory_detail(query.get('kind', [''])[0], query.get('id', [''])[0], int(query.get('offset', ['0'])[0]), query.get('q', [''])[0]))
             except LookupError: self.respond(404, {'error': 'CATALOG_OBJECT_NOT_FOUND'})
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
-            except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
+            except sqlite3.Error as error: self.store_error(error)
         elif urlsplit(self.path).path not in {'/api/services', '/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/directory/settings'}:
             self.respond(404, {'error': 'NOT_FOUND'})
 
@@ -525,7 +549,7 @@ class Handler(BaseHTTPRequestHandler):
                 status=409 if error.code in {'SERVICE_BUSY','REQUEST_ID_CONFLICT','RADIUS_NOT_RUNNING'} else 400 if error.code in {'INVALID_INPUT','CONFIRMATION_REQUIRED','ACTION_NOT_ALLOWED'} else 503
                 self.respond(status,{'error':error.code})
             except (AdminError,ValidationError,ValueError,TypeError,KeyError):self.respond(400,{'error':'INVALID_INPUT'})
-            except sqlite3.Error:self.respond(503,{'error':'STORE_UNAVAILABLE'})
+            except sqlite3.Error as error:self.store_error(error)
             return
         if self.path in {'/api/device/session','/api/device/challenge','/api/device/issue','/api/device/receipt'}:
             self.device_post(); return
@@ -539,7 +563,7 @@ class Handler(BaseHTTPRequestHandler):
             except AdminError as exc:
                 self.respond(429 if exc.code == 'LOGIN_RATE_LIMIT' else 401 if exc.code == 'LOGIN_FAILED' else 400, {'error': exc.code})
             except (ValidationError, ValueError, TypeError, KeyError): self.respond(400, {'error': 'INVALID_INPUT'})
-            except sqlite3.Error: self.respond(503, {'error': 'STORE_UNAVAILABLE'})
+            except sqlite3.Error as error: self.store_error(error)
             return
         resources = {'/api/config': None, '/api/policies': 'policies.rules', '/api/simulate': 'simulate.scenarios', '/api/directory/sync': 'directory.connection', '/api/directory/settings': 'directory.connection', '/api/directory/connectivity': 'directory.connection', '/api/directory/test-credentials': 'directory.connection', '/api/network/vlans': 'network.vlans', '/api/network/radius': 'network.radius', '/api/network/secret/generate': 'network.radius', '/api/network/secret/reveal': 'network.radius', '/api/system/users/save': 'system.administrators', '/api/system/users/delete': 'system.administrators', '/api/system/profiles/save': 'system.profiles', '/api/system/profiles/delete': 'system.profiles', '/api/auth/logout': None, '/api/auth/password': None}
         resources.update({'/api/network/devices/save': 'network.devices', '/api/network/devices/delete': 'network.devices',
@@ -671,6 +695,8 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(400, {'error': str(exc) if str(exc) in allowed else 'INVALID_INPUT'})
         except (ValueError, TypeError, KeyError):
             self.respond(400, {'error': 'INVALID_INPUT'})
-        except (sqlite3.Error, OSError):
+        except sqlite3.Error as error:
+            self.store_error(error)
+        except OSError:
             self.respond(503, {'error': 'STORE_UNAVAILABLE'})
 
