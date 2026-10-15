@@ -312,6 +312,29 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 gateway reachability branch — 15 October 2026, 15:08
+
+- Operator reports VV06 cannot ping its own gateway in the affected network,
+  despite ping being allowed, while access works when moved to another network.
+  Operator disabled Windows Firewall for diagnosis with no change in outcome.
+  Neither a paired FortiGate sniffer trace nor new Windows interface/ARP output
+  has been supplied. Do not attribute a firewall change to the assistant.
+- Expand diagnosis to actual VLAN, addressing, route and gateway ARP/L2 path.
+  Previous EAP-TLS success proves the earlier authenticated state, not the
+  current effective VLAN or gateway connectivity. Gateway ICMP failure alone
+  does not distinguish failed ARP from disabled local-in ICMP or filtering.
+- Next read-only VV06 checks while on affected VLAN 110/port 6 with Wi-Fi off:
+  current wired authentication, IPv4 prefix/address origin, default route,
+  three gateway probes, and gateway neighbor state/MAC. Established expected
+  gateway is 10.10.110.1; check actual current route rather than assuming it.
+- If ARP remains Incomplete/Unreachable, investigate authenticated port VLAN,
+  switch/AP uplink membership and gateway VLAN interface before modifying TLS
+  or broad firewall rules. Existing neighbor mapping is not by itself proof
+  of fresh end-to-end reachability.
+- Restore the endpoint firewall to its pre-test state. No certificate, task,
+  EAP method, server validation, RADIUS policy/VLAN or switch reset is indicated
+  by current evidence; preserve these until the actual fault is established.
+
 ## VV06 Linux capture observation — 15 October 2026, 14:52
 
 - Operator supplied bounded Linux ens33 TCP 8765 SYN/RST capture output:
