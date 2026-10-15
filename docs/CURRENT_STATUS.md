@@ -322,6 +322,29 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 renewal task completed; new leaf verification pending — 15 October 2026, 16:31
+
+- Operator endpoint diagnostic CheckedAt=15 October16:28:28:
+  task Ready, LastRunTime16:23:16, LastTaskResult0;
+  status.json state=installed, last_success=2026-10-15T13:24:42.3282833Z
+  (16:24:42 local); no stage/server_error; PendingRequest=False;
+  RetryFileExists=False.
+- This is a new successful installation-state write during the renewal run,
+  stronger evidence than a healthy existing-certificate early-return.
+  Actual new installed serial/thumbprint and key change are still missing.
+  The earlier installed-selected old-leaf query was captured during Running;
+  do not reuse its cached metadata to identify the final installed leaf.
+- Next read current installed.json afresh, retrieve exactly its selected machine
+  certificate and compare with baseline thumb68B32BBD470847950BAE5629B853739F819150B5,
+  serial6fc12360e627e5b92b0d60ab103def6cb40fe624. Compare public key strings
+  in memory only, output a boolean; do not export or print private key/container
+  or receipt proof data. Old valid predecessor is expected to remain during
+  the normal overlap period; do not delete/revoke it for this read.
+- Certificate renewal is not yet finally accepted solely from task/state:
+  confirm distinct leaf/private key and public key rotation, then validate
+  access cutover with selected-serial evidence or explicitly scoped retirement
+  consistent with the intended lifecycle. No new reconnect has been performed.
+
 ## VV06 renewal run in progress — 15 October 2026, 16:28
 
 - Operator baseline installed record remains canonical serial
