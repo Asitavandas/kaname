@@ -312,6 +312,27 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 DNS restored, HTTPS still blocked — 15 October 2026, 14:37
+
+- Attached image(20261015-113624).png was directly inspected. Explicit VV06 DNS
+  queries against 10.35.50.70 now succeed: kaname.vizyonveri.local A ->
+  10.35.50.246; domain-controller SRV -> dc01.vizyonveri.local:389,
+  with additional A -> 10.35.50.70. Scoped explicit DNS-query restoration is
+  completed; default-resolver behavior and actual DC discovery are not yet retested.
+- Direct-IP TCP test still fails: source 10.10.110.4 -> 10.35.50.246:8765,
+  TcpTestSucceeded=False. Ping timeout is ancillary and not service proof.
+  Do not mark HTTPS enrollment connectivity or the failed task recovered.
+- Direct read-only Linux checks: listener present on 10.35.50.246:8765;
+  route to 10.10.110.4 via 10.35.50.254, ens33, source 10.35.50.246.
+  This proves a configured return route, not successful end-to-end delivery.
+  ufw.service is active; firewalld.service and nftables.service inactive.
+  No privileged firewall ruleset has been read; UFW as the blocker is only
+  a hypothesis alongside the inter-VLAN firewall policy.
+- Next root-only read is operator-run sudo ufw status numbered. Inspect existing
+  source/service allowances before any scoped rule change; do not disable UFW,
+  broadly open management access or restart RADIUS for this diagnosis.
+  Preserve machine cert, client state, task conditions, policy/VLAN and CA.
+
 ## VV06 VLAN 110 firewall prerequisite — 15 October 2026, 14:12
 
 - Explicit endpoint queries to internal DNS 10.35.50.70 timed out for both
