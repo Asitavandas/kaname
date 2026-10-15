@@ -28,8 +28,9 @@ RESOURCES = {
 }
 LEVELS = {'none': 0, 'read': 1, 'write': 2}
 COOKIE = 'kaname_session'
-TTL = 8 * 3600
-IDLE = 30 * 60
+TTL = 12 * 3600
+IDLE = 2 * 3600
+SESSION_TOUCH = 60
 
 
 class AdminError(Exception):
@@ -166,7 +167,11 @@ class AdminStore:
             user = self.user_row(db, user_id=row['user_id']) if row else None
             if not user or not user['enabled'] or row['user_version'] != user['version']:
                 return None
-            db.execute('UPDATE admin_sessions SET last_seen=? WHERE digest=?', (now, digest(session)))
+            # Validate expiry, account status and permissions on every request,
+            # but avoid turning every parallel dashboard read into a writer.
+            if now - row['last_seen'] >= SESSION_TOUCH:
+                db.execute('UPDATE admin_sessions SET last_seen=? WHERE digest=? AND last_seen<=?',
+                           (now, digest(session), now - SESSION_TOUCH))
             return {**self.principal(user), 'csrf': row['csrf'], 'session_digest': digest(session)}
 
     def public_actor(self, actor):

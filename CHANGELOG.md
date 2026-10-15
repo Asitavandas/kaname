@@ -1,4 +1,19 @@
-# 0.14.0-dev.5
+# 0.14.0-dev.6 — Panel session and storage contention recovery
+
+- Conceal the credentials form in the initial HTML until session validation
+  finishes, including slow F5 restoration and connection-recovery cases.
+- Increase new panel sessions to a12-hour absolute limit and a2-hour idle
+  limit; check disabled accounts, versions and permission changes on every
+  request, while persisting activity at most once per minute.
+- Distinguish SQLite busy/locked responses from other storage failures, add
+  fixed-label diagnostics without SQL/URLs/secrets, and retry only bounded
+  GET reads for that transient condition. Never automatically replay POSTs.
+- Keep machine enrollment, signed clients, PKI, policy/VLAN and RADIUS source
+  and persistent configuration unchanged. Historical STORE_UNAVAILABLE cause
+  is not inferred from screenshots alone.
+
+
+## 0.14.0-dev.5
 
 - Add System Services view with separate read/write permission and guarded
   RADIUS start/stop/restart, CRL sync and timer controls.

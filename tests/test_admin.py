@@ -1,13 +1,15 @@
 import http.client
 import json
+import sqlite3
 import tempfile
 import threading
 import time
 import unittest
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
-from kaname.admin import AdminStore, RESOURCES, password_matches
+from kaname.admin import AdminStore, RESOURCES, IDLE, TTL, SESSION_TOUCH, password_matches
 from kaname.server import DevelopmentServer
 from .helpers import config, identity
 from dataclasses import asdict
@@ -82,6 +84,60 @@ class AdministratorHTTPTests(unittest.TestCase):
         code, value, headers = self.call('POST', '/api/auth/login', {'username': name, 'password': password}, auth=None)
         self.assertEqual(200, code, value)
         return (headers['Set-Cookie'].split(';')[0], value['csrf'])
+
+    def test_active_session_read_does_not_wait_for_another_sqlite_writer(self):
+        # A reserved writer allows readers; the former per-request touch turned
+        # this ordinary read into a blocked writer and ultimately a 503.
+        with sqlite3.connect(self.server.admin.path) as writer:
+            writer.execute('BEGIN IMMEDIATE')
+            started = time.monotonic()
+            code, _, _ = self.call('GET', '/api/auth/session')
+            self.assertEqual(200, code)
+            self.assertLess(time.monotonic() - started, 1.5)
+
+    def test_extended_idle_touch_is_throttled_without_extending_absolute_expiry(self):
+        self.assertEqual(2 * 3600, IDLE)
+        self.assertEqual(12 * 3600, TTL)
+        with self.server.admin.connect() as db:
+            db.execute('UPDATE admin_sessions SET last_seen=?', (time.time() - 1801,))
+            expires = db.execute('SELECT expires FROM admin_sessions').fetchone()[0]
+        self.assertEqual(200, self.call('GET', '/api/auth/session')[0])
+        with self.server.admin.connect() as db:
+            touched = db.execute('SELECT last_seen,expires FROM admin_sessions').fetchone()
+        self.assertLess(time.time() - touched[0], SESSION_TOUCH)
+        self.assertEqual(expires, touched[1])
+        self.assertEqual(200, self.call('GET', '/api/auth/session')[0])
+        with self.server.admin.connect() as db:
+            self.assertEqual(touched[0], db.execute('SELECT last_seen FROM admin_sessions').fetchone()[0])
+
+    def test_database_busy_is_distinct_and_diagnostics_exclude_exception_and_query(self):
+        for error_code, expected in [(sqlite3.SQLITE_BUSY, 'STORE_BUSY'),
+                                     (sqlite3.SQLITE_LOCKED, 'STORE_BUSY'),
+                                     (sqlite3.SQLITE_IOERR, 'STORE_UNAVAILABLE')]:
+            error = sqlite3.OperationalError('SQL_SECRET_SENTINEL')
+            error.sqlite_errorcode = error_code
+            with patch.object(self.server.store, 'public_pki_status', side_effect=error):
+                with self.assertLogs('authwire.panel', level='WARNING') as logs:
+                    code, value, _ = self.call('GET', '/api/state')
+            self.assertEqual((503, {'error': expected}), (code, value))
+            self.assertIn('PANEL_DATABASE_ERROR', ''.join(logs.output))
+            self.assertNotIn('SQL_SECRET_SENTINEL', ''.join(logs.output))
+            self.assertEqual(200, self.call('GET', '/api/auth/session')[0])
+
+    def test_guard_busy_preserves_session_and_write_is_not_replayed(self):
+        error = sqlite3.OperationalError('PRIVATE_STORAGE_SENTINEL')
+        error.sqlite_errorcode = sqlite3.SQLITE_BUSY
+        with patch.object(self.server.admin, 'authenticate', side_effect=error):
+            with self.assertLogs('authwire.panel', level='WARNING'):
+                self.assertEqual((503, {'error': 'STORE_BUSY'}), self.call('GET', '/api/auth/session')[:2])
+        before = self.server.store.snapshot()
+        with patch.object(self.server.store, 'save', side_effect=error) as save:
+            with self.assertLogs('authwire.panel', level='WARNING'):
+                code, value, _ = self.call('POST', '/api/policies', {'expected_revision': before['revision'], 'policies': []})
+            self.assertEqual((503, {'error': 'STORE_BUSY'}), (code, value))
+            self.assertEqual(1, save.call_count)
+        self.assertEqual(before, self.server.store.snapshot())
+        self.assertEqual(200, self.call('GET', '/api/auth/session')[0])
 
     def test_default_login_cookie_and_hash_only_storage(self):
         self.assertEqual({'write'}, set(self.call('GET', '/api/auth/session')[1]['permissions'].values()))
@@ -209,7 +265,7 @@ class AdministratorHTTPTests(unittest.TestCase):
         self.assertEqual(200, self.call('POST', '/api/auth/logout', {})[0])
         self.assertEqual(401, self.call('GET', '/api/state')[0])
         pair = self.login('admin', 'Kaname')
-        with self.server.admin.connect() as db: db.execute('UPDATE admin_sessions SET last_seen=?', (time.time() - 1801,))
+        with self.server.admin.connect() as db: db.execute('UPDATE admin_sessions SET last_seen=?', (time.time() - IDLE - 1,))
         self.assertEqual(401, self.call('GET', '/api/state', auth=pair)[0])
         pair = self.login('admin', 'Kaname')
         with self.server.admin.connect() as db: db.execute('UPDATE admin_sessions SET expires=0')

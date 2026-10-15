@@ -39,6 +39,37 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
       cases.push(name);await fixture.context.close();
     }
 
+    // The HTML itself conceals credentials while an existing cookie is checked.
+    {
+      const f=await fresh();await login(f.page);await f.page.locator('#workspace').waitFor({state:'visible'});
+      let release,started;
+      const gate=new Promise(resolve=>release=resolve),seen=new Promise(resolve=>started=resolve);
+      await f.page.route('**/api/auth/session',async route=>{started();await gate;await route.continue();});
+      await f.page.reload({waitUntil:'domcontentloaded'});await seen;
+      assert.equal(await f.page.locator('#login-form').isVisible(),false);
+      assert.equal(await f.page.locator('#panel-loading').isVisible(),true);
+      assert.equal(await f.page.locator('#workspace').isVisible(),false);
+      release();await f.page.locator('#workspace').waitFor({state:'visible'});
+      assert.equal(await f.page.locator('#login').isVisible(),false);
+      await passed('reload-hides-credentials-until-session-check-completes',f);
+    }
+    // Only positively classified SQLite contention is retried, with a fixed bound.
+    {
+      const f=await fresh();await login(f.page);await f.page.locator('#workspace').waitFor({state:'visible'});
+      let reads=0;
+      await f.page.route('**/api/fixture-busy',route=>{reads++;return route.fulfill(reads<3?{status:503,json:{error:'STORE_BUSY'}}:{status:200,json:{recovered:true}});});
+      assert.equal(await f.page.evaluate(()=>api('/api/fixture-busy').then(v=>v.recovered)),true);
+      assert.equal(reads,3);
+      let persistent=0;
+      await f.page.route('**/api/fixture-busy-persistent',route=>{persistent++;return route.fulfill({status:503,json:{error:'STORE_BUSY'}});});
+      assert.equal(await f.page.evaluate(()=>api('/api/fixture-busy-persistent').then(()=>null,e=>e.code)),'STORE_BUSY');
+      assert.equal(persistent,3);assert.equal(await f.page.locator('#workspace').isVisible(),true);
+      let writes=0;
+      await f.page.route('**/api/fixture-busy-write',route=>{writes++;return route.fulfill({status:503,json:{error:'STORE_BUSY'}});});
+      assert.equal(await f.page.evaluate(()=>api('/api/fixture-busy-write',{value:1}).then(()=>null,e=>e.code)),'STORE_BUSY');
+      assert.equal(writes,1);
+      await passed('sqlite-busy-reads-bounded-recovery-writes-never-replayed',f);
+    }
     // A successful password check followed by one failed state read must be recoverable.
     {
       const f=await fresh();let reads=0,logins=0;
