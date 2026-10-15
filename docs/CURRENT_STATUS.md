@@ -6,6 +6,43 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Panel dev6 installed; outer preservation difference needs read-only verification — 15 October2026, 22:57 Istanbul
+
+- Operator ran the prepared dev6 updater. Both SQLite quick checks pass;
+  journal modes remain delete. All18 pre-update loopback authenticated reads
+  succeeded (session/state/certificates/device status/network/services).
+- Fresh private checkpoint:
+  /var/backups/authwire/authwire-pause-20261015T195441Z.tar.gz,
+  SHA256e40a7739e650f1dd7c4cfac001a6b903931fc58b415d2a3e53a7ea042db7bb47.
+  Archive, DB integrity, stable live capture and RADIUS PID preservation pass.
+- Installed updater reported version0.14.0-dev.6, HTTPS verified, configuration/
+  administrators/Windows client preserved, RADIUS process preserved, no RADIUS
+  start or unit migration. Outer launcher then failed at preservation_after
+  with ValueError; it did not identify the compared field. Do not mark the
+  full deployment verified or simply rerun the update.
+- Direct post-failure check: dev6 health200 with the same pinned public TLS
+  certificate and signed client hash; panel active PID174745, RADIUS PID1274,
+  broker PID149955, CRL timer active/waiting. No service restart by assistant.
+- Control digest includes all runtime_settings, including directory_health
+  fields automatically updated by the AD scheduler. These operational records
+  can differ over the backup/update window. This is a plausible false-positive
+  mechanism, not yet the confirmed field cause. The original before dictionary
+  was not persisted and cannot be retroactively reconstructed exactly.
+- Prepared a strictly read-only reconciliation against the exact pinned full
+  checkpoint immediately before source replacement. It verifies archive hash,
+  critical file hashes/PIDs, required config/policy/admin/CA/key/certificate/
+  profile/binding tables, separate health field differences, all104 tested
+  source files, SQLite integrity and authenticated panel reads. No source,
+  certificate, config, session or service mutation; only private temporary
+  snapshot copies are created/deleted.
+- Seven isolated tests pass: stable snapshot acceptance; metadata timestamps
+  separated; policy/network/admin/CA changes rejected; missing table rejected;
+  checkpoint symlink rejected.
+- Verifier: /home/segmentiq/authwire-panel-dev6-verify-20261015.py,
+  SHA25626b8a72fe79325cc550cc8003b00c83fb6b888c81644d14d7e7703000b7b1cfe.
+  Await operator sudo output before closing preservation acceptance. VV06
+  tests remain deferred to Monday morning19 October; no new report requested.
+
 ## Panel reload/session follow-up — 15 October 2026, evening
 
 - Operator postpones VV06 computer-certificate field tests until Monday
