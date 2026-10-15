@@ -10,7 +10,8 @@ The operator requested ongoing tracking and no new report delivery today.
 - **Completed: VV06 controlled normal renewal and key rotation.** Supported
   per-device panel renewal completed via the existing SYSTEM client with a
   distinct certificate/public key, private key available and installation state
-  confirmed. Post-renewal reconnect/selected-leaf and timed cleanup remain open.
+  confirmed. Post-renewal wired authentication, VLAN 110 DHCP and AuthWire HTTPS
+  reachability also passed. Exact EAP-selected leaf and timed cleanup remain open.
 - **Completed: VV06 automatic startup authentication and certificate-task check.**
   On 15 October boot16:05:50, existing task started16:06:02 without manual launch,
   completed Ready/0, RanAfterBoot=True and retry.json absent; wired authentication
@@ -57,7 +58,7 @@ The operator requested ongoing tracking and no new report delivery today.
 | B03 | Server name/CA validation completed on wired/wireless; VV06 wired revoked-certificate rejection and signed/current runtime CRL membership verified. | Expired/wrong issuer, CA/issuer rotation and remaining signing maintenance acceptance. |
 | B04 | Enrollment task, successful last result, installation record, valid certificate/private key and confirmed receipt observed for the pilot. | Interrupted/duplicate requests and negative enrollment scenarios. |
 | B05 | Pilot task and installed client confirmed. Client source hash remained unchanged through server updates. | Fresh SYSVOL package/signature/hash comparison where not yet recorded. |
-| B06 | VV06 controlled post-revocation fresh enrollment, wired access, manual task recovery and automatic corrected-network reboot/task acceptance completed. | Post-renewal access/selected-leaf proof, natural calendar renewal, daily-trigger reliability, offline/expired recovery and delayed predecessor cleanup; controlled renewal/new key installed successfully. |
+| B06 | VV06 controlled post-revocation fresh enrollment, wired access, manual task recovery, automatic corrected-network reboot/task acceptance, controlled renewal/key rotation and post-renewal wired/VLAN/AuthWire reachability completed. | Exact EAP-selected renewed leaf, natural calendar renewal, daily-trigger reliability, offline/expired recovery and delayed predecessor cleanup. |
 | B07 | Normal service, actual switch/AP EAP-TLS/VLAN, VV06 group/disabled-account recovery and corrected-network reboot wired/task acceptance completed. | Remaining lifecycle acceptance, other failure scenarios and accounting. |
 | B08 | Real permit and dynamic VLAN/DHCP completed on switch/AP; pilot-group and disabled-account rejection/recovery completed on VV06. | Other explicit deny conditions and negative state transitions. |
 | B09 | Wired positives, VV06 missing-cert/group/disabled/revoked negatives, controlled fresh-certificate recovery and automatic post-fix reboot wired/task acceptance completed. | Remaining lifecycle/negative scenarios; this does not close ordinary renewal or all offline recovery. |
@@ -325,6 +326,31 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
   implemented and is not silently added to the current EAP-TLS release scope.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
+
+## Completed: VV06 post-renewal wired access — 15 October 2026, 16:43
+
+- Operator supplied image(20261015-134337).png after the requested ordinary
+  wired reconnection test: physical Realtek Ethernet GUID
+  415933d5-5010-4a7a-b8bf-0e537e0bc7f2, MAC 38-CA-84-DB-FF-E6,
+  Connected. Authentication succeeded. Fortinet virtual adapters disconnected.
+- image(20261015-134347).png shows renewed DHCP address 10.10.110.4/24,
+  gateway 10.10.110.1, AddressState Preferred; Wi-Fi disconnected.
+  Test-NetConnection kaname.vizyonveri.local -Port 8765 resolves to
+  10.35.50.246, uses SourceAddress 10.10.110.4 and returns
+  TcpTestSucceeded=True.
+- **Completed: post-renewal wired authentication, policy VLAN 110 DHCP and
+  AuthWire HTTPS transport reachability.** This follows the confirmed new leaf,
+  private key, public-key rotation and installed receipt state. TCP success
+  establishes transport reachability, not a new application login test.
+- Both old and renewed valid certificates remain in the intended overlap;
+  these screenshots do not establish which exact leaf Windows selected for
+  EAP-TLS. Selected-renewed-leaf evidence and scheduled predecessor cleanup
+  remain separate open acceptance items. No manual old-leaf/key deletion,
+  revocation, policy/CA modification or RADIUS restart was performed.
+- Next lifecycle follow-up is normal subsequent task execution after local
+  predecessor cleanup becomes eligible (12h), and server retirement after its
+  separate deadline (up to 24h, capped by expiry). Do not accelerate clocks or
+  remove the predecessor to relabel this overlap test as selected-leaf proof.
 
 ## Completed: VV06 renewed certificate and key rotation — 15 October 2026, 16:33
 
