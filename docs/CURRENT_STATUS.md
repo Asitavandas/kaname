@@ -318,6 +318,37 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## Internal-only reachability failure with Internet working — 15 October 2026, 15:57
+
+- After the proposed port changes, operator reports a VLAN110-subnet address,
+  Internet access working, but gateway 10.10.110.1 and AuthWire10.35.50.246
+  inaccessible again. Fresh wired authentication state, actual cloud client
+  network and network-level access-control screen were not yet supplied.
+- Important previously underweighted screenshot warning on port6:
+  "Network destination restrictions do not apply when multiple networks are included."
+  Earlier all-tagged configuration may have bypassed network destination ACLs;
+  clearing tagged memberships may have made existing restrictions applicable.
+  This is a hypothesis supported by the UI warning and changed behavior, not
+  a verified ACL match or proven final root cause.
+- Own the diagnostic omission: the port review focused on static VLAN tag conflict
+  but did not account for this warning's effect on destination restrictions.
+  Do not restore an all-VLAN PC trunk merely to bypass ACLs or claim Windows
+  authentication settings defective based on ICMP failure.
+- Primary Instant On documentation confirms wired network Restricted access
+  can allow Internet while blocking internal resources; web UI path is Networks
+  -> selected network -> Access Control -> Network Access / Network Destinations,
+  with Allowed Destinations Internet and Specific IP Address exceptions.
+- Next read-only GUI evidence: TEST110/VLAN110 Access Control and current port6
+  VV06 client network (VLAN110 versus Guest70), plus current netsh state if absent.
+  Preserve guest70 isolation; do not globally unrestrict guest or all networks.
+  If TEST110 restricts to Internet, review narrow required internal destinations
+  (AuthWire10.35.50.246, AD/DNS10.35.50.70, gateway10.10.110.1 for diagnostic
+  ICMP) instead of opening the entire internal address space.
+- Previous successful TCP/DC/manual-task tests remain valid for their prior
+  configuration. Current network correction and automatic reboot acceptance
+  are open again; exact reason for earlier operator-described VLAN fix may need
+  refinement once actual restriction settings are read.
+
 ## VV06 reboot failure and switch port review — 15 October 2026, 15:46
 
 - Corrected-network automatic reboot acceptance is NOT complete. Operator's
