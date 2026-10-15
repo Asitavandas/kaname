@@ -6,6 +6,43 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Panel dev6 preservation reconciled and technical deployment accepted — 15 October2026, 23:05 Istanbul
+
+- **Completed: dev6 deployment and technical preservation/API acceptance.**
+  Operator's read-only verifier emitted PANEL_VERIFICATION_FINISHED verified=true.
+  All104 installed source files match the tested release manifest.
+- Against the pinned full checkpoint immediately before source update, all12
+  critical files match (primary/broker units, native module, web/RADIUS keys/
+  certificates, secret-store key and both signed Windows scripts); all12 state
+  comparison categories pass (config/policy, protected secrets, CA material,
+  certificate registry, signer/profiles/bindings/key registry, administrators/
+  profiles and runtime configuration/health shape).
+- RADIUS PID1274 and broker PID149955 preserved. Verification restarted no
+  service and changed no configuration or certificate. Backup integrity and
+  all four SQLite quick checks pass.
+- The sole reported runtime difference is directory_health.checked_at and
+  last_success; timestamps_only=true. These are normal scheduler observations,
+  not policy/AD connection or authentication changes. This reconciles the
+  overly broad outer protection alarm against the pinned pre-update backup.
+  Original outer before dictionary was not persisted; its exact earlier hash
+  is not claimed to have been reconstructed.
+- All15 post-update authenticated loopback API reads returned200. Maxima:
+  session4.3ms, state10.2ms, certificates8.3ms, network5.2ms, services38.4ms.
+  These timings cover local server reads, not a claim about remote VPN/browser
+  performance or long-term disappearance of the historical storage error.
+- Panel changes installed: initial credential form hidden until cookie check,
+  limited transient-busy GET recovery with no write replay, throttled session
+  writes, fixed-label storage diagnostics. New logins use idle2h and absolute
+ 12h; existing absolute deadlines retained. Secure cookie, CSRF and account/
+  permission revocation remain enforced.
+- **Pending: operator F5/login observation and monitoring for recurrence of
+  historical STORE_UNAVAILABLE.** Its exact historical SQLite cause is still
+  not retroactively proved. Do not label this long-term observation complete
+  from server-local API checks alone.
+- VV06 selected-renewed-leaf and delayed cleanup field checks remain deferred
+  until Monday morning19 October2026; user authentication stays on roadmap.
+  No new formal report requested.
+
 ## Panel dev6 installed; outer preservation difference needs read-only verification — 15 October2026, 22:57 Istanbul
 
 - Operator ran the prepared dev6 updater. Both SQLite quick checks pass;
