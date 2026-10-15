@@ -312,6 +312,25 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 queued enrollment — 15 October 2026, 12:55
+
+- Operator read-only diagnostic: Computer=VV06, TaskState=Queued,
+  TaskUser=SYSTEM, LastRunTime=12:41:05, LastTaskResult=0,
+  ActionCallsClient=true, ValidateOnly=false, PendingRequest=false.
+  Current status.json, retry.json and installed.json are all absent.
+  Only AuthWire Certificate Enrollment was listed, also Queued.
+- This confirms the current task is awaiting scheduler execution and no new
+  client-state result has been saved. Earlier current-retry/ValidateOnly
+  hypotheses are not supported by this snapshot. Exit 0 is not acceptance
+  evidence for fresh issuance. Exact queue constraint is not yet established.
+- Check AuthWire TCP reachability from the bootstrap network, task network
+  profile/availability, idle/power settings and current network profile before
+  changing any scheduler condition. Source installer enables
+  RunOnlyIfNetworkAvailable; default Windows battery restrictions may also
+  apply. Do not assume either is the cause before collecting actual settings.
+- No repeat state reset or old certificate deletion is authorized by this
+  diagnostic step; preserve existing Recovery-20261015-124104 backup.
+
 ## VV06 recovery attempt — 15 October 2026, 12:46
 
 - Operator screenshots image(20261015-094606).png and
