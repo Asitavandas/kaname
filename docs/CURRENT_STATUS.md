@@ -312,6 +312,22 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VV06 post-boot task failure — 15 October 2026, 13:58
+
+- After the elevated read, operator reported existing enrollment task Ready,
+  LastRunTime=15 October 2026 13:48:24 and LastTaskResult=1. This confirms a
+  post-boot execution attempt ended with a nonzero result; post-boot task
+  success is not accepted. Existing certificate-backed wired authentication
+  and VLAN 110 access remain successful, as separately observed.
+- Client source inspection confirms status.json records sanitized
+  state/error/stage/checked_at/server_error for enrollment failures and
+  retry.json records attempts/next_attempt/stage/server_error. Read only these
+  whitelisted fields before diagnosing or rerunning. Exit code 1 alone does
+  not identify networking, Kerberos, receipt, renewal or signing as the cause.
+- Do not clear retry or installation state, replace certificates, weaken
+  validation or force-dispatch the task for this initial diagnosis.
+  Earlier queued scheduling and this nonzero boot run are distinct observations.
+
 ## VV06 Windows reboot acceptance — 15 October 2026, 13:54
 
 - **Completed: restored wired access after the instructed VV06 Windows reboot.**
