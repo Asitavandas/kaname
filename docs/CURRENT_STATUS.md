@@ -312,6 +312,29 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## VLAN carriage corrected and network retest passed — 15 October 2026, 15:33
+
+- Operator identified actual correction: the required VLAN was not carried
+  on VV06's connected switch port; adding the VLAN restored access. Exact
+  cloud setting/port membership delta was not supplied. Do not attribute the
+  fault to Windows EAP-TLS mode or a specific FortiGate/UFW deny.
+- **Completed: VV06 post-correction FQDN/TCP and DC discovery checks.**
+  Directly inspected image(20261015-123051).png: AuthWire FQDN resolves to
+  10.35.50.246; TCP 8765 succeeds from 10.10.110.4. Forced nltest succeeds,
+  identifying dc01.vizyonveri.local at 10.35.50.70 with KDC/LDAP/DC flags.
+  Existing Ethernet/default route via 10.10.110.1 remains.
+- Before normal task start, retry.json existed (True). Existing task was
+  started using ordinary Start-ScheduledTask. Directly inspected second image
+  image(20261015-123132).png: State=Running, LastRunTime=15:27:27,
+  LastTaskResult=267009 (0x41301, running); retry.json still True.
+- Task completion/receipt recovery is NOT accepted yet. Running code is not a
+  final failure or success. Request a fresh state/result/retry-presence read
+  without starting a second instance or clearing state. If still running,
+  inspect actual elapsed time/process stage before any restart/reset.
+- Earlier missing network access is resolved at endpoint TCP/DC-discovery
+  level. Persistent task scheduling, final task result and clean reboot with
+  the corrected VLAN configuration remain separate acceptance items.
+
 ## Operator network correction, retest pending — 15 October 2026, 15:27
 
 - Operator reports finding and correcting the network problem and requests
