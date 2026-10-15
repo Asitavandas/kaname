@@ -312,6 +312,26 @@ G01-G07 remain at the baseline state unless a later implementation has evidence.
 - Operator will observe panel behavior and send grouped notes if symptoms recur;
   browser acceptance remains open. No reminder or unattended live test is scheduled.
 
+## Operator network correction, retest pending — 15 October 2026, 15:27
+
+- Operator reports finding and correcting the network problem and requests
+  resuming the intended acceptance test. Exact cause/configuration change
+  has not been supplied; do not label it a specific firewall/switch/endpoint
+  defect or claim independent resolution.
+- Next acceptance: restored FQDN TCP 8765 and domain-controller discovery from
+  VV06, then ordinary Start-ScheduledTask on the existing SYSTEM task after
+  checking retry eligibility. Preserve signed client, certificate/metadata,
+  task settings and server/RADIUS policies. No fresh enrollment/reset or
+  RunEx constraint bypass is indicated for this retest.
+- Read actual LastRunTime/result and current task state after completion.
+  Client source returns successfully after a healthy existing-certificate
+  receipt and removes retry.json without updating status.json in that branch;
+  an old retry_pending status alone is not proof the latest run failed.
+  Capture retry-file presence before/after as well as task result to distinguish
+  a real receipt recovery from a retry-deadline early return.
+- Do not close post-boot task/receipt or network reachability until results
+  are supplied. Ask operator to identify the actual correction for the record.
+
 ## Gateway/interface and endpoint route matched — 15 October 2026, 15:21
 
 - Directly inspected image(20261015-122053).png from FortiGate VIZYONVERI-FW:
