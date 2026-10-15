@@ -1,4 +1,5 @@
 """Guarded deployment checkpoint; no customer RADIUS action is executed."""
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -10,6 +11,14 @@ STAGE=Path('/home/kaname-runner/kaname-stage-3eaa628ae5ea')
 EXPECTED='dcf0957a545bf526c999cf849033868e9e32271a080d5e00004261d9b32ce3c4'
 ROOT=Path('/opt/kaname-lab/source')
 PHASE='preflight'
+
+@contextmanager
+def file_creation_mask(mask):
+    previous=os.umask(mask)
+    try:
+        yield
+    finally:
+        os.umask(previous)
 
 def hash_file(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 def trusted(path):
@@ -25,9 +34,10 @@ def radius_pid():
     return subprocess.check_output(['/usr/bin/systemctl','show','authwire-radius.service','--property=MainPID','--value'],text=True).strip()
 
 def main():
-    global PHASE
+    global PHASE, UPDATER
     if os.geteuid()!=0:raise ValueError('Local sudo required')
     updater=load_installed(ROOT/'tools/linux_update.py')
+    UPDATER=updater
     verified=updater['verified_files'](STAGE,EXPECTED)
     protected_names=[
       'kaname/device_client/AuthWire-Client.ps1','kaname/device_client/Install-AuthWire.ps1',
@@ -56,17 +66,20 @@ def main():
         raise ValueError('Prepared backup source changed')
     backup={'__name__':'guarded_data_backup','__file__':str(checkpoint)}
     exec(compile(data,str(checkpoint),'exec'),backup)
-    backup['main']()
+    with file_creation_mask(0o077):
+        backup['main']()
     PHASE='source_update'
     same=all((ROOT/name).is_file() and not (ROOT/name).is_symlink()
              and (ROOT/name).read_bytes()==content for name,content in verified.items())
     if same:
         print(json.dumps({'event':'SERVICES_SOURCE_UPDATED','already_current':True}),flush=True)
     else:
-        update=updater['update'](STAGE,EXPECTED)
+        with file_creation_mask(0o022):
+            update=updater['update'](STAGE,EXPECTED)
         print(json.dumps({'event':'SERVICES_SOURCE_UPDATED',**update}),flush=True)
     PHASE='service_control_install'
-    installed=load_installed(ROOT/'tools/service_control_install.py')['install']()
+    with file_creation_mask(0o022):
+        installed=load_installed(ROOT/'tools/service_control_install.py')['install']()
     print(json.dumps({'event':'SERVICES_CONTROL_INSTALLED',**installed}),flush=True)
     PHASE='preservation_after'
     if before_pid!=radius_pid():raise ValueError('RADIUS process changed')
@@ -82,5 +95,5 @@ def main():
 if __name__=='__main__':
     try:main()
     except Exception as error:
-        print(json.dumps({'event':'SERVICES_DEPLOY_FAILED','phase':PHASE,'category':type(error).__name__, 'detail':str(error)[:180] if isinstance(error,(ValueError,RuntimeError)) else ''}),flush=True)
+        print(json.dumps({'event':'SERVICES_DEPLOY_FAILED','phase':PHASE,'category':type(error).__name__, 'updater_stage':globals().get('UPDATER',{}).get('_PHASE') if PHASE=='source_update' else None, 'failed_program':Path(str(error.cmd[0])).name if isinstance(error,subprocess.CalledProcessError) and isinstance(error.cmd,(list,tuple)) and error.cmd else None, 'exit_code':error.returncode if isinstance(error,subprocess.CalledProcessError) else None, 'detail':str(error)[:180] if isinstance(error,(ValueError,RuntimeError)) else ''}),flush=True)
         raise SystemExit(1)

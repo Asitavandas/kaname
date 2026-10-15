@@ -6,6 +6,37 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Services deployment backup completed; permission boundary repaired — 15 October 2026, 18:29–18:40 Istanbul
+
+- Operator executed the guarded deployment. Full private checkpoint was created:
+  /var/backups/authwire/authwire-pause-20261015T152747Z.tar.gz,
+  SHA256 549c1227d4f6abcb76d5ad10fb6e9e5665ad0a786b6436726ca403cc4fcf4a50.
+  Archive read, SQLite integrity, stable live state and RADIUS PID preservation
+  were verified. Restore has not been tested.
+- Source update then raised CalledProcessError; original launcher suppressed
+  subprocess detail. Direct post-failure check: installed source remains dev.4,
+  panel active/enabled PID1238; RADIUS active/enabled PID1274; CRL timer active/
+  enabled. Broker absent/inactive. No successful production installation claimed.
+- Launcher defect found: backup main sets process umask0077 and returns without
+  restoring it. The in-process updater's mkdir(mode0755) therefore produces
+  package directories0700, blocking its kaname-lab dependency-import check.
+  The permission mechanism was reproduced using temporary fixture directories;
+  exact remote subprocess traceback was not captured.
+- Corrected launcher isolates backup0077 and update/install0022 in finally-
+  restoring context managers. No application or authentication source change,
+  staged source/manifest unchanged. Four focused regression tests passed for
+  private backup0600, public source0755 despite restrictive caller, error-path
+  restoration, and actual launcher call-site coverage. These tests do not claim
+  a real low-privilege subprocess import on the restricted local test host.
+- Corrected launcher prepared at
+  /home/segmentiq/authwire-services-deploy-fix-20261015.py,
+  SHA256 02a048d49c1ed95f6540f5a30a7ceec3b508658447346ba00e157dd0fe90a056.
+  It takes a fresh backup again, preserves existing pilot RADIUS, and includes
+  safe phase/program/exit-code metadata if another subprocess fails.
+- Installation and operator Services UI acceptance remain pending. Return after
+  acceptance to VV06 B06 selected-new-leaf/delayed cleanup, then the separately
+  planned user-authentication pilot. No new formal report requested.
+
 ## Services feature merged and installation prepared — 15 October 2026
 
 - PR31 https://github.com/Asitavandas/kaname/pull/31 merged as
