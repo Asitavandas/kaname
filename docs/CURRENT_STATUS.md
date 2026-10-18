@@ -6,6 +6,33 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## DC01 çift Startup düzeltmesi ve tekrar denetimi kabul edildi — 18 Ekim 2026, 15:17 İstanbul
+
+- **🔴✓ Tamamlandı: gereksiz AuthWire Startup kaydının kaldırılması ve gerçek
+  DC01/SYSVOL tekrar denetimi.** Operatörün GPO_READONLY_AUDIT sonucunda
+  InstallEntryCount=1, DuplicateInstallEntries=false, ExplicitAllSigned=true,
+  BypassReferenced=false. Önceki iki çağrı bulgusu kapanmıştır.
+- PackageChecksPassed=true;14 paket kontrolü tekrar başarılı. İki scriptin
+  imzası Valid, CodeSigning EKU/yayıncı eşleşiyor; kaynak gövdeleri ve dört
+  asset doğru. URL/domain/SPN/TLS pini, Root/Issuer zinciri ve ACL korunmuş.
+  İmzalı script hash'leri önceki denetimle aynı:
+  Install-AuthWire d1ae2163fa086184f73d3e053bf30a605a9098cedcdd7c0a02528c920b4780b9;
+  AuthWire-Client 784c3234e05f0fe300fd5ed8bac12a23ee90b5a98d392f01159cf08dd3c323e2.
+- GPO AllSettingsEnabled, ApplyTrustees yalnız AuthWire-Pilot-Computers.
+  GpoChanged=false, WindowsClientChanged=false ve TrustStoreChanged=false
+  denetim aracının müdahale etmediğini gösterir; önceki manuel Startup
+  düzeltmesinin hiç yapılmadığı anlamına gelmez.
+- ClientApplicationAccepted=false: yeni GPO halinin istemci yeniden başlatma/
+  uygulama kabulü henüz bu sonuçla kanıtlanmadı. Mevcut imzalı paket ve sertifika/
+  RADIUS ayarları değiştirilmedi; tüm B05 dağıtım/rollout kapsamı kapanmaz.
+  Backup-GPO komutu daha önce verildi; yedek ID/yolu çıktısı paylaşılmadığından
+  bu denetim ayrıca bir GPO yedek kanıtı olarak kullanılmaz.
+- Uzak çalışma sırasındaki sunucu/API kontrolü, gerçek yedekte izole veri
+  restore alt işi ve DC/SYSVOL paket/Startup denetimi tamamlandı. Rehberler
+  kaydedilmiş durumda. Gerçek tarayıcı F5/giriş gözlemi, VV06 yeni leaf/yerel
+  cleanup saha kabulü ve tam OS/runtime boot/rollback kapıları açıktır.
+  Kullanıcı kimliği pilotu sonraki plan içinde korunuyor. Yeni resmi rapor yok.
+
 ## Çift Startup kaydı doğrulandı; GPMC düzeltmesi hazır — 18 Ekim 2026, 15:06 İstanbul
 
 - Operatör INI bölüm çıktısında iki kayıt da aynı UNC Install-AuthWire.ps1
