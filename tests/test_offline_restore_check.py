@@ -1,9 +1,12 @@
 import io
 import json
 import os
+import runpy
 from pathlib import Path
 import shutil
 import sqlite3
+import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -63,6 +66,18 @@ class OfflineRestoreTests(unittest.TestCase):
         p=copy/'etc/systemd/system/authwire-radius.service.d/override.conf'
         self.assertEqual('[Service]\nPrivateTmp=yes\n',p.read_text())
         self.assertEqual(0o640,p.stat().st_mode&0o777)
+    def test_cli_reports_real_rehearsal_and_does_not_print_secrets(self):
+        tool=Path(__file__).parents[1]/'tools/offline_restore_check.py'
+        result=subprocess.run([sys.executable,str(tool),'--backup',str(self.archive),'--sha256',self.expected,'--workspace',str(self.root/'cli')],capture_output=True,text=True,timeout=20)
+        self.assertEqual(0,result.returncode,result.stderr)
+        self.assertTrue(json.loads(result.stdout)['data_restore_exercised'])
+        self.assertNotIn('fixture secret never printed',result.stdout+result.stderr)
+    def test_privileged_launcher_pin_and_tamper_guard(self):
+        ns=runpy.run_path(str(Path(__file__).parents[1]/'docs/checkpoints/2026-10-18-remote-readiness.py'))
+        tool=Path(__file__).parents[1]/'tools/offline_restore_check.py'
+        self.assertEqual(sha(tool),ns['TOOL_SHA'])
+        fake=self.root/'tampered.py';fake.write_text('raise AssertionError("must not execute")')
+        with self.assertRaisesRegex(ValueError,'mismatch'):ns['read_ns'](fake,'0'*64)
     def test_wrong_archive_digest_rejected_before_restore(self):
         with self.assertRaisesRegex(ValueError,'digest'):check(self.archive,'0'*64,self.root/'work')
         self.assertFalse((self.root/'work').exists())

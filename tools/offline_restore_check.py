@@ -152,3 +152,20 @@ def check(backup,expected,workspace):
     return {'data_restore_exercised':True,'backup_sha256':expected,**result,
             'isolated_copy_removed':True,'restored_code_executed':False,'services_started':False,
             'network_calls_from_restore_check':False,'full_appliance_boot_restore_tested':False}
+
+
+def main():
+    import argparse
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--backup',required=True)
+    parser.add_argument('--sha256',required=True)
+    parser.add_argument('--workspace',default='/var/lib/authwire-restore-checks')
+    args=parser.parse_args()
+    try:
+        print(json.dumps({'event':'OFFLINE_RESTORE_CHECK',**check(args.backup,args.sha256,args.workspace)}))
+        return 0
+    except Exception as error:
+        print(json.dumps({'event':'OFFLINE_RESTORE_CHECK_FAILED','category':type(error).__name__}))
+        return 1
+
+if __name__=='__main__':raise SystemExit(main())
