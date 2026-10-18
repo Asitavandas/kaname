@@ -52,7 +52,7 @@ Set-AuthenticodeSignature -FilePath .\AuthWire-Client.ps1 -Certificate $signer
 
 GPO Computer Configuration → Windows Settings → Scripts → Startup üzerinden `Install-AuthWire.ps1` dağıtılır. İlgili pilot OU ve bilgisayar grubuyla scope/security filtering seçilir. Paket, yalnız yetkili yöneticilerin yazabildiği SYSVOL/paylaşımda tutulur. Başlangıç komutu AllSigned politikasıyla çalışır; profile ait paket tüm gerekli açık dosyalarıyla aynı dizinde olmalıdır. Group Policy Management, görev/Trust kurulumunu merkezden yapar; IT her istemciye gitmez.
 
-Kurucu ProgramData\AuthWire dizinini SYSTEM/Administrators erişimiyle korur, güven sertifikalarını makine depolarına kurar ve SYSTEM görevini kaydeder. Görev açılışta, 09:00/21:00’da ve ağ bağlantısı olayında çalışır; ağ yokken bekler. Başlangıçta 0–120 saniye jitter, hatada en fazla 12 saat + jitter olacak yerel backoff vardır. Yeniden deneme bir sonraki görev tetiklemesinde yapılır; kesintisiz polling yoktur. WDAC/AppLocker/Constrained Language uyumu kurumun gerçek pilotunda doğrulanmalıdır.
+Kurucu ProgramData\AuthWire dizinini SYSTEM/Administrators erişimiyle korur, güven sertifikalarını makine depolarına kurar ve SYSTEM görevini kaydeder. Görev açılışta ve her gün 09:00/21:00’da tetiklenir. Ayrı bir ağ bağlantısı olayı tetikleyicisi yoktur; StartWhenAvailable/RunOnlyIfNetworkAvailable koşulları ağ yokken uygun çalışmayı erteler. Başlangıçta 0–120 saniye jitter, hatada en fazla 12 saat + jitter olacak yerel backoff vardır. Yeniden deneme bir sonraki görev tetiklemesinde yapılır; kesintisiz polling yoktur. WDAC/AppLocker/Constrained Language uyumu kurumun gerçek pilotunda doğrulanmalıdır.
 
 ## Kayıt ve yenileme davranışı
 

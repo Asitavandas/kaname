@@ -1,10 +1,58 @@
 # AuthWire current work record
 
-Updated: 15 October 2026, Europe/Istanbul. This record supplements the 9 October
+Updated: 18 October 2026, Europe/Istanbul. This record supplements the 9 October
 `AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-09.docx` / `.pdf`; those reports are a
 dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
+
+## Uzaktan çalışma hazırlıkları ve sunucu gözlemi — 18 Ekim 2026
+
+- **🔴✓ Tamamlandı: canlı sunucu günlükleri, süreçler ve kurulu kaynak kontrolü.**
+  18 Ekim11:13UTC gözleminde panel dev.6/HTTPS200; panel PID174745,
+  RADIUS PID1274 ve broker PID149955 çalışıyor. CRL timer etkin/bekliyor;
+  oneshot son sonucu başarılı. TLS pini ve Windows istemci kaynağı korunmuş.
+  Bu çalışma canlı servis restart, policy/VLAN veya sertifika değişikliği yapmadı.
+- 15 Ekim20:05:31UTC sonrası günlüklerde tek PANEL_DATABASE_ERROR bulundu:
+  15 Ekim20:08:12.882569UTC, area=session, method=GET, sqlite_code=5,
+  transient=true. Sonraki gözlem aralığında aynı kayıt tekrarlamadı. Bu bulgu
+  kullanıcı tarayıcısında hatanın görünmediğini veya geçmiş bütün kitlenmelerin
+  nedeninin kanıtlandığını göstermez. F5/login kullanıcı gözlemi açık kalır.
+- **🔴✓ Tamamlandı: izole veri geri yükleme doğrulayıcısının geliştirilmesi ve
+  regresyon testleri.** Şifreli gerçek fixture verisinde DB/FK, CA/Issuer/vault,
+  TLS/RADIUS anahtar eşleşmeleri, CRL ve sahip/izin/hash denetimleri geçti.
+  Hatalı arşiv pini, anahtar, yol/link ve güvensiz çalışma alanı reddedildi.
+  Ubuntu genel test paketi470 testte başarılı (25 ortam atlaması); restore
+  odaklı10 test başarılı. Canlı dizine geri yükleme veya restored code execution yok.
+- **🔴✓ Tamamlandı: salt okunur DC/SYSVOL paket denetim aracı ve Windows
+  fixture kabulü.** Gerçek Authenticode, aynı yayıncı/EKU, imzalı içerik/asset
+  pinleri, TLS/Root/Issuer zinciri, ACL ve Startup kayıtları test edildi.
+  Değiştirilmiş paket, geniş yazma ve çift/Bypass kayıtları yakalandı.
+  Gerçek DC paketi henüz çalıştırılmadı; GPO/istemci saha kabulü kapanmaz.
+- **🔴✓ Tamamlandı: dev.6 yönetim/işletim/kurtarma rehberleri ve güncel yol
+  haritası.** ADMINISTRATION.md, OPERATIONS_0_14_0.md ve ROADMAP.md güncellendi.
+  BULK_ENROLLMENT belgesindeki network-event trigger iddiası düzeltildi;
+  gerçek görev Startup+09:00+21:00 ve ağ/AC koşulları kullanıyor.
+- Kaynak değişiklikleri PR33: https://github.com/Asitavandas/kaname/pull/33.
+  Bunlar araç/test/belge değişiklikleridir; uygulama sürümü dev.6 kalır.
+  kaname/**, imzalı Windows istemcisi, native modül ve canlı kimlik ayarları değişmedi.
+- **Bekliyor: gerçek sunucu yedeğiyle veri geri yükleme provası ve canlı
+  kimlikli API okumaları.** Root-only dosyalar nedeniyle operatör sudo çıktısı
+  gerekiyor. Hazır çalıştırıcı yeni özel yedek alır, yalnız izole geçici kopyada
+  doğrular, özel hash baseline/sonuç kaydı bırakır ve canlı PID/korunan durumu
+  karşılaştırır. Yalnız hazırlık/test tamamlandı; gerçek prova yapılmış sayılmaz.
+  Tam OS/runtime boot, temiz appliance import/rollback ve off-host yedek ayrı açıktır.
+- Sunucu çalıştırıcısı:
+  /home/segmentiq/authwire-remote-check-20261018.py,
+  SHA256b467c1227d071993f6be7cc92c6c20f97862746bd0ac552f44a897fe8deee683.
+  Sabitlenen veri doğrulayıcısı:
+  /home/segmentiq/authwire-offline-restore-check-20261018.py,
+  SHA256c9a1cba667eee28e5e6a3579ced0b457b17e1e7193f254b74e6638a87e48f610.
+  Kaynak checkpoint docs/checkpoints/2026-10-18-remote-readiness.py içinde.
+- VV06 predecessor için sunucu retirement/registry/imzalı runtime CRL kanıtı
+  aynı salt okunur kontrolde ayrıca alınacak. Windows yerel12saat cleanup ve
+  EAP'nin seçtiği yeni leaf bundan çıkarılmaz; 19 Ekim saha kabulü açık.
+  Kullanıcı kimliği pilotu yol haritasında korunuyor. Yeni resmi rapor istenmedi.
 
 ## Panel dev6 preservation reconciled and technical deployment accepted — 15 October2026, 23:05 Istanbul
 
