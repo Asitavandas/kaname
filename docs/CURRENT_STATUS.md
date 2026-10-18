@@ -6,6 +6,26 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## DC01 gerçek SYSVOL paket denetimi; çift Startup bulgusu — 18 Ekim 2026, 15:04 İstanbul
+
+- **🔴✓ Tamamlandı: gerçek DC01/SYSVOL paket imza, kaynak, asset, güven ve ACL
+  denetimi.** GPO AuthWire-Pilot-Trust, GUID e5a9ab39-3709-49cb-837a-0208d2eb3b12,
+  AllSettingsEnabled; ApplyTrustees yalnız AuthWire-Pilot-Computers.
+  PackageChecksPassed=true;14 paket kontrolünün tamamı başarılı.
+- İki script gerçek Authenticode Valid, CodeSigning EKU ve aynı yayıncı;
+  yayıncı thumbprint6E74B513F766E01730719684A41B2664380CA68A.
+  İmzalı Install-AuthWire SHA256d1ae2163fa086184f73d3e053bf30a605a9098cedcdd7c0a02528c920b4780b9;
+  AuthWire-Client SHA256784c3234e05f0fe300fd5ed8bac12a23ee90b5a98d392f01159cf08dd3c323e2.
+  Normalize edilmiş gövdeler güncel kaynakla, dört asset imzalı kurucuyla eşleşiyor.
+  URL/domain/SPN/TLS pini, Root/Issuer zinciri ve geniş yazma izni kontrolleri geçti.
+- **Açık bulgu: Startup InstallEntryCount=2, DuplicateInstallEntries=true.**
+  Her kayıtta açık AllSigned var, Bypass yok. Tam CmdLine/Parameters ve hangi
+  INI/indekste oldukları görülmeden kayıt silinmeyecek. Gerçek çift çağrı
+  doğrulanırsa GPO yedeğiyle yalnız gereksiz kayıt uzlaştırılacak; paket veya
+  mevcut sertifikalar değiştirilmez. B05 genel GPO/Startup kabulü henüz kapanmaz.
+- Denetimde WindowsClientChanged/GpoChanged/TrustStoreChanged=false.
+  ClientApplicationAccepted=false; bu sonuç yeni istemci saha çalıştırma kanıtı değildir.
+
 ## DC01 paket denetimi ön kontrolü — 18 Ekim 2026, 14:56 İstanbul
 
 - **🔴✓ Tamamlandı: DC01 denetim ön kontrolü.** GPO AllSettingsEnabled,
