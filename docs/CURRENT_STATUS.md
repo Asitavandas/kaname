@@ -6,6 +6,29 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Panel gerçek tarayıcı kabulü tamamlandı — 18 Ekim 2026, 15:21 İstanbul
+
+- **🔴✓ Tamamlandı: operatörün gerçek tarayıcı F5/giriş ve sayfa geçişi kabulü.**
+  Ctrl+F5, yüklenmeyi bekleyerek beş F5, Sertifikalar/Ağlar-VLAN/Servisler
+  geçişleri ve çıkış/yeniden giriş kontrolü istendi. Operatör “hiç bir hata
+  almadım, tek giriş denemesiyle açıldı” sonucunu paylaştı. Bu testte hata veya
+  tekrar parola denemesi bildirilmedi; kısa süreli saha kabulü kapanmıştır.
+- Bu kısa gözlem geçmişteki bütün aralıklı kilitlenmelerin kalıcı bittiğini
+  veya2saat idle/12saat absolute sürelerinin gerçek zamanlı uçtan uca
+  tamamlandığını kanıtlamaz. Uzun süreli kullanıcı gözlemi açık kalır.
+- **🔴✓ Tamamlandı: bu turdaki uzaktan kontrol listesi.** Sunucu günlük/API
+  incelemesi + gerçek tarayıcı kısa kabulü; gerçek yedekte izole veri restore;
+  VV06 sunucu24saat retirement/CRL; DC01 paket/ACL/güven/Startup kontrolü ve
+  çift kayıt düzeltmesi; güncel işletim/kurtarma rehberleri kaydedildi.
+  B01/B05/B06/B12 paketlerinin tamamının kapandığı iddia edilmez.
+- Sıradaki planlı saha adımı19 Ekim Pazartesi VV06 üzerinde yenilenmiş leaf'in
+  EAP'de seçildiğini, eski yerel sertifika/anahtar cleanup'ını ve düzeltilmiş
+  GPO/Startup halinin yeniden uygulanmasını doğrulamaktır. Yeni kullanıcı
+  kimliği pilotu daha sonra devam edecek. Zaman ileri alınmaz, eski anahtarlar
+  elle silinmez. Bu kayıt bir hatırlatma/otomasyon kurulumu değildir.
+- Bu kabul kaydında canlı servis, policy/VLAN, GPO veya sertifika değişikliği
+  yapılmadı. Güncel durum ve yol haritası kaydedildi; yeni resmi rapor yok.
+
 ## DC01 çift Startup düzeltmesi ve tekrar denetimi kabul edildi — 18 Ekim 2026, 15:17 İstanbul
 
 - **🔴✓ Tamamlandı: gereksiz AuthWire Startup kaydının kaldırılması ve gerçek

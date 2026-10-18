@@ -9,7 +9,7 @@ kapsamdır; burada tamamlanan saha işleri yeniden “bekliyor” sayılmaz.
 
 | İş paketi | Tamamlanan kapsam | Açık kabul kapısı |
 |---|---|---|
-| B01 Panel | Oturum kurtarma, yükleniyor durumu,2h/12h sınırları, RBAC/CSRF ve dev.6 teknik kabul | Kullanıcının gerçek F5/giriş gözlemi ve kalan wizard/apply akışı |
+| B01 Panel | Oturum kurtarma, yükleniyor durumu,2h/12h sınırları, RBAC/CSRF, dev.6 teknik kabul ve gerçek F5/giriş kısa saha kabulü | Aralıklı hataların uzun süreli takibi ve kalan wizard/apply akışı |
 | B02 Canlı AD | Gerçek kimlik/grup, grup dışı ve kapalı hesap ret/geri dönüş | Silinmiş hesap/erişilemez AD ve gerçek kapasite sınırları |
 | B03 Güven ve PKI | Gerçek CA/server-name kontrolü, iptal ve imzalı runtime CRL | Expired/yanlış issuer saha testi, CA/Issuer rollover ve bakım |
 | B04 Enrollment | SYSTEM/GPO ile gerçek farklı cihaz anahtarı ve makbuz | Kesilmiş/tekrarlı kayıtların kalan saha senaryoları |
@@ -22,9 +22,11 @@ kapsamdır; burada tamamlanan saha işleri yeniden “bekliyor” sayılmaz.
 | B11 Kayıt/korelasyon | Servis işlem geçmişi ve temel audit | Accounting, canlı oturum korelasyonu ve saklama politikası |
 | B12 Kurtarma/dağıtım | Durum koruyan kurulum/güncelleme, doğrulanmış özel yedekler ve gerçek yedekte izole veri restore | Tam boot/rollback, temiz appliance ve bağımsız kimlik |
 
-Uzak çalışma sırası: panel günlük/API kabulü → güncel yedeğin izole veri restore
-provası → DC/SYSVOL paket denetimi → güncel rehber. Veri restore aracı ve fixture
-başarısı, gerçek müşteri yedeği çıktısı olmadan B12 restore kabulü değildir.
+18 Ekim uzaktan kontrol turu tamamlandı: panel günlük/API ve gerçek tarayıcı
+kısa kabulü; güncel gerçek yedeğin izole veri restore provası; DC/SYSVOL paket
+ve tek AllSigned Startup kontrolü; güncel rehberler. Yalnız fixture başarısı
+müşteri restore kabulü sayılmaz; bu turda gerçek yedek kanıtı da alınmıştır.
+Uzun süreli panel gözlemi ve tam boot/rollback ayrı açık kapılardır.
 VV06 testleri19 Ekim Pazartesi sabahına ayrıldı. Uzaktan sunucu retirement/CRL kaydı18 Ekim'de
 doğrulandı; bu, Windows cert-store cleanup veya seçilen EAP leaf'i kanıtlamaz.
 Kullanıcı EAP-TLS pilotu unutulmadı; bilgisayar yaşam döngüsü kabulünden ayrı
