@@ -28,7 +28,7 @@ def scalar(pairs, name):
     return value
 
 
-def authorize(pairs, root):
+def authorize(pairs, root, *, observe=False):
     import radiusd  # Provided by embedded FreeRADIUS, not a PyPI package.
     root = Path(root)
     decision = Decision('deny', 'FIXTURE_ADAPTER_FAILED')
@@ -64,6 +64,9 @@ def authorize(pairs, root):
             service = TLSAuthorization(data['policies'], registry=registry, directory=Directory())
             decision = service.authorize(cert, nas_ip=data['nas_ip'], access_type=data['access_type'])
         reply, config = freeradius_result(decision)
+        if observe:
+            from kaname.radius_observer import decision_context
+            config += decision_context(decision, pairs, root / 'state')
         event = {'case': data['case'], 'action': decision.action, 'reason': decision.reason,
                  'policy_id': decision.policy_id, 'vlan': decision.vlan}
         with (root / 'decisions.jsonl').open('a') as handle:

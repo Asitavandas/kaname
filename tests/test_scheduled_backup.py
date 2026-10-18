@@ -100,6 +100,26 @@ class ScheduledBackupTests(unittest.TestCase):
         with patch.object(worker, 'inventory', side_effect=changing): result = worker.run()
         self.assertTrue(result['business_state_stable'])
 
+    def test_access_history_writes_do_not_break_backup_and_committed_rows_are_in_archive(self):
+        from kaname.radius_events import initialize, append
+        from tests.test_radius_events import event
+        state = self.root / 'var/lib/kaname-lab'
+        path = initialize(state); append(state, event())
+        original = worker.inventory; calls = 0
+        def changing(items):
+            nonlocal calls
+            result = original(items); calls += 1
+            append(state, event(calls + 10))
+            return result
+        with patch.object(worker, 'inventory', side_effect=changing): result = worker.run()
+        self.assertTrue(result['business_state_stable'])
+        with tarfile.open(result['backup']) as archive:
+            copy = self.root / 'access-copy.sqlite3'
+            copy.write_bytes(archive.extractfile('var/lib/kaname-lab/radius-events/access.sqlite3').read())
+        with sqlite3.connect(copy) as db:
+            self.assertGreaterEqual(db.execute('SELECT count(*) FROM access_events').fetchone()[0], 1)
+            self.assertEqual([('ok',)], db.execute('PRAGMA integrity_check').fetchall())
+
     def test_business_mutation_retries_then_fails_without_publishing_or_pruning(self):
         manual = self.target.parent / 'authwire-pause-manual.tar.gz'; manual.write_bytes(b'keep')
         original = worker.inventory; calls = 0
@@ -229,7 +249,7 @@ class BackupInstallerTests(unittest.TestCase):
 
     def test_operator_entrypoint_matches_the_reviewed_installer_and_payload(self):
         root = Path(__file__).parents[1]
-        ns = runpy.run_path(str(root / 'docs/checkpoints/2026-10-18-scheduled-backup.py'))
+        ns = runpy.run_path(str(root / 'docs/checkpoints/2026-10-18-scheduled-backup-access-history.py'))
         self.assertEqual(ns['INSTALLER_SHA'], hashlib.sha256((root / 'tools/backup_install.py').read_bytes()).hexdigest())
         manifest = json.dumps({n: hashlib.sha256((root / 'tools' / n).read_bytes()).hexdigest() for n in installer.FILES}, sort_keys=True, indent=2) + '\n'
         self.assertEqual(ns['MANIFEST_SHA'], hashlib.sha256(manifest.encode()).hexdigest())

@@ -48,11 +48,15 @@ jobs:
           ./configure --prefix="$RUNNER_TEMP/kaname-freeradius" --with-rlm-python3-config-bin=/usr/bin/python3-config > "$RUNNER_TEMP/kaname-radius-configure.log" 2>&1
           make -j2 > "$RUNNER_TEMP/kaname-radius-build.log" 2>&1
           make install > "$RUNNER_TEMP/kaname-radius-install.log" 2>&1
+      - name: Real hardened native activation and failed-start rollback on disposable systemd
+        env:
+          AUTHWIRE_RADIUS_PREFIX: ${{ runner.temp }}/kaname-freeradius
+        run: sudo --preserve-env=AUTHWIRE_RADIUS_PREFIX,RUNNER_ENVIRONMENT "$(command -v python)" -B -m tools.radius_events_systemd_check
       - name: Normal-mode native loopback EAP-TLS, policy and authenticated VLAN responses
         run: |
-          python -m tools.radius_lab --radius-prefix "$RUNNER_TEMP/kaname-freeradius" --report "$RUNNER_TEMP/kaname-radius-proof.json"
+          python -m tools.radius_lab --access-events --radius-prefix "$RUNNER_TEMP/kaname-freeradius" --report "$RUNNER_TEMP/kaname-radius-proof.json"
       - name: Debug-mode comparison with the same validation and policy cases
-        run: python -m tools.radius_lab --debug --radius-prefix "$RUNNER_TEMP/kaname-freeradius" --report "$RUNNER_TEMP/kaname-radius-debug-proof.json"
+        run: python -m tools.radius_lab --access-events --debug --radius-prefix "$RUNNER_TEMP/kaname-freeradius" --report "$RUNNER_TEMP/kaname-radius-debug-proof.json"
       - name: Production RADIUS runtime config parses with pinned FreeRADIUS
         env:
           AUTHWIRE_RADIUS_PREFIX: ${{ runner.temp }}/kaname-freeradius

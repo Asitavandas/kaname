@@ -14,6 +14,7 @@ import re
 import secrets
 import shutil
 import socket
+import sqlite3
 import struct
 import subprocess
 import tempfile
@@ -153,7 +154,7 @@ def fixture(info):
                                'enabled': True, 'security_group_sids': [GROUP]}}}
 
 
-def configuration(root, prefix, port, secret):
+def configuration(root, prefix, port, secret, *, access_events=False):
     libraries = list(prefix.rglob('rlm_python3.so'))
     if len(libraries) != 1:
         raise RuntimeError('Pinned build must include exactly one rlm_python3 module')
@@ -281,6 +282,25 @@ server kaname-cert-check {{
  }}
 }}
 ''')
+    if access_events:
+        from kaname.radius_events import initialize
+        from tools import radius_events_config as event_config
+        initialize(root / 'state')
+        dictionary = root / 'dictionary'
+        dictionary.write_text(dictionary.read_text() + event_config.dictionary())
+        private_file(mods / 'access-events', event_config.module(repo, Path(cryptography.__file__).resolve().parent.parent,
+                                                                module_name='kaname_lab_observer'))
+        private_file(shim / 'kaname_lab_observer.py',
+                     'from kaname.radius_observer import post_auth as observe\n'
+                     'from pathlib import Path\n'
+                     'def post_auth(values):\n    return observe(values, state=Path(' + repr(str(root / 'state')) +
+                     '), runtime=Path(' + repr(str(root)) + '))\n')
+        script = shim / 'kaname_lab_module.py'
+        script.write_text(script.read_text().replace(repr(str(root)) + ')', repr(str(root)) + ', observe=True)'))
+        site = sites / 'kaname'
+        text = event_config.augment_site(site.read_text())
+        text = text.replace('  kaname_lab\n', '  kaname_lab\n' + event_config.context_copy())
+        site.write_text(text)
 
 
 def radius_attrs(packet):
@@ -341,6 +361,7 @@ class Relay:
         self.running = True
         self.requests = {}
         self.client = None
+        self.last_request = None
         self.socket.settimeout(0.1)
         self.thread = threading.Thread(target=self.run, daemon=True)
         self.thread.start()
@@ -362,6 +383,7 @@ class Relay:
                         raise ValueError('Unexpected lab request peer or code')
                     radius_attrs(packet)
                     self.client = peer
+                    self.last_request = packet
                     self.requests[packet[1]] = packet
                     self.socket.sendto(packet, self.target)
             except Exception as exc:
@@ -466,7 +488,7 @@ def drop_case(port, secret, name, *, source='127.0.0.1', mac='invalid', non_eap=
             'silently_discarded': not non_eap}
 
 
-def run_lab(prefix, *, debug=False):
+def run_lab(prefix, *, debug=False, access_events=False):
     if os.name != 'posix' or not shutil.which('eapol_test'):
         raise RuntimeError('Linux and native eapol_test are required')
     binary = prefix / 'sbin' / 'radiusd'
@@ -482,7 +504,7 @@ def run_lab(prefix, *, debug=False):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
             probe.bind(('127.0.0.1', 0))
             port = probe.getsockname()[1]
-        configuration(root, prefix, port, secret)
+        configuration(root, prefix, port, secret, access_events=access_events)
         log = root / 'private-debug.log'
         process = None
         relay = None
@@ -495,7 +517,7 @@ def run_lab(prefix, *, debug=False):
                 wait_ready(process, log)
                 relay = Relay(port, secret)
 
-                def case(name, cert='computer', expected=3, reason=None, change=None, **options):
+                def case(name, cert='computer', expected=3, reason=None, change=None, *, history_busy=False, **options):
                     data = fixture(info)
                     data['case'] = name
                     if change:
@@ -515,10 +537,53 @@ def run_lab(prefix, *, debug=False):
                     staging = root / 'fixture-next.json'
                     private_file(staging, json.dumps(data))
                     staging.replace(target)
-                    facts.append(eap_case(root, relay, secret, name, cert, expected=expected,
-                                          reason=reason, **options))
+                    from kaname.radius_events import history as event_history
+                    before_events = event_history(root / 'state', {})['storage']['records'] if access_events else 0
+                    blocker = None
+                    try:
+                        if access_events and history_busy:
+                            blocker = sqlite3.connect(root / 'state/radius-events/access.sqlite3')
+                            blocker.execute('BEGIN EXCLUSIVE')
+                        fact = eap_case(root, relay, secret, name, cert, expected=expected, reason=reason, **options)
+                    finally:
+                        if blocker is not None: blocker.close()
+                    if access_events:
+                        page = event_history(root / 'state', {})
+                        rows = [r for r in page['events'] if r['id'] > before_events]
+                        if history_busy:
+                            if rows or 'AUTHWIRE_ACCESS_EVENT_DROPPED code=STORAGE_BUSY' not in log.read_text(errors='replace'):
+                                raise AssertionError(name + ': missing bounded loss diagnostic')
+                            fact.update(history_write_failed=True, authorization_preserved=True)
+                            facts.append(fact)
+                            return
+                        if len(rows) != 1 or rows[0]['response_code'] != expected:
+                            raise AssertionError(name + ': final native response history mismatch')
+                        event = rows[0]
+                        if reason and event['reason'] != reason:
+                            raise AssertionError(name + ': history policy reason mismatch: ' + event['reason'])
+                        if event['vlan'] != (33 if expected == 2 else None):
+                            raise AssertionError(name + ': history VLAN mismatch')
+                        if not reason and (event['tls_verified'] or event['object_guid'] or event['certificate_serial']):
+                            raise AssertionError(name + ': pre-callback failure promoted an unverified identity')
+                        fact['final_response_history_verified'] = True
+                        fact['recorded_reason'] = event['reason']
+                        fact['verified_tls_context'] = event['tls_verified']
+                    facts.append(fact)
 
                 case('valid-computer', expected=2, reason='POLICY_ALLOW')
+                if access_events:
+                    from kaname.radius_events import history as event_history
+                    before_records = event_history(root / 'state', {})['storage']['records']
+                    before_replies = len(relay.facts)
+                    relay.socket.sendto(relay.last_request, relay.target)
+                    deadline = time.monotonic() + 2
+                    while len(relay.facts) == before_replies and time.monotonic() < deadline: time.sleep(0.01)
+                    if len(relay.facts) != before_replies + 1 or relay.facts[-1]['code'] != 2:
+                        raise AssertionError('Retransmission did not retain the authentic native response')
+                    if event_history(root / 'state', {})['storage']['records'] != before_records:
+                        raise AssertionError('Cached retransmission duplicated final history')
+                    facts.append({'case': 'cached-final-retransmission', 'passed': True,
+                                  'radius_code': 2, 'history_not_duplicated': True, 'response_integrity_checked': True})
                 case('valid-wireless', expected=2, reason='POLICY_ALLOW',
                      change=lambda d: d.update(access_type='wireless'))
                 case('disabled-account', reason='ACCOUNT_DISABLED',
@@ -558,12 +623,25 @@ def run_lab(prefix, *, debug=False):
                 case('wrong-client-purpose', cert='wrong-purpose')
                 case('untrusted-server-ca', ca='rogue-ca.pem')
                 case('wrong-server-name', server_name='other.lab.example.test')
+                if access_events:
+                    case('observer-storage-busy', expected=2, reason='POLICY_ALLOW', history_busy=True)
+                    case('observer-storage-recovered', expected=2, reason='POLICY_ALLOW')
                 for name, options in (
                     ('missing-message-authenticator', {'mac': 'missing'}),
                     ('invalid-message-authenticator', {}),
                     ('unknown-nas-source', {'source': '127.0.0.2', 'mac': 'valid'}),
                     ('non-eap-request', {'mac': 'valid', 'non_eap': True})):
-                    facts.append(drop_case(port, secret, name, **options))
+                    before_records = event_history(root / 'state', {})['storage']['records'] if access_events else 0
+                    fact = drop_case(port, secret, name, **options)
+                    if access_events:
+                        page = event_history(root / 'state', {})
+                        rows = [r for r in page['events'] if r['id'] > before_records]
+                        if options.get('non_eap'):
+                            if len(rows) != 1 or rows[0]['response_code'] != 3 or rows[0]['reason'] != 'NON_EAP_REQUEST':
+                                raise AssertionError('Non-EAP reject history mismatch')
+                        elif rows: raise AssertionError('Silently discarded packet invented a final response')
+                        fact['history_scope_verified'] = True
+                    facts.append(fact)
                 if not debug:
                     case('crl-before-publication',expected=2,reason='POLICY_ALLOW')
                     raw = (root/'crl-native-revoked.pem').read_bytes()
@@ -611,6 +689,7 @@ def run_lab(prefix, *, debug=False):
             'physical_wired_wireless_tested': False, 'client_enrollment_enabled': False,
             'production_radius_enabled': False, 'secrets_exported': False,
             'persistent_registry_tested': True,
+            'access_events_observed': access_events,
             'case_count': len(facts), 'cases': facts}
 
 
@@ -619,8 +698,9 @@ def main():
     parser.add_argument('--radius-prefix', type=Path, required=True)
     parser.add_argument('--report', type=Path, required=True)
     parser.add_argument('--debug', action='store_true', help='Also support the explicit debug-mode comparison')
+    parser.add_argument('--access-events', action='store_true')
     args = parser.parse_args()
-    result = run_lab(args.radius_prefix.resolve(), debug=args.debug)
+    result = run_lab(args.radius_prefix.resolve(), debug=args.debug, access_events=args.access_events)
     private_file(args.report, json.dumps(result, indent=2) + '\n')
     print('KANAME_RADIUS_REPORT_BEGIN')
     print(json.dumps(result, indent=2))

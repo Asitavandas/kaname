@@ -56,7 +56,7 @@ def _server_material(state, fqdn):
     return key_path.read_bytes(), cert_path.read_bytes()
 
 
-def generate(output, prefix, state=STATE, listen_ip='127.0.0.1'):
+def generate(output, prefix, state=STATE, listen_ip='127.0.0.1', *, access_events=False):
     output, prefix, state = Path(output), Path(prefix), Path(state)
     listen = ipaddress.ip_address(listen_ip)
     if listen.version != 4 or listen.is_unspecified or listen.is_multicast:
@@ -127,7 +127,24 @@ def generate(output, prefix, state=STATE, listen_ip='127.0.0.1'):
             raise ValueError('RADIUS runtime path contains unsafe characters')
     prefix_text = str(prefix)
     module_dir = str(modules[0].parent)
-    private_file(output / 'dictionary', '$INCLUDE ' + str(dictionary) + '\n')
+    # Opt-in only. A failed history startup must not disable EAP-TLS.
+    events_enabled = False
+    events_error = None
+    if access_events:
+        from kaname.radius_events import initialize, EventStorageError
+        try:
+            initialize(state)
+            events_enabled = True
+        except Exception:
+            events_error = 'ACCESS_HISTORY_UNAVAILABLE'
+        import json
+        from kaname.radius_events import utc
+        private_file(output / 'observer-status.json', json.dumps({
+            'requested': True, 'enabled': events_enabled, 'at': utc(),
+            **({'last_error_code': events_error} if events_error else {})}))
+    from tools import radius_events_config as event_config
+    private_file(output / 'dictionary', '$INCLUDE ' + str(dictionary) + '\n' +
+                 (event_config.dictionary() if events_enabled else ''))
     private_file(output / 'radiusd.conf', f'''prefix = {prefix_text}
 name = authwire-radius
 raddbdir = {output}
@@ -194,18 +211,21 @@ $INCLUDE sites-enabled/
  }
 }
 ''')
+    authorization_module = 'kaname.radius_observer' if events_enabled else 'kaname.radius_adapter'
     private_file(mods / 'python3', f'''python3 authwire_authorize {{
  python_path = "{source}:{dependencies}"
  python_path_mode = prepend
- module = kaname.radius_adapter
+ module = {authorization_module}
  mod_authorize = ${{.module}}
  func_authorize = authorize
 }}
 ''')
+    if events_enabled:
+        private_file(mods / 'access-events', event_config.module(source, dependencies))
     private_file(mods / 'reject', 'always reject {\n rcode = reject\n}\n')
 
     auth_port = network['authentication_port']
-    private_file(sites / 'authwire', f'''server authwire-radius {{
+    site = f'''server authwire-radius {{
  listen {{
   type = auth
   ipaddr = {listen_ip}
@@ -232,9 +252,14 @@ server authwire-cert-check {{
   authwire_authorize
  }}
 }}
-''')
+'''
+    if events_enabled:
+        site = event_config.augment_site(site)
+        site = site.replace('  authwire_authorize\n', '  authwire_authorize\n' + event_config.context_copy())
+    private_file(sites / 'authwire', site)
     return {'generated': True, 'authentication_port': auth_port, 'clients': len(clients),
-            'accounting_enabled': False, 'fqdn': fqdn, 'listen_ip': listen_ip}
+            'accounting_enabled': False, 'fqdn': fqdn, 'listen_ip': listen_ip,
+            'access_events_enabled': events_enabled, 'access_events_error': events_error}
 
 
 def main():
@@ -243,8 +268,9 @@ def main():
     parser.add_argument('--prefix', required=True)
     parser.add_argument('--state-dir', default=str(STATE))
     parser.add_argument('--listen-ip', required=True)
+    parser.add_argument('--access-events', action='store_true', help='Opt in to bounded final-response history')
     args = parser.parse_args()
-    print(generate(args.output, args.prefix, args.state_dir, args.listen_ip))
+    print(generate(args.output, args.prefix, args.state_dir, args.listen_ip, access_events=args.access_events))
 
 
 if __name__ == '__main__':
