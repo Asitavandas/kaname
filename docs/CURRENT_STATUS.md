@@ -6,6 +6,30 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Uzaktan kalan işler ve yedek zamanlama envanteri — 18 Ekim 2026, 15:24 İstanbul
+
+- Önceki “uzaktan kontrol turu tamamlandı” ifadesi18 Ekim kontrol listesini
+  kapsar; bütün uzaktan geliştirilebilecek B01/B11/B12 işleri bitmiş değildir.
+- **🔴✓ Tamamlandı: yedek zamanlama için salt okunur ön envanter.** Linux
+  segmentiq üzerinde /var/backups/authwire root-owned0700. /etc/systemd/system
+  ürün unit adları ve odaklı list-timers çıktısında yalnız CRL sync timer var;
+  ürün adlarıyla eşleşen backup cron/timer tanımı incelenen yerlerde bulunmadı.
+  /usr/lib/systemd/system içindeki dpkg-db-backup OS paket DB görevidir,
+  AuthWire uygulama/CA/vault yedeği kabul edilmez.
+- Bu sınırlı tarama harici backup ürününü, root kullanıcı crontab'ını veya başka
+  isimli görevleri dışlamaz; otomatik/off-host yedek tamamlandı sayılmadı.
+  İlk genel list-unit-files sorgusu15sn timeout oldu; odaklı ürün timer okuması
+  başarılı. Servis değişikliği veya restart yapılmadı.
+- Uzaktan devam edebilecek işler: planlı yedek ve saklama/güvenli aktarım
+  akışının geliştirme/testi (ikinci hedef seçimi gerekir); tekrarlanabilir
+  kurulum/kurtarma kabul hazırlığı (gerçek tam boot için izole VM gerekir);
+  B01 eksik wizard/apply akışları; B11 kayıt saklama/dışa aktarım ve accounting
+  hazırlığı. Sahadaki değişiklikler mevcut kimlik ayarları korunarak ayrı doğrulanır.
+- Öncelik önerisi B12 düzenli yedekleme; ardından B01 kalan akışlar ve B11
+  kayıt düzeni. G01–G07 kapsamı temel kabul kapılarından sonra kalır. VV06
+  seçilen leaf/yerel cleanup ve yeni GPO istemci kabulü19 Ekim'e ayrılmıştır.
+  Yeni otomatik yedek görevi kurulmadı, yedek silinmedi/aktarılmadı; yeni formal rapor yok.
+
 ## Panel gerçek tarayıcı kabulü tamamlandı — 18 Ekim 2026, 15:21 İstanbul
 
 - **🔴✓ Tamamlandı: operatörün gerçek tarayıcı F5/giriş ve sayfa geçişi kabulü.**
