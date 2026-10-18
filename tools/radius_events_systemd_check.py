@@ -84,15 +84,18 @@ password=secrets.token_hex(24).encode();PKIService(s.root).initialize(password);
         original_worker = candidate.replace(install.BACKUP_CHANGE[1], install.BACKUP_CHANGE[0], 1)
         assert install.digest(original_worker) == install.OLD_WORKER_SHA
         install.WORKER.parent.mkdir(mode=0o755)
-        install.WORKER.write_bytes(original_worker)
+        install.atomic(install.WORKER, original_worker)
         checker = install.WORKER.parent / 'offline_restore_check.py'
-        checker.write_bytes((repo / 'tools/offline_restore_check.py').read_bytes())
+        install.atomic(checker, (repo / 'tools/offline_restore_check.py').read_bytes())
         old_release = (json.dumps({'scheduled_backup.py': install.digest(original_worker),
                                   'offline_restore_check.py': install.digest(checker.read_bytes())}, sort_keys=True, indent=2) + '\n').encode()
-        install.RELEASE.write_bytes(old_release)
+        install.atomic(install.RELEASE, old_release)
         install.LOCK.touch(mode=0o600)
-        base = unit_text('127.0.0.1').encode(); install.UNIT.write_bytes(base)
-        for unit in units[1:]: unit.write_text('[Service]\nType=simple\nExecStart=/usr/bin/sleep infinity\n')
+        base = unit_text('127.0.0.1').encode(); install.atomic(install.UNIT, base)
+        for unit in units[1:]: install.atomic(unit, b'[Service]\nType=simple\nExecStart=/usr/bin/sleep infinity\n')
+        for path in (install.WORKER, checker, install.RELEASE):
+            info = path.lstat()
+            assert (info.st_uid, info.st_mode & 0o777, info.st_nlink) == (0, 0o644, 1), (str(path), info)
         command('systemctl', 'daemon-reload'); command('systemctl', 'start', *names)
         before = install.service_pid('authwire-radius.service'); panel_pid = install.service_pid('kaname-lab.service')
         install.listener('127.0.0.1', port, observer_required=False)
@@ -115,7 +118,7 @@ password=secrets.token_hex(24).encode();PKIService(s.root).initialize(password);
             assert set(effective.splitlines()) == {'ProtectSystem=strict', 'NoNewPrivileges=yes', 'User=kaname-lab'}
             # Restore the fixture's no-observer baseline, then cause an actual
             # ExecStartPre failure after a successful native configuration check.
-            install.DROPIN.unlink(); install.WORKER.write_bytes(original_worker); install.RELEASE.write_bytes(old_release)
+            install.DROPIN.unlink(); install.atomic(install.WORKER, original_worker); install.atomic(install.RELEASE, old_release)
             command('systemctl', 'daemon-reload'); command('systemctl', 'restart', 'authwire-radius.service')
             normal_override = install.override_text
             with patch.object(install, 'override_text', side_effect=lambda line: normal_override(line).replace(
