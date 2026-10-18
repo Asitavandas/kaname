@@ -6,6 +6,25 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Dev.7 gerçek tarayıcı kabulü tamamlandı — 18 Ekim 2026, 16:43 İstanbul
+
+- **🔴✓ Tamamlandı: dev.7 operatör ekran kabulü.** Operatör istenen dört
+  kontrol için “tüm sonuçlar belirttiğin gibi” bildirdi: Ctrl+F5 sonrası
+  sürüm0.14.0-dev.7; Kontrol merkezi RADIUS durumu ve son kontrol zamanı;
+  Temel ayarlar → Gözden geçir ekranında değişiklik yok ve pasif kaydet;
+  RADIUS istemcilerinde mevcut switch/AP kayıtlarının yerinde olması.
+- Bu kontroller ayar değiştirmeden yapıldı. Dev.7 B01 review/revision/tek kayıt
+  ve gerçek RADIUS özeti alt işi geliştirme, otomatik test, canlı koruma/API
+  ve gerçek tarayıcı kabulüyle kapandı. Canlı ortamda değişmiş FQDN/domain
+  kaydedilmesi veya RADIUS restart işlemi yapılmış sayılmaz; bu mutasyonlar
+  izole testlerde sınandı. B01'in tüm wizard/OS apply kapsamı kapanmaz.
+- **Açık işler korunuyor:** panel aralıklı hata/uzun süreli gözlemi, B01 kalan
+  kurulum/apply, B11 accounting/korelasyon/saklama, off-host hedef/altyapı,
+  ilk doğal yedek takvim çalışması ve tam OS/runtime boot/rollback.
+  VV06 seçilen yenilenmiş EAP leaf, yerel12h eski sertifika/anahtar cleanup
+  ve son GPO halinin uygulanması19 Ekim Pazartesi saha planında.
+  Kullanıcı EAP-TLS pilotu ve G01–G07 sırası korunur. Yeni resmi rapor yok.
+
 ## Dev.7 canlı panel güncellemesi kabul edildi — 18 Ekim 2026, 16:39 İstanbul
 
 - **🔴✓ Tamamlandı: 0.14.0-dev.7 canlı güncelleme ve teknik koruma/API kabulü.**

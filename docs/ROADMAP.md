@@ -9,7 +9,7 @@ kapsamdır; burada tamamlanan saha işleri yeniden “bekliyor” sayılmaz.
 
 | İş paketi | Tamamlanan kapsam | Açık kabul kapısı |
 |---|---|---|
-| B01 Panel | Oturum kurtarma, yükleniyor durumu,2h/12h sınırları, RBAC/CSRF, dev.6 gerçek F5/giriş kısa saha kabulü; dev.7 ayar review/revision/tek kayıt, gerçek RADIUS özeti ve canlı teknik kabul | Dev.7 operatör ekran kabulü, uzun gözlem ve kalan wizard/OS apply açık |
+| B01 Panel | Oturum kurtarma, yükleniyor durumu,2h/12h sınırları, RBAC/CSRF, dev.6 gerçek F5/giriş kısa saha kabulü; dev.7 ayar review/revision/tek kayıt, gerçek RADIUS özeti, canlı teknik ve operatör ekran kabulü | Uzun gözlem ve kalan wizard/OS apply açık |
 | B02 Canlı AD | Gerçek kimlik/grup, grup dışı ve kapalı hesap ret/geri dönüş | Silinmiş hesap/erişilemez AD ve gerçek kapasite sınırları |
 | B03 Güven ve PKI | Gerçek CA/server-name kontrolü, iptal ve imzalı runtime CRL | Expired/yanlış issuer saha testi, CA/Issuer rollover ve bakım |
 | B04 Enrollment | SYSTEM/GPO ile gerçek farklı cihaz anahtarı ve makbuz | Kesilmiş/tekrarlı kayıtların kalan saha senaryoları |
