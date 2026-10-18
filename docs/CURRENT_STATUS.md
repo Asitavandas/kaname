@@ -6,6 +6,22 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Çift Startup kaydı doğrulandı; GPMC düzeltmesi hazır — 18 Ekim 2026, 15:06 İstanbul
+
+- Operatör INI bölüm çıktısında iki kayıt da aynı UNC Install-AuthWire.ps1
+  kurucusunu -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File ile çağırıyor.
+  scripts.ini/Startup/0CmdLine=powershell.exe doğru klasik Scripts çağrısıdır.
+  psscripts.ini/Startup/0CmdLine=C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe;
+  PowerShell Scripts sekmesinde betik yerine yürütülebilir dosya kaydedilmiş.
+- Somut düzeltme: önce Backup-GPO ile AuthWire-Pilot-Trust yedeği, sonra GPMC
+  Computer Configuration/Policies/Windows Settings/Scripts/Startup içindeki
+  yalnız PowerShell Scripts kaydını kaldırma; klasik Scripts kaydı korunacak.
+  INI/GPT/AD sürümü elle düzenlenmez; GPMC kaydı ve sürümü birlikte yönetir.
+- Düzeltme ve tekrar denetim henüz operatör çıktısını bekliyor. Beklenen
+  InstallEntryCount=1, DuplicateInstallEntries=false, ExplicitAllSigned=true,
+  BypassReferenced=false; paket kontrolleri başarılı kalmalı. GPO yedeği veya
+  düzeltme uygulanmış sayılmadı. Mevcut paket/sertifika/RADIUS değişikliği yok.
+
 ## DC01 gerçek SYSVOL paket denetimi; çift Startup bulgusu — 18 Ekim 2026, 15:04 İstanbul
 
 - **🔴✓ Tamamlandı: gerçek DC01/SYSVOL paket imza, kaynak, asset, güven ve ACL
