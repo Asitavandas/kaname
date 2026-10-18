@@ -6,6 +6,7 @@ import io
 import json
 import os
 from pathlib import Path
+import runpy
 import shutil
 import sqlite3
 import subprocess
@@ -222,6 +223,13 @@ class BackupInstallerTests(unittest.TestCase):
         (self.stage / 'scheduled_backup.py').write_bytes(b'# modified')
         with self.assertRaisesRegex(ValueError, 'source differs'): installer.load_package(self.stage, self.expected)
         self.assertFalse(self.target.exists())
+
+    def test_operator_entrypoint_matches_the_reviewed_installer_and_payload(self):
+        root = Path(__file__).parents[1]
+        ns = runpy.run_path(str(root / 'docs/checkpoints/2026-10-18-scheduled-backup.py'))
+        self.assertEqual(ns['INSTALLER_SHA'], hashlib.sha256((root / 'tools/backup_install.py').read_bytes()).hexdigest())
+        manifest = json.dumps({n: hashlib.sha256((root / 'tools' / n).read_bytes()).hexdigest() for n in installer.FILES}, sort_keys=True, indent=2) + '\n'
+        self.assertEqual(ns['MANIFEST_SHA'], hashlib.sha256(manifest.encode()).hexdigest())
 
     def test_hardened_timer_first_backup_restore_then_enable_preserves_product(self):
         result = self.install()

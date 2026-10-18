@@ -7,7 +7,9 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import tarfile
 import tempfile
+import time
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
@@ -34,6 +36,8 @@ def main():
             Path('/var/lib/authwire-service-control'), Path('/opt/authwire-backup'), Path('/var/backups/authwire')]
     units = [Path('/etc/systemd/system') / name for name in worker.UNITS]
     extra = [Path('/run/kaname-lab-update.lock'), Path('/etc/tmpfiles.d/authwire-service-control.conf')]
+    fixture_timer = Path('/etc/systemd/system/authwire-backup-fixture.timer')
+    extra.append(fixture_timer)
     if any(p.exists() or p.is_symlink() for p in dirs + units + extra):
         raise ValueError('Existing installation or lock refused on disposable fixture')
     source = Path(__file__).resolve().parents[1]
@@ -82,13 +86,33 @@ def main():
             assert result['verified'] and result['initial_data_restore']['data_restore_exercised']
             assert result['product_processes_preserved'] and worker.pids() == before
             command('systemctl', 'stop', installer.TIMER.name)
+            # Exercise a real timer firing the same hardened worker, without advancing time.
+            deadline = time.monotonic() + 20
+            while command('systemctl', 'show', installer.SERVICE.name, '--property=ActiveState', '--value').stdout.strip() == 'activating':
+                if time.monotonic() >= deadline: raise ValueError('Fixture worker did not finish')
+                time.sleep(0.1)
+            last_success = Path('/var/backups/authwire/scheduled/last-success.json')
+            previous_backup = json.loads(last_success.read_text())['backup']
+            fixture_timer.write_text('[Timer]\nOnActiveSec=1s\nAccuracySec=1s\nUnit=authwire-backup.service\n')
+            command('systemctl', 'daemon-reload'); command('systemctl', 'start', fixture_timer.name)
+            deadline = time.monotonic() + 20
+            while json.loads(last_success.read_text())['backup'] == previous_backup:
+                if time.monotonic() >= deadline: raise ValueError('Fixture timer did not publish backup')
+                time.sleep(0.1)
+            command('systemctl', 'stop', fixture_timer.name)
             # A real read-only systemd sandbox must also capture committed WAL bytes.
             db = sqlite3.connect(state / 'administrators.sqlite3')
             try:
                 db.execute('PRAGMA journal_mode=WAL')
-                db.execute('UPDATE admin_sessions SET last_seen=last_seen')
+                db.execute('INSERT INTO admin_login_rate(id,started,attempts) VALUES (1,1,17)')
                 db.commit()
                 command('systemctl', 'start', installer.SERVICE.name)
+                wal_record = json.loads(last_success.read_text())
+                with tarfile.open(wal_record['backup']) as tar, tempfile.TemporaryDirectory() as copied:
+                    copied_db = Path(copied) / 'admin.sqlite3'
+                    copied_db.write_bytes(tar.extractfile('var/lib/kaname-lab/administrators.sqlite3').read())
+                    with sqlite3.connect(copied_db) as reader:
+                        assert reader.execute('SELECT attempts FROM admin_login_rate').fetchone()[0] == 17
             finally: db.close()
             latest = json.loads(Path('/var/backups/authwire/scheduled/last-run.json').read_text())
             assert latest['event'] == 'BACKUP_SUCCESS'
@@ -106,10 +130,12 @@ def main():
             assert previous == Path('/var/backups/authwire/scheduled/last-success.json').read_bytes()
             assert secret.read_bytes() == original and worker.pids() == before
             print(json.dumps({'event': 'BACKUP_SYSTEMD_FIXTURE_OK', 'real_hardened_service': True,
+                              'real_timer_trigger_verified': True,
                               'real_sqlite_and_fixture_pki_restore': True, 'foreign_uid_state_read': True,
                               'wal_snapshot_verified': True, 'failure_recorded': True,
                               'product_fixture_processes_preserved': True, 'customer_data_used': False}))
     finally:
+        subprocess.run(['systemctl', 'stop', fixture_timer.name], capture_output=True, timeout=30)
         subprocess.run(['systemctl', 'disable', '--now', installer.TIMER.name], capture_output=True, timeout=30)
         subprocess.run(['systemctl', 'stop', *worker.UNITS], capture_output=True, timeout=30)
         for path in units + extra: path.unlink(missing_ok=True)
