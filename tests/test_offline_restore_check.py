@@ -40,11 +40,13 @@ class OfflineRestoreTests(unittest.TestCase):
         for certpath,keypath in [('etc/kaname-lab/web.crt','etc/kaname-lab/web.key'),('var/lib/kaname-lab/radius/server.pem','var/lib/kaname-lab/radius/server-key.pem')]:
             for name,data in [(certpath,cert),(keypath,keybytes)]:
                 p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data);p.chmod(0o600)
+        drop=root/'etc/systemd/system/authwire-radius.service.d/override.conf'
+        drop.parent.mkdir(parents=True);drop.write_text('[Service]\nPrivateTmp=yes\n');drop.chmod(0o640)
         # Runtime symlinks are intentionally not materialized by the data rehearsal.
         p=root/'opt/kaname-lab/venv/bin';p.mkdir(parents=True);(p/'python').symlink_to('/usr/bin/python3')
         cls.archive=root/'backup.tar.gz'
         with tarfile.open(cls.archive,'w:gz') as tar:
-            for name in ('var/lib/kaname-lab','etc/kaname-lab','opt/kaname-lab/venv'):tar.add(root/name,arcname=name)
+            for name in ('var/lib/kaname-lab','etc/kaname-lab','opt/kaname-lab/venv','etc/systemd/system'):tar.add(root/name,arcname=name)
         cls.expected=sha(cls.archive)
     @classmethod
     def tearDownClass(cls):cls.base.cleanup()
@@ -56,6 +58,11 @@ class OfflineRestoreTests(unittest.TestCase):
         self.assertEqual(1,result['protected_secret_count_verified']);self.assertTrue(result['ownership_and_modes_verified'])
         self.assertFalse(result['services_started']);self.assertFalse(result['restored_code_executed'])
         self.assertEqual([],list((self.root/'work').iterdir()))
+    def test_unit_dropin_is_rehydrated_without_running_it(self):
+        copy=self.root/'restored';restore_data(self.archive,copy)
+        p=copy/'etc/systemd/system/authwire-radius.service.d/override.conf'
+        self.assertEqual('[Service]\nPrivateTmp=yes\n',p.read_text())
+        self.assertEqual(0o640,p.stat().st_mode&0o777)
     def test_wrong_archive_digest_rejected_before_restore(self):
         with self.assertRaisesRegex(ValueError,'digest'):check(self.archive,'0'*64,self.root/'work')
         self.assertFalse((self.root/'work').exists())

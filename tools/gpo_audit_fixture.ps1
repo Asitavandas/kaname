@@ -6,10 +6,12 @@ $folder=Join-Path $root 'Machine\Scripts\Startup'
 $null=New-Item $folder -ItemType Directory -Force
 $certificate=$null
 try {
+    Write-Output 'GPO_FIXTURE_CREATE_SIGNER'
     $certificate=New-SelfSignedCertificate -Type CodeSigningCert -Subject 'CN=AuthWire GPO Readonly Audit Fixture' -CertStoreLocation Cert:\CurrentUser\My
+    Write-Output 'GPO_FIXTURE_INSTALL_PUBLIC_TRUST'
     foreach($name in @('Root','TrustedPublisher')) {
-        $store=New-Object Security.Cryptography.X509Certificates.X509Store($name,'CurrentUser')
-        $store.Open('ReadWrite');$store.Add($certificate);$store.Close()
+        $store=New-Object Security.Cryptography.X509Certificates.X509Store($name,'LocalMachine')
+        $store.Open('ReadWrite');$store.Add((New-Object Security.Cryptography.X509Certificates.X509Certificate2(,$certificate.RawData)));$store.Close()
     }
     $pem="-----BEGIN CERTIFICATE-----`r`n"+[Convert]::ToBase64String($certificate.RawData,[Base64FormattingOptions]::InsertLineBreaks)+"`r`n-----END CERTIFICATE-----`r`n"
     [IO.File]::WriteAllText((Join-Path $folder 'root-ca.pem'),$pem)
@@ -20,6 +22,7 @@ try {
     foreach($name in @('config.json','root-ca.pem','issuer-ca.pem')) {$hashes[$name]=(Get-FileHash (Join-Path $folder $name)).Hash.ToLowerInvariant()}
     $map=$hashes|ConvertTo-Json -Compress
     $source=Join-Path (Split-Path $PSScriptRoot -Parent) 'kaname\device_client'
+    Write-Output 'GPO_FIXTURE_SIGN_PACKAGE'
     foreach($name in @('AuthWire-Client.ps1','Install-AuthWire.ps1')) {
         $body=[IO.File]::ReadAllText((Join-Path $source $name)).Replace('__AUTHWIRE_ASSET_HASHES__',$map)
         [IO.File]::WriteAllText((Join-Path $folder $name),$body,(New-Object Text.UTF8Encoding($true)))
@@ -37,6 +40,7 @@ try {
     $ini=Join-Path (Split-Path $folder -Parent) 'scripts.ini'
     [IO.File]::WriteAllText($ini,"[Startup]`r`n0CmdLine=powershell.exe`r`n0Parameters=-NoProfile -ExecutionPolicy AllSigned -File Install-AuthWire.ps1`r`n",[Text.Encoding]::Unicode)
     function Audit {Invoke-AuthWireGpoAudit -Directory $folder -OnlyPackage -Url 'https://kaname.vizyonveri.local:8765' -Domain 'vizyonveri.local' -RootThumbprint $certificate.Thumbprint}
+    Write-Output 'GPO_FIXTURE_AUDIT_VALID_PACKAGE'
     $result=Audit
     if(!$result.PackageChecksPassed) {throw ('Valid signed fixture rejected: '+($result.PackageChecks|ConvertTo-Json -Compress))}
     if($result.Startup.InstallEntryCount -ne 1 -or !$result.Startup.ExplicitAllSigned) {throw 'Startup parsing failed.'}
@@ -45,10 +49,12 @@ try {
     $null=Audit
     if($before -ne (Get-FileHash (Join-Path $folder 'AuthWire-Client.ps1')).Hash) {throw 'Audit changed script.'}
     [IO.File]::AppendAllText((Join-Path $folder 'config.json'),' ')
+    Write-Output 'GPO_FIXTURE_AUDIT_TAMPER'
     $tampered=Audit
     if($tampered.PackageChecks.AssetsMatchSignedInstaller) {throw 'Tampered asset accepted.'}
     [IO.File]::WriteAllText((Join-Path $folder 'config.json'),$config)
     [IO.File]::AppendAllText($ini,"1CmdLine=powershell.exe`r`n1Parameters=-ExecutionPolicy Bypass -File Install-AuthWire.ps1`r`n",[Text.Encoding]::Unicode)
+    Write-Output 'GPO_FIXTURE_AUDIT_DUPLICATE'
     $duplicate=Audit
     if(!$duplicate.Startup.DuplicateInstallEntries -or !$duplicate.Startup.BypassReferenced) {throw 'Duplicate or bypass not reported.'}
     $acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule((New-Object Security.Principal.SecurityIdentifier('S-1-1-0')),'Write','ContainerInherit,ObjectInherit','None','Allow')))
@@ -58,7 +64,7 @@ try {
 } finally {
     if($certificate) {
         foreach($name in @('Root','TrustedPublisher')) {
-            $store=New-Object Security.Cryptography.X509Certificates.X509Store($name,'CurrentUser')
+            $store=New-Object Security.Cryptography.X509Certificates.X509Store($name,'LocalMachine')
             $store.Open('ReadWrite');$store.Remove($certificate);$store.Close()
         }
         Remove-Item ('Cert:\CurrentUser\My\'+$certificate.Thumbprint) -Force -ErrorAction SilentlyContinue

@@ -26,7 +26,7 @@ def sha(path):
     return h.hexdigest()
 
 
-def selected(name):return any(name==r or name.startswith(r+'/') for r in ROOTS+UNITS)
+def selected(name):return any(name==r or name.startswith(r+'/') for r in ROOTS+UNITS+tuple(u+'.d' for u in UNITS))
 
 
 def restore_data(archive,destination):

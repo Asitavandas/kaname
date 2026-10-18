@@ -1,41 +1,54 @@
-# KANAME panel yönetimi — 0.5.0-dev.1
+# AuthWire panel yönetimi — 0.14.0-dev.6
 
-## Menüler
+Panel, sunucu HTTPS adresinden yerel panel hesabıyla açılır; AD hesabı otomatik
+panel yöneticisi olmaz. İlk kurulumdaki başlangıç hesabı kurulum sırasında
+belirlenir ve günlük kullanım öncesinde parolası değiştirilir. Güncelleme var olan
+yönetici/parolayı sıfırlamaz. Menü adları çalışan Türkçe arayüzü esas alır.
 
-Sol menü başlıkları akordiyon biçimindedir. Başlığa tıklayınca alt sekmeler açılır/kapanır; bir başlık açılınca diğeri kapanır. Yetkiniz olmayan sekmeler gösterilmez.
+## Giriş ve oturum
 
-## Giriş
+Sayfa açılışında/F5'te mevcut HttpOnly cookie kontrol edilir. Doğrulama sırasında
+kullanıcı adı/parola formu gizlidir; geçerli oturumda panel açılır, gerçek401
+halinde giriş gerekir. Bağlantı/veri yükleme hatası parola POST'unu tekrar etmez.
+Yeni girişlerde mutlak süre12saat, hareketsizlik2saattir. Arka plan istekleri de
+etkinlik sayılır; eski oturumların mutlak bitişi güncellemeyle uzatılmaz.
+Parolamı değiştir, hesap kapatma/silme ve sürüm değişiklikleri ilgili oturumları
+geçersiz kılar; yetki profili değişiklikleri bir sonraki istekte uygulanır.
 
-`http://127.0.0.1:8765/` adresinde kullanıcı adı/parola formu açılır. İlk kurulum **admin / Kaname** hesabıyla giriş yapılır. Bu hesap AD hesabı değildir. Günlük girişte PowerShell veya access-token dosyası kullanılmaz. Üstteki **Parolamı değiştir** ile mevcut parolanızı doğrulayarak yeni parola kaydedebilirsiniz; değişiklikten sonra yeniden giriş yapılır. Yeni parolalar en az 8 karakterdir.
+## Panel yöneticileri ve yetki profilleri
 
-## Administrators
-
-Sol menüde **System → Administrators** açılır. **Yeni kullanıcı** ile kullanıcı adı, parola, profil ve hesap durumu seçilir. **Düzenle** aynı alanları değiştirir; parola boş bırakılırsa korunur. **Sil** onayından sonra hesap ve oturumları kaldırılır. Kendi hesabınızı/parolanızı değiştirmeniz de mevcut oturumları sonlandırır. AD kullanıcıları bu panel hesaplarına otomatik dönüşmez.
-
-## Admin Profiles
-
-Sol menüde ayrı **System → Admin Profiles** sekmesinde **Yeni profil** veya **Düzenle** seçilir.
-
-| Tür | Yetki |
+| Profil | Yetki |
 |---|---|
-| SuperAdmin | Bütün menü/sekme kaynaklarında Read/Write. |
-| Admin_ReadOnly | Bütün kaynaklarda Read; kayıt değiştiremez. Karar testi kayıt değiştirmeyen simülasyon olarak kullanılabilir. |
-| Custom | Her menü/sekme için Erişim yok, Read veya Read/Write seçilir. |
+| SuperAdmin | Bütün kaynaklarda okuma/yazma |
+| Admin_ReadOnly | Okuma; kayıt ve servis işlemi başlatamaz |
+| Custom | Kaynak başına none/read/write; sahip olduğu yetkiden fazlasını devredemez |
 
-Profil adı ve türü değiştirilebilir. Başlangıçtaki SuperAdmin ve Admin_ReadOnly profilleri de düzenlenebilir ve silinebilir. Kullanılan profili silmeden önce ona bağlı hesapları başka profile taşıyın veya silin. Profil değişiklikleri mevcut oturumların bir sonraki isteğinde geçerlidir. Profil/kullanıcı yönetme hakkı olan Custom hesap kendi yetkilerinden daha fazla yetki veremez veya kendisinden yetkili hesabı değiştiremez/silemez.
+Yönetim → Panel yöneticileri / Yetki profilleri bu hesap ve profilleri yönetir.
+Menünün gizlenmesi tek koruma değildir; API de kaynak yetkisini doğrular.
+Kullanılan profil silinmeden hesaplar başka profile taşınır. Son yöneticinin
+silinmesinde panel uyarır; silinen varsayılan hesap restart ile yeniden oluşmaz.
+Kasa/bakım anahtarı normal panel kullanıcılarıyla paylaşılmaz.
 
-Kurulumdaki Ürün, Dizin ve Ağ erişimi ayrı kaynaklardır. Diğer kaynaklar Politikalar, Karar testi, İşlem geçmişi, Sertifikalar, User&Authentication altında AD bağlantısı ve Users/User Groups katalog, System altında Administrators ve Admin Profiles'dır. AD bağlantısı ve listeler ayrı yetkilendirilebilir. Eski Custom profilin directory.catalog hakkı bağlantı hakkını da korur; matriste ayrı ayar kaydedildiğinde iki alan bağımsızdır. Erişim yok seçilen veri sunucu yanıtında da çıkarılır. Profil yalnız görüntüyü değiştirmez; doğrudan API isteği de aynı yetkiye tabidir. Yeni ürün sekmeleri eklendikçe matris genişletilecektir.
+## Güncel menüler
 
-Bütün hesaplar, son hesap dahil, silinebilir. Son hesabın silinmesinde panel açıkça uyarır ve oturum kapanır. Silinen varsayılan hesaplar yeniden başlatmada geri gelmez. Böyle bir durumda erişim için yerel bakım erişimi veya uygun veritabanı yedeği gerekir; mevcut erişimle başka hesabı oluşturmak daha kolaydır. Yerel bakım anahtarı normal panel kullanıcılarına dağıtılmaz.
+Erişim: kullanıcılar/gruplar, erişim kuralları, ağ cihazları, ağlar/VLAN.
+Sertifikalar: otorite bilgisi, profiller, dağıtım ve cihaz kayıtları.
+RADIUS: kaynak-IP bazlı istemci ve korunan shared secret kayıtları.
+İzleme: karar testi ve işlem geçmişi.
+Yönetim: temel ayarlar, LDAP sunucuları, panel yöneticileri, servisler ve yetki profilleri.
 
-## AD grup seçimi
+AD grup isimleri seçim içindir; politika SID ile saklanır. Aynı isimle yeniden
+oluşturulan grup eski SID'nin yerine otomatik geçmez. Domain cihaz şartı,
+EAP yöntemi, NAS kaynağı, grup ve diğer koşullar birlikte değerlendirilir.
+Katalog görüntüsü canlı yetki kontrolü yerine geçmez. Karar testi simülasyondur.
 
-SID, AD'nin kullanıcı veya gruba verdiği benzersiz güvenlik kimliğidir. Grup adı değişebilir; politika eşleşmesi ad yerine bu kimlikle saklanır. Aynı isimle silinip yeniden oluşturulan grup farklı SID alır ve eski politikaya otomatik dahil olmaz.
+## Servisler ve tanılama
 
-Yeni politikada **AD grup kısıtı yok** seçilirse grup üyeliği kontrolü kaldırılır; erişim türü, EAP yöntemi, domain cihazı ve diğer koşullar geçerlidir. Bu seçim tek başına herkese izin vermez. Bir gruba göre sınırlandırmak için kutuyu kaldırın ve AD'den okunmuş listede grup adı arayın/seçin. Birden fazla grup seçilirse herhangi birine üyelik koşulu yeterlidir. SID yazmanız gerekmez; KANAME içeride saklar. Katalog yoksa User&Authentication → Active Directory ekranından bilgileri getirin. Users/User Groups ekranında kullanıcı/grup adına tıklayarak karşılıklı üyelik detaylarını açabilirsiniz. Daha önce okunmuş katalog üyelik içermiyorsa AD'den bir kez yeniden okuyun.
+Ayrı system.services hakkı, RADIUS ve CRL servis kontrollerini yönetir. Panel
+kendini bu ekrandan durdurmaz. Son işlemler kullanıcı/zaman/sonuç gösterir;
+bu, RADIUS accounting veya canlı switch oturum listesi değildir.
+PANEL_DATABASE_ERROR tanılaması SQL/sır yazmadan geçici busy/locked hatasını ayırır.
+Yalnız bu geçici hatadaki GET sınırlı tekrar edilir; POST otomatik tekrarlanmaz.
 
-Listeden seçim canlı üyelik/EAP doğrulaması değildir; mevcut karar testi bir simülasyondur. Çalışan 802.1X/RADIUS ve OVF sonraki geliştirme aşamalarındadır. Switch/AP ayarları operatör tarafından elle yapılır.
-
-## Sürüm çalışma kuralı
-
-Her sürüm tamamlandığında **Soruların veya değiştirmek/düzenlemek istediğin yerler var mı?** sorulur. Operatör yanıtlamadan sonraki sürüm veya yeni kapsam başlatılmaz.
+İşletim, yedek ve kurtarma adımları [OPERATIONS_0_14_0.md](OPERATIONS_0_14_0.md),
+güncel saha kabulü [CURRENT_STATUS.md](CURRENT_STATUS.md) içindedir.

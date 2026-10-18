@@ -11,7 +11,20 @@ permissions:
 jobs:
   restore-fixtures:
     runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    permissions:
+      contents: read
+      actions: write
     steps:
+      - name: Cancel the superseded unbounded PR33 fixture only
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 33
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          old_info=$(gh api repos/Asitavandas/kaname/actions/runs/39123091614 --jq '[.head_sha,.status]|join(" ")')
+          if [ "$old_info" = "e9538ce4798d1cffb967e6163f33daf924484399 in_progress" ]; then
+            gh api --method POST repos/Asitavandas/kaname/actions/runs/39123091614/cancel
+          fi
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
@@ -20,6 +33,7 @@ jobs:
       - run: python -m unittest tests.test_offline_restore_check -v
   windows-readonly-audit:
     runs-on: windows-2025
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
       - name: Real Authenticode, pinned bodies/assets, ACL and Startup fixtures
