@@ -103,9 +103,13 @@ restore_tested=false, ayrı data_restore_exercised=true kanıtıyla aynı kapsam
 
 [AuthWire-GPO-Audit.ps1](../tools/AuthWire-GPO-Audit.ps1), DC üzerinde paket imzaları,
 aynı Code Signing yayıncısı/EKU, güncel script gövdeleri, imzalı kurucuya gömülü
-config/trust hash'leri, URL/domain/SPN/Root ve geniş yazma haklarını inceler.
+config/trust hash'leri, URL/domain/SPN/TLS pini/Root, Issuer zinciri ve geniş yazma haklarını inceler.
 İmza eklendiğinde script raw hash'i değişir; bu nedenle body hash ve gerçek
 Authenticode doğrulaması birlikte kullanılır. İmzayı atlayan bir kontrol değildir.
+
+Denetim betiği de kurumun normal script yürütme politikasına uyar. AllSigned
+gerekiyorsa mevcut güvenilir kod imzalama sertifikasıyla yalnız denetim kopyası
+imzalanır; private key dışarı verilmez ve yürütme politikası gevşetilmez.
 
 GPO adı AuthWire-Pilot-Trust, pilot paket yolu gerçek GPO GUID'sinden türetilir.
 Startup scripts.ini/psscripts.ini içinde Install-AuthWire çağrıları, açık AllSigned,

@@ -4,7 +4,8 @@ param(
     [switch]$PackageOnly,
     [string]$ExpectedUrl = 'https://kaname.vizyonveri.local:8765',
     [string]$ExpectedDomain = 'vizyonveri.local',
-    [string]$ExpectedRootThumbprint = 'C789A0595ADB95A6BE4534D01B1D205F6C37DE18'
+    [string]$ExpectedRootThumbprint = 'C789A0595ADB95A6BE4534D01B1D205F6C37DE18',
+    [string]$ExpectedTlsSha256 = 'a58838b95510f759943e5f1b7fefe29e227960a5c1171b5ebc6d5089df47a76d'
 )
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
@@ -49,7 +50,7 @@ function Get-AuthWireStartupAudit([string]$Directory) {
 }
 
 function Invoke-AuthWireGpoAudit {
-    param([string]$Directory,[switch]$OnlyPackage,[string]$Url,[string]$Domain,[string]$RootThumbprint)
+    param([string]$Directory,[switch]$OnlyPackage,[string]$Url,[string]$Domain,[string]$RootThumbprint,[string]$TlsSha256='a58838b95510f759943e5f1b7fefe29e227960a5c1171b5ebc6d5089df47a76d')
     $gpoInfo=$null
     if(!$OnlyPackage) {
         $machine=Get-CimInstance Win32_ComputerSystem
@@ -95,10 +96,22 @@ function Invoke-AuthWireGpoAudit {
     $checks.AssetsMatchSignedInstaller=(@($assetResults|Where-Object {!$_.MatchesSignedInstaller}).Count -eq 0)
     $config=Get-Content -LiteralPath (Join-Path $Directory 'config.json') -Raw|ConvertFrom-Json
     $checks.ExpectedHttpsUrl=($config.url -ceq $Url)
+    $checks.ExpectedTlsPin=($config.tls_sha256 -ceq $TlsSha256)
+    $checks.ProfileIdFormat=($config.profile_id -match '^[a-fA-F0-9]{8}-(?:[a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}$')
     $checks.ExpectedDomain=($config.domain -ieq $Domain)
     $checks.ExpectedHttpSpn=($config.spn -ceq ('HTTP/'+([uri]$Url).DnsSafeHost))
     $rootCert=New-Object Security.Cryptography.X509Certificates.X509Certificate2((Join-Path $Directory 'root-ca.pem'))
     $checks.ExpectedRootCa=($rootCert.Thumbprint -ieq $RootThumbprint)
+    $issuerCert=New-Object Security.Cryptography.X509Certificates.X509Certificate2((Join-Path $Directory 'issuer-ca.pem'))
+    $chain=New-Object Security.Cryptography.X509Certificates.X509Chain
+    try {
+        $chain.ChainPolicy.RevocationMode=[Security.Cryptography.X509Certificates.X509RevocationMode]::NoCheck
+        $chain.ChainPolicy.VerificationFlags=[Security.Cryptography.X509Certificates.X509VerificationFlags]::AllowUnknownCertificateAuthority
+        $chain.ChainPolicy.UrlRetrievalTimeout=New-TimeSpan -Seconds 1
+        $null=$chain.ChainPolicy.ExtraStore.Add($rootCert)
+        $built=$chain.Build($issuerCert)
+        $checks.IssuerChainsToPinnedRoot=($built -and $chain.ChainElements[$chain.ChainElements.Count-1].Certificate.Thumbprint -ieq $RootThumbprint)
+    } finally {$chain.Dispose();$issuerCert.Dispose();$rootCert.Dispose()}
     $broadWrites=@()
     foreach($item in @($directoryItem)+@(Get-ChildItem -LiteralPath $Directory -File)) {
         if($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Package permission reparse point refused.' }
@@ -117,6 +130,6 @@ function Invoke-AuthWireGpoAudit {
 }
 
 if($MyInvocation.InvocationName -ne '.') {
-    try { Invoke-AuthWireGpoAudit -Directory $PackageDirectory -OnlyPackage:$PackageOnly -Url $ExpectedUrl -Domain $ExpectedDomain -RootThumbprint $ExpectedRootThumbprint | ConvertTo-Json -Depth 7 }
+    try { Invoke-AuthWireGpoAudit -Directory $PackageDirectory -OnlyPackage:$PackageOnly -Url $ExpectedUrl -Domain $ExpectedDomain -RootThumbprint $ExpectedRootThumbprint -TlsSha256 $ExpectedTlsSha256 | ConvertTo-Json -Depth 7 }
     catch { [pscustomobject]@{event='GPO_AUDIT_FAILED';Category=$_.Exception.GetType().Name;GpoChanged=$false;WindowsClientChanged=$false}|ConvertTo-Json;exit 1 }
 }

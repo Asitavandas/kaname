@@ -16,7 +16,7 @@ try {
     $pem="-----BEGIN CERTIFICATE-----`r`n"+[Convert]::ToBase64String($certificate.RawData,[Base64FormattingOptions]::InsertLineBreaks)+"`r`n-----END CERTIFICATE-----`r`n"
     [IO.File]::WriteAllText((Join-Path $folder 'root-ca.pem'),$pem)
     [IO.File]::WriteAllText((Join-Path $folder 'issuer-ca.pem'),$pem)
-    $config=@{url='https://kaname.vizyonveri.local:8765';spn='HTTP/kaname.vizyonveri.local';domain='vizyonveri.local';profile_id='fixture'}|ConvertTo-Json
+    $config=@{url='https://kaname.vizyonveri.local:8765';spn='HTTP/kaname.vizyonveri.local';domain='vizyonveri.local';profile_id='00000000-0000-4000-8000-000000000001';tls_sha256='a58838b95510f759943e5f1b7fefe29e227960a5c1171b5ebc6d5089df47a76d'}|ConvertTo-Json
     [IO.File]::WriteAllText((Join-Path $folder 'config.json'),$config)
     $hashes=[ordered]@{}
     foreach($name in @('config.json','root-ca.pem','issuer-ca.pem')) {$hashes[$name]=(Get-FileHash (Join-Path $folder $name)).Hash.ToLowerInvariant()}
