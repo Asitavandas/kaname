@@ -137,6 +137,11 @@ def generate(output, prefix, state=STATE, listen_ip='127.0.0.1', *, access_event
             events_enabled = True
         except Exception:
             events_error = 'ACCESS_HISTORY_UNAVAILABLE'
+        import json
+        from kaname.radius_events import utc
+        private_file(output / 'observer-status.json', json.dumps({
+            'requested': True, 'enabled': events_enabled, 'at': utc(),
+            **({'last_error_code': events_error} if events_error else {})}))
     from tools import radius_events_config as event_config
     private_file(output / 'dictionary', '$INCLUDE ' + str(dictionary) + '\n' +
                  (event_config.dictionary() if events_enabled else ''))

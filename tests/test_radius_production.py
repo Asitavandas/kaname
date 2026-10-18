@@ -174,22 +174,42 @@ class RuntimeTests(unittest.TestCase):
         self.assertIn('python_path_mode = prepend', module)
         self.assertEqual(0, (self.runtime / 'clients.conf').stat().st_mode & 0o077)
 
+    def test_event_history_is_opt_in_and_storage_startup_failure_keeps_original_authorizer(self):
+        result = generate(self.runtime, self.prefix, self.state)
+        self.assertFalse(result['access_events_enabled'])
+        self.assertFalse((self.state / 'radius-events').exists())
+        runtime = self.root / 'observed'; runtime.mkdir(mode=0o700)
+        result = generate(runtime, self.prefix, self.state, access_events=True)
+        self.assertTrue(result['access_events_enabled'])
+        self.assertIn('module = kaname.radius_observer', (runtime / 'mods-enabled/python3').read_text())
+        self.assertIn('Post-Auth-Type REJECT', (runtime / 'sites-enabled/authwire').read_text())
+        self.assertIn('update outer.session-state', (runtime / 'sites-enabled/authwire').read_text())
+        failed = self.root / 'failed-observer'; failed.mkdir(mode=0o700)
+        with patch('kaname.radius_events.initialize', side_effect=OSError('private disk detail')):
+            result = generate(failed, self.prefix, self.state, access_events=True)
+        self.assertFalse(result['access_events_enabled'])
+        self.assertEqual('ACCESS_HISTORY_UNAVAILABLE', result['access_events_error'])
+        self.assertIn('module = kaname.radius_adapter', (failed / 'mods-enabled/python3').read_text())
+        self.assertFalse((failed / 'mods-enabled/access-events').exists())
+        self.assertNotIn('private disk detail', (failed / 'observer-status.json').read_text())
+
     def test_native_freeradius_accepts_generated_production_config_when_prefix_is_supplied(self):
         prefix = os.environ.get('AUTHWIRE_RADIUS_PREFIX')
         if not prefix:
             self.skipTest('Pinned FreeRADIUS prefix not supplied')
-        runtime = self.root / 'native-runtime'
-        runtime.mkdir(mode=0o700)
-        generate(runtime, Path(prefix), self.state)
-        env = dict(os.environ)
-        env['LD_LIBRARY_PATH'] = str(Path(prefix) / 'lib')
-        result = subprocess.run(
-            [str(Path(prefix) / 'sbin/radiusd'), '-XC', '-D', str(Path(prefix) / 'share/freeradius'), '-d', str(runtime)],
-            env=env, capture_output=True, text=True, timeout=20)
-        if result.returncode != 0:
-            safe = '\n'.join(line for line in (result.stdout + result.stderr).splitlines()
-                             if 'secret' not in line.lower() and 'password' not in line.lower())
-            self.fail('Generated production FreeRADIUS config rejected:\n' + safe[-4000:])
+        for enabled in (False, True):
+            with self.subTest(access_events=enabled):
+                runtime = self.root / ('native-runtime-' + str(enabled)); runtime.mkdir(mode=0o700)
+                generated = generate(runtime, Path(prefix), self.state, access_events=enabled)
+                self.assertEqual(enabled, generated['access_events_enabled'])
+                env = dict(os.environ); env['LD_LIBRARY_PATH'] = str(Path(prefix) / 'lib')
+                result = subprocess.run(
+                    [str(Path(prefix) / 'sbin/radiusd'), '-XC', '-D', str(Path(prefix) / 'share/freeradius'), '-d', str(runtime)],
+                    env=env, capture_output=True, text=True, timeout=20)
+                if result.returncode != 0:
+                    safe = '\n'.join(line for line in (result.stdout + result.stderr).splitlines()
+                                     if 'secret' not in line.lower() and 'password' not in line.lower())
+                    self.fail('Generated production FreeRADIUS config rejected:\n' + safe[-4000:])
 
     def test_native_module_imports_generators_crypto_instead_of_distro_package(self):
         import cryptography

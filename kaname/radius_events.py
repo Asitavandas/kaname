@@ -24,7 +24,7 @@ MAX_BYTES = 256 * 1024 * 1024
 MIN_FREE_BYTES = 128 * 1024 * 1024
 BUSY_SECONDS = 0.025
 LIMIT = 100
-FIELDS = ('event_id', 'at', 'response_code', 'nas_ip', 'reason', 'reason_source',
+FIELDS = ('event_id', 'request_id', 'at', 'response_code', 'nas_ip', 'reason', 'reason_source',
           'policy_id', 'vlan', 'tls_verified', 'certificate_serial', 'object_guid',
           'identity_kind', 'calling_station', 'capture_run')
 REASONS = frozenset({
@@ -33,7 +33,7 @@ REASONS = frozenset({
     'ACCOUNT_NOT_FOUND', 'ACCOUNT_BINDING_MISMATCH', 'DIRECTORY_RESULT_INVALID',
     'CERTIFICATE_UNBOUND', 'CERTIFICATE_INACTIVE', 'CERTIFICATE_BINDING_CHANGED',
     'AUTHORIZATION_INPUT_INVALID', 'RADIUS_ADAPTER_FAILED', 'IDENTITY_NOT_VERIFIED',
-    'EAP_METHOD_NOT_ALLOWED', 'NATIVE_ACCESS_ACCEPT', 'NATIVE_ACCESS_REJECT',
+    'EAP_CONSTRAINT_FAILED', 'EAP_METHOD_NOT_ALLOWED', 'NATIVE_ACCESS_ACCEPT', 'NATIVE_ACCESS_REJECT',
     'NATIVE_REJECT_AFTER_POLICY_ALLOW', 'TLS_CERTIFICATE_REVOKED',
     'TLS_CERTIFICATE_EXPIRED', 'TLS_CERTIFICATE_UNTRUSTED',
     'TLS_CERTIFICATE_PURPOSE', 'TLS_CERTIFICATE_VERIFY_FAILED',
@@ -76,12 +76,15 @@ def initialize(state):
         os.close(fd)
     _private(path)
     with closing(sqlite3.connect(path, timeout=1)) as db:
+        if db.execute('PRAGMA user_version').fetchone()[0] not in (0, 1):
+            raise EventStorageError('STORAGE_ERROR')
         db.executescript('''
             PRAGMA journal_mode=DELETE;
             PRAGMA synchronous=FULL;
             CREATE TABLE IF NOT EXISTS access_events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 event_id TEXT NOT NULL UNIQUE,
+                request_id TEXT NOT NULL,
                 at TEXT NOT NULL,
                 response_code INTEGER NOT NULL CHECK(response_code IN (2,3)),
                 nas_ip TEXT NOT NULL,
@@ -112,6 +115,7 @@ def _optional(value, pattern):
 def validate(event):
     if type(event) is not dict or set(event) != set(FIELDS): raise ValueError('Invalid access event')
     if not re.fullmatch(r'[0-9a-f]{64}', event['event_id']): raise ValueError('Invalid event ID')
+    if not re.fullmatch(r'[0-9a-f]{64}', event['request_id']): raise ValueError('Invalid request ID')
     if instant(event['at']) != event['at']: raise ValueError('Invalid event time')
     if type(event['response_code']) is not int or event['response_code'] not in (2, 3): raise ValueError('Invalid final response')
     if str(ipaddress.IPv4Address(event['nas_ip'])) != event['nas_ip']: raise ValueError('Invalid packet source')
@@ -193,7 +197,26 @@ def filters(query):
             'watermark': number(q['watermark'], zero=True) if 'watermark' in q else None}
 
 
-def history(state, query):
+def runtime_status(runtime):
+    path = Path(runtime) / 'observer-status.json'
+    try:
+        _private(path)
+        if path.stat().st_size > 2048: return None
+        data = json.loads(path.read_text())
+        if (type(data) is not dict or type(data.get('requested')) is not bool or
+                type(data.get('enabled')) is not bool or not instant(data.get('at', ''))): return None
+        result = {k: data[k] for k in ('requested', 'enabled', 'at')}
+        for k in ('attempted', 'committed', 'duplicates', 'dropped', 'pid'):
+            v = data.get(k)
+            if type(v) is int and 0 <= v <= 2**63 - 1: result[k] = v
+        for k in ('capture_run', 'last_error_code'):
+            v = data.get(k)
+            if type(v) is str and re.fullmatch(r'[A-Za-z0-9_]{1,64}', v): result[k] = v
+        return result
+    except (OSError, ValueError, TypeError, EventStorageError): return None
+
+
+def history(state, query, *, runtime=Path('/run/authwire-radius')):
     f = filters(query)
     root, path = paths(state)
     base = {'events': [], 'watermark': 0, 'has_more': False, 'next_before': None, 'limit': LIMIT,
@@ -202,7 +225,7 @@ def history(state, query):
             'coverage': {'server_selected_responses': True, 'nas_receipt_proven': False,
                          'endpoint_success_proven': False, 'accounting_sessions': False,
                          'silent_drops_included': False, 'complete_delivery_guaranteed': False},
-            'initialized': False}
+            'initialized': False, 'observer': runtime_status(runtime) if runtime is not None else None}
     if not root.exists() and not root.is_symlink(): return base
     _private(root, directory=True)
     if not path.exists() and not path.is_symlink(): return base

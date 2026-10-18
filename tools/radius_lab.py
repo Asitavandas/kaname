@@ -292,7 +292,8 @@ server kaname-cert-check {{
         private_file(shim / 'kaname_lab_observer.py',
                      'from kaname.radius_observer import post_auth as observe\n'
                      'from pathlib import Path\n'
-                     'def post_auth(values):\n    return observe(values, state=Path(' + repr(str(root / 'state')) + '))\n')
+                     'def post_auth(values):\n    return observe(values, state=Path(' + repr(str(root / 'state')) +
+                     '), runtime=Path(' + repr(str(root)) + '))\n')
         script = shim / 'kaname_lab_module.py'
         script.write_text(script.read_text().replace(repr(str(root)) + ')', repr(str(root)) + ', observe=True)'))
         site = sites / 'kaname'

@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import http.client
 import json
+import os
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -19,7 +20,8 @@ from kaname.server import DevelopmentServer
 
 
 def event(n=1, **changes):
-    value = dict(event_id=hashlib.sha256(str(n).encode()).hexdigest(), at='2026-10-18T19:00:00.000Z',
+    value = dict(event_id=hashlib.sha256(str(n).encode()).hexdigest(), request_id=hashlib.sha256(str(n).encode()).hexdigest(),
+                 at='2026-10-18T19:00:00.000Z',
                  response_code=2, nas_ip='192.0.2.2', reason='POLICY_ALLOW', reason_source='policy',
                  policy_id='pilot', vlan=110, tls_verified=True, certificate_serial='abcd',
                  object_guid='69b0d5cd-db61-4627-9db7-fcc5230152a3', identity_kind='computer',
@@ -42,6 +44,7 @@ def native(code='2', *, context=True, **sections):
     value.update(sections); return value
 
 
+@unittest.skipUnless(os.name == 'posix', 'Private Linux access-history storage')
 class StorageTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
@@ -122,6 +125,8 @@ class ObserverTests(unittest.TestCase):
         self.assertNotIn('203.0.113.1', json.dumps(value))
         value = observer.build_event(native('3'))
         self.assertEqual('NATIVE_REJECT_AFTER_POLICY_ALLOW', value['reason']); self.assertIsNone(value['vlan'])
+        self.assertEqual(observer.build_event(native())['request_id'], value['request_id'])
+        self.assertNotEqual(observer.build_event(native())['event_id'], value['event_id'])
         self.assertIsNone(observer.build_event(native('11')))
 
     def test_pre_callback_tls_failure_keeps_identity_unknown_and_sanitizes_native_reason(self):
@@ -165,6 +170,35 @@ class ObserverTests(unittest.TestCase):
             self.assertEqual(7, observer.post_auth(native()))
         self.assertEqual(1, len(warnings)); self.assertIn('STORAGE_BUSY', warnings[0])
         self.assertNotIn('privileged-admin', warnings[0])
+
+
+@unittest.skipUnless(os.name == 'posix', 'Private Linux access-history storage')
+class EventHTTPTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.temp = tempfile.TemporaryDirectory(); cls.server = DevelopmentServer(cls.temp.name, 0)
+        events.initialize(cls.server.store.root); events.append(cls.server.store.root, event())
+        cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True); cls.thread.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown(); cls.server.server_close(); cls.thread.join(); cls.temp.cleanup()
+
+    def request(self, path, token=True):
+        conn = http.client.HTTPConnection('127.0.0.1', self.server.server_port, timeout=5)
+        try:
+            conn.request('GET', path, headers={'Authorization': 'Bearer ' + self.server.token} if token else {})
+            r = conn.getresponse(); return r.status, json.loads(r.read()), dict(r.headers)
+        finally: conn.close()
+
+    def test_authenticated_bounded_read_and_no_store(self):
+        self.assertEqual(401, self.request('/api/radius/events', False)[0])
+        code, data, headers = self.request('/api/radius/events')
+        self.assertEqual(200, code); self.assertEqual('no-store', headers['Cache-Control'])
+        self.assertEqual(110, data['events'][0]['vlan'])
+        self.assertFalse(data['coverage']['nas_receipt_proven'])
+        self.assertEqual(400, self.request('/api/radius/events?result=bad')[0])
+        self.assertEqual(400, self.request('/api/radius/events?nas=192.0.2.2&nas=192.0.2.2')[0])
 
 
 if __name__ == '__main__': unittest.main()

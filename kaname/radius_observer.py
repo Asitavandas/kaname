@@ -1,7 +1,11 @@
 """Opt-in native observer. Observation never returns reply/Auth-Type changes."""
 import base64
+import hashlib
 import json
+import os
+from pathlib import Path
 import re
+import tempfile
 import threading
 import time
 import uuid
@@ -19,6 +23,8 @@ CAPTURE_RUN = uuid.uuid4().hex
 _lock = threading.Lock()
 _failed = 0
 _last_warning = float('-inf')
+_metrics = {'attempted': 0, 'committed': 0, 'duplicates': 0, 'dropped': 0}
+_metrics_at = float('-inf')
 
 
 def scalar(pairs, name, *, required=False):
@@ -118,7 +124,8 @@ def build_event(values):
     station = scalar(values.get('request'), 'Calling-Station-Id')
     station = re.sub(r'[:-]', '', station or '').lower()
     station = ':'.join(station[i:i+2] for i in range(0, 12, 2)) if re.fullmatch(r'[0-9a-f]{12}', station) else None
-    return {'event_id': key, 'at': utc(), 'response_code': code, 'nas_ip': source,
+    return {'event_id': hashlib.sha256((key + '|' + str(code)).encode()).hexdigest(),
+            'request_id': key, 'at': utc(), 'response_code': code, 'nas_ip': source,
             'reason': reason, 'reason_source': reason_source,
             'policy_id': context['policy_id'] if context else None, 'vlan': vlan,
             'tls_verified': context is not None,
@@ -138,16 +145,47 @@ def _warning(radiusd, code):
         radiusd.radlog(radiusd.L_WARN, 'AUTHWIRE_ACCESS_EVENT_DROPPED code=' + code + ' process_drop_count=' + str(_failed))
 
 
-def post_auth(values, *, state=radius_adapter.STATE):
+def _status(outcome, error_code, runtime):
+    # Advisory process-local counters; no complete-history/heartbeat promise.
+    # RuntimeDirectory is transient and excluded from persistent backup guards.
+    global _metrics_at
+    with _lock:
+        _metrics['attempted'] += 1
+        _metrics[outcome] += 1
+        if error_code: _metrics['last_error_code'] = error_code
+        now = time.monotonic()
+        if now - _metrics_at < 1: return
+        _metrics_at = now
+        data = {**_metrics, 'requested': True, 'enabled': True, 'at': utc(),
+                'pid': os.getpid(), 'capture_run': CAPTURE_RUN}
+    directory = Path(runtime)
+    from .radius_events import _private
+    _private(directory, directory=True)
+    path = directory / 'observer-status.json'
+    if path.exists() or path.is_symlink(): _private(path)
+    fd, name = tempfile.mkstemp(prefix='.observer-', dir=directory)
+    try:
+        with os.fdopen(fd, 'w') as handle: json.dump(data, handle)
+        os.replace(name, path)
+    finally:
+        try: os.unlink(name)
+        except FileNotFoundError: pass
+
+
+def post_auth(values, *, state=radius_adapter.STATE, runtime=Path('/run/authwire-radius')):
     import radiusd
+    outcome, code = 'dropped', None
     try:
         event = build_event(values)
-        if event is not None: append(state, event)
+        if event is None: return radiusd.RLM_MODULE_NOOP
+        outcome = 'committed' if append(state, event) else 'duplicates'
     except Exception as error:
         code = str(error) if isinstance(error, EventStorageError) else 'OBSERVER_ERROR'
         if code not in {'UNSAFE_STORAGE', 'CAPACITY_REACHED', 'LOW_DISK_SPACE', 'STORAGE_BUSY', 'STORAGE_ERROR'}:
             code = 'OBSERVER_ERROR'
         try: _warning(radiusd, code)
         except Exception: pass
+    try: _status(outcome, code, runtime)
+    except Exception: pass
     # Returning only NOOP cannot add/remove reply attributes or change Auth-Type.
     return radiusd.RLM_MODULE_NOOP
