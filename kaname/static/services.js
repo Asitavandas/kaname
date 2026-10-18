@@ -1,12 +1,31 @@
 'use strict';
 let servicesState=null,servicesLoading=false,servicesSending=false,servicesTimer=0,servicesGeneration=0,servicesPending=null;
+let radiusOverviewRequest=0,radiusOverviewLoading=false;
 const serviceNames={radius:'RADIUS',panel:'AuthWire paneli','crl-sync':'CRL senkronizasyonu','crl-timer':'CRL zamanlayıcısı'};
 const serviceActions={start:'Başlat',stop:'Durdur',restart:'Yeniden başlat',sync:'Şimdi senkronize et'};
 const serviceHealth={running:'Çalışıyor',idle:'Bekliyor · Son çalışma başarılı',inactive:'Durduruldu',failed:'Hata','not-installed':'Kurulu değil','listener-missing':'UDP dinleyicisi bulunamadı',activating:'Başlatılıyor',deactivating:'Durduruluyor',unknown:'Bilinmiyor'};
 const serviceErrors={SERVICE_CONTROL_UNAVAILABLE:'Servis yönetim bağlantısı kullanılamıyor. Kurulum veya yardımcı servis durumunu kontrol edin.',SERVICE_BUSY:'Başka bir servis işlemi devam ediyor.',RADIUS_NOT_RUNNING:'RADIUS durdurulmuş. CRL senkronizasyonu RADIUS’u başlatmaz.',SERVICE_COMMAND_FAILED:'Servis komutu tamamlanamadı.',SERVICE_VERIFICATION_FAILED:'Servisin beklenen duruma geldiği doğrulanamadı.',BOOT_SETTING_CHANGED:'Servisin açılış ayarı değişmiş; kontrol gerekli.',AUDIT_UNAVAILABLE:'Servis işlem kaydı yazılamadı.',OUTCOME_UNKNOWN:'Yönetim servisi yeniden başlamış. İşlem sonucu bilinmiyor; güncel durumu kontrol edin.'};
-function resetServices(){servicesGeneration++;clearTimeout(servicesTimer);servicesState=null;servicesPending=null;servicesLoading=false;servicesSending=false;const dialog=document.getElementById('services-confirm');if(dialog?.open)dialog.close('cancel');for(const id of ['services-list','services-operations','services-selection'])document.getElementById(id)?.replaceChildren();if(document.getElementById('services-feedback'))document.getElementById('services-feedback').textContent='';}
+function resetServices(){servicesGeneration++;radiusOverviewRequest++;radiusOverviewLoading=false;renderRadiusOverview(null);clearTimeout(servicesTimer);servicesState=null;servicesPending=null;servicesLoading=false;servicesSending=false;const dialog=document.getElementById('services-confirm');if(dialog?.open)dialog.close('cancel');for(const id of ['services-list','services-operations','services-selection'])document.getElementById(id)?.replaceChildren();if(document.getElementById('services-feedback'))document.getElementById('services-feedback').textContent='';}
 function servicesVisible(){return !!session&&!$('services').hidden&&can('system.services');}
-function openServices(id){clearTimeout(servicesTimer);if(id==='services'&&can('system.services'))loadServices();}
+function openServices(id){clearTimeout(servicesTimer);if(id==='services'&&can('system.services'))loadServices();if(id==='overview')loadRadiusOverview();}
+function radiusOverviewPermissions(){$('overview-radius-row').hidden=!can('system.services');$('overview-radius-refresh').disabled=radiusOverviewLoading;}
+function renderRadiusOverview(value){
+  const badge=$('overview-radius-health'),detail=$('overview-radius-detail');
+  const radius=value?.available===true&&Array.isArray(value.services)?value.services.find(s=>s.id==='radius'):null;
+  badge.textContent=radius?(serviceHealth[radius.health]||'Bilinmiyor'):'Bilgi alınamadı';
+  badge.dataset.status=radius?.health==='running'?'ready':['failed','listener-missing'].includes(radius?.health)?'error':'pending';
+  if(radius){const time=Date.parse(value.checked_at);detail.textContent=(radius.listener_present===true?'UDP dinleyicisi doğrulandı. ':'')+'Son kontrol: '+(Number.isFinite(time)?new Date(time).toLocaleString('tr-TR'):'Zaman bilgisi yok')+'. Bu gösterge servis durumudur.';}
+  else detail.textContent='Servis bilgisi alınamadı. Servisler ekranından durumu kontrol edebilirsiniz.';
+  radiusOverviewPermissions();
+}
+async function loadRadiusOverview(){
+  if(!can('system.services')||radiusOverviewLoading)return;
+  const generation=authGeneration,request=++radiusOverviewRequest;radiusOverviewLoading=true;
+  $('overview-radius-health').textContent='Kontrol ediliyor';$('overview-radius-detail').textContent='RADIUS servis durumu okunuyor.';radiusOverviewPermissions();
+  try{const value=await api('/api/services');if(generation===authGeneration&&request===radiusOverviewRequest&&can('system.services'))renderRadiusOverview(value);}
+  catch(error){if(generation===authGeneration&&request===radiusOverviewRequest&&can('system.services'))renderRadiusOverview(null);}
+  finally{if(generation===authGeneration&&request===radiusOverviewRequest){radiusOverviewLoading=false;radiusOverviewPermissions();}}
+}
 function serviceText(tag,text){const e=document.createElement(tag);e.textContent=text;return e;}
 function servicesButtons(){
   const selected=servicesState?.services.find(s=>s.id===$('services-selection').value);
@@ -87,3 +106,5 @@ document.addEventListener('DOMContentLoaded',()=>{
   for(const action of ['start','stop','restart','sync'])$('services-'+action).addEventListener('click',()=>confirmService(action));
   $('services-confirm').addEventListener('close',()=>{const d=$('services-confirm');if(d.returnValue==='confirm')sendServiceAction(d.dataset.service,d.dataset.action);});
 });
+
+document.getElementById('overview-radius-refresh').addEventListener('click',loadRadiusOverview);

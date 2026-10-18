@@ -75,3 +75,13 @@ button{font-size:13px;min-height:38px;border-color:var(--line);color:var(--ink);
 .inventory-row>div:first-child{min-width:0}.inventory-row p{overflow-wrap:anywhere}
 /* Service controls share the existing AuthWire table and action styling. */
 .service-toolbar{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;margin:20px 0}.service-toolbar label{min-width:220px}.services-table{width:100%;min-width:650px}.services-table small,#services-operations small{display:block;margin-top:5px;color:#667085}.services-table [data-service-health="failed"],.services-table [data-service-health="listener-missing"]{color:#b42318;background:#fee4e2}.services-table [data-service-health="running"],.services-table [data-service-health="idle"]{color:#067647;background:#dcfae6}#services-confirm{max-width:540px;width:calc(100% - 40px);padding:28px;border:1px solid #d7d0ca;border-radius:16px;background:#fff;color:#2b2b2b}#services-confirm::backdrop{background:#17202a80}#services-operations p{padding:10px 0;border-bottom:1px solid #e5e7eb}.table-scroll{overflow-x:auto}@media(max-width:760px){.service-toolbar{align-items:stretch}.service-toolbar label{min-width:0;width:100%}.service-toolbar .actions{flex-wrap:wrap}.service-toolbar button{white-space:normal}}
+/* Setup review keeps the saved and proposed values readable on small screens. */
+.setup-change-scroll{max-width:100%;overflow-x:auto;margin:16px 0}
+.setup-change-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.setup-change-table th,.setup-change-table td{text-align:left;vertical-align:top;padding:12px;border-bottom:1px solid var(--border,#ded4cc);white-space:pre-wrap;overflow-wrap:anywhere}
+.setup-change-table th:first-child{width:25%}
+.setup-impact{padding:16px;border:1px solid #c88565;border-radius:12px;margin:16px 0;background:#f5e4d8}
+.setup-impact label{display:flex;align-items:flex-start;gap:10px}
+.setup-impact input[type=checkbox]{width:auto;margin-top:4px}
+#setup footer{flex-wrap:wrap}
+#overview-radius-row .actions{flex-wrap:wrap;margin-top:8px}
