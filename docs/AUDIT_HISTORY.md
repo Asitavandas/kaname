@@ -1,4 +1,4 @@
-# İşlem geçmişi — dev.8 aday işletim notu
+# İşlem geçmişi — dev.8 işletim notu
 
 İzleme → İşlem geçmişi mevcut yönetim kayıtlarını salt okunur inceler. Bu
 özellik RADIUS erişim kararı veya accounting kaydı toplamaz. Mevcut RADIUS
@@ -61,8 +61,9 @@ kayıtlarının bozulduğunu veya eksildiğini göstermez.
 
 ## B11 açık iş sırası
 
-1. Teknik canlı kabul ve operatör sürüm/CSV indirme kontrolü tamamlandı;
-   Excel'de ayrı sütunlarla okuma kabulü bekliyor (18 Ekim22:18 gözlemi).
+1. **🔴✓ Yönetim geçmişi alt işi tamamlandı:** geliştirme/izole testler,
+   canlı teknik ve operatör ekran/CSV kabulü. Operatör18 Ekim22:28'de
+   virgül ayırıcısıyla sütunların doğru açıldığını doğruladı.
 2. Final native RADIUS Accept/Reject için sınırlı, dayanıklı yapılandırılmış
    olay toplama; sertifika callback allow sonucu tek başına EAP başarı kanıtı
    değildir. Callback öncesi TLS/CRL retleri ve tekrar paketleri de ele alınmalı.
@@ -73,5 +74,5 @@ kayıtlarının bozulduğunu veya eksildiğini göstermez.
    arşiv, tamlık/geri okuma ve yetki/işlem kaydı kabulünden sonra kontrollü
    temizlik. Mevcut append-only engelleri doğrudan kaldırılmaz.
 
-Bu kabul tamamlanana kadar B11'in tamamı tamamlandı sayılmaz. Çalışan
-kimlik doğrulama hattında yeni olay toplama ayrı kod/runtime kabulü gerektirir.
+Yönetim geçmişi alt işinin kabulü B11'in tamamını kapatmaz;2–4. işler açıktır.
+Çalışan kimlik doğrulama hattında yeni olay toplama ayrı kod/runtime kabulü gerektirir.

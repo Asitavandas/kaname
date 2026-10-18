@@ -6,6 +6,27 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Dev.8 yönetim geçmişi operatör kabulü tamamlandı — 18 Ekim 2026, 22:28 İstanbul
+
+- **🔴✓ Tamamlandı: yönetim işlem geçmişi alt işinin operatör ekran/CSV kabulü.**
+  Operatör son kontrol için “sütun doğru açıldı” bildirdi. Önceki dev.8
+  sürüm/ekran/filtre ve indirme bildirimiyle birlikte CSV sütun kabulü kapandı.
+  İlk görüntüde Türkçe başlıklar okunuyordu; virgül ayırıcısıyla açma sonrası
+  sütunlar düzeldi. Bu düzeltme için ürün kodu veya Windows genel bölge
+  ayarı değiştirilmedi; yeniden dağıtım gerekmedi.
+- İlk B11 yönetim geçmişi alt işi geliştirme, izole testler, canlı teknik
+  koruma/API ve operatör kabulüyle tamamlandı. Mevcut yönetim kayıtlarını
+  salt okunur filtreleme, sayfalama ve görünen sayfayı CSV indirme kapsamıdır.
+  Canlı daha-eski-kayıt testi, kayıt mevcutsa koşulluydu; ayrı canlı kanıt
+  iddiası yoktur. Otomatik sayfalama test kanıtı önceki kayıtta korunur.
+- **B11 bütünü açık:** final native RADIUS karar günlüğü, accounting ve
+  korelasyon, arşiv/saklama/temizlik henüz tamamlanmadı. B04 aralıklı
+  eşzamanlı SQLite kilitlenmesi, doğal yedek takvimi, off-host hedef,
+  tam boot/rollback, uzun panel gözlemi ve VV06 leaf/yerel cleanup/son GPO
+  kabulü korunur. Kullanıcı EAP-TLS pilotu yol haritasında kalır.
+- Bu kabul kaydında çalışan servis, policy, sertifika, Windows istemcisi
+  veya ürün kaynağı değiştirilmedi. Yeni resmi rapor üretilmedi.
+
 ## Dev.8 operatör ekranı ve CSV gözlemi — 18 Ekim 2026, 22:18 İstanbul
 
 - **🔴✓ Tamamlandı: operatör dev.8 sürüm ve CSV indirme doğrulaması.**
