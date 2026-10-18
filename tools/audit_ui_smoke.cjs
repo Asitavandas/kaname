@@ -43,6 +43,8 @@ s.serve_forever()`;
   assert.equal(await reader.locator('#audit-source option[value="administrators"]').isDisabled(),true);
   assert.equal(await reader.evaluate(async()=>{const r=await fetch('/api/audit/history?source=administrators');return r.status;}),403);
   assert.equal(await reader.locator('#audit-export').isEnabled(),true);
+  await page.locator('#audit-from').fill('2026-10-20');await page.locator('#audit-to').fill('2026-10-18');await page.locator('#audit-apply').click();await page.waitForFunction(()=>document.getElementById('message').textContent.includes('Başlangıç'));
+  await page.locator('[data-view="overview"]').click();await page.locator('[data-view="audit"]').click();await page.locator('#audit-reset').click();await page.waitForFunction(()=>!auditLoading&&auditLoadedKey===auditKey());
   // Local list failure preserves the authenticated workspace and existing data.
   await page.route('**/api/audit/history*',r=>r.fulfill({status:503,json:{error:'AUDIT_QUERY_LIMIT'}}));await page.locator('#audit-apply').click();await page.waitForFunction(()=>!auditLoading&&document.getElementById('audit-feedback').textContent.includes('daraltın'));
   assert.equal(await page.locator('#workspace').isVisible(),true);await page.unroute('**/api/audit/history*');

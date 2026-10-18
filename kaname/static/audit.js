@@ -61,7 +61,7 @@ function exportAuditPage(){
   const blob=new Blob(['\uFEFF'+rows.map(r=>r.map(auditCsvCell).join(',')).join('\r\n')+'\r\n'],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='AuthWire-islem-gecmisi-'+auditPage.source+'-'+new Date().toISOString().slice(0,10)+'.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-function openAudit(id){if(id==='audit')loadAuditHistory();}
+function openAudit(id){if(id==='audit')run(()=>loadAuditHistory());}
 document.getElementById('audit-filters').addEventListener('submit',e=>{e.preventDefault();run(()=>loadAuditHistory());});
 document.getElementById('audit-next').addEventListener('click',()=>run(()=>loadAuditHistory({next:true})));
 document.getElementById('audit-reset').addEventListener('click',()=>{if(auditLoading)return;$('audit-filters').reset();run(()=>loadAuditHistory());});
