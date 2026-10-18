@@ -39,6 +39,9 @@ def main():
     if (os.geteuid() != 0 or sys.platform != 'linux' or
             os.environ.get('RUNNER_ENVIRONMENT') != 'github-hosted'):
         raise ValueError('Disposable hosted Linux runner required')
+    # Hosted sudo can inherit a group-writable umask. Model the production
+    # root-owned installation without relaxing its file-trust checks.
+    os.umask(0o022)
     prefix = Path(os.environ['AUTHWIRE_RADIUS_PREFIX']).resolve()
     repo = Path(__file__).resolve().parents[1]
     roots = [Path('/opt/kaname-lab'), install.PREFIX, install.STATE, install.WORKER.parent,
