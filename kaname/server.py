@@ -26,12 +26,14 @@ from .directory import DirectoryError, read_windows_directory, check_windows_dir
 from .operations import Operations
 from .planning import Planning
 from .services import Services, ServiceError, validate as validate_service_action
+from .audit import history as audit_history, AuditQueryLimit
 from .directory_sync import DirectorySync
 from .vault import VaultError
 from .admin import AdminStore, AdminError, COOKIE, TTL, RESOURCES, permits
 
 STATIC = Path(__file__).parent / 'static'
 ASSETS = {'/device.js': ('device.js','application/javascript'), '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
+          '/audit.js': ('audit.js','application/javascript'),
           '/services.js': ('services.js','application/javascript'),
           '/styles.css': ('styles.css', 'text/css'),
           '/planning.js': ('planning.js', 'application/javascript'),
@@ -442,6 +444,16 @@ class Handler(BaseHTTPRequestHandler):
             value.update(product='AuthWire', version=VERSION, runtime_ready=False,
                          integrations={'ad': 'catalog-only' if value['directory_public']['catalog_available'] else 'pending', 'pki': 'pending', 'radius': 'pending', 'ovf': 'not-built'})
             self.respond(200, self.state_projection(value))
+        elif urlsplit(self.path).path == '/api/audit/history' and self.guard(resource='audit.events'):
+            try:
+                if len(self.path) > 2048: raise ValueError()
+                query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                self.respond(200, audit_history(self.server.store, self.server.admin, query,
+                    administrators=permits(self.actor, 'system.administrators')))
+            except PermissionError: self.respond(403, {'error': 'FORBIDDEN'})
+            except (ValueError, TypeError, OverflowError): self.respond(400, {'error': 'INVALID_INPUT'})
+            except AuditQueryLimit: self.respond(503, {'error': 'AUDIT_QUERY_LIMIT'})
+            except sqlite3.Error as error: self.store_error(error)
         elif self.path == '/api/audit' and self.guard(resource='audit.events'):
             self.respond(200, {'events': self.server.store.audit()})
         elif self.path == '/api/network/devices' and self.guard(resource='network.devices'):
@@ -529,7 +541,7 @@ class Handler(BaseHTTPRequestHandler):
             except LookupError: self.respond(404, {'error': 'CATALOG_OBJECT_NOT_FOUND'})
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
             except sqlite3.Error as error: self.store_error(error)
-        elif urlsplit(self.path).path not in {'/api/services', '/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/directory/settings'}:
+        elif urlsplit(self.path).path not in {'/api/services', '/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/audit/history', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/directory/settings'}:
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):

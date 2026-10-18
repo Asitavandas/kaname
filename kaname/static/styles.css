@@ -85,3 +85,5 @@ button{font-size:13px;min-height:38px;border-color:var(--line);color:var(--ink);
 .setup-impact input[type=checkbox]{width:auto;margin-top:4px}
 #setup footer{flex-wrap:wrap}
 #overview-radius-row .actions{flex-wrap:wrap;margin-top:8px}
+
+.audit-table-wrap{overflow-x:auto}.audit-table{width:100%;border-collapse:collapse}.audit-table th,.audit-table td{text-align:left;vertical-align:top;padding:12px;border-bottom:1px solid var(--border,#ddd);overflow-wrap:anywhere}.audit-table td small{display:block;margin-top:5px}.audit-table td:nth-child(4){max-width:250px}.audit-table th{white-space:nowrap}#audit-feedback{min-height:1.5em}#audit-filters{margin:20px 0}#audit-storage{overflow-wrap:anywhere}
