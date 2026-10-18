@@ -34,7 +34,8 @@ pause checkpoint and an updated report with red check marks against 9 October.
   CRL hot reload; cache tekrarında tek kayıt; logging DB EXCLUSIVE kilitliyken
   kabul/VLAN'ın korunması ve kayıt uyarısı, kilit kalkınca yeni kayıt; silent
   drop'a sahte final olay yazılmaması. Bunlar sentetik AD/izoleCA'dır, VV06
-  saha kabulü değildir. Son read-only metadata değişikliği yeniden CI'dadır.
+  saha kabulü değildir. Son read-only metadata sürümü de aynı 29/27
+  senaryolu son turu geçti; doğal CRL bekleme/yenileme kontrolü korundu.
 - **🔴✓ Tamamlandı: Erişim kayıtları arayüzünün ilk gerçek Chromium kabulü.**
   Sonuç/NAS/neden/tarih/metin filtreleri,100'lük sayfalama, yalnız sayfa CSV,
   formül koruması, yetki403, hatada oturum/liste korunması, logout sonrası eski
@@ -48,16 +49,35 @@ pause checkpoint and an updated report with red check marks against 9 October.
   Gerçek servis hesabıyla generator ve radiusd-XC ön kontrolü; yalnız generator
   bayrağı ekleyen drop-in; RADIUS restart ve listener doğrulaması; hata halinde
   araçça değiştirilen worker/release/drop-in geri alınıp eski listener beklenir.
-  Dört izole dosya/lock/fault testi geçti. İlk gerçek systemd turunda ilk UDP
-  probe listener hazır olmadan gönderilip timeout oldu; fixture readiness
-  kontrolü eklendi. Bu bulgu saklanır; bu eski tur systemd kabulü sayılmaz.
+  Dört izole dosya/lock/fault testi geçti.
+- **🔴✓ Tamamlandı: gerçek hardened systemd etkinleştirme ve geri dönüş testi.**
+  Son CI turunda gerçek native restart, tek final Reject satırı, korunan
+  ProtectSystem/NoNewPrivileges/User ve panel PID doğrulandı. Başarılı -XC
+  kontrolünden sonra bilerek bozulan ExecStartPre gerçekten başarısız oldu;
+  eski worker/release/drop-in ve orijinal authorizer/listener geri geldi.
+  İlk fixture turlarındaki UDP readiness ve root dosya güven denetimi
+  hataları test kurulumunda düzeltildi; ürün güven denetimleri gevşetilmedi.
+  Önceki başarısız turlar başarılı kabul diye sayılmadı.
 - Launcher dev.8'in115 kaynak hash'ini pinler; beklenmedik kaynak/istemci
   değişikliğini ve kapsamın yetkilendirme dosyalarına genişlemesini reddeder.
   Kaynak güncellemesinde RADIUS PID korunur; gözlemci için ayrı kontrollü
   restart açıkça raporlanır. Önce/sonra managed yedek, kalıcı koruma kanıtı,
-  son arşivde izole restore + erişim DB bütünlük/sütun okuması hazırlanıyor.
-  Python46 bağımlılığı olan venv kullanılacak; sistem Python41 gözlendi.
-- **Açık:** son native/systemd/guard CI, paket/launcher pin ve canlı sudo
+  son arşivde izole restore + erişim DB bütünlük/sütun okuması hazırdır;
+  bu yeni launcher henüz canlıda yürütülmedi.
+  cryptography 46.0.0 içeren mevcut venv kullanılacak; sistem Python41
+  gözlendiği için launcher yanlış yorumlayıcıyla başlamayı reddeder.
+- **🔴✓ Tamamlandı: dev.9 geliştirme ve son teknik kabul.** PR37 ana kaynakla
+  204f63088550209a912e4c81659974cdf1048d5a commit'inde birleştirildi.
+  Son aday c4c1ec3:524 test/25 ortam atlaması, Chromium, gerçek hardened
+  systemd etkinleştirme/failed-start rollback, native EAP-TLS29/27 ve35
+  production parse/runtime kontrolü geçti. Windows/native LDAP/Kerberos
+  sınırları da başarılıdır. Önceki B04 aralıklı yük testi bulgusu bu başarılı
+  tekrarla kapatılmaz. Test edilen124 dosyanın Git blob'ları doğrulandı;
+  Linux manifest SHA256:
+  0157e4825a6acc7bbfa8b032bfa0dd96e55105b6538af267ce3163b2c19a3769.
+  Somut sudo launcher docs/checkpoints/2026-10-18-access-history.py içinde
+  pinlidir. Paket sunucuda stage edilir; bu kurulumun çalıştığı anlamına gelmez.
+- **Açık:** canlı sudo
   kurulumu, panel operatör ekran/CSV kabulü ve19 Ekim gerçek VV06/NAS olay
   eşleştirmesi. Henüz canlı log etkinleştirilmedi; bu alt iş saha tamamlandı
   değildir. B11 accounting/tam korelasyon/arşiv/retention/temizlik, B04 aralıklı

@@ -17,9 +17,9 @@ import uuid
 import tempfile
 from contextlib import closing
 
-STAGE = Path('__B12_STAGE__')
-EXPECTED = '__B12_MANIFEST__'
-RELEASE = '__B12_RELEASE__'
+STAGE = Path('/home/kaname-runner/kaname-stage-204f63088550')
+EXPECTED = '0157e4825a6acc7bbfa8b032bfa0dd96e55105b6538af267ce3163b2c19a3769'
+RELEASE = '204f63088550209a912e4c81659974cdf1048d5a'
 ROOT = Path('/opt/kaname-lab/source')
 STATE = Path('/var/lib/kaname-lab')
 PHASE = 'preflight'
