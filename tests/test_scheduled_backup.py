@@ -1,6 +1,5 @@
 """Real SQLite/archives, live-read changes, bounded retention and install rollback."""
 from contextlib import redirect_stdout
-import fcntl
 import hashlib
 import io
 import json
@@ -10,15 +9,18 @@ import runpy
 import shutil
 import sqlite3
 import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
 from unittest.mock import patch
 
-from tools import scheduled_backup as worker
-from tools import backup_install as installer
+if sys.platform == 'linux':
+    from tools import scheduled_backup as worker
+    from tools import backup_install as installer
 
 
+@unittest.skipUnless(sys.platform == 'linux', 'Linux backup worker')
 class ScheduledBackupTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
@@ -179,6 +181,7 @@ class ScheduledBackupTests(unittest.TestCase):
         self.assertEqual([], self.archives())
 
 
+@unittest.skipUnless(sys.platform == 'linux', 'Linux backup installer')
 class BackupInstallerTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup); self.root = Path(self.temp.name)
@@ -203,7 +206,7 @@ class BackupInstallerTests(unittest.TestCase):
             return original_read(path, *args, **kwargs)
         p = patch.object(Path, 'read_text', read); p.start(); self.addCleanup(p.stop)
         self.work = {'prepare_directory': lambda: self.backups, 'PRODUCER': worker.PRODUCER, 'NAME': worker.NAME,
-                     'KEEP': 14, 'atomic_json': worker.atomic_json, 'utc': worker.utc}
+                     'KEEP': 14, 'atomic_json': lambda path, value: path.write_text(json.dumps(value)), 'utc': worker.utc}
         def ns(data, path): return self.work if path.name == 'scheduled_backup.py' else {'check': lambda *args: {'data_restore_exercised': True}}
         p = patch.object(installer, 'namespace', side_effect=ns); p.start(); self.addCleanup(p.stop)
 
@@ -234,6 +237,8 @@ class BackupInstallerTests(unittest.TestCase):
     def test_hardened_timer_first_backup_restore_then_enable_preserves_product(self):
         result = self.install()
         self.assertTrue(result['verified']); self.assertFalse(result['off_host_copy_configured'])
+        self.assertTrue((self.backups / 'install-before.json').exists())
+        self.assertTrue(all(json.loads((self.backups / 'install-preservation.json').read_text())['checks'].values()))
         self.assertIn('ProtectSystem=strict\n', self.service.read_text())
         self.assertIn('CapabilityBoundingSet=CAP_DAC_READ_SEARCH\n', self.service.read_text())
         self.assertIn('03:15:00 Europe/Istanbul', self.timer.read_text())

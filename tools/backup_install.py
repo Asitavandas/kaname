@@ -125,6 +125,13 @@ def write_new(path, data, mode):
     with os.fdopen(fd, 'wb') as f: f.write(data); f.flush(); os.fsync(f.fileno())
 
 
+def preservation(worker, before, target):
+    after = protected_snapshot(worker)
+    checks = {name: before[name] == after.get(name) for name in before}
+    worker['atomic_json'](target / 'install-preservation.json', {'checked_utc': worker['utc'](), 'checks': checks})
+    if not all(checks.values()): raise ValueError('Protected live state or processes changed')
+
+
 def install(stage, manifest_sha256):
     global PHASE
     if sys.platform != 'linux' or os.geteuid() != 0: raise ValueError('Local sudo required')
@@ -159,6 +166,7 @@ def install(stage, manifest_sha256):
         trusted(LOCK); fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
         PHASE = 'new_feature_files'
         target = worker['prepare_directory']()
+        worker['atomic_json'](target / 'install-before.json', before)
         if not existing:
             TARGET.mkdir(mode=0o755); new_target = True
             for name, data in all_files.items(): write_new(TARGET / name, data, 0o644)
@@ -180,12 +188,12 @@ def install(stage, manifest_sha256):
         evidence = checker['check'](archive, record['sha256'], Path('/var/lib/authwire-restore-checks'))
         worker['atomic_json'](target / 'initial-restore-check.json', {**evidence, 'backup': str(archive), 'checked_utc': worker['utc']()})
         PHASE = 'preservation_before_enable'
-        if protected_snapshot(worker) != before: raise ValueError('Protected live state or processes changed')
+        preservation(worker, before, target)
         PHASE = 'timer_enable'
         command('systemctl', 'enable', '--now', TIMER.name)
         command('systemctl', 'is-enabled', '--quiet', TIMER.name)
         command('systemctl', 'is-active', '--quiet', TIMER.name)
-        if protected_snapshot(worker) != before: raise ValueError('Protected live state or processes changed')
+        preservation(worker, before, target)
         return {'event': 'BACKUP_TIMER_INSTALLED', 'verified': True, 'timer_enabled': True,
                 'timer_active': True, 'timezone': 'Europe/Istanbul', 'daily_time': '03:15',
                 'maximum_random_delay_seconds': 300, 'keep_successful': worker['KEEP'],

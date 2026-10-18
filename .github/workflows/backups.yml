@@ -23,3 +23,15 @@ jobs:
       - run: python -m unittest tests.test_scheduled_backup tests.test_offline_restore_check -v
       - name: Real hardened backup service and initial fixture data restore
         run: sudo --preserve-env=RUNNER_ENVIRONMENT "$(command -v python)" -B -m tools.backup_systemd_check
+  windows-discovery-boundary:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Linux-only backup tests remain discoverable on Windows
+        run: python -m unittest tests.test_scheduled_backup -v

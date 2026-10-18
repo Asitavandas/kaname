@@ -127,3 +127,8 @@ VV06'da EAP'nin seçtiği yeni leaf ve yerel12saat temizlik; gerçek kullanıcı
 kimliği pilotu; accounting/oturum korelasyonu; full restore/boot/rollback ve temiz
 appliance kapıları açıktır. Sunucudaki24saat predecessor retirement, registry ve
 imzalı runtime CRL ile uzaktan ayrıca doğrulanabilir; Windows cleanup ile karıştırılmaz.
+
+
+Planlı yerel yedekleme kurulumu, saklama ve tanılama için
+[SCHEDULED_BACKUPS.md](SCHEDULED_BACKUPS.md) belgesini kullanın. Bu bileşenin canlı
+kabul durumu CURRENT_STATUS.md içindedir; off-host kopya ayrı bir kapıdır.
