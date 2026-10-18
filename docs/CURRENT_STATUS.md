@@ -76,7 +76,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
   Linux manifest SHA256:
   0157e4825a6acc7bbfa8b032bfa0dd96e55105b6538af267ce3163b2c19a3769.
   Somut sudo launcher docs/checkpoints/2026-10-18-access-history.py içinde
-  pinlidir. Paket sunucuda stage edilir; bu kurulumun çalıştığı anlamına gelmez.
+  pinlidir. **🔴✓ Tamamlandı: sunucuda paket hazırlama ve eşleşme kontrolü.**
+  Ana kaynak staging işi142 test/4 ortam atlamasıyla geçti; segmentiq üzerinde
+  hazırlanan124 dosyalı manifest test edilen paketle birebir aynıdır.
+  Stage: /home/kaname-runner/kaname-stage-204f63088550.
+  Operatör launcher'ı /home/segmentiq/authwire-access-history-dev9-20261018.py
+  üzerinde syntax/hash doğrulandı, yürütülmedi. SHA256:
+  52043765498de430c423eb292bbc53dc569cef8472e2457d25eb84e4b9fd56c2.
+  Canlı sudo kurulumu ve gerçek bağlantı kabulü hâlâ açıktır.
 - **Açık:** canlı sudo
   kurulumu, panel operatör ekran/CSV kabulü ve19 Ekim gerçek VV06/NAS olay
   eşleştirmesi. Henüz canlı log etkinleştirilmedi; bu alt iş saha tamamlandı
