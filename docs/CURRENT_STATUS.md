@@ -6,6 +6,54 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Planlı özel yedekleme geliştirildi; canlı kurulum bekliyor — 18 Ekim 2026
+
+- **🔴✓ Tamamlandı: B12 planlı yedekleme kodu, güvenlik sınırları ve izole
+  kabul hazırlığı.** PR34 https://github.com/Asitavandas/kaname/pull/34.
+  scheduled_backup.py + backup_install.py; ayrı /opt/authwire-backup prefix,
+  authwire-backup.service ve authwire-backup.timer. Ürün dev.6 kalır;
+  kaname/**, Windows imzalı istemcisi ve native RADIUS değiştirilmedi.
+- Varsayılan günlük03:15 Europe/Istanbul, en fazla300sn jitter,30sn doğruluk,
+  Persistent=yes. Son14 başarılı managed çalışma tutulur; bu14 takvim günü
+  garantisi değildir. Manuel authwire-pause ve upgrade yedekleri korunur.
+  Yeni root0700 /var/backups/authwire/scheduled; arşiv/manifest/durum/lock0600.
+- SQLite online backup + integrity/FK; bütün arşiv byte/hash/type/uid/gid/mode
+  kontrolü, önce/kopya/sonra iş durumu kararlılığı ve üç deneme. Session/audit/
+  rate/challenge/cache/health kararlılık guard'ından dışlanır fakat yedeğe alınır.
+  Diğer iş tabloları korunur; çoklu DB için tek global transaction iddiası yoktur.
+  Güncelleme shared lock ve ayrı job lock, disk alanı ön koşulu vardır.
+- Eski managed arşivler yalnız yeni doğrulanmış yedekten sonra ve kendi
+  producer/manifest/isim/hash denetimleriyle temizlenir. Hata durumunda son
+  başarılı kayıt korunur; last-run ve journal hata kategorisi/evresini taşır.
+  Bilinmeyen/orphan dosyalar silinmez. Günlük arşiv bütünlüğü ile veri restore
+  farklıdır; her günlük kayıtta data_restore_exercised=false olması normaldir.
+- Yeni kurulum timer'ı açmadan önce gerçek ilk arşiv ve izole PKI/vault/veri
+  restore provası, korunan dosya/iş durumu ve panel/RADIUS/broker PID kontrolü
+  gerektirir. Hash-only install-before ve install-preservation özel kanıtları
+  tutulur. Farklı mevcut kurulum üzerine yazılmaz; hata halinde yalnız bu
+  yeni feature unit/kodları geri alınır, ürün servislerine restart/stop yok.
+- İzole testler:20 worker/installer sınır testi +10 veri restore testi.
+  Gerçek hosted systemd fixture; kısıtlı root worker, başka uid'ye ait özel
+  verinin okunması, fixture PKI/vault restore, gerçek timer tetiklemesi,
+  committed WAL satırının arşivde doğrulanması, hata kaydı ve ürün fixture
+  PID koruması geçti. Önceki kaynak başında genel490 test başarılı,25 ortam
+  atlaması; son revizyonun CI sonucu merge öncesi doğrulanacak.
+- Canlı salt okunur preflight: /opt ve unit parent root755; broker boot-time
+  lock tanımı beklenen içerikte, ortak lock root600; çakışan backup prefix/unit
+  yok. Kaynak paket dosyaları özel kullanıcı staging dizinine hazırlandı.
+  **Canlı kurulum, ilk müşteri arşiv/restore ve doğal takvim çalışması henüz
+  tamamlandı değildir.** Root-only dosyalar ve unit kurulumu operatör sudo
+  parolası gerektirir. Kurulum çıktısı alınmadan installed/aktif iddiası yok.
+- Hazır paket /home/segmentiq/authwire-backup-package-20261018;
+  manifest SHA2569c84b47a709af791963e25e057a80f6f08feb0094391cdfd5f26bd5afe8f62ec.
+  Installer SHA256ed18f5c0c3e65aa6d2a6fe8311ddd1fa604b128c724e5854214e986118faf347.
+  /home/segmentiq/authwire-backup-deploy-20261018.py
+  SHA256ffe0ba6488aa4e16febd0095ee075ace2503e226a7cabd54f7365e630ec07fbb;
+  aynı kaynak docs/checkpoints/2026-10-18-scheduled-backup.py içinde.
+- İşletim belgesi SCHEDULED_BACKUPS.md. Off-host kopya/şifreli hedef bu yerel
+  zamanlayıcıyla kurulmuş olmaz; hedef seçimi, doğal takvim kabulü, full boot/
+  rollback, VV06 leaf/cleanup ve kullanıcı kimliği pilotu açık kalır.
+
 ## Uzaktan kalan işler ve yedek zamanlama envanteri — 18 Ekim 2026, 15:24 İstanbul
 
 - Önceki “uzaktan kontrol turu tamamlandı” ifadesi18 Ekim kontrol listesini
