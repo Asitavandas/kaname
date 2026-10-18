@@ -6,6 +6,23 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Off-host hedefi yok; yerel yedek aktif, B01 ön incelemesi — 18 Ekim 2026, 15:59 İstanbul
+
+- Operatör şu anda NAS, Windows paylaşımı veya ikinci Linux yedek hedefi
+  olmadığını bildirdi. **Off-host ikinci kopya: hedef/altyapı bekliyor.**
+  Hedef adresi varsayılmadı; yeni makine/paylaşım veya dış servis kurulmadı.
+  Bu alt iş tamamlandı sayılmaz. Yerel günlük backup timer ve14 başarılı
+  managed kopya saklama ayarı korunur; doğal ilk takvim çalışması hâlâ bekliyor.
+- Diğer bağımsız uzaktan iş B01 kurulum/ayar uygulama akışıdır. Salt okunur
+  kaynak ön incelemesinde mevcut panel üst bildiriminde “Ağda 802.1X / RADIUS
+  erişimi henüz uygulanmıyor” metni sabit bulundu. Bu eski ifade çalışan
+  RADIUS ve başarılı kablolu/kablosuz saha kanıtıyla güncel değildir.
+  Overview/kurulum ekranındaki hazırlık/taslak ifadelerinin gerçek kayıt ve
+  uygulama kapsamıyla birlikte incelenmesi gerekir. Henüz UI/kod değişikliği
+  veya canlı dağıtım yapılmadı; B01 tamamlandı sayılmadı.
+- Mevcut policy/VLAN, sertifikalar, RADIUS, görevler ve yedek zamanlayıcısına
+  bu adımda müdahale edilmedi. G01–G07 sırası ve19 Ekim VV06 saha planı korunur.
+
 ## Planlı yedekleme canlı kurulum ve ilk müşteri restore kabulü — 18 Ekim 2026, 15:54 İstanbul
 
 - **🔴✓ Tamamlandı: planlı özel yedekleme canlı kurulum/enable ve ilk yedek
