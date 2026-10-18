@@ -1,10 +1,12 @@
 """Opt-in native observer. Observation never returns reply/Auth-Type changes."""
 import base64
+from contextlib import closing, contextmanager
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
+import sqlite3
 import tempfile
 import threading
 import time
@@ -12,9 +14,9 @@ import uuid
 
 from . import radius_adapter
 from .policy import Decision
-from .radius import CertificateReference, freeradius_result
+from .radius import CertificateReference, freeradius_result, serial_number
 from .radius_registry import CertificateRegistry
-from .radius_events import append, packet_key, utc, REASONS, EventStorageError
+from .radius_events import append, packet_key, utc, REASONS, EventStorageError, _private, BUSY_SECONDS
 
 CONTEXT = 'AuthWire-Event-Context'
 REQUEST_KEY = 'AuthWire-Request-Key'
@@ -37,15 +39,32 @@ def scalar(pairs, name, *, required=False):
     return value
 
 
+class ReadOnlyRegistryStore:
+    """Metadata reuse of the registry validator without Store startup writes."""
+    def __init__(self, state):
+        self.path = Path(state).absolute() / 'kaname.sqlite3'
+        _private(self.path.parent, directory=True); _private(self.path)
+
+    @contextmanager
+    def connect(self):
+        with closing(sqlite3.connect(self.path.as_uri() + '?mode=ro', uri=True, timeout=BUSY_SECONDS)) as db:
+            db.execute('PRAGMA query_only=ON')
+            yield db
+
+
 def decision_context(decision, pairs, state):
     """Optional metadata after the existing authorization decision; no AD call."""
-    from .store import Store
-    serial = radius_adapter.scalar(pairs, 'TLS-Client-Cert-Serial')
-    cert = CertificateReference(radius_adapter.issuer_sha256(Store(state)), serial)
-    binding = CertificateRegistry(Store(state)).lookup(cert)
+    serial = serial_number(radius_adapter.scalar(pairs, 'TLS-Client-Cert-Serial'))
+    binding = None
+    try:
+        store = ReadOnlyRegistryStore(state)
+        cert = CertificateReference(radius_adapter.issuer_sha256(store), serial)
+        binding = CertificateRegistry(store).lookup(cert)
+    except Exception:
+        pass  # Keep the known decision/TLS serial even if optional lookup fails.
     data = {'reason': decision.reason if decision.reason in REASONS else 'RADIUS_ADAPTER_FAILED',
             'action': decision.action, 'policy_id': decision.policy_id,
-            'certificate_serial': cert.serial, 'object_guid': binding.object_guid if binding else None,
+            'certificate_serial': serial, 'object_guid': binding.object_guid if binding else None,
             'identity_kind': binding.kind if binding else None}
     token = base64.urlsafe_b64encode(json.dumps(data, separators=(',', ':')).encode()).decode()
     if len(token) > 1024: raise ValueError('Observer context too large')

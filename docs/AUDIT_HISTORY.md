@@ -1,9 +1,10 @@
 # İşlem geçmişi — dev.8 işletim notu
 
 İzleme → İşlem geçmişi mevcut yönetim kayıtlarını salt okunur inceler. Bu
-özellik RADIUS erişim kararı veya accounting kaydı toplamaz. Mevcut RADIUS
-adapter sonucu kalıcı erişim tablosuna yazılmıyor; auth log kapalı ve accounting
-etkin değil. Okunabilen son24saat journal çıktısının boş olması, hiç kimlik
+özellik RADIUS erişim kararı veya accounting kaydı toplamaz. Dev.9 adayı,
+opt-in native final yanıtlar için ayrı Erişim kayıtları ekranı ekler;
+[ACCESS_HISTORY.md](ACCESS_HISTORY.md) kapsamı ve canlı kabul kapıları ayrıdır.
+Genel auth log ve accounting hâlâ kapalıdır. Okunabilen son24saat journal çıktısının boş olması, hiç kimlik
 doğrulaması yapılmadığını veya hata olmadığını kanıtlamaz.
 
 ## Kaynaklar ve yetkiler
@@ -64,8 +65,8 @@ kayıtlarının bozulduğunu veya eksildiğini göstermez.
 1. **🔴✓ Yönetim geçmişi alt işi tamamlandı:** geliştirme/izole testler,
    canlı teknik ve operatör ekran/CSV kabulü. Operatör18 Ekim22:28'de
    virgül ayırıcısıyla sütunların doğru açıldığını doğruladı.
-2. Final native RADIUS Accept/Reject için sınırlı, dayanıklı yapılandırılmış
-   olay toplama; sertifika callback allow sonucu tek başına EAP başarı kanıtı
+2. Dev.9 final native RADIUS Accept/Reject gözlemci adayı geliştirildi;
+   son CI, kontrollü canlı etkinleştirme ve gerçek NAS/uç cihaz kabulü açık. sertifika callback allow sonucu tek başına EAP başarı kanıtı
    değildir. Callback öncesi TLS/CRL retleri ve tekrar paketleri de ele alınmalı.
    Kimlik alanı doğrulanmamışsa unknown; outer identity güvenilir kimlik olmaz.
 3. RADIUS accounting protokol doğrulaması ve gerçek NAS Start/Interim/Stop,

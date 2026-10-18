@@ -6,6 +6,65 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## B11 final RADIUS yanıt kaydı geliştirmesi — 18 Ekim 2026
+
+- Dev.8 yönetim geçmişi/CSV alt işi tamamlandı. Operatör devam talebi üzerine
+  ayrı final RADIUS yanıt kaydı alt işi PR37'de başlatıldı:
+  https://github.com/Asitavandas/kaname/pull/37. Aday0.14.0-dev.9; canlı
+  sunucu hâlâdev.8, RADIUS1274/broker149955 ve iki timer korunuyor.
+- **🔴✓ Tamamlandı: kapsam ve native son yanıt noktası incelemesi.**
+  Certificate-check callback allow'u final kabul sayılmıyor. Opt-in outer
+  post-auth Accept/Reject hook'u, pre-callback TLS/CRL retleri dahil son seçilen
+  sunucu yanıtını alıyor. Accounting veya uç cihaz başarısı diye gösterilmiyor.
+- Geliştirme: ayrı private append-only access.sqlite3,200.000 satır/64MB'den
+  önce dolan sınır,128MB boş disk altı koruması,25ms SQLite busy bekleme.
+  Başarılı satır FULL sync commit; kayıt hatası reply/Auth-Type değiştirmez.
+  Tanınan native hata yalnız sabit kategoriye çevrilir; ham hata/key/outer
+  identity yazılmaz. Native TLS callback'i yoksa seri/GUID/tür bilinmiyor kalır.
+  MAC yalnız NAS bildirimi, kaynak IP gerçek packet source'tur.
+- Policy kararı, kayıtlı GUID/tür ve TLS seri ek bilgisi orijinal yetki
+  sağlayıcısından ayrıro/query_only bağlantıyla okunur; ek Store başlangıcı,
+  AD sorgusu veya PKI/policy yazma yoktur. Bilgi alınamazsa bilinen karar/TLS
+  seri korunur, bilinmeyen GUID uydurulmaz. Asıl radius_adapter/policy/registry/
+  PKI/enrollment/Windows kaynakları değiştirilmedi.
+- **🔴✓ Tamamlandı: ilk normal/debug gerçek loopback protokol kabulü ve
+  genişletilmiş tekrar/kilit/recovery testleri.** İlk26/24, sonra29/27
+  senaryolu turda gerçek EAP-TLS ve imzalı/authenticator doğrulanmış yanıtlar:
+  policy izin/ret, grup/hesap/AD retleri; revoked/expired/untrusted/purpose,
+  CRL hot reload; cache tekrarında tek kayıt; logging DB EXCLUSIVE kilitliyken
+  kabul/VLAN'ın korunması ve kayıt uyarısı, kilit kalkınca yeni kayıt; silent
+  drop'a sahte final olay yazılmaması. Bunlar sentetik AD/izoleCA'dır, VV06
+  saha kabulü değildir. Son read-only metadata değişikliği yeniden CI'dadır.
+- **🔴✓ Tamamlandı: Erişim kayıtları arayüzünün ilk gerçek Chromium kabulü.**
+  Sonuç/NAS/neden/tarih/metin filtreleri,100'lük sayfalama, yalnız sayfa CSV,
+  formül koruması, yetki403, hatada oturum/liste korunması, logout sonrası eski
+  yanıtın atılması;390/1366/1920 taşmasız görünüm. Servis eylemi0.
+- Yedek worker'da yalnız yeni log tablosu iş durumu istikrar karşılaştırması
+  dışında; tüm satırlar SQLite backup ile arşivde. Gerçek SQLite/arşiv fixture
+  testi eşzamanlı log yazımıyla geçti. Mevcut offline checker128MB dosya sınırı
+  korunur; log64MB ile uyumludur. Tarihsel ilk backup checkpoint'i korunur;
+  güncel worker için ayrı fresh-install checkpoint'i vardır.
+- Kontrollü etkinleştirme aracı base unit/native modülü/CA/policy'ye dokunmaz.
+  Gerçek servis hesabıyla generator ve radiusd-XC ön kontrolü; yalnız generator
+  bayrağı ekleyen drop-in; RADIUS restart ve listener doğrulaması; hata halinde
+  araçça değiştirilen worker/release/drop-in geri alınıp eski listener beklenir.
+  Dört izole dosya/lock/fault testi geçti. İlk gerçek systemd turunda ilk UDP
+  probe listener hazır olmadan gönderilip timeout oldu; fixture readiness
+  kontrolü eklendi. Bu bulgu saklanır; bu eski tur systemd kabulü sayılmaz.
+- Launcher dev.8'in115 kaynak hash'ini pinler; beklenmedik kaynak/istemci
+  değişikliğini ve kapsamın yetkilendirme dosyalarına genişlemesini reddeder.
+  Kaynak güncellemesinde RADIUS PID korunur; gözlemci için ayrı kontrollü
+  restart açıkça raporlanır. Önce/sonra managed yedek, kalıcı koruma kanıtı,
+  son arşivde izole restore + erişim DB bütünlük/sütun okuması hazırlanıyor.
+  Python46 bağımlılığı olan venv kullanılacak; sistem Python41 gözlendi.
+- **Açık:** son native/systemd/guard CI, paket/launcher pin ve canlı sudo
+  kurulumu, panel operatör ekran/CSV kabulü ve19 Ekim gerçek VV06/NAS olay
+  eşleştirmesi. Henüz canlı log etkinleştirilmedi; bu alt iş saha tamamlandı
+  değildir. B11 accounting/tam korelasyon/arşiv/retention/temizlik, B04 aralıklı
+  enrollment kilitlenmesi, doğal backup takvimi, off-host hedef, full boot/
+  rollback ve VV06 leaf/yerel cleanup/son GPO/kullanıcı EAP-TLS açıkları korunur.
+  Yeni resmi rapor üretilmedi.
+
 ## Dev.8 yönetim geçmişi operatör kabulü tamamlandı — 18 Ekim 2026, 22:28 İstanbul
 
 - **🔴✓ Tamamlandı: yönetim işlem geçmişi alt işinin operatör ekran/CSV kabulü.**

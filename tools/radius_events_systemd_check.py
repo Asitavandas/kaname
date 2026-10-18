@@ -50,7 +50,7 @@ def main():
     try:
         account = pwd.getpwnam(install.ACCOUNT)
     except KeyError:
-        command('/usr/sbin/useradd', '--system', '--no-create-home', '--shell', '/usr/sbin/nologin', install.ACCOUNT)
+        command('/usr/sbin/useradd', '--system', '--user-group', '--no-create-home', '--shell', '/usr/sbin/nologin', install.ACCOUNT)
         account = pwd.getpwnam(install.ACCOUNT)
     names = [p.name for p in units]
     try:
@@ -92,6 +92,7 @@ password=secrets.token_hex(24).encode();PKIService(s.root).initialize(password);
         for unit in units[1:]: unit.write_text('[Service]\nType=simple\nExecStart=/usr/bin/sleep infinity\n')
         command('systemctl', 'daemon-reload'); command('systemctl', 'start', *names)
         before = install.service_pid('authwire-radius.service'); panel_pid = install.service_pid('kaname-lab.service')
+        install.listener('127.0.0.1', port, observer_required=False)
         probe(port)
         # CI build paths can differ from the pinned customer's native ELF hash.
         # Pin this disposable test's existing module; the production constant is

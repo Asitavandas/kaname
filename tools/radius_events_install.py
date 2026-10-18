@@ -39,15 +39,21 @@ BACKUP_CHANGE = (b"VOLATILE = {'audit', 'admin_audit', 'admin_sessions'",
                  b"VOLATILE = {'audit', 'admin_audit', 'access_events', 'admin_sessions'")
 
 
+class ActivationError(ValueError):
+    def __init__(self, code):
+        self.code = code
+        super().__init__(code)
+
+
 def digest(data): return hashlib.sha256(data).hexdigest()
 
 
 def trusted(path):
     info = path.lstat()
     if not stat.S_ISREG(info.st_mode) or info.st_uid != ROOT_OWNER or info.st_mode & 0o022 or info.st_nlink != 1:
-        raise ValueError('UNTRUSTED_INSTALLATION_FILE')
+        raise ActivationError('UNTRUSTED_INSTALLATION_FILE')
     for parent in path.parents:
-        if parent.is_symlink(): raise ValueError('UNTRUSTED_INSTALLATION_PATH')
+        if parent.is_symlink(): raise ActivationError('UNTRUSTED_INSTALLATION_PATH')
     return path.read_bytes()
 
 
@@ -73,17 +79,17 @@ def service_pid(name):
     result = command('/usr/bin/systemctl', 'show', name, '--property=ActiveState,MainPID')
     values = dict(line.split('=', 1) for line in result.stdout.splitlines())
     if values.get('ActiveState') != 'active' or not values.get('MainPID', '').isdecimal() or int(values['MainPID']) == 0:
-        raise ValueError('ACTIVE_SERVICE_REQUIRED')
+        raise ActivationError('ACTIVE_SERVICE_REQUIRED')
     return values['MainPID']
 
 
 def generator_line(unit):
     lines = [line for line in unit.decode().splitlines() if line.startswith('ExecStartPre=')]
-    if len(lines) != 1: raise ValueError('UNEXPECTED_RADIUS_GENERATOR')
+    if len(lines) != 1: raise ActivationError('UNEXPECTED_RADIUS_GENERATOR')
     expected = (f'ExecStartPre=/opt/kaname-lab/venv/bin/python -B -m tools.radius_runtime '
                 f'--output /run/authwire-radius --prefix /opt/authwire-radius '
                 f'--state-dir /var/lib/kaname-lab --listen-ip ')
-    if not lines[0].startswith(expected): raise ValueError('UNEXPECTED_RADIUS_GENERATOR')
+    if not lines[0].startswith(expected): raise ActivationError('UNEXPECTED_RADIUS_GENERATOR')
     from ipaddress import IPv4Address
     ip = str(IPv4Address(lines[0][len(expected):]))
     return lines[0], ip
@@ -115,7 +121,7 @@ def native_preflight(ip):
                          '--listen-ip', ip, '--access-events', cwd=SOURCE, env=env)
         generated = ast.literal_eval(result.stdout)
         if generated.get('access_events_enabled') is not True:
-            raise ValueError('ACCESS_HISTORY_STARTUP_FAILED')
+            raise ActivationError('ACCESS_HISTORY_STARTUP_FAILED')
         command('/usr/sbin/runuser', '-u', ACCOUNT, '--', str(PREFIX / 'sbin/radiusd'), '-XC',
                 '-D', str(PREFIX / 'share/freeradius'), '-d', temp, cwd=SOURCE, env=env)
         return generated['authentication_port']
@@ -132,40 +138,40 @@ def listener(ip, port, *, observer_required=True):
                 status = RUNTIME / 'observer-status.json'
                 info = status.lstat(); account = pwd.getpwnam(ACCOUNT)
                 if (not stat.S_ISREG(info.st_mode) or info.st_uid != account.pw_uid or info.st_mode & 0o077
-                        or info.st_size > 2048): raise ValueError('OBSERVER_STATUS_INVALID')
+                        or info.st_size > 2048): raise ActivationError('OBSERVER_STATUS_INVALID')
                 enabled = json.loads(status.read_text()).get('enabled') is True
             sockets = command('/usr/bin/ss', '-H', '-lun').stdout
             if enabled and any(ip + ':' + str(port) in line.split() for line in sockets.splitlines()):
                 return pid
         except (ValueError, OSError, subprocess.SubprocessError): pass
         time.sleep(0.25)
-    raise ValueError('ACCESS_HISTORY_LISTENER_NOT_VERIFIED')
+    raise ActivationError('ACCESS_HISTORY_LISTENER_NOT_VERIFIED')
 
 
 def _restore(path, before, after, mode=0o644):
     current = trusted(path) if path.exists() or path.is_symlink() else None
-    if current not in (before, after): raise ValueError('ROLLBACK_FILE_CHANGED_EXTERNALLY')
+    if current not in (before, after): raise ActivationError('ROLLBACK_FILE_CHANGED_EXTERNALLY')
     if before is None:
         if current is not None: path.unlink()
     elif current != before: atomic(path, before, mode)
 
 
 def activate():
-    if os.geteuid() != 0: raise ValueError('LOCAL_SUDO_REQUIRED')
+    if os.geteuid() != 0: raise ActivationError('LOCAL_SUDO_REQUIRED')
     with update_lock():
         base = trusted(UNIT); line, ip = generator_line(base); drop = override_text(line)
         before_drop = trusted(DROPIN) if DROPIN.exists() or DROPIN.is_symlink() else None
         drop_mode = stat.S_IMODE(DROPIN.stat().st_mode) if before_drop is not None else 0o644
-        if before_drop is not None and before_drop != drop: raise ValueError('UNEXPECTED_ACCESS_HISTORY_OVERRIDE')
+        if before_drop is not None and before_drop != drop: raise ActivationError('UNEXPECTED_ACCESS_HISTORY_OVERRIDE')
         if DROPIN.parent.exists():
             info = DROPIN.parent.lstat()
             if not stat.S_ISDIR(info.st_mode) or info.st_uid != ROOT_OWNER or info.st_mode & 0o022:
-                raise ValueError('UNTRUSTED_OVERRIDE_DIRECTORY')
+                raise ActivationError('UNTRUSTED_OVERRIDE_DIRECTORY')
             for other in DROPIN.parent.glob('*.conf'):
                 if other != DROPIN and re.search(rb'^\s*ExecStartPre\s*=', trusted(other), re.M):
-                    raise ValueError('EXISTING_GENERATOR_OVERRIDE')
+                    raise ActivationError('EXISTING_GENERATOR_OVERRIDE')
         native = trusted(PREFIX / 'lib/rlm_python3.so')
-        if digest(native) != NATIVE_SHA: raise ValueError('NATIVE_MODULE_CHANGED')
+        if digest(native) != NATIVE_SHA: raise ActivationError('NATIVE_MODULE_CHANGED')
         before_pid = service_pid('authwire-radius.service')
         broker_pid = service_pid('authwire-service-control.service')
         old_worker = trusted(WORKER); old_release = trusted(RELEASE)
@@ -175,16 +181,16 @@ def activate():
         if (set(release) != {'scheduled_backup.py', 'offline_restore_check.py'} or
                 release['scheduled_backup.py'] != digest(old_worker) or
                 release['offline_restore_check.py'] != digest(trusted(WORKER.parent / 'offline_restore_check.py'))):
-            raise ValueError('BACKUP_RELEASE_DIFFERS')
+            raise ActivationError('BACKUP_RELEASE_DIFFERS')
         if old_worker != candidate and (digest(old_worker) != OLD_WORKER_SHA or old_worker.replace(*BACKUP_CHANGE, 1) != candidate):
-            raise ValueError('UNEXPECTED_BACKUP_WORKER_CHANGE')
+            raise ActivationError('UNEXPECTED_BACKUP_WORKER_CHANGE')
         release['scheduled_backup.py'] = new_sha
         new_release = (json.dumps(release, sort_keys=True, indent=2) + '\n').encode()
         port = native_preflight(ip)
         EVIDENCE_ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
         info = EVIDENCE_ROOT.lstat()
         if not stat.S_ISDIR(info.st_mode) or info.st_uid != ROOT_OWNER or info.st_mode & 0o077:
-            raise ValueError('PRIVATE_EVIDENCE_DIRECTORY_REQUIRED')
+            raise ActivationError('PRIVATE_EVIDENCE_DIRECTORY_REQUIRED')
         evidence = EVIDENCE_ROOT / ('access-history-' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '-' + uuid.uuid4().hex[:8])
         evidence.mkdir(mode=0o700)
         atomic(evidence / 'backup-worker-before.py', old_worker, 0o600)
@@ -204,9 +210,9 @@ def activate():
             command('/usr/bin/systemctl', 'restart', 'authwire-radius.service')
             after_pid = listener(ip, port)
             if trusted(UNIT) != base or trusted(PREFIX / 'lib/rlm_python3.so') != native:
-                raise ValueError('PROTECTED_RADIUS_FILE_CHANGED')
+                raise ActivationError('PROTECTED_RADIUS_FILE_CHANGED')
             if service_pid('authwire-service-control.service') != broker_pid:
-                raise ValueError('BROKER_PROCESS_CHANGED')
+                raise ActivationError('BROKER_PROCESS_CHANGED')
             result = {'event': 'ACCESS_HISTORY_ACTIVATED', 'verified': True, 'radius_active': True,
                       'radius_restarted': True, 'radius_pid_before': before_pid, 'radius_pid_after': after_pid,
                       'base_unit_preserved': True, 'native_module_preserved': True, 'broker_process_preserved': True,
@@ -235,7 +241,7 @@ def main():
     try: print(json.dumps(activate())); return 0
     except Exception as error:
         # No native config/SQLite/secret/raw subprocess output is printed.
-        print(json.dumps({'event': 'ACCESS_HISTORY_ACTIVATION_FAILED', 'category': type(error).__name__})); return 1
+        print(json.dumps({'event': 'ACCESS_HISTORY_ACTIVATION_FAILED', 'category': type(error).__name__, 'guard_code': getattr(error, 'code', None)})); return 1
 
 
 if __name__ == '__main__': raise SystemExit(main())

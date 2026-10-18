@@ -1,4 +1,4 @@
-# AuthWire panel yönetimi — 0.14.0-dev.8
+# AuthWire panel yönetimi — 0.14.0-dev.9
 
 Panel, sunucu HTTPS adresinden yerel panel hesabıyla açılır; AD hesabı otomatik
 panel yöneticisi olmaz. Temiz kurulumdaki başlangıç hesabı `admin`, parolası
@@ -34,7 +34,7 @@ Kasa/bakım anahtarı normal panel kullanıcılarıyla paylaşılmaz.
 Erişim: kullanıcılar/gruplar, erişim kuralları, ağ cihazları, ağlar/VLAN.
 Sertifikalar: otorite bilgisi, profiller, dağıtım ve cihaz kayıtları.
 RADIUS: kaynak-IP bazlı istemci ve korunan shared secret kayıtları.
-İzleme: karar testi ve işlem geçmişi.
+İzleme: karar testi, işlem geçmişi ve erişim kayıtları.
 Yönetim: temel ayarlar, LDAP sunucuları, panel yöneticileri, servisler ve yetki profilleri.
 
 AD grup isimleri seçim içindir; politika SID ile saklanır. Aynı isimle yeniden
@@ -76,6 +76,22 @@ Saklama bilgisi kaynak toplam satırını ve bütün DB boyutunu gösterir. Otom
 temizlik tanımlı değildir; mevcut append-only koruması sürer. RADIUS kabul/ret
 kararları/accounting bu listede toplanmaz; servis talebi sonuç kanıtı değildir.
 Ayrıntılar ve açık B11 işleri [AUDIT_HISTORY.md](AUDIT_HISTORY.md) içindedir.
+
+## Erişim kayıtları
+
+Dev.9 ile eklenen ayrı ekran son seçilen native RADIUS kabul/ret yanıtlarını
+gösterir; audit.events okuma hakkı gerekir. Gerçek NAS kaynağı, bilinen policy/
+VLAN ve doğrulanmış TLS/kayıtlı kimlik bilgisi varsa görünür; dış kimlik cihaz
+adı sayılmaz. Sonuç/neden/NAS/tarih/metin filtresi,100'lük sayfalama ve yalnız
+görünen sayfayı CSV indirme vardır. Kabul yanıtı uç cihazın bağlantıyı
+tamamladığını veya NAS'ın yanıtı aldığını kanıtlamaz; accounting eklenmedi.
+
+Kayıt üretimi varsayılanda kapalıdır; doğrulanmış ayrı etkinleştirme RADIUS
+restart gerektirir. Kayıt sınırı veya disk/kilit hatası erişim kararını
+değiştirmez; eksiksiz kayıt garantisi yoktur. Panelde son gözlem zamanı ve
+süreç başına yazılan/tekrar/yazılamayan sayıları incelenir. Ayrıntılar,
+kapsam, saklama sınırları ve kontrollü geri alma [ACCESS_HISTORY.md](ACCESS_HISTORY.md)
+içindedir. Güncel canlı kabul durumu CURRENT_STATUS.md'de ayrıca izlenir.
 
 ## Servisler ve tanılama
 

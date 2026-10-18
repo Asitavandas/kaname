@@ -161,13 +161,29 @@ class ObserverTests(unittest.TestCase):
              patch.object(observer, 'decision_context', side_effect=RuntimeError()):
             self.assertEqual((2, (), (('Auth-Type', ':=', 'Reject'),)), observer.authorize(()))
 
+    def test_optional_registry_lookup_is_read_only_and_failure_preserves_known_decision(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'kaname.sqlite3'
+            with sqlite3.connect(path) as db: db.execute('CREATE TABLE fixture(value)')
+            path.chmod(0o600); before = hashlib.sha256(path.read_bytes()).digest()
+            store = observer.ReadOnlyRegistryStore(folder)
+            with store.connect() as db:
+                with self.assertRaises(sqlite3.OperationalError): db.execute('CREATE TABLE forbidden(value)')
+            with patch('kaname.store.Store', side_effect=AssertionError('metadata must not initialize Store')):
+                pairs = observer.decision_context(Decision('deny', 'NO_MATCHING_POLICY'),
+                    [('TLS-Client-Cert-Serial', '00ABCD')], Path(folder))
+            token = pairs[0][2]; data = json.loads(base64.urlsafe_b64decode(token))
+            self.assertEqual('NO_MATCHING_POLICY', data['reason']); self.assertEqual('abcd', data['certificate_serial'])
+            self.assertIsNone(data['object_guid']); self.assertEqual(before, hashlib.sha256(path.read_bytes()).digest())
+
     def test_observer_storage_error_is_noop_with_no_reply_changes_or_sensitive_error(self):
         warnings = []
         radiusd = types.SimpleNamespace(RLM_MODULE_NOOP=7, L_WARN=1, radlog=lambda level, message: warnings.append(message))
-        with patch.dict('sys.modules', radiusd=radiusd), patch.object(observer, '_last_warning', float('-inf')), \
+        with tempfile.TemporaryDirectory() as runtime, \
+             patch.dict('sys.modules', radiusd=radiusd), patch.object(observer, '_last_warning', float('-inf')), \
              patch.object(observer, 'append', side_effect=events.EventStorageError('STORAGE_BUSY')):
-            self.assertEqual(7, observer.post_auth(native()))
-            self.assertEqual(7, observer.post_auth(native()))
+            self.assertEqual(7, observer.post_auth(native(), state=Path(runtime), runtime=Path(runtime)))
+            self.assertEqual(7, observer.post_auth(native(), state=Path(runtime), runtime=Path(runtime)))
         self.assertEqual(1, len(warnings)); self.assertIn('STORAGE_BUSY', warnings[0])
         self.assertNotIn('privileged-admin', warnings[0])
 
