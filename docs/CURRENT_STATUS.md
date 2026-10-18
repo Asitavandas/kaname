@@ -6,6 +6,41 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Gerçek yedek veri restore ve VV06 sunucu retirement kabulü — 18 Ekim 2026, 14:48 İstanbul
+
+- **🔴✓ Tamamlandı: canlı kimlikli panel API okuma kabulü.** Operatörün
+  LIVE_PANEL_READ_CHECK çıktısında session/state/certificates/network/services
+  uçlarında toplam15 okuma200 döndü. Medyanlar1.6–8.5ms; en yüksek20.9ms.
+  Bu ölçüm loopback sunucu okumalarıdır; uzaktan tarayıcı/F5 kabulü değildir.
+- **🔴✓ Tamamlandı: VV06 önceki sertifikasının sunucu tarafı planlı retirement'ı.**
+  Önceki6fc12360e627e5b92b0d60ab103def6cb40fe624 seri superseded ile iptal;
+  yeni5899e122009871b0d5536890bee81e4f0499e605 iptal edilmemiş.
+  Planlı süre86400sn, son tarih16 Ekim13:26:43UTC, gerçek iptal13:27:11UTC:
+  süre dolduktan28sn sonra. Önceki seri imzalı/geçerli runtime CRL'de,
+  yeni seri CRL dışında; DB ve runtime CRL aynı. Bu B06 sunucu alt işini kapatır.
+  Windows yerel12saat cleanup ve EAP'nin seçtiği yeni leaf hâlâ açık.
+- **🔴✓ Tamamlandı: yeni gerçek sunucu yedeğinde izole veri geri yükleme provası.**
+  /var/backups/authwire/authwire-pause-20261018T114709Z.tar.gz,
+  SHA256ae720fe219803a917344a283460a4bbd2179f26dc1ae37df463039e7765552eb.
+  Arşiv okuma, SQLite bütünlüğü ve kararlı canlı capture doğrulandı.
+  Ayrı özel dizine123 dosya geri getirildi; byte/hash ve sahip/izinler geçti.
+  İki DB/FK, config/policy, yöneticiler, CA/Issuer, üç korumalı sırın çözülmesi,
+  Issuer anahtar eşleşmesi ve sertifika/CRL olmayan imza denemesi, web/RADIUS
+  anahtar eşleşmeleri, güncel CRL ve enrollment/sertifika kayıtları doğrulandı.
+- İzole kopyalar silindi; geri gelen kod çalıştırılmadı, servis başlatılmadı,
+  restore denetiminden ağ çağrısı yapılmadı. Dört runtime linki açılmadı.
+  On iki korunan dosya, üç canlı servis PID'si ve altı kontrol hash'i aynı.
+  Canlı policy/VLAN/sertifika/Windows istemcisi değiştirilmedi.
+- Kanıt dosyası aynı yedeğin .restore-check.json uzantılı özel yan kaydıdır.
+  B12'nin yalnız **sunucu verisi geri yükleme** alt işi tamamlandı. Yedek
+  çıktısındaki restore_tested=false ile full_appliance_boot_restore_tested=false,
+  tam OS/runtime boot/rollback testinin yapılmadığını belirtir; ayrı
+  data_restore_exercised=true ile çelişmez. B12'nin tamamı kapanmaz.
+- Sıradaki uzaktan iş gerçek DC/SYSVOL paketinin salt okunur denetimidir;
+  araç/fixture hazır, gerçek DC sonucu bekleniyor. Tarayıcı gözlemi, tam boot/
+  rollback/temiz appliance ve19 Ekim VV06 saha kapıları açık kalır.
+  Kullanıcı kimliği pilotu yol haritasında tutuluyor. Yeni resmi rapor üretilmedi.
+
 ## Uzaktan çalışma hazırlıkları ve sunucu gözlemi — 18 Ekim 2026
 
 - **🔴✓ Tamamlandı: canlı sunucu günlükleri, süreçler ve kurulu kaynak kontrolü.**

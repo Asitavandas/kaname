@@ -14,19 +14,19 @@ kapsamdır; burada tamamlanan saha işleri yeniden “bekliyor” sayılmaz.
 | B03 Güven ve PKI | Gerçek CA/server-name kontrolü, iptal ve imzalı runtime CRL | Expired/yanlış issuer saha testi, CA/Issuer rollover ve bakım |
 | B04 Enrollment | SYSTEM/GPO ile gerçek farklı cihaz anahtarı ve makbuz | Kesilmiş/tekrarlı kayıtların kalan saha senaryoları |
 | B05 Merkezi dağıtım | Paket ve gerçek GPO görevi/istemci kabulü | Güncel SYSVOL imza/hash/ACL ve çift Startup denetimi |
-| B06 Yenileme | VV06 kontrollü yenileme, yeni anahtar/sertifika ve erişim | Seçilen EAP leaf, yerel12h cleanup, sunucu24h retirement kanıtı, offline/expired yolları |
+| B06 Yenileme | VV06 kontrollü yenileme, yeni anahtar/sertifika, erişim ve sunucu24h retirement/CRL kanıtı | Seçilen EAP leaf, yerel12h cleanup, offline/expired yolları |
 | B07 Servis işletimi | Normal RADIUS, ayrı Servisler ekranı ve canlı CRL sync kabulü | Kalan hata/yaşam döngüsü ve işletim senaryoları |
 | B08 Policy/VLAN | Dar pilot grubunda/NAS'ta kablolu/kablosuz gerçek policy VLAN ve DHCP | Diğer deny koşulları ve gelişmiş seçiciler |
 | B09 Kablolu | Pozitif; sertifikasız/grup dışı/kapalı/iptal ret; reboot/recovery | Kalan uç cihaz negatifleri ve doğal yaşam döngüsü |
 | B10 Kablosuz | AP22/SSID, EAP-TLS ve gerçek dinamik VLAN | Ayrılmış negatif güven/kimlik senaryoları; guest tekrarı istenmedi |
 | B11 Kayıt/korelasyon | Servis işlem geçmişi ve temel audit | Accounting, canlı oturum korelasyonu ve saklama politikası |
-| B12 Kurtarma/dağıtım | Durum koruyan kurulum/güncelleme ve doğrulanmış özel yedekler | İzole veri restore, tam boot/rollback, temiz appliance ve bağımsız kimlik |
+| B12 Kurtarma/dağıtım | Durum koruyan kurulum/güncelleme, doğrulanmış özel yedekler ve gerçek yedekte izole veri restore | Tam boot/rollback, temiz appliance ve bağımsız kimlik |
 
 Uzak çalışma sırası: panel günlük/API kabulü → güncel yedeğin izole veri restore
 provası → DC/SYSVOL paket denetimi → güncel rehber. Veri restore aracı ve fixture
 başarısı, gerçek müşteri yedeği çıktısı olmadan B12 restore kabulü değildir.
-VV06 testleri19 Ekim Pazartesi sabahına ayrıldı. Uzaktan sunucu retirement kaydı
-okunabilir; bu, Windows cert-store cleanup veya seçilen EAP leaf'i kanıtlamaz.
+VV06 testleri19 Ekim Pazartesi sabahına ayrıldı. Uzaktan sunucu retirement/CRL kaydı18 Ekim'de
+doğrulandı; bu, Windows cert-store cleanup veya seçilen EAP leaf'i kanıtlamaz.
 Kullanıcı EAP-TLS pilotu unutulmadı; bilgisayar yaşam döngüsü kabulünden ayrı
 izlenir. Kullanıcı+bilgisayar menüsü eşzamanlı iki kimlik/TEAP kanıtı değildir.
 
