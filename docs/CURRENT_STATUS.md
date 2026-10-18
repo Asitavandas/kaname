@@ -36,8 +36,10 @@ pause checkpoint and an updated report with red check marks against 9 October.
   Gerçek hosted systemd fixture; kısıtlı root worker, başka uid'ye ait özel
   verinin okunması, fixture PKI/vault restore, gerçek timer tetiklemesi,
   committed WAL satırının arşivde doğrulanması, hata kaydı ve ürün fixture
-  PID koruması geçti. Önceki kaynak başında genel490 test başarılı,25 ortam
-  atlaması; son revizyonun CI sonucu merge öncesi doğrulanacak.
+  PID koruması geçti. Son kaynak5f7307bf47a2b3acc3a1437b554d897c581fb72c için
+  genel490 test başarılı (25 ortam atlaması); gerçek systemd ve Windows test
+  discovery kapıları da başarılı (Windows'ta20 Linux testi doğru şekilde atlandı).
+  PR34 main'e1e53860cc48a8e83195e6cdf96c42c44b287cc9b olarak birleştirildi.
 - Canlı salt okunur preflight: /opt ve unit parent root755; broker boot-time
   lock tanımı beklenen içerikte, ortak lock root600; çakışan backup prefix/unit
   yok. Kaynak paket dosyaları özel kullanıcı staging dizinine hazırlandı.
