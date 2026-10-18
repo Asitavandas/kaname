@@ -6,6 +6,16 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## DC01 paket denetimi ön kontrolü — 18 Ekim 2026, 14:56 İstanbul
+
+- **🔴✓ Tamamlandı: DC01 denetim ön kontrolü.** GPO AllSettingsEnabled,
+  mevcut Install-AuthWire imzası Valid; aynı yayıncı için yerel private key
+  erişilebilir. Etkin yürütme politikası RemoteSigned. Trust/GPO/SYSVOL
+  değişikliği yok. Asıl paket hash/asset/ACL/Startup denetimi henüz bekliyor.
+- Denetim aracı kaydedilmiş repo kaynağıyla aynı;
+  SHA256920efeb421c845b90a2aa278c1d1d67f0c33c54bf0c1e9d3a65f08b7561a2e9b.
+  Yalnız ayrı indirilen tanılama kopyası mevcut paket yayıncısıyla imzalanacak.
+
 ## Gerçek yedek veri restore ve VV06 sunucu retirement kabulü — 18 Ekim 2026, 14:48 İstanbul
 
 - **🔴✓ Tamamlandı: canlı kimlikli panel API okuma kabulü.** Operatörün
