@@ -6,6 +6,39 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Dev.7 canlı panel güncellemesi kabul edildi — 18 Ekim 2026, 16:39 İstanbul
+
+- **🔴✓ Tamamlandı: 0.14.0-dev.7 canlı güncelleme ve teknik koruma/API kabulü.**
+  Operatör düzeltilmiş launcher çıktısında PANEL_DEPLOY_FINISHED verified=true,
+  version=0.14.0-dev.7 paylaştı. Source update ve HTTPS doğrulaması başarılı;
+  configuration/administrators ve Windows client source hash'i korundu.
+  Ön kontrol sahiplik düzeltmesi gerçek sunucuda da geçmiştir.
+- **🔴✓ Tamamlandı: bu güncelleme öncesi yeni managed yedek ve kalıcı baseline.**
+  /var/backups/authwire/scheduled/authwire-scheduled-20261018T133845Z-a54aaeddfb04.tar.gz
+  SHA256e9c440b5b294e2d776cb6dbc9e219569931e70a4e694b02869367dcbc94aecb7.
+  Arşiv ve SQLite bütünlüğü, süreç koruması başarılı. Bu yeni arşiv için
+  data_restore_exercised=false; önceki ayrı izole restore kabulü geçerlidir,
+  bu arşivde yeniden restore yapılmış sayılmaz.
+  Başlangıç/sonra kanıt dizini:
+  /var/backups/authwire/scheduled/panel-update-dev7-20261018T133746Z-dcf546f4.
+  original_preflight_snapshot_persisted=true; başlangıç snapshot'ı saklandı.
+- PANEL_PRESERVATION: files/pids/timers/business_state hepsi true.
+  RADIUS PID1274 ve broker PID149955 korundu. Policy, sertifikalar ve
+  Windows değişmedi; backup timer korundu. RADIUS başlatılmadı ve unit'i
+  değiştirilmedi. Panel source güncellemesinin yeniden başlatması ayrı kapsamdır.
+- Kimlikli loopback önce/sonra beş API'de üçer okuma, toplam30 yanıt200.
+  Güncelleme sonrası medyan1.8–7.5ms, en yüksek35.2ms. Bunlar sunucu içi
+  okumadır; kullanıcının gerçek tarayıcı ekran kabulünün yerine geçmez.
+- **Bekliyor: dev.7 operatör tarayıcı kabulü.** Ctrl+F5 sonrası0.14.0-dev.7,
+  ana sayfa RADIUS özeti ve kontrol zamanı, Temel ayarlar → Gözden geçir
+  ekranında değişiklik yok özeti/kayıt düğmesinin kapalı olması ve RADIUS
+  istemcilerinin korunması, hiçbir ayarı kaydetmeden kontrol edilecek.
+  Bu dar kabul tamamlanmadan bütün B01 veya OS apply akışı kapatılmaz.
+- Önceki açıklar korunur: uzun süreli panel gözlemi, off-host hedef/altyapı,
+  doğal yedek takvim tetiklemesi, tam boot/rollback,19 Ekim VV06 yenilenmiş
+  EAP leaf/yerel12h cleanup/son GPO uygulaması ve kullanıcı kimliği pilotu.
+  Kullanıcı yeni resmi rapor istemedi; çalışma kaydı güncellendi.
+
 ## Dev.7 ön kontrolündeki sahiplik hatası ve düzeltilmiş launcher — 18 Ekim 2026
 
 - Operatör PANEL_DEPLOY_FAILED phase=preflight, category=ValueError,

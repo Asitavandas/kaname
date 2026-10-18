@@ -1,4 +1,4 @@
-# AuthWire panel yönetimi — 0.14.0-dev.7 (canlı kabul bekliyor)
+# AuthWire panel yönetimi — 0.14.0-dev.7
 
 Panel, sunucu HTTPS adresinden yerel panel hesabıyla açılır; AD hesabı otomatik
 panel yöneticisi olmaz. Temiz kurulumdaki başlangıç hesabı `admin`, parolası

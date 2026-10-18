@@ -1,6 +1,6 @@
 # AuthWire — güncel çalışma planı
 
-18 Ekim2026. Kurulu pilot sürümü0.14.0-dev.6'dır. Ayrıntılı kanıtlar ve tarihli
+18 Ekim2026. Kurulu pilot sürümü0.14.0-dev.7'dir. Ayrıntılı kanıtlar ve tarihli
 sonuçlar [CURRENT_STATUS.md](CURRENT_STATUS.md), işletim/kurtarma adımları
 [OPERATIONS_0_14_0.md](OPERATIONS_0_14_0.md) içindedir. Eski sürüm notları tarihsel
 kapsamdır; burada tamamlanan saha işleri yeniden “bekliyor” sayılmaz.
@@ -9,7 +9,7 @@ kapsamdır; burada tamamlanan saha işleri yeniden “bekliyor” sayılmaz.
 
 | İş paketi | Tamamlanan kapsam | Açık kabul kapısı |
 |---|---|---|
-| B01 Panel | Oturum kurtarma, yükleniyor durumu,2h/12h sınırları, RBAC/CSRF, dev.6 teknik kabul ve gerçek F5/giriş kısa saha kabulü | Ayar review/revision/tek kayıt ve canlı RADIUS özeti dev.7 test edildi; canlı güncelleme/kabul, uzun gözlem ve kalan wizard/OS apply açık |
+| B01 Panel | Oturum kurtarma, yükleniyor durumu,2h/12h sınırları, RBAC/CSRF, dev.6 gerçek F5/giriş kısa saha kabulü; dev.7 ayar review/revision/tek kayıt, gerçek RADIUS özeti ve canlı teknik kabul | Dev.7 operatör ekran kabulü, uzun gözlem ve kalan wizard/OS apply açık |
 | B02 Canlı AD | Gerçek kimlik/grup, grup dışı ve kapalı hesap ret/geri dönüş | Silinmiş hesap/erişilemez AD ve gerçek kapasite sınırları |
 | B03 Güven ve PKI | Gerçek CA/server-name kontrolü, iptal ve imzalı runtime CRL | Expired/yanlış issuer saha testi, CA/Issuer rollover ve bakım |
 | B04 Enrollment | SYSTEM/GPO ile gerçek farklı cihaz anahtarı ve makbuz | Kesilmiş/tekrarlı kayıtların kalan saha senaryoları |
