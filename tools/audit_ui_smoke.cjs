@@ -49,9 +49,9 @@ s.serve_forever()`;
   await page.route('**/api/audit/history*',r=>r.fulfill({status:503,json:{error:'AUDIT_QUERY_LIMIT'}}));await page.locator('#audit-apply').click();await page.waitForFunction(()=>!auditLoading&&document.getElementById('audit-feedback').textContent.includes('daraltın'));
   assert.equal(await page.locator('#workspace').isVisible(),true);await page.unroute('**/api/audit/history*');
   // Response from the old login cannot restore cached records or permit export.
-  let release,seen;const gate=new Promise(r=>release=r),started=new Promise(r=>seen=r);
-  await page.route('**/api/audit/history*',async r=>{seen();await gate;await r.continue();});
-  await page.locator('#audit-apply').click();await started;await page.locator('#logout').click();release();await page.unroute('**/api/audit/history*');
+  let release,seen,handled;const gate=new Promise(r=>release=r),started=new Promise(r=>seen=r),routeDone=new Promise(r=>handled=r);
+  await page.route('**/api/audit/history*',async r=>{seen();await gate;await r.continue();handled();});
+  await page.evaluate(()=>{window.auditPendingFixture=run(()=>loadAuditHistory());});await started;await page.locator('#logout').click();release();await routeDone;await page.evaluate(()=>window.auditPendingFixture);await page.unroute('**/api/audit/history*');
   await page.locator('#login-form').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>auditPage),null);assert.equal(await page.locator('#audit-export').isDisabled(),true);
   await login(page);await page.locator('[data-view="audit"]').click();await page.waitForFunction(()=>!!auditPage&&!auditLoading);
   if(process.env.KANAME_UI_ARTIFACTS){fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'audit-desktop.png'),fullPage:true});}
