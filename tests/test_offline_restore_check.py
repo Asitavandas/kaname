@@ -1,0 +1,89 @@
+import io
+import json
+import os
+from pathlib import Path
+import shutil
+import sqlite3
+import tarfile
+import tempfile
+import unittest
+from contextlib import closing
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from kaname.pki import PKIService
+from kaname.admin import AdminStore
+from kaname.operations import Operations
+from kaname.models import ValidationError
+from .helpers import config
+from .test_pki import PASSWORD,csr
+from tools.offline_restore_check import check,restore_data,sha,validate_copy
+
+class OfflineRestoreTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.base=tempfile.TemporaryDirectory();root=Path(cls.base.name)
+        cls.state=root/'var/lib/kaname-lab';cls.state.mkdir(parents=True)
+        pki=PKIService(cls.state);pki.store.save(0,config=config());pki.initialize(PASSWORD)
+        admin=AdminStore(pki.store);ops=Operations(pki.store)
+        with pki.store.connect() as db:
+            issuer=serialization.load_pem_private_key(db.execute('SELECT issuer_key FROM pki_authority').fetchone()[0],PASSWORD)
+            db.execute('CREATE TABLE device_signer(id INTEGER PRIMARY KEY,key_sealed BLOB)')
+            pem=issuer.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption()).decode()
+            db.execute('INSERT INTO device_signer VALUES (1,?)',(ops.vault.seal('device-issuer-key',pem),))
+            db.execute('INSERT INTO protected_secrets VALUES (?,?)',('directory',ops.vault.seal('directory','fixture secret never printed')))
+            for table in ('device_profiles','radius_certificate_bindings','pki_client_keys','device_issuances','device_retirements'):
+                db.execute('CREATE TABLE '+table+' (id TEXT)')
+        key=ec.generate_private_key(ec.SECP256R1());cert=pki.issue_radius(csr(key),PASSWORD)
+        keybytes=key.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())
+        for certpath,keypath in [('etc/kaname-lab/web.crt','etc/kaname-lab/web.key'),('var/lib/kaname-lab/radius/server.pem','var/lib/kaname-lab/radius/server-key.pem')]:
+            for name,data in [(certpath,cert),(keypath,keybytes)]:
+                p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data);p.chmod(0o600)
+        # Runtime symlinks are intentionally not materialized by the data rehearsal.
+        p=root/'opt/kaname-lab/venv/bin';p.mkdir(parents=True);(p/'python').symlink_to('/usr/bin/python3')
+        cls.archive=root/'backup.tar.gz'
+        with tarfile.open(cls.archive,'w:gz') as tar:
+            for name in ('var/lib/kaname-lab','etc/kaname-lab','opt/kaname-lab/venv'):tar.add(root/name,arcname=name)
+        cls.expected=sha(cls.archive)
+    @classmethod
+    def tearDownClass(cls):cls.base.cleanup()
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup);self.root=Path(self.temp.name)
+    def test_real_encrypted_state_certificate_keys_and_cleanup(self):
+        result=check(self.archive,self.expected,self.root/'work')
+        self.assertTrue(result['data_restore_exercised']);self.assertTrue(all(result['checks'].values()))
+        self.assertEqual(1,result['protected_secret_count_verified']);self.assertTrue(result['ownership_and_modes_verified'])
+        self.assertFalse(result['services_started']);self.assertFalse(result['restored_code_executed'])
+        self.assertEqual([],list((self.root/'work').iterdir()))
+    def test_wrong_archive_digest_rejected_before_restore(self):
+        with self.assertRaisesRegex(ValueError,'digest'):check(self.archive,'0'*64,self.root/'work')
+        self.assertFalse((self.root/'work').exists())
+    def test_replaced_vault_key_cannot_restore_secrets(self):
+        copy=self.root/'restored';restore_data(self.archive,copy)
+        (copy/'var/lib/kaname-lab/secret-store.key').write_bytes(b'x'*32)
+        with self.assertRaises(Exception):validate_copy(copy)
+    def test_replaced_server_key_is_rejected(self):
+        copy=self.root/'restored';restore_data(self.archive,copy)
+        key=ec.generate_private_key(ec.SECP256R1())
+        (copy/'etc/kaname-lab/web.key').write_bytes(key.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption()))
+        with self.assertRaisesRegex(ValueError,'check failed'):validate_copy(copy)
+    def malicious(self,name,kind=tarfile.REGTYPE):
+        archive=self.root/'unsafe.tar.gz'
+        with tarfile.open(archive,'w:gz') as tar:
+            entry=tarfile.TarInfo(name);entry.type=kind;entry.mode=0o600
+            if kind==tarfile.SYMTYPE:entry.linkname='/etc/shadow';tar.addfile(entry)
+            else:entry.size=1;tar.addfile(entry,io.BytesIO(b'x'))
+        return archive
+    def test_escape_and_restored_link_are_rejected(self):
+        for index,(name,kind) in enumerate([('../escape',tarfile.REGTYPE),('etc/kaname-lab/key',tarfile.SYMTYPE)]):
+            archive=self.malicious(name,kind)
+            with self.assertRaises(ValueError):restore_data(archive,self.root/str(index))
+        self.assertFalse((self.root.parent/'escape').exists())
+    def test_live_workspace_is_refused(self):
+        with self.assertRaisesRegex(ValueError,'Live application'):check(self.archive,self.expected,'/var/lib/kaname-lab/drill')
+    def test_world_readable_workspace_refused(self):
+        work=self.root/'work';work.mkdir(mode=0o755)
+        with self.assertRaisesRegex(ValueError,'Private'):check(self.archive,self.expected,work)
+
+if __name__=='__main__':unittest.main()
