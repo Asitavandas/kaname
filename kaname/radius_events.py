@@ -20,7 +20,8 @@ import time
 from .audit import instant, number, AuditQueryLimit
 
 MAX_RECORDS = 200_000
-MAX_BYTES = 256 * 1024 * 1024
+# Below the existing offline restore checker's 128MiB per-file safety limit.
+MAX_BYTES = 64 * 1024 * 1024
 MIN_FREE_BYTES = 128 * 1024 * 1024
 BUSY_SECONDS = 0.025
 LIMIT = 100

@@ -14,6 +14,7 @@ import re
 import secrets
 import shutil
 import socket
+import sqlite3
 import struct
 import subprocess
 import tempfile
@@ -360,6 +361,7 @@ class Relay:
         self.running = True
         self.requests = {}
         self.client = None
+        self.last_request = None
         self.socket.settimeout(0.1)
         self.thread = threading.Thread(target=self.run, daemon=True)
         self.thread.start()
@@ -381,6 +383,7 @@ class Relay:
                         raise ValueError('Unexpected lab request peer or code')
                     radius_attrs(packet)
                     self.client = peer
+                    self.last_request = packet
                     self.requests[packet[1]] = packet
                     self.socket.sendto(packet, self.target)
             except Exception as exc:
@@ -514,7 +517,7 @@ def run_lab(prefix, *, debug=False, access_events=False):
                 wait_ready(process, log)
                 relay = Relay(port, secret)
 
-                def case(name, cert='computer', expected=3, reason=None, change=None, **options):
+                def case(name, cert='computer', expected=3, reason=None, change=None, *, history_busy=False, **options):
                     data = fixture(info)
                     data['case'] = name
                     if change:
@@ -536,10 +539,23 @@ def run_lab(prefix, *, debug=False, access_events=False):
                     staging.replace(target)
                     from kaname.radius_events import history as event_history
                     before_events = event_history(root / 'state', {})['storage']['records'] if access_events else 0
-                    fact = eap_case(root, relay, secret, name, cert, expected=expected, reason=reason, **options)
+                    blocker = None
+                    try:
+                        if access_events and history_busy:
+                            blocker = sqlite3.connect(root / 'state/radius-events/access.sqlite3')
+                            blocker.execute('BEGIN EXCLUSIVE')
+                        fact = eap_case(root, relay, secret, name, cert, expected=expected, reason=reason, **options)
+                    finally:
+                        if blocker is not None: blocker.close()
                     if access_events:
                         page = event_history(root / 'state', {})
                         rows = [r for r in page['events'] if r['id'] > before_events]
+                        if history_busy:
+                            if rows or 'AUTHWIRE_ACCESS_EVENT_DROPPED code=STORAGE_BUSY' not in log.read_text(errors='replace'):
+                                raise AssertionError(name + ': missing bounded loss diagnostic')
+                            fact.update(history_write_failed=True, authorization_preserved=True)
+                            facts.append(fact)
+                            return
                         if len(rows) != 1 or rows[0]['response_code'] != expected:
                             raise AssertionError(name + ': final native response history mismatch')
                         event = rows[0]
@@ -555,6 +571,19 @@ def run_lab(prefix, *, debug=False, access_events=False):
                     facts.append(fact)
 
                 case('valid-computer', expected=2, reason='POLICY_ALLOW')
+                if access_events:
+                    from kaname.radius_events import history as event_history
+                    before_records = event_history(root / 'state', {})['storage']['records']
+                    before_replies = len(relay.facts)
+                    relay.socket.sendto(relay.last_request, relay.target)
+                    deadline = time.monotonic() + 2
+                    while len(relay.facts) == before_replies and time.monotonic() < deadline: time.sleep(0.01)
+                    if len(relay.facts) != before_replies + 1 or relay.facts[-1]['code'] != 2:
+                        raise AssertionError('Retransmission did not retain the authentic native response')
+                    if event_history(root / 'state', {})['storage']['records'] != before_records:
+                        raise AssertionError('Cached retransmission duplicated final history')
+                    facts.append({'case': 'cached-final-retransmission', 'passed': True,
+                                  'radius_code': 2, 'history_not_duplicated': True, 'response_integrity_checked': True})
                 case('valid-wireless', expected=2, reason='POLICY_ALLOW',
                      change=lambda d: d.update(access_type='wireless'))
                 case('disabled-account', reason='ACCOUNT_DISABLED',
@@ -594,12 +623,25 @@ def run_lab(prefix, *, debug=False, access_events=False):
                 case('wrong-client-purpose', cert='wrong-purpose')
                 case('untrusted-server-ca', ca='rogue-ca.pem')
                 case('wrong-server-name', server_name='other.lab.example.test')
+                if access_events:
+                    case('observer-storage-busy', expected=2, reason='POLICY_ALLOW', history_busy=True)
+                    case('observer-storage-recovered', expected=2, reason='POLICY_ALLOW')
                 for name, options in (
                     ('missing-message-authenticator', {'mac': 'missing'}),
                     ('invalid-message-authenticator', {}),
                     ('unknown-nas-source', {'source': '127.0.0.2', 'mac': 'valid'}),
                     ('non-eap-request', {'mac': 'valid', 'non_eap': True})):
-                    facts.append(drop_case(port, secret, name, **options))
+                    before_records = event_history(root / 'state', {})['storage']['records'] if access_events else 0
+                    fact = drop_case(port, secret, name, **options)
+                    if access_events:
+                        page = event_history(root / 'state', {})
+                        rows = [r for r in page['events'] if r['id'] > before_records]
+                        if options.get('non_eap'):
+                            if len(rows) != 1 or rows[0]['response_code'] != 3 or rows[0]['reason'] != 'NON_EAP_REQUEST':
+                                raise AssertionError('Non-EAP reject history mismatch')
+                        elif rows: raise AssertionError('Silently discarded packet invented a final response')
+                        fact['history_scope_verified'] = True
+                    facts.append(fact)
                 if not debug:
                     case('crl-before-publication',expected=2,reason='POLICY_ALLOW')
                     raw = (root/'crl-native-revoked.pem').read_bytes()

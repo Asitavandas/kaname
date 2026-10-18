@@ -249,7 +249,7 @@ class BackupInstallerTests(unittest.TestCase):
 
     def test_operator_entrypoint_matches_the_reviewed_installer_and_payload(self):
         root = Path(__file__).parents[1]
-        ns = runpy.run_path(str(root / 'docs/checkpoints/2026-10-18-scheduled-backup.py'))
+        ns = runpy.run_path(str(root / 'docs/checkpoints/2026-10-18-scheduled-backup-access-history.py'))
         self.assertEqual(ns['INSTALLER_SHA'], hashlib.sha256((root / 'tools/backup_install.py').read_bytes()).hexdigest())
         manifest = json.dumps({n: hashlib.sha256((root / 'tools' / n).read_bytes()).hexdigest() for n in installer.FILES}, sort_keys=True, indent=2) + '\n'
         self.assertEqual(ns['MANIFEST_SHA'], hashlib.sha256(manifest.encode()).hexdigest())
