@@ -37,7 +37,11 @@ def main():
     if any(p.exists() or p.is_symlink() for p in dirs + units + extra):
         raise ValueError('Existing installation or lock refused on disposable fixture')
     source = Path(__file__).resolve().parents[1]
+    # Hosted images may grant the runner write access to /opt. Emulate the
+    # protected appliance parent instead of weakening the actual installer.
+    opt = Path('/opt'); opt_info = opt.stat()
     try:
+        os.chown(opt, 0, 0); opt.chmod(0o755)
         for name in worker.ROOT_NAMES:
             if name != 'opt/authwire-backup': Path('/' + name).mkdir(parents=True)
         pki = PKIService('/var/lib/kaname-lab'); pki.store.save(0, config=config()); pki.initialize(PASSWORD)
@@ -89,18 +93,14 @@ def main():
             latest = json.loads(Path('/var/backups/authwire/scheduled/last-run.json').read_text())
             assert latest['event'] == 'BACKUP_SUCCESS'
             previous = Path('/var/backups/authwire/scheduled/last-success.json').read_bytes()
-            # A deliberately invalid retained copy forces a recorded failure, without stopping product fixtures.
+            # A missing required runtime forces a recorded failure without product stop actions.
             secret = state / 'secret-store.key'; original = secret.read_bytes()
-            secret.rename(state / 'saved-secret-store.key')
-            os.symlink('/no-fixture-target', secret)
             try:
-                # Symlinks within data can be archived, but a missing required installed root cannot.
                 Path('/opt/authwire-radius').rename('/opt/authwire-radius-held')
                 failed = subprocess.run(['systemctl', 'start', installer.SERVICE.name], capture_output=True, timeout=90)
                 assert failed.returncode != 0
             finally:
                 Path('/opt/authwire-radius-held').rename('/opt/authwire-radius')
-                secret.unlink(); (state / 'saved-secret-store.key').rename(secret)
             record = json.loads(Path('/var/backups/authwire/scheduled/last-run.json').read_text())
             assert record['event'] == 'BACKUP_FAILED' and not record['previous_backups_pruned']
             assert previous == Path('/var/backups/authwire/scheduled/last-success.json').read_bytes()
@@ -116,6 +116,7 @@ def main():
         subprocess.run(['systemctl', 'daemon-reload'], capture_output=True, timeout=30)
         for p in dirs + [Path('/var/lib/authwire-restore-checks')]:
             if p.exists(): shutil.rmtree(p)
+        os.chown(opt, opt_info.st_uid, opt_info.st_gid); opt.chmod(opt_info.st_mode & 0o7777)
 
 
 if __name__ == '__main__': main()
