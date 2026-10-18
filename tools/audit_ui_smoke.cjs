@@ -39,7 +39,7 @@ s.serve_forever()`;
   await page.locator('#audit-source').selectOption('application');await apply();
   // Actual API profile/account boundaries; no customer directory or service calls.
   await page.evaluate(async()=>{let s=await api('/api/system');await api('/api/system/profiles/save',{expected_revision:s.revision,profile:{id:'',name:'Audit reader',mode:'Custom',grants:{'audit.events':'read'}}});s=await api('/api/system');const id=s.profiles.find(p=>p.name==='Audit reader').id;await api('/api/system/users/save',{expected_revision:s.revision,user:{id:'',username:'audit-reader',profile_id:id,password:'fixture-audit-password-42',enabled:true}});});
-  const reader=await context.newPage();await login(reader,'audit-reader','fixture-audit-password-42');await reader.locator('[data-view="audit"]').click();await reader.waitForFunction(()=>auditPage?.events.length>0);
+  const readerContext=await browser.newContext({timezoneId:'Europe/Istanbul'}),reader=await readerContext.newPage();await login(reader,'audit-reader','fixture-audit-password-42');await reader.locator('[data-view="audit"]').click();await reader.waitForFunction(()=>auditPage?.events.length>0);
   assert.equal(await reader.locator('#audit-source option[value="administrators"]').isDisabled(),true);
   assert.equal(await reader.evaluate(async()=>{const r=await fetch('/api/audit/history?source=administrators');return r.status;}),403);
   assert.equal(await reader.locator('#audit-export').isEnabled(),true);
