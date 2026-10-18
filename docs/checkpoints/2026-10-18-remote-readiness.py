@@ -71,7 +71,7 @@ def vv06_retirement_readonly():
     guid='69b0d5cd-db61-4627-9db7-fcc5230152a3'
     with closing(sqlite3.connect((STATE/'kaname.sqlite3').as_uri()+'?mode=ro',uri=True,timeout=3)) as db:
         records={row[0]:row[1:] for row in db.execute(
-            'SELECT c.serial,c.revoked_at,c.reason,r.retire_at FROM pki_certificates c JOIN radius_certificate_bindings b ON b.serial=c.serial LEFT JOIN device_retirements r ON r.serial=c.serial WHERE b.object_guid=? AND c.serial IN (?,?)',(guid,old,new))}
+            'SELECT c.serial,c.revoked_at,c.reason,r.retire_at,d.installed_at FROM pki_certificates c JOIN radius_certificate_bindings b ON b.serial=c.serial LEFT JOIN device_retirements r ON r.serial=c.serial LEFT JOIN device_issuances d ON d.serial=c.serial WHERE b.object_guid=? AND c.serial IN (?,?)',(guid,old,new))}
         issuer=x509.load_pem_x509_certificate(db.execute('SELECT issuer_cert FROM pki_authority WHERE id=1').fetchone()[0])
         stored=db.execute('SELECT crl FROM pki_authority WHERE id=1').fetchone()[0]
     runtime=Path('/run/authwire-radius/ca/issuer-crl.pem').read_bytes()
@@ -82,7 +82,15 @@ def vv06_retirement_readonly():
       'new_registry_not_revoked':bool(new_row and not new_row[0]),'new_absent_from_runtime_crl':crl.get_revoked_certificate_by_serial_number(int(new,16)) is None,
       'runtime_crl_signature_valid':crl.is_signature_valid(issuer.public_key()),'runtime_crl_current':crl.last_update_utc<=now<crl.next_update_utc,
       'database_runtime_crl_identical':hashlib.sha256(stored).digest()==hashlib.sha256(runtime).digest()}
-    complete=all(proof[k] for k in ('old_registry_revoked','old_in_runtime_crl','new_registry_not_revoked','new_absent_from_runtime_crl','runtime_crl_signature_valid','runtime_crl_current','database_runtime_crl_identical')) and proof['old_registry_reason']=='superseded'
+    deadline_ok=False;revocation_after_deadline=False;grace_seconds=None
+    if old_row and new_row and old_row[0] and old_row[2] and new_row[3]:
+        deadline=datetime.fromisoformat(old_row[2]);installed=datetime.fromisoformat(new_row[3]);revoked=datetime.fromisoformat(old_row[0])
+        if all(v.tzinfo is not None for v in (deadline,installed,revoked)):
+            grace_seconds=(deadline-installed).total_seconds()
+            deadline_ok=0<=grace_seconds<=86400 and deadline<=now
+            revocation_after_deadline=revoked>=deadline
+    proof.update(old_revoked_at=old_row[0] if old_row else None,planned_grace_seconds=grace_seconds,deadline_within_24h=deadline_ok,revocation_after_deadline=revocation_after_deadline)
+    complete=deadline_ok and revocation_after_deadline and all(proof[k] for k in ('old_registry_revoked','old_in_runtime_crl','new_registry_not_revoked','new_absent_from_runtime_crl','runtime_crl_signature_valid','runtime_crl_current','database_runtime_crl_identical')) and proof['old_registry_reason']=='superseded'
     emit('VV06_SERVER_RETIREMENT_READONLY',**proof,server_retirement_verified=complete,windows_local_cleanup_verified=False,eap_selected_leaf_verified=False)
 
 

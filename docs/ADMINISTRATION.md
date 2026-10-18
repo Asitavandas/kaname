@@ -1,8 +1,8 @@
 # AuthWire panel yönetimi — 0.14.0-dev.6
 
 Panel, sunucu HTTPS adresinden yerel panel hesabıyla açılır; AD hesabı otomatik
-panel yöneticisi olmaz. İlk kurulumdaki başlangıç hesabı kurulum sırasında
-belirlenir ve günlük kullanım öncesinde parolası değiştirilir. Güncelleme var olan
+panel yöneticisi olmaz. Temiz kurulumdaki başlangıç hesabı `admin`, parolası
+`Kaname` olur; günlük kullanım öncesinde parola değiştirilir. Güncelleme var olan
 yönetici/parolayı sıfırlamaz. Menü adları çalışan Türkçe arayüzü esas alır.
 
 ## Giriş ve oturum
