@@ -108,6 +108,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#run-simulation').click();
     await page.waitForFunction(()=>document.querySelector('#result').textContent.includes('DOMAIN_DEVICE_REQUIRED'));
     await navigate('audit');
+    await page.waitForFunction(()=>document.querySelector('#audit-list').textContent.includes('policies_saved'));
     assert.match(await page.locator('#audit-list').textContent(),/config_saved/);
     assert.match(await page.locator('#audit-list').textContent(),/policies_saved/);
     await navigate('certificates');
