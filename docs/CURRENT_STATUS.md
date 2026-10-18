@@ -6,6 +6,47 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Dev.7 ön kontrolündeki sahiplik hatası ve düzeltilmiş launcher — 18 Ekim 2026
+
+- Operatör PANEL_DEPLOY_FAILED phase=preflight, category=ValueError,
+  evidence=null paylaştı. Bu akışta source update, yeni yedek ve servis
+  yeniden başlatma adımına ulaşılmadı; canlı dev.7 kabulü açık kalır.
+- **Tespit edilen launcher kusuru:** snapshot bütün korunan dosyalara kod/unit
+  için yazılmış root sahipliği kontrolünü uyguluyordu. Vault._key tasarımı
+  secret-store.key sahibinin çalışan kaname-lab hesabı olmasını zorunlu kılar.
+  Bu sunucuda state dizini/uygulama hesabı UID999 ve private0700 olarak
+  doğrulandı. Uygulama anahtarında root şartı bu sözleşmeyle çelişir.
+  Orijinal hata kaydı alt kontrolü adlandırmadığından root-only dosyaların
+  gerçek metadata'sı henüz yeni launcher çıktısıyla ayrıca doğrulanacaktır.
+- **🔴✓ Tamamlandı: launcher koruma kontrolünün düzeltmesi ve altı izole test.**
+  Kod/unit/native dosyalar root-owned ve başka kullanıcıca yazılamaz kalır.
+  Yalnız üç sabit uygulama veri yolunda özel kontrol vardır: kasa anahtarı
+  uygulama hesabına ait olmalı; RADIUS materyali root veya aynı hesaba ait
+  olabilir; hepsi gerçek özel dosya, grup/diğer erişimi olmayan modda olmalı.
+  Symlink, yabancı sahip ve grup erişimi reddedilir. Önce/sonra hash, uid/gid ve
+  mod karşılaştırması korunur. Sahiplik/izin değiştiren komut eklenmedi.
+- Altı test özel geçici dosyalar ve simüle UID metadata'sıyla çalıştı; uygulama
+  anahtarı kabulü, root/yabancı kasa sahibi reddi, grup okuma reddi, symlink
+  reddi, RADIUS owner sınırı ve root-only kod sınırını doğruladı.
+  Yerel ortamda gerçek farklı UID chown desteklenmediği için bu bölüm gerçek
+  OS hesap/UID kabulü olarak gösterilmez. Müşteri dosyalarına test yapılmadı.
+- Daha ayrıntılı preflight_helpers/manifest/sources/preservation/evidence
+  evreleri ve sabit guard_code eklendi; sır veya istisna gövdesi basılmaz.
+  Yeni /home/segmentiq/authwire-panel-update-dev7-fix-20261018.py
+  SHA2569e343d5806a51fba4dfe89366797d5c6a71329ae7a5fba82af876dfe5dcfb8d7.
+  Aynı kaynak docs/checkpoints/2026-10-18-panel-dev7-fix.py içinde.
+  Sunucuda hash ve derleme doğrulandı, henüz çalıştırılmadı. Önceki
+  8ba63e... launcher yerine bu komut kullanılacak; eski dosya tarihsel kanıttır.
+- Salt okunur karşılaştırma: korunan29 kaname kaynağı aynı, ek/çıkarılacak
+  korunan dosya yok; updater/backup helper hash'leri aynı. Panel PID174745,
+  RADIUS1274, broker149955; iki timer active/enabled. Kaynak release397fa3...
+  için main üzerindeki bütün CI kapıları da artık başarılı. Paket112 dosya
+  ve manifest değişmedi; uygulama kodu veya Windows istemcisi değiştirilmedi.
+- **Bekliyor:** düzeltilmiş sudo launcher çıktısı, gerçek koruma/API kontrolü
+  ve operatör ekran kabulü. Off-host hedef/altyapı, doğal yedek takvim kabulü,
+  tam boot/rollback, VV06 leaf/cleanup/son GPO saha kabulü ve kullanıcı
+  EAP-TLS pilotu dahil önceki açık işler korunuyor.
+
 ## B01 ayar kaydı ve gerçek RADIUS özeti — 18 Ekim 2026
 
 - **🔴✓ Tamamlandı: panel düzeltmesi ve izole tarayıcı/API doğrulaması.**
