@@ -19,7 +19,7 @@ kapsamdır; burada tamamlanan saha işleri yeniden “bekliyor” sayılmaz.
 | B08 Policy/VLAN | Dar pilot grubunda/NAS'ta kablolu/kablosuz gerçek policy VLAN ve DHCP | Diğer deny koşulları ve gelişmiş seçiciler |
 | B09 Kablolu | Pozitif; sertifikasız/grup dışı/kapalı/iptal ret; reboot/recovery | Kalan uç cihaz negatifleri ve doğal yaşam döngüsü |
 | B10 Kablosuz | AP22/SSID, EAP-TLS ve gerçek dinamik VLAN | Ayrılmış negatif güven/kimlik senaryoları; guest tekrarı istenmedi |
-| B11 Kayıt/korelasyon | Servis işlem geçmişi ve temel audit; dev.8 yönetim geçmişi filtre/sayfalama/CSV geliştirmesi ve canlı teknik kabul | Dev.8 operatör filtre/CSV kabulü, gerçek RADIUS karar günlüğü, accounting/korelasyon ve arşiv/saklama/temizlik |
+| B11 Kayıt/korelasyon | Servis işlem geçmişi ve temel audit; dev.8 yönetim geçmişi filtre/sayfalama/CSV geliştirmesi, canlı teknik kabul ve operatör sürüm/indirme kontrolü | Excel'de virgül ayırıcısıyla CSV sütun kabulü, gerçek RADIUS karar günlüğü, accounting/korelasyon ve arşiv/saklama/temizlik |
 | B12 Kurtarma/dağıtım | Durum koruyan kurulum/güncelleme, doğrulanmış özel yedekler, gerçek yedekte izole veri restore, planlı yedek canlı kurulum ve ilk arşiv/restore kabulü | İlk doğal takvim çalışması, hedef/altyapı bekleyen off-host kopya, tam boot/rollback, temiz appliance ve bağımsız kimlik |
 
 18 Ekim uzaktan kontrol turu tamamlandı: panel günlük/API ve gerçek tarayıcı

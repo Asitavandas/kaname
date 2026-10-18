@@ -48,9 +48,21 @@ veya sadece audit verisinin kapladığı alan değildir. Önceden var olan appen
 trigger'lar korunur; yeni şema, indeks, silme komutu veya retention timer yoktur.
 Günlük doğrulanmış AuthWire yedekleri DB'leri kapsar; off-host hedef hâlâ açık.
 
+### Excel'de sütunlara ayırma
+
+CSV virgül ayırıcılıdır. Excel dosyayı açarken yerel ayarlar nedeniyle her
+satırı tek hücrede gösterebilir. Veri → Metin/CSV'den ile dosyayı seçip
+UTF-8 kodlaması ve Virgül ayırıcısı kullanın; yüklemeden önce önizlemede
+alanların ayrı sütunlara bölündüğünü doğrulayın. Alternatif olarak mevcut
+A sütununu seçip Veri → Metni Sütunlara Dönüştür → Sınırlandırılmış,
+yalnız Virgül ve çift tırnak metin niteleyicisi seçilebilir. Windows'un genel
+bölge ayarını değiştirmek gerekmez. Tek sütun gözlemi, tek başına sunucu
+kayıtlarının bozulduğunu veya eksildiğini göstermez.
+
 ## B11 açık iş sırası
 
-1. Bu yönetim geçmişi alt işinin teknik ve operatör ekran/CSV kabulü.
+1. Teknik canlı kabul ve operatör sürüm/CSV indirme kontrolü tamamlandı;
+   Excel'de ayrı sütunlarla okuma kabulü bekliyor (18 Ekim22:18 gözlemi).
 2. Final native RADIUS Accept/Reject için sınırlı, dayanıklı yapılandırılmış
    olay toplama; sertifika callback allow sonucu tek başına EAP başarı kanıtı
    değildir. Callback öncesi TLS/CRL retleri ve tekrar paketleri de ele alınmalı.

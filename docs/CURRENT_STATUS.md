@@ -6,6 +6,27 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Dev.8 operatör ekranı ve CSV gözlemi — 18 Ekim 2026, 22:18 İstanbul
+
+- **🔴✓ Tamamlandı: operatör dev.8 sürüm ve CSV indirme doğrulaması.**
+  Operatör önceki ekran/filtre adımlarını yaptığını, sürümü0.14.0-dev.8
+  gördüğünü ve CSV indirdiğini bildirdi. Daha eski kayıt sayfalaması yalnız
+  kayıt varsa istenmişti; bu görüntü ayrı bir canlı sayfalama kanıtı değildir.
+- image(20261018-191708).png görüntüsünde CSV başlığı ve iki config_saved
+  satırı okunuyor; Türkçe başlıklar bozuk görünmüyor. Ancak başlık ve her kayıt
+  tek A hücresinde: Excel virgülle ayrılmış alanları sütunlara ayırmamış.
+  Görüntüden ham dosyanın bütün byte/kaçış doğruluğu ayrıca kanıtlanamaz.
+- **Açık: Excel'de sütunlu CSV okuma kabulü.** Veri → Metin/CSV'den içe
+  aktarımda UTF-8 ve Virgül ayırıcısı seçilecek; önizlemede Kaynak, Kayıt ID,
+  Zaman UTC, Olay vb. ayrı sütunlar görülecek. Mevcut A sütunu için
+  Veri → Metni Sütunlara Dönüştür → Sınırlandırılmış → yalnız Virgül,
+  metin niteleyicisi çift tırnak alternatifi vardır.
+  Bu gözlem tek başına sunucu veri kaybı veya export bozulması kanıtı değildir.
+- Bu aşamada kaynak, servis, Windows, policy veya sertifika değişikliği
+  yapılmadı. B11 yönetim geçmişi alt işinin son CSV sütun kabulü açık;
+  final RADIUS olayları/accounting/retention ve diğer mevcut açıklar korunur.
+  Tam B11 tamamlandı işaretlenmedi; yeni resmi rapor üretilmedi.
+
 ## Dev.8 canlı yönetim geçmişi kurulumu kabul edildi — 18 Ekim 2026, 22:07 İstanbul
 
 - **🔴✓ Tamamlandı: dev.8 canlı güncelleme ve teknik koruma/API kabulü.**
