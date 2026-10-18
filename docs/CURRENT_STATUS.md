@@ -6,6 +6,40 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Dev.9 canlı erişim kayıtları teknik kurulumu kabul edildi — 18 Ekim 2026, 23:30 İstanbul
+
+- **🔴✓ Tamamlandı: canlı dev.9 kaynak güncellemesi ve final RADIUS kayıt modülünün etkinleştirilmesi.**
+  Operatörün paylaştığı ACCESS_HISTORY_DEPLOY_FINISHED verified=true çıktısı kabul edildi.
+  Kaynak değişimi sırasında RADIUS PID1274 korundu; ayrı ve beklenen kontrollü
+  etkinleştirme restart'ı sonrasında PID326873 ile aktif listener doğrulandı.
+  Broker PID149955 korundu. Base unit ve native modül değiştirilmedi.
+- **🔴✓ Tamamlandı: kritik durum koruması.** files/pids/timers/business_state
+  kontrollerinin tümü true; policy, sertifika ve Windows değişikliği false.
+  Kalıcı başlangıç kanıtı:
+  /var/backups/authwire/scheduled/access-update-dev9-20261018T202740Z-eaabef14.
+  Etkinleştirme kanıtı:
+  /var/backups/authwire/access-history-20261018T202841Z-699eab01.
+- **🔴✓ Tamamlandı: kurulum öncesi/sonrası yeni managed yedekler ve son yedekte izole veri restore kabulü.**
+  Önceki arşiv authwire-scheduled-20261018T202839Z-2c79decf715e.tar.gz,
+  SHA256769f5d1d9cf973ef9e2cc9edb087538c7de45028481e2ebea1999da6302191e4.
+  Son arşiv /var/backups/authwire/scheduled/authwire-scheduled-20261018T202941Z-3f8a76246977.tar.gz,
+  SHA2565b7532962f8692eaab8471c268510e9862b8e3b415f9f9e6b5b786ddf0da64dd.
+  145 dosyada byte/sahip/mod kontrolü, DB/PKI/secret/key kontrolleri ve yeni
+  access_history_database_integrity_ok/access_history_columns_readable geçti.
+  İzole kopya kaldırıldı; restore edilmiş kod/servis çalıştırılmadı, network çağrısı yok.
+  Bu kanıt tam appliance boot restore kabulü değildir.
+- **🔴✓ Tamamlandı: canlı sunucu-local API teknik kontrolü.** Sekiz endpoint,
+  üçer istek, tümü200; yeni /api/radius/events medyan3.0ms/maksimum12.0ms.
+  Tüm ölçümlerde en yüksek süre41.6ms. Bunlar loopback ölçümüdür; operatör
+  tarayıcısının davranışı ve uç cihaz kimlik doğrulaması için ayrı kanıt gerekir.
+- **Açık:** operatörün dev.9 Erişim kayıtları ekran/filtre ve koşullu CSV kabulü;
+  gerçek VV06/NAS final yanıt kaydı eşleştirmesi19 Ekim saha adımında.
+  Test cihazı uzaktayken boş liste tek başına hata değildir; geçmiş denemeler
+  geriye dönük üretilmez, yeni etkinleştirmeden sonraki final yanıtlar tutulur.
+  B11 accounting/korelasyon/arşiv/saklama/temizlik ve önceki açıklar korunur.
+  İlk doğal backup takvimi, off-host hedef, tam boot/rollback, VV06 leaf/yerel
+  cleanup/son GPO ve kullanıcı EAP-TLS tamamlandı işaretlenmedi.
+
 ## B11 final RADIUS yanıt kaydı geliştirmesi — 18 Ekim 2026
 
 - Dev.8 yönetim geçmişi/CSV alt işi tamamlandı. Operatör devam talebi üzerine
