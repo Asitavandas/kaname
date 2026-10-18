@@ -1,4 +1,4 @@
-# AuthWire panel yönetimi — 0.14.0-dev.7
+# AuthWire panel yönetimi — 0.14.0-dev.8
 
 Panel, sunucu HTTPS adresinden yerel panel hesabıyla açılır; AD hesabı otomatik
 panel yöneticisi olmaz. Temiz kurulumdaki başlangıç hesabı `admin`, parolası
@@ -64,7 +64,7 @@ zamanını gösterir. “UDP1812 doğrulandı” yalnız listener kontrolü olum
 Özet, uçtan uca EAP/DHCP testi değildir. Broker okunamazsa durum bilinmiyor olur;
 sonuç otomatik stop/start/restart başlatmaz. system.services okuma yetkisi gerekir.
 
-## İşlem geçmişi (dev.8 aday)
+## İşlem geçmişi
 
 Tarih, olay kodu ve içerik filtresiyle mevcut kayıtlar100'lük sayfalar halinde
 incelenir. “Daha eski kayıtlar” aynı kayıt üst sınırını korur; “En yeni kayıtlar”

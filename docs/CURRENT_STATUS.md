@@ -6,6 +6,39 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Dev.8 canlı yönetim geçmişi kurulumu kabul edildi — 18 Ekim 2026, 22:07 İstanbul
+
+- **🔴✓ Tamamlandı: dev.8 canlı güncelleme ve teknik koruma/API kabulü.**
+  Operatör PANEL_DEPLOY_FINISHED verified=true, version=0.14.0-dev.8 paylaştı.
+  Güncelleme/HTTPS başarılı; configuration/administrators ve Windows client
+  source hash86081b... korundu. Bu sonuç geliştirilen ilk B11 yönetim geçmişi
+  alt işinin canlı teknik kabulüdür; B11 bütünü veya ekran/CSV kabulü değildir.
+- **🔴✓ Tamamlandı: kurulum öncesi yeni managed yedek ve kalıcı karşılaştırma.**
+  /var/backups/authwire/scheduled/authwire-scheduled-20261018T190641Z-48ea2fe48b0c.tar.gz
+  SHA25654794ff40afd243f43bf73878e2d8218e061c2e98ef9372f7c68909709f32ca6.
+  Arşiv ve SQLite bütünlüğü, süreç koruması doğrulandı. Bu yeni arşivde
+  data_restore_exercised=false; önceki ayrı restore kanıtı bunun için yeni
+  restore kabulü sayılmaz. Başlangıç/sonra kanıtı:
+  /var/backups/authwire/scheduled/panel-update-dev8-20261018T190526Z-9a522334.
+- PANEL_PRESERVATION: files/pids/timers/business_state hepsi true.
+  RADIUS PID1274 ve broker PID149955 aynı; backup timer korundu.
+  Windows/policy/sertifikalar değişmedi. RADIUS başlatılmadı; unit'i güncellenmedi.
+  Yalnız panel source güncellemesi yapıldı; legacy audit uç noktası korunur.
+- Kimlikli loopback önce beş, sonra yedi API'de üçer okuma: toplam36 yanıt200.
+  Yeni /api/audit/history medyan2.5ms, max2.7ms; administrators kaynağı2.2ms.
+  Sonra bütün okumalarda medyan1.7–7.4ms, max40.4ms. Bu sunucu içi okumalardır;
+  gerçek tarayıcı görüntüsü, filtre doğruluğu veya indirilen CSV kabulü değildir.
+- **Bekliyor: operatör tarayıcı/CSV kabulü.** Ctrl+F5 sonrasıdev.8, İzleme →
+  İşlem geçmişi listesi; config_saved olay filtresi, filtre temizleme,
+  mevcutsa Daha eski kayıtlar, bu sayfa CSV indirme ve Türkçe karakterler
+  kontrol edilecek. Ayar/sertifika değişikliği, kayıt silme veya servis
+  stop/restart yapılmayacak. Eksik actor alanı Kaydedilmemiş olabilir.
+- Açıklar korunur: final RADIUS karar günlüğü/accounting/korelasyon,
+  archive/retention/temizlik;4-worker enrollment fixture'daki aralıklı SQLite
+  kilitlenmesi araştırması. Uzun panel gözlemi, off-host hedef/altyapı, doğal
+  yedek takvim çalışması, full boot/rollback ve19 Ekim VV06 leaf/cleanup/son GPO
+  saha kabulü açık. Kullanıcı EAP-TLS pilotu unutulmadı. Yeni resmi rapor yok.
+
 ## B11 yönetim geçmişi paketi hazır; canlı kurulum bekliyor — 18 Ekim 2026, 22:03 İstanbul
 
 - **🔴✓ Tamamlandı: ilk B11 yönetim geçmişi geliştirme, test ve dağıtım hazırlığı.**
