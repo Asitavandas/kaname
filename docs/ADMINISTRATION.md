@@ -1,4 +1,4 @@
-# AuthWire panel yönetimi — 0.14.0-dev.6
+# AuthWire panel yönetimi — 0.14.0-dev.7 (canlı kabul bekliyor)
 
 Panel, sunucu HTTPS adresinden yerel panel hesabıyla açılır; AD hesabı otomatik
 panel yöneticisi olmaz. Temiz kurulumdaki başlangıç hesabı `admin`, parolası
@@ -41,6 +41,28 @@ AD grup isimleri seçim içindir; politika SID ile saklanır. Aynı isimle yenid
 oluşturulan grup eski SID'nin yerine otomatik geçmez. Domain cihaz şartı,
 EAP yöntemi, NAS kaynağı, grup ve diğer koşullar birlikte değerlendirilir.
 Katalog görüntüsü canlı yetki kontrolü yerine geçmez. Karar testi simülasyondur.
+
+## Temel ayarlar ve kayıt öncesi inceleme
+
+Temel ayarlar AuthWire'ın saklanan FQDN, dizin ve erişim modu ayarlarını yönetir.
+Bu kayıt OS IP/DNS, switch/AP veya Windows ayarı uygulamaz. Kayıt adımı eski ve
+yeni değerleri gösterir; mevcut ayar değişiyorsa etki onayı gerekir. Yalnız değişen
+alanlar gönderilir. Başka bir işlem form yüklendikten sonra kaydı değiştirdiyse
+yeniden okuyup farkları kontrol edin; eski formun üzerine sessiz kayıt yapılmaz.
+
+“Kayıt tamamlandı; ekran yenilenemedi” durumunda aynı işlemi tekrar göndermeyin.
+“Güncel ayarları yükle” ile yalnız okuma yapılır. Bağlantı kesilmesinde kayıt
+sonucu bilinmiyorsa da önce güncel ayarlar okunur. Kaydedilmemiş değişikliklerin
+atılması onay ister; arka plan durumu güncellemesi formu silmez.
+
+İlk kurulumdan sonra RADIUS istemcileri temel ayarlarda salt okunur. NAS IP,
+kablolu/kablosuz erişim türü ve shared secret için RADIUS → RADIUS istemcileri
+kullanılır; temel FQDN/dizin kaydı var olan istemci türü veya sırrını yeniden yazmaz.
+
+Ana sayfadaki RADIUS özeti Servisler API'sinden salt okunur durum ve kontrol
+zamanını gösterir. “UDP1812 doğrulandı” yalnız listener kontrolü olumluysa görünür.
+Özet, uçtan uca EAP/DHCP testi değildir. Broker okunamazsa durum bilinmiyor olur;
+sonuç otomatik stop/start/restart başlatmaz. system.services okuma yetkisi gerekir.
 
 ## Servisler ve tanılama
 

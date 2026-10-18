@@ -6,6 +6,53 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## B01 ayar kaydı ve gerçek RADIUS özeti — 18 Ekim 2026
+
+- **🔴✓ Tamamlandı: panel düzeltmesi ve izole tarayıcı/API doğrulaması.**
+  PR35 https://github.com/Asitavandas/kaname/pull/35, aday sürüm0.14.0-dev.7.
+  Eski sabit “802.1X/RADIUS erişimi henüz uygulanmıyor” bildirimi kaldırıldı;
+  ana sayfa mevcut Servisler API'sinden zaman bilgili RADIUS durumunu okur.
+  Servis yetkisi olmayan hesap sorgulamaz; broker kesintisi paneli kilitlemez.
+- Temel ayarlar mevcut AuthWire yapılandırmasına kaydeder; OS IP/DNS,
+  switch/AP veya Windows ayarı uygulamaz. Taslak ifadeleri düzeltildi.
+  Kayıt öncesi eski/yeni alan karşılaştırması ve mevcut ayara etki onayı var.
+  Yalnız değişen alanlar, formun yüklendiği revision ile gönderilir.
+  Arka plan okuması kirli formun revision'ını ilerletmez; çakışmada form korunur.
+  Çift tıklama tek POST; kayıt sonrası okuma hatası veya bilinmeyen POST sonucu
+  otomatik tekrar yazma üretmez, önce yeniden okuma gerekir.
+- Mevcut RADIUS istemcileri bu formda salt okunur; düzenleme ayrı RADIUS
+  istemcileri ekranındadır. Kablolu/kablosuz tür ve sealed secret korunur.
+  Backend, AD/PKI/enrollment/policy/native RADIUS ve Windows istemcisi değişmedi.
+- Gerçek Chromium fixture sekiz senaryosu geçti; servis eylemi0 ve korunan
+  RADIUS secret hash'leri aynı. Genel490 test (25 ortam atlaması), yerel40
+  admin/HTTP, native58 LDAP/installer/systemd ve41 Kerberos testleri başarılı.
+  Windows görevi de başarılı. Normal/debug gerçek native EAP-TLS, policy/VLAN yanıtı ve runtime parse kapıları da geçti.
+- **🔴✓ Tamamlandı: dağıtım paketi ve korumalı komut hazırlığı.**
+  PR35, main'e397fa3d390e20e04bb33dd1803a795fb3ba402bd olarak alındı.
+  Self-hosted141 test geçti;112 dosyanın manifesti, doğrudan Git blob'larıyla
+  doğrulanan kaynakla aynı: d1aba96d059717843d6c3a7e0881047f2a37918cf533eb84386e05d99244bbae.
+  Paket /home/kaname-runner/kaname-stage-397fa3d390e2.
+  Korumalı launcher /home/segmentiq/authwire-panel-update-dev7-20261018.py;
+  SHA2568ba63e511252750d221ca354db1cbcfb34735f1882c9e1489ad04e62c2ca1aa5.
+  Aynı dosya docs/checkpoints/2026-10-18-panel-dev7.py içinde kayıtlı.
+  Üç izole launcher sınır testi değişmiş server kodu/silme/sürüm, pinli helper
+  ve eski/doğrulanmamış yedek reddini geçti. Launcher sunucuda hash/derleme
+  doğrulandı; henüz çalıştırılmadı. Sudo parolası operatörce girilecek.
+- Launcher kurulum öncesi yeni managed yedek ister; hash-only başlangıç
+  snapshot'ını kalıcı özel dizine yazar. Sonra kritik unit/dosya/izinler,
+  kararlı iş DB hash'leri, RADIUS/broker PID ve iki timer karşılaştırılır.
+  Meşru directory_health/session/audit hareketleri iş durumu korumasına
+  dahil edilmez; yedeklerinde saklanır. Yalnız panel yeniden başlar.
+- **Bekliyor: canlı güncelleme ve operatör ekran kabulü.**
+  Kurulu sürüm henüzdev.6; aday test başarısı canlı kurulum sayılmaz.
+  B01'in kalan wizard/OS apply/tekrarlanabilir kurulum kapsamı açık kalır.
+- **Yarım kalanlar korunuyor:** off-host kopya hedef/altyapı bekliyor;
+  ilk doğal yedek takvim çalışması19 Ekim sonrası doğrulanacak; tam OS/runtime
+  boot ve rollback kabulü açık. VV06 seçilen yenilenmiş EAP leaf, yerel12h
+  eski sertifika/anahtar cleanup ve son GPO halinin uygulanması19 Ekim saha
+  planında. Uzun süreli panel gözlemi ve kullanıcı EAP-TLS pilotu unutulmadı.
+  G01–G07 ve B11 accounting/korelasyon/saklama ayrı açık işlerdir.
+
 ## Off-host hedefi yok; yerel yedek aktif, B01 ön incelemesi — 18 Ekim 2026, 15:59 İstanbul
 
 - Operatör şu anda NAS, Windows paylaşımı veya ikinci Linux yedek hedefi
