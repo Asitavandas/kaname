@@ -1,0 +1,25 @@
+name: AuthWire private backup acceptance
+on:
+  pull_request:
+    paths: ['tools/scheduled_backup.py', 'tools/backup_*.py', 'tools/offline_restore_check.py', 'tests/test_scheduled_backup.py', '.github/workflows/backups.yml']
+  push:
+    branches: [main]
+    paths: ['tools/scheduled_backup.py', 'tools/backup_*.py', 'tools/offline_restore_check.py', 'tests/test_scheduled_backup.py', '.github/workflows/backups.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backup-and-systemd:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - run: python -m pip install cryptography==46.0.0
+      - run: python -m unittest tests.test_scheduled_backup tests.test_offline_restore_check -v
+      - name: Real hardened backup service and initial fixture data restore
+        run: sudo --preserve-env=RUNNER_ENVIRONMENT "$(command -v python)" -B -m tools.backup_systemd_check
