@@ -6,6 +6,98 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## B11 yönetim geçmişi paketi hazır; canlı kurulum bekliyor — 18 Ekim 2026, 22:03 İstanbul
+
+- **🔴✓ Tamamlandı: ilk B11 yönetim geçmişi geliştirme, test ve dağıtım hazırlığı.**
+  PR36, main'e551b1a96e69cacca490229c02e7e0216da4b932a olarak birleştirildi.
+  Test edilen son branch3f665a33230bad8467475d79a0cc0281f47ad8d2; bütün
+  ilgili kapılar başarılı. Native Kerberos/load kapısı tek tekrar sonrasında
+  başarılı; önceki SQLite kilitlenmesi aşağıdaki açık bulguda korunur.
+- Sunucu self-hosted hazırlık141 testi geçti.115 dosyalık paket:
+  /home/kaname-runner/kaname-stage-551b1a96e69c.
+  Manifest SHA256862824644e3aaac399d7f28e1b3ff81081afb4016beeb7dce8068a7504011852;
+  bağımsız Git blob karşılaştırması115/115 aynı, self-hosted çıktı aynı digest.
+- /home/segmentiq/authwire-panel-update-dev8-20261018.py
+  SHA256bca8e76fc1d89286d5c0a47a2b797b5ea33113219afb8af2dd10a43d6c67e935.
+  Aynı kaynak docs/checkpoints/2026-10-18-panel-dev8.py içinde saklanır.
+  Sunucuda hash/derleme doğrulandı, çalıştırılmadı; kurulu sürümdev.7 kalır.
+- Launcher yeni managed yedek, kalıcı hash-only başlangıç/sonra kanıtı,
+  korunan dosya/mod/sahip, DB iş durumu, RADIUS/broker PID ve timer karşılaştırması
+  ister. Mevcut dev.7 server hash'i pinlidir; başka panel kaynağı veya beklenmeyen
+  audit modülü varsa reddeder. İmzalı Windows istemcisi ve kimlik kodu aynı kalır.
+  Yalnız gözden geçirilmiş panel route/audit okuyucu/statikler/sürüm değişebilir.
+- Dört source guard testi pinned dev.7 ve aynı adayın tekrarını kabul, bilinmeyen
+  server/modül ve değişmiş istemci reddini geçti. Ayrı API-probe fixture yeni
+  history uçlarının yalnız update sonrası sorgulandığını doğruladı; ağ çağrısı
+  yapmadı. Uygulama hesabına ait özel key sahipliği kontrolü dev.7 düzeltmesini
+  korur; herhangi bir chown/chmod veya yeni şema migration eklenmedi.
+- **Bekliyor:** sudo ile canlı update/koruma/API sonucu ve operatör filtre/CSV
+  kabulü. Bunlar olmadan bu alt işin canlı kabulü veya tüm B11 tamamlandı değildir.
+  RADIUS karar günlüğü, accounting/korelasyon, archive/retention/temizlik;
+  B04 eşzamanlı kilitlenme araştırması ve diğer saha/kurtarma kapıları açıktır.
+  Tamamlanan/açık işler güncel yol haritasına işlendi; yeni resmi rapor yok.
+
+## B11 mevcut kayıt envanteri ve yönetim geçmişi alt işi — 18 Ekim 2026
+
+- **🔴✓ Tamamlandı: kayıt kapsamı salt okunur kaynak/sunucu incelemesi.**
+  Önceki panel /api/audit yalnız son100 yapılandırma/sertifika kaydını gösterir.
+  admin_audit ayrı DB'de panel hesap işlemleri tutar. Servis talepleri ana
+  audit içinde, tamamlanma sonucu ayrı broker geçmişindedir. Şema/trigger
+  ve kayıt yazarları incelendi; ham müşteri olayları veya sırlar basılmadı.
+- **Açık bulgu:** radius_adapter kararları kalıcı erişim tablosuna yazmıyor;
+  runtime auth=no, auth_badpass=no, auth_goodpass=no; accounting kapalı.
+  Sertifika callback allow sonucu final EAP başarısı sayılmaz; native TLS/CRL
+  retleri callback'e ulaşmayabilir. Dolayısıyla mevcut yönetim kayıtlarından
+  cihaz/policy/VLAN/ret nedeni içeren eksiksiz erişim geçmişi üretilemez.
+  Okunabilir son24saat journal0satır gözlemi, trafik veya hata yok kanıtı değildir.
+  Başarısız panel girişinin ayrıntılı kalıcı audit olayı da bu alt işle eklenmedi.
+- **Geliştirilen ilk alt iş:** yeni /api/audit/history salt okunur/parametreli,
+  tarih/olay/metin filtresi,100'lük ID sayfalama ve ilk sayfa üst sınırı;
+  yeni kayıt gelmesi eski sayfayı kaydırmaz. Kaynak toplam sayısı ve bütün DB
+  boyutu görünür. İki saniye query bütçesi, ro/query_only bağlantı vardır.
+  API/şema/append-only trigger'lar ve mevcut kayıt yazarları değiştirilmedi.
+- Panel hesap kaynağı için audit.events + system.administrators gerekir.
+  Eksik eski actor bilgisi doldurulmaz; admin ID'leri tarihsel ad sayılmaz.
+  Servis satırı yalnız talep diye etiketlenir. Açık alan projeksiyonu yapılır,
+  ham JSON/private key/session/parola döndürülmez. Eski /api/audit uyumludur.
+- CSV yalnız görünen100'e kadar kayıttır; UTF-8 BOM/standart kaçış ve formül
+  başlatan hücrelerde apostrof koruması var. CSV, sunucu arşivi veya silme
+  değildir. Filtre değişince indirme kapanır; oturum değişiminde eski veri temizlenir.
+  API her istekte kaynak yetkisini kontrol eder.
+  Kayıtlar silinmez; otomatik retention veya şema/index migration eklenmedi.
+- PR36 https://github.com/Asitavandas/kaname/pull/36; aday dev.8.
+  Yerel39 audit/HTTP/store testi geçti. **🔴✓ Tamamlandı: geliştirme ve izole teknik/tarayıcı kabulü.** Son kaynak
+  3f665a33230bad8467475d79a0cc0281f47ad8d2 için genel502test (25 ortam atlaması),
+  Chromium akışı, native LDAP/installer/systemd, Windows ve normal/debug
+  gerçek EAP-TLS policy/VLAN +34 runtime test kapıları başarılı. Tarayıcı
+  yeni kayıt sırasında sayfalama, İstanbul gün sınırı, gerçek CSV/formül
+  koruması, kaynak yetkisi403, geçersiz filtre, okuma hatasında oturumun
+  korunması ve çıkış sonrası eski yanıtın atılmasını doğruladı.390/1366/1920
+  genişliklerde viewport taşması yok; screenshot incelendi. Servis eylemi0.
+  Henüz canlı dağıtım veya B11 bütünü tamamlandı değildir.
+  Kullanılan/eksik kapsam işletim belgesi AUDIT_HISTORY.md içinde.
+- Ayrı100.000 satırlı izole ölçüm: son sayfa1.9ms, bulunmayan metin11.4ms,
+  tarih filtresi1.1ms, reserved writer varken okuma0.9ms; DB byte hash'i aynı.
+  Bunlar yerel fixture ölçümleridir, müşteri kapasite garantisi değildir.
+- **Açık B04 kapasite bulgusu:** ayrı1000 cihaz/4worker enrollment job'ı
+  bir kez değişmemiş Store.snapshot/device_enrollment yolunda SQLite
+  database-is-locked ile kaldı (job117760170263). Yeni history modülü bu
+  load scriptinde import/çağrı almıyor. Aynı job tek ayrı tekrarda geçti:
+  1000 benzersiz/kurulmuş sertifika,24.394sn; önceki kaynak da1000/19.879sn
+  geçmişti. Bu, aralıklı kilitlenmenin düzeltildiğini kanıtlamaz. Kayıt kodu,
+  timeout, thread sayısı veya test ölçütü değiştirilmedi; B04 geniş yayılım/
+  eşzamanlı kayıt kabulünde ayrıca araştırılacak. Başarısız gözlem gizlenmedi.
+- Canlı salt okunur doğrulama: dev.7 server hash'i beklenen d1b60e...,
+  yeni audit okuyucusu henüz yok. Panel275154/RADIUS1274/broker149955 ve backup
+  timer aktif. Native kimlik doğrulama/PKI/policy/Windows kaynakları aynı.
+  Yeni root launcher mevcut dev.7 server hash'ini, yeni modül yokluğunu veya
+  tam aday eşleşmesini kontrol edecek; ilk ve sonraki API probe'ları ayrıdır.
+- **Açık işler:** bu alt işin canlı kurulum/operatör CSV kabulü; final
+  RADIUS olay toplama ve accounting, arşiv/retention/temizlik tasarımı;
+  uzun panel gözlemi, off-host hedef, doğal yedek takvim kabulü ve full boot/
+  rollback.19 Ekim VV06 leaf/yerel cleanup/son GPO ve kullanıcı EAP-TLS pilotu
+  korunur. Yeni resmi rapor üretilmedi.
+
 ## Dev.7 gerçek tarayıcı kabulü tamamlandı — 18 Ekim 2026, 16:43 İstanbul
 
 - **🔴✓ Tamamlandı: dev.7 operatör ekran kabulü.** Operatör istenen dört

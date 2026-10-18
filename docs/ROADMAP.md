@@ -12,14 +12,14 @@ kapsamdır; burada tamamlanan saha işleri yeniden “bekliyor” sayılmaz.
 | B01 Panel | Oturum kurtarma, yükleniyor durumu,2h/12h sınırları, RBAC/CSRF, dev.6 gerçek F5/giriş kısa saha kabulü; dev.7 ayar review/revision/tek kayıt, gerçek RADIUS özeti, canlı teknik ve operatör ekran kabulü | Uzun gözlem ve kalan wizard/OS apply açık |
 | B02 Canlı AD | Gerçek kimlik/grup, grup dışı ve kapalı hesap ret/geri dönüş | Silinmiş hesap/erişilemez AD ve gerçek kapasite sınırları |
 | B03 Güven ve PKI | Gerçek CA/server-name kontrolü, iptal ve imzalı runtime CRL | Expired/yanlış issuer saha testi, CA/Issuer rollover ve bakım |
-| B04 Enrollment | SYSTEM/GPO ile gerçek farklı cihaz anahtarı ve makbuz | Kesilmiş/tekrarlı kayıtların kalan saha senaryoları |
+| B04 Enrollment | SYSTEM/GPO ile gerçek farklı cihaz anahtarı ve makbuz | Kesilmiş/tekrarlı kayıt saha senaryoları; 4-worker load fixture'da gözlenen aralıklı SQLite kilitlenmesi |
 | B05 Merkezi dağıtım | Paket ve gerçek GPO görevi/istemci kabulü; güncel DC01 paket/ACL kontrolü, çift Startup düzeltmesi ve tek AllSigned çağrı | Son GPO halinin istemcide yeniden uygulanması ve daha geniş yayılım kabulü |
 | B06 Yenileme | VV06 kontrollü yenileme, yeni anahtar/sertifika, erişim ve sunucu24h retirement/CRL kanıtı | Seçilen EAP leaf, yerel12h cleanup, offline/expired yolları |
 | B07 Servis işletimi | Normal RADIUS, ayrı Servisler ekranı ve canlı CRL sync kabulü | Kalan hata/yaşam döngüsü ve işletim senaryoları |
 | B08 Policy/VLAN | Dar pilot grubunda/NAS'ta kablolu/kablosuz gerçek policy VLAN ve DHCP | Diğer deny koşulları ve gelişmiş seçiciler |
 | B09 Kablolu | Pozitif; sertifikasız/grup dışı/kapalı/iptal ret; reboot/recovery | Kalan uç cihaz negatifleri ve doğal yaşam döngüsü |
 | B10 Kablosuz | AP22/SSID, EAP-TLS ve gerçek dinamik VLAN | Ayrılmış negatif güven/kimlik senaryoları; guest tekrarı istenmedi |
-| B11 Kayıt/korelasyon | Servis işlem geçmişi ve temel audit | Accounting, canlı oturum korelasyonu ve saklama politikası |
+| B11 Kayıt/korelasyon | Servis işlem geçmişi ve temel audit; dev.8 yönetim geçmişi filtre/sayfalama/CSV geliştirmesi | Dev.8 canlı/operatör kabulü, gerçek RADIUS karar günlüğü, accounting/korelasyon ve arşiv/saklama/temizlik |
 | B12 Kurtarma/dağıtım | Durum koruyan kurulum/güncelleme, doğrulanmış özel yedekler, gerçek yedekte izole veri restore, planlı yedek canlı kurulum ve ilk arşiv/restore kabulü | İlk doğal takvim çalışması, hedef/altyapı bekleyen off-host kopya, tam boot/rollback, temiz appliance ve bağımsız kimlik |
 
 18 Ekim uzaktan kontrol turu tamamlandı: panel günlük/API ve gerçek tarayıcı

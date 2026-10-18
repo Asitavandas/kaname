@@ -64,6 +64,19 @@ zamanını gösterir. “UDP1812 doğrulandı” yalnız listener kontrolü olum
 Özet, uçtan uca EAP/DHCP testi değildir. Broker okunamazsa durum bilinmiyor olur;
 sonuç otomatik stop/start/restart başlatmaz. system.services okuma yetkisi gerekir.
 
+## İşlem geçmişi (dev.8 aday)
+
+Tarih, olay kodu ve içerik filtresiyle mevcut kayıtlar100'lük sayfalar halinde
+incelenir. “Daha eski kayıtlar” aynı kayıt üst sınırını korur; “En yeni kayıtlar”
+yeni okuma başlatır. CSV yalnız ekranda gösterilen sayfayı indirir ve kayıt silmez.
+Panel hesap işlemleri ayrıca system.administrators okuma hakkı gerektirir.
+Eski kayıtta actor yoksa kullanıcı atanmaz; kimlik alanı mevcut ID olabilir.
+
+Saklama bilgisi kaynak toplam satırını ve bütün DB boyutunu gösterir. Otomatik
+temizlik tanımlı değildir; mevcut append-only koruması sürer. RADIUS kabul/ret
+kararları/accounting bu listede toplanmaz; servis talebi sonuç kanıtı değildir.
+Ayrıntılar ve açık B11 işleri [AUDIT_HISTORY.md](AUDIT_HISTORY.md) içindedir.
+
 ## Servisler ve tanılama
 
 Ayrı system.services hakkı, RADIUS ve CRL servis kontrollerini yönetir. Panel
