@@ -20,7 +20,7 @@ kapsamdır; burada tamamlanan saha işleri yeniden “bekliyor” sayılmaz.
 | B09 Kablolu | Pozitif; sertifikasız/grup dışı/kapalı/iptal ret; reboot/recovery | Kalan uç cihaz negatifleri ve doğal yaşam döngüsü |
 | B10 Kablosuz | AP22/SSID, EAP-TLS ve gerçek dinamik VLAN | Ayrılmış negatif güven/kimlik senaryoları; guest tekrarı istenmedi |
 | B11 Kayıt/korelasyon | Servis işlem geçmişi ve temel audit | Accounting, canlı oturum korelasyonu ve saklama politikası |
-| B12 Kurtarma/dağıtım | Durum koruyan kurulum/güncelleme, doğrulanmış özel yedekler, gerçek yedekte izole veri restore ve planlı yedek kodu/fixture kabulü | Planlı yedek canlı kurulum/doğal takvim kabulü, off-host kopya, tam boot/rollback, temiz appliance ve bağımsız kimlik |
+| B12 Kurtarma/dağıtım | Durum koruyan kurulum/güncelleme, doğrulanmış özel yedekler, gerçek yedekte izole veri restore, planlı yedek canlı kurulum ve ilk arşiv/restore kabulü | İlk doğal takvim çalışması, off-host kopya, tam boot/rollback, temiz appliance ve bağımsız kimlik |
 
 18 Ekim uzaktan kontrol turu tamamlandı: panel günlük/API ve gerçek tarayıcı
 kısa kabulü; güncel gerçek yedeğin izole veri restore provası; DC/SYSVOL paket

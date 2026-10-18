@@ -6,6 +6,39 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Planlı yedekleme canlı kurulum ve ilk müşteri restore kabulü — 18 Ekim 2026, 15:54 İstanbul
+
+- **🔴✓ Tamamlandı: planlı özel yedekleme canlı kurulum/enable ve ilk yedek
+  + izole veri restore kabulü.** Operatör BACKUP_TIMER_INSTALLED verified=true
+  paylaştı. Timer enabled/active; Europe/Istanbul03:15, en fazla300sn jitter,
+  keep_successful=14. Manuel yedekler değiştirilmedi; ilk temizlik0 arşiv.
+- İlk managed arşiv:
+  /var/backups/authwire/scheduled/authwire-scheduled-20261018T125415Z-f274d0e4a6f0.tar.gz
+  SHA2564213808660eb6888f5f531915f4065716e2b71b5541c163c5e8028ec6d111c0d.
+  1609 dosya,3 SQLite DB; arşiv byte/hash/metadata, SQLite bütünlüğü ve kararlı
+  iş durumu doğrulandı. Servis durdurulmadı; süreçler korundu.
+- Aynı SHA'ya bağlı initial_data_restore.data_restore_exercised=true:
+  123 veri/ayar/kaynak/unit dosyası özel geçici dizine geri getirildi; sahip/
+  izinler, iki kritik DB/FK ve iş kayıtları, CA/Issuer, üç korumalı sır, Issuer
+  anahtar eşleşmesi/imza denemesi, web/RADIUS anahtarları, güncel CRL ve
+  sertifika/enrollment kayıtları doğrulandı. Geçici kopyalar silindi; restored
+  kod çalıştırılmadı, servis başlatılmadı, restore denetiminden ağ çağrısı yok.
+  Günlük arşiv manifestindeki data_restore_exercised=false, ayrı ilk restore
+  kanıtıyla çelişmez; full_appliance_boot_restore_tested=false kalır.
+- Doğrudan salt okunur systemd doğrulaması: authwire-backup.timer
+  active/waiting/enabled, Result=success. Oneshot authwire-backup.service
+  inactive/dead/static, Result=success, ExecMainStatus=0; iş bitince normaldir.
+  Panel PID174745, RADIUS PID1274 ve broker PID149955 active/running/enabled
+  olarak korunmuş. Korunan iş durumu/dosyalar ve manuel yedekler aynı.
+- **Bekliyor: ilk doğal takvim tetiklemesi.** systemd'nin gözlenen sonraki
+  planı19 Ekim2026 03:18:54 +03; bu ileriye dönük plan, gerçekleşmiş yedek
+  kanıtı değildir. Doğal çalışma sonrası son kayıt/sonuç ayrıca kontrol edilir.
+- **Bekliyor: off-host şifreli ikinci kopya.** off_host_copy_configured=false.
+  Ayrı NAS/Windows paylaşımı/Linux hedefi ve erişim bilgileri henüz seçilmedi.
+  Hedef belirlenmeden aktarım kurulmuş veya tam B12 tamamlandı sayılmaz.
+  Full boot/rollback ve VV06 leaf/cleanup/GPO saha kapıları açık; kullanıcı
+  kimliği pilotu korunuyor. Yeni resmi rapor üretilmedi.
+
 ## Planlı özel yedekleme geliştirildi; canlı kurulum bekliyor — 18 Ekim 2026
 
 - **🔴✓ Tamamlandı: B12 planlı yedekleme kodu, güvenlik sınırları ve izole
