@@ -6,6 +6,17 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+
+## Güncel durum raporu ve tamamlanma sayımı — 19 Ekim 2026
+
+- **🔴✓ Tamamlandı: 9 Ekim temel raporu ve 15 Ekim ara raporunun 19 Ekim güncellemesi.** B01–B12, G01–G07, P01–P10 kimlikleri korundu; tamamlanan dar alt işler kırmızı tikle, kısmi/açık işler ayrı gösterildi.
+- Sabit ilk rapor listesi üzerinden muhafazakâr sayım: B paketleri42/59 (%71); G paketleri10/35 (%29); toplam52/94 (%55). Tamam1, kısmi/açık0; eşit alt iş sayımıdır, emek/süre veya üretime hazır olma yüzdesi değildir. B tamamları4,3,3,4,5,3,4,5,3,3,2,3. G tamamları2,2,1,1,2,1,1. İlk raporda temel26/59 idi. Yeni servis/yedek kazanımları ilgili kapsamın kanıtıdır, ayrıca puan eklenmedi.
+- B05 ilk dar pilot listesi5/5; güncel signed SYSVOL, tek AllSigned Startup ve VV06 dev.10 doğal boot kabulü tamam. Genel domain yayılımı/G01 ayrı açık.
+- B12 gerçek yedekten izole veri restore alt işi tamam; tam appliance boot restore/rollback ve off-host hedef hâlâ açık. Bu nedenle3/6.
+- B06 eski/yeni seri seçimi ve yerel/server retirement kanıtları tamam; birleşik yaşam döngüsü satırındaki expired kurtarma açık. Canlı otomatik retry eksikliği kapanmadı.
+- **Devam noktası:** canlıdev.10; PR40dev.11 aday8585f3a8de5b, Windows CI son kontroldequeued. Merge/dağıtım/SYSVOL etkinleştirme ve VV06 gerçek otomatik toparlanma açık. ManuelReady/0/retryfalse, otomatik kabul değildir. Kullanıcı EAP-TLS pilotu, DNS düzenlemesi, eşzamanlı SQLite kilidi, accounting, tam kurtarma ve yedi geliştirme paketi raporda açık korundu.
+- Rapor hazırlanırken ürün/AD/NAS/PKI/802.1X ayarı veya servis değiştirilmedi. Sonraki çalışma kullanıcı devamından sonra CI/kalan retry kabulünden sürer.
+
 ## Retry düzeltmesi hazır; native Windows CI kuyruğu bekleniyor — 19 Ekim 2026
 
 - **🔴✓ Tamamlandı: aday dev.11 imzalı installer/launcher geliştirmesi ve yerel regresyonlar.**

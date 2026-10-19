@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-19",
+  "live_version": "0.14.0-dev.10",
+  "candidate": "PR40 dev.11 not deployed",
+  "method": "Unchanged 9 October checklist; complete=1, partial/open=0; equal item count, not effort/time/readiness",
+  "basic": {
+    "complete": 42,
+    "total": 59,
+    "percent": 71,
+    "by_package": [
+      4,
+      3,
+      3,
+      4,
+      5,
+      3,
+      4,
+      5,
+      3,
+      3,
+      2,
+      3
+    ]
+  },
+  "enhancements": {
+    "complete": 10,
+    "total": 35,
+    "percent": 29,
+    "by_package": [
+      2,
+      2,
+      1,
+      1,
+      2,
+      1,
+      1
+    ]
+  },
+  "overall": {
+    "complete": 52,
+    "total": 94,
+    "percent": 55
+  },
+  "open": [
+    "automatic enrollment retry CI/deploy/field acceptance",
+    "internal DNS cleanup",
+    "expired/wrong-issuer/wireless/deleted-account/AD-unavailable tests",
+    "concurrent enrollment SQLite lock",
+    "user EAP-TLS pilot",
+    "accounting/correlation/retention",
+    "off-host target",
+    "full boot restore and rollback",
+    "clean independent appliance and support acceptance",
+    "G01-G07 remaining implementation"
+  ],
+  "resume": "Await native Windows CI for PR40 candidate8585f3a8de5b; preserve live dev10 until all checks and protected rollout pass"
+}
