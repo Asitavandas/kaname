@@ -26,7 +26,7 @@ function Get-AwPackageSnapshot($Directory) {
 function Assert-AwPackagePreserved($Before,$After,[switch]$IncludeInstaller) {
     if(($Before.Keys-join '|') -cne ($After.Keys-join '|')) {throw 'Package file set changed.'}
     foreach($key in $Before.Keys) {
-        if($Before[$key].Sddl -cne $After[$key].Sddl) {throw ('Permissions changed: '+$key)}
+        if($Before[$key].Sddl -cne $After[$key].Sddl) {throw ('Permissions changed: '+$key+' before='+$Before[$key].Sddl+' after='+$After[$key].Sddl)}
         if(!$IncludeInstaller -and $key -ieq '\Startup\Install-AuthWire.ps1') {continue}
         if($Before[$key].Hash -cne $After[$key].Hash) {throw ('Protected file changed: '+$key)}
     }
@@ -62,6 +62,7 @@ function Update-AwPilotInstaller($Directory,$Certificate,$BackupDirectory,$Root)
         Assert-AwPackagePreserved $before (Get-AwPackageSnapshot $Directory) -IncludeInstaller
         # Atomic replacement preserves the existing destination security descriptor.
         [IO.File]::Replace($candidate,$target,[NullString]::Value); $installed=$true
+        Set-Acl -LiteralPath $target -AclObject $oldAcl
         if((Get-FileHash -LiteralPath $target).Hash -cne $replacementHash) {throw 'Installed bytes differ.'}
         Test-AwPilotPackage $Directory $script:awNewHash $Certificate.Thumbprint $Root
         Assert-AwPackagePreserved $before (Get-AwPackageSnapshot $Directory)
