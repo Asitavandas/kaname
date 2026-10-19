@@ -6,6 +6,38 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Dev.10 canlı kaynak kabulü ve doğal gece yedeği — 19 Ekim 2026
+
+- **🔴✓ Tamamlandı: canlı Linux kaynak güncellemesi0.14.0-dev.10.**
+  Operatör STARTUP_UPDATE_FINISHED verified=true çıktısını paylaştı.
+  RADIUS326873 ve broker149955 süreçleri korundu; RADIUS restart yapılmadı.
+  Kritik dosyalar, timer'lar, iş durumu, policy, CA/sertifikalar ve native modül
+  korundu. Windows istemcisine veya SYSVOL'a bu Linux adımıyla yazılmadı.
+- **🔴✓ Tamamlandı: ilk doğal takvim yedeğinin arşiv/digest kanıtı.**
+  Timer19.10.2026 03:17:01 İstanbul'da doğal tetiklendi; servis Result=success,
+  ExecMainStatus0, bitiş03:18:19. Arşiv:
+  /var/backups/authwire/scheduled/authwire-scheduled-20261019T001819Z-2bc7629f0d67.tar.gz
+  SHA25602bd20dc78a9d7884c2bb23a1400a3d202186a8a9f07c379fc0f34271019c91a.
+  PREVIOUS_BACKUP_EVIDENCE digest_verified=true; created_utc00:18:19.240355.
+  Bu doğal arşive ayrıca restore uygulanmış sayılmaz.
+- **🔴✓ Tamamlandı: dev.10 güncellemesinin öncesi/sonrası yedek, koruma ve izole veri restore kabulü.**
+  Kanıt dizini /var/backups/authwire/scheduled/startup-update-dev10-20261019T131838Z-4448a4a4.
+  Ön yedek authwire-scheduled-20261019T131938Z-96f29a5081a6.tar.gz,
+  SHA256c1ff1adff6f4c65040a4e6dbfccf982e775167e04b8d5083b88086c3efa3b271.
+  Son yedek authwire-scheduled-20261019T132039Z-a55dda3d72ab.tar.gz,
+  SHA2560c3bb4aca61ee45206d213144074d96faa4db73d6cf302a176c68a355cc70793.
+  Arşiv/SQLite bütünlüğü doğrulandı;146 dosya izole restore edildi,
+  byte/owner/mode ve PKI/secret/registry/history DB kontrolleri geçti.
+  Restore kopyasında kod/servis çalıştırılmadı veya ağ çağrısı yapılmadı;
+  tam appliance boot restore ayrı açık kapıdır.
+- Son8 API yolu üçer kez200 döndü; en yüksek36.4ms.
+  İstemci body SHA86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15
+  değişmedi; yeni installer template4c1b14a1... Linux kaynakta etkin.
+- **Açık:** DC01 mevcut yayıncıyla yalnız SYSVOL installer'ın yeniden imzalı
+  güncellemesi ve VV06 gerçek reboot sonrası RanAfterBoot/LastResult/802.1X kabulü.
+  signed_sysvol_update_pending=true, vv06_boot_acceptance_pending=true.
+  Önceki aşağıdaki “canlıdev.9 / sudo bekliyor” kayıtları tarihsel aşamadır.
+
 ## VV06 açılış enrollment düzeltmesi hazırlandı — 19 Ekim 2026
 
 - Operatörün15:56:16 salt okunur çıktısı: task Ready/SYSTEM,

@@ -1,10 +1,10 @@
 name: AuthWire offline restore and GPO audit checks
 on:
   pull_request:
-    paths: ['tools/offline_restore_check.py', 'tools/AuthWire-GPO-Audit.ps1', 'tools/gpo_audit_fixture.ps1', 'tests/test_offline_restore_check.py', '.github/workflows/remote-readiness.yml']
+    paths: ['tools/offline_restore_check.py', 'tools/AuthWire-GPO-Audit.ps1', 'tools/gpo_audit_fixture.ps1', 'tools/gpo_installer_update_fixture.ps1', 'docs/checkpoints/2026-10-19-sysvol-installer-update.ps1', 'tests/test_offline_restore_check.py', '.github/workflows/remote-readiness.yml']
   push:
     branches: [main]
-    paths: ['tools/offline_restore_check.py', 'tools/AuthWire-GPO-Audit.ps1', 'tools/gpo_audit_fixture.ps1', 'tests/test_offline_restore_check.py', '.github/workflows/remote-readiness.yml']
+    paths: ['tools/offline_restore_check.py', 'tools/AuthWire-GPO-Audit.ps1', 'tools/gpo_audit_fixture.ps1', 'tools/gpo_installer_update_fixture.ps1', 'docs/checkpoints/2026-10-19-sysvol-installer-update.ps1', 'tests/test_offline_restore_check.py', '.github/workflows/remote-readiness.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -27,3 +27,6 @@ jobs:
       - name: Real Authenticode, pinned bodies/assets, ACL and Startup fixtures
         shell: powershell
         run: tools/gpo_audit_fixture.ps1
+      - name: Protected signed installer replacement and rollback
+        shell: powershell
+        run: tools/gpo_installer_update_fixture.ps1
