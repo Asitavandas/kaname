@@ -6,6 +6,38 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## VV06 pozitif kablolu bağlantı ve iki erişim kaydı incelemesi — 19 Ekim 2026, 15:34 İstanbul
+
+- **🔴✓ Tamamlandı: dev.9 sonrasında VV06 kablolu pozitif Windows gözlemi.**
+  Ethernet Connected.Authentication succeeded; event15505 19.10.2026 15:28:54,
+  reason/error0. GUID415933d5-5010-4a7a-b8bf-0e537e0bc7f2,
+  MAC38:ca:84:db:ff:e6; host/AuthWire computer
+  69b0d5cd-db61-4627-9db7-fcc5230152a3.
+- Erişim kayıtları görüntüsü image(20261019-123308).png okundu.
+  İki ayrı satır zamanı15:28:02 ve15:30:56; her ikisi Access-Accept/POLICY_ALLOW,
+  NAS10.35.50.253, policy authwire-pilot-wired, yanıttaki VLAN110,
+  kayıtlı GUID69b0d5cd-db61-4627-9db7-fcc5230152a3, bildirilen MAC38:ca:84:db:ff:e6.
+  Her iki satırda yenilenmiş TLS seri5899e122009871b0d5536890bee81e4f0499e605
+  görünüyor. Bu, eski seri yerine yeni serinin sunucudaki TLS/policy yoluna
+  ulaştığına ilişkin saha kanıtıdır; yerel eski sertifika/anahtar temizliğini
+  veya DHCP lease yenilenmesini tek başına kanıtlamaz.
+- Görüntü süreç326873 için yazılan2, tekrar0, yazılamayan0 gösteriyor.
+  Bu sayaçlar süreç gözlemidir; tek bağlantı oturumu sayacı veya kayıpsızlık kanıtı değildir.
+- **İnceleme açık:** operatör iki satırın nedenini sordu. Farklı zamanlar
+  yeni deneme/yeniden doğrulama ile uyumludur; bunu kablo takılması/dot3svc
+  restart'ı/periodic reauth gibi belirli bir tetikleyiciye bağlayan kesin
+  kanıt henüz yok. Windows event zamanı15:28:54 iki satırla birebir aynı
+  değildir; saat farkı/gecikme varsayılıp kesin eşleştirme yapılmadı.
+  CSV'deki Kayıt ID/Paket korelasyon ID/Olay ID karşılaştırması istenecek.
+  Aynı final paketin çift yazıldığı veya UI'nin aynı satırı çift çizdiği
+  peşinen kabul edilmedi; farklı request ID de tek başına NAS'ın yeniden
+  gönderme nedenini açıklamaz. Sütunlu CSV kabulü hâlâ açık.
+- Sunucuya salt okunur erişimde RADIUS active/PID326873 görüldü.
+  segmentiq hesabının private erişim DB'sini doğrudan okumasına izin yok;
+  izinler değiştirilmedi. Dar zaman aralığındaki normal servis journal'ında
+  giriş bulunmadı; bu durum paket gelmediği anlamına yorumlanmadı.
+  Bu incelemede servis, policy, sertifika, kaynak veya Windows değiştirilmedi.
+
 ## Dev.9 operatör ekran kabulü — 19 Ekim 2026, 15:22 İstanbul
 
 - **🔴✓ Tamamlandı: Erişim kayıtları ekranının hatasız açılması.**
