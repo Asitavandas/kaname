@@ -6,6 +6,32 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## DC01 imzalı SYSVOL kurucu güncellemesi hazır — 19 Ekim 2026
+
+- **🔴✓ Tamamlandı: dar kapsamlı protected updater ve izole Windows kabulü.**
+  PR39 https://github.com/Asitavandas/kaname/pull/39 birleştirildi;
+  merge0413143263c9fc4c34d81dff91c9e50226afcafb.
+  Aday03eea0623f1923e49b7a547f7906e18692d4b80d için529 test/25 ortam
+  atlaması ve restore fixture'ları geçti. Windows işi118088248063,
+  gerçek Authenticode ile aynı publisher/old-new body pinlerini, imzalı
+  asset/istemci/ACL korumasını, idempotence'ı, bozuk asset ve yanlış publisher
+  reddini, post-replace hata sonrası eski dosya/izin geri almayı doğruladı.
+- Checkpoint docs/checkpoints/2026-10-19-sysvol-installer-update.ps1,
+  SHA2564eba25638ad6f8a6d697c91005266524df1b4c124d690059c4feb1b4dd384bb6.
+  Kılavuz aynı adlı.md dosyasıdır. İçerdiği yeni installer template SHA4c1b14a1...
+  ve audit kaynakları mevcut main ile eşleşir; updater installer'ı yürütmez.
+  DC01/domain/pilot GUID/tek apply grubu/mevcut publisher pinlidir.
+  Eski imzalı kurucu ve hash/SDDL manifest'i private ProgramData yedeğine alınır;
+  yalnız kurucu mevcut publisher private key'i export edilmeden yeniden imzalanır.
+  Atomik byte değişimi ardından eski security descriptor uygulanıp doğrulanır;
+  istemci/config/CA asset/INI byte ve ACL değişikliği reddedilir.
+  Windows PowerShell5.1 gerçek null-string ve izin davranışı fixture ile doğrulandı.
+- **Açık:** dosyanın operatör tarafından DC01'de mevcut yayıncıyla imzalanıp
+  çalıştırılması, başarılı SYSVOL_INSTALLER_UPDATED çıktısı, ardından gerçek
+  VV06 gpupdate/reboot kabulü. Bu henüz canlı GPO/task değişikliği kanıtı değildir.
+  AllSigned korunur; bypass/trust-store değişikliği veya signing key export yoktur.
+  Sunucu RADIUS/CA/policy/sertifikalarına bu hazırlık adımıyla müdahale edilmedi.
+
 ## Dev.10 canlı kaynak kabulü ve doğal gece yedeği — 19 Ekim 2026
 
 - **🔴✓ Tamamlandı: canlı Linux kaynak güncellemesi0.14.0-dev.10.**
