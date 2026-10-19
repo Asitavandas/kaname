@@ -1,10 +1,25 @@
 # AuthWire current work record
 
-Updated: 18 October 2026, Europe/Istanbul. This record supplements the 9 October
+Updated: 19 October 2026, Europe/Istanbul. This record supplements the 9 October
 `AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-09.docx` / `.pdf`; those reports are a
 dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
+
+## Dev.9 operatör ekran kabulü — 19 Ekim 2026, 15:22 İstanbul
+
+- **🔴✓ Tamamlandı: Erişim kayıtları ekranının hatasız açılması.**
+  Operatör herhangi bir hata görmediğini ve kayıt bulunmadığını bildirdi.
+  Bu bildirim filtrelerin gerçek satırlarda sonuç doğruluğunu veya logger'ın
+  gerçek NAS yanıtı kaydettiğini tek başına kanıtlamaz.
+- **Açık: dev.9 canlı CSV sütun kabulü.** Listede kayıt olmadığı için indirme
+  ve sütun kontrolü yapılmadı; başarılı sayılmadı. Dev.8 yönetim geçmişi CSV
+  kabulü ayrı tamamlanmış iştir, dev.9'a aktarılmaz.
+- Sıradaki saha adımı: VV06'da yeni EAP-TLS denemesi, Windows sonucu ile
+  sunucunun final RADIUS kaydındaki NAS/kimlik/karar/VLAN eşleştirmesi.
+  İlk gerçek kayıtla dev.9 CSV indirme/sütun kontrolü de yapılacak.
+- Bu bildirim üzerine kaynak, servis, policy, sertifika veya Windows
+  ayarı değiştirilmedi. Diğer açık kabul kapıları korunur.
 
 ## Dev.9 canlı erişim kayıtları teknik kurulumu kabul edildi — 18 Ekim 2026, 23:30 İstanbul
 

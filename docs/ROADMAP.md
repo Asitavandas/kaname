@@ -1,6 +1,6 @@
 # AuthWire — güncel çalışma planı
 
-18 Ekim2026. Kurulu pilot sürümü0.14.0-dev.9'dur. Ayrıntılı kanıtlar ve tarihli
+19 Ekim2026. Kurulu pilot sürümü0.14.0-dev.9'dur. Ayrıntılı kanıtlar ve tarihli
 sonuçlar [CURRENT_STATUS.md](CURRENT_STATUS.md), işletim/kurtarma adımları
 [OPERATIONS_0_14_0.md](OPERATIONS_0_14_0.md) içindedir. Eski sürüm notları tarihsel
 kapsamdır; burada tamamlanan saha işleri yeniden “bekliyor” sayılmaz.
@@ -19,7 +19,7 @@ kapsamdır; burada tamamlanan saha işleri yeniden “bekliyor” sayılmaz.
 | B08 Policy/VLAN | Dar pilot grubunda/NAS'ta kablolu/kablosuz gerçek policy VLAN ve DHCP | Diğer deny koşulları ve gelişmiş seçiciler |
 | B09 Kablolu | Pozitif; sertifikasız/grup dışı/kapalı/iptal ret; reboot/recovery | Kalan uç cihaz negatifleri ve doğal yaşam döngüsü |
 | B10 Kablosuz | AP22/SSID, EAP-TLS ve gerçek dinamik VLAN | Ayrılmış negatif güven/kimlik senaryoları; guest tekrarı istenmedi |
-| B11 Kayıt/korelasyon | Servis işlem geçmişi ve temel audit; 🔴✓ dev.8 yönetim geçmişi filtre/sayfalama/CSV operatör kabulü; 🔴✓ dev.9 final RADIUS kaydı geliştirme/izole native-systemd/UI ve canlı etkinleştirme, koruma/API/yedek/izole restore teknik kabulü | Dev.9 operatör ekran/CSV ve gerçek VV06/NAS olay eşleştirmesi; accounting/korelasyon ve arşiv/saklama/temizlik |
+| B11 Kayıt/korelasyon | Servis işlem geçmişi ve temel audit; 🔴✓ dev.8 yönetim geçmişi filtre/sayfalama/CSV operatör kabulü; 🔴✓ dev.9 final RADIUS kaydı geliştirme/izole native-systemd/UI ve canlı etkinleştirme, koruma/API/yedek/izole restore teknik kabulü; 🔴✓ dev.9 operatör ekranının hatasız açılması | Dev.9 ilk gerçek kayıtta CSV sütun kabulü ve gerçek VV06/NAS olay eşleştirmesi; accounting/korelasyon ve arşiv/saklama/temizlik |
 | B12 Kurtarma/dağıtım | Durum koruyan kurulum/güncelleme, doğrulanmış özel yedekler, gerçek yedekte izole veri restore, planlı yedek canlı kurulum ve ilk arşiv/restore kabulü | İlk doğal takvim çalışması, hedef/altyapı bekleyen off-host kopya, tam boot/rollback, temiz appliance ve bağımsız kimlik |
 
 18 Ekim uzaktan kontrol turu tamamlandı: panel günlük/API ve gerçek tarayıcı
