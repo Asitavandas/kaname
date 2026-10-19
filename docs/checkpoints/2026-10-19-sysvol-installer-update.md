@@ -37,7 +37,12 @@ Backup yolu JSON'da bildirilir; private ACL altında eski imzalı installer
 ve hash/izin manifest'i tutulur. Önkoşul sağlanmazsa ilerlenmez; kendi
 değişimi sonrasındaki hata kontrollü geri alınır. Dışarıdan ek değişiklik
 saptanırsa otomatik üstüne yazılmaz. Çıktıyı kabul kaydına ekleyin.
-DC01 gerçek kabulü henüz yapılmış sayılmaz.
+DC01 gerçek kabulü19 Ekim17:14 operatör çıktısıyla tamamlandı: verified/updated=true,
+client/assets/ACL korunmuş, tek AllSigned giriş; tam imzalı installer SHA256
+35cf0487ffe84cbbc763cd10d0427e33ebae76c5e7b87447482dc16738fa8238.
+Yedek C:\ProgramData\AuthWire-Admin-Backup-20261019-171142-08ad3aebefaf4a478fefcd96a0f81875.
+VV06 boot kabulü hâlâ açıktır. Clipboard yolu kullanıldı; alternatif geçici
+Linux aktarım süreci kapatıldı. Dosya hash ve imza kontrolleri korunmuştur.
 
 ## Sonraki VV06 kabulü
 

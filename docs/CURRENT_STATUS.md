@@ -6,6 +6,30 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## DC01 imzalı SYSVOL kurucusu canlı kabulü — 19 Ekim 2026, 17:14 İstanbul
+
+- **🔴✓ Tamamlandı: DC01 pilot SYSVOL kurucusunun mevcut yayıncıyla güncellenmesi.**
+  Operatör SYSVOL_INSTALLER_UPDATED, verified=true, updated=true çıktısını paylaştı.
+  Publisher6E74B513F766E01730719684A41B2664380CA68A;
+  installer body SHA2564c1b14a1c088b0ac28f63337ff681824da560d6bf9143bf79132720850f2067d.
+  Yeni tam imzalı dosya SHA256:
+  35cf0487ffe84cbbc763cd10d0427e33ebae76c5e7b87447482dc16738fa8238.
+- Yedek C:\ProgramData\AuthWire-Admin-Backup-20261019-171142-08ad3aebefaf4a478fefcd96a0f81875.
+  client_and_assets_preserved=true, package_permissions_preserved=true,
+  startup_entries=1, all_signed=true. GPO ayarları ve Windows görevi bu
+  DC01 güncellemesiyle değiştirilmedi (iki changed alanı false).
+  Kanıt docs/checkpoints/2026-10-19-dc01-sysvol-acceptance.json içinde saklandı.
+- İndirme/GitHub erişim güçlüğü sonrası Raw clipboard metni LF/BOM normalize
+  edilip sabit helper SHA4eba2563... ile doğrulandı; helper mevcut publisher
+  ile imzalanarak çalıştırıldı. Hash veya Authenticode kontrolü bypass edilmedi.
+  Alternatif dosya aktarımı için açılmış kendi geçici Linux aktarım süreci
+  kapatıldı; ürün servisleri değiştirilmedi.
+- **Açık:** VV06 üzerinde güncel GPO ile gerçek restart sonrası doğal task
+  çalışması. vv06_boot_acceptance_pending=true; RanAfterBoot, Ready/LastResult0,
+  geçerli istemci imzası, mevcut sertifika/private key ve 802.1X/VLAN erişimi
+  birlikte doğrulanmadan B05 boot alt kabulü kapatılmayacak.
+  Önceki aşağıdaki DC01/SYSVOL bekliyor kayıtları tarihsel aşamadır.
+
 ## DC01 imzalı SYSVOL kurucu güncellemesi hazır — 19 Ekim 2026
 
 - **🔴✓ Tamamlandı: dar kapsamlı protected updater ve izole Windows kabulü.**

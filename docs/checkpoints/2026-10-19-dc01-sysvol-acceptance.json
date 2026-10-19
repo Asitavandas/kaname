@@ -1,0 +1,18 @@
+{
+  "reported_at": "2026-10-19T17:14:18+03:00",
+  "source": "operator DC01 output",
+  "event": "SYSVOL_INSTALLER_UPDATED",
+  "verified": true,
+  "updated": true,
+  "backup": "C:\\ProgramData\\AuthWire-Admin-Backup-20261019-171142-08ad3aebefaf4a478fefcd96a0f81875",
+  "publisher": "6E74B513F766E01730719684A41B2664380CA68A",
+  "installer_body_sha256": "4c1b14a1c088b0ac28f63337ff681824da560d6bf9143bf79132720850f2067d",
+  "installer_sha256": "35CF0487FFE84CBBC763CD10D0427E33EBAE76C5E7B87447482DC16738FA8238",
+  "client_and_assets_preserved": true,
+  "startup_entries": 1,
+  "all_signed": true,
+  "package_permissions_preserved": true,
+  "gpo_settings_changed": false,
+  "windows_task_changed": false,
+  "vv06_boot_acceptance_pending": true
+}
