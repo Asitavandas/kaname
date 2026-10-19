@@ -6,6 +6,30 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## VV06 GPO yeniden uygulama: açılış görevi kabulü açık — 19 Ekim 2026, 15:55 İstanbul
+
+- **🔴✓ Tamamlandı: VV06 bilgisayar RSOP'unda güncel GPO'nun uygulanmış görünmesi ve bağlantının korunması.**
+  LastBootUpTime19.10.2026 15:51:34; gpresult oluşturulma15:53:11,
+  son bilgisayar GPO uygulaması15:51:53, kaynakdc01.vizyonveri.local.
+  Applied GPO: Default Domain Policy ve AuthWire-Pilot-Trust;
+  VV06$, AuthWire-Pilot-Computers ve Domain Computers üyelikleri görünüyor.
+  Bu, Startup installer'ın bütün eylemlerinin bu boot'ta yürüdüğünü tek başına kanıtlamaz.
+- İstemci imzasıValid; seri5899e122009871b0d5536890bee81e4f0499e605 ve
+  thumbprint4CFD8321AE08D6074B99AF5C194151AD5F99F454 korunmuş;
+  retry.json yok; Ethernet Authentication succeeded.
+- **Açık bulgu:** LastRunTime09:00:01 boot15:51:34'ten önce; RanAfterBoot=false.
+  LastTaskResult0 önceki çalışmaya aittir; bu boot için başarılı görev kabulü yapılmadı.
+  İlk çıktı boot'tan yaklaşık97s sonra üretilmiştir; gecikmeli/queued başlangıç,
+  tetikleyici ve runtime koşulları yeni salt okunur gözlemle ayrılacak.
+- İncelenen kurucu AtStartup/09:00/21:00 ile SYSTEM görevi kaydeder,
+  RunOnlyIfNetworkAvailable/StartWhenAvailable kullanır; varsayılan pil
+  kısıtlarını açıkça kaldırmaz. Her GPO kurulumunda task yeniden Register edilir,
+  mevcut task varsa ayrıca Start çağırmaz. Bunlar incelenecek olası etkiler;
+  mevcut bulgunun kesin kök nedeni diye atanmadı.
+  Tanı için güncel State/Trigger/Settings, ağ/pil ve yalnız bu görevin boot
+  sonrası TaskScheduler olayları istenecek. Elle Start veya ayar değişikliği
+  yapılmadan doğal durum incelenecek; mevcut RADIUS/policy/CA korunur.
+
 ## VV06 eski CNG anahtarı SYSTEM kabulü — 19 Ekim 2026, 15:49 İstanbul
 
 - **🔴✓ Tamamlandı: yenileme sonrası eski yerel sertifika ve CNG private key temizliğinin doğrudan doğrulanması.**
