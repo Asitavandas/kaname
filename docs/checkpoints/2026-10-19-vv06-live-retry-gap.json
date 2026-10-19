@@ -1,0 +1,27 @@
+{
+  "reported_at": "2026-10-19T18:12:26+03:00",
+  "Computer": "VV06",
+  "dc_discovery": {
+    "success": true,
+    "dc": "dc01.vizyonveri.local",
+    "address": "10.35.50.70",
+    "domain": "vizyonveri.local"
+  },
+  "kdc_tcp": {
+    "RemoteAddress": "10.35.50.70",
+    "TcpTestSucceeded": true
+  },
+  "task": {
+    "LastRunTime": "2026-10-19T17:40:59+03:00",
+    "LastTaskResult": 1,
+    "NextRunTime": "2026-10-19T21:00:00+03:00",
+    "RestartCount": 0,
+    "RestartInterval": null
+  },
+  "retry_deadline": "2026-10-19T17:54:02.2032214+03:00",
+  "automatic_retry_gap_confirmed": true,
+  "session_failure_root_cause_confirmed": false,
+  "dns_change_confirmed": false,
+  "manual_diagnostic_rerun_observed": false,
+  "retry_fix_deployed": false
+}

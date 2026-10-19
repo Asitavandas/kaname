@@ -6,6 +6,42 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Canlı retry tetikleyici boşluğu doğrulandı — 19 Ekim 2026, 18:12 İstanbul
+
+- **🔴✓ Tamamlandı: güncel DC discovery/Kerberos TCP erişimi tanısı.**
+  nltest /dsgetdc:vizyonveri.local /force başarılı; DCdc01.vizyonveri.local,
+  IP10.35.50.70, KDC/LDAP/DNS_DOMAIN/DNS_FOREST gibi flag'ler var.
+  TCP10.35.50.70:88 true. Ayrı SRV sorgu çıktısı paylaşılmadı; SRV kaydı
+  sonucu bu çıktıdan bağımsız başarılı diye kaydedilmedi.
+  Bu,17:41:02 hata anındaki SYSTEM SSPI başarısını kanıtlamaz.
+- **Doğrulanmış açık ürün hatası: otomatik retry tetikleyicisi yok.**
+  LastRun17:40:59/LastResult1 korunuyor; NextRunTime21:00:00,
+  RestartCount0/RestartIntervalboş. retry.json.next_attempt17:54:02 geçmiş;
+  görevi o saatte başlatmamış. Bu hem kaynak hem canlı task ayarlarıyla
+  doğrulandı; ağ geri dönüşü enrollment kabulü açık kalır.
+- Sıradaki tanı: mevcut ağı/DNS ayarını değiştirmeden, next_attempt geçtikten
+  sonra tek kontrollü manuel ana görev çalıştırması. Amaç session hatasının
+  hazır ortamda sürüp sürmediğini ayırmaktır; manuel başarı otomatik recovery
+  yerine geçmez. retry.json silinmeyecek/clock değiştirilmeyecek.
+  Başarı değerlendirmesinde LastRun güncelliği, LastResult0 ve retry.json'ın
+  kalkması birlikte incelenecek. Eski status.json state'i tek başına yeterli
+  değildir: mevcut istemci renewal_check başarı yolunda retry'ı kaldırıp
+  dönüyor, eski hata status'unu yenilemiyor. Bu gözlenebilirlik açığı da
+  retry düzeltmesinde ele alınacak.
+- **Planlanan dar düzeltme, henüz yazılmış/dağıtılmış değil:** retry deadline
+  için gerçek, sınırlı ve kalıcı Task Scheduler tetiklemesi; mevcut imzalı
+  SYSTEM istemci/private state ve IgnoreNew/mutex korumasıyla tekil çalışma;
+  geçerli receipt başarısında güncel durum kaydı; yalnız kontrollü yerel
+  hata kategorisi/HRESULT ile credential/ticket içermeyen tanı.
+  Ayrı retry task, yeniden kayıt esnasında çalışan instance ve ağsız missed
+  one-time trigger davranışları izole Windows testleriyle doğrulanmadan
+  canlıya taşınmayacak. Signed SYSVOL update gerçek publisher ile yapılacak.
+  Task'a yalnız RestartOnFailure eklemek erken return0 nedeniyle yeterli
+  çözüm olarak kabul edilmedi.
+- Kanıt docs/checkpoints/2026-10-19-vv06-live-retry-gap.json.
+  DNS1.1.1.1 düzeltme önerisi hâlâ açık; uygulanmış varsayılmadı.
+  CA/policy/sertifika/RADIUS/802.1X veya Windows görev ayarı değiştirilmedi.
+
 ## VV06 session hatası ve retry zamanlaması bulgusu — 19 Ekim 2026, 17:59 İstanbul
 
 - Operatör status.json: retry_pending, ENROLLMENT_OR_INSTALL_FAILED,
