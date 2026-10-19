@@ -45,3 +45,13 @@ jobs:
       - name: Real SYSTEM startup recovery and duplicate suppression without customer state
         run: |
           & .\tools\device_startup_windows_check.ps1
+  windows-retry:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Real signed SYSTEM deadline retries, rearm, duplicate guard and recovery
+        shell: powershell
+        run: tools/device_retry_windows_check.ps1
