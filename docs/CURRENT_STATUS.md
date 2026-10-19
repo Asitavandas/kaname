@@ -6,6 +6,30 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## VV06 yerel sertifika temizliği kabulü — 19 Ekim 2026, 15:43 İstanbul
+
+- **🔴✓ Tamamlandı: yenileme sonrası eski sertifikanın yerel makine deposundan kaldırılması.**
+  installed.json seri5899e122009871b0d5536890bee81e4f0499e605,
+  thumbprint4CFD8321AE08D6074B99AF5C194151AD5F99F454,
+  renew_at2026-12-14T13:26:42+00:00. Aynı cihaz subject filtresiyle My deposunda
+  yalnız bu yeni sertifika listelendi; HasPrivateKey=true,
+  NotAfter13.01.2027 16:26:42.
+- Takip edilen eski thumbprint68B32BBD470847950BAE5629B853739F819150B5,
+  remove_at2026-10-16T01:24:42.2682885+00:00 (İstanbul04:24:42).
+  Süre geçmiş; previous metadata kaydının durması eski cert'in mevcut olduğu
+  anlamına gelmez. İstemci kodu previous kaydını silmeden cleanup'ı idempotent tekrarlar.
+- **🔴✓ Tamamlandı: bu kontrol turunda son enrollment görevi sonucu gözlemi.**
+  LastRunTime19.10.2026 09:00:01, LastTaskResult0. Bu, GPO'nun son halinin
+  istemciye yeniden uygulandığı veya private key'in silindiği tek başına kanıt değildir.
+- **Açık: eski CNG private key'in kaldırılmasının doğrudan doğrulanması.**
+  Salt okunur SYSTEM varlık kontrolü için ayrı UUID adlı demand-only geçici
+  task hazırlanır. CngKey.Exists, MicrosoftSoftwareKeyStorageProvider/MachineKey
+  ve yeni anahtar için positive control kullanılır; key byte'ları okunmaz/export edilmez.
+  Check başarısız/unknown olursa absent diye raporlanmaz; mevcut enrollment görevi,
+  policy veya sertifika değiştirilmez. Yalnız kendi geçici task/result kaldırılır.
+  Script docs/checkpoints/2026-10-19-vv06-key-readonly.ps1 içinde kaydedildi;
+  henüz VV06 üzerinde çalıştırılmış/kabul edilmiş sayılmaz.
+
 ## Dev.9 CSV teknik kabulü ve farklı paket kimlikleri — 19 Ekim 2026, 15:38 İstanbul
 
 - **🔴✓ Tamamlandı: canlı erişim kayıtları CSV indirme ve dosya yapısı doğrulaması.**
