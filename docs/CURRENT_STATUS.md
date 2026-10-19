@@ -6,6 +6,22 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## VV06 ağsız açılış testi başlangıç kaydı — 19 Ekim 2026, 17:26 İstanbul
+
+- **🔴✓ Tamamlandı: çevrimiçi DNS/TCP baseline.**
+  Operatör Resolve-DnsName çıktısı kaname.vizyonveri.local ->10.35.50.246;
+  ayrı Format-List TCP8765 kontrolü için true bildirdi.
+  Hemen önce VV06 Ethernet10.10.110.4/24 Preferred ve başarılı EAP/boot kabulü vardı.
+  TCP kontrolünün SourceAddress alanı ayrıca paylaşılmadı.
+- **Devam ediyor:** geçerli mevcut sertifikayla tüm fiziksel ağlar kesikken
+  gerçek restart; kablo takılmadan LastBoot/TaskState/LastRun/LastResult ve
+  fiziksel NIC durumunun salt okunur kaydı; ardından kabloyu takıp doğal
+  enrollment ve 802.1X/VLAN/DNS/TCP geri dönüşünün gözlenmesi.
+  Elle görev başlatılmayacak; CA/policy/cert/clock/task ayarı değiştirilmeyecek.
+- Henüz ağsız açılış veya ağ geri dönüşü kabul çıktısı yoktur.
+  Bu senaryo ağ koşulunu test eder; sertifika expired/offline renewal testi
+  yerine geçmez. B04/B06 ilgili kapıları sonuç gelmeden kapatılmadı.
+
 ## VV06 dev.10 gerçek açılış kabulü — 19 Ekim 2026, 17:21 İstanbul
 
 - **🔴✓ Tamamlandı: DC01 imzalı kurucu güncellemesi sonrasında VV06 gerçek
