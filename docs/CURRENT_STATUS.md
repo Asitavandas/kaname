@@ -6,6 +6,40 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Retry düzeltmesi hazır; native Windows CI kuyruğu bekleniyor — 19 Ekim 2026
+
+- **🔴✓ Tamamlandı: aday dev.11 imzalı installer/launcher geliştirmesi ve yerel regresyonlar.**
+  PR40 draft; son aday8585f3a8de5b03e08afd7abf6ae85386d08f2ebc.
+  Yerel tam suite534 test/25 ortam atlaması,87.025s geçti.
+  Ek enrollment + historical/current source guard turu25 test geçti.
+  AuthWire-Client.ps1 SHA86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15
+  değişmedi. Aday installer SHAfaec4a852f61528b8e8df9ab6240323ab4cedae497cadd921568ccf06dac3609.
+- **🔴✓ Tamamlandı: kaynak kapsamı ve yerel tam paket koruma kontrolü.**
+  Kabul edilmiş dev.10 snapshot'ının125 dosyalı baseline'ı ve adayın tam
+  tekrar uygulanması source_check ile doğrulandı. Aday130 dosya,
+  manifest35d8f4956827b8f2a3e356cbbbf1f3ecfeb555d28c88adcfd91f7afd92becfcf.
+  Tam130 Git blob'u aday tree ile birebir eşleşti. kaname/ içinde yalnız
+  installer ve iki sürüm metaverisi değişti; RADIUS/AD/PKI/policy kaynakları aynı.
+  Bu, canlı sunucuda yeni bir deploy veya preservation çalıştırması değildir.
+- **Hazır, ancak canlıya uygulanmadı:** korumalı Linux/source ve DC01 aynı-publisher
+  installer update checkpoint'leri PR40'ta. Linux release/manifest pinlemesi
+  henüz tamamlanmadı; RELEASE_NOT_PINNED guard değişiklikten önce reddeder.
+  DC01 updater ayrıca gerçek Authenticode/ACL/asset/rollback fixture'ına eklendi.
+  Yeni retry görevi periyodik polling yapmaz; deadline'da ana görevi başlatır.
+- **Engel / açık doğrulama:** GitHub işleri queued, runner atanmış değil.
+  Native Windows görev/Authenticode/otomatik retry fixture'ı, mevcut Windows
+  CNG/startup, native Kerberos/LDAP/EAP ve browser/restore CI henüz bu aday için
+  sonuç üretmedi. Son run'lar39279891613(device),39279891501(GPO/restore),
+  39279891326(core),39279891396(Linux),39279891566(EAP),39279891474(browser).
+  Queue nedeni bilinmiyor; geçirilmiş test veya genel platform outage iddiası yok.
+  Native testler geçmeden PR birleştirilmez veya canlıya uygulanmaz.
+- Canlı hâlâ0.14.0-dev.10. Windows/SYSVOL/RADIUS/policy/CA/sertifikalar bu
+  hazırlıkla değiştirilmedi. Gerçek otomatik recovery, signed SYSVOL/reapply,
+  kaynak/paket pinleme, korumalı yedek/restore ve DNS DHCP düzenlemesi açık.
+  Kullanıcının18:17:11 manuel0/retry yok kabulü korunur.
+  Ayrıntılar PR40 docs/checkpoints/2026-10-19-enrollment-retry.md ve
+  docs/checkpoints/2026-10-19-retry-validation.json içinde saklandı.
+
 ## VV06 kontrollü manuel recovery başarılı; retry düzeltmesi hazırlanıyor — 19 Ekim 2026, 18:21 İstanbul
 
 - **🔴✓ Tamamlandı: hazır ağda kontrollü manuel enrollment yeniden denemesi.**

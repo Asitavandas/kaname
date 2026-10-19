@@ -1,0 +1,29 @@
+{
+  "candidate_pr": 40,
+  "candidate_head": "8585f3a8de5b03e08afd7abf6ae85386d08f2ebc",
+  "live_version": "0.14.0-dev.10",
+  "candidate_version": "0.14.0-dev.11",
+  "local_tests": {
+    "suite_tests": 534,
+    "skipped": 25,
+    "seconds": 87.025,
+    "passed": true
+  },
+  "client_sha256": "86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15",
+  "installer_sha256": "faec4a852f61528b8e8df9ab6240323ab4cedae497cadd921568ccf06dac3609",
+  "candidate_manifest": "35d8f4956827b8f2a3e356cbbbf1f3ecfeb555d28c88adcfd91f7afd92becfcf",
+  "candidate_files": 130,
+  "accepted_snapshot_baseline_files": 125,
+  "all_candidate_git_blobs_verified": true,
+  "source_product_changes": [
+    "kaname/__init__.py",
+    "kaname/device_client/Install-AuthWire.ps1",
+    "kaname/static/index.html"
+  ],
+  "native_windows_ci": "queued",
+  "native_windows_runner_assigned": false,
+  "automatic_live_retry_accepted": false,
+  "root_release_pinned": false,
+  "live_deploy_performed": false,
+  "dns_change_confirmed": false
+}
