@@ -51,6 +51,11 @@ pause checkpoint and an updated report with red check marks against 9 October.
   RADIUS restart yok; her PID/timer/iş durumu ve kritik dosya korunacak.
   Önce/sonra managed yedek ve izole veri/history restore doğrulanacak.
   Önceki last-success yedek digest/timer kanıtı overwrite öncesi ayrıca kaydedilecek.
+- **🔴✓ Tamamlandı: sunucuda paket hazırlama ve son guard CI.**
+  Self-hosted142 test/4 ortam atlaması geçti;125 dosyalı manifest yukarıdaki
+  c027714d... değeriyle birebir eşleşti. Ek5 guard dahil529 test/25 ortam
+  atlaması CI'da geçti. Sudo launcher segmentiq üzerinde syntax/hash doğrulandı,
+  yürütülmedi; canlı kaynak hâlâdev.9 ve GPO reboot kabulü açıktır.
 - **Açık:** canlı sudo kaynak güncellemesi, DC01 mevcut yayıncıyla imzalı
   pilot SYSVOL kurucu güncellemesi ve gerçek VV06 yeniden açılış kabulü.
   B05 bütünü ve offline/expired/network-recovery/capacity açıkları kapatılmadı.
