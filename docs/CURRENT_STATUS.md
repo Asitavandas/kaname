@@ -6,6 +6,28 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## VV06 eski CNG anahtarı SYSTEM kabulü — 19 Ekim 2026, 15:49 İstanbul
+
+- **🔴✓ Tamamlandı: yenileme sonrası eski yerel sertifika ve CNG private key temizliğinin doğrudan doğrulanması.**
+  Operatörün SYSTEM kontrol çıktısı:
+  Checked=true, RunAsSystem=true, OldCertificatePresent=false,
+  OldKeyPresent=false, CurrentKeyPresent=true.
+  Böylece yalnız sertifikanın My deposundan kalkması değil, istemcinin
+  takip ettiği eski container'ın MachineKey/Software KSP içinde bulunmaması
+  ve yeni container'ın mevcut kalması da doğrulandı.
+- Kontrol, VV06 mevcut installed thumbprint'i ve tek takip edilen eski
+  thumbprint için pinliydi. Yeni key positive control başarılıdır; hata
+  veya erişim yetersizliği absent diye yorumlanmadı.
+  Eski thumbprint68B32BBD470847950BAE5629B853739F819150B5;
+  korunmuş güncel thumbprint4CFD8321AE08D6074B99AF5C194151AD5F99F454.
+- Kontrollü yenileme alt adımında yeni anahtar/sertifika, gerçek EAP-TLS
+  yolunda yeni seri, sunucu24h superseded/CRL ve yerel12h cleanup artık ayrı
+  kanıtlarıyla tamamlanmış kalemlerdir. B06 offline/expired senaryoları ve
+  tüm sertifika yaşam döngüsü paketi topluca tamamlandı sayılmadı.
+- Sırada son tek-AllSigned Startup GPO halinin VV06'ya yeniden uygulanması,
+  açılış sonrası görev/istemci imzası/sertifika korunması ve bağlantı kontrolü var.
+  Bu kabul kaydı çalışan sunucu, CA/policy veya enrollment görevi değiştirmedi.
+
 ## VV06 yerel sertifika temizliği kabulü — 19 Ekim 2026, 15:43 İstanbul
 
 - **🔴✓ Tamamlandı: yenileme sonrası eski sertifikanın yerel makine deposundan kaldırılması.**
