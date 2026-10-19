@@ -1,0 +1,45 @@
+{
+  "event": "DEV11_LINUX_LIVE_ACCEPTED",
+  "operator_reported_at": "2026-10-19T21:02:30+03:00",
+  "version": "0.14.0-dev.11",
+  "verified": true,
+  "release": "e2b835def66769b61ec0b02c804b7dabafb1edc0",
+  "evidence": "/var/backups/authwire/scheduled/retry-update-dev11-20261019T175941Z-76e52fc1",
+  "pre_backup": {
+    "path": "/var/backups/authwire/scheduled/authwire-scheduled-20261019T180040Z-fb65dde9d307.tar.gz",
+    "sha256": "8763116cd17c57a7b24b0bb3a7c09fc632eebbeafb8b6a961515468b95ce607b"
+  },
+  "post_backup": {
+    "path": "/var/backups/authwire/scheduled/authwire-scheduled-20261019T180142Z-c33f59ef8175.tar.gz",
+    "sha256": "a0dc0f592250d6616bb12d8ed456c3e89de88aee6299ab67f883f15046844f28"
+  },
+  "preserved": {
+    "files": true,
+    "pids": true,
+    "timers": true,
+    "business_state": true,
+    "radius_process": true,
+    "broker_process": true,
+    "policy": true,
+    "certificates": true,
+    "native_module": true,
+    "signed_windows_client": true
+  },
+  "radius_pid": "326873",
+  "broker_pid": "149955",
+  "radius_restarted": false,
+  "windows_changed": false,
+  "restore": {
+    "data_restore_exercised": true,
+    "files_restored": 151,
+    "file_bytes_verified": true,
+    "ownership_and_modes_verified": true,
+    "checks_all_passed": true,
+    "protected_secret_count_verified": 3,
+    "isolated_copy_removed": true,
+    "full_appliance_boot_restore_tested": false
+  },
+  "panel_api_before_after": "all 200; all final endpoints healthy",
+  "signed_sysvol_update_pending": true,
+  "vv06_automatic_retry_acceptance_pending": true
+}

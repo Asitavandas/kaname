@@ -8,6 +8,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## Dev.11 Linux canlı güncellemesi kabul edildi — 19 Ekim 2026, 21:02 İstanbul
+
+- **🔴✓ Tamamlandı: korumalı dev.11 Linux kaynak dağıtımı ve gerçek yedek/restore kabulü.** Operatör RETRY_UPDATE_FINISHED verified=true paylaştı. Ön/son API okumaları200; dosya/PID/timer/iş verisi koruma kontrolleri true. Artık canlı sürüm0.14.0-dev.11.
+- RADIUS PID326873 ve broker149955 korundu; radius_restarted=false. Policy, sertifikalar, native modül ve Windows istemcisi değişmedi. AuthWire-Client.ps1 SHA86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15.
+- Ön yedek180040Z-fb65dde9d307 SHA8763116cd17c57a7b24b0bb3a7c09fc632eebbeafb8b6a961515468b95ce607b; son yedek180142Z-c33f59ef8175 SHAa0dc0f592250d6616bb12d8ed456c3e89de88aee6299ab67f883f15046844f28. Son gerçek arşivden151 dosya izole veri restore, byte/owner/mode, DB/CA/signer/secret/sertifika ve erişim kayıt DB kontrolleri geçti. Full appliance boot restore değildir.
+- Kalıcı ön kontrol/sonuç dizini /var/backups/authwire/scheduled/retry-update-dev11-20261019T175941Z-76e52fc1. Main mergee2b835def667 için tüm altı iş akışı da artık success; candidate ve merge source130 dosya/manifest eşleşmesi korunuyor.
+- **Sonraki adım:** DC01 mevcut publisher ile aynı paket içindeki kurucuyu yeniden imzalama/değiştirme. Test edilmiş helper2026-10-19-retry-installer-update.ps1 SHA0a698cd597a70dc1e5b5016acfbbbcef4eb7256fcaba9e73591cf0e56a718484; Linux /home/segmentiq altında hazır. GPO scope/tek AllSigned Startup, client/config/trust/ACL korunacak. Bu Windows/DC adımı henüz uygulanmadı.
+- **Açık:** signed_sysvol_update_pending=true ve vv06_automatic_retry_acceptance_pending=true. Linux güncellemesi gerçek Windows otomatik retry kabulü sayılmadı. 19 Ekim raporu tarihli snapshot; güncel devam kaydı bu bölüm.
+
 ## Retry native Windows kontrolleri geçti ve dağıtım hazırlandı — 19 Ekim 2026
 
 - **🔴✓ Tamamlandı: aday8585f3a8de5b için altı CI iş akışının tamamı başarılı.** Native Windows job118151986906 gerçek signed SYSTEM/time-trigger ile erken rearm, yalnız SYSTEM/Admin task ACL, iki otomatik retry sonrası recovery ve kimlik koruması, Running ana görevin çoğaltılmamasını doğruladı. Fixture müşteri ağı/AD kesintisi değildir.
