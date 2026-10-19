@@ -7,6 +7,16 @@ The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
 
+
+## Retry native Windows kontrolleri geçti ve dağıtım hazırlandı — 19 Ekim 2026
+
+- **🔴✓ Tamamlandı: aday8585f3a8de5b için altı CI iş akışının tamamı başarılı.** Native Windows job118151986906 gerçek signed SYSTEM/time-trigger ile erken rearm, yalnız SYSTEM/Admin task ACL, iki otomatik retry sonrası recovery ve kimlik koruması, Running ana görevin çoğaltılmamasını doğruladı. Fixture müşteri ağı/AD kesintisi değildir.
+- **🔴✓ Tamamlandı: imzalı GPO güncelleme/geri alma ve mevcut CNG/boot regresyonları.** Job118151986358 same publisher, asset/ACL koruması, tamper/publisher retleri ve rollback; job118151986984 gerçek Windows CNG ilk kayıt/yenileme ve startup fixture başarılı. Diğer LDAP/Kerberos, EAP, browser, restore ve kaynak kontrolleri de başarılı.
+- PR40 hazır duruma alınıp e2b835def66769b61ec0b02c804b7dabafb1edc0 olarak birleşti. Tam130 kaynak Git blob'u merge tree ile eşleşti; manifest35d8f4956827b8f2a3e356cbbbf1f3ecfeb555d28c88adcfd91f7afd92becfcf.
+- **🔴✓ Tamamlandı: pinlenmiş korumalı Linux checkpoint hazırlığı.** /home/segmentiq/authwire-retry-update-dev11-20261019.py SHA0d14759ceff077cd165faba4b70a281f186898b77f98af769d5dbd05c851ae12. Kabul edilmiş125 dosyalı dev10 tabanı ve130 dosyalı aday için guard geçti;10 guard testi başarılı. Root çalışması öncesi stage/manifest ve canlı korunma tekrar denetlenir, ön/son yedek ve izole veri restore alınır; RADIUS restart planlanmaz.
+- **Canlı kurulum hâlâdev.10:** salt okunur kontrolde RADIUS PID326873, broker149955; panel ve iki timer active/enabled. AuthWire-Client.ps1 SHA86081 değişmedi. /opt/kaname-lab/venv/bin/python cryptography46.0.0 doğrulandı.
+- **Açık:** Linux root güncellemesi operatör parolasını gerektiriyor; signed DC01 SYSVOL güncellemesi ve VV06 gerçek doğal otomatik retry kabulü sonraki adımlar. Manuel recovery veya izole Windows fixture gerçek müşteri otomatik kabulü sayılmadı. 19 Ekim raporundaki %55 liste sayımı bu geliştirme/test alt kazanımıyla değiştirilmedi.
+
 ## Güncel durum raporu ve tamamlanma sayımı — 19 Ekim 2026
 
 - **🔴✓ Tamamlandı: 9 Ekim temel raporu ve 15 Ekim ara raporunun 19 Ekim güncellemesi.** B01–B12, G01–G07, P01–P10 kimlikleri korundu; tamamlanan dar alt işler kırmızı tikle, kısmi/açık işler ayrı gösterildi.

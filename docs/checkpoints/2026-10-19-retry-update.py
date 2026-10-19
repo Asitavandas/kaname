@@ -17,9 +17,9 @@ import uuid
 import tempfile
 from contextlib import closing
 
-STAGE = Path('/RELEASE_NOT_PINNED')
-EXPECTED = 'RELEASE_NOT_PINNED'
-RELEASE = 'RELEASE_NOT_PINNED'
+STAGE = Path('/home/kaname-runner/kaname-stage-e2b835def667')
+EXPECTED = '35d8f4956827b8f2a3e356cbbbf1f3ecfeb555d28c88adcfd91f7afd92becfcf'
+RELEASE = 'e2b835def66769b61ec0b02c804b7dabafb1edc0'
 ROOT = Path('/opt/kaname-lab/source')
 STATE = Path('/var/lib/kaname-lab')
 PHASE = 'preflight'
@@ -110,7 +110,7 @@ def snapshot(worker):
 def source_check(files):
     if hashlib.sha256(files['kaname/device_client/AuthWire-Client.ps1']).hexdigest() != '86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15': raise GuardError('CLIENT_SOURCE_CHANGED')
     if hashlib.sha256(files['kaname/device_client/Install-AuthWire.ps1']).hexdigest() != 'faec4a852f61528b8e8df9ab6240323ab4cedae497cadd921568ccf06dac3609': raise GuardError('UNREVIEWED_INSTALLER_SOURCE')
-    # Accept only the exact accepted dev.8 base or exact reviewed candidate.
+    # Accept only the exact accepted dev.10 base or exact reviewed candidate.
     # Every pre-existing source file is pinned, including tools and fixtures.
     for name, old_digest in BASELINE.items():
         if name not in files: raise GuardError('BASE_SOURCE_REMOVAL_REFUSED')

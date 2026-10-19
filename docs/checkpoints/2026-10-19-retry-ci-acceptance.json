@@ -1,0 +1,32 @@
+{
+  "event": "RETRY_CI_ACCEPTED_DEPLOYMENT_PREPARED",
+  "date": "2026-10-19",
+  "candidate": "8585f3a8de5b03e08afd7abf6ae85386d08f2ebc",
+  "merged_release": "e2b835def66769b61ec0b02c804b7dabafb1edc0",
+  "candidate_workflows": "all six passed",
+  "native_windows_retry_job": 118151986906,
+  "native_retry_markers": [
+    "RETRY_NATIVE_EARLY_REARM_AND_TASK_ACL_OK",
+    "RETRY_NATIVE_TWO_AUTOMATIC_ATTEMPTS_RECOVERED_AND_IDENTITY_PRESERVED",
+    "RETRY_RUNNING_MAIN_NOT_DUPLICATED",
+    "AUTHWIRE_RETRY_FIXTURE_OK"
+  ],
+  "gpo_preservation_job": 118151986358,
+  "gpo_marker": "AUTHWIRE_GPO_RETRY_UPDATE_FIXTURE_OK",
+  "windows_cng_startup_job": 118151986984,
+  "manifest": "35d8f4956827b8f2a3e356cbbbf1f3ecfeb555d28c88adcfd91f7afd92becfcf",
+  "package_files": 130,
+  "all_package_git_blobs_match": true,
+  "root_checkpoint_sha256": "0d14759ceff077cd165faba4b70a281f186898b77f98af769d5dbd05c851ae12",
+  "operator_checkpoint": "/home/segmentiq/authwire-retry-update-dev11-20261019.py",
+  "live_readonly": {
+    "version": "0.14.0-dev.10",
+    "radius_pid": "326873",
+    "broker_pid": "149955",
+    "timers_active_enabled": true,
+    "cryptography": "46.0.0"
+  },
+  "installed_product_changed": false,
+  "signed_sysvol_updated": false,
+  "real_vv06_automatic_recovery_accepted": false
+}
