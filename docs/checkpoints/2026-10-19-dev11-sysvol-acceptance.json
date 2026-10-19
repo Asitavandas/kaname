@@ -1,0 +1,19 @@
+{
+  "event": "DEV11_SYSVOL_LIVE_ACCEPTED",
+  "operator_reported_at": "2026-10-19T21:20:55+03:00",
+  "computer": "DC01",
+  "verified": true,
+  "updated": true,
+  "backup": "C:\\ProgramData\\AuthWire-Admin-Backup-20261019-211826-e11b109147f1438388e7ce1a0c44aa13",
+  "publisher": "6E74B513F766E01730719684A41B2664380CA68A",
+  "installer_body_sha256": "faec4a852f61528b8e8df9ab6240323ab4cedae497cadd921568ccf06dac3609",
+  "installer_sha256": "C8B7696224161D144D92E3B0F87F4BBAD70FCAA24DC262EA573EE3850A6BEFD9",
+  "client_and_assets_preserved": true,
+  "startup_entries": 1,
+  "all_signed": true,
+  "package_permissions_preserved": true,
+  "gpo_settings_changed": false,
+  "windows_task_changed": false,
+  "vv06_boot_acceptance_pending": true,
+  "vv06_automatic_retry_acceptance_pending": true
+}

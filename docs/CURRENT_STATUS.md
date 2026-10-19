@@ -9,6 +9,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## Dev.11 signed SYSVOL güncellemesi canlı kabulü — 19 Ekim 2026, 21:20 İstanbul
+
+- **🔴✓ Tamamlandı: DC01 mevcut publisher ile retry kurucusu güncellendi.** Operatör SYSVOL_INSTALLER_UPDATED verified=true/updated=true bildirdi. Publisher6E74B513F766E01730719684A41B2664380CA68A; bodySHAfaec4a852f61528b8e8df9ab6240323ab4cedae497cadd921568ccf06dac3609; signedSHA C8B7696224161D144D92E3B0F87F4BBAD70FCAA24DC262EA573EE3850A6BEFD9.
+- Özel geri dönüş yedeği C:\ProgramData\AuthWire-Admin-Backup-20261019-211826-e11b109147f1438388e7ce1a0c44aa13. Client/config/trust asset ve paket ACL korundu; tek AllSigned Startup girişi1, GPO settings_changed=false. Bu adım VV06 yerel görevini doğrudan değiştirmedi.
+- Dosya açılamadığı için aynı test edilmiş helper, iki gömülü metin yeniden kurularak aynıSHA0a698cd597a70dc1e5b5016acfbbbcef4eb7256fcaba9e73591cf0e56a718484 doğrulaması sonrası doğrudan PowerShell içinden çalıştırıldı; indirme/GitHub girişine ihtiyaç olmadı. Başarılı operatör çıktısı aktarım ve helper yürütmesini doğruladı.
+- **Sonraki kabul:** VV06 bilgisayar GPO yenileme ve ağ hazırken yeniden açılış; yerel signed installer/hash, ana task -RunClient action, SYSTEM, doğal LastRun/0 ve mevcut cert/EAP/VLAN korunması. Bundan sonra ayrı gerçek otomatik retry testi. Bu iki VV06 kapısı henüz kapanmadı.
+
 ## Dev.11 Linux canlı güncellemesi kabul edildi — 19 Ekim 2026, 21:02 İstanbul
 
 - **🔴✓ Tamamlandı: korumalı dev.11 Linux kaynak dağıtımı ve gerçek yedek/restore kabulü.** Operatör RETRY_UPDATE_FINISHED verified=true paylaştı. Ön/son API okumaları200; dosya/PID/timer/iş verisi koruma kontrolleri true. Artık canlı sürüm0.14.0-dev.11.
