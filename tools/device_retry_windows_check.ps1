@@ -61,7 +61,7 @@ $count=if(Test-Path $countFile) {[int](Get-Content $countFile -Raw)+1} else {1}
 [IO.File]::WriteAllText($countFile,[string]$count)
 $mode=Get-Content (Join-Path $PSScriptRoot 'mode.txt') -Raw
 if($mode -eq 'fail-twice' -and $count -le 2) {
-    [IO.File]::WriteAllText((Join-Path $PSScriptRoot 'retry.json'),(@{attempts=$count;stage='session';next_attempt=[DateTimeOffset]::UtcNow.AddSeconds(25).ToString('o')}|ConvertTo-Json))
+    [IO.File]::WriteAllText((Join-Path $PSScriptRoot 'retry.json'),(@{attempts=$count;stage='session';next_attempt=[DateTimeOffset]::UtcNow.AddSeconds(25).ToOffset([TimeSpan]::FromHours(3)).ToString('o')}|ConvertTo-Json))
     [IO.File]::WriteAllText((Join-Path $PSScriptRoot 'status.json'),(@{state='retry_pending';error='ENROLLMENT_OR_INSTALL_FAILED';stage='session';checked_at=[DateTimeOffset]::UtcNow.ToString('o')}|ConvertTo-Json))
     exit 1
 }
