@@ -1,8 +1,10 @@
 """Source-scope and no-RADIUS-restart guards for the startup installer update."""
+import base64
 import copy
 import hashlib
 from pathlib import Path
 import runpy
+import re
 import tempfile
 import unittest
 
@@ -19,8 +21,12 @@ class StartupDeployGuardTests(unittest.TestCase):
                      'kaname/radius_adapter.py': b'protected authorizer\n',
                      'kaname/device_client/AuthWire-Client.ps1': (repo / 'kaname/device_client/AuthWire-Client.ps1').read_bytes(),
                      'kaname/device_client/Install-AuthWire.ps1': b'accepted old installer\n'}
+        # This historical checkpoint admits exactly the reviewed dev10 template,
+        # even after a later release changes the current installer source.
+        frozen = (repo / 'docs/checkpoints/2026-10-19-sysvol-installer-update.ps1').read_text()
+        encoded = re.search(r"FromBase64String\('([A-Za-z0-9+/=]+)'\)", frozen).group(1)
         self.files = {**self.base, 'kaname/__init__.py': b'VERSION = "0.14.0-dev.10"\n',
-                      'kaname/device_client/Install-AuthWire.ps1': (repo / 'kaname/device_client/Install-AuthWire.ps1').read_bytes()}
+                      'kaname/device_client/Install-AuthWire.ps1': base64.b64decode(encoded)}
         self.ns['BASELINE'] = {k: hashlib.sha256(v).hexdigest() for k, v in self.base.items()}
         self.write(self.base)
 
