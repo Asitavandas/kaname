@@ -6,6 +6,38 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## VV06 session hatası ve retry zamanlaması bulgusu — 19 Ekim 2026, 17:59 İstanbul
+
+- Operatör status.json: retry_pending, ENROLLMENT_OR_INSTALL_FAILED,
+  stage=session, server_error boş; checked_at2026-10-19T14:41:02.2419780Z
+  (İstanbul17:41:02). Bu, kablo sonrası17:40:59 çalışmasıyla zaman olarak uyumlu.
+  retry.json attempts1, stage=session,
+  next_attempt2026-10-19T14:54:02.2032214Z (İstanbul17:54:02).
+- **🔴✓ Tamamlandı: hata aşaması ve güncel ağ erişimi ayrıştırması.**
+  Son kontrol TCP8765 true, Remote10.35.50.246, Source10.10.110.4;
+  Ethernet DNS listesi10.35.50.70 ve1.1.1.1.
+  Şimdiki TCP başarısı, hata anında HTTPS/Kerberos/DC yolunun sağlıklı
+  olduğunu kanıtlamaz. server_error boşluğu da isteğin sunucuya hiç
+  ulaşmadığını tek başına kanıtlamaz.
+- session aşaması Kerberos SSPI credential/token üretimi, HTTPS session
+  çağrısı ve karşılıklı doğrulamayı kapsar. Hangi alt adımın hata verdiği
+  henüz bilinmiyor; public DNS kullanımı tek kesin kök neden diye atanmadı.
+  Domain istemcisinde yalnız AD namespace'ini çözen iç DNS sunucularının
+  kullanılması gerekir; pilotta yalnız10.35.50.70 ile tanı ve DC SRV/discovery
+  kontrolü sıradadır. Kalıcı DHCP DNS düzenlemesi ayrıca takip edilir.
+  DNS override henüz uygulanmış sayılmaz.
+- **Doğrulanmış ürün sınırı:** next_attempt yalnız istemci başındaki erken
+  çalışma gate'idir. retry.json yazımı bir Windows task trigger'ı oluşturmaz.
+  Mevcut installer boot/09:00/21:00 trigger'ları ve IgnoreNew kullanır;
+  RestartOnFailure/ayrı retry timer tanımlamaz. 17:54 retry kaydı otomatik
+  17:54 task çalışması vaadi değildir. Canlı RestartCount/RestartInterval ve
+  NextRunTime salt okunur alınacak; retry tetikleme düzeltmesi henüz yoktur.
+  Yalnız RestartOnFailure eklemek de yeterli sayılmaz: retry tarihi gelmeden
+  mevcut istemci return0 verir; bu durumda scheduler hata zinciri kesilebilir.
+- Kanıt docs/checkpoints/2026-10-19-vv06-session-retry-evidence.json.
+  Önceki çevrimiçi reboot ve EAP/VLAN geri dönüşü kabulü korunur;
+  enrollment ağ geri dönüşü kapısı açık. CA/policy/cert/802.1X ayarı değişmedi.
+
 ## VV06 ağsız açılış: EAP geri döndü, enrollment hata verdi — 19 Ekim 2026, 17:48 İstanbul
 
 - **🔴✓ Tamamlandı: ağsız açılış sonrasında Ethernet 802.1X ve VLAN110 geri dönüşü.**

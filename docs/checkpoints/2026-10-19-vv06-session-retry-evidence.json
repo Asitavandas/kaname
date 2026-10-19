@@ -1,0 +1,32 @@
+{
+  "reported_at": "2026-10-19T17:59:53+03:00",
+  "Computer": "VV06",
+  "status": {
+    "state": "retry_pending",
+    "error": "ENROLLMENT_OR_INSTALL_FAILED",
+    "stage": "session",
+    "server_error": null,
+    "checked_at": "2026-10-19T14:41:02.2419780+00:00"
+  },
+  "retry": {
+    "stage": "session",
+    "server_error": null,
+    "attempts": 1,
+    "next_attempt": "2026-10-19T14:54:02.2032214+00:00"
+  },
+  "dns": {
+    "InterfaceAlias": "Ethernet",
+    "ServerAddresses": [
+      "10.35.50.70",
+      "1.1.1.1"
+    ]
+  },
+  "tcp": {
+    "RemoteAddress": "10.35.50.246",
+    "SourceAddress": "10.10.110.4",
+    "TcpTestSucceeded": true
+  },
+  "root_cause_confirmed": false,
+  "dns_override_applied": false,
+  "automatic_retry_fix_deployed": false
+}
