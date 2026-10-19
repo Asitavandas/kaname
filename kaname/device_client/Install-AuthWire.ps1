@@ -68,10 +68,20 @@ $startup = New-ScheduledTaskTrigger -AtStartup
 # until networking is usable. Avoid raw MSFT_TaskEventTrigger CIM instances:
 # Register-ScheduledTask rejects their PSTypeName on supported Windows clients.
 $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 10)
-$existingTask = Get-ScheduledTask -TaskName 'AuthWire Certificate Enrollment' -ErrorAction SilentlyContinue
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 10)
 $null = Register-ScheduledTask -TaskName 'AuthWire Certificate Enrollment' -Action $action -Trigger @($daily,$evening,$startup) -Principal $principal -Settings $settings -Force
-# First installation happens after the current boot's AtStartup event, so start once.
-# On later boots the pre-existing task has already been triggered by AtStartup; do not launch a duplicate instance.
-if(!$existingTask) { Start-ScheduledTask -TaskName 'AuthWire Certificate Enrollment' }
+# GPO can register/update an existing task after the boot event was missed.
+# Task existence does not prove that its boot trigger actually ran.
+function Start-AuthWireEnrollmentForBoot([string]$TaskName) {
+    $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction Stop
+    $info = Get-ScheduledTaskInfo -TaskName $TaskName -ErrorAction Stop
+    $boot = (Get-CimInstance Win32_OperatingSystem -ErrorAction Stop).LastBootUpTime
+    if (!$boot -or !$info.LastRunTime) { throw 'AuthWire boot state unavailable.' }
+    if ($task.State -in @('Running','Queued')) { return 'already_pending' }
+    if ($info.LastRunTime -ge $boot) { return 'already_ran_this_boot' }
+    Start-ScheduledTask -TaskName $TaskName -ErrorAction Stop
+    return 'boot_run_requested'
+}
+$bootRun = Start-AuthWireEnrollmentForBoot 'AuthWire Certificate Enrollment'
+Write-Output ('AuthWire enrollment startup: ' + $bootRun)
 # No supplicant policy, port control or RADIUS changes in this package.
