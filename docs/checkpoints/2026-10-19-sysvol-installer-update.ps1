@@ -61,7 +61,7 @@ function Update-AwPilotInstaller($Directory,$Certificate,$BackupDirectory,$Root)
         $replacementHash=(Get-FileHash -LiteralPath $candidate).Hash
         Assert-AwPackagePreserved $before (Get-AwPackageSnapshot $Directory) -IncludeInstaller
         # Atomic replacement preserves the existing destination security descriptor.
-        [IO.File]::Replace($candidate,$target,$null); $installed=$true
+        [IO.File]::Replace($candidate,$target,[NullString]::Value); $installed=$true
         if((Get-FileHash -LiteralPath $target).Hash -cne $replacementHash) {throw 'Installed bytes differ.'}
         Test-AwPilotPackage $Directory $script:awNewHash $Certificate.Thumbprint $Root
         Assert-AwPackagePreserved $before (Get-AwPackageSnapshot $Directory)
@@ -73,7 +73,7 @@ function Update-AwPilotInstaller($Directory,$Certificate,$BackupDirectory,$Root)
         if($installed) {
             if((Get-FileHash -LiteralPath $target).Hash -cne $replacementHash) {throw 'External installer change; rollback refused. Retain backup.'}
             $rollback=Join-Path $BackupDirectory 'Install-AuthWire.rollback.ps1'; [IO.File]::WriteAllBytes($rollback,$oldBytes)
-            [IO.File]::Replace($rollback,$target,$null); Set-Acl -LiteralPath $target -AclObject $oldAcl
+            [IO.File]::Replace($rollback,$target,[NullString]::Value); Set-Acl -LiteralPath $target -AclObject $oldAcl
             Assert-AwPackagePreserved $before (Get-AwPackageSnapshot $Directory) -IncludeInstaller
             Write-Output '{"event":"SYSVOL_INSTALLER_ROLLED_BACK","verified":true}'
         }; throw $failure
