@@ -6,6 +6,34 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## VV06 ağsız açılış: EAP geri döndü, enrollment hata verdi — 19 Ekim 2026, 17:48 İstanbul
+
+- **🔴✓ Tamamlandı: ağsız açılış sonrasında Ethernet 802.1X ve VLAN110 geri dönüşü.**
+  Boot17:27:45. Kablo öncesi17:39:04: Ethernet/Wi-Fi Disconnected;
+  taskReady, LastRun17:15:50 (önceki boot), LastResult0.
+  Bu0 yeni ağsız boot'un başarılı enrollment sonucu diye yorumlanmadı.
+- Kablo sonrası17:41:34: EthernetUp/Wi-FiDisconnected; LastRun17:40:59,
+  taskReady, **LastTaskResult1**. Elle Start istenmedi; ağ geldikten sonra
+  görev çalışması gözlendi, tam tetikleyici/installer yolu ayrıca ayrıştırılmadı.
+  Windows Ethernet Authentication succeeded;
+  GUID415933d5-5010-4a7a-b8bf-0e537e0bc7f2/MAC38:CA:84:DB:FF:E6;
+  IPv4 10.10.110.4/24 Preferred.
+- **Açık hata:** enrollment ağ geri dönüşü kabulü başarısız.
+  Sertifikanın iptal/geçersiz olduğu veya RADIUS policy hatası olduğu bu
+  sonuçtan çıkarılmadı. status.json/retry.json içindeki aşama, kontrollü hata
+  kodu ve UTC zamanları; güncel DNS sunucuları ve HTTPS TCP erişimi
+  salt okunur isteniyor. Henüz kök neden veya düzeltme kanıtı yok.
+- Kaynak incelemesi: istemci session açma sonrası receipt/renewal kontrolü
+  yapar; catch içinde retry_pending + stage + next_attempt yazar, exit1 verir.
+  next_attempt erken yeniden çalışmayı engelleyen kayıttır; dosya yazımı
+  tek başına yeni Task Scheduler tetikleyicisi kurmaz. Görünen kurucu
+  boot/09:00/21:00 tetikleyicileri kullanır. Bu retry zamanlaması sınırı
+  incelenecek; kullanıcının hata aşaması alınmadan nedeni diye atanmadı.
+- Kanıt docs/checkpoints/2026-10-19-vv06-offline-reconnect-result.json.
+  Bu tanı sırasında görev elle başlatılmadı veya ayarı değiştirilmedi;
+  CA/policy/sertifika/clock/802.1X ayarlarına müdahale edilmedi.
+  Çevrimiçi dev.10 boot kabulü geçerli kalır; B04/B06 ağ geri dönüşü hâlâ açık.
+
 ## VV06 ağsız açılış testi başlangıç kaydı — 19 Ekim 2026, 17:26 İstanbul
 
 - **🔴✓ Tamamlandı: çevrimiçi DNS/TCP baseline.**

@@ -1,0 +1,29 @@
+{
+  "reported_at": "2026-10-19T17:48:04+03:00",
+  "Computer": "VV06",
+  "LastBootUpTime": "2026-10-19T17:27:45+03:00",
+  "before_connection": {
+    "CheckedAt": "2026-10-19T17:39:04+03:00",
+    "LastRunTime": "2026-10-19T17:15:50+03:00",
+    "TaskState": "Ready",
+    "LastTaskResult": 0,
+    "WiFi": "Disconnected",
+    "Ethernet": "Disconnected"
+  },
+  "after_connection": {
+    "CheckedAt": "2026-10-19T17:41:34+03:00",
+    "LastRunTime": "2026-10-19T17:40:59+03:00",
+    "TaskState": "Ready",
+    "LastTaskResult": 1,
+    "WiFi": "Disconnected",
+    "Ethernet": "Up"
+  },
+  "authentication": "Connected. Authentication succeeded.",
+  "ipv4": "10.10.110.4",
+  "prefix_length": 24,
+  "address_state": "Preferred",
+  "eap_network_return_observed": true,
+  "enrollment_recovery_accepted": false,
+  "diagnostic_stage_pending": true,
+  "exact_execution_trigger_observed": false
+}
