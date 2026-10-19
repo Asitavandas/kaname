@@ -1,6 +1,6 @@
 # AuthWire — güncel çalışma planı
 
-19 Ekim2026. Kurulu pilot sürümü0.14.0-dev.9'dur. Ayrıntılı kanıtlar ve tarihli
+19 Ekim2026. Kurulu pilot sürümü0.14.0-dev.10'dur. Ayrıntılı kanıtlar ve tarihli
 sonuçlar [CURRENT_STATUS.md](CURRENT_STATUS.md), işletim/kurtarma adımları
 [OPERATIONS_0_14_0.md](OPERATIONS_0_14_0.md) içindedir. Eski sürüm notları tarihsel
 kapsamdır; burada tamamlanan saha işleri yeniden “bekliyor” sayılmaz.
@@ -13,14 +13,14 @@ kapsamdır; burada tamamlanan saha işleri yeniden “bekliyor” sayılmaz.
 | B02 Canlı AD | Gerçek kimlik/grup, grup dışı ve kapalı hesap ret/geri dönüş | Silinmiş hesap/erişilemez AD ve gerçek kapasite sınırları |
 | B03 Güven ve PKI | Gerçek CA/server-name kontrolü, iptal ve imzalı runtime CRL | Expired/yanlış issuer saha testi, CA/Issuer rollover ve bakım |
 | B04 Enrollment | SYSTEM/GPO ile gerçek farklı cihaz anahtarı ve makbuz | Kesilmiş/tekrarlı kayıt saha senaryoları; 4-worker load fixture'da gözlenen aralıklı SQLite kilitlenmesi |
-| B05 Merkezi dağıtım | Paket ve gerçek GPO görevi/istemci kabulü; güncel DC01 paket/ACL kontrolü, çift Startup düzeltmesi ve tek AllSigned çağrı; 🔴✓ VV06 yeniden açılış RSOP'unda pilot GPO uygulanmış, imza/sertifika/802.1X korunmuş | Enrollment boot çalışması eksik; 🔴✓ dev.10 boot-run kurtarma ve izole SYSTEM testleri hazır. Canlı kaynak, yeniden imzalı SYSVOL, gerçek reboot ve daha geniş yayılım kabulü açık |
+| B05 Merkezi dağıtım | Paket ve gerçek GPO görevi/istemci kabulü; güncel DC01 paket/ACL kontrolü, çift Startup düzeltmesi ve tek AllSigned çağrı; 🔴✓ VV06 yeniden açılış RSOP'unda pilot GPO uygulanmış, imza/sertifika/802.1X korunmuş | Enrollment boot çalışması eksik; 🔴✓ dev.10 boot-run kurtarma ve izole SYSTEM testleri hazır. 🔴✓ canlı dev.10 kaynak/koruma/restore kabulü. Yeniden imzalı SYSVOL, gerçek reboot ve daha geniş yayılım kabulü açık |
 | B06 Yenileme | VV06 kontrollü yenileme, yeni anahtar/sertifika, erişim ve sunucu24h retirement/CRL kanıtı; 🔴✓ gerçek TLS/policy yolunda yeni seri görüldü; 🔴✓ yerel12h eski sertifika/CNG key temizliği SYSTEM ile doğrulandı, yeni key korundu | Offline/expired yolları |
 | B07 Servis işletimi | Normal RADIUS, ayrı Servisler ekranı ve canlı CRL sync kabulü | Kalan hata/yaşam döngüsü ve işletim senaryoları |
 | B08 Policy/VLAN | Dar pilot grubunda/NAS'ta kablolu/kablosuz gerçek policy VLAN ve DHCP | Diğer deny koşulları ve gelişmiş seçiciler |
 | B09 Kablolu | Pozitif; sertifikasız/grup dışı/kapalı/iptal ret; reboot/recovery | Kalan uç cihaz negatifleri ve doğal yaşam döngüsü |
 | B10 Kablosuz | AP22/SSID, EAP-TLS ve gerçek dinamik VLAN | Ayrılmış negatif güven/kimlik senaryoları; guest tekrarı istenmedi |
 | B11 Kayıt/korelasyon | Servis işlem geçmişi ve temel audit; 🔴✓ dev.8 yönetim geçmişi filtre/sayfalama/CSV operatör kabulü; 🔴✓ dev.9 final RADIUS kaydı geliştirme/izole native-systemd/UI ve canlı etkinleştirme, koruma/API/yedek/izole restore teknik kabulü; 🔴✓ dev.9 operatör ekranının hatasız açılması; 🔴✓ VV06 gerçek kabul kayıtları ve16 sütunlu canlı CSV teknik kabulü | Excel görünümünün operatör bildirimi ve kesin Windows/RADIUS zaman-tetik eşleştirmesi; accounting/korelasyon ve arşiv/saklama/temizlik |
-| B12 Kurtarma/dağıtım | Durum koruyan kurulum/güncelleme, doğrulanmış özel yedekler, gerçek yedekte izole veri restore, planlı yedek canlı kurulum ve ilk arşiv/restore kabulü | İlk doğal takvim çalışması, hedef/altyapı bekleyen off-host kopya, tam boot/rollback, temiz appliance ve bağımsız kimlik |
+| B12 Kurtarma/dağıtım | Durum koruyan kurulum/güncelleme, doğrulanmış özel yedekler, gerçek yedekte izole veri restore, planlı yedek canlı kurulum ve ilk arşiv/restore kabulü; 🔴✓19 Ekim doğal timer tetiklenmesi/başarılı arşiv/digest | hedef/altyapı bekleyen off-host kopya, tam boot/rollback, temiz appliance ve bağımsız kimlik |
 
 18 Ekim uzaktan kontrol turu tamamlandı: panel günlük/API ve gerçek tarayıcı
 kısa kabulü; güncel gerçek yedeğin izole veri restore provası; DC/SYSVOL paket
