@@ -6,6 +6,36 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## VV06 dev.10 gerçek açılış kabulü — 19 Ekim 2026, 17:21 İstanbul
+
+- **🔴✓ Tamamlandı: DC01 imzalı kurucu güncellemesi sonrasında VV06 gerçek
+  restart ile doğal enrollment görevi açılış kabulü.**
+  LastBootUpTime19.10.2026 17:15:28, LastRunTime17:15:50;
+  RanAfterBoot=true, TaskState=Ready, LastTaskResult0.
+  Görev açılıştan22 saniye sonra başlamıştır; tamamlanmanın22 saniyede
+  olduğu iddia edilmez. Kontrol çıktısı sırasında başarıyla tamamlanmıştır.
+- **🔴✓ Tamamlandı: bu açılışta istemci imzası ve mevcut kimlik malzemesi koruması.**
+  ClientSignatureValid; pinli mevcut thumbprint
+  4CFD8321AE08D6074B99AF5C194151AD5F99F454 için
+  CertificateFound=true/HasPrivateKey=true; RetryFileExists=false.
+  Bu kontrol private key byte'larını export etmez.
+- **🔴✓ Tamamlandı: aynı reboot sonrası kablolu 802.1X ve VLAN110 adres kabulü.**
+  Ethernet Authentication succeeded,
+  GUID415933d5-5010-4a7a-b8bf-0e537e0bc7f2, MAC38:CA:84:DB:FF:E6;
+  IPv4 10.10.110.4/24, AddressStatePreferred.
+  Yalnız bu çıktı ağ geçidi/uygulama erişimi veya tam DHCP trafiğini yeniden
+  test etmez; VLAN110 adresi ve başarılı EAP gözlemi kaydedilir.
+- Kanıt docs/checkpoints/2026-10-19-vv06-dev10-boot-acceptance.json.
+  Gerçek boot sonucu kabul edilmiştir; bu çıktı StartForBoot fallback
+  dalının mı yoksa yerleşik AtStartup tetikleyicisinin mi çalıştığını tek
+  başına ayırmaz. Eksik boot-run kurtarma dalı ayrı SYSTEM fixture'ında testlidir.
+- Önceki aşağıdaki VV06 boot acceptance pending kayıtları tarihsel aşamadır.
+  B05 bu pilot açılış alt adımı tamamlandı; daha geniş yayılım açıktır.
+  B06 ağ yokken/expired yolları, B04 yük altında SQLite bulgusu ve diğer
+  yol haritası kapıları topluca tamamlandı sayılmaz.
+  Sıradaki saha kapsamı: geçerli mevcut sertifikayla ağsız açılış ve ağ geri
+  geldiğinde enrollment/802.1X toparlanması; önce çevrimiçi DNS/TCP baseline alınır.
+
 ## DC01 imzalı SYSVOL kurucusu canlı kabulü — 19 Ekim 2026, 17:14 İstanbul
 
 - **🔴✓ Tamamlandı: DC01 pilot SYSVOL kurucusunun mevcut yayıncıyla güncellenmesi.**

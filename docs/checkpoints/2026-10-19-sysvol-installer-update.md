@@ -41,7 +41,11 @@ DC01 gerçek kabulü19 Ekim17:14 operatör çıktısıyla tamamlandı: verified/
 client/assets/ACL korunmuş, tek AllSigned giriş; tam imzalı installer SHA256
 35cf0487ffe84cbbc763cd10d0427e33ebae76c5e7b87447482dc16738fa8238.
 Yedek C:\ProgramData\AuthWire-Admin-Backup-20261019-171142-08ad3aebefaf4a478fefcd96a0f81875.
-VV06 boot kabulü hâlâ açıktır. Clipboard yolu kullanıldı; alternatif geçici
+VV06 çevrimiçi gerçek boot kabulü19 Ekim17:21 çıktısıyla tamamlandı:
+boot17:15:28, görev başlangıcı17:15:50, RanAfterBoot=true, Ready/result0;
+ClientSignatureValid, pinli mevcut cert/key mevcut, retry yok;
+Ethernet Authentication succeeded ve10.10.110.4/24 Preferred.
+Ağsız açılış/expired yolları ve geniş yayılım ayrı açıktır. Clipboard yolu kullanıldı; alternatif geçici
 Linux aktarım süreci kapatıldı. Dosya hash ve imza kontrolleri korunmuştur.
 
 ## Sonraki VV06 kabulü

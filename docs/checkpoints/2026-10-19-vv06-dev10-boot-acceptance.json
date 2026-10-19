@@ -1,0 +1,26 @@
+{
+  "reported_at": "2026-10-19T17:21:57+03:00",
+  "source": "operator VV06 elevated PowerShell output",
+  "Computer": "VV06",
+  "LastBootUpTime": "2026-10-19T17:15:28+03:00",
+  "LastRunTime": "2026-10-19T17:15:50+03:00",
+  "RanAfterBoot": true,
+  "TaskState": "Ready",
+  "LastTaskResult": 0,
+  "ClientSignature": "Valid",
+  "CertificateFound": true,
+  "HasPrivateKey": true,
+  "RetryFileExists": false,
+  "checked_certificate_thumbprint": "4CFD8321AE08D6074B99AF5C194151AD5F99F454",
+  "Ethernet": {
+    "guid": "415933d5-5010-4a7a-b8bf-0e537e0bc7f2",
+    "mac": "38-CA-84-DB-FF-E6",
+    "state": "Connected. Authentication succeeded.",
+    "ipv4": "10.10.110.4",
+    "prefix_length": 24,
+    "address_state": "Preferred"
+  },
+  "vv06_online_boot_acceptance_completed": true,
+  "offline_recovery_acceptance_pending": true,
+  "exact_trigger_or_fallback_branch_observed": false
+}
