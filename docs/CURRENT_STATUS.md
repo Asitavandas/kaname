@@ -6,6 +6,33 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## VV06 kontrollü manuel recovery başarılı; retry düzeltmesi hazırlanıyor — 19 Ekim 2026, 18:21 İstanbul
+
+- **🔴✓ Tamamlandı: hazır ağda kontrollü manuel enrollment yeniden denemesi.**
+  Operatör LastRun18:17:11, TaskStateReady, LastTaskResult0,
+  RetryFileExists=false çıktısını paylaştı. Bu,17:40:59 session hatası sonrası
+  hazır ortamda istemcinin yeniden başarıyla çalışabildiğini doğrular.
+  Tamamlanma süresi veya ilk hatanın kesin SSPI/HTTPS alt nedeni çıkarılmadı.
+  Bu manuel başarı otomatik recovery kabulü yerine geçmez.
+- Doğrulanmış düzeltme kapsamı: imzalı installer'ın özel dizine kopyası asıl
+  görevi mevcut imzalı istemciye aktarır; istemci hatasında retry.json UTC
+  deadline'ına gerçek tek seferlik SYSTEM görevi kaydeder. Retry görevi asıl
+  görevi başlatır; böylece ana task'ın LastRun/LastResult bilgisi güncellenir.
+  Erken çağrı deadline'a yeniden kurulur; Running/Queued ana görev başlatılmaz;
+  launcher mutex ve istemcinin mevcut mutex'i korunur. Periyodik polling yoktur.
+- Başarılı receipt kontrolü sonrasında retry yoksa ve mevcut geçerli özel
+  anahtarlı sertifika mevcutsa eski retry_pending durumu güncellenir.
+  last_verified kontrol zamanıdır; yeni sertifika verilme tarihi uydurulmaz.
+  Orijinal AuthWire-Client.ps1 body SHA86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15
+  ve SSPI/TLS/PKI/protokol kodu değişmedi.
+- Aday0.14.0-dev.11, PR40 https://github.com/Asitavandas/kaname/pull/40.
+  Yerel20 enrollment/historical preservation testi geçti. Gerçek imzalı
+  SYSTEM/tek seferlik zaman trigger'ı, rearm, çift süreç engeli ve durum
+  toparlama Windows fixture'ı CI'ya gönderildi; sonucu henüz alınmadı.
+  **Canlı sürüm hâlâdev.10**; Linux kaynak, SYSVOL, VV06 görev veya sertifikası,
+  CA/policy/RADIUS değiştirilmedi. Canlıya geçiş ve otomatik recovery açık.
+  DNS listesindeki1.1.1.1 düzenlemesi uygulanmış sayılmadı.
+
 ## Canlı retry tetikleyici boşluğu doğrulandı — 19 Ekim 2026, 18:12 İstanbul
 
 - **🔴✓ Tamamlandı: güncel DC discovery/Kerberos TCP erişimi tanısı.**

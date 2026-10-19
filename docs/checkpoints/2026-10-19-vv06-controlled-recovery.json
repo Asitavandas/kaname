@@ -1,0 +1,13 @@
+{
+  "reported_at": "2026-10-19T18:21:29+03:00",
+  "Computer": "VV06",
+  "controlled_manual_rerun": true,
+  "TaskState": "Ready",
+  "LastRunTime": "2026-10-19T18:17:11+03:00",
+  "LastTaskResult": 0,
+  "RetryFileExists": false,
+  "automatic_recovery_accepted": false,
+  "initial_session_root_cause_confirmed": false,
+  "live_version": "0.14.0-dev.10",
+  "candidate_pr": 40
+}
