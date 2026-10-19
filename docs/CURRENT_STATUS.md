@@ -6,6 +6,56 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## VV06 açılış enrollment düzeltmesi hazırlandı — 19 Ekim 2026
+
+- Operatörün15:56:16 salt okunur çıktısı: task Ready/SYSTEM,
+  LastBoot15:51:34, LastRun09:00:01, RanAfterBoot=false, LastResult0.
+  Üç trigger enabled; RunOnlyIfNetworkAvailable/StartWhenAvailable ve iki pil
+  kısıtı true. Ethernet DomainAuthenticated/Internet. TaskScheduler event140,
+  15:52:01, VIZYONVERI\\VV06$ mevcut görevi güncellemiş.
+  Bu gözlem kuyrukta bekleyen göreve indirgenmedi; yeni boot çalışması yoktur.
+- Kaynakta mevcut task varlığını açılışta çalıştığının kanıtı sayan
+  if(!$existingTask) koşulu saptandı. **🔴✓ Tamamlandı: bu koşulun kaldırılması
+  ve dar kapsamlı boot-run kurtarma geliştirmesi.**
+  Register sonrasında gerçek LastBootUpTime/LastRunTime/State okunur;
+  Running/Queued veya bu boot'ta zaten çalışmış task yeniden istenmez.
+  Eksik boot çalışmasına tek Start isteği verilir; IgnoreNew korunur.
+  GPO reapply bilinen varsayılan pil kısıtını geri getirmesin diye iki pil
+  izni açıkça eklenir. Ağ koşulu,09:00/21:00/AtStartup kapsamı ve gerçek
+  enrollment/receipt/renewal kodu değiştirilmedi.
+- **🔴✓ Tamamlandı: son teknik testler ve PR38 birleştirmesi.**
+  https://github.com/Asitavandas/kaname/pull/38,
+  aday7a1bef08976ffa012d3a74a7dc6cdbae20666a45,
+  merge0202ded59188fd82bce8e887a7669e2aed53244c.
+  524 test/25 ortam atlaması; Windows CNG ilk kayıt/yenileme; gerçek SYSTEM
+  Task Scheduler iki action ile ilk başlangıç, Running/current-boot duplicate
+  engelleme ve yeniden Register edilmiş görevin kurtarılması geçti.
+  Boot sınırı fixture'da simüledir; gerçek CI reboot iddiası yok.
+  Queued guard mock ile testlidir. GPO imza/varlık/ACL, browser/session,
+  native LDAP/Kerberos, EAP-TLS normal/debug ve production parse testleri geçti.
+  Ek5 sudo kaynak/preservation guard testi yerelde geçti; ana CI'ya eklendi.
+- İstemci body SHA86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15
+  değişmedi. Yeni Install-AuthWire.ps1 template SHA:
+  4c1b14a1c088b0ac28f63337ff681824da560d6bf9143bf79132720850f2067d.
+  Audit aracı yeni template hash'ini bekler. Yeni kurucu mevcut enterprise
+  yayıncıyla yeniden imzalanmadan SYSVOL'a konmayacak; AllSigned korunur.
+- Aday sürüm0.14.0-dev.10; canlı hâlâdev.9, RADIUS326873/broker149955.
+  Paket125 dosya; manifest
+  c027714db78fdabedb400f019723dbce6958e4db49f9d98d5226b892de301423
+  tüm Git blob'larıyla ve live dev.9'un124 dosyalı baseline guard'ıyla doğrulandı.
+  Stage /home/kaname-runner/kaname-stage-0202ded59188.
+- Sudo checkpoint docs/checkpoints/2026-10-19-startup-update.py:
+  SHA4ada81793864d9b29dda7f2dd95a1d501b2c1009da136422b8e6a8fc5aa004fb.
+  Kaynak değişimi için tek istisna imzalanacak installer template ve sürüm
+  metaverisidir; authorizer/PKI/CA/policy/Windows client body değişikliği reddedilir.
+  RADIUS restart yok; her PID/timer/iş durumu ve kritik dosya korunacak.
+  Önce/sonra managed yedek ve izole veri/history restore doğrulanacak.
+  Önceki last-success yedek digest/timer kanıtı overwrite öncesi ayrıca kaydedilecek.
+- **Açık:** canlı sudo kaynak güncellemesi, DC01 mevcut yayıncıyla imzalı
+  pilot SYSVOL kurucu güncellemesi ve gerçek VV06 yeniden açılış kabulü.
+  B05 bütünü ve offline/expired/network-recovery/capacity açıkları kapatılmadı.
+  Bu aşamada canlı kaynak, task, CA, policy veya sertifika değiştirilmedi.
+
 ## VV06 GPO yeniden uygulama: açılış görevi kabulü açık — 19 Ekim 2026, 15:55 İstanbul
 
 - **🔴✓ Tamamlandı: VV06 bilgisayar RSOP'unda güncel GPO'nun uygulanmış görünmesi ve bağlantının korunması.**
