@@ -6,6 +6,41 @@ dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
 pause checkpoint and an updated report with red check marks against 9 October.
 
+## Dev.9 CSV teknik kabulü ve farklı paket kimlikleri — 19 Ekim 2026, 15:38 İstanbul
+
+- **🔴✓ Tamamlandı: canlı erişim kayıtları CSV indirme ve dosya yapısı doğrulaması.**
+  Operatör AuthWire-erisim-kayitlari-2026-10-19.csv dosyasını paylaştı.
+  SHA2564a96015a211da190009cb6f9b6400ee7a1df14cb21b28aa2eb371770529af9ae.
+  UTF-8 BOM, CRLF,16 başlık ve her veri satırında16 alan doğrulandı.
+  Tam2 veri satırı var; Türkçe başlıklar doğru decode edildi. Dosya değiştirilmedi.
+  Bu teknik sütun kabulüdür; operatörün Excel uygulamasındaki görünümü ayrıca bildirilmedi.
+- **🔴✓ Tamamlandı: iki kayıt için paket/olay anahtarı karşılaştırması.**
+  ID1: UTC12:28:02.224 / İstanbul15:28:02.224,
+  request fd65123ccd2457633c67ae72f6f02c7745917047e41672374803a2e7c36ca592,
+  event e87cf43e4ee980a558cf66df80945adcb3bdc763a40ac40c9da34fbc0e7ff8cc.
+  ID2: UTC12:30:56.411 / İstanbul15:30:56.411,
+  request b0caff3edead51b668542290aaa20660f9a4e74b6d2f419334e9a78ea9328f47,
+  event 0e8a437e3cc586b53e22e9c02bfd5295875561917b3ee701e08094d6c5d51cdc.
+  Aralık174.187s. Paket anahtarları ve olay anahtarları farklı; ikisinde de
+  sha256(request_id+'|2') olay anahtarı kuralı bağımsız kontrolle doğrulandı.
+  capture_run aynı:1ecb2d1a4da245f793c643499eacb35c.
+  Aynı DB satırının UI'de/CSV'de iki kez görünmesi veya aynı paket anahtarının
+  iki satır olarak saklanması bulgusu yok. Loglama kapsamı final paket yanıtıdır;
+  farklı anahtarlar tek başına iki ayrı kullanıcı oturumunu veya NAS'ın
+  yeniden deneme tetikleyicisini kanıtlamaz.
+- Her iki satır code2/POLICY_ALLOW, NAS10.35.50.253,
+  authwire-pilot-wired, VLAN110, TLS verified=true; VV06 GUID/MAC eşleşiyor.
+  **🔴✓ Tamamlandı: yeni sertifika serisinin gerçek VV06 TLS/policy yolunda gözlenmesi.**
+  Seri5899e122009871b0d5536890bee81e4f0499e605 iki satırda da aynı.
+  Yerel eski sertifika ve private key temizliği ayrı açık kabul kapısıdır.
+- İkinci isteğin kablo/dot3svc restart/periyodik yeniden doğrulama gibi tam
+  tetikleyicisi bu CSV'de yoktur. Kaynak port/authenticator'ın hangisinin
+  değiştiği özetten geri çıkarılamaz. Windows15:28:54 olayıyla tek tek
+  zaman eşleştirmesi de bu dosyayla kesinleştirilmedi.
+- Bu bulgu için çalışan RADIUS/policy/CA/istemci değiştirilmedi.
+  Sıradaki işlem VV06'dan installed.previous, makine sertifika deposu ve
+  görev son çalışmasını salt okunur inceleyerek12h yerel cleanup'ı doğrulamak.
+
 ## VV06 pozitif kablolu bağlantı ve iki erişim kaydı incelemesi — 19 Ekim 2026, 15:34 İstanbul
 
 - **🔴✓ Tamamlandı: dev.9 sonrasında VV06 kablolu pozitif Windows gözlemi.**
