@@ -1,0 +1,22 @@
+{
+  "event": "VV06_PARTIAL_INSTALL_NATURAL_RETRY_SCHEDULED",
+  "checked_at_local": "2026-10-20T18:50:39+03:00",
+  "installed_serial_before_recovery": "6eb64486d4123a060ba8deb8bb6ea9054fab5b4f",
+  "existing_key_present": true,
+  "pending_key_container": "AuthWire-2ee74dcc-e141-44b9-b546-cc3f360622f5",
+  "retry_attempts": 1,
+  "retry_stage": "issue",
+  "retry_at_local": "2026-10-20T18:59:21+03:00",
+  "retry_task_next_run_local": "2026-10-20T18:59:21+03:00",
+  "retry_deadline_matches": true,
+  "wired_authentication": "succeeded",
+  "operator_ran_lock_disposal_in_capture_command": true,
+  "serial_differs_from_initial_1826_baseline": true,
+  "explanation_of_intervening_serial_change_confirmed": false,
+  "pending_same_key_recovery_verified": false,
+  "server_same_csr_single_issuance_verified": false,
+  "full_recovery_acceptance_complete": false,
+  "next_manual_observation_local": "2026-10-20T19:03:00+03:00",
+  "manual_task_start_requested": false,
+  "dns_dhcp_configuration": "out_of_scope"
+}

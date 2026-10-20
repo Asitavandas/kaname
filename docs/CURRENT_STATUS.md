@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## VV06 yarım kurulum için doğal retry saati eşleşti — 20 Ekim2026, 18:50 İstanbul
+
+- Operatör18:50:39: retry attempts1/stageissue/next_attempt18:59:21+03 ve retry taskNextRun18:59:21 birebir eşleşiyor. Bekleyen anahtar containerAuthWire-2ee74dcc-e141-44b9-b546-cc3f360622f5 olarak kaydedildi. Verilen yakalama komutu kalan handle'ı Dispose eder; ayrıca retry dosyası veya görev zamanı değiştirilmez.
+- Mevcut installedserial6eb64486d4123a060ba8deb8bb6ea9054fab5b4f, özel anahtartrue ve EthernetAuthentication succeeded. Bu seri ilk18:26 baseline5899... serisinden farklıdır; arada başarılı çalışma vardır ancak değişimin kesin issuance/audit nedeni henüz okunmadı. Yenileme hiç başlamadı diye varsayılmaz. Toparlanma öncesi güncel karşılaştırma6eb... ve bu pendingcontainer üzerinden yapılacak.
+- **🔴✓ Tamamlanan dar alt kontrol:** issue hatası sonrası gerçek retry deadline/görev eşleşmesi ve erişimin o anda sürmesi. **Açık:** doğal18:59:21 çalışması sonrası Ready0/statusinstalled, aynı pendingcontainer, yeni leaf/privatekey, pending/retry temizliği; sunucuda aynı CSR için tek issuance ve receipt doğrulaması.
+- Sıradaki operatör kontrolü20 Ekim19:03 civarı; görev elle başlatılmayacak. Doğal çalışma ve süreli jitter tamamlanmadan başarı ilan edilmez; bu kayıt tüm yarım kurulum kabulünü kapatmaz.
+
 ## VV06 hedeflenen yarım kurulum kesintisi görüldü — 20 Ekim2026, 18:39 İstanbul
 
 - Operatör önceki uygulamayı yanlış yaptığını bildirdi ve aynı kontrollü adımları tekrarladı.18:37:53 ana task,18:39:28 kontrolde Ready/result1, statusretry_pending, stageissue, ServerError boş ve pending.json=true.
