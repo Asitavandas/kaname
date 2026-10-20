@@ -1,0 +1,21 @@
+{
+  "event": "VV06_DEV11_OFFLINE_BOOT_RECONNECT_ACCEPTED",
+  "reported_at": "2026-10-20T17:18:24+03:00",
+  "checked_at": "2026-10-20T17:15:30+03:00",
+  "last_boot": "2026-10-20T17:08:48+03:00",
+  "last_run": "2026-10-20T17:11:44+03:00",
+  "ran_after_boot": true,
+  "task_state": "Ready",
+  "last_task_result": 0,
+  "retry_file_exists": false,
+  "retry_task_found": false,
+  "ethernet_authentication": "succeeded",
+  "ipv4": "10.10.110.4",
+  "prefix": 24,
+  "address_state": "Preferred",
+  "operator_followed_offline_boot_reconnect_procedure": true,
+  "automatic_network_return_recovery_accepted": true,
+  "failed_attempt_observed": false,
+  "deadline_retry_exercised": false,
+  "real_failure_deadline_retry_acceptance_pending": true
+}

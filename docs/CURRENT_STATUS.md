@@ -11,6 +11,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## VV06 dev.11 ağsız boot ve doğal kablo geri dönüşü kabulü — 20 Ekim 2026, 17:18 İstanbul
+
+- **🔴✓ Tamamlandı: gerçek ağsız açılış sonrası ağ geri gelince kendiliğinden görev/erişim toparlanması.** Operatör Wi-Fi kapalı, Ethernet çıkarılmış reboot ve sonra kablo takma prosedürü ardından çıktı verdi: boot17:08:48; ana task başlangıcı17:11:44; kontrol17:15:30; RanAfterBoot=true, Ready, LastTaskResult0.
+- **🔴✓ Tamamlandı: aynı senaryoda kablolu EAP/VLAN koruması.** Realtek Ethernet Authentication succeeded,10.10.110.4/24Preferred. Görev elle başlatılması istenmedi; operatör test prosedürü doğal çalışmayı hedefledi.
+- retry.json=false; RetryTaskFound=false. İlk deneme hata vermeden geçtiğinden tek seferlik retry görevi oluşmaması beklenen davranıştır. **Bu sonuç hata sonrası deadline retry'nin çalıştığını kanıtlamaz.** Gerçek başarısız deneme, next_attempt eşleşmesi, kendi kendine sonraki ana görev ve Ready/0/retryfalse kabulü ayrı açık tutulur.
+- Sonraki kontrollü hata testi için önce yalnız VV06 Windows firewall etkin profil/yerel kural durumu salt okunur sorgulanacak. Önceki firewall kapalı bilgisiyle kuralın etkili olacağı varsayılmayacak. Amaç yalnız VV06→10.35.50.246 TCP8765'e geçici test kısıtı; CA/sertifika/policy/RADIUS ayarı değişikliği planlanmaz. Uygulama ve geri alma somutlaştırılmadan blok uygulanmaz.
+
 ## VV06 dev.11 gerçek açılış kabulü — 20 Ekim 2026, 17:03 İstanbul
 
 - **🔴✓ Tamamlandı: dev.11 yeni launcher gerçek GPO/açılış kabulü.** VV06 boot16:58:33, task başlangıcı16:58:44 (11 saniye fark), RanAfterBoot=true, Ready, LastTaskResult0. UsesNewLauncher=true, InstallerSignature=Valid, InstallerUpdated=true.
