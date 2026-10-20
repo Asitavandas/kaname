@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## GitHub native test engeli ödeme/harcama limiti olarak doğrulandı — 20 Ekim2026, 19:39 İstanbul
+
+- Operatörün image(20261020-163906).png ekran görüntüsü bizzat okundu. Actionsrun104/39458558838 Annotations, job'ın hesap ödemesi başarısızlığı **veya** harcama limitinin artırılması gerektiği için başlatılmadığını açıkça söylüyor; Billing&plans kontrolü isteniyor. İki olasılıktan hangisinin hesapta geçerli olduğu henüz bilinmiyor; yalnız kota doldu/yalnız kart reddi diye daraltılmadı.
+- Bu provider engeli nedeniyle test adımları çalışmamış; candidate Windows/RADIUS testleri başarılı sayılmaz. Yerel514geçen/25skip sonucu ve PR42taslak korunuyor. Aday0.14.0-dev.12 merge/teslim edilmedi; canlı0.14.0-dev.11 ve çalışan802.1X değişmedi.
+- Ödeme veya ücretli Actions bütçesi hesap sahibi tarafından yönetilecek; asistan ödeme yöntemi/bütçe ayarı değiştirmedi ve harcama yetkisi varsaymadı. Engel kalkınca güncel candidate head için native testler yeniden yürütülecek.
+- Kanıt Librarylibfile_8695c571f9a081918c8bc889c0541e90, SHAe81d95866e76621102da5c47d5892ac81d26e905e2fbcf5ddbb7c5e095a6e4ac. Expired saha kabulü açık, DNS/DHCP kapsam dışı kalır.
+
 ## Expired-pending kurtarma açığı doğrulandı; düzeltme taslağı native test engelinde — 20 Ekim2026
 
 - **🔴✓ Tamamlandı: izole kaynak/uygulama hata tekrar üretimi.** Aynı expired pending CSR iki kez DEVICE_CERTIFICATE_EXPIRED ile reddediliyor; yeni anahtar/CSR mevcut sunucuda taze yetkilendirmeyle toparlanıyor. Eski Windows istemcisinde pending.json bırakıldığı için aynı expired istek döngüye girebiliyor. Bu bulgu VV06'nın şu anki geçerli26e... sertifikasının arızalı olduğu anlamına gelmez.

@@ -1,0 +1,27 @@
+{
+  "event": "EXPIRED_RECOVERY_NATIVE_CI_BILLING_BLOCK_CONFIRMED",
+  "date": "2026-10-20",
+  "source": "Operator-provided GitHub Actions screenshot, inspected locally",
+  "workflow_run_id": 39458558838,
+  "workflow_run_number": 104,
+  "provider_annotation_summary": "Job was not started because recent account payments have failed or the spending limit needs to be increased; check Billing & plans.",
+  "block_class": "GitHub account billing/payment-or-spending-limit",
+  "specific_branch_of_provider_or_condition_known": false,
+  "test_steps_started": false,
+  "windows_native_passed": false,
+  "live_source_changed": false,
+  "live_version": "0.14.0-dev.11",
+  "candidate_pr": "https://github.com/Asitavandas/kaname/pull/42",
+  "pr_draft": true,
+  "merge_or_deploy_performed": false,
+  "billing_settings_changed_by_assistant": false,
+  "payment_or_budget_authorized": false,
+  "attachment": {
+    "name": "image(20261020-163906).png",
+    "library_file_id": "libfile_8695c571f9a081918c8bc889c0541e90",
+    "sha256": "e81d95866e76621102da5c47d5892ac81d26e905e2fbcf5ddbb7c5e095a6e4ac",
+    "visually_inspected": true
+  },
+  "next": "Account owner checks payment status and Actions budget; native runs must pass before controlled delivery",
+  "dns_dhcp_configuration": "out_of_scope"
+}
