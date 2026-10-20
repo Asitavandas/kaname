@@ -1,0 +1,41 @@
+{
+  "event": "VV06_DEV11_REAL_AUTOMATIC_RETRY_RECOVERY_ACCEPTED",
+  "operator_reported_at": "2026-10-20T17:56:37+03:00",
+  "checked_at": "2026-10-20T17:54:02+03:00",
+  "computer": "VV06",
+  "live_version": "0.14.0-dev.11",
+  "failure": {
+    "method": "Temporary ESXi AuthWire Linux VM NIC disconnect chosen by operator",
+    "first_main_run": "2026-10-20T17:37:00+03:00",
+    "last_task_result": 1,
+    "attempts": 1,
+    "stage": "session",
+    "deadline_utc": "2026-10-20T14:52:30.4497593+00:00"
+  },
+  "restored_client_tcp_8765": true,
+  "restored_client_connectivity_confirmed_at": "2026-10-20T17:49:57+03:00",
+  "recovery": {
+    "retry_last_run": "2026-10-20T17:52:30+03:00",
+    "retry_result": 0,
+    "main_last_run": "2026-10-20T17:52:32+03:00",
+    "main_state": "Ready",
+    "main_result": 0,
+    "retry_file_exists": false,
+    "status_state": "installed"
+  },
+  "manual_start_after_failure_not_requested": true,
+  "automatic_deadline_run_accepted": true,
+  "stale_status_reconciliation_accepted": true,
+  "ethernet_authentication": "succeeded",
+  "ipv4": "10.10.110.4",
+  "prefix": 24,
+  "address_state": "Preferred",
+  "nft_probe_used": false,
+  "remaining": [
+    "Current domain DNS and its DHCP/static source",
+    "Cut/partial installation or issuance recovery scenarios",
+    "Expired and wrong-issuer field paths",
+    "Other AD and wireless negatives",
+    "User EAP-TLS pilot remains separate"
+  ]
+}

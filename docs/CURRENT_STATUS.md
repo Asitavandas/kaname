@@ -14,6 +14,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## VV06 gerçek otomatik retry ve toparlanma kabulü tamamlandı — 20 Ekim 2026, 17:56 İstanbul
+
+- **🔴✓ Tamamlandı: gerçek başarısız deneme → deadline görevi → kendiliğinden başarı saha zinciri.** Kontrollü ESXi vNIC kesintisinde ana task17:37:00/session/result1; retry.json attempts1/next_attempt14:52:30.4497593Z; tek seferlik task Türkiye17:52:30'a kuruldu. Operatör17:49'da VV06 TCP8765=True sonucunu teyit etti.
+- Operatör17:54:02 kontrolünde retry LastRun17:52:30/result0, ana LastRun17:52:32/Ready/result0 gördü. Görev başarısızlıktan sonra elle yeniden başlatılmadan doğal deadline beklendi. **İki saniye tetikleyici ile ana görev başlangıcı arasındaki farktır; tamamlanma süresi değildir.**
+- **🔴✓ Tamamlandı: retry ve eski hata durumu temizliği.** retry.json=false, status.state=installed. Bu gerçek ağ hata/toparlanma kabulüdür; yalnız fixture veya manuel retry değildir.
+- **🔴✓ Tamamlandı: toparlanma sonrası mevcut erişim koruması.** Realtek Ethernet Authentication succeeded;10.10.110.4/24Preferred. CA/policy veya Windows saatinde test değişikliği yapılmadı. Hazırlanan nft probe kullanılmadı. Önceki Linux kontrolünde RADIUS PID326873/broker149955 korunuyordu; son Windows çıktısı sunucu PID okuması değildir.
+- **Sonraki açık adım:** önce VV06 güncel domain DNS listesinin ve statik/DHCP kaynağının salt okunur okunması; daha önce10.35.50.70 yanında1.1.1.1 görülmüştü, güncel durum varsayılmaz. Ardından kalan expired/yanlış issuer, kesilen/yarım kurulum ve diğer AD/kablosuz kabul kapıları. Kullanıcı EAP-TLS pilotu ayrı ve unutulmadan izlenir.
+- B06'nın doğal boot, ağsız boot/kablo dönüşü ve gerçek hata sonrası otomatik retry alt işleri tamamlandı; bütün yaşam döngüsü/expired ve yarım kurulum kapsamı kapanmış sayılmaz. 19 Ekim raporu tarihli snapshot olarak korunur; bu sonuç güncel kayda eklendi.
+
 ## VV06 gerçek session hatası sonrası deadline görevi kuruldu — 20 Ekim 2026, 17:42 İstanbul
 
 - Operatör daha kolay olduğu için ESXi'de AuthWire Linux VM vNIC bağlantısını geçici kesme yöntemini seçti. Yeni/yeniden802.1X doğrulamalarının bu arada etkilenebileceği açıklandı; VM kapatılmadan iki dakika sonra bağlantının geri açılması ve VV06 Ethernet'in korunması istendi. Hazırlanan dar nft probe kullanılmadı/çalıştırılmadı; iki yöntem birlikte uygulanmadı.
