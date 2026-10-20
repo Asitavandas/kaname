@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## VV06 yarım kurulum denemesi hedef kesintiyi doğrulamadı — 20 Ekim2026, 18:36 İstanbul
+
+- Operatör:18:36:00 ana task,18:36:17 kontrolde Ready/result0, statusinstalled, Stage/ServerError boş, pending.json=false; dosya kilidi kaldırıldı. Bu çıktı hedeflenen issue aşaması/result1/pending kesintisi değildir; yarım kurulum ve toparlanma kabulü tamamlandı sayılmaz.
+- İşlemin normal kontrol mü yoksa tamamlanan yenileme mi olduğu henüz bilinmiyor: deneme sonrası seri ve sunucuda yenileme talebi/issuance kaydı görülmedi. WriteBlocked=True kanıtı ayrıca paylaşılmadı; LockActive=True önceki handle açılışına aittir. Operatör hatası veya ürün hatası varsayılmaz.
+- Canlı salt okunur kontrol: panelactive/PID428758 ve RADIUSactive/PID326873 korunuyor; Windows client sourceSHA86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15 beklenenle aynı. Korunan veritabanı remote kullanıcıya kapalı; izinler değiştirilmedi.
+- Sonraki adım yalnız VV06 GUID için salt okunur SQLite issuance/renewal audit sorgusu; mevcut pending/sertifika bilinmeden aynı kesinti veya renew-now tekrar edilmez.
+
 ## VV06 yarım kurulum testi başlangıç durumu — 20 Ekim 2026, 18:26 İstanbul
 
 - Operatör çıktısı: Ready/result0, son çalışma17:52:32; mevcut seri5899e122009871b0d5536890bee81e4f0499e605 ve özel anahtar mevcut, bitiş13 Ocak2027 16:26:42. pending.json=false ve retry.json=false. Ethernet Authentication succeeded.

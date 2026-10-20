@@ -1,0 +1,29 @@
+{
+  "event": "VV06_PARTIAL_INSTALL_ATTEMPT_INCONCLUSIVE",
+  "checked_at_local": "2026-10-20T18:36:17+03:00",
+  "last_run_local": "2026-10-20T18:36:00+03:00",
+  "task_state": "Ready",
+  "last_task_result": 0,
+  "status_state": "installed",
+  "stage": null,
+  "server_error": null,
+  "pending_request": false,
+  "lock_released_reported": true,
+  "write_blocked_true_operator_evidence_received": false,
+  "current_certificate_serial_after_attempt": null,
+  "renewal_request_server_confirmation": null,
+  "expected_fault_observed": false,
+  "acceptance_complete": false,
+  "cause": "not established",
+  "operator_fault_assumed": false,
+  "next_action": "Read-only issuance/renewal audit query before repeating fault injection",
+  "linux_readonly_checks": {
+    "panel_active": true,
+    "panel_pid": 428758,
+    "radius_active": true,
+    "radius_pid": 326873,
+    "client_source_sha256": "86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15"
+  },
+  "protected_database_direct_read": "remote user permission denied; no permissions changed",
+  "dns_dhcp_configuration": "out_of_scope"
+}
