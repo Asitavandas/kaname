@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## VV06 yarım kurulumdan doğal toparlanma — istemci saha kabulü, 20 Ekim2026, 19:03 İstanbul
+
+- **🔴✓ Tamamlandı: kontrollü issue aşaması yarım kalmasından doğal retry ile istemci toparlanması.** Retry18:59:21/result0 ana task18:59:25/Ready/result0; duruminstalled. Dört saniye retry ile ana task başlangıcı arasındaki farktır, toplam tamamlanma süresi değildir.
+- **🔴✓ Tamamlandı: aynı bekleyen anahtar ile kurulum ve yerel durum temizliği.** installedserial26e43008251ac23612b2e654a6f6a259ee234f6e, CertificateChanged=true, SamePendingKey=true (AuthWire-2ee74dcc-e141-44b9-b546-cc3f360622f5), privatekeytrue, pending.json=false ve retry.json=false. Toparlanma öncesi installedserial6eb64486d4123a060ba8deb8bb6ea9054fab5b4f idi.
+- **🔴✓ Tamamlandı: gözlem anında erişim koruması.** EthernetAuthentication succeeded,10.10.110.4/24Preferred. Bu yeni seriyle taze EAP kimlik doğrulaması yapıldığını tek başına kanıtlamaz; mevcut oturumun erişimi korunmuştur.
+- **Açık son kanıtlar:** sunucuda aynı CSR için tek issuance/ilk üretim zamanı, final receipt/installed_at ve önceki sertifika retirement kaydı; ardından yeni serinin taze EAP seçimi. Bütün yarım kurulum çeşitleri veya expired kurtarma bu tek senaryoyla kapanmaz. DHCP/DNS kapsam dışı kararı korunur.
+
 ## VV06 yarım kurulum için doğal retry saati eşleşti — 20 Ekim2026, 18:50 İstanbul
 
 - Operatör18:50:39: retry attempts1/stageissue/next_attempt18:59:21+03 ve retry taskNextRun18:59:21 birebir eşleşiyor. Bekleyen anahtar containerAuthWire-2ee74dcc-e141-44b9-b546-cc3f360622f5 olarak kaydedildi. Verilen yakalama komutu kalan handle'ı Dispose eder; ayrıca retry dosyası veya görev zamanı değiştirilmez.
