@@ -13,6 +13,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## VV06 gerçek session hatası sonrası deadline görevi kuruldu — 20 Ekim 2026, 17:42 İstanbul
+
+- Operatör daha kolay olduğu için ESXi'de AuthWire Linux VM vNIC bağlantısını geçici kesme yöntemini seçti. Yeni/yeniden802.1X doğrulamalarının bu arada etkilenebileceği açıklandı; VM kapatılmadan iki dakika sonra bağlantının geri açılması ve VV06 Ethernet'in korunması istendi. Hazırlanan dar nft probe kullanılmadı/çalıştırılmadı; iki yöntem birlikte uygulanmadı.
+- **🔴✓ Tamamlandı: gerçek başarısız enrollment ve gerçek retry deadline kurulumu.** VV06 ana task17:37:00 çalıştı ve1 ile bitti. retry.json attempts1/stage=session/next_attempt2026-10-20T14:52:30.4497593+00:00. Türkiye saati17:52:30 ile retry task NextRunTime17:52:30 eşleşiyor (saniye gösteriminde alt saniye farkı).
+- Yeni retry task LastTaskResult267011=0x00041303 SCHED_S_TASK_HAS_NOT_RUN; henüz çalışmamış görev durumudur. LastRunTime30.11.1999 gerçek test çalışması değildir. Windows saatiyle oynanmaz veya task elle yeniden başlatılmaz.
+- Salt okunur Linux kontrolü14:42:54Z: ens33UP10.35.50.246/24, panel/RADIUS/brokeractive; RADIUS PID326873 ve broker149955 korunuyor. Bu kontrol VV06'dan TCP erişiminin yerine geçmez; istemciden HTTPS yolu da kontrol edilecek.
+- **Açık son kabul:**17:52:30 sonrasında retry task kendi kendine ana task'ı başlatmalı; ana task yeniLastRun/Ready0, retry.json yok ve statusinstalled görülmeli. Eski manuel Start başarısı otomatik tekrar kabulü sayılmaz. Kontrol17:54 civarı salt okunur yapılacak; kernel probe için hazır dosya kullanılmayacak.
+
 ## VV06 kontrollü retry kesintisi hazırlandı; canlı engel uygulanmadı — 20 Ekim 2026
 
 - VV06 Domain/Private/Public firewall profilleri False; yerel kurallar izinli görünse de kapalı profilde engel etkili varsayılmadı. Birleştirilmiş tabloda MpsSvc adı göründü, Status görünmedi; servis durumu uydurulmadı. Windows firewall açılmadı.

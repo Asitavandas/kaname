@@ -1,0 +1,39 @@
+{
+  "event": "VV06_REAL_FAILURE_RETRY_DEADLINE_SCHEDULED",
+  "reported_at": "2026-10-20T17:42:21+03:00",
+  "method": "Operator chose temporary ESXi disconnect of AuthWire Linux VM vNIC; no nft probe was used",
+  "main_task_last_run": "2026-10-20T17:37:00+03:00",
+  "main_task_result": 1,
+  "retry": {
+    "attempts": 1,
+    "stage": "session",
+    "next_attempt_utc": "2026-10-20T14:52:30.4497593+00:00",
+    "scheduled_local": "2026-10-20T17:52:30+03:00",
+    "deadline_matches": true,
+    "subsecond_difference_under_one_second": true
+  },
+  "retry_task": {
+    "last_run_display": "30.11.1999 00:00:00",
+    "last_task_result": 267011,
+    "result_hex": "0x00041303",
+    "meaning": "SCHED_S_TASK_HAS_NOT_RUN",
+    "next_run": "2026-10-20T17:52:30+03:00"
+  },
+  "server_readonly_at": "2026-10-20T14:42:54Z",
+  "server": {
+    "ens33_up": true,
+    "ipv4": "10.35.50.246/24",
+    "panel_active": true,
+    "radius_active": true,
+    "radius_pid": "326873",
+    "broker_active": true,
+    "broker_pid": "149955"
+  },
+  "accepted": {
+    "real_failed_attempt": true,
+    "retry_json_written": true,
+    "actual_deadline_task_created": true,
+    "utc_local_alignment": true
+  },
+  "automatic_retry_execution_and_recovery_pending": true
+}
