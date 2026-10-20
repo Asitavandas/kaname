@@ -1,0 +1,35 @@
+{
+  "event": "DNS_DHCP_CUSTOMER_OWNED_OUT_OF_SCOPE",
+  "decision_date": "2026-10-20",
+  "decision_timezone": "Europe/Istanbul",
+  "decision_local_time": "18:07",
+  "basis": "Explicit customer instruction",
+  "status": "out_of_scope",
+  "customer_owned": [
+    "DHCP provider selection",
+    "DNS resolver placement on firewall or AD DNS",
+    "DNS server list distributed to clients"
+  ],
+  "removed_from_open_work": [
+    "DNS list cleanup",
+    "DHCP/static source discovery for DNS changes",
+    "DHCP DNS distribution reconfiguration"
+  ],
+  "configuration_changed": false,
+  "live_server_actions_executed": false,
+  "completed_technical_work": false,
+  "functional_prerequisite": "Required domain and AuthWire names resolve and required connections work using the customer-provided architecture",
+  "prior_dns_cause_proven": false,
+  "supersedes_current_scope_of": [
+    "docs/checkpoints/2026-10-20-vv06-dhcp-dns-source.json",
+    "DNS configuration open items in earlier dated reports"
+  ],
+  "historical_evidence_preserved": true,
+  "automatic_retry_acceptance_preserved": true,
+  "remaining_authwire_acceptance": [
+    "Interrupted or partial installation recovery",
+    "Expired certificate and wrong issuer scenarios",
+    "Separate AD and wireless negative acceptance",
+    "Separate user EAP-TLS pilot"
+  ]
+}

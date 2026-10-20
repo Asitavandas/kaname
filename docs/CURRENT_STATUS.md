@@ -16,12 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
-## VV06 DNS kaynağı DHCP olarak doğrulandı — 20 Ekim 2026, 18:00 İstanbul
+## DHCP/DNS yapılandırması kapsam dışı — müşteri kararı, 20 Ekim 2026, 18:07 İstanbul
 
-- Operatör netsh çıktısı Ethernet DNS listesi DHCP'den10.35.50.70 ve1.1.1.1 olarak geliyor, suffixPrimaryonly. Statik istemci override'ı varsayılmadı.
-- Güncel kaynak tanısı tamam; **düzeltme henüz uygulanmadı.** DHCP server identifier IP'si henüz bilinmiyor; gateway'in FortiGate olması DHCP sunucusunun da aynı cihaz olduğunu kanıtlamaz. VV06 InterfaceIndex ile Win32_NetworkAdapterConfiguration üzerinden DHCPServer salt okunur alınacak.
-- Hedef dar kapsam VLAN110'un DHCP DNS dağıtımı: iç domain kayıtlarını çözebilen10.35.50.70; başka doğrulanmış iç DNS varsa ikinci olarak o. Global FortiGate system DNS veya karantina/diğer VLAN DHCP kapsamı değiştirilmez. İnternet çözümlemesi iç DNS'in forwarder/root-hints yoluyla sağlanabilir; bu ortamın mevcut forwarder ayarı bu çıktıdan doğrulanmış sayılmaz.
-- Bu DNS karışımı olası domain çözümleme sorunudur; önceki session hatasının kesin özgün nedeni olarak ilan edilmedi. Gerçek otomatik retry kabulü tamamlanmış olarak korunuyor.
+- **Kapsam dışı / müşteri kararı:** DHCP/DNS'in hangi cihazdan dağıtılacağı, firewall veya AD DNS mimarisi ve istemciye dağıtılan DNS listesi müşterinin sorumluluğundadır. AuthWire çalışması kapsamında bu ayarlar değiştirilmeyecek; bu konu bekleyen iş veya tamamlanmış teknik iş olarak sayılmayacak.
+- Önceki18:00 DNS kaynak incelemesi ve DNS düzenleme önerisi bu kararla kapatıldı. DHCPServer keşfi dahil yeni DNS yapılandırma çalışması yapılmayacak. Eski tarihli rapor/checkpoint kayıtları geçmiş gözlemdir; güncel kapsam için bu karar esas alınır.
+- Mevcut gözlem: VV06 Ethernet DNS listesi DHCP'den10.35.50.70 ve1.1.1.1 geliyor. Hiçbir DNS/DHCP ayarı değiştirilmedi. Önceki session hatasının kesin nedeninin DNS olduğu kanıtlanmadı.
+- AuthWire için yalnız gerekli domain ve AuthWire adlarının çözümlenebilmesi ve gerekli bağlantıların çalışması işlevsel ön koşuldur; bu hizmetin hangi cihazda sağlandığına ilişkin mimari değişiklik istenmez.
+- **🔴✓ Korunan tamamlanmış kabul:** gerçek otomatik retry, installed durumuna dönüş, 802.1X ve VLAN110 erişimi. Sonraki AuthWire kabul işleri kesilen/yarım kurulum, expired/yanlış issuer ve diğer ayrı AD/kablosuz senaryolarıdır; kullanıcı EAP-TLS pilotu ayrıca izlenir.
 
 ## VV06 gerçek otomatik retry ve toparlanma kabulü tamamlandı — 20 Ekim 2026, 17:56 İstanbul
 
@@ -29,7 +30,7 @@ pause checkpoint and an updated report with red check marks against 9 October.
 - Operatör17:54:02 kontrolünde retry LastRun17:52:30/result0, ana LastRun17:52:32/Ready/result0 gördü. Görev başarısızlıktan sonra elle yeniden başlatılmadan doğal deadline beklendi. **İki saniye tetikleyici ile ana görev başlangıcı arasındaki farktır; tamamlanma süresi değildir.**
 - **🔴✓ Tamamlandı: retry ve eski hata durumu temizliği.** retry.json=false, status.state=installed. Bu gerçek ağ hata/toparlanma kabulüdür; yalnız fixture veya manuel retry değildir.
 - **🔴✓ Tamamlandı: toparlanma sonrası mevcut erişim koruması.** Realtek Ethernet Authentication succeeded;10.10.110.4/24Preferred. CA/policy veya Windows saatinde test değişikliği yapılmadı. Hazırlanan nft probe kullanılmadı. Önceki Linux kontrolünde RADIUS PID326873/broker149955 korunuyordu; son Windows çıktısı sunucu PID okuması değildir.
-- **Sonraki açık adım:** önce VV06 güncel domain DNS listesinin ve statik/DHCP kaynağının salt okunur okunması; daha önce10.35.50.70 yanında1.1.1.1 görülmüştü, güncel durum varsayılmaz. Ardından kalan expired/yanlış issuer, kesilen/yarım kurulum ve diğer AD/kablosuz kabul kapıları. Kullanıcı EAP-TLS pilotu ayrı ve unutulmadan izlenir.
+- **Sonraki açık AuthWire işleri:** kalan expired/yanlış issuer, kesilen/yarım kurulum ve diğer AD/kablosuz kabul kapıları. Kullanıcı EAP-TLS pilotu ayrı ve unutulmadan izlenir. DHCP/DNS yapılandırması20 Ekim18:07 müşteri kararıyla kapsam dışıdır.
 - B06'nın doğal boot, ağsız boot/kablo dönüşü ve gerçek hata sonrası otomatik retry alt işleri tamamlandı; bütün yaşam döngüsü/expired ve yarım kurulum kapsamı kapanmış sayılmaz. 19 Ekim raporu tarihli snapshot olarak korunur; bu sonuç güncel kayda eklendi.
 
 ## VV06 gerçek session hatası sonrası deadline görevi kuruldu — 20 Ekim 2026, 17:42 İstanbul

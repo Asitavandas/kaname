@@ -5,6 +5,14 @@ sonuçlar [CURRENT_STATUS.md](CURRENT_STATUS.md), işletim/kurtarma adımları
 [OPERATIONS_0_14_0.md](OPERATIONS_0_14_0.md) içindedir. Eski sürüm notları tarihsel
 kapsamdır; burada tamamlanan saha işleri yeniden “bekliyor” sayılmaz.
 
+## Kapsam sınırı — 20 Ekim müşteri kararı
+
+DHCP/DNS'in hangi cihazdan dağıtılacağı, firewall/AD DNS mimarisi ve DNS listesi
+değişiklikleri müşteri sorumluluğundadır; AuthWire çalışma kapsamından çıkarıldı.
+Bu konu bekleyen eksik veya tamamlanan teknik iş olarak sayılmaz. Mevcut mimaride
+gerekli domain/AuthWire ad çözümlemesi ve bağlantılar işlevsel ön koşuldur.
+Eski tarihli raporlardaki DNS düzenleme maddeleri için bu karar geçerlidir.
+
 ## Temel ürün
 
 | İş paketi | Tamamlanan kapsam | Açık kabul kapısı |
@@ -14,7 +22,7 @@ kapsamdır; burada tamamlanan saha işleri yeniden “bekliyor” sayılmaz.
 | B03 Güven ve PKI | Gerçek CA/server-name kontrolü, iptal ve imzalı runtime CRL | Expired/yanlış issuer saha testi, CA/Issuer rollover ve bakım |
 | B04 Enrollment | SYSTEM/GPO ile gerçek farklı cihaz anahtarı ve makbuz | Kesilmiş/tekrarlı kayıt saha senaryoları; 4-worker load fixture'da gözlenen aralıklı SQLite kilitlenmesi |
 | B05 Merkezi dağıtım | Paket ve gerçek GPO görevi/istemci kabulü; DC01 paket/ACL kontrolü, çift Startup düzeltmesi ve tek AllSigned çağrı; 🔴✓ VV06 RSOP/imza/sertifika/802.1X korunması; 🔴✓ dev.10 boot-run kurtarma/SYSTEM testleri, canlı kaynak/restore ve signed updater Windows/rollback testleri; 🔴✓ DC01 mevcut publisher ile yeni imzalı SYSVOL kurucusu ve asset/ACL koruması canlı kabulü; 🔴✓ VV06 gerçek boot sonrası doğal task çalışması0, imza/cert/key ve 802.1X/VLAN110 korunması | Daha geniş yayılım; dev.11 doğal boot ve ağ hata/toparlanma kabulü B06'da tamamlandı |
-| B06 Yenileme ve toparlanma | VV06 gerçek yeni anahtar/sertifika yenilemesi, yeni seri EAP seçimi, sunucu24h retirement/CRL ve yerel12h eski cert/CNG key temizliği; 🔴✓ dev.11 signed SYSVOL, yeni launcher doğal boot Ready/0 ve cert/key/802.1X/VLAN110 koruması; 🔴✓20 Ekim ağsız boot/kablo dönüşü; 🔴✓ gerçek ESXi kesintisi session/result1 sonrası retry17:52:30 → ana task17:52:32/Ready0, retry dosyası yok, statusinstalled ve EAP/VLAN110 korundu | Kesilen/yarım kurulum ve expired kurtarma yolları; güncel domain DNS ve DHCP/statik kaynak düzenlemesi |
+| B06 Yenileme ve toparlanma | VV06 gerçek yeni anahtar/sertifika yenilemesi, yeni seri EAP seçimi, sunucu24h retirement/CRL ve yerel12h eski cert/CNG key temizliği; 🔴✓ dev.11 signed SYSVOL, yeni launcher doğal boot Ready/0 ve cert/key/802.1X/VLAN110 koruması; 🔴✓20 Ekim ağsız boot/kablo dönüşü; 🔴✓ gerçek ESXi kesintisi session/result1 sonrası retry17:52:30 → ana task17:52:32/Ready0, retry dosyası yok, statusinstalled ve EAP/VLAN110 korundu | Kesilen/yarım kurulum ve expired kurtarma yolları |
 | B07 Servis işletimi | Normal RADIUS, ayrı Servisler ekranı ve canlı CRL sync kabulü | Kalan hata/yaşam döngüsü ve işletim senaryoları |
 | B08 Policy/VLAN | Dar pilot grubunda/NAS'ta kablolu/kablosuz gerçek policy VLAN ve DHCP | Diğer deny koşulları ve gelişmiş seçiciler |
 | B09 Kablolu | Pozitif; sertifikasız/grup dışı/kapalı/iptal ret; reboot/recovery; 🔴✓19 Ekim ağsız boot sonrası kablo takılınca EAP/VLAN110 geri dönüşü | Kalan olumsuz kimlik/güven, expired ve yarım kurulum senaryoları |
