@@ -1,0 +1,59 @@
+{
+  "event": "EXPIRED_PENDING_RECOVERY_GAP_AND_DRAFT_FIX",
+  "date": "2026-10-20",
+  "installed_version": "0.14.0-dev.11",
+  "candidate_version": "0.14.0-dev.12",
+  "candidate_pr": "https://github.com/Asitavandas/kaname/pull/42",
+  "candidate_source_commit": "f6ddf71629f251cd40feb936cf5f24fe4f38d489",
+  "candidate_latest_commit": "8b714c475590c5a0ae512c5533961064b0b6131d",
+  "candidate_client_sha256": "bf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60",
+  "reproduction": {
+    "isolated_fixture_only": true,
+    "system_clock_changed": false,
+    "same_expired_pending_csr_retries": [
+      "DEVICE_CERTIFICATE_EXPIRED",
+      "DEVICE_CERTIFICATE_EXPIRED"
+    ],
+    "fresh_key_new_csr_recovers": true,
+    "customer_state_used": false
+  },
+  "local_checks": {
+    "tests_run": 539,
+    "skipped": 25,
+    "failures": 0,
+    "errors": 0,
+    "passed": 514,
+    "focused_tests_passed": 26,
+    "related_tests_run": 55,
+    "related_tests_skipped": 1
+  },
+  "native_ci": {
+    "status": "blocked_before_execution",
+    "device_workflow_run_id": 39458558838,
+    "windows_job_id": 118751695669,
+    "windows_job_steps": [],
+    "native_radius_workflow_run_id": 39458558740,
+    "windows_log_download": "BlobNotFound",
+    "exact_provider_reason": null,
+    "annotation_capability": "unsupported by connected GitHub fetch endpoint",
+    "windows_native_passed": false,
+    "current_native_tls_expiry_passed": false
+  },
+  "production": {
+    "source_changed": false,
+    "signed_sysvol_changed": false,
+    "vv06_client_changed": false,
+    "certificate_or_key_changed": false,
+    "system_clock_changed": false,
+    "radius_policy_changed": false,
+    "services_restarted": false,
+    "panel_pid": 428758,
+    "radius_pid": 326873,
+    "broker_pid": 149955,
+    "client_sha256": "86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15"
+  },
+  "draft_behavior": "Only exact issue-stage expired-certificate response archives matching pending.json; existing certificates and keys stay intact; next normal authenticated retry creates a fresh key and CSR. Archived metadata/key retained for diagnosis.",
+  "full_expired_field_acceptance": false,
+  "next": "Read provider error on failed Actions page; restore native execution before merge/deploy; keep actual expired-VV06 field test separate",
+  "dns_dhcp_configuration": "out_of_scope"
+}

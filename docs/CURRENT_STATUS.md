@@ -16,6 +16,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Expired-pending kurtarma açığı doğrulandı; düzeltme taslağı native test engelinde — 20 Ekim2026
+
+- **🔴✓ Tamamlandı: izole kaynak/uygulama hata tekrar üretimi.** Aynı expired pending CSR iki kez DEVICE_CERTIFICATE_EXPIRED ile reddediliyor; yeni anahtar/CSR mevcut sunucuda taze yetkilendirmeyle toparlanıyor. Eski Windows istemcisinde pending.json bırakıldığı için aynı expired istek döngüye girebiliyor. Bu bulgu VV06'nın şu anki geçerli26e... sertifikasının arızalı olduğu anlamına gelmez.
+- Taslak düzeltme **PR42** https://github.com/Asitavandas/kaname/pull/42, aday0.14.0-dev.12, sourceheadf6ddf71629f251cd40feb936cf5f24fe4f38d489; yalnız issue aşamasında açık expired yanıtı ve değişmemiş pending kimliği varsa eski istek özel expired-pending klasörüne taşınır. Sonraki normal retry yeni nonexportable CNG key/CSR üretir. Diğer hata kodları aynı pending isteği korur; arşiv hatası durum alanına yazılır. Eski request/key referansı tanılama için saklanır; sertifika/anahtar silme veya yeni otomatik arşiv/key temizliği bu taslakta yoktur.
+- **🔴✓ Yerel teknik kontrol:**539test/25skip/hatasız (514geçti); odak26testgeçti; ilişkili55test/1skip/hatasız. Bunlar Windows SYSTEM/CNG veya yeni gerçek TLS testleri geçti demek değildir.
+- **Açık/engelli:** GitHub Actions device run39458558838/windowsjob118751695669 ve RADIUSrun39458558740 test adımları başlamadan failure oldu. Windows steps=[] ve logBlobNotFound. Provider annotation bağlantının desteklediği read uçlarından alınamadı; kesin neden veya billing/kota tanısı uydurulmadı. Native Windows fixture ve güncel native TLS expired ret henüz çalıştırılamadı. PRdraft, merge/deploy yapılmadı.
+- Canlı salt okunur kontrol: version0.14.0-dev.11, clientSHA86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15; panel428758/RADIUS326873/broker149955active. Üretim kaynak/SYSVOL/Windows, CA/policy ve saat ayarı değişmedi. Aday clientSHAbf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60.
+- Normal profil en az2gün geçerli sertifika üretir. Canlı VV06 sertifikasının gerçek expiry saha kabulü, izole/native teknik testlerden ayrı kalır; Windows veya Linux saatini ileri alma uygulanmadı. Sonraki kapı Actions sağlayıcı hata metnini okuyup native doğrulamayı açmak, kontrollerden sonra korumalı kaynak ve signed SYSVOL teslimidir. DHCP/DNS kapsam dışı kararı korunur.
+
 ## 🔴✓ VV06 yarım kurulum → doğal retry → yeni seriyle taze kablolu EAP senaryosu tamamlandı — 20 Ekim2026
 
 - **🔴✓ Tamamlandı: yeni sertifika ile taze802.1X kabulü.** Operatör dot3svc yeniden başlatma adımından sonra VV06 EthernetAuthentication succeeded ve20 Ekim19:15:52 yerel15505/Reason0/Error0 olayını paylaştı. Fiziksel MAC38:ca:84:db:ff:e6 ve cihaz GUID69b0d5cd-db61-4627-9db7-fcc5230152a3.
