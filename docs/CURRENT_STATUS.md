@@ -16,6 +16,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ VV06 yarım kurulum → doğal retry → yeni seriyle taze kablolu EAP senaryosu tamamlandı — 20 Ekim2026
+
+- **🔴✓ Tamamlandı: yeni sertifika ile taze802.1X kabulü.** Operatör dot3svc yeniden başlatma adımından sonra VV06 EthernetAuthentication succeeded ve20 Ekim19:15:52 yerel15505/Reason0/Error0 olayını paylaştı. Fiziksel MAC38:ca:84:db:ff:e6 ve cihaz GUID69b0d5cd-db61-4627-9db7-fcc5230152a3.
+- AuthWire Linux ekran görüntüsü bizzat okundu: checked_at16:18:14.066703Z, en yeni kayıt16:17:55.541Z, response_code2/POLICY_ALLOW, **certificate_serial26e43008251ac23612b2e654a6f6a259ee234f6e**, policy_idauthwire-pilot-wired, VLAN110, tls_verified1 ve aynı MAC. Diğer iki satır daha önceki14:13:45Z/14:00:49Z olayları ve eski5899... serisidir; yeni testin çoğaltılmış kayıtları olarak sayılmaz.
+- Önceden kabul edilen zincir: issue/result1/pendingtrue → doğal18:59:21 retry → ana18:59:25/Ready0 → aynı pendingcontainer ile yeni leaf/privatekey → pending/retryfalse → sunucuda aynı CSR tek issuance/final receipt ve önceki6eb... serisine receipt+24h retirement planı. Şimdi yeni26e... serisinin gerçek RADIUS/EAP kullanım kanıtı da var.
+- **Bu dar kontrollü yarım kurulum senaryosu tamamlandı.** Expired, diğer kesilme noktaları/ilk kurulum varyantları, diğer negatif güven senaryoları ve kullanıcı EAP-TLS pilotu ayrıca açık kalır. Henüz gelecekteki6eb... retirement yürütmesi veya bu yeni çiftin12h yerel temizliği test edilmiş sayılmaz.
+- Zaman korelasyonu sınırı: Windows15505 yerel19:15:52 ve sunucuaccept yerel19:17:55.541 arasında123.541s fark var. Ortak anda iki saat ofseti ölçülmedi; tekil tetik ile olayın saniye bazında birebir eşleşmesi/clock drift nedeni iddia edilmez. MAC/yeni seri/TLS ve operatör akışı yeni serinin taze kabulünü destekler; kesin çapraz kaynak zaman korelasyonu B11'de ayrı açık nottur. Saat/DNS/DHCP ayarı değiştirilmedi.
+- Kaynak görselimage(20261020-161942).png Librarylibfile_948cb01ddfec819189f8249bfc69f8b9, SHA1605652bc6935c386f9145ef8cf98b5c65d22b257a3b415d0abb2457203aa3a5. Güncel rapor üretiminde bu alt adımlar kırmızı tik ile gösterilecek;19 Ekim PDF tarihli snapshot olarak kalır.
+
 ## VV06 yarım kurulum: tek issuance ve final receipt sunucuda doğrulandı — 20 Ekim2026
 
 - **🔴✓ Tamamlandı: sunucuda aynı CSR için tek issuance ve kurulum onayı.** Seri26e43008251ac23612b2e654a6f6a259ee234f6e, CSRsha256fbad25474f7faff5fc29b85958cf5cbb138e0f05898e0882f677d11ac310440f; same_csr_issuance_count=1, tek issued ve installed audit kaydı paylaşıldı. installed_at/last_seen2026-10-20T16:02:33Z.

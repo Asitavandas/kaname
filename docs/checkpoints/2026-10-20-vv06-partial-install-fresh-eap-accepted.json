@@ -1,0 +1,53 @@
+{
+  "event": "VV06_PARTIAL_INSTALL_FRESH_EAP_ACCEPTED",
+  "scenario": "Controlled failure after certificate issuance before local installation; natural retry with same pending machine key; final receipt; fresh wired EAP with recovered certificate",
+  "scenario_complete": true,
+  "all_partial_install_variants_complete": false,
+  "all_certificate_lifecycle_complete": false,
+  "windows": {
+    "observed_time_local": "2026-10-20T19:15:52+03:00",
+    "event_id": 15505,
+    "reason_code": "0x0",
+    "error_code": "0x0",
+    "interface_name": "Ethernet",
+    "interface_guid": "415933d5-5010-4a7a-b8bf-0e537e0bc7f2",
+    "calling_station": "38:ca:84:db:ff:e6",
+    "identity": "host/AuthWire computer 69b0d5cd-db61-4627-9db7-fcc5230152a3",
+    "state": "Connected. Authentication succeeded."
+  },
+  "server": {
+    "checked_at_utc": "2026-10-20T16:18:14.066703+00:00",
+    "event_at_utc": "2026-10-20T16:17:55.541Z",
+    "response_code": 2,
+    "reason": "POLICY_ALLOW",
+    "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+    "policy_id": "authwire-pilot-wired",
+    "vlan": 110,
+    "tls_verified": 1,
+    "calling_station": "38:ca:84:db:ff:e6"
+  },
+  "cross_source_exact_time_correlation": {
+    "verified": false,
+    "note": "Windows success at19:15:52 local and latest server accept at19:17:55.541 local differ by123.541 seconds. Current clock offsets were not sampled together; no clock setting changed. Fresh new serial use is supported by current server row, TLS verification, MAC and operator sequence; exact event-to-event identity is not claimed."
+  },
+  "supporting_accepted_evidence": [
+    "2026-10-20-vv06-partial-install-client-recovery-accepted.json",
+    "2026-10-20-vv06-partial-install-server-receipt-accepted.json"
+  ],
+  "attachment": {
+    "name": "image(20261020-161942).png",
+    "library_file_id": "libfile_948cb01ddfec819189f8249bfc69f8b9",
+    "sha256": "1605652bc6935c386f9145ef8cf98b5c65d22b257a3b415d0abb2457203aa3a5",
+    "visually_inspected": true
+  },
+  "previous_rows_in_screenshot": {
+    "count": 2,
+    "certificate_serial": "5899e122009871b0d5536890bee81e4f0499e605",
+    "at_utc": [
+      "2026-10-20T14:13:45.732Z",
+      "2026-10-20T14:00:49.027Z"
+    ],
+    "historical_not_new_certificate_use": true
+  },
+  "dns_dhcp_configuration": "out_of_scope"
+}
