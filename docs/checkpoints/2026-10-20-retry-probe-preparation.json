@@ -1,0 +1,42 @@
+{
+  "event": "VV06_RETRY_PROBE_PREPARED",
+  "date": "2026-10-20",
+  "windows_firewall": {
+    "Domain": false,
+    "Private": false,
+    "Public": false,
+    "allow_local_rules": true,
+    "service_status_not_visible_in_combined_output": true
+  },
+  "live_version": "0.14.0-dev.11",
+  "product_changed": false,
+  "probe_started": false,
+  "source_client": "10.10.110.4",
+  "destination": "10.35.50.246",
+  "protocol": "tcp",
+  "destination_port": 8765,
+  "restriction_seconds": 180,
+  "kernel_element_timeout": true,
+  "temporary_table_prefix": "aw_retry_probe_",
+  "candidate": "1afbcb3148568e421621d1c8a6a1f3fd9169758b",
+  "merge": "0e635a83bf170a0bff2f2fc3d1d8174776ecc9cd",
+  "pr": 41,
+  "hosted_native_job": 118685231691,
+  "native_result": "RETRY_PROBE_NATIVE_OK",
+  "native_verified": {
+    "single_client_tcp_reject": true,
+    "other_client_allowed": true,
+    "loopback_allowed": true,
+    "ssh_allowed": true,
+    "udp_1812_allowed": true,
+    "foreign_rules_preserved": true,
+    "foreign_drop_still_enforced": true,
+    "kernel_expiry_without_cleanup": true,
+    "own_table_removed": true
+  },
+  "unit_guards": 4,
+  "all_candidate_checks_passed": true,
+  "operator_path": "/home/segmentiq/authwire-retry-network-probe-20261020.py",
+  "sha256": "8152fb58f5a00e87c57995242eb2f9d40838b3e5b09e3eeea3020f582c396614",
+  "actual_failed_attempt_and_deadline_retry_pending": true
+}

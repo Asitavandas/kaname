@@ -12,6 +12,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## VV06 kontrollü retry kesintisi hazırlandı; canlı engel uygulanmadı — 20 Ekim 2026
+
+- VV06 Domain/Private/Public firewall profilleri False; yerel kurallar izinli görünse de kapalı profilde engel etkili varsayılmadı. Birleştirilmiş tabloda MpsSvc adı göründü, Status görünmedi; servis durumu uydurulmadı. Windows firewall açılmadı.
+- **🔴✓ Tamamlandı: sınırlı sunucu probe kodu ve gerçek izole kernel testi.** PR41 candidate1afbcb314856, native job118685231691 başarı; dört scope/overlap/deletion guard testi ve foundation kontrolleri de geçti. Private network namespace içinde yalnız10.10.110.4→10.35.50.246TCP8765 reset ile reddedildi; farklı istemci, loopback, TCP22 ve UDP1812 açık kaldı; mevcut farklı chain'in drop'u geçersiz kılınmadı. Kernel set timeout4s testinde cleanup süreci çalıştırmadan erişim döndü, başka tablonun JSON'u korundu ve probe tablosu kaldırıldı. Bu transport fixture gerçek RADIUS oturum kabulü değildir.
+- Live probe sabit180 saniye, yalnız IPv4 istemci/hedef/TCPport, paket yolunda timeout uzatması yok. UUID adlı ayrı inet table, mevcut tabloya flush/yazma yok; normal finally yalnız kendi tablosunu kaldırır. Terminal/SIGKILL halinde engel kernel element timeout ile son bulur (boş test tablosu ayrıca temizlenebilir). Kaynak/sertifika/service state yazılmaz; panel/RADIUS/broker PID ve korunan dosyalar ön/son karşılaştırılır.
+- PR41 merge0e635a83bf170a0bff2f2fc3d1d8174776ecc9cd. Operatör dosyası /home/segmentiq/authwire-retry-network-probe-20261020.py SHA8152fb58f5a00e87c57995242eb2f9d40838b3e5b09e3eeea3020f582c396614 olarak hazırlandı. **Probe çalıştırılmadı; canlı nft kuralı kurulmadı.** Ürün source update/restart yapılmadı, canlıdev.11 kalır.
+- Sonraki operatör akışı: Linux sudo probe READY ardından beklemeden VV06'dan hedefTCP8765'in kapandığı kontrol edilir; True ise task başlatılmaz. False ise hazır ana task bir kez kontrollü başlatılır; retry.json ve tek seferlik task deadline kanıtı alınır. İlk hata sonrası sonraki task elle başlatılmaz;3dk engel kalkışı/paket sayısı/koruma çıktısı ve doğal10–25dk retry Ready/0/retryfalse sonucu beklenir. CA/sertifika/policy ve Windows saati değiştirilmez. NAT nedeniyle eşleşme olmazsa paket sayısı0 olarak teşhis edilir; kapsam genişletilmez.
+
 ## VV06 dev.11 ağsız boot ve doğal kablo geri dönüşü kabulü — 20 Ekim 2026, 17:18 İstanbul
 
 - **🔴✓ Tamamlandı: gerçek ağsız açılış sonrası ağ geri gelince kendiliğinden görev/erişim toparlanması.** Operatör Wi-Fi kapalı, Ethernet çıkarılmış reboot ve sonra kablo takma prosedürü ardından çıktı verdi: boot17:08:48; ana task başlangıcı17:11:44; kontrol17:15:30; RanAfterBoot=true, Ready, LastTaskResult0.
