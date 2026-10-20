@@ -1,0 +1,22 @@
+{
+  "event": "VV06_DEV11_BOOT_ACCEPTED",
+  "reported_at": "2026-10-20T17:03:48+03:00",
+  "computer": "VV06",
+  "last_boot": "2026-10-20T16:58:33+03:00",
+  "last_run": "2026-10-20T16:58:44+03:00",
+  "ran_after_boot": true,
+  "task_state": "Ready",
+  "last_task_result": 0,
+  "uses_new_launcher": true,
+  "installer_signature": "Valid",
+  "installer_updated": true,
+  "certificate_found": true,
+  "has_private_key": true,
+  "retry_file_exists": false,
+  "wired_authentication": "succeeded",
+  "ipv4": "10.10.110.4",
+  "prefix": 24,
+  "address_state": "Preferred",
+  "offline_reconnect_acceptance_pending": true,
+  "real_failed_attempt_automatic_retry_acceptance_pending": true
+}

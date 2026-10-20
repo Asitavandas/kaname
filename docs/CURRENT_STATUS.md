@@ -1,6 +1,6 @@
 # AuthWire current work record
 
-Updated: 19 October 2026, Europe/Istanbul. This record supplements the 9 October
+Updated: 20 October 2026, Europe/Istanbul. This record supplements the 9 October
 `AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-09.docx` / `.pdf`; those reports are a
 dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
@@ -9,6 +9,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+
+## VV06 dev.11 gerçek açılış kabulü — 20 Ekim 2026, 17:03 İstanbul
+
+- **🔴✓ Tamamlandı: dev.11 yeni launcher gerçek GPO/açılış kabulü.** VV06 boot16:58:33, task başlangıcı16:58:44 (11 saniye fark), RanAfterBoot=true, Ready, LastTaskResult0. UsesNewLauncher=true, InstallerSignature=Valid, InstallerUpdated=true.
+- **🔴✓ Tamamlandı: mevcut kimlik ve erişim koruması.** CertificateFound/HasPrivateKey=true; retry.json yok. Realtek Ethernet Authentication succeeded,10.10.110.4/24Preferred.
+- **Sonraki ayrı kabul:** Wi-Fi kapalı/Ethernet çıkarılmış reboot, kablo geri gelince doğal task/EAP/VLAN; elle task başlatılmayacak. İlk deneme0 ise ağsız boot toparlanması kabul edilir fakat hata sonrası otomatik retry kanıtlanmış sayılmaz. Hata oluşursa retry.json deadline ve tek seferlik task zamanı ile doğal sonraki Ready/0/retryfalse izlenecek. Expired/diğer olumsuzlar ve kullanıcı EAP-TLS ayrı açık.
 
 ## Dev.11 signed SYSVOL güncellemesi canlı kabulü — 19 Ekim 2026, 21:20 İstanbul
 
