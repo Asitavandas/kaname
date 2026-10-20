@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## VV06 yarım kurulum testi başlangıç durumu — 20 Ekim 2026, 18:26 İstanbul
+
+- Operatör çıktısı: Ready/result0, son çalışma17:52:32; mevcut seri5899e122009871b0d5536890bee81e4f0499e605 ve özel anahtar mevcut, bitiş13 Ocak2027 16:26:42. pending.json=false ve retry.json=false. Ethernet Authentication succeeded.
+- Hazırlık: istemci kaynak yolunda sunucu issue yanıtından sonra issued.pem yazısı, Windows cert-store kurulumundan ve final receipt'ten öncedir. Mevcut dosyaya salt okunur FileShare.Read handle ile geçici yazma kesintisi planlandı; yazma engelinin gerçekten sharing violation olduğu önce doğrulanacak. Sertifika/anahtar silinmez, signed istemci veya ACL değiştirilmez.
+- Yerel iki ilgili unittest geçti: aynı CSR/yeniden denemede idempotent issuance ve yeni kurulum makbuzuna kadar eski sertifikanın korunması. Bunlar saha kesintisi kabulü değildir.
+- **Açık:** kilit kurulması, panelden yalnız VV06 için normal yenileme isteği, gerçek yarım kurulum çıktısı ve aynı pending CSR/anahtarla toparlanma. Henüz kilit/yenileme uygulanmadı; bu test tamamlandı sayılmaz. DHCP/DNS yapılandırması kapsam dışı kalır.
+
 ## DHCP/DNS yapılandırması kapsam dışı — müşteri kararı, 20 Ekim 2026, 18:07 İstanbul
 
 - **Kapsam dışı / müşteri kararı:** DHCP/DNS'in hangi cihazdan dağıtılacağı, firewall veya AD DNS mimarisi ve istemciye dağıtılan DNS listesi müşterinin sorumluluğundadır. AuthWire çalışması kapsamında bu ayarlar değiştirilmeyecek; bu konu bekleyen iş veya tamamlanmış teknik iş olarak sayılmayacak.

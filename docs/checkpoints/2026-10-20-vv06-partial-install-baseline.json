@@ -1,0 +1,27 @@
+{
+  "event": "VV06_PARTIAL_INSTALL_BASELINE",
+  "checked_at_local": "2026-10-20T18:26:05+03:00",
+  "computer": "VV06",
+  "task_state": "Ready",
+  "last_run_local": "2026-10-20T17:52:32+03:00",
+  "last_task_result": 0,
+  "serial": "5899e122009871b0d5536890bee81e4f0499e605",
+  "certificate_found": true,
+  "has_private_key": true,
+  "not_after_local": "2027-01-13T16:26:42+03:00",
+  "pending_request": false,
+  "retry_file_exists": false,
+  "wired_authentication": "succeeded",
+  "preparation_checks": {
+    "source_path": "kaname/device_client/AuthWire-Client.ps1",
+    "failure_point": "issued.pem write after server issuance, before certificate validation/install/final receipt",
+    "same_csr_idempotency_test_passed": true,
+    "old_certificate_retained_until_receipt_test_passed": true
+  },
+  "planned_fault": "Temporary read handle with FileShare.Read on existing issued.pem; verify write-sharing violation before requesting renewal",
+  "fault_applied": false,
+  "renewal_requested": false,
+  "customer_acceptance_complete": false,
+  "dns_dhcp_configuration": "out_of_scope",
+  "protected_state_changes": []
+}
