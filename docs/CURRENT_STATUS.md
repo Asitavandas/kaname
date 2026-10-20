@@ -15,6 +15,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## VV06 DNS kaynağı DHCP olarak doğrulandı — 20 Ekim 2026, 18:00 İstanbul
+
+- Operatör netsh çıktısı Ethernet DNS listesi DHCP'den10.35.50.70 ve1.1.1.1 olarak geliyor, suffixPrimaryonly. Statik istemci override'ı varsayılmadı.
+- Güncel kaynak tanısı tamam; **düzeltme henüz uygulanmadı.** DHCP server identifier IP'si henüz bilinmiyor; gateway'in FortiGate olması DHCP sunucusunun da aynı cihaz olduğunu kanıtlamaz. VV06 InterfaceIndex ile Win32_NetworkAdapterConfiguration üzerinden DHCPServer salt okunur alınacak.
+- Hedef dar kapsam VLAN110'un DHCP DNS dağıtımı: iç domain kayıtlarını çözebilen10.35.50.70; başka doğrulanmış iç DNS varsa ikinci olarak o. Global FortiGate system DNS veya karantina/diğer VLAN DHCP kapsamı değiştirilmez. İnternet çözümlemesi iç DNS'in forwarder/root-hints yoluyla sağlanabilir; bu ortamın mevcut forwarder ayarı bu çıktıdan doğrulanmış sayılmaz.
+- Bu DNS karışımı olası domain çözümleme sorunudur; önceki session hatasının kesin özgün nedeni olarak ilan edilmedi. Gerçek otomatik retry kabulü tamamlanmış olarak korunuyor.
+
 ## VV06 gerçek otomatik retry ve toparlanma kabulü tamamlandı — 20 Ekim 2026, 17:56 İstanbul
 
 - **🔴✓ Tamamlandı: gerçek başarısız deneme → deadline görevi → kendiliğinden başarı saha zinciri.** Kontrollü ESXi vNIC kesintisinde ana task17:37:00/session/result1; retry.json attempts1/next_attempt14:52:30.4497593Z; tek seferlik task Türkiye17:52:30'a kuruldu. Operatör17:49'da VV06 TCP8765=True sonucunu teyit etti.

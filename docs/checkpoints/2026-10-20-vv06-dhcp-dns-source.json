@@ -1,0 +1,15 @@
+{
+  "event": "VV06_DNS_DHCP_SOURCE_CONFIRMED",
+  "reported_at": "2026-10-20T18:00:21+03:00",
+  "interface": "Ethernet",
+  "dns_source": "DHCP",
+  "servers": [
+    "10.35.50.70",
+    "1.1.1.1"
+  ],
+  "suffix_registration": "Primary only",
+  "dhcp_server_identifier_pending": true,
+  "configuration_changed": false,
+  "target_scope": "VLAN110 only",
+  "previous_session_root_cause_proven": false
+}
