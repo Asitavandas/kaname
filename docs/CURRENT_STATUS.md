@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Actions yeniden kontrolü: taze denemede de test adımı başlamadı — 20 Ekim2026, 19:48 İstanbul
+
+- Operatör “bir daha kontrol et” talebi üzerine PR42 güncelhead8b714c475590c5a0ae512c5533961064b0b6131d ve deviceworkflowrun105/39458971058 kontrol edildi; yeniden yürütme isteği kabul edildi.
+- Attempt2 başlangıç16:47:57Z, bitiş/güncelleme16:48:02Z;5s içinde failure. Güncel Windowsjob118758738683 için steps=[] doğrulandı; nativeWindows test çalışmadı. Bu, yalnız eski failure ekranının okunması değildir; yeni bir deneme yapıldı.
+- Önceki ödeme/harcama limiti annotation'ı operatör görseliyle doğrulanmıştı. Yeni attempt'in annotation ayrıntısı bağlantıda görülemediğinden aynı mesajın tekrar okunduğu iddia edilmez; başlangıç engelinin kalktığı henüz doğrulanamadı.
+- PR42draft ve teslim/native kabul kapıları açık kalıyor. Bu kontrolde canlı kaynak, SYSVOL, Windows veya sertifika değişikliği yapılmadı.
+
 ## GitHub native test engeli ödeme/harcama limiti olarak doğrulandı — 20 Ekim2026, 19:39 İstanbul
 
 - Operatörün image(20261020-163906).png ekran görüntüsü bizzat okundu. Actionsrun104/39458558838 Annotations, job'ın hesap ödemesi başarısızlığı **veya** harcama limitinin artırılması gerektiği için başlatılmadığını açıkça söylüyor; Billing&plans kontrolü isteniyor. İki olasılıktan hangisinin hesapta geçerli olduğu henüz bilinmiyor; yalnız kota doldu/yalnız kart reddi diye daraltılmadı.

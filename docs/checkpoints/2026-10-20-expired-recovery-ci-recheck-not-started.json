@@ -1,0 +1,21 @@
+{
+  "event": "EXPIRED_RECOVERY_CI_RECHECK_STILL_NOT_STARTED",
+  "requested_by_operator": true,
+  "candidate_head": "8b714c475590c5a0ae512c5533961064b0b6131d",
+  "workflow_run_id": 39458971058,
+  "run_number": 105,
+  "attempt": 2,
+  "started_at_utc": "2026-10-20T16:47:57Z",
+  "updated_at_utc": "2026-10-20T16:48:02Z",
+  "elapsed_seconds": 5,
+  "conclusion": "failure",
+  "windows_job_id": 118758738683,
+  "windows_job_steps": [],
+  "native_tests_executed": false,
+  "prior_provider_billing_block_confirmed": true,
+  "current_attempt_annotation_observed": false,
+  "note": "A fresh rerun was accepted and failed before any Windows steps executed. Provider block clearance is not confirmed; exact new annotation is not available through the connected capability.",
+  "live_changes": false,
+  "pr_draft": true,
+  "merge_or_deploy_performed": false
+}
