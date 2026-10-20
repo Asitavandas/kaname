@@ -228,7 +228,7 @@ class DeviceTests(unittest.TestCase):
             self.assertIn(b'LastRunTime -ge $boot',installer)
             self.assertIn(b'-AllowStartIfOnBatteries -DontStopIfGoingOnBatteries',installer)
             client=archive.read('AuthWire-Client.ps1')
-            self.assertEqual('86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15', __import__('hashlib').sha256(client).hexdigest())
+            self.assertEqual('bf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60', __import__('hashlib').sha256(client).hexdigest())
             self.assertIn(b'renew_now',client)
             self.assertEqual(2,client.count(b"Post-Json '/api/device/session'"))
             self.assertIn(b"$session.Dispose(); $session = New-Object AuthWireSspi($config.spn)",client)
@@ -259,6 +259,21 @@ class DeviceTests(unittest.TestCase):
             new,_=self.enrollment(ec.generate_private_key(ec.SECP256R1()))
         self.assertNotEqual(old['serial'],new['serial'])
         self.assertGreaterEqual(len(self.connections),4)
+
+    def test_same_expired_pending_csr_stays_rejected_until_fresh_key_retry(self):
+        old,value=self.enrollment()
+        future=datetime.now(timezone.utc)+timedelta(days=91)
+        before=len(self.connections)
+        with patch('kaname.device_enrollment.instant',return_value=future):
+            for _ in range(2):
+                self.reject('DEVICE_CERTIFICATE_EXPIRED',lambda:self.service.issue(PRINCIPAL,value))
+            self.assertEqual(1,self.count())
+            new,key_request=self.enrollment(ec.generate_private_key(ec.SECP256R1()))
+            self.assertNotEqual(old['serial'],new['serial'])
+            self.assertGreater(len(self.connections),before)
+            # A lost response on the fresh request still returns one issuance.
+            self.assertEqual(new,self.service.issue(PRINCIPAL,key_request))
+            self.assertEqual(2,self.count())
 
     def test_crl_refresh_is_automatic_and_cached_signer_checks_vault_changes(self):
         self.enrollment()

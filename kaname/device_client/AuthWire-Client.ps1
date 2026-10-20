@@ -68,6 +68,24 @@ public sealed class AuthWireSspi : IDisposable {
  public void Dispose() { if(hasCtx) DeleteSecurityContext(ref ctx); if(hasCred) FreeCredentialsHandle(ref cred); hasCtx=hasCred=false; }
 }
 '@
+function Move-AuthWireExpiredPending([string]$Directory, [string]$Stage, [string]$ServerError, $Pending) {
+    # A protected issuer response can identify an expired issuance whose local
+    # installation never completed. Reusing that CSR can never recover it.
+    # Preserve the request/key reference for diagnosis; never delete a key or
+    # certificate here. The next normal, authenticated retry creates a new key.
+    if($Stage -cne 'issue' -or $ServerError -cne 'DEVICE_CERTIFICATE_EXPIRED' -or !$Pending) { return $null }
+    $path = Join-Path $Directory 'pending.json'
+    if(!(Test-Path -LiteralPath $path)) { return $null }
+    if((Get-Item -LiteralPath $path).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Pending request reparse point refused.' }
+    $current = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+    if(!$Pending.container -or !$Pending.csr -or $current.container -cne $Pending.container -or $current.csr -cne $Pending.csr) { throw 'Pending request changed during recovery.' }
+    $archiveDirectory = Join-Path $Directory 'expired-pending'
+    if((Test-Path -LiteralPath $archiveDirectory) -and ((Get-Item -LiteralPath $archiveDirectory).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Pending archive reparse point refused.' }
+    $null = [IO.Directory]::CreateDirectory($archiveDirectory)
+    $archiveName = [Guid]::NewGuid().ToString('N')+'.json'
+    [IO.File]::Move($path,(Join-Path $archiveDirectory $archiveName))
+    return $archiveName
+}
 if ($ValidateOnly) { return }
 if ([Security.Principal.WindowsIdentity]::GetCurrent().User.Value -ne 'S-1-5-18') { throw 'AuthWire client must run as SYSTEM.' }
 $directory = $PSScriptRoot
@@ -237,15 +255,22 @@ SuppressDefaults=TRUE
     Remove-Item $pendingFile,$retryFile -ErrorAction SilentlyContinue
     Save-State 'status.json' @{state='installed';last_success=[DateTimeOffset]::UtcNow.ToString('o');serial=$issued.serial}
 } catch {
+    $expiredPendingArchive = $null
+    $pendingRecoveryFailed = $false
+    try { $expiredPendingArchive = Move-AuthWireExpiredPending $directory $stage $serverError $pending }
+    catch { $pendingRecoveryFailed = $true }
     # Persist no ticket, body, credential or raw exception. Task retries with
     # bounded backoff; jitter also distributes online/domain-startup spikes.
     $attempts = if($retry) { [Math]::Min(8,[int]$retry.attempts+1) } else { 1 }
     $minutes = [Math]::Min(720,[Math]::Pow(2,$attempts)*5)+(Get-Random -Minimum 0 -Maximum 16)
     $retryState = @{attempts=$attempts;next_attempt=[DateTimeOffset]::UtcNow.AddMinutes($minutes).ToString('o');stage=$stage}
     if($serverError) { $retryState['server_error'] = $serverError }
+    if($expiredPendingArchive) { $retryState['expired_pending_archive'] = $expiredPendingArchive }
     Save-State 'retry.json' $retryState
     $status = @{state='retry_pending';error='ENROLLMENT_OR_INSTALL_FAILED';stage=$stage;checked_at=[DateTimeOffset]::UtcNow.ToString('o')}
     if($serverError) { $status['server_error'] = $serverError }
+    if($expiredPendingArchive) { $status['expired_pending_archived'] = $true }
+    if($pendingRecoveryFailed) { $status['recovery_error'] = 'EXPIRED_PENDING_ARCHIVE_FAILED' }
     Save-State 'status.json' $status
     Write-Error 'AuthWire enrollment/renewal failed. Check HTTPS DNS/trust, DC access, time, SPN/keytab and profile eligibility.' -ErrorAction Continue
     exit 1

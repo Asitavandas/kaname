@@ -45,6 +45,9 @@ jobs:
       - name: Real SYSTEM startup recovery and duplicate suppression without customer state
         run: |
           & .\tools\device_startup_windows_check.ps1
+      - name: Expired pending recovery with actual SYSTEM CNG and certificate installation
+        run: |
+          & .\tools\device_expired_windows_check.ps1
   windows-retry:
     runs-on: windows-2025
     timeout-minutes: 10

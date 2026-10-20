@@ -19,7 +19,7 @@ class RetryDeployGuardTests(unittest.TestCase):
         self.ns['ROOT'] = self.root; self.ns['trusted'] = lambda p: p.read_bytes()
         self.base = {'kaname/__init__.py': b'VERSION = "0.14.0-dev.10"\n',
                      'kaname/radius_adapter.py': b'protected authorizer\n',
-                     'kaname/device_client/AuthWire-Client.ps1': (repo / 'kaname/device_client/AuthWire-Client.ps1').read_bytes(),
+                     'kaname/device_client/AuthWire-Client.ps1': (repo / 'docs/checkpoints/2026-10-19-authwire-client-dev11.ps1').read_bytes(),
                      'kaname/device_client/Install-AuthWire.ps1': b'accepted old installer\n'}
         # This historical checkpoint admits exactly the reviewed dev10 template,
         # even after a later release changes the current installer source.
