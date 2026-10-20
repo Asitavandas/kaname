@@ -1,0 +1,25 @@
+{
+  "event": "VV06_PARTIAL_INSTALL_SERVER_RECEIPT_ACCEPTED",
+  "serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+  "csr_sha256": "fbad25474f7faff5fc29b85958cf5cbb138e0f05898e0882f677d11ac310440f",
+  "same_csr_issuance_count": 1,
+  "issued_audit_at_utc": "2026-10-20T15:41:24.427Z",
+  "installed_at_utc": "2026-10-20T16:02:33+00:00",
+  "installed_audit_at_utc": "2026-10-20T16:02:33.879Z",
+  "last_seen_utc": "2026-10-20T16:02:33+00:00",
+  "previous_serial": "6eb64486d4123a060ba8deb8bb6ea9054fab5b4f",
+  "previous_retire_at_utc": "2026-10-21T16:02:33+00:00",
+  "retirement_delay_seconds": 86400,
+  "server_single_issuance_and_receipt_accepted": true,
+  "client_same_pending_key_recovery_previously_accepted": true,
+  "fresh_eap_selected_current_serial_verified": false,
+  "exact_failed_attempt_to_issue_audit_time_correlation_verified": false,
+  "time_note": "Issue audit 18:41:24 Istanbul is later than the reported 18:39:28 failure observation; records are retained without assuming exact trigger correlation.",
+  "server_clock_readonly_observation": {
+    "request_started_utc": "2026-10-20T16:15:27.352Z",
+    "request_finished_utc": "2026-10-20T16:15:29.671Z",
+    "reported_utc": "2026-10-20T16:15:29+00:00",
+    "ntp_status_not_observed": true
+  },
+  "dns_dhcp_configuration": "out_of_scope"
+}

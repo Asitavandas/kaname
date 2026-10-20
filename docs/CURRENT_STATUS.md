@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## VV06 yarım kurulum: tek issuance ve final receipt sunucuda doğrulandı — 20 Ekim2026
+
+- **🔴✓ Tamamlandı: sunucuda aynı CSR için tek issuance ve kurulum onayı.** Seri26e43008251ac23612b2e654a6f6a259ee234f6e, CSRsha256fbad25474f7faff5fc29b85958cf5cbb138e0f05898e0882f677d11ac310440f; same_csr_issuance_count=1, tek issued ve installed audit kaydı paylaşıldı. installed_at/last_seen2026-10-20T16:02:33Z.
+- **🔴✓ Tamamlandı: önceki6eb... sertifikasının emeklilik planı final receipt'ten24h sonra.** retire_at2026-10-21T16:02:33Z; bu henüz gelecekteki iptalin gerçekleştiği anlamına gelmez.
+- Audit ilk üretim2026-10-20T15:41:24.427Z, kurulum16:02:33.879Z. İlk issue audit'i raporlanan18:39:28 yerel hata gözleminden sonradır; kesin hata-tetik/audit zaman eşleştirmesi ayrıca kanıtlanmış sayılmaz. Dar tek-issuance/receipt ve aynı pending anahtar istemci kanıtları korunur. Salt okunur canlı Linux tarih kontrolü16:15:29Z, araç16:15:27.352–16:15:29.671Z aralığında; NTP durumu çıktıda görülmedi, saat değiştirilmedi.
+- **Son açık saha kapısı:** yeni26e... serisinin taze802.1X/EAP seçimi. Mevcut oturum Authentication succeeded/VLAN110 sonucu bunun yerine geçmez. Diğer expired/yarım kurulum çeşitleri ve kullanıcı EAP-TLS ayrı izlenir; DHCP/DNS kapsam dışı.
+
 ## VV06 yarım kurulumdan doğal toparlanma — istemci saha kabulü, 20 Ekim2026, 19:03 İstanbul
 
 - **🔴✓ Tamamlandı: kontrollü issue aşaması yarım kalmasından doğal retry ile istemci toparlanması.** Retry18:59:21/result0 ana task18:59:25/Ready/result0; duruminstalled. Dört saniye retry ile ana task başlangıcı arasındaki farktır, toplam tamamlanma süresi değildir.
