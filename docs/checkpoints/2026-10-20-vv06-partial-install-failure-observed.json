@@ -1,0 +1,21 @@
+{
+  "event": "VV06_PARTIAL_INSTALL_FAILURE_OBSERVED",
+  "checked_at_local": "2026-10-20T18:39:28+03:00",
+  "task_last_run_local": "2026-10-20T18:37:53+03:00",
+  "task_state": "Ready",
+  "last_task_result": 1,
+  "status_state": "retry_pending",
+  "stage": "issue",
+  "server_error": null,
+  "pending_request": true,
+  "operator_correction": "Operator reports previous execution was incorrect and repeated the same controlled steps",
+  "partial_failure_substep_verified": true,
+  "full_recovery_acceptance_complete": false,
+  "lock_release_confirmed": false,
+  "old_certificate_preserved_after_failure_confirmed": false,
+  "pending_csr_hash": null,
+  "retry_deadline": null,
+  "next_action": "Release any remaining test handle, capture pending CSR/key-container identity and natural retry deadline; do not manually start enrollment",
+  "previous_attempt_retained_as_history": "2026-10-20-vv06-partial-install-attempt-inconclusive.json",
+  "dns_dhcp_configuration": "out_of_scope"
+}

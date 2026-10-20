@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## VV06 hedeflenen yarım kurulum kesintisi görüldü — 20 Ekim2026, 18:39 İstanbul
+
+- Operatör önceki uygulamayı yanlış yaptığını bildirdi ve aynı kontrollü adımları tekrarladı.18:37:53 ana task,18:39:28 kontrolde Ready/result1, statusretry_pending, stageissue, ServerError boş ve pending.json=true.
+- **🔴✓ Tamamlandı: hedeflenen issue aşamasında başarısız çalışma ve pending isteğin korunması alt adımı.** Bu çıktı hata/toparlanma testinin beklenen kesintisidir; normal ürün arızası olarak veya tüm yarım kurulum kabulünün tamamlanması olarak işaretlenmez.
+- **Açık:** dosya kilidinin bırakıldığının ve eski sertifika/erişimin korunduğunun doğrulanması; pending CSR/anahtar kimliği ve gerçek next_attempt/taskNextRun zamanının yakalanması; doğal retry sonucunda aynı istekle kurulum, tek issuance/receipt ve temiz durum. Görev elle tekrar başlatılmayacak, pending/retry dosyaları silinmeyecek.
+- Önceki18:36 sonuçsuz deneme tarihsel kayıtta korunur; güncel kesinti kanıtı bu ikinci çıktıdır. DHCP/DNS yapılandırması kapsam dışı kalır.
+
 ## VV06 yarım kurulum denemesi hedef kesintiyi doğrulamadı — 20 Ekim2026, 18:36 İstanbul
 
 - Operatör:18:36:00 ana task,18:36:17 kontrolde Ready/result0, statusinstalled, Stage/ServerError boş, pending.json=false; dosya kilidi kaldırıldı. Bu çıktı hedeflenen issue aşaması/result1/pending kesintisi değildir; yarım kurulum ve toparlanma kabulü tamamlandı sayılmaz.
