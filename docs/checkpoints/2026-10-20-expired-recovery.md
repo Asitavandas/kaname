@@ -37,5 +37,22 @@ of these expired-pending archives/keys is not introduced by this change.
   fixture success. Current VV06 serial26e43008251ac23612b2e654a6f6a259ee234f6e
   remains untouched. Normal enrollment profiles require at least two days.
 
-Candidate/native CI and controlled delivery are pending at this checkpoint.
+Local verification: 539 tests run, 25 skipped, no failures (514 passed); focused
+26 tests passed, and a related 55-test group had one skip and no failures.
+
+Draft PR42 head f6ddf71629f251cd40feb936cf5f24fe4f38d489. GitHub Actions
+run39458558838 Windows jobs and the real RADIUS run39458558740 ended in
+failure before any job steps ran; Windows log download returned BlobNotFound.
+The provider annotation cannot be read with the connected GitHub capability;
+its exact reason is not known. No claim that native Windows or current native
+TLS tests passed, and no production delivery/merge is performed.
+
+Candidate client SHA256bf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60.
+The unchanged dev11 client is frozen for historical deployment-guard tests;
+the old historical deployers still refuse this new client by design.
+
+Next gate: inspect the Actions provider error, restore native test execution,
+then fix any native-fixture failures and complete signed source/SYSVOL delivery
+with protected-state checks. A real production expired-VV06 field test remains
+separate; the installed pilot certificate is not made expired for this test.
 DHCP/DNS architecture and configuration remain out of scope by customer choice.
