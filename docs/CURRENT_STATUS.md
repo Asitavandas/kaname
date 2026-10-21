@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ VV06 doğrulanmış Wi-Fi profilinin geri yüklenmesi / test temizliği tamam — 21 Ekim 2026
+
+- Operatör, C:\Users\administrator\AuthWire-WiFi-Verified-20261021-190808\Wi-Fi-VV_802.1X.xml doğrulanmış yedeğini `netsh wlan add profile ... interface=Wi-Fi user=all` ile geri yükleme komutuna `Profile VV_802.1X is added on interface Wi-Fi` başarı yanıtı verdi. Aynı çıktı iki kez iletildi; iki ayrı işlem/test gibi sayılmaz.
+- 🔴✓ Geçici PMKCacheMode=no değişikliğinin özgün profil yedeğiyle geri alınması, profil import başarı ölçütüne göre tamamlandı. Yedek daha önce machine/EAP-TLS, doğru KANAME root/server-name ve sunucu doğrulama ayarlarıyla doğrulanmıştı. Bu son yanıt yalnız profil yükleme kabulüdür; yeni export veya import sonrası yeni 802.1X/DHCP ölçümü yapılmış gibi sunulmaz.
+- dev13butonun geliştirme/teknik/canlı teslim/görünüm kabulleri, Windows-RADIUS disabled ret/güncel allow140 kabul kayıtları ve önceden elle kaydedilen deny/null açıklamasıyla kapatılan inceleme korunur. Geçici profil geri dönüşü artık bekleyen iş değildir. İlk döngü deny başlangıcı/action-vlan değişikliği içerdiğinden safallow140→disabled→enabled turu ayrıca uygulanmış sayılmaz; bütün B08/B10 tamamlandı denmez.
+- Diğer kullanıcıEAP-TLS, gerçekexpiry/ayrıcihaz, off-host/tamappliance kurtarma ve yol haritasındaki kalan senaryolar açık; NTPişleri duraklatılmış ve DHCP/DNS mimarisi kapsam dışıdır. Bu kayıt ürün/policy/sertifika/servis değişikliği içermez.
+
 ## 🔴✓ Operatör açıklamasıyla Ret/boş VLAN incelemesi kapatıldı — 21 Ekim 2026
 
 - Operatör, daha önce policy'yi elle İzin ver'den Reddet'e çekip kaydettiğini, sonra bunu unuttuğunu ve devre dışı bırak butonu eklenince kayıtlı kararı değiştirmediğini açıkça doğruladı. Bu açıklama revision56/SHAdoğrulanmış yedekteki enabled/deny/null ve yeniden etkinleşme sonrası POLICY_DENY kaydıyla örtüşür. **Ret/boşVLAN bildirimi önceki kayıtlı ayardan kaynaklanmıştır; ürün/form hatası incelemesi bu açıklamayla kapatıldı.** Yeni kod/servis/policy düzeltmesi yapılmadı, gerekmedi.
