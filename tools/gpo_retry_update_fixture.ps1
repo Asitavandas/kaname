@@ -24,7 +24,8 @@ try {
     $source=Join-Path (Split-Path $PSScriptRoot -Parent) 'kaname\device_client'
     Write-Output 'GPO_FIXTURE_SIGN_PACKAGE'
     foreach($name in @('AuthWire-Client.ps1','Install-AuthWire.ps1')) {
-        $body=[IO.File]::ReadAllText((Join-Path $source $name)).Replace('__AUTHWIRE_ASSET_HASHES__',$map)
+        $sourceFile=if($name -eq 'AuthWire-Client.ps1') {Join-Path (Split-Path $PSScriptRoot -Parent) 'docs\checkpoints\2026-10-19-authwire-client-dev11.ps1'} else {Join-Path $source $name}
+        $body=[IO.File]::ReadAllText($sourceFile).Replace('__AUTHWIRE_ASSET_HASHES__',$map)
         [IO.File]::WriteAllText((Join-Path $folder $name),$body,(New-Object Text.UTF8Encoding($true)))
         $signed=Set-AuthenticodeSignature -FilePath (Join-Path $folder $name) -Certificate $certificate -HashAlgorithm SHA256
         if($signed.Status -ne 'Valid') {throw 'Fixture signature not valid.'}

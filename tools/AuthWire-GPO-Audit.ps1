@@ -72,7 +72,7 @@ function Invoke-AuthWireGpoAudit {
         $eku=@($signature.SignerCertificate.Extensions | Where-Object {$_.Oid.Value -eq '2.5.29.37'} | ForEach-Object {$_.EnhancedKeyUsages} | ForEach-Object {$_.Value})
         $text=[IO.File]::ReadAllText($file)
         $bodyHash=Get-AuthWireBodyHash -Text $text -Installer:($name -eq 'Install-AuthWire.ps1')
-        $expected=if($name -eq 'AuthWire-Client.ps1') {'86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15'} else {'faec4a852f61528b8e8df9ab6240323ab4cedae497cadd921568ccf06dac3609'}
+        $expected=if($name -eq 'AuthWire-Client.ps1') {'bf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60'} else {'faec4a852f61528b8e8df9ab6240323ab4cedae497cadd921568ccf06dac3609'}
         $publisher=if($signature.SignerCertificate) {$signature.SignerCertificate.Thumbprint} else {''}
         $scripts += [pscustomobject]@{Name=$name;SignatureStatus=$signature.Status.ToString();CodeSigningEku=($eku -contains '1.3.6.1.5.5.7.3.3');SourceBodyMatches=($bodyHash -eq $expected);FileSha256=(Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant();PublisherThumbprint=$publisher}
         $publishers += $publisher

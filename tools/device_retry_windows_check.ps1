@@ -28,8 +28,9 @@ function Write-RetryFixtureDiagnostic {
         $task=Get-ScheduledTask -TaskName $entry[1] -ErrorAction SilentlyContinue
         if(!$task) {$facts[$entry[0]]=@{found=$false};continue}
         $info=Get-ScheduledTaskInfo -TaskName $entry[1]
-        $facts[$entry[0]]=@{found=$true;state=[string]$task.State;last_result=$info.LastTaskResult;last_run=$info.LastRunTime.ToString('o');next_run=$info.NextRunTime.ToString('o')}
+        $facts[$entry[0]]=@{found=$true;state=[string]$task.State;last_result=$info.LastTaskResult;last_run=$(if($info.LastRunTime){$info.LastRunTime.ToString('o')}else{$null});next_run=$(if($info.NextRunTime){$info.NextRunTime.ToString('o')}else{$null})}
     }
+    $facts['network_profiles']=@(Get-NetConnectionProfile -ErrorAction SilentlyContinue|ForEach-Object {@{category=[string]$_.NetworkCategory;ipv4=[string]$_.IPv4Connectivity;ipv6=[string]$_.IPv6Connectivity}})
     foreach($name in @('retry.json','status.json','launcher-result.json')) {
         $path=Join-Path $folder $name
         if(!(Test-Path -LiteralPath $path)) {continue}
