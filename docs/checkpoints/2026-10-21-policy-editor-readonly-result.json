@@ -1,0 +1,442 @@
+{
+  "event": "POLICY_EDITOR_READONLY",
+  "checked_utc": "2026-10-21T18:33:17.134923+00:00",
+  "current": {
+    "revision": 60,
+    "policies": [
+      {
+        "id": "authwire-pilot-wired",
+        "name": "AuthWire Pilot - Kablolu",
+        "enabled": true,
+        "conditions": {
+          "group_sids": [
+            "S-1-5-21-34256453-3348971241-2809240126-1647"
+          ],
+          "access_types": [
+            "wired"
+          ],
+          "nas_ips": [
+            "10.35.50.253"
+          ]
+        },
+        "constraints": {
+          "eap_methods": [
+            "EAP-TLS"
+          ],
+          "require_domain_device": true
+        },
+        "action": "allow",
+        "vlan": 110
+      },
+      {
+        "id": "authwire-pilot-wireless",
+        "name": "AuthWire Pilot - Kablosuz",
+        "enabled": true,
+        "conditions": {
+          "group_sids": [
+            "S-1-5-21-34256453-3348971241-2809240126-1647"
+          ],
+          "access_types": [
+            "wireless"
+          ],
+          "nas_ips": [
+            "10.35.50.52"
+          ]
+        },
+        "constraints": {
+          "eap_methods": [
+            "EAP-TLS"
+          ],
+          "require_domain_device": true
+        },
+        "action": "allow",
+        "vlan": 140
+      }
+    ],
+    "other_wireless_rules": []
+  },
+  "verified_backup": {
+    "revision": 56,
+    "policies": [
+      {
+        "id": "authwire-pilot-wired",
+        "name": "AuthWire Pilot - Kablolu",
+        "enabled": true,
+        "conditions": {
+          "group_sids": [
+            "S-1-5-21-34256453-3348971241-2809240126-1647"
+          ],
+          "access_types": [
+            "wired"
+          ],
+          "nas_ips": [
+            "10.35.50.253"
+          ]
+        },
+        "constraints": {
+          "eap_methods": [
+            "EAP-TLS"
+          ],
+          "require_domain_device": true
+        },
+        "action": "allow",
+        "vlan": 110
+      },
+      {
+        "id": "authwire-pilot-wireless",
+        "name": "AuthWire Pilot - Kablosuz",
+        "enabled": true,
+        "conditions": {
+          "group_sids": [
+            "S-1-5-21-34256453-3348971241-2809240126-1647"
+          ],
+          "access_types": [
+            "wireless"
+          ],
+          "nas_ips": [
+            "10.35.50.52"
+          ]
+        },
+        "constraints": {
+          "eap_methods": [
+            "EAP-TLS"
+          ],
+          "require_domain_device": true
+        },
+        "action": "deny",
+        "vlan": null
+      }
+    ],
+    "other_wireless_rules": []
+  },
+  "comparison": [
+    {
+      "id": "authwire-pilot-wired",
+      "changed_fields_since_backup": [],
+      "settings_except_enabled_preserved": true
+    },
+    {
+      "id": "authwire-pilot-wireless",
+      "changed_fields_since_backup": [
+        "action",
+        "vlan"
+      ],
+      "settings_except_enabled_preserved": false
+    }
+  ],
+  "recent_policy_audit": [
+    {
+      "id": 1694,
+      "event": "policies_saved",
+      "revision": 60,
+      "at": "2026-10-21T18:24:24.064Z"
+    },
+    {
+      "id": 1693,
+      "event": "policies_saved",
+      "revision": 59,
+      "at": "2026-10-21T18:23:04.127Z"
+    },
+    {
+      "id": 1692,
+      "event": "policies_saved",
+      "revision": 58,
+      "at": "2026-10-21T18:22:34.862Z"
+    },
+    {
+      "id": 1691,
+      "event": "policies_saved",
+      "revision": 57,
+      "at": "2026-10-21T18:19:58.065Z"
+    },
+    {
+      "id": 1688,
+      "event": "policies_saved",
+      "revision": 56,
+      "at": "2026-10-21T17:38:00.784Z"
+    },
+    {
+      "id": 1683,
+      "event": "policies_saved",
+      "revision": 55,
+      "at": "2026-10-21T16:33:02.049Z"
+    },
+    {
+      "id": 1675,
+      "event": "policies_saved",
+      "revision": 54,
+      "at": "2026-10-21T15:25:27.945Z"
+    },
+    {
+      "id": 1674,
+      "event": "policies_saved",
+      "revision": 53,
+      "at": "2026-10-21T15:23:53.302Z"
+    }
+  ],
+  "wireless_events": {
+    "available": true,
+    "events": [
+      {
+        "id": 31,
+        "at": "2026-10-21T18:30:15.819Z",
+        "response_code": 2,
+        "reason": "POLICY_ALLOW",
+        "reason_source": "policy",
+        "nas_ip": "10.35.50.52",
+        "policy_id": "authwire-pilot-wireless",
+        "vlan": 140,
+        "tls_verified": 1,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+        "object_guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+        "at_istanbul": "2026-10-21T21:30:15.819000+03:00"
+      },
+      {
+        "id": 30,
+        "at": "2026-10-21T18:25:39.511Z",
+        "response_code": 2,
+        "reason": "POLICY_ALLOW",
+        "reason_source": "policy",
+        "nas_ip": "10.35.50.52",
+        "policy_id": "authwire-pilot-wireless",
+        "vlan": 140,
+        "tls_verified": 1,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+        "object_guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+        "at_istanbul": "2026-10-21T21:25:39.511000+03:00"
+      },
+      {
+        "id": 29,
+        "at": "2026-10-21T18:25:02.135Z",
+        "response_code": 2,
+        "reason": "POLICY_ALLOW",
+        "reason_source": "policy",
+        "nas_ip": "10.35.50.52",
+        "policy_id": "authwire-pilot-wireless",
+        "vlan": 140,
+        "tls_verified": 1,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+        "object_guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+        "at_istanbul": "2026-10-21T21:25:02.135000+03:00"
+      },
+      {
+        "id": 28,
+        "at": "2026-10-21T18:23:32.300Z",
+        "response_code": 3,
+        "reason": "POLICY_DENY",
+        "reason_source": "policy",
+        "nas_ip": "10.35.50.52",
+        "policy_id": "authwire-pilot-wireless",
+        "vlan": null,
+        "tls_verified": 1,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+        "object_guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+        "at_istanbul": "2026-10-21T21:23:32.300000+03:00"
+      },
+      {
+        "id": 27,
+        "at": "2026-10-21T18:21:18.436Z",
+        "response_code": 3,
+        "reason": "NO_MATCHING_POLICY",
+        "reason_source": "policy",
+        "nas_ip": "10.35.50.52",
+        "policy_id": null,
+        "vlan": null,
+        "tls_verified": 1,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+        "object_guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+        "at_istanbul": "2026-10-21T21:21:18.436000+03:00"
+      },
+      {
+        "id": 26,
+        "at": "2026-10-21T18:20:12.167Z",
+        "response_code": 3,
+        "reason": "NO_MATCHING_POLICY",
+        "reason_source": "policy",
+        "nas_ip": "10.35.50.52",
+        "policy_id": null,
+        "vlan": null,
+        "tls_verified": 1,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+        "object_guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+        "at_istanbul": "2026-10-21T21:20:12.167000+03:00"
+      },
+      {
+        "id": 25,
+        "at": "2026-10-21T17:09:44.983Z",
+        "response_code": 2,
+        "reason": "POLICY_ALLOW",
+        "reason_source": "policy",
+        "nas_ip": "10.35.50.52",
+        "policy_id": "authwire-pilot-wireless",
+        "vlan": 140,
+        "tls_verified": 1,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+        "object_guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+        "at_istanbul": "2026-10-21T20:09:44.983000+03:00"
+      },
+      {
+        "id": 23,
+        "at": "2026-10-21T16:55:18.006Z",
+        "response_code": 2,
+        "reason": "POLICY_ALLOW",
+        "reason_source": "policy",
+        "nas_ip": "10.35.50.52",
+        "policy_id": "authwire-pilot-wireless",
+        "vlan": 140,
+        "tls_verified": 1,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+        "object_guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+        "at_istanbul": "2026-10-21T19:55:18.006000+03:00"
+      },
+      {
+        "id": 22,
+        "at": "2026-10-21T16:55:01.282Z",
+        "response_code": 2,
+        "reason": "POLICY_ALLOW",
+        "reason_source": "policy",
+        "nas_ip": "10.35.50.52",
+        "policy_id": "authwire-pilot-wireless",
+        "vlan": 140,
+        "tls_verified": 1,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+        "object_guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+        "at_istanbul": "2026-10-21T19:55:01.282000+03:00"
+      },
+      {
+        "id": 21,
+        "at": "2026-10-21T16:33:50.953Z",
+        "response_code": 2,
+        "reason": "POLICY_ALLOW",
+        "reason_source": "policy",
+        "nas_ip": "10.35.50.52",
+        "policy_id": "authwire-pilot-wireless",
+        "vlan": 140,
+        "tls_verified": 1,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+        "object_guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+        "at_istanbul": "2026-10-21T19:33:50.953000+03:00"
+      },
+      {
+        "id": 20,
+        "at": "2026-10-21T16:33:34.238Z",
+        "response_code": 2,
+        "reason": "POLICY_ALLOW",
+        "reason_source": "policy",
+        "nas_ip": "10.35.50.52",
+        "policy_id": "authwire-pilot-wireless",
+        "vlan": 140,
+        "tls_verified": 1,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+        "object_guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+        "at_istanbul": "2026-10-21T19:33:34.238000+03:00"
+      },
+      {
+        "id": 19,
+        "at": "2026-10-21T16:29:18.275Z",
+        "response_code": 2,
+        "reason": "POLICY_ALLOW",
+        "reason_source": "policy",
+        "nas_ip": "10.35.50.52",
+        "policy_id": "authwire-pilot-wireless",
+        "vlan": 110,
+        "tls_verified": 1,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+        "object_guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+        "at_istanbul": "2026-10-21T19:29:18.275000+03:00"
+      },
+      {
+        "id": 18,
+        "at": "2026-10-21T16:28:10.930Z",
+        "response_code": 3,
+        "reason": "TLS_CERTIFICATE_UNTRUSTED",
+        "reason_source": "native_category",
+        "nas_ip": "10.35.50.52",
+        "policy_id": null,
+        "vlan": null,
+        "tls_verified": 0,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": null,
+        "object_guid": null,
+        "at_istanbul": "2026-10-21T19:28:10.930000+03:00"
+      },
+      {
+        "id": 17,
+        "at": "2026-10-21T16:18:01.586Z",
+        "response_code": 2,
+        "reason": "POLICY_ALLOW",
+        "reason_source": "policy",
+        "nas_ip": "10.35.50.52",
+        "policy_id": "authwire-pilot-wireless",
+        "vlan": 110,
+        "tls_verified": 1,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+        "object_guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+        "at_istanbul": "2026-10-21T19:18:01.586000+03:00"
+      },
+      {
+        "id": 16,
+        "at": "2026-10-21T16:16:47.280Z",
+        "response_code": 3,
+        "reason": "NATIVE_ACCESS_REJECT",
+        "reason_source": "native_generic",
+        "nas_ip": "10.35.50.52",
+        "policy_id": null,
+        "vlan": null,
+        "tls_verified": 0,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": null,
+        "object_guid": null,
+        "at_istanbul": "2026-10-21T19:16:47.280000+03:00"
+      },
+      {
+        "id": 15,
+        "at": "2026-10-21T16:12:10.953Z",
+        "response_code": 2,
+        "reason": "POLICY_ALLOW",
+        "reason_source": "policy",
+        "nas_ip": "10.35.50.52",
+        "policy_id": "authwire-pilot-wireless",
+        "vlan": 110,
+        "tls_verified": 1,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+        "object_guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+        "at_istanbul": "2026-10-21T19:12:10.953000+03:00"
+      },
+      {
+        "id": 14,
+        "at": "2026-10-21T15:48:10.083Z",
+        "response_code": 2,
+        "reason": "POLICY_ALLOW",
+        "reason_source": "policy",
+        "nas_ip": "10.35.50.52",
+        "policy_id": "authwire-pilot-wireless",
+        "vlan": 110,
+        "tls_verified": 1,
+        "calling_station": "10:b1:df:69:95:33",
+        "certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+        "object_guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+        "at_istanbul": "2026-10-21T18:48:10.083000+03:00"
+      }
+    ]
+  },
+  "revision_stable_during_check": true,
+  "service_pids_preserved": true,
+  "policy_changed_by_check": false,
+  "services_restarted": false,
+  "disk_restore_performed": false
+}
