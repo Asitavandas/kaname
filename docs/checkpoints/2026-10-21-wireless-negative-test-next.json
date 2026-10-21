@@ -1,0 +1,30 @@
+{
+  "event": "FIELD_TEST_SEQUENCE_SELECTED",
+  "recorded_utc": "2026-10-21T15:42:19.049Z",
+  "operator_selection": "Only VV06 is currently available",
+  "real_expiry_field_test": {
+    "state": "pending separate test device",
+    "completed": false,
+    "profile_minimum_validity_days": 2,
+    "basis": "kaname/device_enrollment.py save_profile integer(validity_days,2,365)",
+    "customer_clock_changed": false,
+    "current_valid_vv06_identity_changed": false
+  },
+  "next": {
+    "package": "B10 wireless negative trust",
+    "scenario": "Wrong expected RADIUS server name must be rejected; restore exact original profile and confirm positive connection",
+    "ssid": "VV_802.1X",
+    "ap_ip": "10.35.50.52",
+    "expected_server_name": "kaname.vizyonveri.local",
+    "target": "VV06",
+    "state": "preparation, awaiting read-only Wi-Fi profile baseline",
+    "completed": false
+  },
+  "protected": {
+    "ethernet_current_connection_kept": true,
+    "policy_ca_radius_shared_secret_changes": false,
+    "server_validation_must_remain_enabled": true,
+    "original_profile_backup_before_any_edit": true
+  },
+  "dns_architecture_out_of_scope": true
+}

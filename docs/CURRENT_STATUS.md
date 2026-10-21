@@ -16,6 +16,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Sonraki saha adımı: VV06 kablosuz server-name olumsuz güven testi; gerçek expiry ayrı cihaz bekliyor — 21 Ekim2026
+
+- Operatör seçimi: **şu an yalnızVV06 var.** Enrollment profile mevcut kuralı en az2gün geçerlilik ve en az1gün renew-before ister. Gerçek expired-pending saha testi bugün tamamlandı sayılmaz; **ayrı test cihazı bekliyor** olarak açık tutulur. Geçerli VV06 cert/key veya sistem saati değiştirilmez.
+- Sıradaki dar kabul **B10 kablosuz yanlış RADIUS server-name reddi → özgün doğru profile geri dönüş**. SSIDVV_802.1X, AP10.35.50.52, beklenen server-namekaname.vizyonveri.local. İlk adım VV06'da yalnız Wi-Fi profil/arayüz bilgisi okumaktır; henüz profil/server/policy/CA/shared-secret değişikliği yoktur.
+- Ethernet yönetim bağlantısı başlangıçta korunur. Herhangi bir profile edit öncesi özgün kablosuz profile yedeği alınacak; server certificate validation açık kalacak. Bu senaryo başlamadı/tamamlanmadı diye ayrılır; gerçek expiry bekleyen maddesi veya eski pozitif kablosuz kabulü bununla karıştırılmaz. DHCP/DNS mimarisi kapsam dışı kalır.
+
 ## 🔴✓ VV06 doğrulanmış dev.12 signed kopyadan sonra taze normal görev kabulü tamamlandı — 21 Ekim2026,18:29 İstanbul
 
 - **🔴✓ Operatör manuel task start sonrası:**AuthWire Certificate EnrollmentLastRun21Ekim18:29:17+03,Ready/LastTaskResult0; statusinstalled, error/stage/server_error raporlanmadı; retry.jsonfalse. Bu çalışma, exact hash/publisher ile doğrulanmış yeni signed istemci kopyasından sonradır.
