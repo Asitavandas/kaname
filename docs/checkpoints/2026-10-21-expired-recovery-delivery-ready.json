@@ -1,0 +1,86 @@
+{
+  "event": "EXPIRED_RECOVERY_DELIVERY_READY",
+  "checked_utc": "2026-10-21T14:48:53.283Z",
+  "pull_request": 42,
+  "merged": true,
+  "merge_commit": "b3b0936ed4c8acdf3a0d7f0524ceb1305413d70c",
+  "tested_candidate_head": "39676196d72d5a7e467857b981fe141c786ce672",
+  "candidate_version": "0.14.0-dev.12",
+  "installed_version": "0.14.0-dev.11",
+  "ci_runs": {
+    "foundation": 39617785888,
+    "device_enrollment": 39617785953,
+    "native_radius": 39617785931,
+    "gpo_and_restore": 39617785904,
+    "browser": 39617785900,
+    "linux_source_preparation": 39617785929,
+    "bounded_network_retry": 39617785891
+  },
+  "all_seven_candidate_ci_runs_passed": true,
+  "ci_unit_suite": {
+    "ran": 547,
+    "skipped": 25,
+    "errors": 0,
+    "seconds": 109.913
+  },
+  "same_head_native_retry_passes": [
+    119283136099,
+    119284494311
+  ],
+  "native_signed_sysvol_update_rollback_job": 119283136477,
+  "previous_retry_timeout_root_cause": "not established; not erased by later passes",
+  "local_suite": {
+    "ran": 547,
+    "skipped": 25,
+    "errors": 3,
+    "seconds": 401.887,
+    "failures": [
+      "tests.test_admin.AdministratorHTTPTests.test_wrong_password_unknown_user_and_disabled_account_share_error: loopback HTTP timeout",
+      "tests.test_radius_events.StorageTests.test_concurrent_same_packet_is_one_event_and_reconnect_is_new: STORAGE_BUSY",
+      "tests.test_service_control.BrokerTests.test_stop_does_not_disable_boot: temporary directory cleanup race"
+    ],
+    "focused_repeat": {
+      "ran": 3,
+      "passed": 3,
+      "seconds": 2.736
+    },
+    "affected_source_and_tests_identical_to_accepted_dev11": true,
+    "root_cause": "not established; stability follow-up retained"
+  },
+  "source_stage": {
+    "path": "/home/segmentiq/authwire-stage-dev12-b3b0936ed4c8",
+    "files": 139,
+    "source_digest": "b53c4df2c52ede56719c13cac4fb84053045120cfeb0f8ccd687c6298ed0d386",
+    "all_local_source_git_blob_ids_match_merge_commit": true,
+    "remote_manifest_and_each_source_byte_hash_verified": true
+  },
+  "operator_helper": {
+    "path": "/home/segmentiq/authwire-expired-recovery-update-20261021.py",
+    "repository_path": "docs/checkpoints/2026-10-21-expired-recovery-operator.py",
+    "sha256": "80167d1329cc09fc06ca38f25509f73e19a0b936929c8a9dfb95a235856ad0c9",
+    "ast_identical_to_tested_template_except_three_release_pins": true,
+    "python": "/opt/kaname-lab/venv/bin/python",
+    "cryptography_version": "46.0.0"
+  },
+  "sysvol_helper": {
+    "path": "/home/segmentiq/authwire-sysvol-client-update-20261021.ps1",
+    "repository_path": "docs/checkpoints/2026-10-21-sysvol-client-update.ps1",
+    "sha256": "a1bc6a0dac570409b4e07b62d0aa4b6065950f281065f7f0e70636dba8186965",
+    "native_atomic_update_idempotence_asset_publisher_rejection_and_rollback_passed": true
+  },
+  "new_client_source_sha256": "bf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60",
+  "installed_client_source_sha256": "86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15",
+  "live_readonly": {
+    "panel_pid": 428758,
+    "radius_pid": 326873,
+    "broker_pid": 149955,
+    "all_active": true
+  },
+  "live_source_updated": false,
+  "services_restarted": false,
+  "fresh_backup_taken_in_this_step": false,
+  "signed_sysvol_updated": false,
+  "windows_endpoint_changed": false,
+  "operator_action_required": "local sudo protected source update, then signed DC01 SYSVOL client update and VV06 acceptance",
+  "dns_architecture_out_of_scope": true
+}
