@@ -16,6 +16,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ VV06 kablosuz CSV'de güncel sertifika/kimlik/policy eşleşmesi; VLAN140 ve zaman korelasyonu takipte — 21 Ekim 2026
+
+- **🔴✓ Operatör CSV'si salt okunur incelendi:** AuthWire-erisim-kayitlari-2026-10-21.csv, SHA256 723d8a54bfb26b3e62d45fa85a60d8b995665b01572f0452469a2d0b3b04ad0d,16sütun/8geçerli satır,ID14–21;8ayrı event_id ve8ayrı request_id (bu örnekte aynı korelasyon anahtarlı mükerrer satır yok).6Access-Accept/2Access-Reject.
+- **🔴✓ Tüm6kabul:** AP/NAS10.35.50.52,station10:b1:df:69:95:33,policy authwire-pilot-wireless,reasonPOLICY_ALLOW,sourcepolicy,TLStrue,identitycomputer,GUID69b0d5cd-db61-4627-9db7-fcc5230152a3 ve güncel seri26e43008251ac23612b2e654a6f6a259ee234f6e. Güncel VV06 sertifikasının bu kablosuz RADIUS kabullerinde seçildiği kayıttan doğrulandı; native sonuç endpoint/DHCP teslim kanıtıyla karıştırılmaz.
+- **VLAN farkı açık:** ID14/15/17/19 yanıtında110,sonID20/21 yanıtında140. Son iki sunucu zamanı19:33:34.238 ve19:33:50.953+03;110yanıtı son19:29:18.275+03. Operatörün bilerek policyVLAN değiştirip değiştirmediği,aktif policykonfigürasyonu ve140sonrası endpointIP bu CSV'den belirlenemez; otomatik110'a çevirme yok.
+- ID16/NATIVE_ACCESS_REJECT,native_generic,19:16:47.280+03;ID18/TLS_CERTIFICATE_UNTRUSTED,native_category,19:28:10.930+03. İkisindeTLSfalse/serial-GUID-policy-VLANboş; doğrulanmamış kimlikyetkilendirmesi yapılmamasıyla tutarlı. Client-side yanlış sunucu/kök testleriyle kesin birebir paket eşleşmesi iddia edilmedi.
+- **B11 zaman farkı açık:** Windows19:10:07/19:14:44/19:26:07 ile olası sunucuID15/16/18eşleşmeleri+123.953/+123.280/+123.930saniye fark gösteriyor. Bu güçlü bir yaklaşık2dakika4saniye sapma işaretidir; saat kaynağı ve kesin eşleşme doğrulanmadı. Linuxsaltokunur16:48:26.712719ZkontrolündeEurope/Istanbul,NTP=yes,NTPSynchronized=yes. Hiçbir sistem saati veya NTPkonfigürasyonu değiştirilmedi.
+- CSVanalizi ve kablosuz sertifika/policy/kimlik alt kabulü **tamamlandı**; B10/B11tümü, kesin zaman korelasyonu ve140DHCPkabulü açık kalır. Sunucu/Windows/policy/cert/CA/RADIUSprosesleri değiştirilmedi.
+
 ## 🔴✓ B10 VV06 yanlış kök seçimi reddi ve doğru profile/VLAN110'a geri dönüş saha kabulü — 21 Ekim 2026, 19:26 İstanbul
 
 - **🔴✓ Test önkoşulu:** KANAME rootC789A0595ADB95A6BE4534D01B1D205F6C37DE18 hemLocalMachine\\Root hemCurrentUser\\Root'ta aynı cert olarak bulundu; önceki profildeki0FF97F30... bu iki depoda bulunmadı. Sertifika silinmedi/yüklenmedi. Alternatif geçerli self-issued yerel kök AAA Certificate Services, Comodo CA Limited, thumbD1EB23A46D17D68FD92564C2F1F1601764D8E349,NotAfter1Ocak2029 seçildi.
