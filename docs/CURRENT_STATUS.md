@@ -16,6 +16,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ VV06 Windows Time domain kaynağını kabul etti; yaklaşık124saatfarkı henüz kapanmadı — 21 Ekim 2026
+
+- **🔴✓ Operatör yalnızVV06W32Timerestartsonrası/resync/rediscover başarılı**,sourcedc01.vizyonveri.local/10.35.50.70,Leap0,stratum4,lastsync20:19:47+03,rootdispersion131.7487307s.20:19:43/45/47Time-Service37:“valid time data”;20:19:47olay35:“now synchronizing”veUDP0.0.0.0:123→10.35.50.70:123. Bu,buölçümdegerçekW32Timeverikabulünügösterir;kalıcıUDPengeliartıkkanıtlanmışnedendeğildir.
+- **Saatyakınsaması açık:**20:19:47/49/51/53/55stripchartoffsetleriDCminusVV06+123.9661099/+123.9656704/+123.9655307/+123.9655892/+123.9653209s. Değişim8s'de~0.789ms;başarılıresynckomutuveLeap0,duvarsaatininyakınsadığıanlamınagelmez.
+- Olay158,VMICTimeProvidernon-HyperVortamıdesteklemiyorvebeklenenşekildedurduğunu açıkça belirtiyor;AuthWire/sertifikaarızasınedeniolarakyorumlanmadı.
+- MicrosoftW32Timebelgelerikabul edilmişoffsetiMaxAllowedPhaseOffsetaltındakademelihızayarıyladüzeltebileceğinibelirtiyor. VV06güncelType/phase/poll/MaxAllowedPhaseOffsetveverbosePhaseOffset/ClockRateparametrelerihenüzokunmadı;kesinmekanizmaparametreçıktısındanönceiddiaedilmez. SıradakisaltokunurVV06statusverbosevefiltrelenmişconfiguration;orijinaldeğerlerbilinmedenphase/spike/GPOgüvenayarlarıdeğiştirilmedi.
+- **Tamamlanmadı:**VV06–DCoffsetyakınsamasıveB11tazeWindows/RADIUSolaykorelasyonu. DC01/LinuxkaynakdüzeltmesiveöncekikablosuzVLAN/kimliktestlerininkabullerikorunur;AuthWirepolicy/cert/CA/RADIUSveprofilayarlarıdeğişmedi.
+
 ## VV06 W32Time yeniden eşzamanlaması açık; DC01 güncel NTP sağlığı tekrar doğrulandı — 21 Ekim 2026
 
 - VV06operatör /resync/rediscover sonucu “no time data was available”;sourcedc01.vizyonveri.local,Leap3/stratum0,lastsync20:08:01/rootdispersion133.4957884s.20:09:04–20:09:12stripchart DC01'eyanıtveriyor,offset+123.9729094/+123.9712788/+123.9713576/+123.9706198/+123.9715100s. **VV06eşzamanlamasıtamamlanmadı.** Stripchart ephemeralUDP ile gerçekW32TimeUDP123/MS-SNTPeşzamanlaması aynıbaşarıkanıtıdeğildir.

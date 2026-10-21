@@ -1,0 +1,42 @@
+{
+  "event": "VV06_W32TIME_DOMAIN_DATA_ACCEPTED_OFFSET_NOT_CONVERGED",
+  "date": "2026-10-21",
+  "timezone": "Europe/Istanbul",
+  "operator_service_restart_completed": true,
+  "resync_success": true,
+  "source": "dc01.vizyonveri.local",
+  "source_ip": "10.35.50.70",
+  "leap": 0,
+  "stratum": 4,
+  "last_sync_local": "2026-10-21T20:19:47+03:00",
+  "root_dispersion_seconds": 131.7487307,
+  "valid_time_data_event_ids": [
+    37,
+    35
+  ],
+  "ntp_client_flow": "0.0.0.0:123->10.35.50.70:123",
+  "stripchart_times_local": [
+    "20:19:47",
+    "20:19:49",
+    "20:19:51",
+    "20:19:53",
+    "20:19:55"
+  ],
+  "dc_minus_vv06_seconds": [
+    123.9661099,
+    123.9656704,
+    123.9655307,
+    123.9655892,
+    123.9653209
+  ],
+  "clock_offset_converged": false,
+  "vmic_event_158": "expected stop in non-HyperV environment per event message",
+  "vv06_phase_parameters_read": false,
+  "gradual_correction_mechanism": "consistent with documented behavior; exact active client parameters pending",
+  "next": "VV06 status verbose and filtered phase/poll configuration",
+  "registry_changed": false,
+  "phase_limits_changed": false,
+  "ntp_source_changed_on_vv06": false,
+  "authwire_changed": false,
+  "exact_windows_radius_correlation_accepted": false
+}
