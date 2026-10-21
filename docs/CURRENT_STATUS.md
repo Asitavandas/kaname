@@ -16,6 +16,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ B10 VV06 yanlış RADIUS sunucu adı reddi ve doğru profile geri dönüş saha kabulü — 21 Ekim 2026
+
+- **🔴✓ Pozitif → olumsuz → geri dönüş:**19:10:07+03 doğru kaname.vizyonveri.local/KANAME root/machine EAP-TLS ile12012/8001 ve10.10.110.2/24; operatörün yanlış yanlis-radius.vizyonveri.local adıyla kontrollü denemesinde19:14:43+03 EAPtype13başlangıcı,19:14:44+03 olay12013/11006/8002,0x800B0114 ve0x80420101; arayüzdisconnected.
+- 0x800B0114=Microsoft CERT_E_INVALID_NAME (isim izin verilen listede değil veya dışlanmış). Tek başına genel Windows “kullanıcı sertifikası geçersiz” metni istemci leaf'inin bozulduğunu kanıtlamaz. Önce/sonra kontrollü sonuçlar sunucu adı kısıtının beklendiği gibi reddettiği dar saha kabulünü destekler; paket/chain düzeyi trace alınmadı.
+- **🔴✓ Geri dönüş:** operatör C:\Users\administrator\AuthWire-WiFi-Verified-20261021-190808\Wi-Fi-VV_802.1X.xml doğru yedeğini netsh add profile ile başarıyla yükledi; sonraki çıktı VV_802.1X/aynı APBSSID/MAC, WPA2-Enterprise(FT)/CCMP veconnected. Geri dönüş çıktısında IP veya12012 yeniden gösterilmedi; önceki10.10.110.2 yeni ölçüm gibi sunulmaz.
+- Testte PMKCacheMode=no/ConnectionMode=manual komutu başarılı; doğru exportun geri yüklenmesi özgün ayarlara dönüş işlemidir (sonrasında alan bazında ayrı export karşılaştırması yapılmadı). Ethernet yönetimi korunması talimatı verildi; sunucu/RADIUS/policy/CA/native module/sharedsecret değiştirilmedi.
+- **Yalnız bu B10 alt senaryosu tamamlandı.** Diğer kablosuz negatif güven/kimlik, kullanıcı EAP-TLS ve geniş B10 kabulü açık; gerçek expiry saha testi ayrı cihaz bekliyor.
+
 ## 🔴✓ VV06 doğru sunucu güven profiliyle kablosuz yeniden bağlantı kabulü — 21 Ekim 2026, 19:10 İstanbul
 
 - **🔴✓ 19:10:07+03 WLAN zinciri:**8000 bağlantı başlangıcı,11000/11001 ilişkilendirme,12011 EAPtype13 başlangıcı,12012 802.1Xsuccess (host/AuthWire computer69b0d5cd-db61-4627-9db7-fcc5230152a3),11005 güvenliksuccess,8001 bağlandı. Son arayüz VV_802.1X/APBSSIDf0:61:c0:cc:73:54, WPA2-Enterprise(FT)/CCMP; Wi-Fi10.10.110.2/24Preferred.

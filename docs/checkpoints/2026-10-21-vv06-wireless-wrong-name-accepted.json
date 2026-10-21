@@ -1,0 +1,48 @@
+{
+  "event": "VV06_WIRELESS_WRONG_SERVER_NAME_REJECTION_AND_RESTORE_ACCEPTED",
+  "date": "2026-10-21",
+  "timezone": "Europe/Istanbul",
+  "computer": "VV06",
+  "ssid": "VV_802.1X",
+  "mac": "10:B1:DF:69:95:33",
+  "baseline": {
+    "correct_server_name": "kaname.vizyonveri.local",
+    "event_time": "2026-10-21T19:10:07+03:00",
+    "success_event": 12012,
+    "ipv4": "10.10.110.2"
+  },
+  "negative": {
+    "configured_name": "yanlis-radius.vizyonveri.local",
+    "configured_name_source": "operator_manual_edit_per_procedure_not_separately_exported",
+    "pmk_cache_disable_command_succeeded": true,
+    "eap_started_at": "2026-10-21T19:14:43+03:00",
+    "eap_failed_at": "2026-10-21T19:14:44+03:00",
+    "failure_events": [
+      12013,
+      11006,
+      8002
+    ],
+    "certificate_error": "0x800B0114",
+    "certificate_error_symbol": "CERT_E_INVALID_NAME",
+    "eap_error": "0x80420101",
+    "final_interface_state": "disconnected"
+  },
+  "restore": {
+    "source": "C:\\Users\\administrator\\AuthWire-WiFi-Verified-20261021-190808\\Wi-Fi-VV_802.1X.xml",
+    "import_succeeded": true,
+    "interface_state": "connected",
+    "ssid": "VV_802.1X",
+    "ap_bssid": "f0:61:c0:cc:73:54",
+    "authentication": "WPA2-Enterprise (FT)",
+    "cipher": "CCMP",
+    "ipv4_remeasured": false,
+    "success_event_recollected": false,
+    "profile_fields_reexported": false
+  },
+  "narrow_scenario_accepted": true,
+  "entire_B10_completed": false,
+  "server_changed": false,
+  "policy_changed": false,
+  "certificates_changed": false,
+  "packet_trace_captured": false
+}
