@@ -1,0 +1,46 @@
+{
+  "event": "VV06_VLAN140_DHCP_INCOMPLETE_AND_RELATIVE_CLOCK_OFFSET_MEASURED",
+  "date": "2026-10-21",
+  "timezone": "Europe/Istanbul",
+  "wireless_ip": {
+    "address": "169.254.206.66",
+    "prefix": 16,
+    "prefix_origin": "WellKnown",
+    "state": "Tentative",
+    "dhcp_vlan140_accepted": false,
+    "current_authentication_state_recollected": false,
+    "root_cause": "not_established"
+  },
+  "windows_time": {
+    "local": "2026-10-21T19:50:22.6486991+03:00",
+    "utc": "2026-10-21T16:50:22.6486991+00:00",
+    "source": "dc01.vizyonveri.local",
+    "source_ip": "10.35.50.70",
+    "stratum": 2,
+    "leap": 0,
+    "last_sync_local": "2026-10-21T19:45:06+03:00"
+  },
+  "linux_to_dc_sntp": {
+    "linux_local_utc_at_response": "2026-10-21T16:53:19.072151+00:00",
+    "dc": "10.35.50.70",
+    "dc_stratum": 1,
+    "leap": 0,
+    "response_source_mode_originate_checked": true,
+    "dc_minus_linux_seconds": -123.12339,
+    "round_trip_seconds": 0.000973,
+    "absolute_utc_authority_verified": false
+  },
+  "linux_time_source": {
+    "NTP": "yes",
+    "NTPSynchronized": "yes",
+    "server": "ntp.ubuntu.com",
+    "server_address": "185.125.190.57",
+    "vmware_tools_timesync": "Disabled"
+  },
+  "clock_changed": false,
+  "ntp_config_changed": false,
+  "policy_changed_by_assistant": false,
+  "dhcp_changed": false,
+  "certificates_changed": false,
+  "exact_past_event_correlation_accepted": false
+}

@@ -16,6 +16,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## VLAN140 uç DHCP kabulü başarısız; DC01–Linux zaman farkı salt okunur ölçüldü — 21 Ekim 2026
+
+- **VLAN140 sonrası VV06 Wi-Fi:**169.254.206.66/16,PrefixOriginWellKnown,AddressStateTentative. Bu geçerli140DHCPkirası kanıtı değildir; uçIP/DHCPkabulü tamamlanmadı. CSV'de140Access-Acceptgönderimi ve doğru sertifika/policy kabulü korunur; mevcut arayüz802.1Xdurumu bu yeni IPçıktısında ayrıca bulunmuyor. DHCPscope,140ağyolu/APuplinktagging veya başka nedenler henüz belirlenmedi.
+- **🔴✓ Windows zaman kaynağı okundu:** VV06yerel19:50:22.6486991+03/UTC16:50:22.6486991Z;W32Timesource dc01.vizyonveri.local/10.35.50.70,stratum2,leap0,lastsync19:45:06. Sunucu adı veUTCyereldönüşümü tutarlı; tek başına mutlak saatin doğruluğunu kanıtlamaz.
+- **🔴✓ Linux→DC01 saltokunur SNTP karşılaştırması:** Linuxyerelsaatine göre16:53:19.072151ZölçümündeDCminusLinux=-123.123390s,RTT0.000973s,DCstratum1/leap0. Yanıt kaynağı10.35.50.70,mode4veoriginatetimestamp eşleşmesi doğrulandı. Bu, önceki olasıWindows/RADIUSolaylarındaki123–124sfarkıyla uyumlu güncel relatif farktır; geçmiş ortakpaket korelasyonunun kesin kanıtı değildir.
+- LinuxNTPkaynağıntp.ubuntu.com/185.125.190.57,FallbackNTPServersntp.ubuntu.com,VMwareToolszamaneşitlemesiDisabled; öncekiNTP=yes/NTPSynchronized=yesgözlemi. DC01upstreamkaynağı veya mutlakUTCdoğruluğu henüz sorgulanmadı. “LinuxNTPeşzamanlı” durumu DC01ileeşit saat anlamına gelmez.
+- **Açık takip:** Wi-Fi802.1Xgünceldurum + yalnızWi-FiDHCPrenew; kullanıcı tarafından140DHCPscopeveAP/switch/uplinkVLANyolu kontrolü. Sonra müşteriADzamanotoritesi kaynağı/korelasyon incelemesi; hiçbir saat/NTP/DNS/GPO/policy/cert/serverayarına asistan müdahalesi yok. Saat düzeltmesiyle geçerlilik koşulları yapay olarak değiştirilmez.
+
 ## 🔴✓ Kablosuz policy VLAN140 değişikliği operatör tarafından doğrulandı — 21 Ekim 2026
 
 - Operatör açıkça **VLAN140'ı kendisi değiştirdiğini** bildirdi. CSV ID20/21'de19:33:34.238/19:33:50.953+03 policy authwire-pilot-wireless/POLICY_ALLOW/TLStrue/güncel VV06sertifikası ile140gönderilmesi bu bilinçli değişiklikle uyumludur; yanlış VLAN olayı veya otomatik policy düzeltme gereği olarak değerlendirilmez.
