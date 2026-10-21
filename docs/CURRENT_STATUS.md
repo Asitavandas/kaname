@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Operatör açıklamasıyla Ret/boş VLAN incelemesi kapatıldı — 21 Ekim 2026
+
+- Operatör, daha önce policy'yi elle İzin ver'den Reddet'e çekip kaydettiğini, sonra bunu unuttuğunu ve devre dışı bırak butonu eklenince kayıtlı kararı değiştirmediğini açıkça doğruladı. Bu açıklama revision56/SHAdoğrulanmış yedekteki enabled/deny/null ve yeniden etkinleşme sonrası POLICY_DENY kaydıyla örtüşür. **Ret/boşVLAN bildirimi önceki kayıtlı ayardan kaynaklanmıştır; ürün/form hatası incelemesi bu açıklamayla kapatıldı.** Yeni kod/servis/policy düzeltmesi yapılmadı, gerekmedi.
+- 🔴✓ dev13butonun geliştirme/teknik test/canlı kurulum/operatör görünümü kabulü; 🔴✓disablediken NO_MATCHING_POLICY ret ve güncel allow/VLAN140 durumunda POLICY_ALLOW/Windows12012-8001/10.10.140.2geri dönüşü kabul edildi. Etkinlik bayrağı ile İzin/Retkararı ayrı; mevcut kayıt kablosuz enabled/allow140, wiredallow110.
+- **Kanıt sınırı korunur:** ilk döngü denybaşlangıcı ve sonrasında action/vlan değişikliği içerdiği için yalnızallow140başlangıçlı saf kapat/aç turu ayrıca uygulanmış gibi kaydedilmez. Bu tur artık bildirilen hata için zorunlu yeniden üretim adımı değildir; operatör sebebi açıkladı. B08/B10bütün açık maddeleri tamamlanmış sayılmaz.
+- Son temizlik açık: VV06'da PMKCacheMode=no geçici değişikliğini, bugün önceden doğrulanmış C:\\Users\\administrator\\AuthWire-WiFi-Verified-20261021-190808\\Wi-Fi-VV_802.1X.xml profiliyle özgün haline döndürmek. Bu adım sertifika/policy/GPO değişikliği gerektirmez; operatör netsh profil geri yükleme başarısı ve bağlantı/IP kontrolü henüz beklenir. NTPişleri duraklatılmış, DNSmimarisi kapsam dışı, kullanıcıEAP-TLSvegerçekexpiry ayrı açık maddelerdir.
+
 ## Policy tanılaması: ilk yedek zaten Reddet/boş VLAN; mevcut kayıt İzin/VLAN140 — 21 Ekim 2026
 
 - Operatörün Yapıştırılan metin(2).txt salt okunur tanılaması18:33:17UTC/21:33:17+03'te geldi; dosyaSHA256fa9127c2af1a039e61dedd250b2f73c23f9d4133b2bfb231002a06f5d58f0635. Canlı revision60; wiredenabled/allow/VLAN110 değişmemiş, wirelessenabled/allow/VLAN140, başka kablosuzpolicy yok. Revizyon kontrol boyunca sabit, servisPIDkorumasıtrue, policywrite/restart/diskrestorefalse.
