@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## DC01 zaman yapılandırması: yerel NT5DS, etkin upstream yok; yedekli NTP düzeltmesi hazırlanıyor — 21 Ekim 2026
+
+- Operatör configuration/peers: NtpClientEnabled1/InputProvider1/TypeNT5DS(Local);NtpServerEnabled1;AnnounceFlags10(Local);VMICTimeProviderEnabled1(Local).Paylaşılan ayarlardaGPO/Policyişareti yok.1peeradıboş/Pending,mode0,stratum0,poll0;bu etkin birNTPupstream değildir.
+- ÖncekiADçıktıları forest/domainvizyonveri.local/PDCdc01hiyerarşisini gösteriyor;rootPDC'ninNT5DShiyerarşisinden upstream beklemesi Free-runningSystemClock davranışıyla uyumludur.MicrosoftrootPDCiçin manuelüstzamanreferansı önerir.
+- Hazırlanan operatör adımı: labdaLinux'unhalihazırkullandığıntp.ubuntu.com'a DC01w32tmstripchart5saltokunurörnek;başarılıyanıtsonrasıyerelW32Timeregistry/configbackup,manualpeerntp.ubuntu.com,0x8/syncfromflagsmanual/update,resync/rediscover,source/statuskontrol. MevcutAnnounceFlags10veVMIC/NtpServerayarlarına özeldeğişiklik yok. Stripchart ephemeralUDPportkullandığıiçinW32TimesourceUDP123erişiminikesinolarakkanıtlamaz;resynckabulüayrıdoğrulanacak.
+- Bu kayıt **hazırlanmış, henüz operatörce uygulanmamış** adımı anlatır. Geri dönüşkopyası,sourceerişimi,configuygulaması,resyncveoffsetyakınsamasıkabulleriaçık;backupoluştu/saatişişlediyedenmez. AuthWirepolicy/CA/cert/RADIUS/Windows802.1Xetkilenmemesi korunacak;mevcutNTPveADC'tümünündüzeldiğikabulüverilmedi.
+
 ## 🔴✓ Zaman farkı teşhisinde DC01 PDC ve yerel serbest saat kaynağı doğrulandı — 21 Ekim 2026
 
 - **🔴✓ DC01 operatör saltokunur çıktısı:** DNSRootvizyonveri.local,PDCEmulatordc01.vizyonveri.local;W32Time/query/source ve/query/status **Free-running System Clock**,RefIDLOCL(0x4C4F434C),stratum1,rootdelay0,rootdispersion10s,lastsync16:35:12+03. Stratum1/genel“radio clock”etiketi bu kaynakta gerçek dış/hardware UTC referansı kanıtı değildir.
