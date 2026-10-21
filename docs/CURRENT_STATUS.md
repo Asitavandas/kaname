@@ -16,6 +16,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Zaman farkı teşhisinde DC01 PDC ve yerel serbest saat kaynağı doğrulandı — 21 Ekim 2026
+
+- **🔴✓ DC01 operatör saltokunur çıktısı:** DNSRootvizyonveri.local,PDCEmulatordc01.vizyonveri.local;W32Time/query/source ve/query/status **Free-running System Clock**,RefIDLOCL(0x4C4F434C),stratum1,rootdelay0,rootdispersion10s,lastsync16:35:12+03. Stratum1/genel“radio clock”etiketi bu kaynakta gerçek dış/hardware UTC referansı kanıtı değildir.
+- VV06DC01'i,AuthWireLinuxntp.ubuntu.com'u izliyor;Linux→DC01SNTPölçümündekiDCminusLinux-123.123sile birlikte ayrışmışaktifzamanreferansları saptandı. DC01'in harici/iç onaylı upstream'e aktif eşzamanlanmaması doğrulandı; bunun eksikpeer,erişim,GPO,servis veya sanallaştırma nedeniyle olup olmadığı henüz belirlenmedi.
+- **Sonraki gerekli saltokunur kontrol:** DC01w32tm/query/configuration ve/query/peers;Local/Policykaynağı ve yapılandırılmışpeer durumunu ayırt et. Kaynak seçimi/erişim ve mevcutyapılandırmayedeği incelenmeden etki alanının saati değiştirilmedi;AuthWireCA/cert/policy/RADIUS/802.1XveDNSayarları korundu. B11kesinpacket/timekorelasyonu veNTPdüzeltmekabulü açık kalır.
+
 ## 🔴✓ VV06 doğru Wi-Fi ağına bağlandıktan sonra policy VLAN140 DHCP uç kabulü tamamlandı — 21 Ekim 2026
 
 - Operatör önceki169.254çıktısının **Wi-Fi ağına bağlı değilken** alındığını açıkladı; doğru Wi-Fi ağına bağlanıp yeniden ölçtü. Önceki “VLAN140DHCPyolu/scope arızası” şüphesi bu veriye dayanarak doğrulanmış arıza sayılmaz; gereksizAP/switch/DHCPdeğişikliği yapılmadı. Tarihsel ham APIPA gözlemi korunur, arıza çıkarımı bu notla düzeltilir.

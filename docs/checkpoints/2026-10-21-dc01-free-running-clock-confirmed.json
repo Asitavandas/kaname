@@ -1,0 +1,35 @@
+{
+  "event": "DC01_PDC_FREE_RUNNING_CLOCK_CONFIRMED",
+  "date": "2026-10-21",
+  "timezone": "Europe/Istanbul",
+  "source": "operator_readonly_commands",
+  "computer": "dc01",
+  "domain": "vizyonveri.local",
+  "pdc_emulator": "dc01.vizyonveri.local",
+  "w32time": {
+    "source": "Free-running System Clock",
+    "stratum": 1,
+    "leap": 0,
+    "reference_id": "0x4C4F434C",
+    "reference_name": "LOCL",
+    "root_delay_seconds": 0,
+    "root_dispersion_seconds": 10,
+    "last_successful_sync_local": "2026-10-21T16:35:12+03:00",
+    "poll_interval_seconds": 64
+  },
+  "active_upstream_sync_verified": false,
+  "configured_peers": "not_yet_read",
+  "configuration_policy_precedence": "not_yet_read",
+  "why_upstream_not_in_use": "not_established",
+  "previous_measured_dc_minus_linux_seconds": -123.12339,
+  "changes": {
+    "clock": false,
+    "ntp": false,
+    "gpo": false,
+    "dns": false,
+    "certificates": false,
+    "policy": false,
+    "radius": false
+  },
+  "next": "DC01 w32tm /query /configuration and /query /peers"
+}
