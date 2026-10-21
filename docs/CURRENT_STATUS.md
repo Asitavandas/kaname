@@ -16,6 +16,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.13 policy butonu operatör ekran kabulü tamam — 21 Ekim 2026
+
+- Operatör F5 sonrası policy satırının Etkin olduğunu ve Devre dışı bırak butonunu gördüğünü doğruladı. Geliştirme/CI ve canlı kurulumun ardından bu dar ekran görünümü kabulü de tamamlandı.
+- Sıradaki saha adımı yalnız `authwire-pilot-wireless` enabled=false→true: VV06 Wi-Fi yeni doğrulamada ret; ardından aynı policy yeniden etkin, VLAN140 DHCP geri dönüşü. Mevcut bağlantının otomatik düşmesi beklenmez; PMK cache kapalı taze bağlantı ile güncel RADIUS kaydı ve Windows WLAN olayları birlikte incelenecek. Başka etkin policy eşleşirse karar önceden varsayılmayacak. Ethernet yönetim ve wired policy korunacak.
+- Henüz butona basıldığına veya olumsuz/geri dönüş saha testinin tamamlandığına dair çıktı yok. B08/B10 saha kabulü açık; bu kayıt yalnız operatörün durum rozeti/buton görünümü kabulünü tamamlar.
+
 ## 🔴✓ dev.13 policy butonu canlı kurulum, koruma ve yedek/restore kabulü tamam — 21 Ekim 2026
 
 - Operatör `POLICY_TOGGLE_UPDATE_FINISHED` çıktısı verified=true/version0.14.0-dev.13; Linux canlı kurulum tamamlandı. Orijinal preflight snapshot ve kanıt dizini `/var/backups/authwire/scheduled/policy-toggle-dev13-20261021T181206Z-277d351a` kalıcıdır.
