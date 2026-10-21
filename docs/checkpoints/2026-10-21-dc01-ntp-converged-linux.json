@@ -1,0 +1,77 @@
+{
+  "event": "DC01_NTP_SOURCE_CONFIGURED_AND_LINUX_RELATIVE_OFFSET_CONVERGED",
+  "date": "2026-10-21",
+  "timezone": "Europe/Istanbul",
+  "operator_backup": "C:\\ProgramData\\AuthWire-Time-Backup-20261021-200423",
+  "operator_config_success": true,
+  "operator_resync_success": true,
+  "source": "ntp.ubuntu.com,0x8",
+  "source_ip": "185.125.190.57",
+  "dc_stratum": 3,
+  "dc_last_sync_local": "2026-10-21T20:04:23+03:00",
+  "initial_dc_root_dispersion_seconds": 130.8929471,
+  "transient_after_change": {
+    "linux_utc_first": "2026-10-21T17:07:40.330994+00:00",
+    "dc_minus_linux_seconds": [
+      624.093807,
+      624.093811,
+      624.093781
+    ],
+    "root_cause": "not_established",
+    "later_measurements_recovered": true
+  },
+  "upstream_comparison": {
+    "linux_utc": "2026-10-21T17:08:18.688686+00:00",
+    "upstream_minus_linux_seconds": 0.000303,
+    "rtt_seconds": 0.062921,
+    "stratum": 2,
+    "leap": 0
+  },
+  "convergence_repeat": {
+    "linux_utc_start": "2026-10-21T17:08:52.547798+00:00",
+    "linux_utc_end": "2026-10-21T17:08:54.548724+00:00",
+    "dc_minus_linux_seconds": [
+      0.004189,
+      0.00416,
+      0.004176
+    ],
+    "dc_stratum": 3,
+    "leap": 0
+  },
+  "authwire_services": {
+    "panel": {
+      "pid": 573680,
+      "active": true,
+      "enabled": true
+    },
+    "radius": {
+      "pid": 326873,
+      "active": true,
+      "enabled": true
+    },
+    "broker": {
+      "pid": 149955,
+      "active": true,
+      "enabled": true
+    },
+    "crl_timer": {
+      "name": "authwire-radius-crl-sync.timer",
+      "loaded": true,
+      "active": true,
+      "enabled": true
+    },
+    "backup_timer": {
+      "name": "authwire-backup.timer",
+      "loaded": true,
+      "active": true,
+      "enabled": true,
+      "last_trigger_local": "2026-10-21T03:16:33+03:00",
+      "next_trigger_local": "2026-10-22T03:17:11+03:00"
+    }
+  },
+  "vv06_post_correction_resync_accepted": false,
+  "exact_windows_radius_event_correlation_accepted": false,
+  "long_term_stability_accepted": false,
+  "linux_clock_changed_by_assistant": false,
+  "authwire_configuration_changed_by_assistant": false
+}

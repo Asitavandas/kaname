@@ -16,6 +16,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 yedekli NTP kaynak düzeltmesi ve Linux ile milisaniye düzeyinde yakınsama — 21 Ekim 2026
+
+- **🔴✓ Operatör uygulaması:** W32Timeregistryexport/configbackup başarılı,C:\ProgramData\AuthWire-Time-Backup-20261021-200423;manualpeerntp.ubuntu.com,0x8/config/update ve/resync/rediscover başarılı. DCsource ntp.ubuntu.com,0x8/185.125.190.57,stratum3,leap0,lastsync20:04:23. İlkoperatörstatus RootDispersion130.8929471s; bu tekçıktıyakınsamışsaatkanıtısayılmadı.
+- **Geçici sapma saklandı:**17:07:40.330994–17:07:40.931942Z Linux→DCüçdoğrulanmışSNTPyanıtındaDCminusLinux+624.093807/+624.093811/+624.093781s,RTT~0.3msölçüldü. Sonrakiyenidenölçüm17:08:18.625627Zfark+0.004291s,DCreference185.125.190.57/stratum3/leap0/rootdispersion7.761459s. İlkbüyüksapmanınkesinnedeni belirlenmedi;kaynakdeğişimiylesıradakiyakınsamaölçümleriarasındaoluşanbulguolarakkorundu,permanentarızaolaraksunulmadı.
+- **🔴✓ Bağımsızüstkaynak karşılaştırması:**17:08:18.688686Z,185.125.190.57minusLinux+0.000303s,RTT62.921ms,stratum2/leap0;Linuxsystemd-timesyncdsonoffset+2.031ms/rootdistance4.363ms.
+- **🔴✓ Tekrar DC–Linux ölçümleri:**17:08:52.547798/17:08:53.548232/17:08:54.548724Zfark+0.004189/+0.004160/+0.004176s,RTT0.279–0.313ms,DCstratum3/leap0. Bu kısa pencerede aynıNTPkaynağıüzerindenyakınsama doğrulandı;uzunsüre/rebootkalıcılığıveVV06clientyenidenkabulühenüzölçülmedi.
+- **🔴✓ AuthWire saltokunur servis koruması:**panel573680/RADIUS326873/broker149955active+enabled,PIDlerkorundu;authwire-radius-crl-sync.timervegerçekyedekunitiauthwire-backup.timerloaded/active/enabled,sonbackuptrigger21Ekim03:16:33,next22Ekim03:17:11İstanbul. İlkgenelstatussorgusundayanlıştahminedilenauthwire-scheduled-backup.timerinactiveçıktısıgerçekyedekarıza bulgusu değildir.
+- **Bekliyor:**VV06yalnızdomainhiyerarşisindenresyncveDC'yestripchart/status;sonrasıtazeWindows/RADIUSortakolaykorelasyonu. B11tamamısayılmaz. NTPdüzeltmesioperatörünDC01W32Timeayarınaaittir;asistanLinuxsaatini,NTP'sini,AuthWirepolicy/CA/cert/nativeRADIUSve802.1Xprofillerinideğiştirmedi.
+
 ## DC01 zaman yapılandırması: yerel NT5DS, etkin upstream yok; yedekli NTP düzeltmesi hazırlanıyor — 21 Ekim 2026
 
 - Operatör configuration/peers: NtpClientEnabled1/InputProvider1/TypeNT5DS(Local);NtpServerEnabled1;AnnounceFlags10(Local);VMICTimeProviderEnabled1(Local).Paylaşılan ayarlardaGPO/Policyişareti yok.1peeradıboş/Pending,mode0,stratum0,poll0;bu etkin birNTPupstream değildir.
