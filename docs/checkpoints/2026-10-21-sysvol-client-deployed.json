@@ -1,0 +1,26 @@
+{
+  "event": "SYSVOL_CLIENT_UPDATE_ACCEPTED",
+  "recorded_utc": "2026-10-21T15:07:55.615Z",
+  "operator_output": {
+    "event": "SYSVOL_CLIENT_UPDATED",
+    "verified": true,
+    "updated": true,
+    "backup": "C:\\ProgramData\\AuthWire-Admin-Backup-20261021-180253-88c863b5c1bc46cb99b6b9fb6b74b8ca",
+    "publisher": "6E74B513F766E01730719684A41B2664380CA68A",
+    "client_body_sha256": "bf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60",
+    "client_sha256": "59C86CF55E5110E23DF16388928580FE8D2050B59C999A0E09CA2599286790B3",
+    "installer_and_assets_preserved": true,
+    "startup_entries": 1,
+    "all_signed": true,
+    "package_permissions_preserved": true,
+    "gpo_settings_changed": false,
+    "windows_task_changed": false,
+    "vv06_client_acceptance_pending": true
+  },
+  "installed_linux_version": "0.14.0-dev.12",
+  "scope": "DC01 pilot SYSVOL client package only; this output does not prove that VV06 received or executed the new client.",
+  "next": "VV06 natural GPO startup distribution, verify exact signed client hash/publisher, task boot/result and existing certificate/key/EAP/VLAN preservation.",
+  "live_expired_endpoint_acceptance_pending": true,
+  "previous_intermediate_stability_findings_retained": true,
+  "dns_architecture_out_of_scope": true
+}

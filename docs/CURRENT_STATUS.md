@@ -16,6 +16,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 aynı publisher ile dev.12 istemciyi SYSVOL'e teslim etti — 21 Ekim2026,18:02 İstanbul
+
+- **🔴✓ Operatör çıktısı SYSVOL_CLIENT_UPDATED/verifiedtrue/updatedtrue:** mevcut publisher`6E74B513F766E01730719684A41B2664380CA68A` ile yeni AuthWire-Client.ps1 imzalandı. BodySHA`bf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60`; signed full-fileSHA`59C86CF55E5110E23DF16388928580FE8D2050B59C999A0E09CA2599286790B3`.
+- **🔴✓ Koruma/yedek:**`C:\ProgramData\AuthWire-Admin-Backup-20261021-180253-88c863b5c1bc46cb99b6b9fb6b74b8ca`. Installer ve signed assets korundu; tek AllSigned Startup girişi ve paket izinleri korundu. GPO ayarları ve Windows görevleri bu DC teslim adımında değişmedi.
+- **Henüz açık:** VV06'nın bu yeni signed dosyayı gerçekten aldığı/çalıştırdığı bu çıktıdan anlaşılmaz. Sıradaki dar kabul doğal bilgisayar GPO/boot dağıtımı, exact signed file hash/publisher, boot/task sonucu, mevcut cert/key, Ethernet802.1X ve VLAN110 korumasıdır. Yeni istemci aldıktan sonraki temel kabul, gerçek expired saha kabulünden ayrı tutulur. Dev12 Linux canlı kaynağı daha önce kabul edilmişti; aralıklı CI/yerel test kararlılığı bulguları ve DHCP/DNS kapsam dışı kararı korunur.
+
 ## 🔴✓ dev.12 Linux canlı güncellemesi, koruma ve gerçek yedekte izole restore tamamlandı — 21 Ekim2026
 
 - **🔴✓ Operatör sudo çıktısıyla canlı kaynak güncellemesi kabul edildi:**0.14.0-dev.12, HTTPS doğrulandı; Windows istemci sourceSHA`bf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60`. Sonrasında salt okunur remote kontrol de aynı sürüm/hash'i doğruladı. Evidence`/var/backups/authwire/scheduled/expired-recovery-dev12-20261021T145726Z-ec221763`; özgün before snapshot kalıcı.
