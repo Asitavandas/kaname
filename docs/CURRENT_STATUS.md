@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ VV06 doğrulanmış dev.12 signed kopyadan sonra taze normal görev kabulü tamamlandı — 21 Ekim2026,18:29 İstanbul
+
+- **🔴✓ Operatör manuel task start sonrası:**AuthWire Certificate EnrollmentLastRun21Ekim18:29:17+03,Ready/LastTaskResult0; statusinstalled, error/stage/server_error raporlanmadı; retry.jsonfalse. Bu çalışma, exact hash/publisher ile doğrulanmış yeni signed istemci kopyasından sonradır.
+- **🔴✓ Mevcut sertifika serisi korundu:**26e43008251ac23612b2e654a6f6a259ee234f6e aynı. Güncel thumbprintF5596CFE0AA4FD4F9378EB0699DF4FB4FC275119 kaydedildi; aynı leaf için önceki thumbprint karşılaştırması yapılmış gibi sunulmadı. Önceki boot çıktısında privatekeytrue/pendingfalse/EthernetAuthSuccess/10.10.110.4/24 doğrulanmıştı; bu yeni çıktı pending/EAP/IP'yi ayrıca yeniden ölçmez.
+- **🔴✓ dev.12 teslim ve normal çalışma kabul zinciri kapandı:** Linux kaynak/koruma/backup/izole restore → DC01 same-publisher signed client/SYSVOL/ACL koruması → VV06 exact signed copy/boot/cert-key/Ethernet/IP koruması → yeni kopyadan sonra fresh taskReady0/installed/seri aynı/retryfalse. Sadece bu dar teslim/günlük çalışma zinciri tamamlandı; tüm B06 veya projenin tamamı bitmiş sayılmaz.
+- **Açık:** actual expired-pending uç cihaz saha kurtarması, diğer kalan yaşam döngüsü varyantları ve önceki aralıklı test kararlılığı bulguları. Bu adım için geçerli cert/key/saat/policy değişikliği veya zorla yenileme uygulanmadı. Kesin RADIUS-selected-leaf/zaman eşleştirmesi ayrı kapsamdır; DHCP/DNS mimarisi kapsam dışı kalır.
+
 ## 🔴✓ VV06 dev.12 signed client kopyası ve boot sonrası görev/cert/kablolu ağ kabulü tamamlandı — 21 Ekim2026
 
 - **🔴✓ Gerçek GPO/endpoint teslimi:** VV06ClientUpdatedtrue; signed full-fileSHA59C86CF55E5110E23DF16388928580FE8D2050B59C999A0E09CA2599286790B3 ile eşleşiyor. SignatureValid ve mevcut publisher6E74B513F766E01730719684A41B2664380CA68A doğru.

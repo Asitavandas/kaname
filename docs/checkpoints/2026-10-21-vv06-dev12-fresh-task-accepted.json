@@ -1,0 +1,36 @@
+{
+  "event": "VV06_DEV12_FRESH_TASK_ACCEPTED",
+  "recorded_utc": "2026-10-21T15:36:56.804Z",
+  "computer": "VV06",
+  "previous_verified_copy": {
+    "signed_file_sha256": "59C86CF55E5110E23DF16388928580FE8D2050B59C999A0E09CA2599286790B3",
+    "signature": "Valid",
+    "publisher": "6E74B513F766E01730719684A41B2664380CA68A"
+  },
+  "task": {
+    "name": "AuthWire Certificate Enrollment",
+    "last_run": "2026-10-21T18:29:17+03:00",
+    "state": "Ready",
+    "last_result": 0,
+    "manual_start_after_verified_new_signed_copy": true
+  },
+  "client_status": {
+    "state": "installed",
+    "error_stage_server_error_not_reported": true
+  },
+  "installed": {
+    "serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+    "serial_unchanged": true,
+    "thumbprint": "F5596CFE0AA4FD4F9378EB0699DF4FB4FC275119",
+    "thumbprint_is_recorded_current_value_not_claimed_compared_to_prior_same_leaf": true
+  },
+  "retry_file_exists": false,
+  "pending_request_rechecked_in_this_output": false,
+  "last_boot_check_pending_request_false": true,
+  "independent_fresh_server_receipt_audit_query_performed": false,
+  "scope": "Live dev12 Linux plus signed SYSVOL distribution, actual VV06 signed copy, healthy boot/wired/IP state and subsequent fresh normal task acceptance completed. This is not actual expired-pending endpoint recovery.",
+  "dev12_delivery_and_normal_operation_accepted": true,
+  "real_expired_pending_endpoint_recovery_pending": true,
+  "previous_test_stability_findings_retained": true,
+  "dns_architecture_out_of_scope": true
+}
