@@ -1,0 +1,41 @@
+{
+  "event": "VV06_WALL_CLOCK_ALIGNED_RESTORE_VERIFIED_RETURN_TO_8021X",
+  "date": "2026-10-21",
+  "timezone": "Europe/Istanbul",
+  "operator_backup": "C:\\ProgramData\\AuthWire-Time-Align-20261021-203036",
+  "restored_parameters": {
+    "MaxAllowedPhaseOffset": 300,
+    "Type": "NT5DS",
+    "configuration_origin": "Local"
+  },
+  "dc_minus_vv06_seconds": [
+    0.0009195,
+    0.0001621,
+    0.0000133,
+    -0.0001196,
+    -0.0002258
+  ],
+  "wall_clock_alignment_accepted": true,
+  "last_w32time_status": {
+    "resync_message": "The computer did not resync because no time data was available.",
+    "leap": 3,
+    "stratum": 0,
+    "state": "Unset",
+    "last_sync_error": 1,
+    "phase_offset_seconds": -20.2919052,
+    "root_dispersion_seconds": 28.0747172,
+    "last_success_local": "2026-10-21T20:30:40+03:00"
+  },
+  "service_long_term_health_accepted": false,
+  "user_steering": "Duzeldi bence, artik gercek konumuza donelim",
+  "further_ntp_work_paused": true,
+  "next_8021x_scenario": {
+    "policy": "authwire-pilot-wireless",
+    "disable_expectation": "reject if no alternate allow matches",
+    "reenable_expectation": "accept and VLAN140 DHCP",
+    "wired_policy_to_remain_unchanged": true,
+    "side_effect": "other clients using pilot wireless policy may be denied on reauthentication while disabled",
+    "executed": false
+  },
+  "authwire_config_changed_by_assistant": false
+}

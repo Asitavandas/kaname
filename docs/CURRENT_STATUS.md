@@ -16,6 +16,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ VV06–DC01 anlık saat hizalaması ve özgün eşik geri dönüşü; operatör isteğiyle 802.1X'e dönüldü — 21 Ekim 2026
+
+- Operatörhelperçıktısı:W32Timebackup C:\ProgramData\AuthWire-Time-Align-20261021-203036;geçiciMaxAllowedPhaseOffset1adımısonrası“no time data”resyncmetni görüldü;finally“Özgün eşik geri yüklendi:300”,runtimeMaxAllowedPhaseOffset300(Local)/TypeNT5DS(Local)doğrulandı.
+- **🔴✓ Anlık duvarsaatihizalama:**20:30:23/25/27/29/31stripchartDCminusVV06+0.0009195/+0.0001621/+0.0000133/-0.0001196/-0.0002258s.5örnekte|offset|<1ms;önceki124sfarkbukısapenceredekapandı. Buölçümve300/NT5DSgeri dönüş dar kabulü tamamlandı.
+- **Açıkizlem,başarıgibisunulmaz:**aynısonstatusLeap3,stratum0,StateUnset,LastSyncError1,PhaseOffset-20.2919052s,rootdispersion28.0747172s,lastsync20:30:40. Komutresyncsonucuileduvarsaat ölçümüayrıkaydedilir;NTPhizmetinin kararlı normalstatüdeolduğu veya rebootkalıcılığı kanıtlanmadı. Kullanıcı“Düzeldi bence,artık gerçek konumuza dönelim”dedi;bu nedenle NTPçalışmasınadevamedilmeyecek,izlemmaddesiaçıkduracak. Nativeexitcodekontrolütekbaşınabuoperatörresyncmetniningeçerliliğinikabuleyetmez;manuelstatus/offsetkabulükorunur.
+- **Sıradaki 802.1X B08/B10 dar senaryo:**geçerliVV06certveaynıdoğruWi-Fiprofiliyleyalnızauthwire-pilot-wirelesspolicygeçicidisabledikenret,bukablosuzpolicyyenidenenabledikenaccept/VLAN140DHCPgeridönüş. Ethernetmanagementvewiredpolicykorunur;ADgroup/device/cert/CA/sharedsecret/RADIUSservisayarınadokunulmaz. Aynıpilotwirelesspolicy'ye bağlıdiğercihazlaryenidendoğrulamadageçiciretgörebilir;operatörpaneladımındabuetkibelirtilecek. Başkailzinpolicy'sieşleşirsegerçekkararincelenecek,sonuçöncedenvarsayılmayacak.
+- Henüzpolicytoggle/olumsuztestyapılmadı;hazırlıkolarakkaydedildi. Guesttekrarıistenmedi,DNSmimarisikapsamdışı,gerçekexpiryayrıcihazbekliyor,kullanıcıEAP-TLSayrıaçıkmaddekalır.
+
 ## VV06 phase ayarları doğrulandı; yedekli tek seferlik anlık hizalama adımı hazır — 21 Ekim 2026
 
 - Operatörverbose:PhaseOffset123.9658728s/ClockRate0.0156250s/StateHold/TimeSourceFlags8(SignatureAuthenticated)/LastSyncError0/soniyiörnek234sönce. NT5DS(Local),MinPoll10/MaxPoll15,MaxAllowedPhaseOffset300(Local),PhaseCorrectRate1,UpdateInterval30000,SpikeWatchPeriod900;maxpos/neg0xFFFFFFFFmevcutdeğerleridir,asistantarafındangenişletilmedi.
