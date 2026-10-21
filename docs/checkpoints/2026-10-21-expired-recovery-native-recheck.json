@@ -1,6 +1,6 @@
 {
   "event": "EXPIRED_RECOVERY_NATIVE_RECHECK",
-  "checked_utc": "2026-10-21T14:07:20.648Z",
+  "checked_utc": "2026-10-21T14:14:46.278Z",
   "candidate_head": "a89869cdde2b22688df66433a6a9ac8f5ca20f66",
   "candidate_version": "0.14.0-dev.12",
   "live_version": "0.14.0-dev.11",
@@ -8,11 +8,11 @@
   "billing_settings_changed": false,
   "completed_head": "7574d942a47e3b298013f01a23022bfc0dcacd5f",
   "completed_runs": {
-    "device_enrollment": 39612729264,
-    "foundation": 39612729697,
-    "browser": 39612730036,
-    "source_preparation": 39612729454,
-    "bounded_retry": 39612729411
+    "foundation": 39613895446,
+    "browser": 39613896020,
+    "source_preparation": 39613894982,
+    "bounded_retry": 39613895022,
+    "native_radius": 39613895299
   },
   "windows_native_expired_recovery_passed": true,
   "windows_evidence": {
@@ -33,14 +33,50 @@
   "separate_native_kerberos_passed": true,
   "synthetic_1000_device_load_passed": true,
   "remaining": {
-    "radius_native_startup_failure_run": 39612729475,
-    "radius_native_fix_run_in_progress": 39613895299,
+    "windows_retry": {
+      "job": 119269650741,
+      "result": "failure",
+      "reason": "automatic failure/rearm/recovery did not finish within 180 seconds",
+      "same_check_earlier_passed_run": 39612729264,
+      "job_rerun_rejected": "403: containing workflow already running",
+      "failed_jobs_rerun_rejected": "403: workflow already running",
+      "run_reported_in_progress_despite_terminal_jobs": true
+    },
     "merge": false,
     "live_source_delivery": false,
     "signed_sysvol_delivery": false,
-    "vv06_real_expiry_field_acceptance": false,
-    "unsuccessful_explicit_dictionary_run": 39613583961
+    "vv06_real_expiry_field_acceptance": false
   },
   "production_state_changed": false,
-  "dns_architecture_out_of_scope": true
+  "dns_architecture_out_of_scope": true,
+  "passed_device_jobs": {
+    "run": 39613894826,
+    "windows_client": 119269650239,
+    "native_kerberos": 119269650421
+  },
+  "radius_native": {
+    "passed": true,
+    "job": 119269652889,
+    "normal_cases": 29,
+    "debug_cases": 27,
+    "expired_tls_rejection": true,
+    "native_crl_cache_reload": true,
+    "process_preserved": true,
+    "related_tests": 35
+  },
+  "live_readonly": {
+    "panel": {
+      "pid": 428758,
+      "active": true
+    },
+    "radius": {
+      "pid": 326873,
+      "active": true
+    },
+    "broker": {
+      "pid": 149955,
+      "active": true
+    },
+    "client_sha256": "86081b41e7072c055cf3a0364f688914b5f66def91ab44273cdcea50e26f5b15"
+  }
 }
