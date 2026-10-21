@@ -1,0 +1,42 @@
+{
+  "event": "VV06_WIRELESS_POLICY_VLAN140_DHCP_ENDPOINT_ACCEPTED",
+  "date": "2026-10-21",
+  "timezone": "Europe/Istanbul",
+  "computer": "VV06",
+  "operator_correction": "Previous APIPA reading was taken while Wi-Fi was not connected to a network; operator connected to correct Wi-Fi and repeated measurement.",
+  "wireless_ipv4": {
+    "address": "10.10.140.2",
+    "prefix": 24,
+    "prefix_origin": "Dhcp",
+    "address_state": "Preferred"
+  },
+  "ssid_context": "correct Wi-Fi per operator; SSID not reprinted in latest IP output",
+  "policy": "authwire-pilot-wireless",
+  "vlan": 140,
+  "operator_policy_change_confirmed": true,
+  "prior_radius_evidence_row_ids": [
+    20,
+    21
+  ],
+  "current_certificate_serial_from_prior_csv": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+  "dynamic_vlan_endpoint_acceptance": true,
+  "previous_apipa_indicates_proven_dhcp_fault": false,
+  "windows_time": {
+    "local": "2026-10-21T19:53:14.3358545+03:00",
+    "utc": "2026-10-21T16:53:14.3358545+00:00",
+    "source": "dc01.vizyonveri.local",
+    "stratum": 2,
+    "last_sync_local": "2026-10-21T19:45:06+03:00"
+  },
+  "relative_clock_offset_resolution": "pending",
+  "next": "DC01 read-only time source, status and PDC role",
+  "changes_by_assistant": {
+    "clock": false,
+    "ntp": false,
+    "dhcp": false,
+    "ap": false,
+    "switch": false,
+    "policy": false,
+    "certificates": false
+  }
+}

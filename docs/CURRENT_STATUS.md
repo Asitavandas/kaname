@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ VV06 doğru Wi-Fi ağına bağlandıktan sonra policy VLAN140 DHCP uç kabulü tamamlandı — 21 Ekim 2026
+
+- Operatör önceki169.254çıktısının **Wi-Fi ağına bağlı değilken** alındığını açıkladı; doğru Wi-Fi ağına bağlanıp yeniden ölçtü. Önceki “VLAN140DHCPyolu/scope arızası” şüphesi bu veriye dayanarak doğrulanmış arıza sayılmaz; gereksizAP/switch/DHCPdeğişikliği yapılmadı. Tarihsel ham APIPA gözlemi korunur, arıza çıkarımı bu notla düzeltilir.
+- **🔴✓ Yeni uç ölçümü:** VV06Wi-Fi10.10.140.2/24,PrefixOriginDhcp,AddressStatePreferred. Operatörün VLAN140policydeğişikliği + CSV ID20/21kablosuzpolicy/currentcert/TLStrue/140Access-Accept + doğru Wi-Fiağına bağlandıktan sonra140DHCPadresinin alınması birlikte bu dar dinamikVLANuçkabulünü tamamlar. SonIPçıktısındaSSID/BSSID/12012yeniden basılmadı; bağlantıbağlamı operatörbildirimine dayanır,kesinpaketkorelasyonu iddia edilmez.
+- Yeni VV06zaman okuması19:53:14.3358545+03/16:53:14.3358545Z;W32TimeDC01kaynağı/stratum2/lastsync19:45:06aynı. Bu çıktı geçmiş123saniyelikDC–Linuxfarkının düzeldiğini kanıtlamaz.
+- **Açık sıradaki adım:** DC01'dehostname,W32Timesource/status vePDCrolü saltokunurkontrol. Saat/NTP/DNS/GPO/policy/certayarları asistan tarafından değiştirilmedi. Daha geniş B10kimlikvaryantları veB11kesinzamankorelasyonu açık kalır.
+
 ## VLAN140 uç DHCP kabulü başarısız; DC01–Linux zaman farkı salt okunur ölçüldü — 21 Ekim 2026
 
 - **VLAN140 sonrası VV06 Wi-Fi:**169.254.206.66/16,PrefixOriginWellKnown,AddressStateTentative. Bu geçerli140DHCPkirası kanıtı değildir; uçIP/DHCPkabulü tamamlanmadı. CSV'de140Access-Acceptgönderimi ve doğru sertifika/policy kabulü korunur; mevcut arayüz802.1Xdurumu bu yeni IPçıktısında ayrıca bulunmuyor. DHCPscope,140ağyolu/APuplinktagging veya başka nedenler henüz belirlenmedi.
