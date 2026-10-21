@@ -1,0 +1,46 @@
+{
+  "event": "EXPIRED_RECOVERY_NATIVE_RECHECK",
+  "checked_utc": "2026-10-21T14:07:20.648Z",
+  "candidate_head": "a89869cdde2b22688df66433a6a9ac8f5ca20f66",
+  "candidate_version": "0.14.0-dev.12",
+  "live_version": "0.14.0-dev.11",
+  "github_jobs_can_start": true,
+  "billing_settings_changed": false,
+  "completed_head": "7574d942a47e3b298013f01a23022bfc0dcacd5f",
+  "completed_runs": {
+    "device_enrollment": 39612729264,
+    "foundation": 39612729697,
+    "browser": 39612730036,
+    "source_preparation": 39612729454,
+    "bounded_retry": 39612729411
+  },
+  "windows_native_expired_recovery_passed": true,
+  "windows_evidence": {
+    "run_as_system": true,
+    "production_main_ast": true,
+    "real_cng_csr_certreq_chain_receipt": true,
+    "expired_pending_rejected": true,
+    "old_pending_archived_identically": true,
+    "new_key_and_csr": true,
+    "new_leaf_installed": true,
+    "unrelated_identity_preserved": true,
+    "old_key_retained_nonexportable": true,
+    "kerberos_transport": "synthetic",
+    "real_deadline_wait": false,
+    "system_clock_changed": false,
+    "customer_state_used": false
+  },
+  "separate_native_kerberos_passed": true,
+  "synthetic_1000_device_load_passed": true,
+  "remaining": {
+    "radius_native_startup_failure_run": 39612729475,
+    "radius_native_fix_run_in_progress": 39613895299,
+    "merge": false,
+    "live_source_delivery": false,
+    "signed_sysvol_delivery": false,
+    "vv06_real_expiry_field_acceptance": false,
+    "unsuccessful_explicit_dictionary_run": 39613583961
+  },
+  "production_state_changed": false,
+  "dns_architecture_out_of_scope": true
+}

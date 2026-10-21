@@ -1,6 +1,6 @@
 # AuthWire current work record
 
-Updated: 20 October 2026, Europe/Istanbul. This record supplements the 9 October
+Updated: 21 October 2026, Europe/Istanbul. This record supplements the 9 October
 `AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-09.docx` / `.pdf`; those reports are a
 dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
@@ -15,6 +15,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## 🔴✓ Native Windows expired-pending kurtarma testi geçti; Actions çalıştırma engeli kalktı — 21 Ekim2026
+
+- **🔴✓ Tamamlandı: izole, imzalı SYSTEM Windows teknik kabulü.** Candidate7574d942a47e3b298013f01a23022bfc0dcacd5f için device enrollment run39612729264 başarılı. Production main AST, gerçek CNG/CSR proof/chain/certreq/receipt ile expired pending reddi, birebir arşiv, yeni nonexportable anahtar/CSR ve yeni leaf kurulumu doğrulandı; ilgisiz mevcut kimlik korundu. Kerberos taşıması bu fixture'da sentetiktir; saat ve müşteri durumu değiştirilmedi, gerçek retry deadline beklenmedi. Ayrı native MIT KDC testleri ve1000sentetik cihaz yük kontrolü de geçti; önceki aralıklı4-worker SQLite bulgusu kapanmış sayılmaz.
+- **🔴✓ Actions başlatma engeli artık gözlenmiyor:** taze işler test adımlarını gerçekten yürütüyor. Ödeme/bütçe ayarı değiştirilmedi. Aynı head için foundation39612729697, browser39612730036, Linux source preparation39612729454 ve bounded retry39612729411 başarılı.
+- Windows fixture'ın ilk yeni denemesinde parent kullanıcıya ait CurrentUser DPAPI sırrı SYSTEM içinde açılmaya çalışılıyordu. Yalnız test fixture'ı, issuer'ı kendi kullanıcı sürecinde tutan özel/UUID korelasyonlu dosya IPC ile düzeltildi; production Vault/DPAPI kapsamı gevşetilmedi.
+- **Açık:** RADIUS native suite, normal loopback süreç başlangıcında EAP senaryolarından önce exit1 veriyor (run39612729475; explicit dictionary denemesi39613583961 de başarısız). Ayrı hardened native systemd/failed-start rollback adımı geçti. Görünen ptrace uyarısı kesin kök neden sayılmadı; capability verilmedi. Sanitized başlangıç tanısı ve explicit relocated dictionary/log hedefi için candidatea89869cdde2b22688df66433a6a9ac8f5ca20f66/run39613895299 sürüyor.
+- PR42 taslak kalır; **merge, canlı kaynak güncellemesi, signed SYSVOL teslimi ve VV06 gerçek expired saha kabulü yapılmadı.** Kurulu sürüm0.14.0-dev.11; CA/policy/native RADIUS/saat ayarları değiştirilmedi. Candidate clientSHAbf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60. Eski expired-pending request/key tanılama için saklanır; yeni otomatik temizleme kapsam dışıdır. DHCP/DNS müşteri kararı kapsam dışı kalır.
 
 ## Actions yeniden kontrolü: taze denemede de test adımı başlamadı — 20 Ekim2026, 19:48 İstanbul
 
