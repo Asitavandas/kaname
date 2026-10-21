@@ -16,6 +16,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ VV06 policy kapalı senaryosunda Windows Wi-Fi reddi doğrulandı — 21 Ekim 2026, sunucu nedeni ve geri dönüş bekliyor
+
+- Operatör, yalnız kablosuz policy devre dışı adımı sonrası PMKCacheMode=no profil güncellemesi ve yeni bağlantı çıktısını iletti. VV06 Wi-Fi disconnected, donanım/yazılım radyosu açık;21:20:12 olay12013 ve8002; EAP0x80420105 sunucudan genel ret. MAC10:B1:DF:69:95:33, APF0:61:C0:CC:73:54, kimlikhost/AuthWire computer69b0d5cd-db61-4627-9db7-fcc5230152a3. Connection request completed metni başarılı kimlik doğrulama sayılmadı.
+- 🔴✓ Yalnız Windows tarafında yeni bağlantının reddedilmesi tamamlandı. **AuthWire yeni Access-Reject kaydı/nedeni henüz paylaşılmadı**; NO_MATCHING_POLICY ve ret nedeninin policy disabled olması henüz doğrulanmış değildir. Windows genel0x80420105 tek başına sertifika bozuk/iptal veya policy nedeni ayırmaz. Tam B08/B10 senaryosu açık.
+- Sıradaki adım aynıauthwire-pilot-wireless'i Etkinleştir/VLAN140 korumasını kontrol et, PMKcache kapalı kalırken yeni Wi-Fi bağlantısı/12012-8001/DHCP140 ve yeni Access-AcceptPOLICY_ALLOW kaydını birlikte doğrula. Önceki ret kaydı da bu sırada incelenebilir; Ethernet yönetim korunur. Sonunda geçici Wi-Fi profil parametresi doğrulanmış özgün yedekten geri alınacak.
+
 ## 🔴✓ dev.13 policy butonu operatör ekran kabulü tamam — 21 Ekim 2026
 
 - Operatör F5 sonrası policy satırının Etkin olduğunu ve Devre dışı bırak butonunu gördüğünü doğruladı. Geliştirme/CI ve canlı kurulumun ardından bu dar ekran görünümü kabulü de tamamlandı.

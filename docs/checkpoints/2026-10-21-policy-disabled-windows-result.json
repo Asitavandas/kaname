@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-21",
+  "reported_local_time": "21:20:12",
+  "timezone": "Europe/Istanbul",
+  "computer": "VV06",
+  "ssid": "VV_802.1X",
+  "interface": "Wi-Fi",
+  "interface_guid": "927f5d3e-1b59-478a-83d7-ee6445261fff",
+  "mac": "10:B1:DF:69:95:33",
+  "ap_bssid": "F0:61:C0:CC:73:54",
+  "identity": "host/AuthWire computer 69b0d5cd-db61-4627-9db7-fcc5230152a3",
+  "profile_pmk_cache_disabled": true,
+  "new_connection_result": "disconnected",
+  "windows_events": [
+    12013,
+    8002
+  ],
+  "eap_error": "0x80420105",
+  "client_reject_confirmed": true,
+  "authwire_event_provided": false,
+  "authwire_reason": null,
+  "policy_disabled_causal_acceptance_pending": true,
+  "reenable_positive_acceptance_pending": true,
+  "profile_restore_pending": true,
+  "source": "operator-pasted Windows output"
+}
