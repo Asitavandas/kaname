@@ -1,0 +1,79 @@
+{
+  "event": "EXPIRED_RECOVERY_LINUX_DEPLOY_ACCEPTED",
+  "operator_evidence_received_utc": "2026-10-21T15:02:34.759Z",
+  "version": "0.14.0-dev.12",
+  "release": "b3b0936ed4c8acdf3a0d7f0524ceb1305413d70c",
+  "evidence": "/var/backups/authwire/scheduled/expired-recovery-dev12-20261021T145726Z-ec221763",
+  "previous_scheduled_backup": {
+    "path": "/var/backups/authwire/scheduled/authwire-scheduled-20261021T001743Z-36106e37870b.tar.gz",
+    "sha256": "9b224868df0368d249b8e02a2bbe0c7eaf733979ad27a422838eec7e92b269f9",
+    "digest_verified": true,
+    "timer_last_trigger": "2026-10-21 03:16:33 Europe/Istanbul"
+  },
+  "fresh_backups": {
+    "before": {
+      "path": "/var/backups/authwire/scheduled/authwire-scheduled-20261021T145825Z-b81963bb89a2.tar.gz",
+      "sha256": "83c02df6be9f54cf89c1bf0a653e5e025441cd3f9372791fd980139a17da7abe"
+    },
+    "after": {
+      "path": "/var/backups/authwire/scheduled/authwire-scheduled-20261021T145925Z-258c41968bd4.tar.gz",
+      "sha256": "4cb6670c7135942e6b416a09fb5e27b14e694ee3c92293ca76afd56f711c5c39"
+    },
+    "archive_read_and_sqlite_integrity_verified": true
+  },
+  "preservation": {
+    "files": true,
+    "pids": true,
+    "timers": true,
+    "business_state": true,
+    "configuration": true,
+    "administrators": true,
+    "policies": true,
+    "certificates": true,
+    "native_module": true
+  },
+  "restore": {
+    "real_backup_data_restored_in_isolation": true,
+    "files": 160,
+    "bytes_ownership_modes_verified": true,
+    "private_secrets_decryptable": true,
+    "signer_key_matches_issuer_and_signs_probe": true,
+    "web_radius_certificate_key_pairs_verified": true,
+    "crl_valid_and_signature_verified": true,
+    "access_history_integrity_readable": true,
+    "isolated_copy_removed": true,
+    "restored_code_executed": false,
+    "services_started": false,
+    "network_calls": false,
+    "full_appliance_boot_restore_tested": false
+  },
+  "api_before_after_all_statuses_200": true,
+  "original_preflight_snapshot_persisted": true,
+  "remote_readonly_confirmation": {
+    "version": "0.14.0-dev.12",
+    "client_source_sha256": "bf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60",
+    "panel": {
+      "pid": 573680,
+      "active": true
+    },
+    "radius": {
+      "pid": 326873,
+      "active": true,
+      "restarted": false
+    },
+    "broker": {
+      "pid": 149955,
+      "active": true
+    }
+  },
+  "windows_changed_interpretation": "Generic updater field denotes changed Linux-hosted Windows client source template only; Windows endpoints were not changed.",
+  "signed_sysvol_update_pending": true,
+  "vv06_client_delivery_and_expired_recovery_acceptance_pending": true,
+  "sysvol_helper": {
+    "path": "/home/segmentiq/authwire-sysvol-client-update-20261021.ps1",
+    "sha256": "a1bc6a0dac570409b4e07b62d0aa4b6065950f281065f7f0e70636dba8186965",
+    "ssh_service_active": true,
+    "ssh_ed25519_host_key_fingerprint": "SHA256:2WcdB102dnmUsOGSnSL9ptqJ0NimJ7Gve6WhFmwmpxY"
+  },
+  "dns_architecture_out_of_scope": true
+}
