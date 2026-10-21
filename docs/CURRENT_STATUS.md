@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Panel policy etkinleştirme/devre dışı bırakma — 21 Ekim 2026, geliştirme ve saha kabulü ayrıldı
+
+- Operatör, Reddet senaryosuna geçmek yerine panelde gerçek **Devre dışı bırak / Etkinleştir** butonu istedi. Bu istek önceki Reddet→İzin ver yönergesinin yerini alır. Sonraki saha testi yeniden `authwire-pilot-wireless.enabled=false→true`; başka eşleşen allow yoksa olumsuz karar `NO_MATCHING_POLICY` beklenir. Açık deny kararı `POLICY_DENY` ayrı senaryodur.
+- dev.13 adayında satırda Etkin/Devre dışı rozeti ve yalnız `policies.rules` yazma yetkisine açık buton eklendi. Var olan CSRF/RBAC/revision/çakışma denetimli `/api/policies` kaydı kullanılır; yalnız ilgili `enabled` değişir, VLAN140/karar/grup/NAS/erişim türü/constraints ve diğer politikalar korunur. Disabled policy düzenleme ile açılmaz; çakışan etkinleştirme kaydedilmez. Düzenleyici açıkken ve kayıt sürerken toggle kilitlenir; POST otomatik tekrar edilmez.
+- 🔴✓ Mevcut policy/yönetim/admin sınırları için yerel90 test geçti (1skip); panel-only teslim korumaları için5 test geçti. Yeni gerçek HTTP/tarayıcı fixture'ı hazırlanmıştır; tarayıcı ve tüm zorunlu CI sonuçları henüz beklenir. Yerelde Chromium indirmesi HTML yanıtla başarısız olduğundan tarayıcı kabulü yapılmış sayılmaz.
+- Sunucu salt okunur kontrolünde dev.12, panel/RADIUS/broker etkin; RADIUS326873 ve broker149955 PID korunuyor, CRL/backup timer etkin/enabled. Canlı policy toggle, RADIUS restart, CA/cert/Windows/GPO/DNS değişikliği **yapılmadı**. dev.13 kurulum ve operatör buton/gerçek Wi-Fi ret→kabul kabulü henüz bekliyor; bütün B08/B10 tamam sayılmaz.
+
 ## Test yönergesi düzeltildi: UI'de devre dışı anahtarı yok; açık Reddet→İzin ver senaryosu uygulanacak — 21 Ekim 2026
 
 - Operatör panelde“devre dışı”değil“Reddet”seçeneği olduğunu belirtti. **Asistanın önceki disable/enableUIyönergesihatalıydı.** Canlıstatic/index.htmlpolicy-actionseçenekleriallow/İzinvervedeny/Reddet;static/app.jsrenderPoliciesyalnızDüzenle/Silbutonlarısunuyor,enabledalanıgörseldüzenlenemiyor(legacyarchivedgösterimi). Paneldeolmayananahtarıvarsaymayacağız;yenibuttonözelliğibuturnkapsamınagirilmedi.

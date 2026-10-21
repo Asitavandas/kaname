@@ -87,3 +87,6 @@ button{font-size:13px;min-height:38px;border-color:var(--line);color:var(--ink);
 #overview-radius-row .actions{flex-wrap:wrap;margin-top:8px}
 
 .audit-table-wrap{overflow-x:auto}.audit-table{width:100%;border-collapse:collapse}.audit-table th,.audit-table td{text-align:left;vertical-align:top;padding:12px;border-bottom:1px solid var(--border,#ddd);overflow-wrap:anywhere}.audit-table td small{display:block;margin-top:5px}.audit-table td:nth-child(4){max-width:250px}.audit-table th{white-space:nowrap}#audit-feedback{min-height:1.5em}#audit-filters{margin:20px 0}#audit-storage{overflow-wrap:anywhere}
+
+.policy-copy{display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0}.policy-copy .object-status{white-space:nowrap}.policy-copy>span:last-child{flex:1;min-width:0}
+@media(max-width:760px){#policy-list .policy-copy{flex-basis:100%}#policy-list .actions{flex-wrap:wrap;max-width:100%}}
