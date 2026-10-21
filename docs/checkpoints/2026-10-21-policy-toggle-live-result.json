@@ -1,0 +1,73 @@
+{
+  "event": "POLICY_TOGGLE_LIVE_ACCEPTANCE_RECEIVED",
+  "source": "operator-provided deployment output",
+  "date": "2026-10-21",
+  "timezone": "Europe/Istanbul",
+  "version": "0.14.0-dev.13",
+  "verified": true,
+  "evidence": "/var/backups/authwire/scheduled/policy-toggle-dev13-20261021T181206Z-277d351a",
+  "radius_pid": "326873",
+  "broker_pid": "149955",
+  "radius_active": true,
+  "radius_restarted": false,
+  "radius_process_preserved": true,
+  "broker_process_preserved": true,
+  "protected_state_preserved": true,
+  "backup_timer_preserved": true,
+  "preservation_checks": {
+    "files": true,
+    "pids": true,
+    "timers": true,
+    "business_state": true
+  },
+  "before_backup": {
+    "path": "/var/backups/authwire/scheduled/authwire-scheduled-20261021T181314Z-35ad264976a2.tar.gz",
+    "sha256": "4d5af973feb2c51573a264ac76e06020567e84313a85bd20ec3cb4615aed4b15",
+    "archive_read_verified": true,
+    "sqlite_integrity_verified": true
+  },
+  "after_backup": {
+    "path": "/var/backups/authwire/scheduled/authwire-scheduled-20261021T181414Z-77a4a68ad8c4.tar.gz",
+    "sha256": "a51a4575c98b8199ddcc61c600c10db6d2f65e04b9362d14d8db69f0d766cde7",
+    "archive_read_verified": true,
+    "sqlite_integrity_verified": true
+  },
+  "restore": {
+    "data_restore_exercised": true,
+    "files_restored": 162,
+    "file_bytes_verified": true,
+    "ownership_and_modes_verified": true,
+    "all_checks_passed": true,
+    "isolated_copy_removed": true,
+    "services_started": false,
+    "network_calls_from_restore_check": false,
+    "full_appliance_boot_restore_tested": false
+  },
+  "api": {
+    "authenticated": true,
+    "loopback": true,
+    "before_all_statuses_200": true,
+    "after_all_statuses_200": true,
+    "after_paths": [
+      "/api/auth/session",
+      "/api/state",
+      "/api/pki/certificates?offset=0",
+      "/api/network",
+      "/api/services",
+      "/api/audit/history",
+      "/api/audit/history?source=administrators",
+      "/api/radius/events"
+    ],
+    "after_max_ms": 34.5
+  },
+  "windows_changed": false,
+  "policy_changed": false,
+  "certificates_changed": false,
+  "native_module_changed": false,
+  "windows_client_template_updated": false,
+  "gpo_installer_source_updated": false,
+  "original_preflight_snapshot_persisted": true,
+  "live_policy_actions_executed": false,
+  "operator_browser_acceptance_pending": true,
+  "policy_toggle_field_acceptance_pending": true
+}

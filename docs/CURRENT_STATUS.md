@@ -16,6 +16,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.13 policy butonu canlı kurulum, koruma ve yedek/restore kabulü tamam — 21 Ekim 2026
+
+- Operatör `POLICY_TOGGLE_UPDATE_FINISHED` çıktısı verified=true/version0.14.0-dev.13; Linux canlı kurulum tamamlandı. Orijinal preflight snapshot ve kanıt dizini `/var/backups/authwire/scheduled/policy-toggle-dev13-20261021T181206Z-277d351a` kalıcıdır.
+- RADIUS aktif, PID326873 ve broker PID149955 korundu; radius_restarted=false. Dosya/PID/timer/business_state kontrolleri tümütrue; policy, CA/sertifika, native modül, Windows ve GPO kaynak değişikliği yok. Kurulum herhangi bir canlı policy toggle işlemi yapmadı.
+- 🔴✓ Önce/sonra gerçek özel yedekler okuma/SQLite kontrolünü geçti. Son arşiv `/var/backups/authwire/scheduled/authwire-scheduled-20261021T181414Z-77a4a68ad8c4.tar.gz`, SHA256 `a51a4575c98b8199ddcc61c600c10db6d2f65e04b9362d14d8db69f0d766cde7`. 🔴✓ Bu arşivden162dosya izole veri restore provası, byte/owner/mode, DB/CA/CRL/şifreli sırlar/imzalama/anahtarlar/kayıt tutarlılığı ve erişim kayıtları kontrolleri geçti; kopya kaldırıldı. Tam appliance boot restore hâlâ test edilmiş sayılmaz.
+- 🔴✓ Önce/sonra kimliği doğrulanmış yerel HTTPS API ölçümleri tümü200; son8endpoint max34.5ms. Bu teknik canlı kabul, operatörün gerçek tarayıcı görünümü kabulünün yerine geçmez.
+- **Açık kalan dar adım:** F5 sonrası dev.13, Etkin/Devre dışı rozeti ve butonun görünmesi; kablosuz policy'nin halen allow/VLAN140 olması. Ardından yalnızpilotwireless enabled=false→true ile yeni bağlantıda ret/kabul/VLAN140 saha testi. B08/B10 bütünü tamamlanmış sayılmaz. NTP çalışması duraklatılmıştır; DHCP/DNS mimarisi kapsam dışıdır.
+- [Yapılandırılmış canlı teslim kanıt özeti](checkpoints/2026-10-21-policy-toggle-live-result.json); yeniden sunucu kontrolü yapılmış gibi sunulmadan operatör çıktısından kaydedildi.
+
 ## 🔴✓ Policy etkinleştirme/devre dışı bırakma geliştirme ve teknik testleri tamam — 21 Ekim 2026; canlı kurulum bekliyor
 
 - Operatör, Reddet senaryosuna geçmek yerine panelde gerçek **Devre dışı bırak / Etkinleştir** butonu istedi. Bu istek önceki Reddet→İzin ver yönergesinin yerini alır. Sonraki saha testi yeniden `authwire-pilot-wireless.enabled=false→true`; başka eşleşen allow yoksa olumsuz karar `NO_MATCHING_POLICY` beklenir. Açık deny kararı `POLICY_DENY` ayrı senaryodur.
