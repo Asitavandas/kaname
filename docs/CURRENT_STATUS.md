@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ VV06 Wi-Fi profilinin sunucu güven ayarları düzeltildi ve export ile doğrulandı — 21 Ekim 2026, 19:08 İstanbul
+
+- **🔴✓ Operatörün elle kaydettiği güncel profil exportu:** C:\Users\administrator\AuthWire-WiFi-Verified-20261021-190808\Wi-Fi-VV_802.1X.xml.
+- authMode=machine; ServerNames=kaname.vizyonveri.local; TrustedRootCA=C789A0595ADB95A6BE4534D01B1D205F6C37DE18; PerformServerValidation=true; AcceptServerName=true; DisableUserPromptForServerValidation=true. İstemci profili doğru sunucu adı ve KANAME köküyle sınırlanmıştır; kullanıcı onayıyla doğrulama hatasını geçme kapalıdır.
+- Bu kabul **yalnız profil yapılandırması ve yedeği** içindir. Kaydetme sonrası yeniden bağlantı, taze tam EAP/leaf seçimi ve yanlış server-name reddi → doğru profile dönüş henüz doğrulanmadı; B10 saha olumsuz kabulü açık kalır. Önceki FT oturum başarısı yeni ayarların el sıkışması kanıtı sayılmaz.
+- Sunucu/policy/CA/native RADIUS/shared secret/Ethernet değiştirilmedi. Gerçek expiry saha testi ayrı cihaz bekliyor.
+
 ## VV06 Wi-Fi pozitif bağlantı görüldü; istemci sunucu güveni düzeltmesi bekliyor — 21 Ekim 2026
 
 - **🔴✓ Dar pozitif gözlem:** VV06, RTL8852BE/MAC10:b1:df:69:95:33 ile VV_802.1X/APBSSIDf0:61:c0:cc:73:54 bağlantısı; WPA2-Enterprise(FT)/CCMP, EAP-TLS, machine credential ve Wi-Fi10.10.110.2/24Preferred operatör çıktısında görüldü. Bu gözlem seçilmiş leaf serialini veya taze tam EAP el sıkışmasını kanıtlamaz.

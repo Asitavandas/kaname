@@ -1,0 +1,25 @@
+{
+  "event": "VV06_WIRELESS_TRUST_PROFILE_CORRECTED",
+  "date": "2026-10-21",
+  "timezone": "Europe/Istanbul",
+  "evidence_source": "operator_fresh_export_fields",
+  "computer": "VV06",
+  "profile": "VV_802.1X",
+  "backup": "C:\\Users\\administrator\\AuthWire-WiFi-Verified-20261021-190808\\Wi-Fi-VV_802.1X.xml",
+  "fields": {
+    "authMode": "machine",
+    "DisableUserPromptForServerValidation": true,
+    "ServerNames": "kaname.vizyonveri.local",
+    "TrustedRootCA": "C789A0595ADB95A6BE4534D01B1D205F6C37DE18",
+    "PerformServerValidation": true,
+    "AcceptServerName": true
+  },
+  "configuration_verified": true,
+  "reconnect_after_correction_verified": false,
+  "full_fresh_eap_verified": false,
+  "wrong_server_name_rejection_verified": false,
+  "restoration_after_negative_test_verified": false,
+  "server_changed": false,
+  "policy_changed": false,
+  "certificates_changed": false
+}
