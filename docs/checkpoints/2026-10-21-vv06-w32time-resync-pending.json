@@ -1,0 +1,44 @@
+{
+  "event": "VV06_W32TIME_RESYNC_FAILED_DC_HEALTH_RECHECKED",
+  "date": "2026-10-21",
+  "timezone": "Europe/Istanbul",
+  "vv06": {
+    "resync_success": false,
+    "message": "The computer did not resync because no time data was available.",
+    "source": "dc01.vizyonveri.local",
+    "leap": 3,
+    "stratum": 0,
+    "last_success_local": "2026-10-21T20:08:01+03:00",
+    "root_dispersion_seconds": 133.4957884,
+    "stripchart_times_local": [
+      "20:09:04",
+      "20:09:06",
+      "20:09:08",
+      "20:09:10",
+      "20:09:12"
+    ],
+    "dc_minus_vv06_seconds": [
+      123.9729094,
+      123.9712788,
+      123.9713576,
+      123.9706198,
+      123.97151
+    ]
+  },
+  "dc_health_latest": {
+    "linux_utc": "2026-10-21T17:20:36.737614+00:00",
+    "dc_minus_linux_seconds": 0.002652,
+    "rtt_seconds": 0.000295,
+    "stratum": 3,
+    "leap": 0,
+    "root_dispersion_seconds": 0.0233154296875,
+    "reference_ip": "185.125.190.57"
+  },
+  "vv06_failure_root_cause": "not_established",
+  "next": "VV06 only W32Time restart, resync, source/status, DC stripchart and recent Time-Service System events",
+  "proposed_client_restart_executed": false,
+  "client_config_changed": false,
+  "dc_config_changed_again": false,
+  "authwire_config_changed": false,
+  "correlation_acceptance": false
+}

@@ -16,6 +16,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## VV06 W32Time yeniden eşzamanlaması açık; DC01 güncel NTP sağlığı tekrar doğrulandı — 21 Ekim 2026
+
+- VV06operatör /resync/rediscover sonucu “no time data was available”;sourcedc01.vizyonveri.local,Leap3/stratum0,lastsync20:08:01/rootdispersion133.4957884s.20:09:04–20:09:12stripchart DC01'eyanıtveriyor,offset+123.9729094/+123.9712788/+123.9713576/+123.9706198/+123.9715100s. **VV06eşzamanlamasıtamamlanmadı.** Stripchart ephemeralUDP ile gerçekW32TimeUDP123/MS-SNTPeşzamanlaması aynıbaşarıkanıtıdeğildir.
+- Linux→DC01takip17:12:30.423697Z:fark+0.003578s,leap0,stratum3,rootdispersion0.262680s,reference185.125.190.57. AynıpenceredeupstreamminusLinux-0.000288s.
+- **🔴✓ Devam sonrası17:20:36.737614ZgüncelDCNTPölçümü:**DCminusLinux+0.002652s,RTT0.295ms,stratum3/leap0,rootdispersion0.023315s,reference185.125.190.57. DCkaynağı kısaizlemdeyakınsamışkaldı;VV06'dekiöncekiyüksekdispersionyanıtınıgüncelDCdurumuolarakgenelleştirmeyiz.
+- İstemcihatasınınkesinnedeni henüzbilinmiyor (öncekikaynakgeçişi/ölçümreddi,domainadvertising,UDP123yolu veyaistemciyereldurum ihtimalleriayrıştırılmadı). GPO/NTPSNTPgüvenayarlarınıgevşetme veyaWindowsTimeunregister/register yapılmadı.
+- **Sıradaki dar işlem:**yalnızVV06W32Timeservicerestart,3sbekleme,resync/rediscover,source/status,5örnekDCstripchartveTime-ServiceSystemsonolayları; henüzoperatörceuygulanmışdeğil. DC01konfigürasyonuveAuthWireRADIUS/CA/cert/policyleredeğişiklikyok;B11kesinWindows-RADIUSkorelasyonuaçık.
+
 ## 🔴✓ DC01 yedekli NTP kaynak düzeltmesi ve Linux ile milisaniye düzeyinde yakınsama — 21 Ekim 2026
 
 - **🔴✓ Operatör uygulaması:** W32Timeregistryexport/configbackup başarılı,C:\ProgramData\AuthWire-Time-Backup-20261021-200423;manualpeerntp.ubuntu.com,0x8/config/update ve/resync/rediscover başarılı. DCsource ntp.ubuntu.com,0x8/185.125.190.57,stratum3,leap0,lastsync20:04:23. İlkoperatörstatus RootDispersion130.8929471s; bu tekçıktıyakınsamışsaatkanıtısayılmadı.
