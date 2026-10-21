@@ -197,6 +197,7 @@ function renderDirectoryStatus(){if(!state)return;const d=state.directory_public
 async function refresh({checkSession=true,includeAudit=true}={}){
   if(checkSession){const auth=await api('/api/auth/session');session=auth;csrf=auth.csrf;}
   state=await api('/api/state');
+  $('panel-version').textContent='Ubuntu · '+state.version;
   if(setupBaseRevision!==null&&!setupSaving&&!setupHasEdits()&&!setupAwaitingRead)fillConfig({force:true});
   $('account-name').textContent=session.user.username+' · '+session.user.profile_name;
   $('revision').textContent='Kayıt sürümü '+state.revision;

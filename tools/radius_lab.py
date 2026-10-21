@@ -288,7 +288,9 @@ server kaname-cert-check {{
         initialize(root / 'state')
         dictionary = root / 'dictionary'
         dictionary.write_text(dictionary.read_text() + event_config.dictionary())
-        private_file(mods / 'access-events', event_config.module(repo, Path(cryptography.__file__).resolve().parent.parent,
+        # This module can initialize before the authorizer; its own path must
+        # include the disposable observer shim, independent of load order.
+        private_file(mods / 'access-events', event_config.module(f'{repo}:{shim}', Path(cryptography.__file__).resolve().parent.parent,
                                                                 module_name='kaname_lab_observer'))
         private_file(shim / 'kaname_lab_observer.py',
                      'from kaname.radius_observer import post_auth as observe\n'

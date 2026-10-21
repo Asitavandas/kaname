@@ -35,13 +35,14 @@ s.serve_forever()`;
   async function clickToggle(id,enabled){await toggle(id).click();await page.waitForFunction(({id,enabled})=>!policySaving&&state.policies.find(p=>p.id===id)?.enabled===enabled,{id,enabled});}
   async function decision(access_type){return page.evaluate(async access_type=>(await api('/api/simulate',{authenticated:true,directory_available:true,account_enabled:true,domain_device:true,group_sids:['S-1-5-21-10-20-30-40'],access_type,nas_ip:access_type==='wired'?'192.0.2.2':'192.0.2.52',eap_method:'EAP-TLS'})).decision,access_type);}
   await login(page);await policiesView();
+  assert.match(await page.locator('#panel-version').textContent(),/0\.14\.0-dev\.13/);
   const original=await snapshot();assert.equal((await decision('wireless')).vlan,140);
   await clickToggle('wireless',false);
   let current=await snapshot();assert.deepEqual(current.policies,original.policies.map(p=>p.id==='wireless'?{...p,enabled:false}:p));assert.deepEqual(current.config,original.config);
   assert.match(await row('wireless').textContent(),/Devre dışı.*VLAN 140/);assert.equal((await decision('wireless')).reason,'NO_MATCHING_POLICY');assert.equal((await decision('wired')).vlan,110);
   await page.reload();await page.locator('#workspace').waitFor({state:'visible'});await policiesView();assert.equal(await toggle('wireless').textContent(),'Etkinleştir');
   // Editing a disabled rule must not silently enable it or lose its VLAN/selectors.
-  await row('wireless').getByRole('button',{name:'Düzenle',exact:true}).click();await page.waitForFunction(()=>!networkLoading&&document.getElementById('policy-vlan').value==='140');
+  await row('wireless').getByRole('button',{name:'Düzenle',exact:true}).click();await page.waitForFunction(()=>!networkLoading&&document.getElementById('policy-vlan').value==='140'&&document.getElementById('policy-group').selectedOptions.length===1);
   assert.equal(await toggle('wired').isDisabled(),true);await page.locator('#add-policy').click();await page.waitForFunction(()=>!policySaving&&editingPolicy==='');
   assert.deepEqual((await snapshot()).policies.find(p=>p.id==='wireless'),{...original.policies.find(p=>p.id==='wireless'),enabled:false});
   await page.locator('#cancel-policy').click();await clickToggle('wireless',true);assert.equal((await decision('wireless')).vlan,140);
