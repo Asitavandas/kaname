@@ -1,6 +1,8 @@
 """Disposable expired-pending bridge for native Windows CI; never customer state."""
 import argparse
 import json
+import os
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -20,7 +22,7 @@ PRINCIPAL = 'PC01$@LAB.EXAMPLE'
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', required=True)
-    parser.add_argument('--step', choices=['expire', 'dispatch', 'inspect'], required=True)
+    parser.add_argument('--step', choices=['expire', 'dispatch', 'inspect', 'serve'], required=True)
     args = parser.parse_args()
     root = Path(args.root).resolve()
     if (not root.name.startswith('authwire-ci-expired-')
@@ -49,18 +51,45 @@ def main():
             db.execute('UPDATE pki_certificates SET certificate=? WHERE serial=?',
                        (expired, issued['serial']))
         print(json.dumps({'fixture_expired': True, 'system_clock_changed': False}))
-    elif args.step == 'dispatch':
-        request = json.loads((root / 'bridge-request.json').read_text())
+    elif args.step in ('dispatch', 'serve'):
         routes = {'/api/device/challenge': service.challenge,
                   '/api/device/issue': service.issue,
                   '/api/device/receipt': service.receipt}
-        if request['path'] not in routes:
-            raise ValueError('Unexpected fixture route')
-        try:
-            result = routes[request['path']](PRINCIPAL, request['body'])
-        except EnrollmentError as error:
-            result = {'fixture_error': error.code}
-        print(json.dumps(result))
+        def dispatch(request):
+            if request['path'] not in routes:
+                raise ValueError('Unexpected fixture route')
+            try:
+                return routes[request['path']](PRINCIPAL, request['body'])
+            except EnrollmentError as error:
+                return {'fixture_error': error.code}
+        if args.step == 'dispatch':
+            print(json.dumps(dispatch(json.loads((root / 'bridge-request.json').read_text()))))
+        else:
+            # Keep server-side DPAPI secrets under the original fixture user.
+            # SYSTEM owns only the client; private files provide disposable IPC.
+            # No sockets, real Kerberos, customer secrets or machine-DPAPI bypass.
+            (root / 'bridge-ready').write_text('ready')
+            seen = None
+            deadline = time.monotonic() + 480
+            while time.monotonic() < deadline and not (root / 'bridge-stop').exists():
+                path = root / 'bridge-request.json'
+                if path.exists():
+                    request = json.loads(path.read_text(encoding='utf-8-sig'))
+                    if request['id'] != seen:
+                        result = {'id': request['id'], 'body': dispatch(request)}
+                        temporary = root / 'bridge-response.tmp'
+                        temporary.write_text(json.dumps(result), encoding='utf-8')
+                        publish_until = time.monotonic() + 5
+                        while True:
+                            try:
+                                os.replace(temporary, root / 'bridge-response.json')
+                                break
+                            except PermissionError:
+                                if time.monotonic() >= publish_until:
+                                    raise
+                                time.sleep(0.02)
+                        seen = request['id']
+                time.sleep(0.05)
     else:
         with service.store.connect() as db:
             rows = db.execute('SELECT serial,csr_sha256,installed_at FROM device_issuances ORDER BY rowid').fetchall()

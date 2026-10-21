@@ -19,7 +19,7 @@ $python=(Get-Command python -ErrorAction Stop).Source
 [IO.File]::WriteAllText((Join-Path $root 'repository-path.txt'),$repo)
 $taskName='AuthWire Expired CI '+[guid]::NewGuid().ToString('N')
 $oldContainer='AuthWire-CI-Expired-'+[guid]::NewGuid()
-$fixtureTrust=@();$oldKey=$null;$oldPrivate=$null;$signer=$null;$sentinel=$null
+$fixtureTrust=@();$oldKey=$null;$oldPrivate=$null;$signer=$null;$sentinel=$null;$bridgeProcess=$null
 function Wait-FixtureTask {
     $before=(Get-ScheduledTaskInfo -TaskName $taskName).LastRunTime
     Start-ScheduledTask -TaskName $taskName
@@ -106,6 +106,12 @@ SuppressDefaults=TRUE
     $principal=New-ScheduledTaskPrincipal -UserId SYSTEM -LogonType ServiceAccount -RunLevel Highest
     $settings=New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 3)
     $null=Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Settings $settings
+    # The fixture issuer remains in its DPAPI owner account. Never decrypt its
+    # user-scoped vault under the SYSTEM client or weaken vault protection.
+    $bridgeProcess=Start-Process -FilePath $python -ArgumentList @('-m','tools.device_expired_fixture','--root',('"'+$root+'"'),'--step','serve') -WorkingDirectory $repo -PassThru -WindowStyle Hidden -RedirectStandardOutput (Join-Path $root 'bridge-out.txt') -RedirectStandardError (Join-Path $root 'bridge-error.txt')
+    $bridgeDeadline=(Get-Date).AddSeconds(30)
+    while(!(Test-Path (Join-Path $root 'bridge-ready')) -and !$bridgeProcess.HasExited -and (Get-Date) -lt $bridgeDeadline) {Start-Sleep -Milliseconds 100}
+    if(!(Test-Path (Join-Path $root 'bridge-ready'))) {throw 'Private fixture issuer bridge did not start.'}
     if((Wait-FixtureTask) -ne 1) {throw 'Expected actual client failure on expired pending issuance.'}
     $status=Get-Content (Join-Path $root 'status.json') -Raw|ConvertFrom-Json
     $retry=Get-Content (Join-Path $root 'retry.json') -Raw|ConvertFrom-Json
@@ -134,6 +140,10 @@ SuppressDefaults=TRUE
 } finally {
     $task=Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
     if($task) {Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue;Unregister-ScheduledTask -TaskName $taskName -Confirm:$false}
+    if($bridgeProcess -and !$bridgeProcess.HasExited) {
+        [IO.File]::WriteAllText((Join-Path $root 'bridge-stop'),'stop')
+        if(!$bridgeProcess.WaitForExit(5000)) {Stop-Process -Id $bridgeProcess.Id -Force}
+    }
     $containers=@($oldContainer)
     foreach($name in @('installed.json','pending.json')) {
         $path=Join-Path $root $name

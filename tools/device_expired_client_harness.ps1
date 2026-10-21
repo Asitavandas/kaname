@@ -26,11 +26,23 @@ function Post-Json($path,$data) {
     return @{token='';id='synthetic-kerberos-fixture'}
 }
 function Protected-Post($path,$data) {
-    $request=@{path=$path;body=$data}|ConvertTo-Json -Depth 8 -Compress
-    [IO.File]::WriteAllText((Join-Path $FixtureRoot 'bridge-request.json'),$request,(New-Object Text.UTF8Encoding($false)))
-    $result=& $script:fixturePython -m tools.device_expired_fixture --root $FixtureRoot --step dispatch
-    if($LASTEXITCODE -ne 0) {throw 'Isolated fixture bridge failed.'}
-    $answer=($result|Out-String)|ConvertFrom-Json
+    $requestId=[guid]::NewGuid().ToString('N')
+    $request=@{id=$requestId;path=$path;body=$data}|ConvertTo-Json -Depth 8 -Compress
+    $temporary=Join-Path $FixtureRoot 'bridge-request.tmp'
+    [IO.File]::WriteAllText($temporary,$request,(New-Object Text.UTF8Encoding($false)))
+    [AuthWireTls]::AtomicReplace($temporary,(Join-Path $FixtureRoot 'bridge-request.json'))
+    $deadline=(Get-Date).AddSeconds(45)
+    $response=$null
+    do {
+        Start-Sleep -Milliseconds 100
+        $responsePath=Join-Path $FixtureRoot 'bridge-response.json'
+        if(Test-Path $responsePath) {
+            $value=Get-Content $responsePath -Raw|ConvertFrom-Json
+            if($value.id -ceq $requestId) {$response=$value;break}
+        }
+    } while((Get-Date) -lt $deadline)
+    if(!$response) {throw 'Isolated fixture bridge timed out.'}
+    $answer=$response.body
     if($answer.fixture_error) {$script:serverError=[string]$answer.fixture_error;throw 'Isolated issuer rejected request.'}
     return $answer
 }
