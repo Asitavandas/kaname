@@ -1,0 +1,28 @@
+{
+  "event": "WIRELESS_POLICY_TEST_UI_CLARIFICATION_EXPLICIT_DENY_INSTEAD_OF_DISABLE",
+  "date": "2026-10-21",
+  "timezone": "Europe/Istanbul",
+  "source": "operator UI report and live static/index.html/static/app.js read",
+  "previous_instruction_incorrect": "disable/enable control assumed present",
+  "ui_action_values": {
+    "allow": "İzin ver",
+    "deny": "Reddet"
+  },
+  "ui_enabled_toggle_available": false,
+  "model_enabled_field_preserved_by_editor": true,
+  "policy": "authwire-pilot-wireless",
+  "revised_scenario": "allow -> deny -> allow with VLAN140 explicitly reselected",
+  "expected_deny_reason": "POLICY_DENY",
+  "disabled_policy_no_match_scenario_tested": false,
+  "editor_deny_saves_vlan": null,
+  "restore_requires_vlan_selection": 140,
+  "preserves_existing": {
+    "enabled": true,
+    "access_types": true,
+    "nas_ips": true,
+    "constraints": true
+  },
+  "group_selection_operator_to_preserve": true,
+  "policy_changed_by_assistant": false,
+  "scenario_executed": false
+}

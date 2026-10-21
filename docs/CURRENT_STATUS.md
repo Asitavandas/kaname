@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Test yönergesi düzeltildi: UI'de devre dışı anahtarı yok; açık Reddet→İzin ver senaryosu uygulanacak — 21 Ekim 2026
+
+- Operatör panelde“devre dışı”değil“Reddet”seçeneği olduğunu belirtti. **Asistanın önceki disable/enableUIyönergesihatalıydı.** Canlıstatic/index.htmlpolicy-actionseçenekleriallow/İzinvervedeny/Reddet;static/app.jsrenderPoliciesyalnızDüzenle/Silbutonlarısunuyor,enabledalanıgörseldüzenlenemiyor(legacyarchivedgösterimi). Paneldeolmayananahtarıvarsaymayacağız;yenibuttonözelliğibuturnkapsamınagirilmedi.
+- Değerlendirmedışıbırakmak(enabledfalse)ileeşleşenpolicy'ninreddetmesi(actiondeny)aynıdeğildir. Sıradakitest**yalnızauthwire-pilot-wirelessactionallow→deny→allow**olarakdüzeltildi. BeklenenolumsuznedenPOLICY_DENY'dır;NO_MATCHING_POLICY/disabledpolicykabulu sayılmaz.
+- **Kaynakdoğrulamalıgeridönüşayrıntısı:**UIkaydetmedeenabled:old.enabled,mevcutaccess_types/nas_ips/constraints korunur;denyactionvlan:nullolarakkaydedilir. Bu nedenleİzinver'egeridönüşte**VLAN140yenidenseçilecektir**. Grupkoşuluseçimikorunmalı,policykopyalama/silme/wiredpolicyeveAD'yeişlemyok.
+- ÖncekiVV06PMKcachegeçicikapat/negativeconnect,sonrapositiveconnectveözgünprofilrestorekomutlarıtestiçingeçerlidir;yalnızpaneladımlarıvebeklenenretkararıdeğişmiştir. Etkiaynıpilotwirelesspolicy'ye bağlıcihazlarıyenidendoğrulamadaetkileyebilir. Şimdilikpolicydeğişikliğiuygulanmış/testtamamlanmışsayılmaz.
+
 ## 🔴✓ VV06–DC01 anlık saat hizalaması ve özgün eşik geri dönüşü; operatör isteğiyle 802.1X'e dönüldü — 21 Ekim 2026
 
 - Operatörhelperçıktısı:W32Timebackup C:\ProgramData\AuthWire-Time-Align-20261021-203036;geçiciMaxAllowedPhaseOffset1adımısonrası“no time data”resyncmetni görüldü;finally“Özgün eşik geri yüklendi:300”,runtimeMaxAllowedPhaseOffset300(Local)/TypeNT5DS(Local)doğrulandı.
