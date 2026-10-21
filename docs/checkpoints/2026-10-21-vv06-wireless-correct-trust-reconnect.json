@@ -1,0 +1,30 @@
+{
+  "event": "VV06_WIRELESS_CORRECT_TRUST_RECONNECT_ACCEPTED",
+  "observed_at": "2026-10-21T19:10:07+03:00",
+  "computer": "VV06",
+  "ssid": "VV_802.1X",
+  "interface_guid": "927f5d3e-1b59-478a-83d7-ee6445261fff",
+  "mac": "10:B1:DF:69:95:33",
+  "ipv4": "10.10.110.2",
+  "prefix": 24,
+  "address_state": "Preferred",
+  "event_ids": [
+    8000,
+    11000,
+    11001,
+    11010,
+    12011,
+    12012,
+    11005,
+    8001
+  ],
+  "eap_type": 13,
+  "identity": "host/AuthWire computer 69b0d5cd-db61-4627-9db7-fcc5230152a3",
+  "correct_trust_export_verified": true,
+  "reconnect_accepted": true,
+  "tls_full_vs_resumed": "unmeasured",
+  "selected_leaf_serial": "unmeasured",
+  "negative_test_completed": false,
+  "restore_after_negative_completed": false,
+  "server_changed": false
+}

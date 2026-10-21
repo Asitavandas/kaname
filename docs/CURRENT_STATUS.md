@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ VV06 doğru sunucu güven profiliyle kablosuz yeniden bağlantı kabulü — 21 Ekim 2026, 19:10 İstanbul
+
+- **🔴✓ 19:10:07+03 WLAN zinciri:**8000 bağlantı başlangıcı,11000/11001 ilişkilendirme,12011 EAPtype13 başlangıcı,12012 802.1Xsuccess (host/AuthWire computer69b0d5cd-db61-4627-9db7-fcc5230152a3),11005 güvenliksuccess,8001 bağlandı. Son arayüz VV_802.1X/APBSSIDf0:61:c0:cc:73:54, WPA2-Enterprise(FT)/CCMP; Wi-Fi10.10.110.2/24Preferred.
+- Bu, 19:08 exportunda doğrulanan doğru KANAME root/server-name/prompt ayarlarından sonraki pozitif istemci bağlantı kabulüdür. Hangi leaf serialinin seçildiği ve TLS full/resumption ayrımı bu çıktıda ölçülmedi.
+- **B10 yanlış sunucu adı olumsuz saha testi ve doğru profile geri dönüş halen bekliyor.** Yalnız VV06 Wi-Fi üzerinde test; doğru export C:\Users\administrator\AuthWire-WiFi-Verified-20261021-190808\Wi-Fi-VV_802.1X.xml geri dönüş noktası. Testte PMK caching geçici kapatılıp doğru export geri yüklenerek özgün ayarlar korunacak; henüz uygulanmış sayılmaz.
+- Sunucu/RADIUS/policy/CA/shared secret/Ethernet değişmedi; daha geniş B10 paketi tamamlanmadı.
+
 ## 🔴✓ VV06 Wi-Fi profilinin sunucu güven ayarları düzeltildi ve export ile doğrulandı — 21 Ekim 2026, 19:08 İstanbul
 
 - **🔴✓ Operatörün elle kaydettiği güncel profil exportu:** C:\Users\administrator\AuthWire-WiFi-Verified-20261021-190808\Wi-Fi-VV_802.1X.xml.
