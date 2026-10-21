@@ -1,0 +1,41 @@
+{
+  "event": "VV06_WIRELESS_TRUST_BASELINE_FINDING",
+  "date": "2026-10-21",
+  "timezone": "Europe/Istanbul",
+  "evidence_source": "operator_pasted_netsh_IP_and_exported_profile_fields",
+  "computer": "VV06",
+  "positive_observation": {
+    "ssid": "VV_802.1X",
+    "ipv4": "10.10.110.2",
+    "prefix": 24,
+    "machine_authentication": true,
+    "eap": "EAP-TLS",
+    "authentication": "WPA2-Enterprise (FT)",
+    "cipher": "CCMP",
+    "full_fresh_eap_verified": false,
+    "selected_leaf_verified": false
+  },
+  "backup": "C:\\Users\\administrator\\AuthWire-WiFi-Backup-20261021-185927\\Wi-Fi-VV_802.1X.xml",
+  "profile_fields": {
+    "authMode": "machine",
+    "DisableUserPromptForServerValidation": false,
+    "ServerNames": "",
+    "TrustedRootCA": "0FF97F30A22CC23776A994B72CF6279C3A365281",
+    "PerformServerValidation": true,
+    "AcceptServerName": false
+  },
+  "expected": {
+    "ServerNames": "kaname.vizyonveri.local",
+    "TrustedRootCA": "C789A0595ADB95A6BE4534D01B1D205F6C37DE18",
+    "DisableUserPromptForServerValidation": true,
+    "PerformServerValidation": true,
+    "AcceptServerName": true
+  },
+  "finding": "server-name restriction absent; root fingerprint differs from recorded AuthWire root; user prompt is permitted",
+  "correction_applied": false,
+  "negative_test_completed": false,
+  "server_changed": false,
+  "policy_changed": false,
+  "certificates_changed": false,
+  "actual_expiry_field_test": "pending_separate_device"
+}

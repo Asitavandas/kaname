@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## VV06 Wi-Fi pozitif bağlantı görüldü; istemci sunucu güveni düzeltmesi bekliyor — 21 Ekim 2026
+
+- **🔴✓ Dar pozitif gözlem:** VV06, RTL8852BE/MAC10:b1:df:69:95:33 ile VV_802.1X/APBSSIDf0:61:c0:cc:73:54 bağlantısı; WPA2-Enterprise(FT)/CCMP, EAP-TLS, machine credential ve Wi-Fi10.10.110.2/24Preferred operatör çıktısında görüldü. Bu gözlem seçilmiş leaf serialini veya taze tam EAP el sıkışmasını kanıtlamaz.
+- **🔴✓ Değişiklik öncesi profil yedeği:** C:\Users\administrator\AuthWire-WiFi-Backup-20261021-185927\Wi-Fi-VV_802.1X.xml, netsh export başarılı.
+- Yedek XML: authMode=machine, PerformServerValidation=true; ServerNames boş, AcceptServerName=false, DisableUserPromptForServerValidation=false. TrustedRootCA=0FF97F30A22CC23776A994B72CF6279C3A365281; beklenen KANAME Root6796fa84/C789A0595ADB95A6BE4534D01B1D205F6C37DE18 ile eşleşmiyor. Farklı hash'in hangi CA olduğu ve mevcut oturumun neden kabul edildiği henüz belirlenmedi; FT/cache veya prompt olasılıkları kanıtlanmış neden değildir.
+- **Bekliyor:** yalnız VV06 Wi-Fi profilinde doğru server-name/root ve promptsuz reddetme ayarını elle düzeltme, yeni export ile doğrulama, taze bağlantı kabulü; sonrasında B10 yanlış server-name reddi ve doğrulanmış doğru profile dönüş. B10 tamamlandı sayılmaz. Sunucu/policy/CA/native RADIUS/shared secret veya Ethernet ayarına müdahale yoktur.
+
 ## Sonraki saha adımı: VV06 kablosuz server-name olumsuz güven testi; gerçek expiry ayrı cihaz bekliyor — 21 Ekim2026
 
 - Operatör seçimi: **şu an yalnızVV06 var.** Enrollment profile mevcut kuralı en az2gün geçerlilik ve en az1gün renew-before ister. Gerçek expired-pending saha testi bugün tamamlandı sayılmaz; **ayrı test cihazı bekliyor** olarak açık tutulur. Geçerli VV06 cert/key veya sistem saati değiştirilmez.
