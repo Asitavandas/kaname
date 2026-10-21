@@ -16,6 +16,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ VV06 yeniden etkinleştirme sonrası Wi-Fi/VLAN140 döndü; policy Düzenle alanlarında Ret/boş VLAN bildirimi açık — 21 Ekim 2026
+
+- Operatör yeniden Etkinleştir adımı sonrası VV06'da aynıSSID/AP/MAC/computerGUID ile connected,21:25:39 WLAN12012/8001 ve10.10.140.2/24Preferred bildirdi. **🔴✓ Windows yeniden bağlantı ve VLAN140 geri dönüşü tamamlandı.** Önceki21:20:12Windowsreddiyle birlikte dar uç davranışı görüldü; RADIUS ret/kabul kaydı ve kesin neden/policy eşleştirmesi henüz paylaşılmadı.
+- Operatör ayrıca toggle sonrası kararın Reddet, VLAN'ın boş göründüğünü belirtti; hedefli soruya **Erişim kuralları / Düzenle** yanıtını verdi. Bu bildirim ret geçmişi olarak yorumlanamaz; **policy editörü/veri koruması hatası incelemesi açık**. Mevcut bağlantı başarısı tek başına policy'nin depodaki action/vlan alanlarının doğru olduğunu kanıtlamaz. B08/B10tamamlandı sayılmaz.
+- Salt okunur RDC kontrolünde sunucudaki141kurulu dosyanın tamamı incelenen dev13manifestiyle eşleşti; panelPID645600/RADIUS326873aktif. Kurulu setPolicyEnabled yalnızenabledalanını değiştiriyor; bu kod gözlemi operatör hatasını geçersiz saymaz. UI state/edit yarışları, form gösterimi ve gerçek kayıt ayrı incelenecek; henüz ürün düzeltmesi veya canlı policy değişikliği yapılmadı.
+- Hazır tanılama [2026-10-21-policy-editor-readonly.py](checkpoints/2026-10-21-policy-editor-readonly.py), sunucu/home/segmentiq/authwire-policy-editor-readonly-20261021.py, SHA2563495396d3d743a84414067de94f68e5097cf9504d8da409a8bfc321d8a25a08c. Yalnız sqlite mode=ro/query_only ile pilot policy ve sonAPNAS kayıtları; bilinen a51a4575...yedek arşivini SHA doğruladıktan sonra SQLite'ı yalnızbelleğe deserialize edip action/vlan/conditions farkını karşılaştırır. Diskextract/restore, secret/token/CA/key çıktısı, servisrestart veya policywrite yok. Yerel fixture'da yazma reddi/dosyaözeti korunması/bellekrestore/yalnızenabled ve action-vlanfarkı tespiti/yanlışdigestret kontrolleri geçti. Sunucuda dosyaözeti ve sözdizimi doğrulandı; özelDB için operatör sudo çalıştırması beklenir.
+- Geçici PMKCacheMode=no ayarı ve sonradan özgün profil geri dönüşü açık kalır; bozuk görünümü kaydetmeden kayıtlıveri ve form gösterimi ayırt edilecek. KullanıcıEAP-TLS/gerçekexpiry ve diğer açık senaryolar korunur; DNSmimarisi kapsam dışı, NTPçalışması duraklatılmıştır.
+
 ## 🔴✓ VV06 policy kapalı senaryosunda Windows Wi-Fi reddi doğrulandı — 21 Ekim 2026, sunucu nedeni ve geri dönüş bekliyor
 
 - Operatör, yalnız kablosuz policy devre dışı adımı sonrası PMKCacheMode=no profil güncellemesi ve yeni bağlantı çıktısını iletti. VV06 Wi-Fi disconnected, donanım/yazılım radyosu açık;21:20:12 olay12013 ve8002; EAP0x80420105 sunucudan genel ret. MAC10:B1:DF:69:95:33, APF0:61:C0:CC:73:54, kimlikhost/AuthWire computer69b0d5cd-db61-4627-9db7-fcc5230152a3. Connection request completed metni başarılı kimlik doğrulama sayılmadı.
