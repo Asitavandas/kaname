@@ -404,10 +404,10 @@ def wait_ready(process, log):
             return
         time.sleep(0.1)
     # Never dump TLS debug logs, keys, secrets or full request attributes.
-    safe = [line for line in log.read_text(errors='replace').splitlines()
-            if re.search(r'Error|Failed|Unknown|not found|Cannot|Invalid', line, re.I)
-            and not re.search(r'secret|password|key|User-Name|cert|TLS|EAP-Message', line, re.I)]
-    raise RuntimeError('FreeRADIUS startup failed: ' + ' | '.join(safe[-5:]))
+    safe = [re.sub(r'[0-9a-fA-F]{32,}', '[redacted]', line) for line in log.read_text(errors='replace').splitlines()
+            if re.search(r'Error|Failed|Unknown|not found|Cannot|Invalid|Unable|Refus|Traceback', line, re.I)
+            and not re.search(r'secret|password|User-Name|EAP-Message|BEGIN .*KEY', line, re.I)]
+    raise RuntimeError('FreeRADIUS startup failed (exit=' + str(process.poll()) + '): ' + ' | '.join(safe[-8:]))
 
 
 def eap_case(root, relay, secret, name, cert='computer', *, expected=2, reason=None,
@@ -511,7 +511,8 @@ def run_lab(prefix, *, debug=False, access_events=False):
         try:
             with log.open('wb') as handle:
                 mode = ['-X'] if debug else ['-f']
-                process = subprocess.Popen([str(binary), *mode, '-d', str(root)],
+                process = subprocess.Popen([str(binary), *mode, '-l', 'stdout', '-D',
+                                            str(prefix / 'share' / 'freeradius'), '-d', str(root)],
                                            stdout=handle, stderr=subprocess.STDOUT)
                 process_started = time.monotonic()
                 wait_ready(process, log)

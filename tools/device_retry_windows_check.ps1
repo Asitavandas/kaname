@@ -20,6 +20,31 @@ function ChildCount {
     if(Test-Path $file) {return [int](Get-Content $file -Raw)}
     return 0
 }
+function Write-RetryFixtureDiagnostic {
+    # Only bounded task/timing facts from this UUID fixture; never script bodies,
+    # credentials, full state documents, certificate keys, or customer tasks.
+    $facts=[ordered]@{checked_utc=[DateTimeOffset]::UtcNow.ToString('o');child_count=(ChildCount)}
+    foreach($entry in @(@('main',$mainName),@('retry',$retryName))) {
+        $task=Get-ScheduledTask -TaskName $entry[1] -ErrorAction SilentlyContinue
+        if(!$task) {$facts[$entry[0]]=@{found=$false};continue}
+        $info=Get-ScheduledTaskInfo -TaskName $entry[1]
+        $facts[$entry[0]]=@{found=$true;state=[string]$task.State;last_result=$info.LastTaskResult;last_run=$(if($info.LastRunTime){$info.LastRunTime.ToString('o')}else{$null});next_run=$(if($info.NextRunTime){$info.NextRunTime.ToString('o')}else{$null})}
+    }
+    $facts['network_profiles']=@(Get-NetConnectionProfile -ErrorAction SilentlyContinue|ForEach-Object {@{category=[string]$_.NetworkCategory;ipv4=[string]$_.IPv4Connectivity;ipv6=[string]$_.IPv6Connectivity}})
+    foreach($name in @('retry.json','status.json','launcher-result.json')) {
+        $path=Join-Path $folder $name
+        if(!(Test-Path -LiteralPath $path)) {continue}
+        try {
+            $value=Get-Content -LiteralPath $path -Raw|ConvertFrom-Json
+            $selected=[ordered]@{}
+            foreach($field in @('attempts','next_attempt','state','stage','mode','result','error_type','error_id','hresult')) {
+                if($null -ne $value.$field) {$selected[$field]=$value.$field}
+            }
+            $facts[$name]=$selected
+        } catch {$facts[$name]=@{read_failed=$true}}
+    }
+    Write-Output ('AUTHWIRE_RETRY_FIXTURE_DIAGNOSTIC '+($facts|ConvertTo-Json -Depth 5 -Compress))
+}
 function Wait-TaskResult([string]$Name,[datetime]$After,[int]$Expected) {
     $limit=(Get-Date).AddSeconds(50)
     do {
@@ -78,12 +103,18 @@ exit 0
     # Only private test-directory binding and UUID task names differ from entrypoint.
     $prefix=$text.Substring(0,$text.IndexOf('$target = Join-Path'))
     $footer=@'
-if($RetryCheck) {
-    $null=Invoke-AuthWireRetryCheck $PSScriptRoot '__MAIN__' '__RETRY__'
-    exit 0
+try {
+    if($RetryCheck) {
+        $outcome=Invoke-AuthWireRetryCheck $PSScriptRoot '__MAIN__' '__RETRY__'
+        [IO.File]::WriteAllText((Join-Path $PSScriptRoot 'launcher-result.json'),(@{mode='retry';result=[string]$outcome}|ConvertTo-Json -Compress))
+        exit 0
+    }
+    if($RunClient) {exit (Invoke-AuthWireEnrollmentClient $PSScriptRoot '__RETRY__')}
+    throw 'Fixture launcher requires an explicit mode.'
+} catch {
+    [IO.File]::WriteAllText((Join-Path $PSScriptRoot 'launcher-result.json'),(@{mode=$(if($RetryCheck){'retry'}else{'main'});error_type=$_.Exception.GetType().Name;error_id=$_.FullyQualifiedErrorId;hresult=$_.Exception.HResult}|ConvertTo-Json -Compress))
+    throw
 }
-if($RunClient) {exit (Invoke-AuthWireEnrollmentClient $PSScriptRoot '__RETRY__')}
-throw 'Fixture launcher requires an explicit mode.'
 '@
     $footer=$footer.Replace('__MAIN__',$mainName).Replace('__RETRY__',$retryName)
     $shim=$prefix+$definitions+[Environment]::NewLine+$footer
@@ -125,7 +156,7 @@ throw 'Fixture launcher requires an explicit mode.'
         $info=Get-ScheduledTaskInfo -TaskName $mainName
         if((ChildCount) -eq 3 -and $main.State -eq 'Ready' -and $info.LastTaskResult -eq 0) {break}
     } while((Get-Date) -lt $limit)
-    if((ChildCount) -ne 3 -or $info.LastTaskResult -ne 0) {throw 'Native automatic failure/rearm/recovery did not finish.'}
+    if((ChildCount) -ne 3 -or $info.LastTaskResult -ne 0) {Write-RetryFixtureDiagnostic;throw 'Native automatic failure/rearm/recovery did not finish.'}
     if(Test-Path (Join-Path $folder 'retry.json')) {throw 'Retry state survived successful recovery.'}
     $status=Get-Content (Join-Path $folder 'status.json') -Raw|ConvertFrom-Json
     if($status.state -ne 'installed' -or $status.serial -ne $leaf.SerialNumber -or !$status.last_verified -or $status.error -or $status.stage -or $status.last_success) {throw 'Recovered status stale or invented issuance date.'}

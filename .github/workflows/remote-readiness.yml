@@ -1,10 +1,10 @@
 name: AuthWire offline restore and GPO audit checks
 on:
   pull_request:
-    paths: ['tools/offline_restore_check.py', 'tools/AuthWire-GPO-Audit.ps1', 'tools/gpo_audit_fixture.ps1', 'tools/gpo_installer_update_fixture.ps1', 'tools/gpo_retry_update_fixture.ps1', 'docs/checkpoints/2026-10-19-sysvol-installer-update.ps1', 'docs/checkpoints/2026-10-19-retry-installer-update.ps1', 'tests/test_offline_restore_check.py', '.github/workflows/remote-readiness.yml']
+    paths: ['tools/offline_restore_check.py', 'tools/AuthWire-GPO-Audit.ps1', 'tools/gpo_audit_fixture.ps1', 'tools/gpo_installer_update_fixture.ps1', 'tools/gpo_retry_update_fixture.ps1', 'tools/gpo_expired_update_fixture.ps1', 'docs/checkpoints/2026-10-21-sysvol-client-update.ps1', 'docs/checkpoints/2026-10-19-sysvol-installer-update.ps1', 'docs/checkpoints/2026-10-19-retry-installer-update.ps1', 'tests/test_offline_restore_check.py', '.github/workflows/remote-readiness.yml']
   push:
     branches: [main]
-    paths: ['tools/offline_restore_check.py', 'tools/AuthWire-GPO-Audit.ps1', 'tools/gpo_audit_fixture.ps1', 'tools/gpo_installer_update_fixture.ps1', 'tools/gpo_retry_update_fixture.ps1', 'docs/checkpoints/2026-10-19-sysvol-installer-update.ps1', 'docs/checkpoints/2026-10-19-retry-installer-update.ps1', 'tests/test_offline_restore_check.py', '.github/workflows/remote-readiness.yml']
+    paths: ['tools/offline_restore_check.py', 'tools/AuthWire-GPO-Audit.ps1', 'tools/gpo_audit_fixture.ps1', 'tools/gpo_installer_update_fixture.ps1', 'tools/gpo_retry_update_fixture.ps1', 'tools/gpo_expired_update_fixture.ps1', 'docs/checkpoints/2026-10-21-sysvol-client-update.ps1', 'docs/checkpoints/2026-10-19-sysvol-installer-update.ps1', 'docs/checkpoints/2026-10-19-retry-installer-update.ps1', 'tests/test_offline_restore_check.py', '.github/workflows/remote-readiness.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -33,3 +33,6 @@ jobs:
       - name: Same-publisher retry installer upgrade and preservation
         shell: powershell
         run: tools/gpo_retry_update_fixture.ps1
+      - name: Protected signed expired-recovery client update and rollback
+        shell: powershell
+        run: tools/gpo_expired_update_fixture.ps1
