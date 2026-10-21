@@ -1,0 +1,41 @@
+{
+  "event": "VV06_DEV12_COPY_BOOT_AND_WIRED_ACCEPTED",
+  "recorded_utc": "2026-10-21T15:23:07.803Z",
+  "computer": "VV06",
+  "signed_client_file_sha256": "59C86CF55E5110E23DF16388928580FE8D2050B59C999A0E09CA2599286790B3",
+  "client_updated": true,
+  "client_signature": "Valid",
+  "publisher_correct": true,
+  "publisher": "6E74B513F766E01730719684A41B2664380CA68A",
+  "last_boot": "2026-10-21T18:14:12+03:00",
+  "task_last_run": "2026-10-21T18:14:24+03:00",
+  "task_start_seconds_after_boot": 12,
+  "task_completion_duration_measured": false,
+  "ran_after_boot": true,
+  "task_state": "Ready",
+  "last_task_result": 0,
+  "installed_certificate_serial": "26e43008251ac23612b2e654a6f6a259ee234f6e",
+  "installed_serial_unchanged": true,
+  "has_private_key": true,
+  "pending_request": false,
+  "retry_file_exists": false,
+  "wired": {
+    "interface": "Ethernet",
+    "adapter": "Realtek PCIe GbE Family Controller",
+    "guid": "415933d5-5010-4a7a-b8bf-0e537e0bc7f2",
+    "mac": "38-CA-84-DB-FF-E6",
+    "authentication": "succeeded"
+  },
+  "ipv4": {
+    "address": "10.10.110.4",
+    "prefix_length": 24,
+    "state": "Preferred",
+    "matches_known_vlan110_network": true
+  },
+  "scope": "Actual GPO signed file delivery and healthy post-boot task/certificate/wired/IP state accepted. Copy-versus-process-launch order was not measured; a fresh normal task run after verified copy can close exact updated-source execution ordering.",
+  "fresh_verified_source_task_run_pending": true,
+  "real_expired_pending_endpoint_recovery_pending": true,
+  "radius_selected_leaf_for_this_boot_independently_verified": false,
+  "previous_test_stability_findings_retained": true,
+  "dns_architecture_out_of_scope": true
+}

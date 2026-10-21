@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ VV06 dev.12 signed client kopyası ve boot sonrası görev/cert/kablolu ağ kabulü tamamlandı — 21 Ekim2026
+
+- **🔴✓ Gerçek GPO/endpoint teslimi:** VV06ClientUpdatedtrue; signed full-fileSHA59C86CF55E5110E23DF16388928580FE8D2050B59C999A0E09CA2599286790B3 ile eşleşiyor. SignatureValid ve mevcut publisher6E74B513F766E01730719684A41B2664380CA68A doğru.
+- **🔴✓ Boot/task:**boot18:14:12+03; taskLastRun18:14:24+03; RanAfterBoottrue, Ready veLastTaskResult0. Bu12s task başlangıcı farkıdır, tamamlanma süresi ölçümü değildir.
+- **🔴✓ Mevcut kimlik ve ağ korunması:**installed serial26e43008251ac23612b2e654a6f6a259ee234f6e aynı;HasPrivateKeytrue,pendingfalse,retryfalse. Gerçek Ethernet38-CA-84-DB-FF-E6 Authentication succeeded; IP10.10.110.4/24Preferred mevcut VLAN110 ağıyla uyumlu. Bu çıktı bu boot'ta RADIUS'un seçtiği leaf serisinin ayrı server kanıtı değildir.
+- Bu dar copy/boot/sağlıklı kablolu ağ kabulü tamamdır. GPO dosya kopyası ile ilk task process launch sırası ölçülmediğinden, doğrulanmış yeni kopya sonrasında bir taze normal görev çalışması exact updated-source execution kabulünü tamamlayabilir. **Gerçek expired-pending saha kurtarması ayrı açık kalır**; geçerli mevcut sertifika/anahtar/sistem saati bu adımda değiştirilmedi. Önceki test kararlılığı bulguları ve DHCP/DNS kapsam dışı kararı korunur.
+
 ## 🔴✓ DC01 aynı publisher ile dev.12 istemciyi SYSVOL'e teslim etti — 21 Ekim2026,18:02 İstanbul
 
 - **🔴✓ Operatör çıktısı SYSVOL_CLIENT_UPDATED/verifiedtrue/updatedtrue:** mevcut publisher`6E74B513F766E01730719684A41B2664380CA68A` ile yeni AuthWire-Client.ps1 imzalandı. BodySHA`bf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60`; signed full-fileSHA`59C86CF55E5110E23DF16388928580FE8D2050B59C999A0E09CA2599286790B3`.
