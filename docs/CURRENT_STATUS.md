@@ -16,6 +16,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Kablosuz policy VLAN140 değişikliği operatör tarafından doğrulandı — 21 Ekim 2026
+
+- Operatör açıkça **VLAN140'ı kendisi değiştirdiğini** bildirdi. CSV ID20/21'de19:33:34.238/19:33:50.953+03 policy authwire-pilot-wireless/POLICY_ALLOW/TLStrue/güncel VV06sertifikası ile140gönderilmesi bu bilinçli değişiklikle uyumludur; yanlış VLAN olayı veya otomatik policy düzeltme gereği olarak değerlendirilmez.
+- **🔴✓ Policy değişikliğinin RADIUS yanıtına140olarak yansıması** dar kontrolü tamamlandı;140sonrasında VV06Wi-FiDHCPadresi henüz paylaşılmadı, bu uçkabul açık. Bilinen110IP'si140sonrası ölçüm yerine kullanılmaz.
+- B11 yaklaşık124saniye Windows/RADIUS olası zaman farkı açık. Sıradaki saltokunur adım Wi-FiIP,Windowsyerel/UTCzamanı veW32Timekaynağını okumaktır; saat/NTP/Windowsprofil/policy üzerinde asistan değişikliği uygulanmadı. Linux öncekiNTP=yes/NTPSynchronized=yes gözlemi korunur; geçmişteki olayların kesin eşleşmesi bundan türetilmez.
+
 ## 🔴✓ VV06 kablosuz CSV'de güncel sertifika/kimlik/policy eşleşmesi; VLAN140 ve zaman korelasyonu takipte — 21 Ekim 2026
 
 - **🔴✓ Operatör CSV'si salt okunur incelendi:** AuthWire-erisim-kayitlari-2026-10-21.csv, SHA256 723d8a54bfb26b3e62d45fa85a60d8b995665b01572f0452469a2d0b3b04ad0d,16sütun/8geçerli satır,ID14–21;8ayrı event_id ve8ayrı request_id (bu örnekte aynı korelasyon anahtarlı mükerrer satır yok).6Access-Accept/2Access-Reject.

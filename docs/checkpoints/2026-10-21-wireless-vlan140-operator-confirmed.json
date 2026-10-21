@@ -1,0 +1,24 @@
+{
+  "event": "WIRELESS_VLAN140_OPERATOR_INTENT_CONFIRMED",
+  "date": "2026-10-21",
+  "timezone": "Europe/Istanbul",
+  "computer": "VV06",
+  "policy": "authwire-pilot-wireless",
+  "operator_statement": "evet vlan 140'ı ben değiştirdim.",
+  "vlan_140_intent_confirmed": true,
+  "matching_radius_row_ids": [
+    20,
+    21
+  ],
+  "radius_vlan_matches_operator_change": true,
+  "endpoint_ipv4_after_vlan140": "pending",
+  "windows_time_source": "pending",
+  "exact_windows_radius_time_correlation": "pending",
+  "changes_by_assistant": {
+    "policy": false,
+    "windows": false,
+    "clock": false,
+    "ntp": false,
+    "server": false
+  }
+}
