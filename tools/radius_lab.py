@@ -511,7 +511,8 @@ def run_lab(prefix, *, debug=False, access_events=False):
         try:
             with log.open('wb') as handle:
                 mode = ['-X'] if debug else ['-f']
-                process = subprocess.Popen([str(binary), *mode, '-d', str(root)],
+                process = subprocess.Popen([str(binary), *mode, '-D',
+                                            str(prefix / 'share' / 'freeradius'), '-d', str(root)],
                                            stdout=handle, stderr=subprocess.STDOUT)
                 process_started = time.monotonic()
                 wait_ready(process, log)
