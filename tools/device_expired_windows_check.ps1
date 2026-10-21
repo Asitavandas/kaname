@@ -109,7 +109,11 @@ SuppressDefaults=TRUE
     if((Wait-FixtureTask) -ne 1) {throw 'Expected actual client failure on expired pending issuance.'}
     $status=Get-Content (Join-Path $root 'status.json') -Raw|ConvertFrom-Json
     $retry=Get-Content (Join-Path $root 'retry.json') -Raw|ConvertFrom-Json
-    if($status.server_error -ne 'DEVICE_CERTIFICATE_EXPIRED' -or !$status.expired_pending_archived -or $status.recovery_error) {throw 'Client did not archive expired pending state.'}
+    if($status.server_error -ne 'DEVICE_CERTIFICATE_EXPIRED' -or !$status.expired_pending_archived -or $status.recovery_error) {
+        $diagnostic=@{stage=$status.stage;server_error=$status.server_error;recovery_error=$status.recovery_error;archived=$status.expired_pending_archived;pending_exists=(Test-Path (Join-Path $root 'pending.json'))}
+        Write-Output ('EXPIRED_FIXTURE_FAILURE '+($diagnostic|ConvertTo-Json -Compress))
+        throw 'Client did not archive expired pending state.'
+    }
     $archive=Join-Path (Join-Path $root 'expired-pending') $retry.expired_pending_archive
     if((Test-Path (Join-Path $root 'pending.json')) -or (Get-FileHash $archive).Hash -ne $pendingHash) {throw 'Pending request archive differs or old request still active.'}
     $retained=[Security.Cryptography.CngKey]::Open($oldContainer,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::MachineKey)
