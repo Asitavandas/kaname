@@ -16,6 +16,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ B10 VV06 yanlış kök seçimi reddi ve doğru profile/VLAN110'a geri dönüş saha kabulü — 21 Ekim 2026, 19:26 İstanbul
+
+- **🔴✓ Test önkoşulu:** KANAME rootC789A0595ADB95A6BE4534D01B1D205F6C37DE18 hemLocalMachine\\Root hemCurrentUser\\Root'ta aynı cert olarak bulundu; önceki profildeki0FF97F30... bu iki depoda bulunmadı. Sertifika silinmedi/yüklenmedi. Alternatif geçerli self-issued yerel kök AAA Certificate Services, Comodo CA Limited, thumbD1EB23A46D17D68FD92564C2F1F1601764D8E349,NotAfter1Ocak2029 seçildi.
+- **🔴✓ Yanlış kök export doğrulaması:** C:\Users\administrator\AuthWire-WrongRoot-20261021-192604\Wi-Fi-VV_802.1X.xml; komut XML'de yalnızAAA hash'ini doğruladı;PMKCacheMode=no/ConnectionMode=manual başarılı. Diğer doğru server-name/machine/validation/prompt ayarları korunması talimatı verildi; bu test exportunda bu alanlar ayrıca basılmadı.
+- **🔴✓ 19:26:07+03 EAPtype13/12011 ardından12013 ve11006:**0x800B0109 (CERT_E_UNTRUSTEDROOT),EAP0x80420301; Windows kök neden metni ağ için kök sertifikası doğrulamasının başarısız olduğunu belirtiyor.19:26:08+03 olay8002 ve arayüzdisconnected. Bu, AAA sertifikasının genel Windows deposunda bozuk/geçersiz olduğu anlamına gelmez; server zincirinin test profilinde seçilmiş köke güvenemediğini gösterir.
+- **🔴✓ Geri dönüş:**19:08 doğru KANAME root/server-name exportu başarıyla yüklendi, VV_802.1X/aynıAPBSSIDf0:61:c0:cc:73:54/MAC10:B1:DF:69:95:33/WPA2-Enterprise(FT)/CCMPconnected ve Wi-Fi10.10.110.2/24Preferred yeniden ölçüldü. Geri dönüş12012 veya seçilen leafseriali yeniden toplanmadı; profile fields sonradan yeniden export edilmedi.
+- Dar B10 yanlış kök reddi/geri dönüş senaryosu **tamamlandı**; tüm B10 paketi veya kullanıcı kimlik doğrulaması tamamlandı sayılmaz. Sunucu/RADIUS/policy/CA/native module/sharedsecret değişmedi; gerçek expiry saha testi ayrı cihaz bekliyor.
+
 ## 🔴✓ B10 VV06 yanlış RADIUS sunucu adı reddi ve doğru profile geri dönüş saha kabulü — 21 Ekim 2026
 
 - **🔴✓ Pozitif → olumsuz → geri dönüş:**19:10:07+03 doğru kaname.vizyonveri.local/KANAME root/machine EAP-TLS ile12012/8001 ve10.10.110.2/24; operatörün yanlış yanlis-radius.vizyonveri.local adıyla kontrollü denemesinde19:14:43+03 EAPtype13başlangıcı,19:14:44+03 olay12013/11006/8002,0x800B0114 ve0x80420101; arayüzdisconnected.
