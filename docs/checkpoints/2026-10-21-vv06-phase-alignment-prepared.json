@@ -1,0 +1,36 @@
+{
+  "event": "VV06_PHASE_SETTINGS_READ_ONE_TIME_ALIGNMENT_PREPARED",
+  "date": "2026-10-21",
+  "timezone": "Europe/Istanbul",
+  "observed": {
+    "phase_offset_seconds": 123.9658728,
+    "clock_rate_seconds": 0.015625,
+    "state": "Hold",
+    "time_source_flags": "8 SignatureAuthenticated",
+    "last_sync_error": 0,
+    "Type": "NT5DS Local",
+    "MinPollInterval": 10,
+    "MaxPollInterval": 15,
+    "MaxAllowedPhaseOffset": 300,
+    "PhaseCorrectRate": 1,
+    "UpdateInterval": 30000,
+    "SpikeWatchPeriod": 900,
+    "MaxPosPhaseCorrection": 4294967295,
+    "MaxNegPhaseCorrection": 4294967295
+  },
+  "latest_offsets_seconds": [
+    123.9566876,
+    123.9568428,
+    123.9565635
+  ],
+  "proposed_helper": "docs/checkpoints/2026-10-21-vv06-time-align-once.ps1",
+  "proposed_temporary_threshold_seconds": 1,
+  "original_threshold_restore_required": 300,
+  "host_guard": "VV06",
+  "backup_before_mutation": true,
+  "finally_restore_original": true,
+  "operator_applied": false,
+  "offset_converged": false,
+  "acceptance_pending": true,
+  "no_change_to_source_or_acceptance_limits": true
+}

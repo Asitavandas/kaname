@@ -16,6 +16,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## VV06 phase ayarları doğrulandı; yedekli tek seferlik anlık hizalama adımı hazır — 21 Ekim 2026
+
+- Operatörverbose:PhaseOffset123.9658728s/ClockRate0.0156250s/StateHold/TimeSourceFlags8(SignatureAuthenticated)/LastSyncError0/soniyiörnek234sönce. NT5DS(Local),MinPoll10/MaxPoll15,MaxAllowedPhaseOffset300(Local),PhaseCorrectRate1,UpdateInterval30000,SpikeWatchPeriod900;maxpos/neg0xFFFFFFFFmevcutdeğerleridir,asistantarafındangenişletilmedi.
+- Sonölçüm20:23:41/43/45+03:DCminusVV06+123.9566876/+123.9568428/+123.9565635s. Kaynakkabulüvar,farkhenuz~124s. Microsoftbelgelerineeşikaltıoffsetinkademelidüzeltilmesidavranışıylauyumlu;Holdveuzunpollayarlarıtamyakınsamabeklentisindeayrıcagörünür.
+- Hazır operatörhelper **docs/checkpoints/2026-10-21-vv06-time-align-once.ps1**:yalnızVV06guard,orijinal300/NT5DSkontrolü,GPOphaseoverridevarsaabort,W32Timeregistryexportbaşarısızsaabort;tryiçindeMaxAllowedPhaseOffsetgeçici1s,W32Timerestart/resync;finallyherdurumdaorijinal300registrygeri+configupdateveokumadoğrulaması;ardındanruntimeconfiguration/statusverbose/5örnekstripchart. Saatbirkezgünceldomainkaynağınahizalanır;DC01/LinuxveAuthWirekonfigürasyonunadokunulmaz. Parametre,MaxPos/NegveyaSpikeWatchPeriodgibikabuledilebilirörnek sınırlarınıgenişletmez.
+- **Henüz uygulanmadı:**backup/temporaryphase/resync/restore/offsetkabullerioperatörçıktısıbekliyor.HelperüzerindeWindowsçalıştırmatestiyapılmışgibisunumyok;belgelitemelmekanizmavegerçekVV06baselinedeğerleriylehazırlandı. B11yakınsamavekorelasyon açık.
+
 ## 🔴✓ VV06 Windows Time domain kaynağını kabul etti; yaklaşık124saatfarkı henüz kapanmadı — 21 Ekim 2026
 
 - **🔴✓ Operatör yalnızVV06W32Timerestartsonrası/resync/rediscover başarılı**,sourcedc01.vizyonveri.local/10.35.50.70,Leap0,stratum4,lastsync20:19:47+03,rootdispersion131.7487307s.20:19:43/45/47Time-Service37:“valid time data”;20:19:47olay35:“now synchronizing”veUDP0.0.0.0:123→10.35.50.70:123. Bu,buölçümdegerçekW32Timeverikabulünügösterir;kalıcıUDPengeliartıkkanıtlanmışnedendeğildir.
