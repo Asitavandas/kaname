@@ -1,0 +1,119 @@
+{
+  "event": "BRANDING_LIVE_DEPLOYMENT_ACCEPTED",
+  "date_local": "2026-10-22",
+  "timezone": "Europe/Istanbul",
+  "evidence_source": "operator-supplied guarded deployment output; no additional live mutation or independent service restart in this recording turn",
+  "version": "0.14.0-dev.15",
+  "verified": true,
+  "evidence": "/var/backups/authwire/scheduled/branding-dev15-20261022T135527Z-c18fb2e1",
+  "original_preflight_snapshot_persisted": true,
+  "protected_server_authentication_source_identical": true,
+  "radius_active": true,
+  "radius_process_preserved": true,
+  "radius_restarted": false,
+  "broker_process_preserved": true,
+  "service_pids": {
+    "authwire-radius.service": "679309",
+    "authwire-service-control.service": "149955"
+  },
+  "preservation": {
+    "files": true,
+    "pids": true,
+    "timers": true,
+    "business_state": true
+  },
+  "protected_state_preserved": true,
+  "backup_timer_preserved": true,
+  "windows_changed": false,
+  "windows_endpoints_changed": false,
+  "policy_changed": false,
+  "certificates_changed": false,
+  "native_module_changed": false,
+  "windows_client_template_updated": false,
+  "gpo_installer_source_updated": false,
+  "live_policy_actions_executed": false,
+  "windows_client_sha256": "bf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60",
+  "backups": {
+    "before": {
+      "path": "/var/backups/authwire/scheduled/authwire-scheduled-20261022T135703Z-e6b925a16835.tar.gz",
+      "sha256": "206d448a86f66daea99e91be9354f9554f5d94691b80ba415df98eb72ca8c2b1"
+    },
+    "after": {
+      "path": "/var/backups/authwire/scheduled/authwire-scheduled-20261022T135850Z-f04757325236.tar.gz",
+      "sha256": "dd20d1b6a56f07d15dfff7d9c0b2da5d73a59e927091ec7b83e2de2826d9a78d"
+    },
+    "archive_read_verified": true,
+    "sqlite_integrity_verified": true,
+    "service_processes_preserved": true
+  },
+  "restore": {
+    "data_restore_exercised": true,
+    "backup_sha256": "dd20d1b6a56f07d15dfff7d9c0b2da5d73a59e927091ec7b83e2de2826d9a78d",
+    "files_restored": 162,
+    "file_bytes_verified": true,
+    "ownership_and_modes_verified": true,
+    "runtime_links_not_materialized": 4,
+    "all_reported_validation_checks_passed": true,
+    "protected_secret_count_verified": 3,
+    "isolated_copy_removed": true,
+    "restored_code_executed": false,
+    "services_started": false,
+    "network_calls_from_restore_check": false,
+    "full_appliance_boot_restore_tested": false
+  },
+  "api_checks": {
+    "authenticated": true,
+    "loopback": true,
+    "requests_per_path": 3,
+    "before_paths": 5,
+    "after_paths": 8,
+    "all_statuses": 200,
+    "after_max_ms": 46,
+    "after": [
+      {
+        "path": "/api/auth/session",
+        "median_ms": 8.1,
+        "max_ms": 10.6
+      },
+      {
+        "path": "/api/state",
+        "median_ms": 14.8,
+        "max_ms": 15.4
+      },
+      {
+        "path": "/api/pki/certificates?offset=0",
+        "median_ms": 3.9,
+        "max_ms": 46
+      },
+      {
+        "path": "/api/network",
+        "median_ms": 2.9,
+        "max_ms": 2.9
+      },
+      {
+        "path": "/api/services",
+        "median_ms": 2.5,
+        "max_ms": 37.7
+      },
+      {
+        "path": "/api/audit/history",
+        "median_ms": 3,
+        "max_ms": 3.5
+      },
+      {
+        "path": "/api/audit/history?source=administrators",
+        "median_ms": 2.2,
+        "max_ms": 2.3
+      },
+      {
+        "path": "/api/radius/events",
+        "median_ms": 3.2,
+        "max_ms": 3.3
+      }
+    ]
+  },
+  "live_installation_completed": true,
+  "branding_browser_acceptance_pending": true,
+  "full_functional_project_completion_claimed": false,
+  "remaining_functional_work_paused": true
+}

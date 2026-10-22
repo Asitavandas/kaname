@@ -16,6 +16,17 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.15 ΛuthWire logo canlı kurulumu, veri koruma ve izole geri yükleme kabulü tamam — 22 Ekim 2026; operatör görünüm kontrolü bekliyor
+
+- Operatörün BRANDING_UPDATE_FINISHED çıktısı verified=true/version0.14.0-dev.15. Logo/marka paketi canlı Linux sunucusuna kuruldu. Kanıt dizini `/var/backups/authwire/scheduled/branding-dev15-20261022T135527Z-c18fb2e1`; orijinal başlangıç snapshot'ı kalıcıdır. Bu kabul operatörün gerçek kurulum çıktısına dayanır; bu kayıt turunda ek servis eylemi veya yeni saha testi yapılmadı.
+- 🔴✓ RADIUS aktif; PID679309 ve brokerPID149955korundu, radius_restarted=false. Dosya/PID/timer/business_state karşılaştırmaları tümütrue. Windows istemcisi/GPO, policy/VLAN, CA/sertifikalar, native modül ve planlı yedek timer'ı korundu. Canlı policy eylemi yapılmadı.
+- 🔴✓ Kurulum öncesi ve sonrası yeni veri yedeklerinin arşiv ve SQLite kontrolleri geçti. Son yedek `/var/backups/authwire/scheduled/authwire-scheduled-20261022T135850Z-f04757325236.tar.gz`, SHA256 `dd20d1b6a56f07d15dfff7d9c0b2da5d73a59e927091ec7b83e2de2826d9a78d`. Bu arşivden162dosyanın izole veri geri yüklemesi; byte/sahiplik/mod, veritabanı, CA/CRL, korumalı sırlar, anahtar eşleşmesi/imzalama, kayıt ve erişim geçmişi kontrolleri başarılı. İzole kopya kaldırıldı; tam appliance boot restore tamamlanmış sayılmaz.
+- 🔴✓ Önce5/sonra8 kimlikli yerel HTTPS API uç noktası üçer kez okundu, tüm yanıtlar200. Kurulum sonrası en yüksek süre46.0ms. Panelin teknik sağlık kontrolü başarılı.
+- **Açık kalan dar adım:** operatör Ctrl+F5 ile yenileyip dev.15, altın–antrasit amblem ve çizgisiz Lambda ile **ΛuthWire** yazımını giriş/menü/kontrol merkezinde kontrol edecek. branding_browser_acceptance_pending=true; canlı kurulum sonucu tek başına gerçek tarayıcı görünümü kabulü değildir.
+- Kalan işlevsel işler ve önceki açık B04/Windows retry aralıklılığı bulguları beklemede kalır; DNS mimarisi kapsam dışıdır. Görsel güncelleme94iş hesabında yeni işlevsel puan oluşturmaz.
+- [Canlı kurulum kanıt özeti](checkpoints/2026-10-22-panel-branding-live-result.json).
+
+
 ## 🔴✓ Onaylı 42° altın–antrasit ΛuthWire logo geliştirme ve teknik/görsel kontrol tamam — 22 Ekim 2026; canlı kurulum bekliyor
 
 - Operatör matematiksel vektör çizimini “bence oldu bunu kullanalım” diyerek onayladı. Baş harf çizgisiz Yunanca büyük Lambda: **ΛuthWire**. Altın `#C6A15B` / antrasit `#25272B` ve onaylı geçişler kullanılır. Beş ayrı parça, dört komşu eksen açısı42°, dört yatay uç aralığı28birim, dik parça kalınlığı36birim korunur. Panelin krem/lacivert/açık mavi/kiremit renk rolleri aynı kaldı.
