@@ -1,6 +1,6 @@
 # AuthWire current work record
 
-Updated: 21 October 2026, Europe/Istanbul. This record supplements the 9 October
+Updated: 22 October 2026, Europe/Istanbul. This record supplements the 9 October
 `AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-09.docx` / `.pdf`; those reports are a
 dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
@@ -15,6 +15,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## 🔴✓ Panel renk paleti geliştirme ve teknik kabulü tamam — 22 Ekim 2026; canlı kurulum bekliyor
+
+- Operatör kalan işlevsel işleri bekletti; bugün yalnız mevcut panelin renk düzeni üzerinde çalışılacak. Referans görsel ve palet açıldı: lacivert #1D4D73, açık mavi #68A9CF, kiremit #D96B52, krem #F3EAD8, koyu füme #2C2C2C. Ana zemin/menü krem; aktif menü ve sekmeler açık mavi; ana sayaç kartları lacivert; CTA ve marka yazısı kiremit. Krem ara yüzey tonları kart/formları ayırır. Küçük CTA yazısı kontrast için #171717; lacivert kartta krem, açık mavide koyu metin kullanıldı. Başarı/uyarı/hata anlam renkleri korundu.
+- 🔴✓ dev.14 kaynak geliştirme tamam: ürün tarafında yalnız styles.css ile sürüm metadata dosyaları değişti. Kimlik doğrulama, JavaScript davranışı, policy, Windows/GPO ve RADIUS kaynakları aynı. PR44, incelenen b180d5c2cccf2f145f4c49d7ad85ba71c5b6ca88 kaynağı; merge f16de7ae5f0deb111184dcbc76f4ae87138fc141.
+- 🔴✓ 9 mevcut tarayıcı akışı, gerçek render metin/zemin kontrastı ve mobil/masaüstü kontrolleri geçti; overview, mobil, policy, servis, sertifika/drawer, LDAP ve erişim kayıt ekranları görsel incelendi. Foundation 553 test /25skip, Linux hazırlama, native RADIUS, network probe, Windows istemci ve Kerberos grupları başarılı. İlk Windows retry job119743546546 deadline_rearmed zaman aşımıyla başarısızdı; değişmeyen kod tek yeniden çalıştırmada job119745471485 ile geçti. Önceki aralıklı zamanlama bulgusu çözülmüş sayılmaz, saklandı.
+- 🔴✓ Yalnız sunucu kullanıcı dizininde kurulum paketi hazırlandı; 141 dosya/manifest ve kurulum dosyası SHA256/sözdizimi doğrulandı. Salt okunur canlı kontrol Linux segmentiq/IP10.35.50.246, dev.13; panel679209, RADIUS679309, broker149955 aktif. Kurulu141 dosyanın tümü kabul edilmiş dev.13 ile aynı. Yerel deploy koruması base→aday/tekrar kabulü, yetkisiz RADIUS/JS/Windows değişikliği ve drift reddi, dosya/PID/timer/policy koruma senaryolarını geçti.
+- **Canlı kurulum henüz yapılmadı:** parolasız sudo yok; operatör Linux terminalinden yerel sudo çalıştıracak. Stage `/home/segmentiq/authwire-stage-dev14-b180d5c2cccf`, manifestSHA256 `5dc6f6d432630c92f3c276654163f6ad3ffefcb0270552ab0bd30883f6c7106c`. Deployer `/home/segmentiq/authwire-palette-update-20261022.py`, SHA256 `1b21178d80907dede058d45a40f882b9374e8851e34bb93e9b82ff0efeb6a6df`. Beklenen son olay PALETTE_UPDATE_FINISHED; ardından gerçek panel F5/görsel kabulü açık. Kod yedeği, canlı veri yedeği, korunma ve izole veri restore kontrolleri kurulum sırasında yapılacak; bugün bunlar yeni canlı kabul yapılmış gibi sayılmaz.
+- Yeni saha testi/servis restart/policy veya sertifika değişikliği yapılmadı. İşlevsel kalanlar ve NTP duraklatıldı; DHCP/DNS mimarisi kapsam dışı. Renk düzenlemesi mevcut panel maddesini günceller; 94 alt iş sayımına yeni iş/puan eklemez.
+- [Teslim ve kanıt özeti](checkpoints/2026-10-22-panel-palette-delivery.md), [incelenen yerel-sudo kurulum dosyası](checkpoints/2026-10-22-panel-palette-update.py).
 
 ## 🔴✓ VV06 doğrulanmış Wi-Fi profilinin geri yüklenmesi / test temizliği tamam — 21 Ekim 2026
 
