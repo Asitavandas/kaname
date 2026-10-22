@@ -6,7 +6,7 @@
   "manifest_sha256": "0ea4273dc028458b415bd2ff97cb6e10da3db4dc175a2a16736525fce0df6593",
   "source_files": 143,
   "deployer_sha256": "86781cb73c2c936d01b808a5176d013b9e25be4d93a323a1a25bd77f69d7866a",
-  "root_install_executed": false,
+  "root_install_executed": true,
   "planned_broker_restart": true,
   "planned_radius_restart": false,
   "power_actions_executed": false,
@@ -22,5 +22,38 @@
     "hardened_power_timer_marker_probe": true,
     "host_reboot_or_poweroff_tested": false,
     "rollback_and_phase_checks": true
+  },
+  "live_install_verified": true,
+  "live_result": {
+    "event": "ACCOUNT_MENU_FINISHED",
+    "verified": true,
+    "version": "0.14.0-dev.18",
+    "release": "21ea9b2e994b95fae9f38e0099ec29f8bf18f644",
+    "changed": true,
+    "checks": {
+      "files": true,
+      "radius_process": true,
+      "timers": true,
+      "business_state": true,
+      "broker_transition": true
+    },
+    "radius_active": true,
+    "radius_restarted": false,
+    "radius_process_preserved": true,
+    "broker_restarted": true,
+    "broker_pid_before": "149955",
+    "broker_pid_after": "858994",
+    "power_actions_executed": false,
+    "control_actions_executed": false,
+    "policy_changed": false,
+    "certificates_changed": false,
+    "windows_changed": false,
+    "native_module_changed": false,
+    "full_data_backup_created": false,
+    "backup_timer_preserved": true,
+    "operator_browser_acceptance_pending": true,
+    "host_power_execution_acceptance_pending": true,
+    "rollback_source_commit": "e2ad6634c853ae39750822123dca87d259276ca1",
+    "evidence": "/var/lib/authwire-ui-updates/account-menu-dev18-20261022T173757Z-ee699f1c"
   }
 }

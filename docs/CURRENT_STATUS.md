@@ -16,6 +16,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.18 canlı kurulum ve koruma kontrolleri tamam — görünüm kabulü bekliyor (22 Ekim 2026)
+
+- 🔴✓ Operatörün paylaştığı gerçek ACCOUNT_MENU_FINISHED çıktısı dev.18 kurulumunu doğruladı; kaynak sürümü `21ea9b2e994b95fae9f38e0099ec29f8bf18f644`. Dosya, çalışan RADIUS süreci, zamanlayıcılar, iş verisi ve planlanan broker geçişi kontrolleri başarılı.
+- 🔴✓ RADIUS aktif; PID 832810 korundu ve yeniden başlatılmadı. Servis kontrol brokerı planlandığı gibi 149955 → 858994 geçti.
+- 🔴✓ Kurallar, sertifikalar, Windows kaynakları ve yerel RADIUS modülü değişmedi. Güç veya servis kontrol eylemi uygulanmadı. Tam veri yedeği alınmadı; günlük yedek zamanlayıcısı korundu.
+- 🔴✓ Güncelleme öncesi beş, sonrası on API yolu üçer kez HTTP 200 döndürdü; yeni /api/system/power dahil, bildirilen en uzun yanıt 34,7 ms.
+- Bekliyor: Sil butonunun, sağ üst hesap menüsünün ve Sistem alt menüsünün operatör tarayıcı kabulü. Gerçek sunucu yeniden başlatma/kapatma yürütme kabulü ayrıca bekler; durum sorgusu bu eylemlerin testi sayılmaz.
+- Bu kayıt operatörün canlı kurulum çıktısına dayanır. Bu kayıt turunda sunucuda yeni kurulum, servis yeniden başlatma veya güç eylemi yapılmadı. Önceki uç cihaz kabulü, kullanıcı kimlik doğrulaması yol haritası ve açık hata kayıtları bu sonuçla tamamlanmış sayılmaz.
+- Kanıt: `/var/lib/authwire-ui-updates/account-menu-dev18-20261022T173757Z-ee699f1c`; makine okunur sonuç: `docs/checkpoints/2026-10-22-account-menu-live-result.json`.
+
 ## 🔴✓ dev.18 Sil / hesap ve Sistem menüsü kaynak-test-hazırlık tamam — canlı kurulum bekliyor (22 Ekim 2026)
 
 - 🔴✓ Operatör dev.17 için “Görünüyor şu an için sorun yok” diyerek önceki tablo/modal/kayan kimlik panelinin görünümünü kabul etti. dev.17 operator_browser_acceptance_pending artık false olarak takip edilir. Bu kabul yeni gerçek VV06 bağlantısı veya kullanıcı kimlik doğrulaması testi sayılmaz; gerçek uç kabulü ayrı bekler.
