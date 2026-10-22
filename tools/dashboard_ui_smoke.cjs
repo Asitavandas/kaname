@@ -12,10 +12,11 @@ from kaname.radius_events import initialize,append
 from tests.test_radius_events import event
 s=DevelopmentServer(sys.argv[1],0)
 initialize(s.store.root)
+s.operations.network=lambda:{'radius_clients':[{'ip':'192.0.2.2','name':'SW-PILOT','access_type':'wired'},{'ip':'192.0.2.3','name':'AP-PILOT','access_type':'wireless'}],'vlans':[]}
 now=datetime.now(timezone.utc)
 for n in range(205):
  yes=n%3!=0
- append(s.store.root,event(n,at=(now-timedelta(hours=n%48,seconds=10)).isoformat(timespec='milliseconds').replace('+00:00','Z'),response_code=2 if yes else 3,vlan=110 if yes else None))
+ append(s.store.root,event(n,nas_ip='192.0.2.'+str(2+n%3),at=(now-timedelta(hours=n%48,seconds=10)).isoformat(timespec='milliseconds').replace('+00:00','Z'),response_code=2 if yes else 3,reason='POLICY_ALLOW' if yes else 'POLICY_DENY',vlan=110 if yes else None))
 s.services.status=lambda:{'available':True,'checked_at':now.isoformat(),'busy':False,'operations':[],'backup':{'available':True,'last_success_at':now.isoformat(),'last_run_succeeded':True,'archive_read_verified':True,'sqlite_integrity_verified':True},'services':[{'id':'radius','health':'running','active_state':'active','listener_present':True}]}
 print(s.server_port,flush=True)
 s.serve_forever()`;
@@ -26,11 +27,11 @@ s.serve_forever()`;
   const context=await browser.newContext({viewport:{width:1440,height:1100},timezoneId:'Europe/Istanbul'}),page=await context.newPage(),errors=[];let actions=0;
   page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.method()==='POST'&&/services\/action|power\/action/.test(r.url()))actions++;});
   await page.goto('http://127.0.0.1:'+port);await page.locator('#login-user').fill('admin');await page.locator('#login-password').fill('Kaname');await page.locator('#unlock').click();await page.locator('#workspace').waitFor({state:'visible'});await page.waitForFunction(()=>!dashboardLoading&&dashboardData?.events?.total===205);
-  assert.equal(await page.locator('#dashboard-accept').textContent(),'136');assert.equal(await page.locator('#dashboard-reject').textContent(),'69');assert.equal(await page.locator('#dashboard-recent tr').count(),8);assert.equal(await page.locator('#dashboard-nas button').count(),1);
+  assert.equal(await page.locator('#dashboard-accept').textContent(),'136');assert.equal(await page.locator('#dashboard-reject').textContent(),'69');assert.equal(await page.locator('#dashboard-recent tr').count(),8);assert.equal(await page.locator('#dashboard-nas button').count(),3);
   assert.match(await page.locator('#dashboard-types').textContent(),/Türü belirlenemedi/);await page.waitForFunction(()=>document.querySelector('#dashboard-backup').textContent==='Başarılı');
   await page.locator('#dashboard-reject-card').click();await page.waitForFunction(()=>!accessLoading&&accessPage?.events?.length===69);assert.equal(await page.locator('#access-result').inputValue(),'reject');assert.ok(await page.evaluate(()=>accessPage.events.every(e=>e.response_code===3)));assert.equal(await page.evaluate(()=>accessDashboardRange.watermark),'205');
   await page.locator('[data-view="overview"]').click();await page.waitForFunction(()=>!dashboardLoading&&dashboardData?.events?.total===205);await page.locator('#dashboard-period').selectOption('24h');await page.waitForFunction(()=>!dashboardLoading&&dashboardData?.period==='24h');assert.ok(await page.evaluate(()=>dashboardData.events.total<205));
-  await page.locator('#dashboard-period').selectOption('7d');await page.waitForFunction(()=>!dashboardLoading&&dashboardData?.period==='7d');
+  await page.locator('#dashboard-period').selectOption('7d');await page.waitForFunction(()=>!dashboardLoading&&dashboardData?.period==='7d');await page.evaluate(()=>message(''));
   if(process.env.KANAME_UI_ARTIFACTS){fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'dashboard-analytics-desktop.png'),fullPage:true,animations:'disabled'});}
   for(const width of [390,1366,1920]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'overflow '+width);if(width===390&&process.env.KANAME_UI_ARTIFACTS)await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'dashboard-analytics-mobile.png'),fullPage:true,animations:'disabled'});}
   await page.setViewportSize({width:1440,height:1100});await page.route('**/api/dashboard*',r=>r.fulfill({status:503,json:{error:'STORE_BUSY'}}));await page.locator('#dashboard-refresh').click();await page.waitForFunction(()=>!dashboardLoading&&document.querySelector('#dashboard-feedback').textContent.includes('alınamadı'));assert.equal(await page.locator('#workspace').isVisible(),true);assert.equal(await page.locator('#dashboard-accept').textContent(),'—');await page.unroute('**/api/dashboard*');

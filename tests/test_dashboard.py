@@ -75,7 +75,12 @@ class DashboardTests(unittest.TestCase):
                 r=real(path)
                 from types import SimpleNamespace
                 return SimpleNamespace(st_mode=r.st_mode & ~0o022,st_uid=0)
-            with patch.object(broker,'BACKUP_STATUS_ROOT',p),patch.object(Path,'lstat',info):
+            real_fstat=broker.os.fstat
+            def fstat(fd):
+                r=real_fstat(fd)
+                from types import SimpleNamespace
+                return SimpleNamespace(st_mode=r.st_mode,st_uid=0,st_size=r.st_size)
+            with patch.object(broker,'BACKUP_STATUS_ROOT',p),patch.object(Path,'lstat',info),patch.object(broker.os,'fstat',fstat):
                 value=broker.backup_status();self.assertTrue(value['available']);self.assertNotIn('secret',str(value));self.assertNotIn('private',str(value))
                 (p/'last-run.json').write_text(json.dumps({**good,'event':'BACKUP_FAILED'}));self.assertFalse(broker.backup_status()['last_run_succeeded'])
                 (p/'last-run.json').write_text('{}');self.assertFalse(broker.backup_status()['available'])

@@ -8,11 +8,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import sqlite3
 import time
-from zoneinfo import ZoneInfo
 
 from . import radius_events as history
 
-ZONE = ZoneInfo('Europe/Istanbul')
+# Reporting and SQL buckets use the same explicit UTC+03:00 offset.
+# No OS tzdata dependency at server import (including Windows fixture hosts).
+ZONE = timezone(timedelta(hours=3), 'Europe/Istanbul')
 
 
 def stamp(value):

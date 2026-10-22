@@ -7,6 +7,7 @@ function dashboardVisible(){return !!session&&!$('overview').hidden&&!document.h
 function dashboardPermissions(){
  for(const [id,permission]of [['dashboard-accept-card','audit.events'],['dashboard-reject-card','audit.events'],['dashboard-all-events','audit.events'],['dashboard-cert-card','certificates.authority'],['dashboard-expiring-card','certificates.authority']])$(id).disabled=!can(permission);
  $('dashboard-crl-row').hidden=!can('certificates.authority');
+ if(!can('system.services'))renderDashboardBackup(null);
  if(dashboardData&&((dashboardData.events&&!can('audit.events'))||(dashboardData.certificates&&!can('certificates.authority'))))resetDashboard();
 }
 function resetDashboard(){dashboardRequest++;clearTimeout(dashboardTimer);dashboardLoading=false;dashboardData=null;for(const id of ['dashboard-accept','dashboard-reject','dashboard-certificates','dashboard-expiring'])$(id).textContent='—';for(const id of ['dashboard-trend','dashboard-donut','dashboard-types','dashboard-nas','dashboard-heatmap','dashboard-recent','dashboard-alerts'])$(id).replaceChildren();$('dashboard-alerts').hidden=true;$('dashboard-feedback').textContent='';$('dashboard-updated').textContent='Henüz yenilenmedi';$('dashboard-period').value='7d';renderDashboardBackup(null);}
