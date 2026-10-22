@@ -116,7 +116,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#vlan-form button[type="submit"]').click();
     await page.waitForFunction(()=>document.querySelector('#vlan-list').textContent.includes('Corporate'));
     await navigate('policies');
-    await page.locator('#policy-form-title').click();
+    await page.locator('#new-policy').click();
     await page.waitForFunction(()=>document.querySelector('#policy-vlan').options.length===2);
     await page.locator('#policy-vlan').selectOption('120');
     const sid='S-1-5-21-100-200-300-400';
@@ -364,7 +364,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#vlan-form button[type="submit"]').click();
     await page.waitForFunction(()=>document.querySelector('#vlan-list').textContent.includes('Lab'));
     await navigate('policies');
-    if(!await page.locator('#policy-editor').evaluate(x=>x.open))await page.locator('#policy-form-title').click();
+    if(!await page.locator('#policy-editor').evaluate(x=>x.open))await page.locator('#new-policy').click();
     await page.waitForFunction(()=>document.querySelector('#policy-vlan').options.length===3);
     await page.locator('#policy-name').fill('Conflicting VLAN');
     await page.locator('#policy-any-group').uncheck();

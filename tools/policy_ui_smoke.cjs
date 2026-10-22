@@ -32,17 +32,38 @@ s.serve_forever()`;
   async function policiesView(){await page.locator('[data-view="policies"]').click();await page.waitForFunction(()=>networkState!==null&&!networkLoading);}
   const snapshot=()=>page.evaluate(()=>api('/api/state'));
   const save=value=>page.evaluate(value=>api('/api/policies',{expected_revision:value.revision,policies:value.policies}),value);
-  async function clickToggle(id,enabled){await toggle(id).click();await page.waitForFunction(({id,enabled})=>!policySaving&&state.policies.find(p=>p.id===id)?.enabled===enabled,{id,enabled});}
+  async function selectRow(id){if(await row(id).locator('.policy-action-row').isHidden())await row(id).locator('.policy-summary').click();}
+  async function clickToggle(id,enabled){await selectRow(id);await toggle(id).click();await page.waitForFunction(({id,enabled})=>!policySaving&&state.policies.find(p=>p.id===id)?.enabled===enabled,{id,enabled});}
   async function decision(access_type){return page.evaluate(async access_type=>(await api('/api/simulate',{authenticated:true,directory_available:true,account_enabled:true,domain_device:true,group_sids:['S-1-5-21-10-20-30-40'],access_type,nas_ip:access_type==='wired'?'192.0.2.2':'192.0.2.52',eap_method:'EAP-TLS'})).decision,access_type);}
   await login(page);await policiesView();
-  assert.match(await page.locator('#panel-version').textContent(),/0\.14\.0-dev\.15/);
+  assert.match(await page.locator('#panel-version').textContent(),/0\.14\.0-dev\.16/);
   const original=await snapshot();assert.equal((await decision('wireless')).vlan,140);
+  assert.deepEqual(await page.locator('#policy-list th').allTextContents(),['Kural Adı','Erişim Türü','Kullanıcı/Grup','VLAN','Karar']);
+  const toolbar=await page.locator('.policy-toolbar').boundingBox(),create=await page.locator('#new-policy').boundingBox(),search=await page.locator('#policy-query').boundingBox();
+  assert.ok(create.x+create.width<search.x&&Math.abs(create.y+create.height/2-search.y-search.height/2)<3,'Create button must sit immediately left of search');
+  assert.ok(search.width<=340&&search.width<toolbar.width*.6,'Search stays compact on desktop');
+  assert.equal(await page.locator('.policy-action-row:visible').count(),0);
+  await selectRow('wireless');
+  assert.deepEqual(await row('wireless').locator('.policy-action-row button').allTextContents(),['Düzenle','Devre dışı bırak']);
+  assert.equal(await row('wireless').locator('.policy-summary').evaluate(el=>el.nextElementSibling.classList.contains('policy-action-row')),true);
+  await selectRow('wired');assert.equal(await row('wireless').locator('.policy-action-row').isHidden(),true);assert.equal(await page.locator('.policy-action-row:visible').count(),1);
+  await row('wired').locator('.policy-summary').focus();await page.keyboard.press('Escape');assert.equal(await page.locator('.policy-action-row:visible').count(),0);
+  await page.keyboard.press('Enter');assert.equal(await row('wired').locator('.policy-action-row').isVisible(),true);
+  const columns=await row('wired').locator('.policy-summary td').evaluateAll(cells=>cells.map(el=>({x:el.getBoundingClientRect().x,width:el.getBoundingClientRect().width})));
+  const headings=await page.locator('#policy-list th').evaluateAll(cells=>cells.map(el=>({x:el.getBoundingClientRect().x,width:el.getBoundingClientRect().width})));
+  headings.forEach((h,i)=>assert.ok(Math.abs(h.x-columns[i].x)<1&&Math.abs(h.width-columns[i].width)<1,'Each value must align with its heading'));
+  for(const [query,id]of [['140','wireless'],['kablosuz','wireless'],['Pilot Kablolu','wired']]){await page.locator('#policy-query').fill(query);assert.equal(await page.locator('[data-policy-id]').count(),1);assert.equal(await row(id).count(),1);}
+  await page.locator('#policy-query').fill('no-policy-matches');assert.equal(await page.locator('[data-policy-id]').count(),0);assert.equal(await page.locator('#policy-list th').count(),5);assert.match(await page.locator('.policy-empty').textContent(),/eşleşen kural bulunamadı/);
+  await page.locator('#policy-query').fill('');assert.equal(await page.locator('[data-policy-id]').count(),2);assert.equal(writes,0);assert.deepEqual((await snapshot()).policies,original.policies);
+  await page.locator('#new-policy').click();assert.equal(await page.locator('#policy-editor').evaluate(el=>el.open),true);assert.equal(await page.locator('#policy-name').inputValue(),'');await page.locator('#cancel-policy').click();
+  if(process.env.KANAME_UI_ARTIFACTS){fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});await selectRow('wireless');await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'policy-table-desktop.png'),fullPage:true});await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'policy-table-mobile.png'),fullPage:true});await page.setViewportSize({width:1440,height:1050});}
+
   await clickToggle('wireless',false);
   let current=await snapshot();assert.deepEqual(current.policies,original.policies.map(p=>p.id==='wireless'?{...p,enabled:false}:p));assert.deepEqual(current.config,original.config);
   assert.match(await row('wireless').textContent(),/Devre dışı.*VLAN 140/);assert.equal((await decision('wireless')).reason,'NO_MATCHING_POLICY');assert.equal((await decision('wired')).vlan,110);
   await page.reload();await page.locator('#workspace').waitFor({state:'visible'});await policiesView();assert.equal(await toggle('wireless').textContent(),'Etkinleştir');
   // Editing a disabled rule must not silently enable it or lose its VLAN/selectors.
-  await row('wireless').getByRole('button',{name:'Düzenle',exact:true}).click();await page.waitForFunction(()=>!networkLoading&&document.getElementById('policy-vlan').value==='140'&&document.getElementById('policy-group').selectedOptions.length===1);
+  await selectRow('wireless');await row('wireless').getByRole('button',{name:'Düzenle',exact:true}).click();await page.waitForFunction(()=>!networkLoading&&document.getElementById('policy-vlan').value==='140'&&document.getElementById('policy-group').selectedOptions.length===1);
   assert.equal(await toggle('wired').isDisabled(),true);await page.locator('#add-policy').click();await page.waitForFunction(()=>!policySaving&&editingPolicy==='');
   assert.deepEqual((await snapshot()).policies.find(p=>p.id==='wireless'),{...original.policies.find(p=>p.id==='wireless'),enabled:false});
   await page.locator('#cancel-policy').click();await clickToggle('wireless',true);assert.equal((await decision('wireless')).vlan,140);
@@ -61,7 +82,7 @@ s.serve_forever()`;
   await toggle('wireless').click();await page.waitForFunction(()=>!policySaving&&state.policies[0].name==='Concurrent wired edit');assert.equal((await snapshot()).policies.find(p=>p.id==='wireless').enabled,true);
   // Re-enabling a conflicting disabled rule returns 409 and changes nothing.
   current=await snapshot();const conflict={...current.policies.find(p=>p.id==='wireless'),id:'conflict',name:'Conflicting wireless',enabled:false,vlan:110};current.policies.push(conflict);await save(current);await page.evaluate(()=>refresh());
-  const beforeConflict=await snapshot();await toggle('conflict').click();await page.waitForFunction(()=>!policySaving&&!document.getElementById('conflict-alert').hidden);
+  const beforeConflict=await snapshot();await selectRow('conflict');await toggle('conflict').click();await page.waitForFunction(()=>!policySaving&&!document.getElementById('conflict-alert').hidden);
   assert.deepEqual((await snapshot()).policies,beforeConflict.policies);assert.equal((await snapshot()).revision,beforeConflict.revision);assert.equal(await toggle('conflict').textContent(),'Etkinleştir');
   // Existing server-side write and CSRF boundaries also protect the new control.
   assert.equal(await page.evaluate(async()=>{const s=await api('/api/state');return (await fetch('/api/policies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({expected_revision:s.revision,policies:s.policies})})).status;}),403);
@@ -72,6 +93,6 @@ s.serve_forever()`;
   assert.deepEqual((await snapshot()).policies,beforeConflict.policies);
   for(const width of [390,1366,1920]){await page.setViewportSize({width,height:1050});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
   if(process.env.KANAME_UI_ARTIFACTS){fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'policy-toggle.png'),fullPage:true});}
-  assert.deepEqual(errors,[]);console.log('Policy UI: persistence, preserved VLAN/selectors, disabled evaluation, editing, single POST, failures, stale revision, activation conflict, RBAC, CSRF and responsive layout passed.');
+  assert.deepEqual(errors,[]);console.log('Policy UI: aligned columns, compact search, row menus, keyboard selection, read-only filtering, new-rule button, persistence, preserved VLAN/selectors, disabled evaluation, editing, single POST, failures, stale revision, activation conflict, RBAC, CSRF and responsive layout passed.');
  }finally{if(browser)await browser.close();if(child.exitCode===null){child.kill();await exited;}fs.rmSync(temp,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});
