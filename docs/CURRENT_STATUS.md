@@ -16,6 +16,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.17 kural modalı canlı kurulum ve koruma kontrolleri tamam — 22 Ekim 2026; görünüm/VV06 kabulü bekliyor
+
+- Operatör düzeltmiş kurulum dosyasını güncel d74b2f887db66f6ba6535e1f7d0c8037e1bb8b478ba6817a597f245f8c811580 hash'iyle çalıştırdı ve POLICY_MODAL_FINISHED / verified=true çıktısını iletti. Son doğrulanmış canlı sürüm **0.14.0-dev.17**, kaynak8f2a3971d00c849fc8fdee168250d7da1e763a41. Kanıt dizini /var/lib/authwire-ui-updates/policy-modal-dev17-20261022T163108Z-d08a37ff. Kabul operatörün gerçek çıktısına dayanır; bu kayıt turunda ek canlı işlem yapılmadı.
+- 🔴✓ Önkontrol mevcut5rotada200; sonkontrol yeni /api/policies/labels dahil9rotanın her birinde üç kez200. İlk denemeyi durduran yanlış kontrol sırası düzeltilmiş haliyle canlıda geçti. Sonkontrolde en yüksek gözlenen yanıt35.5ms.
+- 🔴✓ files, broker_process, radius_listener, timers, business_state ve planned_radius_transition tümütrue. RADIUS planlandığı gibi bir kez yeniden başladı (PID679309→832810) ve aktif. Broker süreci korundu; native modül, mevcut policy/VLAN, sertifikalar ve Windows kaynakları değişmedi.
+- 🔴✓ Operatör tercihi korundu: full_data_backup_created=false; bu güncelleme için tam veri yedeği alınmadı. Düzenli yedek timer'ı korundu. İzole restore veya yeni tam yedek tamamlandı iddiası yok.
+- **Bekliyor:** Ctrl+F5 sonrası Durum sütunu, Yeni Kural/Düzenle modalı ve sağdan kayan bilgisayar/kullanıcı/grup çoklu seçim panelinin operatör kabulü; VV06 ile yeni bir gerçek802.1Xbağlantı denemesi. RADIUS'un aktif olması gerçek cihaz kabulünün yerine sayılmadı. Mevcut kurallar bu kontrol için kendiliğinden değiştirilmedi.
+- Kullanıcı kimlik doğrulaması/yol haritası ile daha önce açık Windows retry fixture ve B04 bulguları bu canlı UI kurulumu nedeniyle tamamlandı sayılmıyor. Önceki dev16ve başarısız ilk dev17deneme kayıtları aşağıda tarihsel kanıt olarak korunuyor.
+
 ## 🔴✓ dev.17 kurulum önkontrol düzeltmesi test edildi ve hazırlandı — canlı kurulum hâlâ bekliyor (22 Ekim 2026)
 
 - Operatörün ilk denemesi /var/lib/authwire-ui-updates/policy-modal-dev17-20261022T162458Z-f2803231 dizininde PANEL_READ_CHECK/before sırasında durdu. Kurulum dosyası dev.17 ile eklenecek /api/policies/labels adresini dev.16 üzerinde çağırmıştı; 404 doğru yanıt, hatalı olan kurulum kontrol sırasıydı. Bu deneme başarılı veya geri alınmış güncelleme sayılmaz: kaynak yazma/servis durdurma aşamasına ulaşmadı.

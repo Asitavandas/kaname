@@ -1,0 +1,49 @@
+{
+  "evidence_source": "operator-provided actual deployment output",
+  "result": {
+    "event": "POLICY_MODAL_FINISHED",
+    "verified": true,
+    "version": "0.14.0-dev.17",
+    "release": "8f2a3971d00c849fc8fdee168250d7da1e763a41",
+    "changed": true,
+    "checks": {
+      "files": true,
+      "broker_process": true,
+      "radius_listener": true,
+      "timers": true,
+      "business_state": true,
+      "planned_radius_transition": true
+    },
+    "radius_active": true,
+    "radius_restarted": true,
+    "radius_pid_before": "679309",
+    "radius_pid_after": "832810",
+    "broker_process_preserved": true,
+    "policy_changed": false,
+    "certificates_changed": false,
+    "windows_changed": false,
+    "native_module_changed": false,
+    "full_data_backup_created": false,
+    "backup_timer_preserved": true,
+    "operator_browser_acceptance_pending": true,
+    "real_endpoint_acceptance_pending": true,
+    "rollback_source_commit": "9f537bd50c358cc2c5f88235d141920c95d7a0e4",
+    "evidence": "/var/lib/authwire-ui-updates/policy-modal-dev17-20261022T163108Z-d08a37ff"
+  },
+  "api_after": {
+    "all_statuses": 200,
+    "requests_per_route": 3,
+    "routes": [
+      "/api/auth/session",
+      "/api/state",
+      "/api/pki/certificates?offset=0",
+      "/api/network",
+      "/api/services",
+      "/api/policies/labels",
+      "/api/audit/history",
+      "/api/audit/history?source=administrators",
+      "/api/radius/events"
+    ],
+    "max_observed_ms": 35.5
+  }
+}
