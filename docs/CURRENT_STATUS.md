@@ -16,6 +16,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.17 kurulum önkontrol düzeltmesi test edildi ve hazırlandı — canlı kurulum hâlâ bekliyor (22 Ekim 2026)
+
+- Operatörün ilk denemesi /var/lib/authwire-ui-updates/policy-modal-dev17-20261022T162458Z-f2803231 dizininde PANEL_READ_CHECK/before sırasında durdu. Kurulum dosyası dev.17 ile eklenecek /api/policies/labels adresini dev.16 üzerinde çağırmıştı; 404 doğru yanıt, hatalı olan kurulum kontrol sırasıydı. Bu deneme başarılı veya geri alınmış güncelleme sayılmaz: kaynak yazma/servis durdurma aşamasına ulaşmadı.
+- 🔴✓ Sonraki salt okunur kontrolde kurulu sürüm0.14.0-dev.16, önceki manifestteki141 kaynak dosyası birebir aynı, farklı dosya yok. RADIUS PID679309, brokerPID149955 ve panelPID802958aktif; CRL ve yedek timer'ları aktif. İnceleme servis eylemi çalıştırmadı.
+- 🔴✓ Düzeltme yalnız kurulum dosyasında: before mevcut5 adresi kontrol eder; after yeni /api/policies/labels adresini de zorunlu200 olarak kontrol eder. Eksik yeni adresin404yanıtı güncelleme sonrasında hâlâ hatadır. Hata fazları panel_health_before / panel_health_after olarak ayrıldı. Ürün kaynağı, sürüm,142dosyalık aday manifest ve kural motoru değişmedi.
+- 🔴✓ Üç disposable regresyon testi geçti: dev16önkontrol yeni adrese gitmez; dev17sonkontrol yeni adresi üç kez çağırır; sonkontrolde404güncellemeyi doğrulanmış saydırmaz. Önceki yazma/start/HTTPS hata geri alma ve idempotans testleri de yeniden geçti.
+- Hazır dosya /home/segmentiq/authwire-policy-modal-20261022.py; **güncel SHA256 d74b2f887db66f6ba6535e1f7d0c8037e1bb8b478ba6817a597f245f8c811580**. Önceki6dca927d3705453dce89028c4561be83ee5bc1ed0bde24e4e58786596806f9f7değeri bu dosya için artık kullanılmamalı. Sunucuda dosya SHA'sı ve aday142dosya tekrar doğrulandı.
+- **Bekliyor:** yeni hash'li sudo komutu, POLICY_MODAL_FINISHED koruma sonucu, panel görünüm kabulü ve VV06bağlantı kabulü. Bir planlı RADIUSrestart yalnız başarılı önkontrol sonrası uygulanacak. Tam veri yedeği veya restore eklenmedi.
+
 ## 🔴✓ dev.17 kural modalı, sağ kimlik paneli ve Durum sütunu — kaynak/test tamam; canlı kurulum bekliyor (22 Ekim 2026)
 
 - 🔴✓ Karar sağında Durum sütunu; etkinlik rozeti Kural Adı hücresinden kaldırıldı. Altı başlık ve satır hücreleri hizalı.

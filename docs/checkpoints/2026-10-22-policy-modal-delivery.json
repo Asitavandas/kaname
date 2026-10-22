@@ -5,7 +5,7 @@
   "merge_commit": "a6864a11e4aabdf3db505d4e655fa58f42397d5e",
   "source_files": 142,
   "manifest_sha256": "5ca12d3077b7303da00f49039837a9e16d3e8697e5548d9461bc14e0957c344b",
-  "deployer_sha256": "6dca927d3705453dce89028c4561be83ee5bc1ed0bde24e4e58786596806f9f7",
+  "deployer_sha256": "d74b2f887db66f6ba6535e1f7d0c8037e1bb8b478ba6817a597f245f8c811580",
   "stage": "/home/segmentiq/authwire-stage-dev17-8f2a3971d00c",
   "full_data_backup": false,
   "planned_radius_restart": true,
@@ -23,5 +23,23 @@
     "real_eap_tls_passed": true,
     "rollback_fault_injection_passed": true
   },
-  "rollback_source_commit": "9f537bd50c358cc2c5f88235d141920c95d7a0e4"
+  "rollback_source_commit": "9f537bd50c358cc2c5f88235d141920c95d7a0e4",
+  "previous_deployer_sha256": "6dca927d3705453dce89028c4561be83ee5bc1ed0bde24e4e58786596806f9f7",
+  "preflight_fix": {
+    "cause": "new labels route was checked against old version before patch",
+    "before_new_route_requested": false,
+    "after_new_route_required": true,
+    "phase_regression_tests": 3,
+    "rollback_checks_repeated": true,
+    "product_source_changed": false
+  },
+  "last_live_attempt": {
+    "event": "POLICY_MODAL_FAILED",
+    "evidence": "/var/lib/authwire-ui-updates/policy-modal-dev17-20261022T162458Z-f2803231",
+    "stopped_before_patch": true,
+    "installed_version": "0.14.0-dev.16",
+    "baseline_files_identical": 141,
+    "radius_pid": "679309",
+    "broker_pid": "149955"
+  }
 }

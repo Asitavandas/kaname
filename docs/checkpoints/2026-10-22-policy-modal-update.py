@@ -141,8 +141,8 @@ def measure(label):
     token = (STATE / 'access-token').read_text().strip()
     context = ssl.create_default_context(cafile='/etc/kaname-lab/web.crt')
     results = []
-    paths = ['/api/auth/session', '/api/policies/labels', '/api/state', '/api/pki/certificates?offset=0', '/api/network', '/api/services']
-    if label == 'after': paths += ['/api/audit/history', '/api/audit/history?source=administrators', '/api/radius/events']
+    paths = ['/api/auth/session', '/api/state', '/api/pki/certificates?offset=0', '/api/network', '/api/services']
+    if label == 'after': paths += ['/api/policies/labels', '/api/audit/history', '/api/audit/history?source=administrators', '/api/radius/events']
     for path in paths:
         codes, times = [], []
         for attempt in range(3):
@@ -284,7 +284,7 @@ def main():
         worker['atomic_json'](EVIDENCE / 'before.json', {'release': RELEASE, 'manifest': EXPECTED, 'snapshot': before, 'full_backup_requested': False})
         emit('POLICY_MODAL_PREFLIGHT', protected_source_scope_verified=True, radius_active=True,
              planned_radius_restart=True, full_data_backup=False, isolated_restore=False, evidence=str(EVIDENCE))
-        measure('before')
+        PHASE = 'panel_health_before'; measure('before')
         if snapshot(worker) != before: raise GuardError('PREPARATION_STATE_CHANGED')
         PHASE = 'reviewed_source_patch'
         previous = current_patch()
@@ -295,7 +295,7 @@ def main():
             after = snapshot(worker); checks = preservation(before, after, files)
             checks['planned_radius_transition'] = ((after['pids']['authwire-radius.service'] != before['pids']['authwire-radius.service']) if changed else (after['pids']['authwire-radius.service'] == before['pids']['authwire-radius.service']))
             if not all(checks.values()): raise GuardError('PATCH_PRESERVATION_FAILED')
-            measure('after')
+            PHASE = 'panel_health_after'; measure('after')
         except Exception:
             if changed:
                 rollback = dict(files); rollback.update(previous); patch_source(rollback, UPDATER)
