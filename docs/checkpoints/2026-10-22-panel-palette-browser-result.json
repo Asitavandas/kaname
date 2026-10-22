@@ -1,0 +1,12 @@
+{
+  "event": "PALETTE_BROWSER_VISUAL_VERIFIED",
+  "date": "2026-10-22",
+  "version": "0.14.0-dev.14",
+  "basis": "operator screenshot directly inspected",
+  "image": "image(20261022-093936).png",
+  "library_file_id": "libfile_105e5459b7e48191be0bcc52068a2b5b",
+  "scope": "live control center palette and visible version; no new field test or live change",
+  "palette_visible": true,
+  "text_and_controls_readable": true,
+  "operator_aesthetic_approval_claimed": false
+}
