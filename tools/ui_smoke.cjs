@@ -121,8 +121,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.waitForFunction(()=>document.querySelector('#policy-vlan').options.length===2);
     await page.locator('#policy-vlan').selectOption('120');
     const sid='S-1-5-21-100-200-300-400';
-    assert.equal(await page.locator('#policy-any-group').isChecked(),false);
-    assert.equal(await page.locator('#policy-group').isDisabled(),true);
+    assert.equal(await page.locator('#policy-selected button').count(),0);
     await page.locator('#add-policy').click();
     await page.waitForFunction(()=>document.querySelectorAll('#policy-list .policy-row').length===1);
     await navigate('simulate');
@@ -348,7 +347,8 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     const distribution=page.locator('#directory-groups-list .policy-row').filter({hasText:'Department'});
     assert.equal(await distribution.getByText('Politikada kullan',{exact:true}).count(),0);
     await page.locator('#directory-groups-list .policy-row').filter({hasText:'<script>alert(1)</script>'}).getByText('Politikada kullan',{exact:true}).click();
-    assert.equal(await page.locator('#policy-group').inputValue(),'S-1-5-21-1-2-3-1100');
+    await page.waitForFunction(()=>policySelected.has('S-1-5-21-1-2-3-1100'));
+    assert.equal(await page.locator('#policy-selected script').count(),0);
     await page.reload();
     await page.locator('#workspace').waitFor({state:'visible'});
     assert.equal(await page.locator('#fqdn').inputValue(),'kaname.kurum.example');
@@ -368,7 +368,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     if(!await page.locator('#policy-editor').evaluate(x=>x.open))await page.locator('#new-policy').click();
     await page.waitForFunction(()=>document.querySelector('#policy-vlan').options.length===3);
     await page.locator('#policy-name').fill('Conflicting VLAN');
-    await page.locator('#policy-any-group').uncheck();
+    await page.evaluate(()=>{policySelected.clear();renderPolicySelected();});
     await page.locator('#policy-vlan').selectOption('33');
     await page.locator('#add-policy').click();
     await page.locator('#conflict-alert').waitFor({state:'visible'});

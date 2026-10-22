@@ -120,7 +120,7 @@ def validate_policies(value):
             raise ValidationError("At least one EAP method is required")
         groups = array(conditions['group_sids'], lambda x: text(x, 184))
         if any(not re.fullmatch(r'S-1-[0-9]+(?:-[0-9]+)+', x) for x in groups):
-            raise ValidationError("Expected immutable AD group SID")
+            raise ValidationError("Expected immutable AD principal SID")
         action = enum(policy['action'], {'allow', 'deny'})
         vlan = policy['vlan']
         if action == 'allow':

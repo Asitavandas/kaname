@@ -146,7 +146,8 @@ class TLSAuthorization:
             if type(latest) is not CertificateBinding or latest != binding:
                 return Decision('deny', 'CERTIFICATE_BINDING_CHANGED')
             identity = VerifiedIdentity(True, True, account.enabled, account.kind == 'computer',
-                                        account.security_group_sids, access_type, nas_ip, 'EAP-TLS')
+                                        account.security_group_sids, access_type, nas_ip, 'EAP-TLS',
+                                        account_sid=account.sid)
             return evaluate(self.policies, identity)
         except DirectoryUnavailable:
             return Decision('deny', 'DIRECTORY_UNAVAILABLE')
