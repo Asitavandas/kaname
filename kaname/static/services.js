@@ -1,8 +1,8 @@
 'use strict';
 let servicesState=null,servicesLoading=false,servicesSending=false,servicesTimer=0,servicesGeneration=0,servicesPending=null;
 let radiusOverviewRequest=0,radiusOverviewLoading=false;
-const serviceNames={radius:'RADIUS',panel:'ΛuthWire paneli','crl-sync':'CRL senkronizasyonu','crl-timer':'CRL zamanlayıcısı'};
-const serviceActions={start:'Başlat',stop:'Durdur',restart:'Yeniden başlat',sync:'Şimdi senkronize et'};
+const serviceNames={system:'Sunucu',radius:'RADIUS',panel:'ΛuthWire paneli','crl-sync':'CRL senkronizasyonu','crl-timer':'CRL zamanlayıcısı'};
+const serviceActions={reboot:'Yeniden başlat',poweroff:'Kapat',start:'Başlat',stop:'Durdur',restart:'Yeniden başlat',sync:'Şimdi senkronize et'};
 const serviceHealth={running:'Çalışıyor',idle:'Bekliyor · Son çalışma başarılı',inactive:'Durduruldu',failed:'Hata','not-installed':'Kurulu değil','listener-missing':'UDP dinleyicisi bulunamadı',activating:'Başlatılıyor',deactivating:'Durduruluyor',unknown:'Bilinmiyor'};
 const serviceErrors={SERVICE_CONTROL_UNAVAILABLE:'Servis yönetim bağlantısı kullanılamıyor. Kurulum veya yardımcı servis durumunu kontrol edin.',SERVICE_BUSY:'Başka bir servis işlemi devam ediyor.',RADIUS_NOT_RUNNING:'RADIUS durdurulmuş. CRL senkronizasyonu RADIUS’u başlatmaz.',SERVICE_COMMAND_FAILED:'Servis komutu tamamlanamadı.',SERVICE_VERIFICATION_FAILED:'Servisin beklenen duruma geldiği doğrulanamadı.',BOOT_SETTING_CHANGED:'Servisin açılış ayarı değişmiş; kontrol gerekli.',AUDIT_UNAVAILABLE:'Servis işlem kaydı yazılamadı.',OUTCOME_UNKNOWN:'Yönetim servisi yeniden başlamış. İşlem sonucu bilinmiyor; güncel durumu kontrol edin.'};
 function resetServices(){servicesGeneration++;radiusOverviewRequest++;radiusOverviewLoading=false;renderRadiusOverview(null);clearTimeout(servicesTimer);servicesState=null;servicesPending=null;servicesLoading=false;servicesSending=false;const dialog=document.getElementById('services-confirm');if(dialog?.open)dialog.close('cancel');for(const id of ['services-list','services-operations','services-selection'])document.getElementById(id)?.replaceChildren();if(document.getElementById('services-feedback'))document.getElementById('services-feedback').textContent='';}
@@ -53,7 +53,7 @@ function renderServices(){
   }
   if([...select.options].some(o=>o.value===previous))select.value=previous;
   for(const op of servicesState?.operations||[]){
-    const line=serviceText('p',(serviceNames[op.service]||op.service)+' · '+(serviceActions[op.action]||op.action)+' · '+({queued:'Sırada',running:'Devam ediyor',succeeded:'Başarılı',failed:'Başarısız',interrupted:'Sonuç bilinmiyor'}[op.state]||op.state)+' · '+op.actor+' · '+new Date(op.created_at).toLocaleString('tr-TR'));
+    const line=serviceText('p',(serviceNames[op.service]||op.service)+' · '+(serviceActions[op.action]||op.action)+' · '+({scheduled:'Sistem işlemi planlandı','boot-observed':'Yeni sistem açılışı gözlendi',queued:'Sırada',running:'Devam ediyor',succeeded:'Başarılı',failed:'Başarısız',interrupted:'Sonuç bilinmiyor'}[op.state]||op.state)+' · '+op.actor+' · '+new Date(op.created_at).toLocaleString('tr-TR'));
     if(op.error)line.append(serviceText('small',serviceErrors[op.error]||'İşlem tamamlanamadı.'));$('services-operations').append(line);
   }
   if(!servicesState?.operations.length)$('services-operations').append(serviceText('p','Henüz kayıtlı servis işlemi yok.'));

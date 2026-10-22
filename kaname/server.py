@@ -467,6 +467,9 @@ class Handler(BaseHTTPRequestHandler):
             except sqlite3.Error as error: self.store_error(error)
         elif self.path == '/api/audit' and self.guard(resource='audit.events'):
             self.respond(200, {'events': self.server.store.audit()})
+        elif self.path == '/api/system/power' and self.guard(resource='system.power'):
+            try:self.respond(200,self.server.services.power_status())
+            except ServiceError as error:self.respond(503,{'error':error.code})
         elif self.path == '/api/network/devices' and self.guard(resource='network.devices'):
             self.respond(200, self.server.planning.devices())
         elif self.path == '/api/policies/labels' and self.guard(resource='policies.rules'):
@@ -554,10 +557,28 @@ class Handler(BaseHTTPRequestHandler):
             except LookupError: self.respond(404, {'error': 'CATALOG_OBJECT_NOT_FOUND'})
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
             except sqlite3.Error as error: self.store_error(error)
-        elif urlsplit(self.path).path not in {'/api/radius/events', '/api/services', '/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/audit/history', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/policies/labels', '/api/directory/settings'}:
+        elif urlsplit(self.path).path not in {'/api/radius/events', '/api/services', '/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/audit/history', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/policies/labels', '/api/system/power', '/api/directory/settings'}:
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
+        if self.path == '/api/system/power/action':
+            if not self.guard(write=True,resource='system.power'):return
+            if self.actor['maintenance']:
+                self.respond(403,{'error':'SERVICES_SESSION_REQUIRED'});return
+            try:
+                from .services import validate_power
+                value=self.read_body();validate_power(value)
+                with self.server.store.connect() as db:
+                    revision=db.execute('SELECT revision FROM state WHERE id=1').fetchone()[0]
+                    event='system_power_requested:'+json.dumps({'request_id':value['request_id'],'action':value['action'],'actor':self.actor['username']},ensure_ascii=True,separators=(',',':'))
+                    db.execute('INSERT INTO audit(event,revision) VALUES (?,?)',(event,revision))
+                self.respond(202,self.server.services.power_action(value,self.actor))
+            except ServiceError as error:
+                status=409 if error.code in {'SERVICE_BUSY','REQUEST_ID_CONFLICT','MAINTENANCE_BUSY'} else 400 if error.code in {'INVALID_INPUT','CONFIRMATION_REQUIRED','ACTION_NOT_ALLOWED'} else 503
+                self.respond(status,{'error':error.code})
+            except (AdminError,ValidationError,ValueError,TypeError,KeyError):self.respond(400,{'error':'INVALID_INPUT'})
+            except sqlite3.Error as error:self.store_error(error)
+            return
         if self.path == '/api/services/action':
             if not self.guard(write=True,resource='system.services'):return
             if self.actor['maintenance']:

@@ -38,7 +38,7 @@ s.serve_forever()`;
   async function clickToggle(id,enabled){await selectRow(id);await toggle(id).click();await page.waitForFunction(({id,enabled})=>!policySaving&&state.policies.find(p=>p.id===id)?.enabled===enabled,{id,enabled});}
   async function decision(access_type){return page.evaluate(async access_type=>(await api('/api/simulate',{authenticated:true,directory_available:true,account_enabled:true,domain_device:true,group_sids:['S-1-5-21-10-20-30-40'],access_type,nas_ip:access_type==='wired'?'192.0.2.2':'192.0.2.52',eap_method:'EAP-TLS'})).decision,access_type);}
   await login(page);await policiesView();
-  assert.match(await page.locator('#panel-version').textContent(),/0\.14\.0-dev\.17/);
+  assert.match(await page.locator('#panel-version').textContent(),/0\.14\.0-dev\.18/);
   const original=await snapshot();assert.equal((await decision('wireless')).vlan,140);
   assert.deepEqual(await page.locator('#policy-list th').allTextContents(),['Kural Adı','Erişim Türü','Kullanıcı/Grup','VLAN','Karar','Durum']);
   const toolbar=await page.locator('.policy-toolbar').boundingBox(),create=await page.locator('#new-policy').boundingBox(),search=await page.locator('#policy-query').boundingBox();
@@ -46,7 +46,7 @@ s.serve_forever()`;
   assert.ok(search.width<=340&&search.width<toolbar.width*.6,'Search stays compact on desktop');
   assert.equal(await page.locator('.policy-action-row:visible').count(),0);
   await selectRow('wireless');
-  assert.deepEqual(await row('wireless').locator('.policy-action-row button').allTextContents(),['Düzenle','Devre dışı bırak']);
+  assert.deepEqual(await row('wireless').locator('.policy-action-row button').allTextContents(),['Düzenle','Devre dışı bırak','Sil']);
   assert.equal(await row('wireless').locator('.policy-summary').evaluate(el=>el.nextElementSibling.classList.contains('policy-action-row')),true);
   await selectRow('wired');assert.equal(await row('wireless').locator('.policy-action-row').isHidden(),true);assert.equal(await page.locator('.policy-action-row:visible').count(),1);
   await row('wired').locator('.policy-summary').focus();await page.keyboard.press('Escape');assert.equal(await page.locator('.policy-action-row:visible').count(),0);
@@ -114,6 +114,10 @@ s.serve_forever()`;
   await page.route('**/api/policies',r=>r.fulfill({status:503,json:{error:'STORE_BUSY'}}));await page.locator('#add-policy').click();await page.waitForFunction(()=>!policySaving&&document.getElementById('policy-form-error').textContent.length>0);assert.equal(await page.locator('#policy-editor').isVisible(),true);assert.equal(await page.locator('#policy-selected button').count(),2);await page.unroute('**/api/policies');await page.locator('#cancel-policy').click();
   await page.locator('#new-policy').click();await page.locator('#policy-editor').waitFor({state:'visible'});await page.locator('#policy-kind').selectOption('group');await page.locator('#policy-target-results input').first().waitFor();await page.locator('#policy-target-results input').first().check();await page.locator('#policy-picker-done').click();assert.equal(await page.locator('#policy-selected button').count(),1);await page.keyboard.press('Escape');assert.equal(await page.locator('#policy-editor').isHidden(),true);
   assert.deepEqual((await snapshot()).policies.find(p=>p.id===added.id),added);
+  // Delete is confirmed, revision-bound, and never erases a concurrent edit.
+  await selectRow(added.id);await row(added.id).getByRole('button',{name:'Sil',exact:true}).click();assert.match(await page.locator('#delete-policy-description').textContent(),/Selected computers/);const beforeCancel=writes;await page.locator('#delete-policy-confirm button[value="cancel"]').click();assert.equal(writes,beforeCancel);assert.ok((await snapshot()).policies.some(p=>p.id===added.id));
+  await row(added.id).getByRole('button',{name:'Sil',exact:true}).click();const concurrent=await snapshot();concurrent.policies.find(p=>p.id==='wired').name='Newer rule name';await save(concurrent);await page.locator('#delete-policy-submit').click();await page.waitForFunction(()=>!policySaving&&state.policies.find(p=>p.id==='wired').name==='Newer rule name');assert.ok((await snapshot()).policies.some(p=>p.id===added.id));
+  const beforeDelete=await snapshot();await selectRow(added.id);await row(added.id).getByRole('button',{name:'Sil',exact:true}).click();await page.locator('#delete-policy-submit').click();await page.waitForFunction(()=>!policySaving&&!state.policies.some(p=>p.name==='Selected computers'));assert.deepEqual((await snapshot()).policies,beforeDelete.policies.filter(p=>p.id!==added.id));
   for(const width of [390,1366,1920]){await page.setViewportSize({width,height:1050});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
   if(process.env.KANAME_UI_ARTIFACTS){fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'policy-toggle.png'),fullPage:true,animations:'disabled'});}
   assert.deepEqual(errors,[]);console.log('Policy UI: aligned columns, compact search, row menus, keyboard selection, read-only filtering, new-rule button, persistence, preserved VLAN/selectors, disabled evaluation, editing, single POST, failures, stale revision, activation conflict, RBAC, CSRF and responsive layout passed.');
