@@ -1,0 +1,26 @@
+{
+  "event": "ACCOUNT_MENU_DELIVERY",
+  "version": "0.14.0-dev.18",
+  "source_commit": "21ea9b2e994b95fae9f38e0099ec29f8bf18f644",
+  "merge_commit": "675c1645510f02c791b86cd49ce3f14577f534ca",
+  "manifest_sha256": "0ea4273dc028458b415bd2ff97cb6e10da3db4dc175a2a16736525fce0df6593",
+  "source_files": 143,
+  "deployer_sha256": "86781cb73c2c936d01b808a5176d013b9e25be4d93a323a1a25bd77f69d7866a",
+  "root_install_executed": false,
+  "planned_broker_restart": true,
+  "planned_radius_restart": false,
+  "power_actions_executed": false,
+  "full_data_backup": false,
+  "operator_browser_acceptance_pending": true,
+  "host_power_execution_acceptance_pending": true,
+  "previous_dev17_browser_accepted": true,
+  "tests": {
+    "foundation_ran": 576,
+    "foundation_skipped": 25,
+    "browser_flows": 9,
+    "all_ci_checks_passed": true,
+    "hardened_power_timer_marker_probe": true,
+    "host_reboot_or_poweroff_tested": false,
+    "rollback_and_phase_checks": true
+  }
+}
