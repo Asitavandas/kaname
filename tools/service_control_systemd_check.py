@@ -87,7 +87,12 @@ def main():
         launcher.write_text("import importlib.util,os\nfrom pathlib import Path\n"
             +"s=importlib.util.spec_from_file_location('fixture_broker',"+repr(str(folder/'broker.py'))+");m=importlib.util.module_from_spec(s);s.loader.exec_module(m)\n"
             +"m.UNITS="+repr(mapping)+"\n"
-            +"c=m.Controller(Path("+repr(str(folder/'sandbox-operations.json'))+"),update_lock=Path("+repr(str(lock))+"),runtime_site=Path("+repr(str(site))+"))\n"
+            +"def fixture_runner(args,timeout=5):\n"
+            +" if args[0]=='/usr/bin/systemd-run':\n"
+            +"  assert args[-3:]==['/usr/bin/systemctl','--no-block','reboot']\n"
+            +"  args=args[:-3]+['/usr/bin/touch',"+repr(str(folder/'power-fixture-marker'))+"]\n"
+            +" return m.execute(args,timeout=timeout)\n"
+            +"c=m.Controller(Path("+repr(str(folder/'sandbox-operations.json'))+"),runner=fixture_runner,update_lock=Path("+repr(str(lock))+"),runtime_site=Path("+repr(str(site))+"))\n"
             +"with m.Server(Path("+repr(str(folder/'sandbox.sock'))+"),c,"+str(uid)+") as server:\n os.chmod("+repr(str(folder/'sandbox.sock'))+",0o660)\n server.serve_forever()\n")
         sandbox_name=tag+'-broker.service';sandbox_unit=root/sandbox_name;paths.append(sandbox_unit)
         text=unit_text().replace('Group=kaname-lab','Group='+grp.getgrgid(user.pw_gid).gr_name)
@@ -110,12 +115,27 @@ def main():
             if outcome['state'] not in {'queued','running'}:break
             time.sleep(.2)
         assert outcome['state']=='succeeded',outcome
+        # Exercise the actual hardened broker -> transient timer path. The
+        # launcher's fixed runner replaces the power command with touch, so
+        # this fixture cannot reboot or power off the CI host.
+        power_id=str(uuid.uuid4())
+        value={'kind':'power-action','action':'reboot','request_id':power_id,'actor':'fixture-operator'}
+        with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as client:
+            client.settimeout(10);client.connect(str(folder/'sandbox.sock'));client.sendall(json.dumps(value).encode()+b'\n')
+            with client.makefile('rb') as f:power=json.loads(f.readline(262145))
+        assert power['ok'],power
+        deadline=time.monotonic()+20
+        while not (folder/'power-fixture-marker').exists() and time.monotonic()<deadline:time.sleep(.2)
+        assert (folder/'power-fixture-marker').is_file(),'Hardened broker could not schedule the harmless timer'
+        subprocess.run(['systemctl','stop','authwire-power-'+power_id+'.timer','authwire-power-'+power_id+'.service'],capture_output=True,timeout=10)
         command('systemctl','stop',sandbox_name)
         shutil.rmtree(Path('/var/lib')/folder.name)
         print(json.dumps({'service_control_systemd_fixture':'passed','real_systemd_start_stop_restart':True,
                           'radius_udp_listener_verified':True,'boot_setting_preserved':True,
                           'nonroot_socket_query':True,'duplicate_restart_not_replayed':True,
-                          'panel_self_stop_rejected':True,'hardened_broker_unit_verified':True,'customer_units_used':False}))
+                          'panel_self_stop_rejected':True,'hardened_broker_unit_verified':True,
+                          'host_power_timer_sandbox_verified':True,'power_command_substituted_with_fixture_marker':True,
+                          'host_reboot_or_poweroff_executed':False,'customer_units_used':False}))
     finally:
         if server:server.shutdown();server.server_close()
         if thread:thread.join(timeout=5)
