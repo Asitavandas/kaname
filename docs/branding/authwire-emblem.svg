@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="86.0 88.243540932 797.953113925 493.51291813600005" width="1200" height="742"><defs>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8E6C2D" /><stop offset=".23" stop-color="#C6A15B" /><stop offset=".46" stop-color="#E1C587" /><stop offset=".62" stop-color="#C6A15B" /><stop offset="1" stop-color="#98743B" /></linearGradient>
+<linearGradient id="anthracite" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#191B1E" /><stop offset=".28" stop-color="#25272B" /><stop offset=".48" stop-color="#575B61" /><stop offset=".64" stop-color="#34373B" /><stop offset="1" stop-color="#202225" /></linearGradient>
+<linearGradient id="gold-text" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#B28B45" /><stop offset=".5" stop-color="#D4B16D" /><stop offset="1" stop-color="#B28B45" /></linearGradient>
+</defs>
+<g id="monogram"><polygon id="blade-1" points="94,473.301047121 238.738815766,96.243540932 238.738815766,196.698952879 94,573.756459068" fill="url(#gold)" />
+<polygon id="blade-2" points="266.738815766,96.243540932 411.477631532,473.301047121 411.477631532,573.756459068 266.738815766,196.698952879" fill="url(#gold)" />
+<polygon id="blade-3" points="439.477631532,473.301047121 557.345964845,166.243540932 557.345964845,266.698952879 439.477631532,573.756459068" fill="url(#anthracite)" />
+<polygon id="blade-4" points="585.345964845,166.243540932 703.214298159,473.301047121 703.214298159,573.756459068 585.345964845,266.698952879" fill="url(#anthracite)" />
+<polygon id="blade-5" points="731.214298159,473.301047121 875.953113925,96.243540932 875.953113925,196.698952879 731.214298159,573.756459068" fill="url(#anthracite)" /></g>
+</svg>

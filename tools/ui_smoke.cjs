@@ -30,14 +30,26 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     page.on('response',async response=>{if(response.status()>=400&&new URL(response.url()).pathname.startsWith('/api/')){let code='';try{code=(await response.json()).error;}catch(_){}console.log('KANAME_UI_HTTP '+new URL(response.url()).pathname+' '+response.status()+' '+code);}});
     async function navigate(view){console.log('KANAME_UI_STAGE '+view);await page.locator('[data-view="'+view+'"] ').click();}
     await page.goto(`http://127.0.0.1:${port}`);
+    if(process.env.KANAME_UI_ARTIFACTS){
+      fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});
+      await page.locator('#login-user').waitFor({state:'visible'});
+      await page.waitForFunction(()=>document.querySelector('.login-logo').complete);
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'login-branding.png'),fullPage:true,animations:'disabled'});
+    }
     await page.locator('#login-user').fill('admin');
     await page.locator('#login-password').fill('Kaname');
     await page.locator('#unlock').click();
     await page.locator('#workspace').waitFor({state:'visible'});
-    assert.equal(await page.title(),'AuthWire • Kontrol merkezi');
-    assert.match(await page.locator('.brand').textContent(),/AuthWire/);
+    assert.equal(await page.title(),'ΛuthWire • Kontrol merkezi');
+    assert.match(await page.locator('.brand').textContent(),/ΛuthWire/);
     assert.equal(await page.evaluate(()=>document.body.innerText.includes('KANAME')),false);
     await page.waitForFunction(()=>[...document.querySelectorAll('img[src="/authwire-logo.png"]')].every(img=>img.complete&&img.naturalWidth>0));
+    const brand=await page.locator('.brand').boundingBox();
+    const wordmark=await page.locator('.brand-wordmark').boundingBox();
+    assert.ok(wordmark.x+wordmark.width<=brand.x+brand.width,'Wordmark must fit sidebar brand area');
+    const emblem=await page.locator('.logo img').evaluate(img=>({ratio:img.naturalWidth/img.naturalHeight,fit:getComputedStyle(img).objectFit}));
+    assert.ok(emblem.ratio>1.6&&emblem.ratio<1.7,'Approved wide emblem must retain its proportions');
+    assert.equal(emblem.fit,'contain');
     const logoResponse=await page.request.get(new URL('/authwire-logo.png',page.url()).href);
     assert.equal(logoResponse.status(),200);
     assert.match(logoResponse.headers()['content-type'],/image\/png/);
@@ -80,6 +92,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-palette-mobile.png'),fullPage:true,animations:'disabled'});
       await page.locator('#nav-toggle').click();
       assert.equal(await page.locator('#nav-toggle').getAttribute('aria-expanded'),'true');
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'branding-mobile-menu.png'),fullPage:true,animations:'disabled'});
       await page.locator('[data-view="directory"]').click();
       assert.equal(await page.locator('#nav-toggle').getAttribute('aria-expanded'),'false');
       await page.locator('#nav-toggle').click();await page.keyboard.press('Escape');
