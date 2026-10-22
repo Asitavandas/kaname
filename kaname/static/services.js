@@ -16,6 +16,7 @@ function renderRadiusOverview(value){
   badge.dataset.status=radius?.health==='running'?'ready':['failed','listener-missing'].includes(radius?.health)?'error':'pending';
   if(radius){const time=Date.parse(value.checked_at);detail.textContent=(radius.listener_present===true?'UDP dinleyicisi doğrulandı. ':'')+'Son kontrol: '+(Number.isFinite(time)?new Date(time).toLocaleString('tr-TR'):'Zaman bilgisi yok')+'. Bu gösterge servis durumudur.';}
   else detail.textContent='Servis bilgisi alınamadı. Servisler ekranından durumu kontrol edebilirsiniz.';
+  if(typeof renderDashboardBackup==='function')renderDashboardBackup(value?.backup);
   radiusOverviewPermissions();
 }
 async function loadRadiusOverview(){

@@ -29,6 +29,38 @@ PROPERTIES = ('Id','LoadState','ActiveState','SubState','UnitFileState','MainPID
 def now():
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
+BACKUP_STATUS_ROOT = Path('/var/backups/authwire/scheduled')
+
+
+def backup_status():
+    """Fixed root-owned metadata only; no archive content, caller paths or commands."""
+    result = {'available': False}
+    try:
+        for directory in (BACKUP_STATUS_ROOT, *BACKUP_STATUS_ROOT.parents):
+            info = directory.lstat()
+            if not stat.S_ISDIR(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o022: return result
+        values = {}
+        for name in ('last-run.json', 'last-success.json'):
+            fd = os.open(BACKUP_STATUS_ROOT / name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+            with os.fdopen(fd, 'rb') as stream:
+                info = os.fstat(stream.fileno())
+                if not stat.S_ISREG(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o022 or info.st_size > 8192: return result
+                value = json.loads(stream.read(8193))
+            if type(value) is not dict or value.get('producer') != 'authwire-scheduled-backup-v1': return result
+            values[name] = value
+        last, success = values['last-run.json'], values['last-success.json']
+        created = success.get('created_utc')
+        moment = datetime.datetime.fromisoformat(created)
+        if moment.utcoffset() is None or success.get('event') != 'BACKUP_SUCCESS': return result
+        if last.get('event') not in {'BACKUP_SUCCESS', 'BACKUP_FAILED'}: return result
+        return {'available': True, 'last_success_at': moment.astimezone(datetime.timezone.utc).isoformat(),
+                'last_run_succeeded': last['event'] == 'BACKUP_SUCCESS',
+                'archive_read_verified': success.get('archive_read_verified') is True,
+                'sqlite_integrity_verified': success.get('sqlite_integrity_verified') is True,
+                'off_host_copy_verified': False, 'full_boot_restore_verified': False}
+    except (OSError, ValueError, TypeError, OverflowError): return result
+
+
 class ControlError(Exception):
     def __init__(self, code):
         self.code = code
@@ -186,7 +218,7 @@ class Controller:
                 self.cached=rows; self.cached_at=time.monotonic()
             rows=self.cached
         with self.lock:
-            return {'available':True,'checked_at':now(),'services':rows,
+            return {'available':True,'checked_at':now(),'services':rows,'backup':backup_status(),
                     'busy':self.busy or self.pending_power(),'operations':list(reversed(self.jobs[-20:]))}
 
     def pending_power(self):

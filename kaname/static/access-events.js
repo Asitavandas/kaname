@@ -1,4 +1,5 @@
 'use strict';
+let accessDashboardRange=null;
 let accessPage=null,accessLoadedKey='',accessLoading=false,accessRequest=0;
 const accessReasons={POLICY_ALLOW:'Policy izin verdi',POLICY_DENY:'Policy reddetti',POLICY_CONFLICT:'Policy çakışması',NO_MATCHING_POLICY:'Eşleşen policy yok',ACCOUNT_DISABLED:'AD hesabı devre dışı',ACCOUNT_NOT_FOUND:'AD hesabı bulunamadı',DIRECTORY_UNAVAILABLE:'AD bilgisi alınamadı',DOMAIN_DEVICE_REQUIRED:'Domain bilgisayarı gerekiyor',CERTIFICATE_UNBOUND:'Sertifika kayıtlı kimliğe bağlı değil',CERTIFICATE_INACTIVE:'Sertifika kaydı etkin değil',CERTIFICATE_BINDING_CHANGED:'Sertifika kaydı değişti',TLS_CERTIFICATE_REVOKED:'İptal edilmiş sertifika',TLS_CERTIFICATE_EXPIRED:'Sertifikanın süresi dolmuş',TLS_CERTIFICATE_UNTRUSTED:'Sertifika zincirine güvenilmiyor',TLS_CERTIFICATE_PURPOSE:'Sertifika kullanım amacı uygun değil',TLS_CERTIFICATE_VERIFY_FAILED:'Sertifika doğrulanamadı',NON_EAP_REQUEST:'EAP içermeyen istek',NATIVE_ACCESS_ACCEPT:'Sunucu kabul yanıtı seçti',NATIVE_ACCESS_REJECT:'Sunucu ret yanıtı seçti; ayrıntı belirlenemedi',NATIVE_REJECT_AFTER_POLICY_ALLOW:'Policy izninden sonra EAP/TLS reddi'};
 function accessFilters(){
@@ -7,11 +8,12 @@ function accessFilters(){
   if(start)q.from=new Date(start+'T00:00:00').toISOString();
   if(end){const d=new Date(end+'T00:00:00');d.setDate(d.getDate()+1);q.to=d.toISOString();}
   if(q.from&&q.to&&q.from>=q.to)throw new Error('Başlangıç tarihi bitiş tarihinden sonra olamaz.');
+  if(accessDashboardRange)Object.assign(q,accessDashboardRange);
   return q;
 }
 function accessKey(){try{return JSON.stringify(accessFilters());}catch(_){return '';}}
 function accessControls(){const fresh=!!accessPage&&accessLoadedKey===accessKey(),allowed=can('audit.events');for(const id of ['access-apply','access-reset'])$(id).disabled=!allowed||accessLoading;$('access-next').disabled=!allowed||accessLoading||!fresh||!accessPage?.has_more;$('access-export').disabled=!allowed||accessLoading||!fresh||!accessPage?.events.length;}
-function resetAccessEvents(){accessRequest++;accessPage=null;accessLoadedKey='';accessLoading=false;$('access-filters').reset();for(const id of ['access-list','access-feedback','access-storage','access-observer'])$(id).replaceChildren();accessControls();}
+function resetAccessEvents(){accessDashboardRange=null;accessRequest++;accessPage=null;accessLoadedKey='';accessLoading=false;$('access-filters').reset();for(const id of ['access-list','access-feedback','access-storage','access-observer'])$(id).replaceChildren();accessControls();}
 function accessPermissions(){if(!can('audit.events')&&accessPage)resetAccessEvents();accessControls();}
 function renderAccessEvents(){
   const parent=$('access-list');parent.replaceChildren();
@@ -54,6 +56,6 @@ function exportAccessEvents(){
 function openAccessEvents(id){if(id==='access-events')run(()=>loadAccessEvents());}
 document.getElementById('access-filters').addEventListener('submit',e=>{e.preventDefault();run(()=>loadAccessEvents());});
 document.getElementById('access-next').addEventListener('click',()=>run(()=>loadAccessEvents({next:true})));
-document.getElementById('access-reset').addEventListener('click',()=>{if(accessLoading)return;$('access-filters').reset();run(()=>loadAccessEvents());});
+document.getElementById('access-reset').addEventListener('click',()=>{if(accessLoading)return;accessDashboardRange=null;$('access-filters').reset();run(()=>loadAccessEvents());});
 document.getElementById('access-export').addEventListener('click',exportAccessEvents);
-for(const id of ['access-from','access-to','access-result','access-nas','access-reason','access-query'])document.getElementById(id).addEventListener('input',()=>{$('access-feedback').textContent='Filtreler değişti. Uygula ile yeniden arayın.';accessControls();});
+for(const id of ['access-from','access-to','access-result','access-nas','access-reason','access-query'])document.getElementById(id).addEventListener('input',()=>{accessDashboardRange=null;$('access-feedback').textContent='Filtreler değişti. Uygula ile yeniden arayın.';accessControls();});
