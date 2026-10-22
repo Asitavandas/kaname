@@ -1,0 +1,27 @@
+{
+  "event": "POLICY_MODAL_DELIVERY",
+  "version": "0.14.0-dev.17",
+  "source_commit": "8f2a3971d00c849fc8fdee168250d7da1e763a41",
+  "merge_commit": "a6864a11e4aabdf3db505d4e655fa58f42397d5e",
+  "source_files": 142,
+  "manifest_sha256": "5ca12d3077b7303da00f49039837a9e16d3e8697e5548d9461bc14e0957c344b",
+  "deployer_sha256": "6dca927d3705453dce89028c4561be83ee5bc1ed0bde24e4e58786596806f9f7",
+  "stage": "/home/segmentiq/authwire-stage-dev17-8f2a3971d00c",
+  "full_data_backup": false,
+  "planned_radius_restart": true,
+  "live_install_executed": false,
+  "operator_browser_acceptance_pending": true,
+  "real_endpoint_acceptance_pending": true,
+  "known_windows_retry_fixture_failure": true,
+  "tests": {
+    "foundation": {
+      "ran": 562,
+      "skipped": 25,
+      "passed": true
+    },
+    "browser_flows": 9,
+    "real_eap_tls_passed": true,
+    "rollback_fault_injection_passed": true
+  },
+  "rollback_source_commit": "9f537bd50c358cc2c5f88235d141920c95d7a0e4"
+}

@@ -16,6 +16,21 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.17 kural modalı, sağ kimlik paneli ve Durum sütunu — kaynak/test tamam; canlı kurulum bekliyor (22 Ekim 2026)
+
+- 🔴✓ Karar sağında Durum sütunu; etkinlik rozeti Kural Adı hücresinden kaldırıldı. Altı başlık ve satır hücreleri hizalı.
+- 🔴✓ Yeni Kural ve Düzenle altı alanlı modal açar: Kural Adı, Erişim Türü, Kullanıcı/Grup, VLAN, Karar, Etkin/Devre Dışı. Ortadaki TAMAM yalnız başarılı kayıt sonrasında kapatır; tek POST, revizyon/CSRF/RBAC korunur. Hata formu ve seçimleri korur.
+- 🔴✓ Sağdan kayan, ana modalın bir kısmını görünür bırakan kimlik paneli: bilgisayar/kullanıcı/grup listesi, arama, 100 kayıtlık sayfalar, çoklu seçim, aramada seçimleri koruma. İç TAMAM forma aktarır; ×/Escape panelin kaydedilmeyen seçimlerini iptal eder. Dış ×/Escape kuralı kaydetmez.
+- 🔴✓ Gelişmiş taslak arayüzü kaldırıldı. Kaydedilmiş eski taslaklar ve API'leri silinmedi; envanter arayüzü korunuyor.
+- 🔴✓ Seçilen doğrudan hesap SID'si yalnız sertifika kaydıyla eşleşen ve canlı AD'den tekrar okunan account.sid ile değerlendirilir. Mevcut grup eşleşmesi, iptal/kapalı hesap/AD erişimi ve NAS/EAP sınırları korunur. Simülasyon endpoint'i account_sid kabul etmez. **Kullanıcı kimlik doğrulaması ve kullanıcı+bilgisayar yol haritası tamamlandı sayılmaz**; makine EAP-TLS oturumu oturum açan kullanıcıya ait kanıt değildir. Yeni kullanıcı kapsamlı kurallar kullanıcı kimlik doğrulaması gerektirir; mevcut kural kısıtları düzenlemede korunur.
+- 🔴✓ PR47 birleştirildi: a6864a11e4aabdf3db505d4e655fa58f42397d5e. Test edilen kaynak8f2a3971d00c849fc8fdee168250d7da1e763a41; 142 paket dosyası Git blob'larıyla karşılaştırıldı, fark yok. Sürüm0.14.0-dev.17.
+- 🔴✓ Foundation562 test/25 ortam atlaması; 9 tarayıcı akışı; Linux LDAP/systemd58 test ve gerçek kurulum kontrolleri; native Kerberos/Windows istemci; normal+debug gerçek EAP-TLS ve35 runtime testi geçti. Tarayıcı artefaktı12439733775, run39811987895, SHA256 20896cb2c54ca21f29b6a70a3c84e8ef5834c08717c95c495a45e65e8f756d96. Masaüstü tablo, modal ve kayan panel görsel olarak incelendi.
+- **Açık test bulgusu:** Windows retry fixture'ındaki önceden takip edilen deadline_rearmed / automatic recovery did not finish hatası bu turda da tekrarlandı (job119940410459 ve119941861158). Windows istemci/installer/GPO kaynakları değişmedi. Hata bu UI çalışmasında çözülmüş veya Windows retry kabulü yeniden tamamlanmış sayılmıyor. B04 kilitlenme bulgusu da ayrı açık kalır.
+- 🔴✓ Küçük root güncellemesinde yazma, servis start ve HTTPS sağlık hatalarından kaynak geri alma ile idempotans disposable ortamda doğrulandı. Tam veri yedeği/izole restore çalıştırılmıyor; mevcut günlük yedek timer'ı korunacak. Bu tur yedek veya restore tamamlandı iddiası yok.
+- Sunucuda hazırlanan kaynak /home/segmentiq/authwire-stage-dev17-8f2a3971d00c; manifest SHA256 5ca12d3077b7303da00f49039837a9e16d3e8697e5548d9461bc14e0957c344b. Root dosya /home/segmentiq/authwire-policy-modal-20261022.py; SHA256 6dca927d3705453dce89028c4561be83ee5bc1ed0bde24e4e58786596806f9f7.
+- **Bekliyor:** operatörün tek sudo komutuyla canlı kurulumu; öncesi/sonrası koruma çıktısı; panelde modal/kayan panel kabulü; VV06 yeniden bağlantı kabulü. Doğrudan principal desteği için kurulum **bir kontrollü RADIUS yeniden başlatması** yapar; RADIUS PID korunacak denmiyor. Broker, unit/native modül, Windows kaynakları, mevcut policy/VLAN ve sertifikalar korunacak. Bu kayıtta canlı servis henüz durdurulmadı/yeniden başlatılmadı; son doğrulanmış canlı sürümdev.16.
+- Kaynak geri alma referansı9f537bd50c358cc2c5f88235d141920c95d7a0e4 ve önceki dev16 hazırlık dizini korunuyor. Çalışma yüzdesi bu UI isteğiyle yeniden hesaplanmadı; kapsam dışı DNS ve bekleyen ana roadmap işleri aynen duruyor.
+
 ## 🔴✓ dev.16 erişim kuralları tablosu canlı kurulum ve koruma kabulü tamam — 22 Ekim 2026; operatör görünüm kabulü bekliyor
 
 - Operatör POLICY_TABLE_UI_FINISHED/verified=true/version0.14.0-dev.16 çıktısını iletti. Küçük UI kaynak yaması canlı sunucuda başarıyla uygulandı. Kanıt dizini `/var/lib/authwire-ui-updates/policy-table-dev16-20261022T151018Z-1d8c260e`; kabul operatörün gerçek çıktısına dayanır. Bu kayıt turunda ek canlı işlem yapılmadı.
