@@ -44,7 +44,18 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     const healthResponse=await page.request.get(new URL('/healthz',page.url()).href);assert.equal((await healthResponse.json()).product,'AuthWire');
 
     const colors=await page.evaluate(()=>({background:getComputedStyle(document.body).backgroundColor,sidebar:getComputedStyle(document.querySelector('aside')).backgroundColor,nav:getComputedStyle(document.querySelector('[data-view="overview"]')).color}));
-    assert.deepEqual(colors,{background:'rgb(245, 239, 235)',sidebar:'rgb(43, 43, 43)',nav:'rgb(242, 222, 212)'});
+    assert.deepEqual(colors,{background:'rgb(243, 234, 216)',sidebar:'rgb(243, 234, 216)',nav:'rgb(44, 44, 44)'});
+    // Check real rendered text/background pairs, including the deliberately dark CTA text.
+    const contrastPairs=await page.evaluate(()=>{
+      function ratio(foreground,background){
+        const luminance=value=>value.match(/[\d.]+/g).slice(0,3).map(Number).map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((v,c,i)=>v+c*[.2126,.7152,.0722][i],0);
+        const a=luminance(foreground),b=luminance(background);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+      }
+      return ['body','nav button.selected','.welcome-primary','.stats>div:first-child','.stats>div:nth-child(2)','.stats>div:nth-child(4)'].map(selector=>{
+        const style=getComputedStyle(document.querySelector(selector));return {selector,ratio:ratio(style.color,style.backgroundColor)};
+      });
+    });
+    for(const pair of contrastPairs)assert.ok(pair.ratio>=4.5,`${pair.selector} text contrast ${pair.ratio} must be at least 4.5:1`);
     assert.match(await page.locator('#overview-directory-health').textContent(),/Bekliyor/);
     assert.match(await page.locator('#overview-authority-health').textContent(),/Bekliyor/);
     for(const width of [1366,1920]){
@@ -66,6 +77,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-empty.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:390,height:844});
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
+      await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-palette-mobile.png'),fullPage:true,animations:'disabled'});
       await page.locator('#nav-toggle').click();
       assert.equal(await page.locator('#nav-toggle').getAttribute('aria-expanded'),'true');
       await page.locator('[data-view="directory"]').click();
