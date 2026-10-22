@@ -1,0 +1,96 @@
+{
+  "event": "DASHBOARD_DELIVERY",
+  "version": "0.14.0-dev.19",
+  "source_commit": "ae79998d7ff1afd6777e81cc05bca5a5e389ce2e",
+  "pr": 49,
+  "manifest_sha256": "ccc2104a9d52422e0dd2670cea92d8de7158bb8ca457dd8b60123863b59842ec",
+  "deployer_sha256": "7f64e7ef2ac9c82124a807d0ddfc1ca917359832b37262e8ebc8a167eb4aef2e",
+  "source_files": 146,
+  "protected_authentication_paths_identical": [
+    "kaname/policy.py",
+    "kaname/radius_adapter.py",
+    "kaname/radius_directory.py",
+    "kaname/radius_registry.py",
+    "kaname/radius_events.py",
+    "kaname/radius_observer.py",
+    "kaname/device_client/AuthWire-Client.ps1",
+    "kaname/device_client/Install-AuthWire.ps1",
+    "kaname/pki.py",
+    "kaname/device_enrollment.py",
+    "kaname/device_auth.py",
+    "tools/radius_runtime.py"
+  ],
+  "root_install_executed": false,
+  "operator_browser_acceptance_pending": true,
+  "planned_radius_restart": false,
+  "planned_broker_restart": true,
+  "full_data_backup": false,
+  "source_readonly_live_preflight_verified": true,
+  "root_patch_rollback_and_phase_checks": true,
+  "local_dashboard_tests": 10,
+  "foundation_tests": 586,
+  "foundation_skips": 25,
+  "load_probe": {
+    "fixture_records": 100000,
+    "fixture_megabytes": 38.12,
+    "elapsed_seconds": 0.517,
+    "aggregate_available": true,
+    "total": 100000,
+    "concurrent_writes": 21,
+    "write_failures": [],
+    "customer_data_used": false
+  },
+  "historical_windows_retry_fixture_issue_kept_open": true,
+  "historical_enrollment_sqlite_issue_kept_open": true,
+  "dns_changes_in_scope": false,
+  "merge_commit": "d9a5fb94d1302cad9594c38216e139548e6c814e",
+  "all_final_ci_checks_passed": true,
+  "browser_flows": 10,
+  "browser_job": 120019845112,
+  "browser_artifact": {
+    "id": 12450392007,
+    "sha256": "05f507d33adb9decbb55279aa4c0fdd73398c728ebdb2af0eb4122de29f41f12"
+  },
+  "final_ci": [
+    {
+      "id": 39833140220,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 39833140123,
+      "name": "AuthWire device enrollment pilot checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 39833140084,
+      "name": "KANAME Linux source preparation",
+      "conclusion": "success"
+    },
+    {
+      "id": 39833140204,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 39833140167,
+      "name": "KANAME real RADIUS protocol proof",
+      "conclusion": "success"
+    },
+    {
+      "id": 39833140168,
+      "name": "KANAME browser checks",
+      "conclusion": "success"
+    }
+  ],
+  "retry_notes": {
+    "windows_retry_first_attempt": "historical deadline_rearmed fixture timing failure; single rerun passed; issue remains open",
+    "browser_first_attempt": "Ubuntu dependency mirror transfer timed out before application tests; single rerun passed"
+  },
+  "stage": "/home/segmentiq/authwire-stage-dev19-ae79998d7ff1",
+  "deployer": "/home/segmentiq/authwire-dashboard-20261022.py",
+  "live_version_before_operator_install": "0.14.0-dev.18",
+  "radius_pid_before": "832810",
+  "broker_pid_before": "858994",
+  "panel_pid_before": "859017"
+}

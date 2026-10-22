@@ -16,6 +16,21 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.19 erişim dashboard’u geliştirildi, test edildi ve sunucuda hazırlandı — canlı kurulum bekliyor (22 Ekim 2026)
+
+- 🔴✓ Operatörün onayladığı Velzon yerleşim yaklaşımı, AuthWire'ın mevcut krem/lacivert/gökyüzü/kiremit renkleri ve Λ/W logosuyla yeniden uygulandı. Şablonun ticari kodları veya varlıkları kopyalanmadı; yerel HTML/CSS/JS ve SVG kullanıldı.
+- 🔴✓ Ana ekranda kabul/ret sayaçları, geçerli ve 30 gün içinde dolacak cihaz sertifikaları, zaman grafiği, mevcut NAS tanımından kablolu/kablosuz/bilinmeyen dağılımı, ilk altı switch/AP, gün-saat yoğunluğu, son sekiz sunucu yanıtı ve sistem sağlığı bulunuyor. 24 saat / 7 gün / 30 gün seçimi var. Doğrulama yanıtı, bağlı cihaz ve canlı oturum sayısı olarak sunulmuyor.
+- 🔴✓ Kabul/ret kartları ve NAS satırları erişim kayıtlarını kesin zaman aralığı ve aynı kayıt watermark'ı ile açıyor. Sertifika kartları sertifika listesine gider; liste sayfalıdır. Kimlik ve kaynak eksikse tahmin üretilmez; veri yok / yetki yok / alınamadı durumları ayrıdır.
+- 🔴✓ Yeni GET /api/dashboard bölümleri mevcut audit.events ve certificates.authority yetkileriyle süzülür; NAS adları/sınıflaması için network.radius gerekir. Sorgular salt okunurdur. Değiştirilemeyen olay ID sınırıyla kısa okuma parçaları kullanılır; uzun bir okuma transaction'ı tutulmaz. RADIUS karar yolu bu modülü çağırmaz.
+- 🔴✓ Mevcut servis durumuna, sabit root sahipli yedek durum dosyalarından yalnız doğrulanmış durum alanlarını döndüren okuma özeti eklendi. Arşiv içeriği, yollar, anahtarlar veya komut girdisi döndürülmez. Bu gösterge arşivin şimdi yeniden doğrulandığı, sunucu dışı kopya veya tam açılış geri yükleme testi yapıldığı anlamına gelmez. CRL güncelliği/imzası çalışan dosyadan okunur.
+- 🔴✓ Son kaynak için 586 foundation testi tamamlandı (25 ortam atlaması); bunun içinde 10 dashboard testi var. On tarayıcı akışı, mobil/masaüstü taşma, filtreli geçiş, oturum çıkışında bekleyen yanıtın atılması ve veri hatasında oturumun korunması başarılı. Gerçek normal/debug EAP-TLS/VLAN, Windows istemcisi, yerel Kerberos, yeniden deneme ve sınırlı ağ probu kontrolleri de başarılı.
+- 🔴✓ Ayrı geçici 100.000 kayıt / 38,12 MB testinde özet 0,517 saniyede hesaplandı; eşzamanlı 21 yazma başarılı, yazma hatası yok. Bu bir test ortamı ölçümüdür, canlı yük garantisi değildir.
+- 🔴✓ Kurulum yardımcısının iptal/geri dönüş, tekrarlı çalışma, eski broker dosya modu, yeni API'yi yalnız kurulumdan sonra kontrol etme ve korunan kaynak değişimini reddetme kontrolleri geçti. 146 kaynak dosyası son Git commit'iyle birebir karşılaştırıldı. Sunucuda salt okunur gerçek kaynak ön kontrolü başarılı.
+- Son test turundaki Windows deadline_rearmed aralıklı fixture hatası bir tekrar çalışmasında geçti; eski açık hata kaydı kapatılmadı. Tarayıcının ilk çalışması uygulama testine ulaşmadan Ubuntu paket aynasının yavaşlığıyla zaman aşımına uğradı; tek tekrar çalışması başarılı. B04 ve diğer önceden açık işler ayrıca korunur.
+- Canlı durum: hâlâ dev.18; panel PID 859017, RADIUS PID 832810 ve broker PID 858994 değişmedi. Bu turda root kurulumu, servis veya güç eylemi uygulanmadı. Tam veri yedeği/izole geri yükleme yapılmadı; günlük zamanlayıcı değişmedi.
+- Bekliyor: operatörün sudo komutunu çalıştırması, DASHBOARD_FINISHED canlı koruma çıktısı ve Ctrl+F5 sonrası görünüm kabulü. Çalışan RADIUS sürecinin korunması zorunlu; kurulum yalnız panel ve brokerı kısa süreli yeniden başlatacak. Mevcut kurallar, sertifikalar, Windows istemcisi, GPO ve yerel RADIUS modülü değişmeyecek.
+- Kaynak `ae79998d7ff1afd6777e81cc05bca5a5e389ce2e`; PR #49 birleştirildi. Manifest `ccc2104a9d52422e0dd2670cea92d8de7158bb8ca457dd8b60123863b59842ec`. Kurulum dosyası `/home/segmentiq/authwire-dashboard-20261022.py`, SHA256 `7f64e7ef2ac9c82124a807d0ddfc1ca917359832b37262e8ebc8a167eb4aef2e`. Kalıcı teslim kaydı: `docs/checkpoints/2026-10-22-dashboard-delivery.json`.
+
 ## 🔴✓ dev.18 canlı kurulum ve koruma kontrolleri tamam — görünüm kabulü bekliyor (22 Ekim 2026)
 
 - 🔴✓ Operatörün paylaştığı gerçek ACCOUNT_MENU_FINISHED çıktısı dev.18 kurulumunu doğruladı; kaynak sürümü `21ea9b2e994b95fae9f38e0099ec29f8bf18f644`. Dosya, çalışan RADIUS süreci, zamanlayıcılar, iş verisi ve planlanan broker geçişi kontrolleri başarılı.
