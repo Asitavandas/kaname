@@ -1,0 +1,59 @@
+{
+  "evidence_source": "operator-provided actual live installation output",
+  "result": {
+    "event": "DASHBOARD_FINISHED",
+    "verified": true,
+    "version": "0.14.0-dev.19",
+    "release": "ae79998d7ff1afd6777e81cc05bca5a5e389ce2e",
+    "changed": true,
+    "checks": {
+      "files": true,
+      "radius_process": true,
+      "timers": true,
+      "business_state": true,
+      "broker_transition": true
+    },
+    "radius_active": true,
+    "radius_restarted": false,
+    "radius_process_preserved": true,
+    "broker_restarted": true,
+    "broker_pid_before": "858994",
+    "broker_pid_after": "887154",
+    "power_actions_executed": false,
+    "control_actions_executed": false,
+    "policy_changed": false,
+    "certificates_changed": false,
+    "windows_changed": false,
+    "native_module_changed": false,
+    "full_data_backup_created": false,
+    "backup_timer_preserved": true,
+    "operator_browser_acceptance_pending": true,
+    "real_endpoint_acceptance_pending": true,
+    "rollback_source_commit": "21ea9b2e994b95fae9f38e0099ec29f8bf18f644",
+    "evidence": "/var/lib/authwire-ui-updates/dashboard-dev19-20261022T185325Z-c7455f87"
+  },
+  "api_read_checks": {
+    "before": {
+      "routes": 5,
+      "requests_per_route": 3,
+      "all_http_statuses": 200
+    },
+    "after": {
+      "routes": 11,
+      "requests_per_route": 3,
+      "all_http_statuses": 200,
+      "maximum_ms": 36.9,
+      "dashboard": {
+        "path": "/api/dashboard?period=7d",
+        "statuses": [
+          200,
+          200,
+          200
+        ],
+        "median_ms": 4.9,
+        "max_ms": 5.1
+      }
+    }
+  },
+  "recording_turn_server_actions_executed": false
+}

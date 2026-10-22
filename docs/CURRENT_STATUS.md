@@ -16,6 +16,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.19 dashboard canlı kurulumu doğrulandı — görünüm kabulü bekliyor (22 Ekim 2026)
+
+- 🔴✓ Operatörün paylaştığı gerçek DASHBOARD_FINISHED çıktısına göre dev.19 aktif. Dosya, çalışan RADIUS süreci, zamanlayıcılar, iş verisi ve planlanan broker geçişi kontrolleri başarılı.
+- 🔴✓ Güncelleme öncesinde beş, sonrasında on bir API yolu üçer kez HTTP 200 döndürdü. Yeni /api/dashboard?period=7d yanıtları 4,9 ms medyan / 5,1 ms en uzun süreyle başarılı; tüm son kontrollerde en uzun yanıt 36,9 ms.
+- 🔴✓ RADIUS aktif ve yeniden başlatılmadı; çalışan süreç korundu. Broker planlandığı gibi 858994 → 887154 geçti. Kurallar, sertifikalar, Windows kaynakları ve yerel RADIUS modülü değişmedi; servis kontrol veya güç eylemi uygulanmadı.
+- 🔴✓ Tam veri yedeği alınmadı; günlük yedek zamanlayıcısı korundu. Bu kayıt turunda yeniden kurulum veya servis müdahalesi yapılmadı.
+- Bekliyor: Ctrl+F5 sonrası operatörün dashboard görünümünü, dönem seçimlerini ve kartlardan detaylara geçişi kabul etmesi. Gerçek uç cihaz kabulü ayrıca bekliyor; API başarısı yeni bir VV06 EAP-TLS bağlantısı sayılmaz. Önceden açık hata ve yol haritası maddeleri bu kurulum sonucuyla kapatılmadı.
+- Kaynak: operatörün canlı kurulum çıktısı; kanıt dizini `/var/lib/authwire-ui-updates/dashboard-dev19-20261022T185325Z-c7455f87`. Makine okunur kayıt: `docs/checkpoints/2026-10-22-dashboard-live-result.json`.
+
 ## 🔴✓ dev.19 erişim dashboard’u geliştirildi, test edildi ve sunucuda hazırlandı — canlı kurulum bekliyor (22 Ekim 2026)
 
 - 🔴✓ Operatörün onayladığı Velzon yerleşim yaklaşımı, AuthWire'ın mevcut krem/lacivert/gökyüzü/kiremit renkleri ve Λ/W logosuyla yeniden uygulandı. Şablonun ticari kodları veya varlıkları kopyalanmadı; yerel HTML/CSS/JS ve SVG kullanıldı.

@@ -20,7 +20,7 @@
     "kaname/device_auth.py",
     "tools/radius_runtime.py"
   ],
-  "root_install_executed": false,
+  "root_install_executed": true,
   "operator_browser_acceptance_pending": true,
   "planned_radius_restart": false,
   "planned_broker_restart": true,
@@ -92,5 +92,40 @@
   "live_version_before_operator_install": "0.14.0-dev.18",
   "radius_pid_before": "832810",
   "broker_pid_before": "858994",
-  "panel_pid_before": "859017"
+  "panel_pid_before": "859017",
+  "live_install_verified": true,
+  "live_version": "0.14.0-dev.19",
+  "live_result": {
+    "event": "DASHBOARD_FINISHED",
+    "verified": true,
+    "version": "0.14.0-dev.19",
+    "release": "ae79998d7ff1afd6777e81cc05bca5a5e389ce2e",
+    "changed": true,
+    "checks": {
+      "files": true,
+      "radius_process": true,
+      "timers": true,
+      "business_state": true,
+      "broker_transition": true
+    },
+    "radius_active": true,
+    "radius_restarted": false,
+    "radius_process_preserved": true,
+    "broker_restarted": true,
+    "broker_pid_before": "858994",
+    "broker_pid_after": "887154",
+    "power_actions_executed": false,
+    "control_actions_executed": false,
+    "policy_changed": false,
+    "certificates_changed": false,
+    "windows_changed": false,
+    "native_module_changed": false,
+    "full_data_backup_created": false,
+    "backup_timer_preserved": true,
+    "operator_browser_acceptance_pending": true,
+    "real_endpoint_acceptance_pending": true,
+    "rollback_source_commit": "21ea9b2e994b95fae9f38e0099ec29f8bf18f644",
+    "evidence": "/var/lib/authwire-ui-updates/dashboard-dev19-20261022T185325Z-c7455f87"
+  },
+  "real_endpoint_acceptance_pending": true
 }
