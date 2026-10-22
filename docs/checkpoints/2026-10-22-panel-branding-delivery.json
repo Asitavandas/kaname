@@ -1,5 +1,5 @@
 {
-  "event": "BRANDING_DELIVERY_PREPARED",
+  "event": "BRANDING_DELIVERY_VERIFIED",
   "version": "0.14.0-dev.15",
   "source_commit": "1e062bf896e492a4ae50a344dd67ad849d994422",
   "pull_request": 45,
@@ -56,14 +56,37 @@
       "passed_after_separate_failed_job_retries": true
     },
     "browser": {
-      "run": 39786716721,
-      "pending": true,
+      "run": 39788662719,
+      "pending": false,
       "first_attempt": {
         "job": 119851756744,
         "cancelled_before_browser_tests": true,
         "reason": "Ten-minute CI job timeout during slow azure.archive.ubuntu.com apt dependency downloads; no browser fixture was executed",
         "product_failure_observed": false
-      }
+      },
+      "passed": true,
+      "flows": 9,
+      "reviewed_screenshots": [
+        "login-branding.png",
+        "overview-empty.png",
+        "branding-mobile-menu.png"
+      ],
+      "screenshots_are_disposable_fixture_not_live_panel": true,
+      "artifact_id": 12430067022,
+      "artifact_sha256": "e5d0f500ca6a84c5a6e66b33463675ebb6d21eae2709dfa53588f6f01ba9a27f"
+    },
+    "latest_documentation_head": {
+      "head": "750ee012939e3bf07bb115987cf197e4114acd63",
+      "documentation_only_after_reviewed_product": true,
+      "foundation": 39788662691,
+      "linux": 39788662675,
+      "device_enrollment": 39788662676,
+      "browser": 39788662719,
+      "bounded_probe": 39788662679,
+      "passed": true,
+      "repeated_same_product_radius_run": 39788662722,
+      "repeated_radius_still_running_at_merge": true,
+      "original_product_radius_proof_passed": 39786716847
     }
   },
   "open_findings": [
@@ -91,5 +114,9 @@
   "new_live_data_backup_created_this_turn": false,
   "new_live_data_restore_exercised_this_turn": false,
   "remaining_functional_work_paused": true,
-  "dns_architecture_out_of_scope": true
+  "dns_architecture_out_of_scope": true,
+  "documentation_and_browser_test_head": "750ee012939e3bf07bb115987cf197e4114acd63",
+  "visual_development_acceptance": true,
+  "merge_commit": "1a5fe3cef053b56e287dd147e97aa5fa1d9444c5",
+  "merged": true
 }
