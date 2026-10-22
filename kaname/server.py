@@ -28,12 +28,13 @@ from .planning import Planning
 from .services import Services, ServiceError, validate as validate_service_action
 from .audit import history as audit_history, AuditQueryLimit
 from .radius_events import history as access_history, EventStorageError
+from .dashboard import summary as dashboard_summary
 from .directory_sync import DirectorySync
 from .vault import VaultError
 from .admin import AdminStore, AdminError, COOKIE, TTL, RESOURCES, permits
 
 STATIC = Path(__file__).parent / 'static'
-ASSETS = {'/device.js': ('device.js','application/javascript'), '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
+ASSETS = {'/dashboard.js': ('dashboard.js','application/javascript'), '/device.js': ('device.js','application/javascript'), '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
           '/audit.js': ('audit.js','application/javascript'),
           '/access-events.js': ('access-events.js','application/javascript'),
           '/services.js': ('services.js','application/javascript'),
@@ -446,6 +447,17 @@ class Handler(BaseHTTPRequestHandler):
             value.update(product='AuthWire', version=VERSION, runtime_ready=False,
                          integrations={'ad': 'catalog-only' if value['directory_public']['catalog_available'] else 'pending', 'pki': 'pending', 'radius': 'pending', 'ovf': 'not-built'})
             self.respond(200, self.state_projection(value))
+        elif urlsplit(self.path).path == '/api/dashboard' and self.guard():
+            allowed = {r: permits(self.actor, r) for r in ('audit.events', 'certificates.authority')}
+            if not any(allowed.values()):
+                self.respond(403, {'error': 'FORBIDDEN'}); return
+            try:
+                query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                if len(self.path) > 128 or set(query) - {'period'} or any(len(v) != 1 for v in query.values()): raise ValueError()
+                network = self.server.operations.network() if allowed['audit.events'] and permits(self.actor, 'network.radius') else None
+                self.respond(200, dashboard_summary(self.server.store.root, query.get('period', ['7d'])[0],
+                    events=allowed['audit.events'], certificates=allowed['certificates.authority'], network=network))
+            except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
         elif urlsplit(self.path).path == '/api/radius/events' and self.guard(resource='audit.events'):
             try:
                 if len(self.path) > 2048: raise ValueError()
@@ -557,7 +569,7 @@ class Handler(BaseHTTPRequestHandler):
             except LookupError: self.respond(404, {'error': 'CATALOG_OBJECT_NOT_FOUND'})
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
             except sqlite3.Error as error: self.store_error(error)
-        elif urlsplit(self.path).path not in {'/api/radius/events', '/api/services', '/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/audit/history', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/policies/labels', '/api/system/power', '/api/directory/settings'}:
+        elif urlsplit(self.path).path not in {'/api/dashboard', '/api/radius/events', '/api/services', '/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/audit/history', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/policies/labels', '/api/system/power', '/api/directory/settings'}:
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):

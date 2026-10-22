@@ -2,9 +2,9 @@ name: KANAME browser checks
 on:
   push:
     branches: [main]
-    paths: ['kaname/**', 'tools/ui_smoke.cjs', 'tools/policy_ui_smoke.cjs', 'tools/setup_ui_smoke.cjs', 'tools/audit_ui_smoke.cjs', 'tools/access_events_ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/services_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', 'tests/test_directory.py', '.github/workflows/ui.yml']
+    paths: ['kaname/**', 'tools/ui_smoke.cjs', 'tools/dashboard_ui_smoke.cjs', 'tools/policy_ui_smoke.cjs', 'tools/setup_ui_smoke.cjs', 'tools/audit_ui_smoke.cjs', 'tools/access_events_ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/services_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', 'tests/test_directory.py', '.github/workflows/ui.yml']
   pull_request:
-    paths: ['kaname/**', 'tools/ui_smoke.cjs', 'tools/policy_ui_smoke.cjs', 'tools/setup_ui_smoke.cjs', 'tools/audit_ui_smoke.cjs', 'tools/access_events_ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/services_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', '.github/workflows/ui.yml']
+    paths: ['kaname/**', 'tools/ui_smoke.cjs', 'tools/dashboard_ui_smoke.cjs', 'tools/policy_ui_smoke.cjs', 'tools/setup_ui_smoke.cjs', 'tools/audit_ui_smoke.cjs', 'tools/access_events_ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/services_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', '.github/workflows/ui.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -26,6 +26,7 @@ jobs:
       - name: Browser flow with temporary directory fixture (no real AD)
         run: |
           node tools/ui_smoke.cjs
+          node tools/dashboard_ui_smoke.cjs
           node tools/policy_ui_smoke.cjs
           node tools/setup_ui_smoke.cjs
           node tools/audit_ui_smoke.cjs

@@ -63,7 +63,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
         const luminance=value=>value.match(/[\d.]+/g).slice(0,3).map(Number).map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((v,c,i)=>v+c*[.2126,.7152,.0722][i],0);
         const a=luminance(foreground),b=luminance(background);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
       }
-      return ['body','nav button.selected','.welcome-primary','.stats>div:first-child','.stats>div:nth-child(2)','.stats>div:nth-child(4)'].map(selector=>{
+      return ['body','nav button.selected','.dashboard-stat.navy','.dashboard-stat:nth-child(2)','.dashboard-stat.sky'].map(selector=>{
         const style=getComputedStyle(document.querySelector(selector));return {selector,ratio:ratio(style.color,style.backgroundColor)};
       });
     });
