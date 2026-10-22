@@ -435,7 +435,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
       await page.locator('#unlock').click();
       await page.locator('#workspace').waitFor({state:'visible'});
     }
-    await page.locator('#logout').click();
+    await page.locator('#account-toggle').click();await page.locator('#logout').click();
     await login('reader');
     assert.equal(await page.locator('#fqdn').isDisabled(),true);
     await navigate('certificates');
@@ -457,7 +457,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.route('**/api/system',delayedPreviousRole);
     await page.evaluate(()=>{window.pendingPreviousRole=loadSystem().catch(()=>{});});
     await previousRoleStarted;
-    await page.locator('#logout').click();
+    await page.locator('#account-toggle').click();await page.locator('#logout').click();
     await login('product');
     releasePreviousRole();
     await page.evaluate(()=>window.pendingPreviousRole);
@@ -477,7 +477,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.deepEqual(Object.keys(restricted.config),['appliance_fqdn']);
     assert.equal('pki_public' in restricted,false);
     assert.equal('directory_public' in restricted,false);
-    await page.locator('#logout').click();
+    await page.locator('#account-toggle').click();await page.locator('#logout').click();
     await login('admin','Kaname');
     await navigate('system');
     page.on('dialog',dialog=>dialog.accept());

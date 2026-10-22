@@ -29,7 +29,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.joi
     await page.locator('[data-view="network-devices"]').click();await page.waitForFunction(()=>inventory?.items.length===1);
     assert.equal(await page.locator('#inventory-list').textContent().then(x=>x.includes('SW-01')),true);
     for(const width of [390,1366,1920]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'Page fits '+width);}
-    await page.locator('#logout').click();await page.locator('#login').waitFor({state:'visible'});assert.equal(await page.locator('#inventory-list').textContent(),'');
+    await page.locator('#account-toggle').click();await page.locator('#logout').click();await page.locator('#login').waitFor({state:'visible'});assert.equal(await page.locator('#inventory-list').textContent(),'');
     assert.deepEqual(errors,[]);console.log('AUTHWIRE_PLANNING_UI_OK');
   }finally{if(browser)await browser.close();child.kill();fs.rmSync(temp,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});

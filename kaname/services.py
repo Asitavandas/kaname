@@ -38,6 +38,12 @@ class Services:
 
     def status(self):return self.request({'kind':'status'})
 
+    def power_status(self):return self.request({'kind':'power-status'})
+
+    def power_action(self,value,actor):
+        validate_power(value)
+        return self.request({'kind':'power-action','action':value['action'],'request_id':value['request_id'],'actor':actor['username']})
+
     def action(self,value,actor):
         validate(value)
         return self.request({'kind':'action',**{k:value[k] for k in ('service','action','request_id')},'actor':actor['username']})
@@ -53,3 +59,11 @@ def validate(value):
     try:
         if type(value['request_id']) is not str or str(uuid.UUID(value['request_id']))!=value['request_id']:raise ValueError()
     except ValueError:raise ServiceError('INVALID_INPUT') from None
+
+def validate_power(value):
+    if type(value) is not dict or set(value)!={'action','request_id','confirmed'}:
+        raise ServiceError('INVALID_INPUT')
+    if value['confirmed'] is not True:raise ServiceError('CONFIRMATION_REQUIRED')
+    if type(value['action']) is not str or value['action'] not in {'reboot','poweroff'}:
+        raise ServiceError('ACTION_NOT_ALLOWED')
+    validate({'service':'radius','action':'restart','request_id':value['request_id'],'confirmed':True})

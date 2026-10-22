@@ -182,3 +182,23 @@ input[type=checkbox],input[type=radio]{accent-color:var(--navy)}
 @keyframes rule-slide{from{transform:translateX(100%)}to{transform:translateX(0)}}
 @media(max-width:600px){.rule-modal{width:calc(100vw - 16px)}#policy-modal-main{padding:16px}.rule-fields{grid-template-columns:1fr;gap:8px}.rule-fields>label{padding-top:8px}.rule-picker{width:86%;padding:14px}.rule-picker footer{gap:8px;font-size:12px}}
 @media(prefers-reduced-motion:reduce){.rule-picker{animation:none}}
+
+/* Account actions share one compact, anchored control in the main header. */
+main>header{overflow:visible;position:relative;z-index:25;flex-wrap:nowrap}
+#account-bar.account-dropdown{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:0;margin:0 0 0 8px;flex:0 0 auto;padding:0;background:none;border:0}
+#account-bar[hidden]{display:none!important}
+#account-toggle{display:flex;align-items:center;gap:8px;max-width:230px;min-height:40px;padding:8px 10px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--navy)}
+#account-toggle:hover,#account-toggle[aria-expanded="true"]{background:var(--surface);border-color:var(--line)}
+#account-name{font-size:13px;font-weight:600;color:var(--navy);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.account-user-icon{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;flex:none}.account-chevron{font-size:14px}
+.account-menu{position:absolute;top:calc(100% + 8px);right:0;width:264px;max-width:calc(100vw - 32px);padding:5px 0;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 12px 35px #152b3f30;z-index:80}
+.account-menu[hidden],.account-system-menu[hidden]{display:none}
+.account-menu-heading{display:grid;gap:7px;padding:12px 16px;border-bottom:1px solid var(--line);color:var(--navy)}.account-menu-heading strong{font-size:15px}.account-menu-heading span{font-size:12px}.account-menu-heading small{color:var(--muted);font-size:11px}
+#account-bar .account-menu button{display:flex;align-items:center;gap:12px;width:100%;border:0;border-radius:0;text-align:left;background:transparent;min-height:42px;padding:10px 16px;font-size:13px;color:var(--charcoal)}
+#account-bar .account-menu button:hover,#account-bar .account-menu button:focus-visible{background:var(--info-soft);color:var(--navy)}.account-menu button>span:first-child{width:18px;font-size:18px;text-align:center}.account-system-row{position:relative}.account-sub-arrow{margin-left:auto}
+.account-system-menu{position:absolute;right:100%;top:-1px;width:228px;padding:5px 0;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:-8px 8px 24px #152b3f22;z-index:81}
+#account-power-status{display:block;padding:0 14px;color:var(--muted);font-size:11px;line-height:1.5}#account-power-status:not(:empty){padding-top:8px;padding-bottom:8px}
+.account-confirm{max-width:520px;width:calc(100vw - 32px);padding:26px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--charcoal)}.account-confirm::backdrop{background:#17293488}.account-confirm h3{margin-top:0;color:var(--navy)}.account-confirm p{line-height:1.6}.account-confirm .actions{justify-content:flex-end;margin-top:22px}.critical,.policy-delete{color:var(--critical);border-color:var(--critical)}.critical{background:var(--critical)!important;color:#fff!important}
+@media(max-width:900px){main>header{flex-wrap:wrap}.page-heading{flex:1;min-width:100px}#account-bar.account-dropdown{margin-left:auto;order:1}.panel-search{order:2;width:100%;max-width:none;margin:0}#account-toggle{max-width:180px}#account-name{max-width:110px}}
+@media(max-width:600px){#account-bar.account-dropdown{margin-left:0}#account-toggle{max-width:150px;padding:7px 5px;gap:5px}#account-name{max-width:94px}.account-system-menu{position:static;right:auto;width:100%;box-shadow:none;border:0;border-left:3px solid var(--sky);border-radius:0;background:var(--info-soft)}.account-sub-arrow{transform:rotate(-90deg)}}
+
+#message{top:auto;bottom:20px}@media(max-width:760px){#message{top:auto;bottom:12px}}

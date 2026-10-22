@@ -18,7 +18,7 @@ function message(value,tone='info'){
   if(value){const text=document.createElement('span');text.textContent=value;const dismiss=document.createElement('button');dismiss.type='button';dismiss.className='message-dismiss';dismiss.setAttribute('aria-label','Bildirimi kapat');dismiss.textContent='×';dismiss.addEventListener('click',()=>message(''));toast.append(text,dismiss);if(tone!=='error')messageTimer=setTimeout(()=>toast.replaceChildren(),5000);}
   if(pkiDrawer)$('pki-feedback').textContent=value;if(!$('directory').hidden)$('ad-feedback').textContent=value;
 }
-function lock(){if(typeof resetAccessEvents==='function')resetAccessEvents();resetSetup();if(typeof resetAudit==='function')resetAudit();$('panel-loading').hidden=true;$('login-title').textContent='ΛuthWire giriş';$('login-description').textContent='Panel kullanıcı adı ve parolanızla giriş yapın.';if(typeof resetServices==='function')resetServices();message('');$('login-form').hidden=false;$('panel-recovery').hidden=true;if(typeof resetPlanning==='function')resetPlanning();if(typeof resetDevices==='function')resetDevices();setNavigation(false);setIdentityTab('users');closePKIDrawer();pkiRows=[];clearPKISecrets();$('pki-csr').value='';$('pki-username').value='';$('pki-certificates').replaceChildren();pkiRequest++;pkiOffset=0;authGeneration++;networkRequest++;directoryRequest++;directoryLoading=false;networkLoading=false;rejectedConflicts=[];networkState=null;directorySettings=null;editingPolicy='';expandedPolicy='';$('policy-query').value='';policySaving=false;closePolicyEditor();editingVlan=null;editingRadius='';$('radius-secret').value='';$('radius-secret').type='password';$('radius-instructions').textContent='';$('ad-alert').hidden=true;$('conflict-alert').hidden=true;for(const id of ['vlan-list','radius-list','policy-vlan','sim-group'])$(id).replaceChildren();for(const id of ['ad-name','ad-ou','vlan-id','vlan-name','vlan-description','radius-name','radius-ip'])$(id).value='';systemRequest++;catalogRequests.users++;catalogRequests.groups++;catalogRequests.computers++;detailRequest++;detailSelection=null;detailLoading=false;if($('directory-detail').open)$('directory-detail').close();directoryBusy=false;systemLoading=false;session=null;csrf='';state=null;systemState=null;groupNames.clear();policyLabels.clear();$('admin-user-form').hidden=true;$('admin-profile-form').hidden=true;$('profile-permissions').replaceChildren();$('admin-user-profile').replaceChildren();$('workspace').hidden=true;$('account-bar').hidden=true;$('login').hidden=false;for(const id of ['sim-group-query','ad-password','admin-password','current-password','new-password','login-password','fqdn','domain','dc','clients','ad-host','ad-user','ad-domain','sim-group','admin-username','admin-profile-name','directory-users-query','directory-groups-query','directory-computers-query','detail-query'])$(id).value='';for(const id of ['review','result','directory-status','directory-users-count','directory-groups-count','directory-computers-count','detail-count','detail-title','detail-meta','detail-status','identities-status','account-name','ad-feedback','ad-credential-status'])$(id).textContent='';for(const id of ['directory-users-list','directory-groups-list','directory-computers-list','detail-list','policy-list','audit-list','admin-users-list','admin-profiles-list','pki-info'])$(id).replaceChildren();renderOverview();applyPermissions();}
+function lock(){resetAccountMenu();if(typeof resetAccessEvents==='function')resetAccessEvents();resetSetup();if(typeof resetAudit==='function')resetAudit();$('panel-loading').hidden=true;$('login-title').textContent='ΛuthWire giriş';$('login-description').textContent='Panel kullanıcı adı ve parolanızla giriş yapın.';if(typeof resetServices==='function')resetServices();message('');$('login-form').hidden=false;$('panel-recovery').hidden=true;if(typeof resetPlanning==='function')resetPlanning();if(typeof resetDevices==='function')resetDevices();setNavigation(false);setIdentityTab('users');closePKIDrawer();pkiRows=[];clearPKISecrets();$('pki-csr').value='';$('pki-username').value='';$('pki-certificates').replaceChildren();pkiRequest++;pkiOffset=0;authGeneration++;networkRequest++;directoryRequest++;directoryLoading=false;networkLoading=false;rejectedConflicts=[];networkState=null;directorySettings=null;editingPolicy='';expandedPolicy='';$('policy-query').value='';policySaving=false;closePolicyEditor();editingVlan=null;editingRadius='';$('radius-secret').value='';$('radius-secret').type='password';$('radius-instructions').textContent='';$('ad-alert').hidden=true;$('conflict-alert').hidden=true;for(const id of ['vlan-list','radius-list','policy-vlan','sim-group'])$(id).replaceChildren();for(const id of ['ad-name','ad-ou','vlan-id','vlan-name','vlan-description','radius-name','radius-ip'])$(id).value='';systemRequest++;catalogRequests.users++;catalogRequests.groups++;catalogRequests.computers++;detailRequest++;detailSelection=null;detailLoading=false;if($('directory-detail').open)$('directory-detail').close();directoryBusy=false;systemLoading=false;session=null;csrf='';state=null;systemState=null;groupNames.clear();policyLabels.clear();$('admin-user-form').hidden=true;$('admin-profile-form').hidden=true;$('profile-permissions').replaceChildren();$('admin-user-profile').replaceChildren();$('workspace').hidden=true;$('account-bar').hidden=true;$('login').hidden=false;for(const id of ['sim-group-query','ad-password','admin-password','current-password','new-password','login-password','fqdn','domain','dc','clients','ad-host','ad-user','ad-domain','sim-group','admin-username','admin-profile-name','directory-users-query','directory-groups-query','directory-computers-query','detail-query'])$(id).value='';for(const id of ['review','result','directory-status','directory-users-count','directory-groups-count','directory-computers-count','detail-count','detail-title','detail-meta','detail-status','identities-status','account-name','ad-feedback','ad-credential-status'])$(id).textContent='';for(const id of ['directory-users-list','directory-groups-list','directory-computers-list','detail-list','policy-list','audit-list','admin-users-list','admin-profiles-list','pki-info'])$(id).replaceChildren();renderOverview();applyPermissions();}
 function panelError(code,text,status=0){const error=new Error(text);error.code=code;error.status=status;return error;}
 function readBackoff(ms,signal){
   return new Promise((resolve,reject)=>{
@@ -144,7 +144,7 @@ function applyPermissions(){
   document.querySelectorAll('[data-write]').forEach(x=>x.disabled=!can(x.dataset.write,true)||(x.dataset.write==='directory.connection'&&(directoryBusy||directoryLoading||!state?.directory_context?.configured))||(x.id==='directory-sync'&&(!(state?.directory_public?.reader_available??state?.directory_public?.windows_reader_available)||!directorySettings?.credentials_saved))||(x.dataset.write.startsWith('network.')&&x.dataset.write!=='network.devices'&&(networkLoading||!networkState))||(x.dataset.write==='policies.rules'&&policySaving)||(x.dataset.write.startsWith('system.')&&x.dataset.write!=='system.services'&&(!systemState||systemLoading)));
   for(const [resource,ids] of Object.entries({'setup.product':['fqdn'],'setup.directory':['domain','dc'],'setup.network':['clients','wired','wireless'],'directory.connection':['ad-host','ad-user','ad-password','ad-name','ad-ou','ad-sync-minutes','ad-check-minutes','ad-auto'],'network.vlans':['vlan-id','vlan-name','vlan-description'],'network.radius':['radius-name','radius-ip','radius-access-type','radius-secret','radius-auth-port','radius-account-port'],'policies.rules':['policy-name','policy-action','policy-vlan','policy-access','policy-enabled','policy-kind','policy-pick']}))for(const id of ids)$(id).disabled=!can(resource,true)||(resource==='policies.rules'&&policySaving)||(resource==='directory.connection'&&directoryLoading)||(resource.startsWith('network.')&&(networkLoading||!networkState));
   if(!can('policies.rules')&&$('policy-editor').open)closePolicyEditor();
-  pkiControls();policyEditorControls();
+  pkiControls();policyEditorControls();accountMenuControls();
   $('cancel-policy').disabled=policySaving||!can('policies.rules',true);
   applyPolicyControls();
   for(const [id,resource]of [['admin-users-list','system.administrators'],['admin-profiles-list','system.profiles']])$(id).querySelectorAll('button').forEach(button=>button.disabled=systemLoading||!can(resource,true));
@@ -202,7 +202,7 @@ function renderPolicies(){
       toggle.setAttribute('aria-label',p.name+' — '+toggle.textContent);
       toggle.title='Ayarları koruyarak politikayı '+(p.enabled?'devre dışı bırak':'etkinleştir');
       toggle.addEventListener('click',()=>run(()=>setPolicyEnabled(p.id,!p.enabled)));
-      actions.append(edit,toggle);
+      const remove=document.createElement('button');remove.textContent='Sil';remove.className='policy-delete';remove.dataset.policyDelete=p.id;remove.addEventListener('click',()=>confirmPolicyDelete(p));actions.append(edit,toggle,remove);
     }
     entry.append(row,menuRow);parent.append(entry);
   }
@@ -226,7 +226,7 @@ async function refresh({checkSession=true,includeAudit=true}={}){
   state=await api('/api/state');
   $('panel-version').textContent='Ubuntu · '+state.version;
   if(setupBaseRevision!==null&&!setupSaving&&!setupHasEdits()&&!setupAwaitingRead)fillConfig({force:true});
-  $('account-name').textContent=session.user.username+' · '+session.user.profile_name;
+  $('account-name').textContent=session.user.username;$('account-profile').textContent=session.user.profile_name;$('account-version').textContent='Yazılım sürümü '+state.version;
   $('revision').textContent='Kayıt sürümü '+state.revision;
   renderPolicies();renderPKI();renderDirectoryStatus();renderOverview();applyPermissions();
   if(includeAudit)await loadAudit();
@@ -261,11 +261,11 @@ async function restorePanel(){
   }finally{booting=false;$('unlock').disabled=false;$('panel-retry').disabled=false;}
 }
 $('panel-retry').addEventListener('click',()=>{if(!booting&&!loginBusy)restorePanel();});
-async function savePolicies(policies=state.policies,successMessage='Politikalar kaydedildi.'){
+async function savePolicies(policies=state.policies,successMessage='Politikalar kaydedildi.',expectedRevision=state.revision){
   if(policySaving)return;
   const generation=authGeneration;policySaving=true;applyPermissions();
   try{
-    await api('/api/policies',{expected_revision:state.revision,policies});
+    await api('/api/policies',{expected_revision:expectedRevision,policies});
     rejectedConflicts=[];await refresh();message(successMessage);return true;
   }finally{if(generation===authGeneration){policySaving=false;applyPermissions();}}
 }
@@ -300,8 +300,89 @@ $('login-form').addEventListener('submit',event=>{
     }finally{$('login-password').value='';loginBusy=false;button.disabled=false;}
   });
 });
-$('logout').addEventListener('click',()=>run(async()=>{await api('/api/auth/logout',{});lock();message('Çıkış yapıldı.');}));
-$('my-password').addEventListener('click',()=>showView('account'));
+let accountPowerState=null,accountPowerLoading=false,accountPowerSending=false,accountPowerRequest=0,accountPowerTimer=null,accountPowerPending=null,policyDeletePending=null;
+function closeAccountSystem(){ $('account-system-menu').hidden=true;$('account-system').setAttribute('aria-expanded','false'); }
+function closeAccountMenu(focus=false){closeAccountSystem();$('account-menu').hidden=true;$('account-toggle').setAttribute('aria-expanded','false');if(focus&&!$('account-bar').hidden)$('account-toggle').focus();}
+function resetAccountMenu(){
+  accountPowerRequest++;clearTimeout(accountPowerTimer);accountPowerState=null;accountPowerLoading=false;accountPowerSending=false;accountPowerPending=null;policyDeletePending=null;
+  closeAccountMenu();for(const id of ['power-confirm','delete-policy-confirm'])if($(id).open)$(id).close('cancel');
+  $('account-power-status').textContent='';$('account-version').textContent='';$('account-profile').textContent='';$('delete-policy-description').textContent='';
+}
+function accountMenuControls(){
+  $('account-system-row').hidden=!can('system.power');
+  for(const id of ['account-reboot','account-poweroff'])$(id).disabled=!can('system.power',true)||accountPowerLoading||accountPowerSending||!accountPowerState?.available||accountPowerState?.busy===true;
+  $('delete-policy-submit').disabled=policySaving||!can('policies.rules',true);
+  $('power-confirm-submit').disabled=accountPowerSending||!can('system.power',true);
+  if(!can('system.power')){closeAccountSystem();if($('power-confirm').open)$('power-confirm').close('cancel');}
+}
+async function loadAccountPower(){
+  if(accountPowerLoading||!session||!can('system.power'))return;
+  const generation=authGeneration,request=++accountPowerRequest;accountPowerLoading=true;accountMenuControls();$('account-power-status').textContent='Durum okunuyor…';
+  try{
+    const value=await api('/api/system/power');if(generation!==authGeneration||request!==accountPowerRequest)return;
+    accountPowerState=value;const op=accountPowerPending&&value.operations?.find(x=>x.id===accountPowerPending);
+    if(op&&['failed','interrupted'].includes(op.state)){accountPowerSending=false;accountPowerPending=null;message('Sistem talebi tamamlanamadı. Güncel durumu kontrol edin.','error');}
+    $('account-power-status').textContent=!can('system.power',true)?'Salt okunur yetki':value.busy?'Bir sistem veya servis işlemi bekliyor.':'';
+    if(accountPowerPending&&op&&['queued','running'].includes(op.state))accountPowerTimer=setTimeout(loadAccountPower,1500);
+  }catch(error){if(generation!==authGeneration||request!==accountPowerRequest)return;accountPowerState=null;$('account-power-status').textContent='Sunucu yönetimine erişilemiyor.';}
+  finally{if(generation===authGeneration&&request===accountPowerRequest){accountPowerLoading=false;accountMenuControls();}}
+}
+function openAccountSystem(){
+  if(!session||!can('system.power')||$('account-menu').hidden)return;
+  $('account-system-menu').hidden=false;$('account-system').setAttribute('aria-expanded','true');loadAccountPower();
+}
+function openAccountMenu(keyboard=false){
+  if(!session)return;$('account-menu').hidden=false;$('account-toggle').setAttribute('aria-expanded','true');accountMenuControls();
+  if(keyboard)accountItems().find(x=>!x.disabled)?.focus();
+}
+function accountItems(){return [...$('account-menu').querySelectorAll(':scope>button,#account-system')].filter(x=>!x.closest('[hidden]'));}
+$('account-toggle').addEventListener('click',()=>{$('account-menu').hidden?openAccountMenu():closeAccountMenu();});
+$('account-toggle').addEventListener('keydown',e=>{if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();openAccountMenu(true);}});
+$('account-system').addEventListener('mouseenter',openAccountSystem);$('account-system').addEventListener('click',openAccountSystem);
+$('account-system-row').addEventListener('mouseleave',()=>{if(!$('account-system-row').contains(document.activeElement))closeAccountSystem();});
+$('account-menu').addEventListener('keydown',event=>{
+  const inSub=$('account-system-menu').contains(event.target);
+  if(event.key==='Escape'){event.preventDefault();event.stopPropagation();if(inSub){closeAccountSystem();$('account-system').focus();}else closeAccountMenu(true);return;}
+  if(event.target===$('account-system')&&['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();openAccountSystem();$('account-reboot').focus();return;}
+  if(inSub&&event.key==='ArrowRight'){event.preventDefault();closeAccountSystem();$('account-system').focus();return;}
+  if(!['ArrowDown','ArrowUp','Home','End'].includes(event.key))return;
+  event.preventDefault();const items=(inSub?[...$('account-system-menu').querySelectorAll('button')]:accountItems()).filter(x=>!x.disabled),index=items.indexOf(document.activeElement);
+  const next=event.key==='Home'?0:event.key==='End'?items.length-1:(index+(event.key==='ArrowDown'?1:items.length-1))%items.length;items[next]?.focus();
+});
+document.addEventListener('pointerdown',event=>{if(!$('account-bar').contains(event.target))closeAccountMenu();});
+document.addEventListener('focusin',event=>{if(!$('account-bar').contains(event.target))closeAccountMenu();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!event.defaultPrevented&&!$('account-menu').hidden){event.preventDefault();closeAccountMenu(true);}});
+function confirmPolicyDelete(policy){
+  if(policySaving||!can('policies.rules',true))return;
+  policyDeletePending={id:policy.id,revision:state.revision,policies:structuredClone(state.policies)};
+  $('delete-policy-description').textContent='“'+policy.name+'” kuralı silinsin mi? Bu kural sonraki kimlik doğrulama denemelerinde değerlendirilmez.';
+  $('delete-policy-confirm').showModal();
+}
+$('delete-policy-confirm').addEventListener('close',()=>{
+  const pending=policyDeletePending;policyDeletePending=null;if($('delete-policy-confirm').returnValue!=='confirm'||!pending||!can('policies.rules',true)||policySaving)return;
+  run(()=>savePolicies(pending.policies.filter(p=>p.id!==pending.id),'Kural silindi.',pending.revision));
+});
+function confirmAccountPower(action){
+  if(!can('system.power',true)||accountPowerSending||!accountPowerState?.available||accountPowerState?.busy)return;
+  const reboot=action==='reboot';closeAccountMenu();$('power-confirm').dataset.action=action;
+  $('power-confirm-title').textContent=reboot?'Sunucuyu yeniden başlat':'Sunucuyu kapat';
+  $('power-confirm-impact').textContent=reboot?'AuthWire’ın çalıştığı Linux sunucusu yeniden başlatılacak. Panel ve yeni 802.1X kimlik doğrulamaları sunucu açılana kadar kullanılamayacak.':'AuthWire’ın çalıştığı Linux sunucusu kapatılacak. Panel ve yeni 802.1X kimlik doğrulamaları duracak. Tekrar açmak için sanallaştırma yönetimine veya fiziksel erişime ihtiyaç duyacaksınız.';
+  $('power-confirm-feedback').textContent='Ayarlar ve kayıtlı veriler korunarak normal işletim sistemi işlemi uygulanır.';
+  $('power-confirm').showModal();
+}
+$('account-reboot').addEventListener('click',()=>confirmAccountPower('reboot'));$('account-poweroff').addEventListener('click',()=>confirmAccountPower('poweroff'));
+$('power-confirm').addEventListener('close',()=>{
+  if($('power-confirm').returnValue!=='confirm'||accountPowerSending||!can('system.power',true))return;
+  const action=$('power-confirm').dataset.action,generation=authGeneration;accountPowerSending=true;accountPowerPending=crypto.randomUUID();accountMenuControls();
+  run(async()=>{
+    try{await api('/api/system/power/action',{action,confirmed:true,request_id:accountPowerPending});if(generation!==authGeneration)return;message(action==='reboot'?'Yeniden başlatma talebi alındı. Panel bağlantısı kesilecek; sunucu açıldığında sayfayı yenileyin.':'Kapatma talebi alındı. Panel bağlantısı kesilecek.');accountPowerTimer=setTimeout(loadAccountPower,1000);}
+    catch(error){if(generation!==authGeneration)return;accountPowerSending=false;message(error.message+' Talep otomatik tekrarlanmadı; güncel durumu kontrol edin.','error');await loadAccountPower();}
+    finally{if(generation===authGeneration)accountMenuControls();}
+  });
+});
+
+$('logout').addEventListener('click',()=>run(async()=>{closeAccountMenu();await api('/api/auth/logout',{});lock();message('Çıkış yapıldı.');}));
+$('my-password').addEventListener('click',()=>{closeAccountMenu();showView('account');});
 $('password-form').addEventListener('submit',event=>{event.preventDefault();run(async()=>{try{await api('/api/auth/password',{current:$('current-password').value,new:$('new-password').value});lock();message('Parola değişti. Yeni parolanızla giriş yapın.');}finally{$('current-password').value='';$('new-password').value='';}});});
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{showView(b.dataset.view);}));
 document.querySelectorAll('[data-step]').forEach(b=>b.addEventListener('click',()=>run(()=>showStep(Number(b.dataset.step)))));

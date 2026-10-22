@@ -25,6 +25,7 @@ RESOURCES = {
     'network.devices': ['Network', 'Device Inventory'],
     'network.vlans': ['Network', 'VLANs'], 'network.radius': ['Network', 'RADIUS Clients'],
     'system.services': ['System', 'Servisler'],
+    'system.power': ['System', 'Sunucu yeniden başlatma / kapatma'],
 }
 LEVELS = {'none': 0, 'read': 1, 'write': 2}
 COOKIE = 'kaname_session'

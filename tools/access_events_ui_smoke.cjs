@@ -48,7 +48,7 @@ s.serve_forever()`;
   assert.equal(await page.locator('#workspace').isVisible(),true);assert.equal(await page.locator('#access-list tr').count(),100);await page.unroute('**/api/radius/events*');
   let release,seen,handled;const gate=new Promise(r=>release=r),started=new Promise(r=>seen=r),routeDone=new Promise(r=>handled=r);
   await page.route('**/api/radius/events*',async r=>{seen();await gate;await r.continue();handled();});await page.evaluate(()=>{window.accessPendingFixture=run(()=>loadAccessEvents());});await started;
-  await page.locator('#logout').click();release();await routeDone;await page.evaluate(()=>window.accessPendingFixture);await page.unroute('**/api/radius/events*');
+  await page.locator('#account-toggle').click();await page.locator('#logout').click();release();await routeDone;await page.evaluate(()=>window.accessPendingFixture);await page.unroute('**/api/radius/events*');
   assert.equal(await page.evaluate(()=>accessPage),null);assert.equal(await page.locator('#access-export').isDisabled(),true);
   await login(page);await page.locator('[data-view="access-events"]').click();await page.waitForFunction(()=>!!accessPage&&!accessLoading);
   if(process.env.KANAME_UI_ARTIFACTS){fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'access-events-desktop.png'),fullPage:true});}

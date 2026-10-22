@@ -66,6 +66,20 @@ def validate_action(value):
         raise ControlError('INVALID_INPUT')
     return service, action
 
+def boot_identity():
+    try:
+        value=Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+        return value if str(uuid.UUID(value))==value else None
+    except (OSError,ValueError):return None
+
+def validate_power_action(value):
+    if type(value) is not dict or set(value)!={'kind','action','request_id','actor'} or value.get('kind')!='power-action':
+        raise ControlError('INVALID_INPUT')
+    if type(value['action']) is not str or value['action'] not in {'reboot','poweroff'}:
+        raise ControlError('ACTION_NOT_ALLOWED')
+    validate_action({'kind':'action','service':'radius','action':'restart','request_id':value['request_id'],'actor':value['actor']})
+    return 'system',value['action']
+
 class Controller:
     def __init__(self, history=HISTORY, runner=execute, update_lock=Path('/run/kaname-lab-update.lock'),
                  runtime_site=Path('/run/authwire-radius/sites-enabled/authwire')):
@@ -74,6 +88,7 @@ class Controller:
         self.runtime_site=Path(runtime_site)
         self.lock=threading.Lock(); self.snapshot_lock=threading.Lock()
         self.jobs=[]; self.busy=False; self.cached=None; self.cached_at=0
+        self.boot_id=boot_identity()
         if self.history.exists():
             if self.history.is_symlink() or self.history.stat().st_size > 262144:
                 raise ControlError('HISTORY_INVALID')
@@ -82,6 +97,8 @@ class Controller:
                 raise ControlError('HISTORY_INVALID')
             # Never replay a command after broker restart. Its outcome may be unknown.
             for job in self.jobs:
+                if job.get('service')=='system' and job['state']=='scheduled' and self.boot_id and job.get('boot_id') and job['boot_id']!=self.boot_id:
+                    job.update(state='boot-observed',finished_at=now())
                 if job['state'] in {'queued','running'}:
                     job.update(state='interrupted',error='OUTCOME_UNKNOWN',finished_at=now())
             self.save()
@@ -170,18 +187,50 @@ class Controller:
             rows=self.cached
         with self.lock:
             return {'available':True,'checked_at':now(),'services':rows,
-                    'busy':self.busy,'operations':list(reversed(self.jobs[-20:]))}
+                    'busy':self.busy or self.pending_power(),'operations':list(reversed(self.jobs[-20:]))}
 
-    def submit(self, value):
-        service, action=validate_action(value)
+    def pending_power(self):
+        return any(j.get('service')=='system' and j['state'] in {'queued','running','scheduled'} for j in self.jobs)
+
+    def power_status(self):
+        self.reconcile_power()
+        with self.lock:
+            return {'available':self.boot_id is not None,'checked_at':now(),'actions':['reboot','poweroff'] if self.boot_id else [],'busy':self.busy or self.pending_power(),
+                    'operations':[dict(j) for j in reversed(self.jobs) if j.get('service')=='system'][:20]}
+
+    def reconcile_power(self):
+        with self.lock:
+            pending=[dict(j) for j in self.jobs if j.get('service')=='system' and j['state']=='scheduled'
+                     and time.monotonic()-j.get('scheduled_monotonic',time.monotonic())>20]
+        for job in pending:
+            # Inspect only a UUID-derived unit; never replay an uncertain request.
+            unit='authwire-power-'+str(uuid.UUID(job['id']))+'.service'
+            try:
+                result=self.runner(['/usr/bin/systemctl','show',unit,'--property=LoadState,ActiveState,Result,ExecMainStatus'])
+                values=properties(result.stdout)
+                unknown=result.returncode!=0 or values.get('LoadState')!='loaded'
+                failed=values.get('ActiveState')=='failed' or values.get('Result') not in (None,'','success')
+                if not (unknown or failed):continue
+                with self.lock:
+                    current=next((j for j in self.jobs if j['id']==job['id'] and j['state']=='scheduled'),None)
+                    if current:
+                        current.update(state='interrupted' if unknown else 'failed',error='OUTCOME_UNKNOWN' if unknown else 'POWER_COMMAND_FAILED',finished_at=now())
+                        self.save()
+            except (OSError,ValueError,subprocess.TimeoutExpired):pass
+
+    def submit_power(self,value):return self.submit(value,power=True)
+
+    def submit(self, value, *, power=False):
+        service, action=validate_power_action(value) if power else validate_action(value)
+        if power and self.boot_id is None:raise ControlError('POWER_CONTROL_UNAVAILABLE')
         with self.lock:
             existing=next((j for j in self.jobs if j['id']==value['request_id']),None)
             if existing:
-                if any(existing[k] != value[k] for k in ('service','action','actor')):
+                if existing['service']!=service or existing['action']!=action or existing['actor']!=value['actor']:
                     raise ControlError('REQUEST_ID_CONFLICT')
                 return dict(existing)
-            if self.busy: raise ControlError('SERVICE_BUSY')
-            if self.inspect(service)['installed'] is not True:
+            if self.busy or self.pending_power(): raise ControlError('SERVICE_BUSY')
+            if not power and self.inspect(service)['installed'] is not True:
                 raise ControlError('SERVICE_NOT_INSTALLED')
             # Never run a sync action to restart a deliberately stopped RADIUS.
             if service=='crl-sync' and self.inspect('radius')['active_state']!='active':
@@ -226,6 +275,8 @@ class Controller:
             if descriptor is not None:os.close(descriptor)
 
     def _perform(self, job):
+        if job['service']=='system':
+            self._perform_power(job);return
         try:
             with self.lock:
                 job['state']='running';self.save()
@@ -259,6 +310,32 @@ class Controller:
                 except OSError:job.update(state='failed',error='AUDIT_UNAVAILABLE')
             self.cached_at=0
 
+    def _perform_power(self,job):
+        # A fixed transient timer lets the HTTP acknowledgement arrive first.
+        # No caller path, shell, arguments, unit name or deadline is accepted.
+        try:
+            unit='authwire-power-'+job['id']
+            with self.lock:
+                job.update(state='running',boot_id=self.boot_id,timer_unit=unit+'.timer')
+                self.save()
+            result=self.runner(['/usr/bin/systemd-run','--quiet','--collect','--unit='+unit,
+                                '--on-active=5s','--timer-property=AccuracySec=1s',
+                                '--property=Type=oneshot','/usr/bin/systemctl','--no-block',job['action']],timeout=15)
+            if result.returncode:raise ControlError('POWER_SCHEDULE_FAILED')
+            with self.lock:
+                job.update(state='scheduled',scheduled_at=now(),scheduled_monotonic=time.monotonic());self.save()
+            # Keep the shared maintenance lock through the timer's firing window.
+            time.sleep(7)
+        except Exception as error:
+            with self.lock:
+                job.update(state='failed',finished_at=now(),error=error.code if isinstance(error,ControlError) else 'POWER_OUTCOME_UNKNOWN')
+        finally:
+            with self.lock:
+                self.busy=False
+                try:self.save()
+                except OSError:job.update(state='interrupted',error='OUTCOME_UNKNOWN')
+
+
 class Handler(socketserver.StreamRequestHandler):
     def handle(self):
         self.connection.settimeout(2)
@@ -270,6 +347,10 @@ class Handler(socketserver.StreamRequestHandler):
             value=json.loads(raw)
             if type(value) is dict and value=={'kind':'status'}:
                 result=self.server.controller.status()
+            elif type(value) is dict and value=={'kind':'power-status'}:
+                result=self.server.controller.power_status()
+            elif type(value) is dict and value.get('kind')=='power-action':
+                result={'operation':self.server.controller.submit_power(value)}
             elif type(value) is dict and value.get('kind')=='action':
                 result={'operation':self.server.controller.submit(value)}
             else:raise ControlError('INVALID_INPUT')
