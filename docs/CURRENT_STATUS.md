@@ -16,6 +16,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.14 panel renk paleti canlı kurulum ve veri koruma kabulü tamam — 22 Ekim 2026; tarayıcı görünümü bekliyor
+
+- Operatör PALETTE_UPDATE_FINISHED çıktısını verified=true/version0.14.0-dev.14 olarak iletti. Canlı Linux kurulum tamamlandı. Orijinal preflight snapshot/kanıt dizini `/var/backups/authwire/scheduled/palette-dev14-20261022T093320Z-1d994551` kalıcıdır. Bu kayıt operatörün gerçek çıktısına dayanır; bu turda yeni canlı sistem veya saha testi yapılmadı.
+- 🔴✓ RADIUS aktif, PID679309 ve brokerPID149955 korundu; radius_restarted=false. Dosya/PID/timer/business_state kontrolleri tümütrue; policy, sertifika/CA, native modül, Windows istemci ve GPO kaynakları değişmedi. Canlı policy işlemi yapılmadı; planlı yedek zamanlayıcısı korundu.
+- 🔴✓ Önce/sonra gerçek yedeklerin arşiv ve SQLite kontrolleri geçti. Son arşiv `/var/backups/authwire/scheduled/authwire-scheduled-20261022T093520Z-58209c3065c4.tar.gz`, SHA256 `a011c5ef004f8b84e4b7b6e713fc23b2e28c181d528208ce8c5aae0e763ee8e7`. Bu arşivden162dosya izole veri geri yükleme; byte/owner/mode, DB/CA/CRL/korumalı sırlar/anahtar eşleşmesi/imzalama ve erişim kayıtları kontrolleri geçti. İzole kopya kaldırıldı. Tam appliance boot restore tamamlanmış sayılmaz.
+- 🔴✓ Önce5/sonra8 kimliği doğrulanmış yerel HTTPS API uç noktası, her biri3okuma, tümü200; son kontrollerde en yüksek süre35.9ms. Panel teknik sağlık kontrolü başarılı.
+- **Açık kalan dar adım:** operatör gerçek paneli F5 ile yenileyip dev.14, krem zemin/menü, açık mavi aktif sekme, lacivert kartlar ve kiremit buton görünümünü kontrol edecek. palette_browser_acceptance_pending=true; bu çıktı tek başına gerçek tarayıcı görünümü kabulü değildir.
+- Kalan işlevsel işler beklemede; DHCP/DNS mimarisi kapsam dışı ve NTP çalışması duraklatılmıştır. Mevcut policy/VLAN değerleri değiştirilmedi. Yeni tema için94alt iş hesabına ek puan verilmez.
+- [Canlı kurulum kanıt özeti](checkpoints/2026-10-22-panel-palette-live-result.json).
+
 ## 🔴✓ Panel renk paleti geliştirme ve teknik kabulü tamam — 22 Ekim 2026; canlı kurulum bekliyor
 
 - Operatör kalan işlevsel işleri bekletti; bugün yalnız mevcut panelin renk düzeni üzerinde çalışılacak. Referans görsel ve palet açıldı: lacivert #1D4D73, açık mavi #68A9CF, kiremit #D96B52, krem #F3EAD8, koyu füme #2C2C2C. Ana zemin/menü krem; aktif menü ve sekmeler açık mavi; ana sayaç kartları lacivert; CTA ve marka yazısı kiremit. Krem ara yüzey tonları kart/formları ayırır. Küçük CTA yazısı kontrast için #171717; lacivert kartta krem, açık mavide koyu metin kullanıldı. Başarı/uyarı/hata anlam renkleri korundu.

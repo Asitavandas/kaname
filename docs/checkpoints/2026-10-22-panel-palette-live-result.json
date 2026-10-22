@@ -1,0 +1,52 @@
+{
+  "event": "PALETTE_LIVE_INSTALL_ACCEPTED",
+  "recorded_date": "2026-10-22",
+  "timezone": "Europe/Istanbul",
+  "basis": "operator supplied PALETTE_UPDATE_FINISHED and supporting events; no additional live probe in this turn",
+  "verified": true,
+  "version": "0.14.0-dev.14",
+  "evidence_directory": "/var/backups/authwire/scheduled/palette-dev14-20261022T093320Z-1d994551",
+  "radius_active": true,
+  "radius_pid_preserved": "679309",
+  "broker_pid_preserved": "149955",
+  "radius_restarted": false,
+  "preserved": {
+    "files": true,
+    "pids": true,
+    "timers": true,
+    "business_state": true
+  },
+  "changed": {
+    "windows": false,
+    "policies": false,
+    "certificates": false,
+    "native_module": false,
+    "windows_client_template": false,
+    "gpo_installer_source": false
+  },
+  "live_policy_actions_executed": false,
+  "backup": {
+    "path": "/var/backups/authwire/scheduled/authwire-scheduled-20261022T093520Z-58209c3065c4.tar.gz",
+    "sha256": "a011c5ef004f8b84e4b7b6e713fc23b2e28c181d528208ce8c5aae0e763ee8e7",
+    "archive_read_verified": true,
+    "sqlite_integrity_verified": true
+  },
+  "restore": {
+    "data_restore_exercised": true,
+    "files_restored": 162,
+    "file_bytes_verified": true,
+    "ownership_and_modes_verified": true,
+    "all_reported_checks_passed": true,
+    "isolated_copy_removed": true,
+    "full_appliance_boot_restore_tested": false
+  },
+  "https_api": {
+    "before_endpoints": 5,
+    "after_endpoints": 8,
+    "reads_per_endpoint": 3,
+    "all_statuses": 200,
+    "after_max_ms": 35.9
+  },
+  "operator_browser_acceptance_pending": true,
+  "remaining_functional_work_paused": true
+}
