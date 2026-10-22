@@ -1,0 +1,91 @@
+{
+  "event": "POLICY_TABLE_UI_DELIVERY_VERIFIED",
+  "date": "2026-10-22",
+  "timezone": "Europe/Istanbul",
+  "version": "0.14.0-dev.16",
+  "product_source_commit": "b3ae5cc655522faf43b642622af6f1f2cb0ddd62",
+  "tested_head": "e2de117598fe0b54ad60f16a2327953218056219",
+  "merge_commit": "9dc908e1301bc6336038bbc880ab238b86aff04d",
+  "pull_request": 46,
+  "features": {
+    "columns": [
+      "Kural Adı",
+      "Erişim Türü",
+      "Kullanıcı/Grup",
+      "VLAN",
+      "Karar"
+    ],
+    "toolbar": [
+      "Yeni Kural",
+      "compact search"
+    ],
+    "selected_row_actions": [
+      "Düzenle",
+      "enable/disable"
+    ],
+    "single_expanded_row": true,
+    "keyboard_row_selection": true,
+    "client_side_filter_without_policy_writes": true,
+    "read_only_boundaries_preserved": true,
+    "delete_action_not_in_requested_menu": true,
+    "existing_policy_save_semantics_retained": true
+  },
+  "checks": {
+    "all_six_workflows_passed": true,
+    "foundation": 39799462792,
+    "linux": 39799462782,
+    "real_radius": 39799462788,
+    "device_enrollment": 39799462804,
+    "bounded_probe": 39799462847,
+    "browser": 39799462916,
+    "browser_flows": 9,
+    "artifact_id": 12435870660,
+    "artifact_sha256": "c8176c633b239e8cf1f646e1ae16416b86f6d96233754b008f71d2f888f74a0a",
+    "desktop_screenshot_reviewed": "policy-table-desktop.png",
+    "viewport_bounds_checked": [
+      390,
+      1366,
+      1920
+    ],
+    "initial_browser_fixture_issue": "New-rule form now starts blank; the general UI fixture was corrected to enter its rule name explicitly. Product source unchanged after this test-only fix."
+  },
+  "delivery": {
+    "stage": "/home/segmentiq/authwire-stage-dev16-b3ae5cc65552",
+    "manifest_sha256": "e93d89e835d8f722efd5c8cdda8cf84149903077cc650409df7cb66a6d055eec",
+    "source_files_verified": 141,
+    "changed_product_files": [
+      "kaname/__init__.py",
+      "pyproject.toml",
+      "kaname/static/index.html",
+      "kaname/static/app.js",
+      "kaname/static/styles.css"
+    ],
+    "deployer": "/home/segmentiq/authwire-policy-table-ui-20261022.py",
+    "deployer_sha256": "5bb7a5958cf9718001fa09a08ce98d43e2c5012607eb11696eb2703a95fbb0bc",
+    "rollback_source_commit": "d90947e265257ea83f2bd56ba3397198098e3f65"
+  },
+  "deployment_guard_tests": {
+    "protected_authentication_and_windows_mutations_refused": true,
+    "non_ui_tool_change_refused": true,
+    "valid_ui_patch_and_exact_retry": true,
+    "mid_write_failure_original_bytes_restored": true,
+    "health_failure_original_bytes_restored": true,
+    "service_commands_limited_to_panel": true
+  },
+  "operator_preference": {
+    "no_per_change_full_data_backup_or_restore_for_visual_changes": true,
+    "retain_source_versions_for_manual_last_change_revert": true,
+    "regular_scheduled_backup_timer_unchanged": true
+  },
+  "live_installation_performed": false,
+  "live_policy_actions_executed": false,
+  "protected_authentication_source_unchanged": true,
+  "policy_changed": false,
+  "certificates_changed": false,
+  "windows_changed": false,
+  "full_data_backup_created_this_turn": false,
+  "isolated_data_restore_exercised_this_turn": false,
+  "live_installation_pending": true,
+  "operator_browser_acceptance_pending": true,
+  "remaining_functional_work_paused": true
+}
