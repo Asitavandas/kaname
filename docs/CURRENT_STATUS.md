@@ -16,6 +16,17 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.16 erişim kuralları tablosu canlı kurulum ve koruma kabulü tamam — 22 Ekim 2026; operatör görünüm kabulü bekliyor
+
+- Operatör POLICY_TABLE_UI_FINISHED/verified=true/version0.14.0-dev.16 çıktısını iletti. Küçük UI kaynak yaması canlı sunucuda başarıyla uygulandı. Kanıt dizini `/var/lib/authwire-ui-updates/policy-table-dev16-20261022T151018Z-1d8c260e`; kabul operatörün gerçek çıktısına dayanır. Bu kayıt turunda ek canlı işlem yapılmadı.
+- 🔴✓ Dosya/PID/timer/business_state karşılaştırmaları tümütrue. RADIUS aktif, PID679309 ve brokerPID149955korundu; radius_restarted=false. Policy/VLAN, sertifikalar ve Windows kaynakları değişmedi. Düzenli yedek timer'ı korundu.
+- 🔴✓ Operatörün yeni tercihi uygulandı: bu UI güncellemesinde **tam veri yedeği alınmadı ve izole restore çalıştırılmadı**. Kaynak geri alma referansı `d90947e265257ea83f2bd56ba3397198098e3f65` kayıtta tutulur; geri alma gerekirse yalnız kaynak değişikliği ele alınır, mevcut policy/veri geçmişe döndürülmez.
+- 🔴✓ Önce5/sonra8 kimlikli yerel HTTPS API uç noktası üçer okuma, tümü200; kurulum sonrası en yüksek süre58.4ms. Panel teknik sağlık kontrolü başarılı.
+- **Bekliyor:** operatör Ctrl+F5 ile dev.16ve Erişim kuralları sayfasındaki Yeni Kural/kısa arama, beş hizalı sütun ve satıra tıklayınca açılan iki işlem menüsünü gerçek tarayıcıda kontrol edecek. operator_browser_acceptance_pending=true; kurulum çıktısı tek başına görsel kabul değildir.
+- Kalan işlevsel plan beklemede; bu UI işi94iş hesabına yeni işlevsel puan eklemez. Önceki açık bulgular ve kapsam dışı DNS mimarisi aynen korunur.
+- [Canlı kurulum kanıt özeti](checkpoints/2026-10-22-policy-table-live-result.json).
+
+
 ## 🔴✓ Erişim kuralları tablo düzeni geliştirme ve teknik kabul tamam — 22 Ekim 2026; küçük canlı kaynak yaması bekliyor
 
 - Operatörün iki referans görüntüsüne göre üstte **Yeni Kural**, hemen sağında kısa arama alanı; altında sırasıyla **Kural Adı / Erişim Türü / Kullanıcı/Grup / VLAN / Karar** başlıklı hizalı tablo hazırlandı. Kurala tıklanınca yalnız o satırın altında **Düzenle**, ardından etkinleştirme/devre dışı bırakma düğmesi açılır. Klavyeyle seçim desteklenir; arama yalnız görünür listeyi süzer, kural kaydetmez. Sütun değerleri mevcut policy alanlarından gelir. Genel panel paleti ve onaylı42°ΛuthWire logosu korunur.
