@@ -1,0 +1,95 @@
+{
+  "event": "BRANDING_DELIVERY_PREPARED",
+  "version": "0.14.0-dev.15",
+  "source_commit": "1e062bf896e492a4ae50a344dd67ad849d994422",
+  "pull_request": 45,
+  "approved_name": "ΛuthWire",
+  "gold": "#C6A15B",
+  "anthracite": "#25272B",
+  "exact_approved_vector_master_sha256": "90639e21a88e2cfe065574121019369aeb27d49b8b6a14908b173287be1f402d",
+  "polygon_attributes_identical_to_master": true,
+  "adjacent_axis_angles_deg": 42,
+  "equal_horizontal_gaps_svg_units": 28,
+  "perpendicular_blade_width_svg_units": 36,
+  "panel_palette_preserved": true,
+  "technical_identifiers_preserved": true,
+  "javascript_display_strings_only": true,
+  "authentication_source_preserved": true,
+  "source_files_verified": 141,
+  "changed_product_files": 8,
+  "manifest_sha256": "cdd7e02efb77fead5db9de1b8c95ed9fd400944beb6d4f037392d7269ac30565",
+  "stage": "/home/segmentiq/authwire-stage-dev15-1e062bf896e4",
+  "deployer": "/home/segmentiq/authwire-branding-update-20261022.py",
+  "deployer_sha256": "ea3cb87ef9f940c5ea05b960cb47558e14cacd6c0f9f098a7263a71833eeee3e",
+  "deployment_guards_verified": [
+    "base_and_exact_retry_accepted",
+    "radius_adapter_change_refused",
+    "windows_client_change_refused",
+    "installer_change_refused",
+    "installed_drift_refused"
+  ],
+  "live_installation_performed": false,
+  "live_service_actions": 0,
+  "live_radius_pid": "679309",
+  "live_broker_pid": "149955",
+  "checks": {
+    "foundation": {
+      "run": 39786717092,
+      "tests": 553,
+      "skipped": 25,
+      "passed": true
+    },
+    "linux": {
+      "run": 39786716807,
+      "passed": true
+    },
+    "real_radius": {
+      "run": 39786716847,
+      "passed": true
+    },
+    "bounded_probe": {
+      "run": 39786716805,
+      "passed": true
+    },
+    "device_enrollment": {
+      "run": 39786716794,
+      "passed_after_separate_failed_job_retries": true
+    },
+    "browser": {
+      "run": 39786716721,
+      "pending": true,
+      "first_attempt": {
+        "job": 119851756744,
+        "cancelled_before_browser_tests": true,
+        "reason": "Ten-minute CI job timeout during slow azure.archive.ubuntu.com apt dependency downloads; no browser fixture was executed",
+        "product_failure_observed": false
+      }
+    }
+  },
+  "open_findings": [
+    {
+      "area": "B04 concurrent enrollment",
+      "job": 119851757698,
+      "failure": "sqlite3.OperationalError: database is locked, Operations._public read during 1000-device/4-worker synthetic issuance",
+      "unchanged_source": true,
+      "separate_retry_job": 119853804871,
+      "retry_result": "1000 unique installed certificates in 18.742 seconds",
+      "resolved": false
+    },
+    {
+      "area": "Windows retry fixture intermittency",
+      "job": 119853865843,
+      "failure": "180-second automatic rearm/recovery wait ended with deadline_rearmed and retry_pending",
+      "unchanged_source": true,
+      "separate_retry_job": 119854782823,
+      "retry_passed": true,
+      "resolved": false
+    }
+  ],
+  "live_installation_pending": true,
+  "operator_browser_acceptance_pending": true,
+  "new_live_data_backup_created_this_turn": false,
+  "new_live_data_restore_exercised_this_turn": false,
+  "remaining_functional_work_paused": true,
+  "dns_architecture_out_of_scope": true
+}

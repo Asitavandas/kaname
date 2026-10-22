@@ -126,3 +126,15 @@ input[type=checkbox],input[type=radio]{accent-color:var(--navy)}
 .journey-card>small,.lifecycle-actions button,.overview-foot button{color:var(--navy)}
 .pki-drawer,.ldap-credentials,#services-confirm{background:var(--surface)}
 .setup-impact{background:var(--accent-soft);border-color:var(--terracotta)}
+
+/* Approved 42-degree artwork: preserve its aspect ratio at every display size. */
+.brand{color:#25272B;gap:10px}
+.logo{width:60px;height:40px}
+.logo img{width:60px;height:40px;object-fit:contain}
+.brand-wordmark{display:block;width:116px;height:auto;max-width:100%}
+.brand small{letter-spacing:0}
+.login-logo{width:144px;height:90px;object-fit:contain}
+#login-title{color:#25272B}
+#login-title::first-letter{color:#C6A15B}
+.welcome-mark>span{width:180px;height:112px}
+.welcome-mark img{width:180px;height:112px;object-fit:contain}
