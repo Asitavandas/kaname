@@ -117,6 +117,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.waitForFunction(()=>document.querySelector('#vlan-list').textContent.includes('Corporate'));
     await navigate('policies');
     await page.locator('#new-policy').click();
+    await page.locator('#policy-name').fill('Kurumsal cihazlar');
     await page.waitForFunction(()=>document.querySelector('#policy-vlan').options.length===2);
     await page.locator('#policy-vlan').selectOption('120');
     const sid='S-1-5-21-100-200-300-400';
