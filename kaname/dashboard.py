@@ -34,19 +34,39 @@ def response_summary(root, start, end, period, network):
         return {'available': True, 'initialized': False, 'total': 0, 'accept': 0, 'reject': 0,
                 'series': [], 'nas': [], 'access_types': [], 'heatmap': [], 'recent': [], 'observer': None}
     history._private(directory, directory=True); history._private(path)
-    # Same transaction / watermark for all widgets. No first-page sampling.
+    # Append-only IDs make the watermark an immutable snapshot. Fetch short
+    # primary-key batches without a long read transaction, so dashboard scans
+    # release DELETE-journal read locks between batches for the native writer.
+    hourly = period == '24h'
+    grouped_counts, nas_counts, heat_counts, recent = {}, {}, {}, []
+    accept = reject = 0
+    low, high_time = stamp(start), stamp(end)
+    deadline = time.monotonic() + 1.5
     with closing(readonly(path)) as db:
-        db.execute('BEGIN')
         high = db.execute('SELECT coalesce(max(id),0) FROM access_events').fetchone()[0]
-        where = 'id<=? AND at>=? AND at<?'
-        args = (high, stamp(start), stamp(end))
-        accept, reject = db.execute('SELECT coalesce(sum(response_code=2),0),coalesce(sum(response_code=3),0) FROM access_events WHERE '+where,args).fetchone()
-        hourly = period == '24h'
-        bucket = "strftime('%Y-%m-%dT%H:00:00Z',at)" if hourly else "date(at,'+3 hours')"
-        grouped = db.execute('SELECT '+bucket+',sum(response_code=2),sum(response_code=3) FROM access_events WHERE '+where+' GROUP BY 1 ORDER BY 1',args).fetchall()
-        nas = db.execute('SELECT nas_ip,count(*),sum(response_code=2),sum(response_code=3) FROM access_events WHERE '+where+' GROUP BY nas_ip ORDER BY count(*) DESC,nas_ip',args).fetchall()
-        heat = db.execute("SELECT strftime('%w',at,'+3 hours'),strftime('%H',at,'+3 hours'),count(*) FROM access_events WHERE "+where+' GROUP BY 1,2',args).fetchall()
-        rows = db.execute('SELECT id,at,response_code,reason,nas_ip,policy_id,vlan,object_guid,calling_station,certificate_serial FROM access_events WHERE '+where+' ORDER BY id DESC LIMIT 8',args).fetchall()
+        cursor = 0
+        while cursor < high:
+            if time.monotonic() > deadline: raise ValueError('DASHBOARD_QUERY_LIMIT')
+            rows = db.execute('SELECT id,at,response_code,reason,nas_ip,policy_id,vlan,object_guid,calling_station,certificate_serial FROM access_events WHERE id>? AND id<=? ORDER BY id LIMIT 512',(cursor,high)).fetchall()
+            if not rows: break
+            cursor = rows[-1][0]
+            for row in rows:
+                ident, at, code, reason, ip, policy, vlan, guid, mac, serial = row
+                if not low <= at < high_time: continue
+                local = datetime.fromisoformat(at.replace('Z','+00:00')).astimezone(ZONE)
+                key = at[:13]+':00:00Z' if hourly else local.strftime('%Y-%m-%d')
+                yes, no = int(code == 2), int(code == 3)
+                accept += yes; reject += no
+                bucket = grouped_counts.setdefault(key,[0,0]); bucket[0] += yes; bucket[1] += no
+                bucket = nas_counts.setdefault(ip,[0,0,0]); bucket[0] += 1; bucket[1] += yes; bucket[2] += no
+                heat_key = (local.weekday(),local.hour)
+                heat_counts[heat_key] = heat_counts.get(heat_key,0)+1
+                recent.append(row)
+                if len(recent)>8:recent.pop(0)
+    grouped = [(key,*value) for key,value in sorted(grouped_counts.items())]
+    nas = [(ip,*value) for ip,value in sorted(nas_counts.items(),key=lambda item:(-item[1][0],item[0]))]
+    heat = [(day,hour,count) for (day,hour),count in sorted(heat_counts.items())]
+    rows = list(reversed(recent))
     client_map = {c['ip']: c for c in (network or {}).get('radius_clients', [])}
     types = {'wired':0,'wireless':0,'unknown':0}
     devices = []
@@ -63,8 +83,8 @@ def response_summary(root, start, end, period, network):
         yes,no=indexed.get(key,(0,0));series.append({'at':stamp(cursor),'accept':yes,'reject':no})
         cursor += timedelta(hours=1) if hourly else timedelta(days=1)
     return {'available':True,'initialized':True,'watermark':high,'total':accept+reject,'accept':accept,'reject':reject,
-            'series':series,'nas':devices,'access_types':[{'type':k,'count':v} for k,v in types.items()],
-            'heatmap':[{'day':(int(day)+6)%7,'hour':int(hour),'count':count} for day,hour,count in heat],
+            'series':series,'nas':devices[:6],'access_types':[{'type':k,'count':v} for k,v in types.items()],
+            'heatmap':[{'day':day,'hour':hour,'count':count} for day,hour,count in heat],
             'recent':[dict(zip(('id','at','response_code','reason','nas_ip','policy_id','vlan','object_guid','calling_station','certificate_serial'),row)) for row in rows],
             'observer':history.runtime_status(Path('/run/authwire-radius')),
             'classification':'current_nas_configuration' if network is not None else 'unavailable'}

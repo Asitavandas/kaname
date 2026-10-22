@@ -35,6 +35,29 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(e['access_types'][0]['count'],205);self.assertEqual(e['nas'][0]['name'],'SW1')
         self.assertEqual(before,hashlib.sha256(path.read_bytes()).hexdigest())
         e=summary(self.root,'7d',certificates=False,now=NOW)['events'];self.assertEqual(e['access_types'][2]['count'],205);self.assertNotIn('SW1',str(e))
+    def test_writer_can_append_between_watermarked_batches(self):
+        import kaname.dashboard as dashboard
+        radius_events.initialize(self.root)
+        for n in range(600):radius_events.append(self.root,event(n,at='2026-10-22T11:00:00.000Z'))
+        original=dashboard.readonly;injected=[]
+        class Reader:
+            def __init__(reader,path):reader.db=original(path)
+            def execute(reader,sql,args=()):
+                cursor=reader.db.execute(sql,args)
+                if not sql.startswith('SELECT id,at,'):return cursor
+                class Batch:
+                    def fetchall(batch):
+                        rows=cursor.fetchall()
+                        if not injected:
+                            injected.append(True)
+                            radius_events.append(self.root,event(999,at='2026-10-22T11:30:00.000Z'))
+                        return rows
+                return Batch()
+            def close(reader):reader.db.close()
+        with patch.object(dashboard,'readonly',Reader):value=summary(self.root,certificates=False,now=NOW)['events']
+        self.assertTrue(value['available']);self.assertEqual(value['total'],600);self.assertEqual(value['watermark'],600)
+        self.assertEqual(radius_events.history(self.root,{},runtime=None)['storage']['records'],601)
+
     def test_invalid_period_and_storage_failure_isolated(self):
         with self.assertRaises(ValueError):summary(self.root,'all',now=NOW)
         radius_events.initialize(self.root).write_bytes(b'broken')
