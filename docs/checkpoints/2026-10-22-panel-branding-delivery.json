@@ -86,7 +86,9 @@
       "passed": true,
       "repeated_same_product_radius_run": 39788662722,
       "repeated_radius_still_running_at_merge": true,
-      "original_product_radius_proof_passed": 39786716847
+      "original_product_radius_proof_passed": 39786716847,
+      "repeated_radius_passed": true,
+      "all_six_workflows_passed": true
     }
   },
   "open_findings": [
@@ -118,5 +120,17 @@
   "documentation_and_browser_test_head": "750ee012939e3bf07bb115987cf197e4114acd63",
   "visual_development_acceptance": true,
   "merge_commit": "1a5fe3cef053b56e287dd147e97aa5fa1d9444c5",
-  "merged": true
+  "merged": true,
+  "final_pre_sudo_live_check": {
+    "installed_dev14_source_files_identical": 141,
+    "panel_active": true,
+    "panel_pid": "716005",
+    "radius_active": true,
+    "radius_pid": "679309",
+    "broker_active": true,
+    "broker_pid": "149955",
+    "sync_completed": true,
+    "deployer_hash_reverified": true,
+    "live_installation_pending": true
+  }
 }
