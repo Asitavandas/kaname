@@ -19,6 +19,7 @@ class VerifiedIdentity:
     access_type: str
     nas_ip: str
     eap_method: str
+    account_sid: str = ''
 
     def __post_init__(self):
         for value in (self.authenticated, self.directory_available, self.account_enabled, self.domain_device):
@@ -27,6 +28,8 @@ class VerifiedIdentity:
             raise ValidationError('Expected a bounded immutable group set')
         if any(type(x) is not str or len(x) > 184 or not re.fullmatch(r'S-1-[0-9]+(?:-[0-9]+)+', x) for x in self.group_sids):
             raise ValidationError('Invalid verified group SID')
+        if type(self.account_sid) is not str or (self.account_sid and (len(self.account_sid) > 184 or not re.fullmatch(r'S-1-[0-9]+(?:-[0-9]+)+', self.account_sid))):
+            raise ValidationError('Invalid verified account SID')
         enum(self.access_type, {'wired', 'wireless'})
         enum(self.eap_method, {'EAP-TLS', 'PEAP-TLS', 'PEAP-MSCHAPV2'})
         object.__setattr__(self, 'nas_ip', address(self.nas_ip))
@@ -107,7 +110,7 @@ def evaluate(policies, identity):
         if not policy['enabled']:
             continue
         c = policy['conditions']
-        if c['group_sids'] and not identity.group_sids.intersection(c['group_sids']):
+        if c['group_sids'] and not (identity.group_sids.intersection(c['group_sids']) or identity.account_sid in c['group_sids']):
             continue
         if c['access_types'] and identity.access_type not in c['access_types']:
             continue

@@ -18,7 +18,7 @@ function message(value,tone='info'){
   if(value){const text=document.createElement('span');text.textContent=value;const dismiss=document.createElement('button');dismiss.type='button';dismiss.className='message-dismiss';dismiss.setAttribute('aria-label','Bildirimi kapat');dismiss.textContent='×';dismiss.addEventListener('click',()=>message(''));toast.append(text,dismiss);if(tone!=='error')messageTimer=setTimeout(()=>toast.replaceChildren(),5000);}
   if(pkiDrawer)$('pki-feedback').textContent=value;if(!$('directory').hidden)$('ad-feedback').textContent=value;
 }
-function lock(){if(typeof resetAccessEvents==='function')resetAccessEvents();resetSetup();if(typeof resetAudit==='function')resetAudit();$('panel-loading').hidden=true;$('login-title').textContent='ΛuthWire giriş';$('login-description').textContent='Panel kullanıcı adı ve parolanızla giriş yapın.';if(typeof resetServices==='function')resetServices();message('');$('login-form').hidden=false;$('panel-recovery').hidden=true;if(typeof resetPlanning==='function')resetPlanning();if(typeof resetDevices==='function')resetDevices();setNavigation(false);setIdentityTab('users');closePKIDrawer();pkiRows=[];clearPKISecrets();$('pki-csr').value='';$('pki-username').value='';$('pki-certificates').replaceChildren();pkiRequest++;pkiOffset=0;authGeneration++;networkRequest++;directoryRequest++;directoryLoading=false;networkLoading=false;rejectedConflicts=[];networkState=null;directorySettings=null;editingPolicy='';expandedPolicy='';$('policy-query').value='';policySaving=false;$('policy-editor').open=false;editingVlan=null;editingRadius='';$('radius-secret').value='';$('radius-secret').type='password';$('radius-instructions').textContent='';$('ad-alert').hidden=true;$('conflict-alert').hidden=true;for(const id of ['vlan-list','radius-list','policy-vlan','sim-group'])$(id).replaceChildren();for(const id of ['ad-name','ad-ou','vlan-id','vlan-name','vlan-description','radius-name','radius-ip'])$(id).value='';systemRequest++;catalogRequests.users++;catalogRequests.groups++;catalogRequests.computers++;detailRequest++;detailSelection=null;detailLoading=false;if($('directory-detail').open)$('directory-detail').close();directoryBusy=false;systemLoading=false;session=null;csrf='';state=null;systemState=null;groupNames.clear();$('admin-user-form').hidden=true;$('admin-profile-form').hidden=true;$('profile-permissions').replaceChildren();$('admin-user-profile').replaceChildren();$('workspace').hidden=true;$('account-bar').hidden=true;$('login').hidden=false;for(const id of ['sim-group-query','ad-password','admin-password','current-password','new-password','login-password','fqdn','domain','dc','clients','ad-host','ad-user','ad-domain','sim-group','admin-username','admin-profile-name','policy-group-query','directory-users-query','directory-groups-query','directory-computers-query','detail-query'])$(id).value='';for(const id of ['review','result','directory-status','directory-users-count','directory-groups-count','directory-computers-count','detail-count','detail-title','detail-meta','detail-status','identities-status','account-name','ad-feedback','ad-credential-status','policy-group-status'])$(id).textContent='';$('policy-any-group').checked=false;for(const id of ['directory-users-list','directory-groups-list','directory-computers-list','detail-list','policy-list','audit-list','admin-users-list','admin-profiles-list','pki-info','policy-group'])$(id).replaceChildren();renderOverview();applyPermissions();}
+function lock(){if(typeof resetAccessEvents==='function')resetAccessEvents();resetSetup();if(typeof resetAudit==='function')resetAudit();$('panel-loading').hidden=true;$('login-title').textContent='ΛuthWire giriş';$('login-description').textContent='Panel kullanıcı adı ve parolanızla giriş yapın.';if(typeof resetServices==='function')resetServices();message('');$('login-form').hidden=false;$('panel-recovery').hidden=true;if(typeof resetPlanning==='function')resetPlanning();if(typeof resetDevices==='function')resetDevices();setNavigation(false);setIdentityTab('users');closePKIDrawer();pkiRows=[];clearPKISecrets();$('pki-csr').value='';$('pki-username').value='';$('pki-certificates').replaceChildren();pkiRequest++;pkiOffset=0;authGeneration++;networkRequest++;directoryRequest++;directoryLoading=false;networkLoading=false;rejectedConflicts=[];networkState=null;directorySettings=null;editingPolicy='';expandedPolicy='';$('policy-query').value='';policySaving=false;closePolicyEditor();editingVlan=null;editingRadius='';$('radius-secret').value='';$('radius-secret').type='password';$('radius-instructions').textContent='';$('ad-alert').hidden=true;$('conflict-alert').hidden=true;for(const id of ['vlan-list','radius-list','policy-vlan','sim-group'])$(id).replaceChildren();for(const id of ['ad-name','ad-ou','vlan-id','vlan-name','vlan-description','radius-name','radius-ip'])$(id).value='';systemRequest++;catalogRequests.users++;catalogRequests.groups++;catalogRequests.computers++;detailRequest++;detailSelection=null;detailLoading=false;if($('directory-detail').open)$('directory-detail').close();directoryBusy=false;systemLoading=false;session=null;csrf='';state=null;systemState=null;groupNames.clear();policyLabels.clear();$('admin-user-form').hidden=true;$('admin-profile-form').hidden=true;$('profile-permissions').replaceChildren();$('admin-user-profile').replaceChildren();$('workspace').hidden=true;$('account-bar').hidden=true;$('login').hidden=false;for(const id of ['sim-group-query','ad-password','admin-password','current-password','new-password','login-password','fqdn','domain','dc','clients','ad-host','ad-user','ad-domain','sim-group','admin-username','admin-profile-name','directory-users-query','directory-groups-query','directory-computers-query','detail-query'])$(id).value='';for(const id of ['review','result','directory-status','directory-users-count','directory-groups-count','directory-computers-count','detail-count','detail-title','detail-meta','detail-status','identities-status','account-name','ad-feedback','ad-credential-status'])$(id).textContent='';for(const id of ['directory-users-list','directory-groups-list','directory-computers-list','detail-list','policy-list','audit-list','admin-users-list','admin-profiles-list','pki-info'])$(id).replaceChildren();renderOverview();applyPermissions();}
 function panelError(code,text,status=0){const error=new Error(text);error.code=code;error.status=status;return error;}
 function readBackoff(ms,signal){
   return new Promise((resolve,reject)=>{
@@ -142,9 +142,10 @@ function applyPermissions(){
   $('page-jumps').replaceChildren();for(const [id,name] of Object.entries(viewNames)){if((viewPermissions[id]||[]).some(k=>can(k))){const option=document.createElement('option');option.value=name;$('page-jumps').append(option);}}
   document.querySelectorAll('.nav-group').forEach(group=>group.hidden=![...group.querySelectorAll('[data-view]')].some(x=>!x.hidden));
   document.querySelectorAll('[data-write]').forEach(x=>x.disabled=!can(x.dataset.write,true)||(x.dataset.write==='directory.connection'&&(directoryBusy||directoryLoading||!state?.directory_context?.configured))||(x.id==='directory-sync'&&(!(state?.directory_public?.reader_available??state?.directory_public?.windows_reader_available)||!directorySettings?.credentials_saved))||(x.dataset.write.startsWith('network.')&&x.dataset.write!=='network.devices'&&(networkLoading||!networkState))||(x.dataset.write==='policies.rules'&&policySaving)||(x.dataset.write.startsWith('system.')&&x.dataset.write!=='system.services'&&(!systemState||systemLoading)));
-  for(const [resource,ids] of Object.entries({'setup.product':['fqdn'],'setup.directory':['domain','dc'],'setup.network':['clients','wired','wireless'],'directory.connection':['ad-host','ad-user','ad-password','ad-name','ad-ou','ad-sync-minutes','ad-check-minutes','ad-auto'],'network.vlans':['vlan-id','vlan-name','vlan-description'],'network.radius':['radius-name','radius-ip','radius-access-type','radius-secret','radius-auth-port','radius-account-port'],'policies.rules':['policy-name','policy-action','policy-vlan','policy-any-group']}))for(const id of ids)$(id).disabled=!can(resource,true)||(resource==='policies.rules'&&policySaving)||(resource==='directory.connection'&&directoryLoading)||(resource.startsWith('network.')&&(networkLoading||!networkState));
-  pkiControls();$('policy-group').disabled=policySaving||!can('policies.rules',true)||!$('policy-any-group').checked;
-  $('cancel-policy').disabled=policySaving;
+  for(const [resource,ids] of Object.entries({'setup.product':['fqdn'],'setup.directory':['domain','dc'],'setup.network':['clients','wired','wireless'],'directory.connection':['ad-host','ad-user','ad-password','ad-name','ad-ou','ad-sync-minutes','ad-check-minutes','ad-auto'],'network.vlans':['vlan-id','vlan-name','vlan-description'],'network.radius':['radius-name','radius-ip','radius-access-type','radius-secret','radius-auth-port','radius-account-port'],'policies.rules':['policy-name','policy-action','policy-vlan','policy-access','policy-enabled','policy-kind','policy-pick']}))for(const id of ids)$(id).disabled=!can(resource,true)||(resource==='policies.rules'&&policySaving)||(resource==='directory.connection'&&directoryLoading)||(resource.startsWith('network.')&&(networkLoading||!networkState));
+  if(!can('policies.rules')&&$('policy-editor').open)closePolicyEditor();
+  pkiControls();policyEditorControls();
+  $('cancel-policy').disabled=policySaving||!can('policies.rules',true);
   applyPolicyControls();
   for(const [id,resource]of [['admin-users-list','system.administrators'],['admin-profiles-list','system.profiles']])$(id).querySelectorAll('button').forEach(button=>button.disabled=systemLoading||!can(resource,true));
   if(!can('directory.catalog')){for(const id of ['directory-users-list','directory-groups-list','directory-computers-list','detail-list'])$(id).replaceChildren();if($('directory-detail').open)$('directory-detail').close();}if(!can('system.administrators'))$('admin-users-list').replaceChildren();if(!can('system.profiles'))$('admin-profiles-list').replaceChildren();
@@ -157,7 +158,7 @@ function policyColumns(policy){
   const groups=policy.conditions.group_sids.map(sid=>groupNames.get(sid)||sid);
   const access=(policy.conditions.access_types||[]).map(type=>({wired:'Kablolu',wireless:'Kablosuz'}[type]||type)).join(', ')||'Tüm erişim türleri';
   const vlan=networkState?.vlans?.find(item=>item.id===policy.vlan);
-  return {groups:groups.length?groups.join(', '):'Grup koşulu yok',access,vlan:policy.vlan===null?'—':'VLAN '+policy.vlan,vlanName:vlan?.name||'',decision:policy.action==='allow'?'İzin ver':'Reddet'};
+  return {groups:groups.length?groups.join(', '):'Kimlik koşulu yok',access,vlan:policy.vlan===null?'—':'VLAN '+policy.vlan,vlanName:vlan?.name||'',decision:policy.action==='allow'?'İzin ver':'Reddet'};
 }
 function selectPolicyRow(id){
   if(policySaving||!can('policies.rules',true))return;
@@ -176,26 +177,26 @@ function renderPolicies(){
   if(!rows.some(p=>p.id===expandedPolicy))expandedPolicy='';
   $('policy-count').textContent=query?rows.length+' / '+policies.length+' kural':policies.length+' kural';
   const head=document.createElement('thead'),heading=document.createElement('tr');
-  for(const name of ['Kural Adı','Erişim Türü','Kullanıcı/Grup','VLAN','Karar']){const th=document.createElement('th');th.scope='col';th.textContent=name;heading.append(th);}
+  for(const name of ['Kural Adı','Erişim Türü','Kullanıcı/Grup','VLAN','Karar','Durum']){const th=document.createElement('th');th.scope='col';th.textContent=name;heading.append(th);}
   head.append(heading);parent.append(head);
-  if(!rows.length){const body=document.createElement('tbody'),row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=5;cell.className='policy-empty';cell.textContent=policies.length?'Aramanızla eşleşen kural bulunamadı.':'Henüz kural yok. Varsayılan karar: reddet.';row.append(cell);body.append(row);parent.append(body);}
+  if(!rows.length){const body=document.createElement('tbody'),row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=6;cell.className='policy-empty';cell.textContent=policies.length?'Aramanızla eşleşen kural bulunamadı.':'Henüz kural yok. Varsayılan karar: reddet.';row.append(cell);body.append(row);parent.append(body);}
   for(const p of rows){
     const entry=document.createElement('tbody');entry.dataset.policyId=p.id;entry.classList.toggle('selected',expandedPolicy===p.id);entry.classList.toggle('policy-disabled',!p.enabled);
     const row=document.createElement('tr');row.className='policy-row policy-summary';
     const c=policyColumns(p),name=document.createElement('td'),copy=document.createElement('div');copy.className='policy-name-wrap';
     const title=document.createElement('span');title.className='policy-name';title.textContent=p.name;
     const badge=document.createElement('span');badge.className='object-status '+(p.enabled?'enabled':'disabled');badge.textContent=p.enabled?'Etkin':'Devre dışı';
-    copy.append(title,badge);name.append(copy);row.append(name);
+    copy.append(title);name.append(copy);row.append(name);
     for(const text of [c.access,c.groups]){const cell=document.createElement('td');cell.textContent=text;row.append(cell);}
     const vlan=document.createElement('td');vlan.append(document.createTextNode(c.vlan));if(c.vlanName){const small=document.createElement('small');small.textContent=c.vlanName;vlan.append(small);}row.append(vlan);
-    const decision=document.createElement('td'),decisionBadge=document.createElement('span');decisionBadge.className='policy-decision '+(p.action==='allow'?'allow':'deny');decisionBadge.textContent=c.decision;decision.append(decisionBadge);row.append(decision);
+    const decision=document.createElement('td'),decisionBadge=document.createElement('span');decisionBadge.className='policy-decision '+(p.action==='allow'?'allow':'deny');decisionBadge.textContent=c.decision;decision.append(decisionBadge);row.append(decision);const status=document.createElement('td');status.append(badge);row.append(status);
     const menuRow=document.createElement('tr');menuRow.className='policy-action-row';menuRow.id='policy-actions-'+p.id;menuRow.hidden=expandedPolicy!==p.id;
-    const menuCell=document.createElement('td');menuCell.colSpan=5;const actions=document.createElement('div');actions.className='actions';menuCell.append(actions);menuRow.append(menuCell);
+    const menuCell=document.createElement('td');menuCell.colSpan=6;const actions=document.createElement('div');actions.className='actions';menuCell.append(actions);menuRow.append(menuCell);
     if(can('policies.rules',true)){
       row.tabIndex=0;row.setAttribute('aria-expanded',String(expandedPolicy===p.id));row.setAttribute('aria-controls',menuRow.id);
       row.addEventListener('click',()=>selectPolicyRow(p.id));
       row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPolicyRow(p.id);}else if(event.key==='Escape'&&expandedPolicy===p.id){event.preventDefault();selectPolicyRow(p.id);}});
-      const edit=document.createElement('button');edit.textContent='Düzenle';edit.addEventListener('click',()=>run(async()=>{if(policySaving)return;editingPolicy=p.id;$('policy-editor').open=true;applyPermissions();await loadNetwork();$('policy-form-title').textContent='Politikayı düzenle';$('policy-name').value=p.name;$('policy-action').value=p.action;$('policy-vlan').value=String(p.vlan||'');$('policy-any-group').checked=p.conditions.group_sids.length>0;await loadGroups();for(const sid of p.conditions.group_sids){if(![...$('policy-group').options].some(x=>x.value===sid)){const o=document.createElement('option');o.value=sid;o.textContent=groupNames.get(sid)||'Katalogda bulunamayan grup';$('policy-group').append(o);}}for(const o of $('policy-group').options)o.selected=p.conditions.group_sids.includes(o.value);applyPermissions();$('policies').querySelector('details').open=true;}));
+      const edit=document.createElement('button');edit.textContent='Düzenle';edit.addEventListener('click',()=>run(()=>openPolicyEditor(p)));
       const toggle=document.createElement('button');toggle.dataset.policyToggle=p.id;
       toggle.textContent=p.enabled?'Devre dışı bırak':'Etkinleştir';
       toggle.setAttribute('aria-label',p.name+' — '+toggle.textContent);
@@ -265,13 +266,16 @@ async function savePolicies(policies=state.policies,successMessage='Politikalar 
   const generation=authGeneration;policySaving=true;applyPermissions();
   try{
     await api('/api/policies',{expected_revision:state.revision,policies});
-    rejectedConflicts=[];await refresh();message(successMessage);
+    rejectedConflicts=[];await refresh();message(successMessage);return true;
   }finally{if(generation===authGeneration){policySaving=false;applyPermissions();}}
 }
-async function loadGroups(kind='policy'){if(kind==='policy'&&!can('policies.rules')||kind==='sim'&&!can('simulate.scenarios'))return;const id=kind==='sim'?'sim-group':'policy-group',query=kind==='sim'?'sim-group-query':'policy-group-query',select=$(id);const selected=[...select.selectedOptions].map(o=>({sid:o.value,name:o.textContent}));const page=await api('/api/policies/groups?q='+encodeURIComponent($(query).value.trim()));select.replaceChildren();for(const object of page.items){groupNames.set(object.sid,object.name);const option=document.createElement('option');option.value=object.sid;option.textContent=object.name+' ('+object.sam+')';option.selected=selected.some(s=>s.sid===object.sid);select.append(option);}for(const old of selected)if(![...select.options].some(o=>o.value===old.sid)){const o=document.createElement('option');o.value=old.sid;o.textContent=old.name;o.selected=true;select.append(o);}if(kind==='policy')$('policy-group-status').textContent=page.catalog_available?page.total+' grup; ilk '+page.items.length+' sonuç gösteriliyor. Aramayla daraltabilirsiniz.':'Önce Active Directory ekranından grupları getirin.';renderPolicies();}
+async function loadGroups(kind='policy'){
+  if(kind==='policy'){if(!can('policies.rules'))return;const generation=authGeneration,page=await api('/api/policies/labels');if(generation!==authGeneration||!can('policies.rules'))return;for(const object of page.items){policyLabels.set(object.sid,object);groupNames.set(object.sid,object.name);}renderPolicies();return;}
+  if(!can('simulate.scenarios'))return;const generation=authGeneration,select=$('sim-group'),selected=[...select.selectedOptions].map(o=>o.value),page=await api('/api/policies/groups?q='+encodeURIComponent($('sim-group-query').value.trim()));if(generation!==authGeneration)return;select.replaceChildren();for(const object of page.items){const option=new Option(object.name+' ('+object.sam+')',object.sid);option.selected=selected.includes(object.sid);select.append(option);}
+}
 
 function directoryButton(object,kind){const button=document.createElement('button');button.className='directory-object';button.dataset.objectId=object.guid;const avatar=document.createElement('span');avatar.className='object-avatar';avatar.setAttribute('aria-hidden','true');avatar.textContent=kind==='computers'?'PC':kind==='users'?(object.name||object.sam||'?').slice(0,1).toLocaleUpperCase('tr'):'G';const copy=document.createElement('span');copy.className='object-copy';const name=document.createElement('span');name.className='object-name';name.textContent=object.name;const meta=document.createElement('small');meta.textContent=object.sam;copy.append(name,meta);const badge=document.createElement('span');badge.className='object-status '+(kind!=='groups'?(object.enabled?'enabled':'disabled'):'group');badge.textContent=kind!=='groups'?((kind==='computers'?'Bilgisayar · ':'')+(object.enabled?'Etkin':'Kapalı hesap')):(object.security_enabled===false?'Dağıtım grubu':'Güvenlik grubu');const arrow=document.createElement('span');arrow.className='object-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='›';button.append(avatar,copy,badge,arrow);button.addEventListener('click',()=>run(()=>openDirectoryDetail(kind,object.guid)));return button;}
-function pickGroup(object){const select=$('policy-group');if(![...select.options].some(x=>x.value===object.sid)){const option=document.createElement('option');option.value=object.sid;option.textContent=object.name;select.append(option);}for(const option of select.options)option.selected=option.value===object.sid;$('policy-any-group').checked=true;select.disabled=false;showView('policies');$('policies').querySelector('details').open=true;message('Grup seçildi. Politika adını ve VLAN’ı kontrol ederek kaydedin.');}
+function pickGroup(object){if($('directory-detail').open)$('directory-detail').close();showView('policies');run(async()=>{await openPolicyEditor();policySelected.set(object.sid,{...object,kind:'group'});renderPolicySelected();message('Grup seçildi. Kuralı kontrol ederek TAMAM ile kaydedin.');});}
 async function loadCatalogKind(kind){if(!can('directory.catalog'))return;const request=++catalogRequests[kind],offset=catalogOffsets[kind],prefix='directory-'+kind;const page=await api('/api/directory/catalog?kind='+kind+'&offset='+offset+'&q='+encodeURIComponent($(prefix+'-query').value.trim()));if(request!==catalogRequests[kind])return;const parent=$(prefix+'-list');parent.replaceChildren();for(const object of page.items){const row=document.createElement('div');row.className='policy-row';row.append(directoryButton(object,kind));if(kind==='groups'){groupNames.set(object.sid,object.name);if(object.security_enabled!==false&&can('policies.rules',true)){const button=document.createElement('button');button.textContent='Politikada kullan';button.addEventListener('click',()=>pickGroup(object));row.append(button);}}parent.append(row);}if(!page.items.length)parent.textContent=page.catalog_available?'Bu aramada sonuç yok.':'Henüz AD dizini okunmadı.';$(prefix+'-count').textContent=page.total+' sonuç • '+(page.items.length?offset+1:0)+'–'+(offset+page.items.length);$(prefix+'-previous').disabled=offset===0;$(prefix+'-next').disabled=offset+page.items.length>=page.total;}
 async function loadDirectory(){await Promise.all(['users','groups','computers'].map(kind=>loadCatalogKind(kind)));}
 async function openDirectoryDetail(kind,id){detailSelection={kind,id};detailOffset=0;$('detail-query').value='';$('detail-list').replaceChildren();$('detail-title').textContent='Üyelik ayrıntıları';$('detail-meta').textContent='';$('detail-status').textContent='Yükleniyor…';$('detail-count').textContent='';if(!$('directory-detail').open)$('directory-detail').showModal();await loadDetail();}
@@ -308,15 +312,100 @@ $('setup-ack').addEventListener('change',setupControls);
 for(const id of ['fqdn','domain','dc','clients','wired','wireless'])$(id).addEventListener('input',()=>{setupTouched=true;setupControls();});
 $('refresh-pki').addEventListener('click',()=>run(async()=>{await refresh();await loadCertificates();}));
 $('policy-query').addEventListener('input',renderPolicies);
-$('new-policy').addEventListener('click',()=>{
+$('new-policy').addEventListener('click',()=>run(()=>openPolicyEditor()));
+const policyLabels=new Map(),policySelected=new Map();
+let policyPickerSelection=new Map(),policyTargetOffset=0,policyTargetRequest=0,policyEditorRequest=0,policyTargetBusy=false,policyTargetTotal=0;
+const policyKindNames={computer:'Bilgisayar',user:'Kullanıcı',group:'Grup'};
+function policyEditorControls(){
+  const blocked=policySaving||!can('policies.rules',true);
+  for(const id of ['policy-name','policy-access','policy-kind','policy-pick','policy-enabled','add-policy','cancel-policy'])$(id).disabled=blocked;
+  $('policy-vlan').disabled=blocked||$('policy-action').value==='deny';
+  $('policy-selected').querySelectorAll('button').forEach(b=>b.disabled=blocked);
+  for(const id of ['policy-target-query','policy-target-search','policy-picker-done','policy-picker-cancel'])$(id).disabled=blocked;
+  $('policy-target-previous').disabled=blocked||policyTargetBusy||policyTargetOffset===0;
+  $('policy-target-next').disabled=blocked||policyTargetBusy||policyTargetOffset+100>=policyTargetTotal;
+}
+function closePolicyPicker(commit=false){
+  policyTargetRequest++;policyTargetBusy=false;
+  if(commit){policySelected.clear();for(const [sid,item]of policyPickerSelection)policySelected.set(sid,item);renderPolicySelected();}
+  policyPickerSelection.clear();$('policy-picker').hidden=true;$('policy-modal-main').inert=false;$('policy-target-results').replaceChildren();
+  if($('policy-editor').open)$('policy-kind').focus();
+}
+function closePolicyEditor(){
+  policyEditorRequest++;closePolicyPicker();if($('policy-editor').open)$('policy-editor').close();
+  policySelected.clear();editingPolicy='';$('policy-form').reset();$('policy-form-error').textContent='';$('policy-selected').replaceChildren();applyPolicyControls();
+}
+function renderPolicySelected(){
+  const parent=$('policy-selected');parent.replaceChildren();
+  for(const [sid,item]of policySelected){const button=document.createElement('button');button.type='button';button.className='rule-chip';button.textContent=(policyKindNames[item.kind]?policyKindNames[item.kind]+' · ':'')+(item.name||sid)+' ×';button.title=sid;button.setAttribute('aria-label',(item.name||sid)+' seçimini kaldır');button.addEventListener('click',()=>{policySelected.delete(sid);renderPolicySelected();});parent.append(button);}
+  policyEditorControls();
+}
+async function openPolicyEditor(policy=null){
   if(policySaving||!can('policies.rules',true))return;
-  if(editingPolicy||!$('policy-editor').open){editingPolicy='';rejectedConflicts=[];$('policy-name').value='';$('policy-action').value='allow';$('policy-vlan').value='';$('policy-any-group').checked=false;for(const option of $('policy-group').options)option.selected=false;}
-  $('policy-form-title').textContent='Yeni kural';$('policy-editor').open=true;applyPermissions();$('policy-name').focus();
+  closePolicyEditor();const request=++policyEditorRequest,generation=authGeneration;
+  await loadNetwork();await loadGroups();if(request!==policyEditorRequest||generation!==authGeneration||!can('policies.rules',true))return;
+  editingPolicy=policy?.id||'';$('policy-form-title').textContent=policy?'Kuralı düzenle':'Yeni kural';
+  $('policy-name').value=policy?.name||'';$('policy-access').value=!policy?'both':policy.conditions.access_types.length===2?'both':policy.conditions.access_types[0]||'any';
+  $('policy-action').value=policy?.action||'allow';$('policy-vlan').value=String(policy?.vlan||'');$('policy-enabled').value=String(policy?.enabled??true);
+  for(const sid of policy?.conditions.group_sids||[])policySelected.set(sid,policyLabels.get(sid)||{sid,name:groupNames.get(sid)||sid,kind:''});
+  renderPolicySelected();$('policy-editor').showModal();applyPermissions();$('policy-name').focus();
+}
+async function loadPolicyTargets(){
+  if($('policy-picker').hidden||!can('policies.rules',true))return;
+  const request=++policyTargetRequest,generation=authGeneration,kind=$('policy-kind').value;
+  policyTargetBusy=true;$('policy-target-results').replaceChildren();$('policy-target-count').textContent='Kimlikler yükleniyor…';policyEditorControls();
+  try{
+    const page=await api('/api/policies/targets?kind='+kind+'&offset='+policyTargetOffset+'&q='+encodeURIComponent($('policy-target-query').value.trim()));
+    if(request!==policyTargetRequest||generation!==authGeneration||$('policy-picker').hidden)return;
+    policyTargetTotal=page.total;
+    for(const object of page.items){const item={...object,kind},label=document.createElement('label'),check=document.createElement('input'),copy=document.createElement('span'),name=document.createElement('strong'),meta=document.createElement('small');
+      check.type='checkbox';check.value=item.sid;check.checked=policyPickerSelection.has(item.sid);name.textContent=item.name;meta.textContent=item.sam;copy.append(name,meta);
+      check.addEventListener('change',()=>{if(check.checked)policyPickerSelection.set(item.sid,item);else policyPickerSelection.delete(item.sid);$('policy-picker-count').textContent=policyPickerSelection.size+' kimlik seçildi';});label.append(check,copy);$('policy-target-results').append(label);
+    }
+    $('policy-target-count').textContent=!page.catalog_available?'AD kataloğu yok. Önce Active Directory senkronizasyonunu tamamlayın.':page.total?(policyTargetOffset+1)+'–'+Math.min(policyTargetOffset+page.items.length,page.total)+' / '+page.total:'Eşleşen kimlik yok.';
+  }catch(error){if(request===policyTargetRequest){$('policy-target-count').textContent=error.message;policyTargetTotal=0;}}
+  finally{if(request===policyTargetRequest){policyTargetBusy=false;policyEditorControls();}}
+}
+function openPolicyPicker(){
+  if(!can('policies.rules',true)||policySaving||!$('policy-editor').open)return;
+  if(!$('policy-kind').value)$('policy-kind').value='group';
+  policyPickerSelection=new Map(policySelected);policyTargetOffset=0;policyTargetTotal=0;$('policy-target-query').value='';
+  $('policy-picker-title').textContent=policyKindNames[$('policy-kind').value]+' seçimi';$('policy-picker-count').textContent=policyPickerSelection.size+' kimlik seçildi';
+  $('policy-modal-main').inert=true;$('policy-picker').hidden=false;$('policy-target-query').focus();loadPolicyTargets();
+}
+$('policy-kind').addEventListener('change',()=>{if($('policy-kind').value)openPolicyPicker();});
+$('policy-pick').addEventListener('click',openPolicyPicker);
+$('policy-picker-done').addEventListener('click',()=>closePolicyPicker(true));
+$('policy-picker-cancel').addEventListener('click',()=>closePolicyPicker(false));
+$('policy-target-search').addEventListener('click',()=>{policyTargetOffset=0;loadPolicyTargets();});
+$('policy-target-query').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('policy-target-search').click();}});
+$('policy-target-previous').addEventListener('click',()=>{policyTargetOffset=Math.max(0,policyTargetOffset-100);loadPolicyTargets();});
+$('policy-target-next').addEventListener('click',()=>{policyTargetOffset+=100;loadPolicyTargets();});
+$('policy-editor').addEventListener('keydown',e=>{
+  if($('policy-picker').hidden||e.key!=='Tab')return;
+  const elements=[...$('policy-picker').querySelectorAll('input,button')].filter(x=>!x.disabled),first=elements[0],last=elements.at(-1);
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
 });
-$('policy-any-group').addEventListener('change',()=>{$('policy-group').disabled=!$('policy-any-group').checked||!can('policies.rules',true);});$('policy-group-search').addEventListener('click',()=>run(()=>loadGroups()));
-$('add-policy').addEventListener('click',()=>run(async()=>{const action=$('policy-action').value,groups=$('policy-any-group').checked?[...$('policy-group').selectedOptions].map(o=>o.value):[];if($('policy-any-group').checked&&!groups.length)throw new Error('En az bir AD grubu seçin veya grup üyeliği koşulunu kaldırın.');if(action==='allow'&&!$('policy-vlan').value)throw new Error('Önce Network → VLANs ekranında VLAN tanımlayın ve seçin.');const old=state.policies.find(x=>x.id===editingPolicy);const p={id:editingPolicy||crypto.randomUUID(),name:$('policy-name').value.trim(),enabled:old?.enabled??true,conditions:{group_sids:groups,access_types:old?.conditions.access_types||['wired','wireless'],nas_ips:old?.conditions.nas_ips||[]},constraints:old?.constraints||{eap_methods:['EAP-TLS'],require_domain_device:true},action,vlan:action==='allow'?Number($('policy-vlan').value):null};await savePolicies([...state.policies.filter(x=>x.id!==p.id),p]);editingPolicy='';$('policy-form-title').textContent='Yeni kural';applyPermissions();}));
-$('policy-editor').addEventListener('toggle',applyPolicyControls);
-$('cancel-policy').addEventListener('click',()=>{editingPolicy='';rejectedConflicts=[];renderPolicies();$('policy-form-title').textContent='Yeni kural';$('policies').querySelector('details').open=false;});
+$('policy-editor').addEventListener('cancel',e=>{e.preventDefault();if(policySaving)return;if(!$('policy-picker').hidden)closePolicyPicker();else closePolicyEditor();});
+$('cancel-policy').addEventListener('click',()=>{if(!policySaving)closePolicyEditor();});
+$('policy-action').addEventListener('change',policyEditorControls);
+$('policy-form').addEventListener('submit',async event=>{
+  event.preventDefault();if(policySaving||!can('policies.rules',true))return;
+  const generation=authGeneration,request=policyEditorRequest;
+  $('policy-form-error').textContent='';
+  try{
+    const action=$('policy-action').value,old=state.policies.find(p=>p.id===editingPolicy),access=$('policy-access').value;
+    if(action==='allow'&&!$('policy-vlan').value)throw new Error('VLAN seçin. VLAN tanımlı değilse önce Ağ → VLAN ekranından ekleyin.');
+    const selected=[...policySelected.values()];
+    if(selected.length>100)throw new Error('Bir kuralda en fazla 100 kimlik seçebilirsiniz.');
+    const policy={id:editingPolicy||crypto.randomUUID(),name:$('policy-name').value.trim(),enabled:$('policy-enabled').value==='true',conditions:{group_sids:[...policySelected.keys()],access_types:access==='both'?['wired','wireless']:access==='any'?[]:[access],nas_ips:old?.conditions.nas_ips||[]},constraints:old?.constraints||{eap_methods:['EAP-TLS'],require_domain_device:!selected.some(x=>x.kind==='user')},action,vlan:action==='allow'?Number($('policy-vlan').value):null};
+    if(await savePolicies([...state.policies.filter(p=>p.id!==policy.id),policy])){
+      for(const item of selected){policyLabels.set(item.sid,item);groupNames.set(item.sid,item.name);}
+      if(generation===authGeneration&&request===policyEditorRequest){closePolicyEditor();renderPolicies();}
+    }
+  }catch(error){if(generation===authGeneration&&request===policyEditorRequest){$('policy-form-error').textContent=error.message;message(error.message,'error');if(error.code==='REVISION_CONFLICT')await refresh();}}
+});
+
 $('run-simulation').addEventListener('click',()=>run(async()=>{const scenario=$('scenario').value,result=await api('/api/simulate',{authenticated:true,directory_available:scenario!=='offline',account_enabled:scenario!=='disabled',domain_device:scenario!=='outside',group_sids:[...$('sim-group').selectedOptions].map(o=>o.value),access_type:'wired',nas_ip:state.config?.radius_clients?.[0]?.ip||'192.0.2.2',eap_method:scenario==='wrong-eap'?'PEAP-MSCHAPV2':'EAP-TLS'});$('result').textContent='YALNIZ SİMÜLASYON • Ağda uygulanmaz\n\n'+JSON.stringify(result,null,2);}));
 $('sim-group-search').addEventListener('click',()=>run(()=>loadGroups('sim')));
 function directoryFormConnection(){return {dc_fqdn:$('ad-host').value.trim(),username:$('ad-user').value.trim(),password:$('ad-password').value,search_base:$('ad-ou').value.trim()};}
@@ -400,7 +489,7 @@ $('overview-authority-detail').textContent=can('certificates.authority')&&author
 }
 function setIdentityTab(tab){for(const name of ['users','groups','computers']){const selected=name===tab,button=$('identity-tab-'+name);button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;$('identity-panel-'+name).hidden=!selected;}}
 document.querySelectorAll('[data-identity-tab]').forEach(button=>{button.addEventListener('click',()=>setIdentityTab(button.dataset.identityTab));button.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const names=['users','groups','computers'],index=names.indexOf(button.dataset.identityTab);const tab=event.key==='Home'?names[0]:event.key==='End'?names[names.length-1]:names[(index+(event.key==='ArrowRight'?1:names.length-1))%names.length];setIdentityTab(tab);$('identity-tab-'+tab).focus();});});
-$('nav-toggle').addEventListener('click',()=>setNavigation(!document.body.classList.contains('nav-open')));$('nav-scrim').addEventListener('click',()=>{setNavigation(false);$('nav-toggle').focus();});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.body.classList.contains('nav-open')){setNavigation(false);$('nav-toggle').focus();}if(event.key==='/'&&session&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&!pkiDrawer&&!$('directory-detail').open){event.preventDefault();$('page-search').focus();}});
+$('nav-toggle').addEventListener('click',()=>setNavigation(!document.body.classList.contains('nav-open')));$('nav-scrim').addEventListener('click',()=>{setNavigation(false);$('nav-toggle').focus();});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.body.classList.contains('nav-open')){setNavigation(false);$('nav-toggle').focus();}if(event.key==='/'&&session&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&!pkiDrawer&&!$('directory-detail').open&&!$('policy-editor').open){event.preventDefault();$('page-search').focus();}});
 
 window.matchMedia('(max-width:760px)').addEventListener('change',()=>setNavigation(false));setNavigation(false);
 

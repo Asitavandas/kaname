@@ -176,6 +176,17 @@ class Store:
         visible = [_directory_display(x, kind) for x in items[offset:offset + limit]]
         return {'items': visible, 'total': len(items), 'offset': offset, 'catalog_available': True}
 
+    def policy_labels(self):
+        selected = {sid for p in self.snapshot()['policies'] for sid in p['conditions']['group_sids']}
+        catalog = self.directory_catalog()
+        items = []
+        if catalog:
+            for plural, kind in [('users', 'user'), ('computers', 'computer'), ('groups', 'group')]:
+                for obj in catalog[plural]:
+                    if obj['sid'] in selected:
+                        items.append({**_directory_display(obj, plural), 'kind': kind})
+        return {'items': items, 'catalog_available': catalog is not None}
+
     def directory_detail(self, kind, object_id, offset=0, query=''):
         import uuid
         from .membership import related

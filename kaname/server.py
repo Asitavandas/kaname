@@ -469,6 +469,8 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(200, {'events': self.server.store.audit()})
         elif self.path == '/api/network/devices' and self.guard(resource='network.devices'):
             self.respond(200, self.server.planning.devices())
+        elif self.path == '/api/policies/labels' and self.guard(resource='policies.rules'):
+            self.respond(200, self.server.store.policy_labels())
         elif self.path == '/api/policies/drafts' and self.guard(resource='policies.rules'):
             self.respond(200, self.server.planning.drafts())
         elif urlsplit(self.path).path == '/api/policies/targets' and self.guard(resource='policies.rules'):
@@ -552,7 +554,7 @@ class Handler(BaseHTTPRequestHandler):
             except LookupError: self.respond(404, {'error': 'CATALOG_OBJECT_NOT_FOUND'})
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
             except sqlite3.Error as error: self.store_error(error)
-        elif urlsplit(self.path).path not in {'/api/radius/events', '/api/services', '/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/audit/history', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/directory/settings'}:
+        elif urlsplit(self.path).path not in {'/api/radius/events', '/api/services', '/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/audit/history', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/policies/labels', '/api/directory/settings'}:
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):

@@ -81,10 +81,14 @@ class HTTPTests(unittest.TestCase):
     def test_simulation_is_inert(self):
         revision=json.loads(self.request('GET','/api/state')[1])['revision']
         self.assertEqual(self.request('POST','/api/policies',{'expected_revision':revision,'policies':[policy()]})[0],200)
-        data=asdict(identity());data['group_sids']=list(data['group_sids'])
+        data=asdict(identity());data.pop('account_sid');data['group_sids']=list(data['group_sids'])
         status,body,_=self.request('POST','/api/simulate',data)
         self.assertEqual(status,200);value=json.loads(body)
         self.assertTrue(value['simulation_only']);self.assertFalse(value['network_enforced'])
+
+    def test_simulation_cannot_supply_trusted_account_sid(self):
+        data=asdict(identity());data['group_sids']=list(data['group_sids'])
+        self.assertEqual(self.request('POST','/api/simulate',data)[0],400)
 
     def test_static_traversal_is_not_served(self):
         self.assertEqual(self.request('GET','/../access-token')[0],404)
