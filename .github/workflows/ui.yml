@@ -2,9 +2,9 @@ name: KANAME browser checks
 on:
   push:
     branches: [main]
-    paths: ['kaname/**', 'tools/ui_smoke.cjs', 'tools/dashboard_ui_smoke.cjs', 'tools/central_ui_smoke.cjs', 'tools/ui_navigation.cjs', 'tools/policy_ui_smoke.cjs', 'tools/setup_ui_smoke.cjs', 'tools/audit_ui_smoke.cjs', 'tools/access_events_ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/services_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', 'tests/test_directory.py', '.github/workflows/ui.yml']
+    paths: ['kaname/**', 'tools/ui_smoke.cjs', 'tools/dashboard_ui_smoke.cjs', 'tools/central_ui_smoke.cjs', 'tools/motion_ui_smoke.cjs', 'tools/ui_navigation.cjs', 'tools/policy_ui_smoke.cjs', 'tools/setup_ui_smoke.cjs', 'tools/audit_ui_smoke.cjs', 'tools/access_events_ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/services_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', 'tests/test_directory.py', '.github/workflows/ui.yml']
   pull_request:
-    paths: ['kaname/**', 'tools/ui_smoke.cjs', 'tools/dashboard_ui_smoke.cjs', 'tools/central_ui_smoke.cjs', 'tools/ui_navigation.cjs', 'tools/policy_ui_smoke.cjs', 'tools/setup_ui_smoke.cjs', 'tools/audit_ui_smoke.cjs', 'tools/access_events_ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/services_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', '.github/workflows/ui.yml']
+    paths: ['kaname/**', 'tools/ui_smoke.cjs', 'tools/dashboard_ui_smoke.cjs', 'tools/central_ui_smoke.cjs', 'tools/motion_ui_smoke.cjs', 'tools/ui_navigation.cjs', 'tools/policy_ui_smoke.cjs', 'tools/setup_ui_smoke.cjs', 'tools/audit_ui_smoke.cjs', 'tools/access_events_ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/services_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', '.github/workflows/ui.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -34,7 +34,7 @@ jobs:
       - name: Browser flow with temporary directory fixture (no real AD)
         run: |
           browser_test_status=0
-          for browser_test_file in tools/central_ui_smoke.cjs tools/ui_smoke.cjs tools/dashboard_ui_smoke.cjs tools/policy_ui_smoke.cjs tools/setup_ui_smoke.cjs tools/audit_ui_smoke.cjs tools/access_events_ui_smoke.cjs tools/session_ui_smoke.cjs tools/device_ui_smoke.cjs tools/planning_ui_smoke.cjs tools/services_ui_smoke.cjs; do
+          for browser_test_file in tools/motion_ui_smoke.cjs tools/central_ui_smoke.cjs tools/ui_smoke.cjs tools/dashboard_ui_smoke.cjs tools/policy_ui_smoke.cjs tools/setup_ui_smoke.cjs tools/audit_ui_smoke.cjs tools/access_events_ui_smoke.cjs tools/session_ui_smoke.cjs tools/device_ui_smoke.cjs tools/planning_ui_smoke.cjs tools/services_ui_smoke.cjs; do
             node "$browser_test_file" || browser_test_status=1
           done
           exit "$browser_test_status"
