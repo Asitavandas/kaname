@@ -69,6 +69,41 @@ class DashboardTests(unittest.TestCase):
         e=summary(self.root,'24h',now=NOW,certificates=False)['events']
         self.assertEqual(e['total'],1);self.assertEqual(sum(r['accept'] for r in e['series']),1)
         self.assertEqual(len(e['series']),24)
+
+    def test_one_hour_minute_bins_exact_edges_and_partial_minute(self):
+        now=datetime(2026,10,22,12,0,30,tzinfo=timezone.utc)
+        radius_events.initialize(self.root)
+        for n,at in enumerate(['2026-10-22T11:00:29.999Z','2026-10-22T11:00:30.000Z',
+                               '2026-10-22T11:15:14.000Z','2026-10-22T12:00:29.999Z',
+                               '2026-10-22T12:00:30.000Z']):
+            radius_events.append(self.root,event(n,at=at,response_code=3 if n==2 else 2,vlan=None if n==2 else 110))
+        value=summary(self.root,'1h',certificates=False,now=now);e=value['events']
+        self.assertEqual(value['from'],'2026-10-22T11:00:30.000Z')
+        self.assertEqual((e['total'],e['accept'],e['reject']),(3,2,1))
+        self.assertEqual(len(e['series']),61)
+        self.assertEqual(sum(r['accept']+r['reject'] for r in e['series']),3)
+        self.assertEqual(e['series'][0]['accept'],1);self.assertEqual(e['series'][-1]['accept'],1)
+
+    def test_calendar_periods_clamp_month_end_and_preserve_istanbul_boundaries(self):
+        radius_events.initialize(self.root)
+        now=datetime(2024,8,31,22,15,tzinfo=timezone.utc) # September 1 in Istanbul.
+        cases=[('6m',now,'2024-02-29T21:00:00.000Z'),
+               ('6m',datetime(2026,8,31,12,tzinfo=timezone.utc),'2026-02-27T21:00:00.000Z'),
+               ('1y',datetime(2024,2,29,12,tzinfo=timezone.utc),'2023-02-27T21:00:00.000Z')]
+        for period,current,start in cases:
+            with self.subTest(period=period,now=current):
+                value=summary(self.root,period,certificates=False,now=current)
+                self.assertEqual(value['from'],start)
+                self.assertTrue(value['events']['available'])
+                self.assertLessEqual(len(value['events']['series']),367)
+        # Long-range totals include every retained row in range, without sampling.
+        for n,at in enumerate(['2026-04-21T21:00:00.000Z','2026-04-21T20:59:59.999Z',
+                               '2025-10-21T21:00:00.000Z','2026-10-22T12:00:00.000Z']):
+            radius_events.append(self.root,event(n,at=at))
+        self.assertEqual(summary(self.root,'6m',certificates=False,now=NOW)['events']['total'],1)
+        yearly=summary(self.root,'1y',certificates=False,now=NOW)['events']
+        self.assertEqual(yearly['total'],3)
+        self.assertEqual(sum(r['accept']+r['reject'] for r in yearly['series']),3)
     def test_certificate_totals_skip_revoked_expired_future_and_server(self):
         import sqlite3
         from datetime import timedelta
@@ -121,6 +156,10 @@ class DashboardHTTPTests(unittest.TestCase):
         for path in ['/api/dashboard?period=all','/api/dashboard?period=7d&period=30d','/api/dashboard?path=/etc/passwd']:
             self.assertEqual(self.call('GET',path)[0],400)
         self.assertEqual(self.call('GET','/api/auth/session')[0],200)
+        for period in ('1h','24h','7d','30d','6m','1y'):
+            with self.subTest(period=period):
+                code,value,_=self.call('GET','/api/dashboard?period='+period)
+                self.assertEqual(code,200);self.assertEqual(value['period'],period)
     def test_sections_respect_permissions_without_data_leak(self):
         profile=self.create_profile('History',{'audit.events':'read'});self.user('reader',profile);pair=self.login('reader')
         code,value,_=self.call('GET','/api/dashboard',auth=pair);self.assertEqual(code,200);self.assertIsNone(value['certificates']);self.assertIsNotNone(value['events'])

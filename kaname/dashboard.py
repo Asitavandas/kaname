@@ -4,6 +4,7 @@ Counts are retained server responses, not clients, sessions or NAS delivery.
 Per-section permissions are enforced by the HTTP caller; no secrets returned.
 """
 from contextlib import closing
+from calendar import monthrange
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import sqlite3
@@ -37,6 +38,7 @@ def response_summary(root, start, end, period, network):
     # Append-only IDs make the watermark an immutable snapshot. Fetch short
     # primary-key batches without a long read transaction, so dashboard scans
     # release DELETE-journal read locks between batches for the native writer.
+    minute = period == '1h'
     hourly = period == '24h'
     grouped_counts, nas_counts, heat_counts, recent = {}, {}, {}, []
     accept = reject = 0
@@ -54,7 +56,7 @@ def response_summary(root, start, end, period, network):
                 ident, at, code, reason, ip, policy, vlan, guid, mac, serial = row
                 if not low <= at < high_time: continue
                 local = datetime.fromisoformat(at.replace('Z','+00:00')).astimezone(ZONE)
-                key = at[:13]+':00:00Z' if hourly else local.strftime('%Y-%m-%d')
+                key = at[:16]+':00Z' if minute else at[:13]+':00:00Z' if hourly else local.strftime('%Y-%m-%d')
                 yes, no = int(code == 2), int(code == 3)
                 accept += yes; reject += no
                 bucket = grouped_counts.setdefault(key,[0,0]); bucket[0] += yes; bucket[1] += no
@@ -76,12 +78,12 @@ def response_summary(root, start, end, period, network):
         types[kind if kind in types else 'unknown'] += count
         devices.append({'ip':ip,'name':client.get('name',ip),'count':count,'accept':yes,'reject':no})
     indexed = {key:(yes,no) for key,yes,no in grouped}
-    cursor = start.replace(minute=0,second=0,microsecond=0) if hourly else start
+    cursor = start.replace(second=0,microsecond=0) if minute else start.replace(minute=0,second=0,microsecond=0) if hourly else start
     series=[]
     while cursor < end:
-        key=cursor.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:00:00Z') if hourly else cursor.strftime('%Y-%m-%d')
+        key=cursor.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:00Z') if minute else cursor.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:00:00Z') if hourly else cursor.strftime('%Y-%m-%d')
         yes,no=indexed.get(key,(0,0));series.append({'at':stamp(cursor),'accept':yes,'reject':no})
-        cursor += timedelta(hours=1) if hourly else timedelta(days=1)
+        cursor += timedelta(minutes=1) if minute else timedelta(hours=1) if hourly else timedelta(days=1)
     return {'available':True,'initialized':True,'watermark':high,'total':accept+reject,'accept':accept,'reject':reject,
             'series':series,'nas':devices[:6],'access_types':[{'type':k,'count':v} for k,v in types.items()],
             'heatmap':[{'day':day,'hour':hour,'count':count} for day,hour,count in heat],
@@ -125,10 +127,17 @@ def certificate_summary(root, now):
 
 
 def summary(root, period='7d', *, events=True, certificates=True, network=None, now=None):
-    if period not in {'24h','7d','30d'}:raise ValueError('INVALID_PERIOD')
+    if period not in {'1h','24h','7d','30d','6m','1y'}:raise ValueError('INVALID_PERIOD')
     now=(now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     local=now.astimezone(ZONE)
-    start=local-timedelta(hours=24) if period=='24h' else local.replace(hour=0,minute=0,second=0,microsecond=0)-timedelta(days=int(period[:-1])-1)
+    if period in {'1h','24h'}:
+        start=local-timedelta(hours=int(period[:-1]))
+    elif period in {'6m','1y'}:
+        months=6 if period=='6m' else 12
+        year,month=divmod(local.year*12+local.month-1-months,12);month+=1
+        start=local.replace(year=year,month=month,day=min(local.day,monthrange(year,month)[1]),hour=0,minute=0,second=0,microsecond=0)
+    else:
+        start=local.replace(hour=0,minute=0,second=0,microsecond=0)-timedelta(days=int(period[:-1])-1)
     result={'period':period,'from':stamp(start),'to':stamp(now),'checked_at':stamp(now),'timezone':'Europe/Istanbul',
             'events':None,'certificates':None,'coverage':{'accounting_sessions':False,'endpoint_success_proven':False,'retained_server_responses_only':True}}
     if events:
