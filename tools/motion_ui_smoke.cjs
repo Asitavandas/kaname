@@ -39,6 +39,7 @@ s.serve_forever()`;
   await login();assert.equal(await page.locator('.dashboard-widget').count(),10);
   assert.equal(await page.locator('.dashboard-area').count(),2);assert.equal(await page.locator('.dashboard-donut-segment').count(),3);
   assert.equal(await page.locator('.dashboard-donut-svg').evaluate(svg=>{const outer=svg.getBoundingClientRect();return [...svg.querySelectorAll('.dashboard-donut-segment')].every(el=>{const b=el.getBoundingClientRect();return b.x>=outer.x&&b.y>=outer.y&&b.right<=outer.right&&b.bottom<=outer.bottom;});}),true,'donut arcs remain centered inside chart');
+  await page.locator('.dashboard-donut-svg').evaluate(async svg=>Promise.all(svg.getAnimations().map(animation=>animation.finished)));
   assert.equal(await page.evaluate(()=>document.querySelector('.dashboard-donut-svg').getBoundingClientRect().bottom<=document.querySelector('#dashboard-types').getBoundingClientRect().top),true,'donut does not overlap its legend');
   assert.equal(await page.locator('.orbit-hub').evaluate(e=>getComputedStyle(e,':before').display),'none');
   await page.locator('.dashboard-point').first().focus();assert.equal(await page.locator('.dashboard-chart-tip').isVisible(),true);await page.locator('#dashboard-refresh').focus();
