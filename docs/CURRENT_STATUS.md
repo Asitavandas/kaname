@@ -17,6 +17,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.26 giriş/menü/grafik canlı kurulumu tamam — görünüm kabulü bekliyor (23 Ekim 2026)
+
+- 🔴✓ Operatörün LOGIN_CHART_FINISHED çıktısı sürüm 0.14.0-dev.26, kaynak cf4b34926b206aa4e3c1e52e7d08b264782e643c kurulumunu doğruladı. Dosya, süreç, zamanlayıcı ve iş verisi kontrollerinin tamamı başarılı.
+- 🔴✓ Kurulum öncesi beş, sonrası on beş API yolu üçer kez HTTP 200 döndürdü. Dashboard 7 gün medyan/en uzun 4,8/4,8 ms; 1 saat 4,1/4,3 ms; 6 ay 8,1/8,7 ms; 1 yıl 6,3/9,6 ms. Kaynak API'si 1,6/2,2 ms. Son kontrollerin en uzun yanıtı 35,5 ms.
+- 🔴✓ RADIUS aktif ve yeniden başlatılmadı; PID 832810 korundu. Broker PID 887154 korundu. Kurallar, sertifikalar ve Windows kaynakları değişmedi; günlük yedek zamanlayıcısı korundu. Operatör tercihiyle yeni tam veri yedeği/izole veri restore yapılmadı.
+- Bu kayıt turunda ek kaynak/servis eylemi uygulanmadı. Canlı kurulum bekleme maddesi kapanmıştır. Bekliyor: gerçek tarayıcıda çerçevesiz giriş ekranı, her girişte açık menü, yalnız Düzenle modundaki × düğmeleri ve yeni çift sütun trafik grafiği için operatör görünüm kabulü. Önceki bağımsız fonksiyonel açık işler bu kurulum çıktısıyla kapanmaz.
+- Kanıt: /var/lib/authwire-ui-updates/login-chart-dev26-20261023T204113Z-cf2f2590. Makine okunur kayıt: docs/checkpoints/2026-10-23-login-chart-live-result.json.
+
 ## 🔴✓ dev.26 giriş ekranı, düzenleme denetimleri ve yeni trafik grafiği — kaynak/test tamam; canlı kurulum bekliyor (23 Ekim 2026)
 
 - 🔴✓ Operatörün ekranına göre dashboard kartlarının × kaldırma düğmesi yalnız Düzenle modunda görünür ve çalışır. Normal görünümde hover, klavye odağı ve dokunmatik ekran bu düğmeyi açmaz; düzenleme dışındaki kaldırma çağrısı da engellenir. Kaydet/Vazgeç, boş düzen, katalogdan geri ekleme, taşıma ve boyutlandırma korunur.
