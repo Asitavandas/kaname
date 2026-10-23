@@ -37,6 +37,7 @@ s.serve_forever()`;
   async function logout(){await page.locator('#account-toggle').click();await page.locator('#logout').click();await page.locator('#login-form').waitFor({state:'visible'});}
   const widget=id=>page.locator('[data-widget="'+id+'"]');
   await login();assert.equal(await page.locator('.dashboard-widget').count(),10);
+  assert.equal(await page.locator('#page-description,.panel-search,.dashboard-layout-toolbar,.dashboard-heading h2,.dashboard-heading p').count(),0);assert.equal(await page.locator('#dashboard-feedback').isVisible(),false);assert.equal(await page.locator('#dashboard-layout-edit').textContent(),'Düzenle');const refreshBox=await page.locator('#dashboard-refresh').boundingBox(),editBox=await page.locator('#dashboard-layout-edit').boundingBox();assert.ok(editBox.x>=refreshBox.x+refreshBox.width&&Math.abs(editBox.y-refreshBox.y)<2,'edit follows refresh on the same row');
   assert.equal(await page.locator('.dashboard-area').count(),2);assert.equal(await page.locator('.dashboard-donut-segment').count(),3);
   assert.equal(await page.locator('.dashboard-donut-svg').evaluate(svg=>{const outer=svg.getBoundingClientRect();return [...svg.querySelectorAll('.dashboard-donut-segment')].every(el=>{const b=el.getBoundingClientRect();return b.x>=outer.x&&b.y>=outer.y&&b.right<=outer.right&&b.bottom<=outer.bottom;});}),true,'donut arcs remain centered inside chart');
   await page.locator('.dashboard-donut-svg').evaluate(async svg=>Promise.all(svg.getAnimations().map(animation=>animation.finished)));
