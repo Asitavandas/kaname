@@ -17,6 +17,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.22 dashboard başlıklarını sadeleştirme — kaynak/test tamam; canlı kurulum bekliyor (23 Ekim 2026)
+
+- 🔴✓ Operatörün kırmızı işaretli ekranına göre üst başlık açıklaması, bölüm arama/Git alanı, Ağınızın erişim özeti başlığı ve açıklaması, ayrı düzenleme şeridi ve başarılı okumadaki dönem/saat dilimi metni kaldırıldı. Boş alan bırakılmadı; kaldırılan arama elemanlarının olay bağları ve kısayolu da temizlendi.
+- 🔴✓ Düzeni düzenle → Düzenle olarak değişti; Yenile düğmesinin hemen sağına, aynı yükseklik/hizaya taşındı. Kaydet/Vazgeç/Varsayılan düzen aynı kontrol grubunda; mobilde gerektiğinde sarılır. Kart taşıma/boyutlandırma ve hesaba özel tarayıcı kaydı korundu. Veri/yetki hatalarının görünür geri bildirimi korundu.
+- 🔴✓ Son kaynakta 12 tarayıcı akışı, temel/HTTP sınır testleri, Linux paket hazırlık, Windows istemci/retry/native Kerberos ve sınırlı ağ probu başarılı. Yeni yerleşim kontrolü işaretli elemanların kaldırıldığını, normal metin satırının boşluğuyla birlikte gizlendiğini ve Düzenle/Yenile sırasını aynı satırda doğrular. İlk turda düğme yükseklik farkı düzeltildi; iki eski sürüm beklentisi güncellendi. Gerçek normal/debug EAP-TLS CI workflow'u bu kayıt anında çalışıyor; başarılı diye işaretlenmedi ve açık fonksiyonel işler kapatılmadı.
+- 🔴✓ 146 dosyalı kaynak paketinde yalnız altı UI/sürüm dosyası değişti. Kurulu dev.21 ile korunan kaynakların gerçek sunucuda salt okunur karşılaştırması başarılı. Kaynak yamasının yazma/başlatma/HTTPS hata geri dönüşü ve tekrarlı çalışma sınırı doğrulandı. Yalnız panel servisi yenilenecek.
+- Canlı sürüm hâlâ dev.21; bu turda servis eylemi yapılmadı. RADIUS PID 832810, broker PID 887154 aktif ve korundu. Yeni tam veri yedeği/izole restore yok; günlük yedek düzeni korunuyor.
+- Bekliyor: sudo kurulumu, CLEAN_UI_FINISHED koruma çıktısı ve Ctrl+F5 sonrası operatör görünüm kabulü.
+- Kaynak e128a8a2426c0aa3e9a62f6544eef9dbeed388b4; PR #53 birleştirildi (77d33d867ee7f9586ecdbb82551c8a8e371f7661). Manifest 235829410e4bba7567add7f23652ef84d683dd8e80a74cff244a8a78a56f0aa7. Yardımcı /home/segmentiq/authwire-clean-ui-20261023.py; SHA256 0297dc87e8afec7a9beb50e414589e631e21790e754fb558ad54fcdf0b22c6b7. Tarayıcı run39950737870/job120404272748/artifact12500855407; arşiv SHA256 3b7dd05115f4c4b059ed73f9473332433233effd3cf322045938fe557018aef2.
+
 ## 🔴✓ dev.21 canlı kurulum ve koruma kontrolleri tamam — görünüm kabulü bekliyor (23 Ekim 2026)
 
 - 🔴✓ Operatörün MOTION_UI_FINISHED çıktısı sürüm 0.14.0-dev.21, kaynak ad21a77d99d5cf1cbf0d6a71cf933af2586092a6 kurulumunu doğruladı. Dosya, süreç, zamanlayıcı ve iş verisi kontrolleri başarılı.
