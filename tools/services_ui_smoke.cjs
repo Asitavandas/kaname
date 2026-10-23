@@ -31,7 +31,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.joi
   const header=await page.locator('main>header').boundingBox(),account=await page.locator('#account-toggle').boundingBox();
   assert.ok(account.x+account.width>header.x+header.width-12,'Username sits at the right edge of the top header');
   assert.equal(await page.locator('#account-name').textContent(),'admin');assert.equal(await page.locator('#account-menu').isHidden(),true);
-  await page.locator('#account-toggle').click();assert.match(await page.locator('#account-version').textContent(),/0\.14\.0-dev\.21/);
+  await page.locator('#account-toggle').click();assert.match(await page.locator('#account-version').textContent(),/0\.14\.0-dev\.22/);
   await page.locator('#account-system').hover();await page.waitForFunction(()=>accountPowerState?.available&&!accountPowerLoading);
   const rootMenu=await page.locator('#account-menu').boundingBox(),sub=await page.locator('#account-system-menu').boundingBox();assert.ok(sub.x<rootMenu.x&&sub.x+sub.width<=rootMenu.x+2,'Desktop submenu opens to the left');
   assert.deepEqual(await page.locator('#account-system-menu button').allTextContents(),['↻Yeniden başlat','⏻Kapat']);
