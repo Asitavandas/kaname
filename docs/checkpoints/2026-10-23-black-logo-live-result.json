@@ -1,0 +1,27 @@
+{
+  "event": "BLACK_LOGO_FINISHED",
+  "verified": true,
+  "version": "0.14.0-dev.23",
+  "release": "d4cc83e80eeff69c50732c11fecdd4eb3cae5b9f",
+  "changed": true,
+  "checks": {
+    "files": true,
+    "pids": true,
+    "timers": true,
+    "business_state": true
+  },
+  "radius_active": true,
+  "radius_restarted": false,
+  "radius_process_preserved": true,
+  "broker_process_preserved": true,
+  "policy_changed": false,
+  "certificates_changed": false,
+  "windows_changed": false,
+  "full_data_backup_created": false,
+  "isolated_restore_exercised": false,
+  "backup_timer_preserved": true,
+  "operator_browser_acceptance_pending": true,
+  "rollback_source_commit": "e128a8a2426c0aa3e9a62f6544eef9dbeed388b4",
+  "evidence": "/var/lib/authwire-ui-updates/black-logo-dev23-20261023T191949Z-ae61e346",
+  "source": "operator supplied live deployment output"
+}
