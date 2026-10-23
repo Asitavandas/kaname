@@ -493,10 +493,10 @@ html:has(body.central-theme){overflow-x:clip}
 .linear-navigation .aside-bottom{position:static;margin-top:auto;padding:14px 18px;border-top:1px solid #EDF2F6}
 @keyframes nav-inline-in{from{opacity:0;translate:0 -4px}to{opacity:1;translate:0 0}}
 /* Dark pink is an accent, with readable text and restrained light surfaces. */
-.linear-navigation #dashboard-reject-card{background:linear-gradient(135deg,#FBEAF2,#FFF7FB);background-color:#FBEAF2;color:#762346;border-color:#EED3DF}
+.linear-navigation .widget-body>.dashboard-stat{background:var(--navy);border:1px solid var(--navy);color:#fff}
+.linear-navigation .widget-body>.dashboard-stat>span,.linear-navigation .widget-body>.dashboard-stat>strong,.linear-navigation .widget-body>.dashboard-stat>small{color:#fff}
 .linear-navigation .dashboard-legend i.reject,.linear-navigation .dashboard-decision.reject{background:#F6DBE7;color:#8D2853}
 .linear-navigation .dashboard-legend i.reject{background:var(--rose)}
-.linear-navigation #dashboard-expiring-card{border-top:3px solid #B5346B}
 #dashboard-widget-add{border-color:#D5A8BC;background:#FBEAF2;color:#8A2550}
 .widget-remove{position:absolute;right:7px;top:6px;z-index:6;min-height:24px;width:24px;height:24px;padding:0!important;display:grid;place-items:center;border-radius:7px;border:1px solid #E3D5DD;background:#FFFFFFF2;color:#8A2550;font-size:17px;line-height:1;opacity:0;pointer-events:none;transition:opacity .15s,background .15s}
 .dashboard-widget:hover .widget-remove,.dashboard-widget:focus-within .widget-remove,.is-editing .widget-remove{opacity:1;pointer-events:auto}
@@ -515,15 +515,24 @@ html:has(body.central-theme){overflow-x:clip}
 .widget-catalog-row:hover{border-color:#D2A4BA;background:#FFFAFC}.widget-catalog-row>div{min-width:0}.widget-catalog-row strong{display:block;color:#1D4D73;font-size:12px}.widget-catalog-row p{font-size:11px;color:#75899B;margin:5px 0 0;line-height:1.5}
 .widget-catalog-row button{min-width:72px;flex:none;font-size:11px;background:#FBEAF2;color:#8A2550;border-color:#E7C5D6;min-height:32px}.widget-catalog-row button:disabled{opacity:1;background:#F0F5F8;color:#8A9BA9;border-color:#E5EDF3}
 .widget-catalog-footer{padding:14px 22px;display:flex;justify-content:flex-end;border-top:1px solid #ECF1F5;background:white;position:sticky;bottom:0}.widget-catalog-footer button{min-width:90px;font-size:12px}
-.central-theme .widget-body>.resource-panel{display:flex;flex-direction:column;align-items:stretch;padding:18px 20px;border-top:3px solid #B5346B}
+.central-theme .widget-body>.resource-panel{display:flex;flex-direction:column;align-items:stretch;padding:18px 20px}
 .resource-panel .dashboard-panel-head{align-items:center;margin:0 0 5px}.resource-icon{font-size:21px;line-height:1;color:#B5346B}.resource-gauge{position:relative;flex:1;min-height:104px;max-height:140px;display:grid;place-items:center}
 .resource-svg{width:122px;height:122px;max-height:100%;overflow:visible}.resource-progress{stroke:#B5346B;transition:stroke-dasharray .8s ease,stroke-width .2s;transform-origin:0 0}
 #dashboard-memory-panel .resource-progress{stroke:#68A9CF}#dashboard-disk-panel .resource-progress{stroke:#1D4D73}
 .resource-value{position:absolute;font-size:25px;line-height:1.2;letter-spacing:-.7px;color:#1D4D73;pointer-events:none}
 .resource-detail{font-size:11px;line-height:1.6;color:#6B8295;margin:8px 0 0}.resource-sampled{display:block;font-size:9px;color:#8A9AA7;margin-top:5px}
 .resource-panel:hover .resource-progress{stroke-width:12}.resource-panel[data-level=high] .resource-value{color:#B5346B}
-.central-theme .widget-body>.status-widget{display:flex;flex-direction:column;justify-content:flex-start;border-top:3px solid #B5346B}
+.central-theme .widget-body>.status-widget{display:flex;flex-direction:column;justify-content:flex-start}
 .status-widget-value{font-size:25px;letter-spacing:-.7px;color:#1D4D73;margin:auto 0 12px}.status-widget-value[data-status=error]{color:#B5346B}.status-widget-value[data-status=ready]{color:#27714A}
 @media(hover:none){.widget-remove{opacity:1;pointer-events:auto}}
 @media(max-width:760px){.linear-navigation #sidebar{width:min(var(--sidebar),86vw)}.linear-navigation .brand{padding:18px 14px}.linear-navigation .orbit-navigation{margin:12px 10px}.linear-navigation #sidebar .nav-items{margin-left:18px}.widget-catalog-row{gap:10px;padding:11px}.widget-catalog-group{padding:8px 14px}.widget-catalog-row p{font-size:10px}.resource-value{font-size:25px}}
 @media(prefers-reduced-motion:reduce){.linear-navigation .nav-items,.resource-progress,.widget-remove{animation:none!important;transition:none!important}.linear-navigation #sidebar nav .orbit-node:hover{transform:none}}
+
+/* Compact top bar: the divider sits just below the account control. */
+.central-theme main>header{min-height:62px;padding:8px 0 9px;margin-bottom:16px;align-items:center}
+.central-theme main>header .page-heading h1{margin:0}
+.linear-navigation .dashboard-heat-cell[data-level="1"],.linear-navigation .dashboard-scale i:nth-of-type(1){background:#F8DDE9}
+.linear-navigation .dashboard-heat-cell[data-level="2"],.linear-navigation .dashboard-scale i:nth-of-type(2){background:#EFA5C4}
+.linear-navigation .dashboard-heat-cell[data-level="3"],.linear-navigation .dashboard-scale i:nth-of-type(3){background:#D56594}
+.linear-navigation .dashboard-heat-cell[data-level="4"],.linear-navigation .dashboard-scale i:nth-of-type(4){background:#B5346B}
+@media(max-width:760px){.central-theme main>header{min-height:60px;padding:8px 0 9px;gap:10px}.central-theme main>header h1{font-size:18px}}

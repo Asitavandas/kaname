@@ -38,7 +38,7 @@ function renderDashboardTrend(events){
   const reveal=()=>{guide.setAttribute('x1',x(i));guide.setAttribute('x2',x(i));guide.setAttribute('visibility','visible');dashboardTip(host,date,dashboardNumber(row.accept)+' kabul · '+dashboardNumber(row.reject)+' ret',x(i)/740*100,8);};
   const hide=()=>{guide.setAttribute('visibility','hidden');host.querySelector('.dashboard-chart-tip')?.setAttribute('hidden','');};
   group.addEventListener('pointerenter',reveal);group.addEventListener('focus',reveal);group.addEventListener('pointerleave',hide);group.addEventListener('blur',hide);svg.append(group);
-  if(i===0||i===rows.length-1||i%Math.max(1,Math.floor(rows.length/5))===0){const label=dashSVG('text',{x:x(i),y:233,'text-anchor':'middle',fill:'#697D8F','font-size':10});label.textContent=new Date(row.at).toLocaleString('tr-TR',dashboardData.period==='24h'?{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit'}:{timeZone:'Europe/Istanbul',day:'2-digit',month:'short'});svg.append(label);}
+  if(i===0||i===rows.length-1||i%Math.max(1,Math.floor(rows.length/5))===0){const label=dashSVG('text',{x:x(i),y:233,'text-anchor':'middle',fill:'#697D8F','font-size':10});label.textContent=new Date(row.at).toLocaleString('tr-TR',['1h','24h'].includes(dashboardData.period)?{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit'}:{timeZone:'Europe/Istanbul',day:'2-digit',month:'short'});svg.append(label);}
  });
  host.append(svg);$('dashboard-trend-summary').textContent=dashboardNumber(events.accept)+' kabul · '+dashboardNumber(events.reject)+' ret · '+(events.accept/events.total*100).toFixed(1)+'% kabul oranı';
 }
