@@ -17,6 +17,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.21 canlı kurulum ve koruma kontrolleri tamam — görünüm kabulü bekliyor (23 Ekim 2026)
+
+- 🔴✓ Operatörün MOTION_UI_FINISHED çıktısı sürüm 0.14.0-dev.21, kaynak ad21a77d99d5cf1cbf0d6a71cf933af2586092a6 kurulumunu doğruladı. Dosya, süreç, zamanlayıcı ve iş verisi kontrolleri başarılı.
+- 🔴✓ Kurulum öncesi beş, sonrası on bir API yolu üçer kez HTTP 200 döndürdü. Dashboard medyan 5,3 ms / en uzun 7,0 ms; son kontrollerin en uzun yanıtı 37,4 ms.
+- 🔴✓ RADIUS aktif ve yeniden başlatılmadı; PID 832810 korundu. Broker PID 887154 korundu. Kurallar, sertifikalar ve Windows kaynakları değişmedi; günlük yedek zamanlayıcısı korundu.
+- 🔴✓ Operatör tercihi doğrultusunda tam veri yedeği veya izole restore yapılmadı. Bu kayıt turunda ek kurulum veya servis müdahalesi uygulanmadı.
+- Bekliyor: Ctrl+F5 sonrasında küçük/büyüyen dairesel başlıklar, tıklanan başlık yanında açılan menü, tüm dashboard kartlarında hareket ve Düzeni düzenle / taşıma / boyutlandırma / kaydetme için operatör görünüm kabulü. Kurulum çıktısı yeni bir uç cihaz EAP-TLS testi sayılmaz; önceki açık işler ayrıca korunur.
+- Kanıt: /var/lib/authwire-ui-updates/motion-ui-dev21-20261023T114222Z-26a7ac0d. Makine okunur kayıt: docs/checkpoints/2026-10-23-motion-ui-live-result.json.
+
 ## 🔴✓ dev.21 küçük dairesel menü ve hareketli, düzenlenebilir dashboard — kaynak/test tamam; canlı kurulum bekliyor (23 Ekim 2026)
 
 - 🔴✓ Ekteki iki gerçek ekran incelendi. Merkezden boşta uzanan fazladan yatay çizgi kaldırıldı; altı başlık 74 px dairelere alındı, okunaklı etiketler korundu. İmleç/klavye odağında hafif büyür. Alt menü, tıklanan başlığın gerçek ekran konumuna göre yanında; dar alanda altında ve ekran sınırlarında açılır. Kısa ekranlarda yukarı sabitleyen eski kural geçersiz kılındı.
