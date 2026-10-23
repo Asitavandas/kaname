@@ -1,0 +1,47 @@
+{
+  "evidence_source": "operator-provided actual live installation output",
+  "result": {
+    "event": "CENTRAL_UI_FINISHED",
+    "verified": true,
+    "version": "0.14.0-dev.20",
+    "release": "adf0c0c6333d8930bc48af3f892371d7cd2526be",
+    "changed": true,
+    "checks": {
+      "files": true,
+      "pids": true,
+      "timers": true,
+      "business_state": true
+    },
+    "radius_active": true,
+    "radius_restarted": false,
+    "radius_process_preserved": true,
+    "broker_process_preserved": true,
+    "policy_changed": false,
+    "certificates_changed": false,
+    "windows_changed": false,
+    "full_data_backup_created": false,
+    "isolated_restore_exercised": false,
+    "backup_timer_preserved": true,
+    "operator_browser_acceptance_pending": true,
+    "rollback_source_commit": "ae79998d7ff1afd6777e81cc05bca5a5e389ce2e",
+    "evidence": "/var/lib/authwire-ui-updates/central-ui-dev20-20261023T101912Z-89975f7c"
+  },
+  "api_read_checks": {
+    "before": {
+      "routes": 5,
+      "requests_per_route": 3,
+      "all_http_statuses": 200
+    },
+    "after": {
+      "routes": 11,
+      "requests_per_route": 3,
+      "all_http_statuses": 200,
+      "maximum_ms": 38.4,
+      "dashboard": {
+        "median_ms": 5.7,
+        "max_ms": 6.5
+      }
+    }
+  },
+  "recording_turn_server_actions_executed": false
+}

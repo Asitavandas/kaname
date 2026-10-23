@@ -16,6 +16,17 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## 🔴✓ dev.20 canlı kurulumu ve koruma kontrolleri tamam — görünüm kabulü bekliyor (23 Ekim 2026)
+
+- 🔴✓ Operatörün gerçek CENTRAL_UI_FINISHED çıktısı dev.20 kurulumunu doğruladı. Kaynak adf0c0c6333d8930bc48af3f892371d7cd2526be; dosya, süreç, zamanlayıcı ve iş verisi kontrollerinin tümü başarılı.
+- 🔴✓ Kurulum öncesinde beş, sonrasında on bir API yolu üçer kez HTTP 200 döndürdü. Son kontrollerde en uzun yanıt 38,4 ms; dashboard medyanı 5,7 ms, en uzun yanıtı 6,5 ms.
+- 🔴✓ RADIUS aktif ve yeniden başlatılmadı; PID 832810 korundu. Broker PID 887154 korundu. Kurallar, sertifikalar ve Windows kaynakları değişmedi; günlük yedek zamanlayıcısı korundu.
+- 🔴✓ Operatör tercihi doğrultusunda yeni tam veri yedeği veya izole restore yapılmadı. Bu kayıt turunda sunucuya ek kurulum veya servis müdahalesi uygulanmadı.
+- Bekliyor: Ctrl+F5 sonrası yeni dairesel menü, gizleme/açma, kimlik tabloları ve gölgeli bölümlerin operatör görünüm kabulü. Kurulum doğrulaması yeni bir gerçek uç cihaz testi değildir; önceki fonksiyonel yol haritası, açık hatalar ve henüz sonuçlanmamış bağımsız testler bu sonuçla kapatılmadı.
+- Kanıt: /var/lib/authwire-ui-updates/central-ui-dev20-20261023T101912Z-89975f7c. Makine okunur kayıt: docs/checkpoints/2026-10-23-central-ui-live-result.json.
+
+
 ## 🔴✓ dev.20 sade mavi panel ve dairesel menü — kaynak/test tamam; canlı kurulum bekliyor (23 Ekim 2026)
 
 - 🔴✓ Operatörün Aruba Central referansına göre açık gri zemin, beyaz gölgeli bölümler, açık mavi #DDEAF0 seçim yüzeyleri ve lacivert #1D4D73 vurgular hazırlandı. Onaylı altın/antrasit Λ/W logosu korundu; üçüncü taraf ürün kodu veya görsel varlığı kopyalanmadı.
