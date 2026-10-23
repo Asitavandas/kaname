@@ -1,6 +1,6 @@
 # AuthWire current work record
 
-Updated: 22 October 2026, Europe/Istanbul. This record supplements the 9 October
+Updated: 23 October 2026, Europe/Istanbul. This record supplements the 9 October
 `AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-09.docx` / `.pdf`; those reports are a
 dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
@@ -14,6 +14,20 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+
+## 🔴✓ dev.20 sade mavi panel ve dairesel menü — kaynak/test tamam; canlı kurulum bekliyor (23 Ekim 2026)
+
+- 🔴✓ Operatörün Aruba Central referansına göre açık gri zemin, beyaz gölgeli bölümler, açık mavi #DDEAF0 seçim yüzeyleri ve lacivert #1D4D73 vurgular hazırlandı. Onaylı altın/antrasit Λ/W logosu korundu; üçüncü taraf ürün kodu veya görsel varlığı kopyalanmadı.
+- 🔴✓ Altı dairesel ana başlık: Genel bakış, Erişim, Sertifikalar, RADIUS, Kayıtlar ve Sistem. Alt seçenekler tıklanınca açılır. Sol menü sola kayarak gizlenir, çalışma alanı genişler; masaüstü gizleme tercihi hatırlanır. Mobilde perde, Escape ve klavye odak davranışları bulunur. Mevcut görünürlük/yazma yetkileri korunur.
+- 🔴✓ Kullanıcılar, gruplar ve bilgisayarlar sekmelerinde hizalı tablolar, sınırlı genişlikte arama, sayaçlar ve 100 kayıtlık sayfalama var. Alanlar mevcut AD kataloğundan gelir: ad, hesap adı, hesap durumu/grup türü, SID ve üyelik/kuralda kullan işlemi. AD hesap durumu canlı ağ oturumu olarak sunulmaz; bilinmeyen MAC/IP/son oturum verisi uydurulmaz.
+- 🔴✓ Ayrı tarayıcı kontrolünde menüyü gizleme ve tercihi hatırlama, alt menü klavyesi, liste başlıkları, arama/sayfalama, üyelik penceresi, XSS metin güvenliği ve 390/768/1366/1920 genişlikleri doğrulandı; bu akışta değişiklik yapan API isteği sıfır. Son kaynak üzerinde 11 tarayıcı akışının tamamı başarılı: ana panel/roller, dashboard, policy modalı ve tablo işlemleri, kurulum, işlem geçmişi, erişim kayıtları, oturum, cihaz dağıtımı, envanter ve servisler. Kural satırındaki Escape işleminin menüye odak kaçırması da düzeltilip bu turda doğrulandı.
+- 🔴✓ Yerel hedefli 113 Python testi tamamlandı (7 ortam atlaması). Tam yerel koşuda eksik tarihsel test fixture dosyası beş kurulum koruma testini engelledi; dosya depodan alındı ve bu beş test tekrar başarılı oldu. Kaynak üretim hatası sayılmadı. CI tam foundation kontrolü başarılı: 586 test, 25 ortam atlaması. Linux hazırlık, Windows/native Kerberos istemci ve sınırlı retry ağ probu kontrolleri de başarılı. Bu UI turu tarihsel B04 veya Windows fixture flakiness kayıtlarını kapatmaz.
+- 🔴✓ Küçük kurulum yaması yazma, panel başlatma ve HTTPS kontrol hatalarında önceki kaynak baytlarına döner; tekrarlı çalışma servis eylemi yapmaz. Yalnız panel servisini durdurup başlatabilir. RADIUS/broker yeniden başlatma veya host güç eylemi içermez.
+- 🔴✓ 146 paket dosyasında değişen üretim kapsamı yalnız sürüm bilgileri ve üç panel dosyasıdır: kaname/__init__.py, pyproject.toml, index.html, app.js, styles.css. Sunucuda salt okunur kaynak kontrolü başarılı; kurulu dev.19 ile korunan kaynaklar aynı. Kurallar, sertifikalar, Windows/GPO istemcisi, yerel modül ve broker kodu değişmedi.
+- Bekliyor: sudo ile canlı dev.20 kurulumu ve operatör görünüm kabulü. Canlı panel bu hazırlık sırasında dev.19'da; RADIUS PID 832810, broker PID 887154 korundu. Yeni tam yedek/izole restore yapılmadı; günlük yedek zamanlayıcısı değiştirilmedi. Önceki fonksiyonel yol haritası ve açık hata kayıtları korunur.
+
+- Kaynak adf0c0c6333d8930bc48af3f892371d7cd2526be; PR #50 birleştirildi (40e244918e195fdce54e9c1f5c10a91f89953698). Manifest 7b50fadd7d66881a88bb360ef004343b8d4e9f6e8a0641ac448454baa08c1db2. Root yardımcı /home/segmentiq/authwire-central-ui-20261023.py, SHA256 799b7fac3af3f4e6ef08162aa3c5d4e29b1e4dbc349bc9180578982240e37b98. Son tarayıcı run39937607414/job120360887973/artifact12494138788, arşiv SHA256 f8442ba148cce4111ad967c5c5d3b6efbe850644bd3e59d7f52705f3c019f8ac. Normal/debug gerçek EAP-TLS protokol workflow'u bu kayıt anında hâlâ çalışıyor; sonucu başarılı diye işaretlenmedi. Çalışan sunucuda gerçek uç cihaz veya hizmet güç eylemi yapılmadı.
 
 
 ## 🔴✓ dev.19 dashboard canlı kurulumu doğrulandı — görünüm kabulü bekliyor (22 Ekim 2026)

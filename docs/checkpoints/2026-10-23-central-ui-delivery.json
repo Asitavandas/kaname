@@ -1,0 +1,80 @@
+{
+  "version": "0.14.0-dev.20",
+  "live_version": "0.14.0-dev.19",
+  "source_scope": [
+    "kaname/__init__.py",
+    "pyproject.toml",
+    "kaname/static/index.html",
+    "kaname/static/app.js",
+    "kaname/static/styles.css"
+  ],
+  "package_files": 146,
+  "runtime_authentication_source_changed": false,
+  "radius_restarted": false,
+  "broker_restarted": false,
+  "full_data_backup_created": false,
+  "root_install_executed": false,
+  "live_source_drift": false,
+  "dedicated_browser_checks": {
+    "slide_and_persist": true,
+    "submenu_keyboard": true,
+    "identity_tables": true,
+    "search_pagination": true,
+    "membership_details": true,
+    "xss_safe": true,
+    "responsive": true,
+    "mutation_requests": 0
+  },
+  "targeted_python_tests": {
+    "tests": 113,
+    "skipped": 7,
+    "passed": true
+  },
+  "local_full_suite": {
+    "tests": 586,
+    "skipped": 25,
+    "initial_missing_fixture_errors": 5,
+    "missing_fixture_restored_from_repository": true,
+    "fixture_guard_rerun_tests": 5,
+    "fixture_guard_rerun_passed": true
+  },
+  "installer_checks": "CENTRAL_UI_PATCH_IDEMPOTENCE_WRITE_START_HEALTH_ROLLBACK_AND_SERVICE_BOUNDARY_OK",
+  "general_browser_acceptance_pending": false,
+  "operator_browser_acceptance_pending": true,
+  "source_release": "adf0c0c6333d8930bc48af3f892371d7cd2526be",
+  "merged_pr": 50,
+  "merge_commit": "40e244918e195fdce54e9c1f5c10a91f89953698",
+  "manifest_sha256": "7b50fadd7d66881a88bb360ef004343b8d4e9f6e8a0641ac448454baa08c1db2",
+  "root_deployer": "/home/segmentiq/authwire-central-ui-20261023.py",
+  "root_deployer_sha256": "799b7fac3af3f4e6ef08162aa3c5d4e29b1e4dbc349bc9180578982240e37b98",
+  "stage": "/home/segmentiq/authwire-stage-dev20-adf0c0c6333d",
+  "git_runtime_scope_verified": 5,
+  "browser_flows": 11,
+  "foundation_ci": {
+    "tests": 586,
+    "skipped": 25,
+    "success": true,
+    "run": 39937607405,
+    "job": 120360888449
+  },
+  "browser_ci": {
+    "run": 39937607414,
+    "job": 120360887973,
+    "artifact": 12494138788,
+    "sha256": "f8442ba148cce4111ad967c5c5d3b6efbe850644bd3e59d7f52705f3c019f8ac",
+    "success": true
+  },
+  "readonly_live_source_check": true,
+  "native_eap_tls_workflow_pending": true,
+  "visual_qa": {
+    "runtime_identical_source": "61baa07f911de409f30ad70532a300d1558f3a20",
+    "artifact": 12495025297,
+    "sha256": "a87bfa7011a297a7c39f7ee69e6c53082e27990e9140dc1bd39ede904198faa7",
+    "images_inspected": [
+      "central-computers-desktop.png",
+      "central-computers-mobile.png",
+      "policy-table-desktop.png",
+      "dashboard-analytics-desktop.png"
+    ]
+  }
+}
