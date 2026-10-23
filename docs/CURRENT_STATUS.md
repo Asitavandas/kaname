@@ -17,6 +17,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.25 dashboard düzenlemeleri canlı kurulum tamam — görünüm kabulü bekliyor (23 Ekim 2026)
+
+- 🔴✓ Operatörün DASHBOARD_POLISH_FINISHED çıktısı sürüm 0.14.0-dev.25, kaynak 3baa25868bccf69b930b69404c37d69cc3746090 kurulumunu doğruladı. Dosya, süreç, zamanlayıcı ve iş verisi kontrollerinin tamamı başarılı.
+- 🔴✓ Kurulum öncesi beş, sonrası on beş API yolu üçer kez HTTP 200 döndürdü. Son 1 saat medyan 4,9 ms / en uzun 5,3 ms; 6 ay 5,6 / 6,1 ms; 1 yıl 6,8 / 7,0 ms. Dashboard 7 gün 7,0 / 10,5 ms; kaynak API'si 4,9 / 5,0 ms. Son kontrollerin en uzun yanıtı 38,9 ms.
+- 🔴✓ RADIUS aktif, yeniden başlatılmadı; PID 832810 korundu. Broker PID 887154 korundu. Kurallar, sertifikalar ve Windows kaynakları değişmedi; günlük yedek zamanlayıcısı korundu. Operatör tercihiyle yeni tam yedek/izole veri restore yapılmadı.
+- Bu kayıt turunda ek kaynak veya servis eylemi uygulanmadı. Canlı kurulum beklemesi kapanmıştır. Bekliyor: Ctrl+F5 sonrası dört lacivert özet kartı, pembe üst çizgilerin kaldırılması, pembe yoğunluk ölçeği, altı dönem ve dar üst başlığın operatör görünüm kabulü. Önceki bağımsız fonksiyonel açık işler bu kurulum çıktısıyla kapanmaz.
+- Kanıt: /var/lib/authwire-ui-updates/dashboard-polish-dev25-20261023T202446Z-6cf487dc. Makine okunur kayıt: docs/checkpoints/2026-10-23-dashboard-polish-live-result.json.
+
 ## 🔴✓ dev.25 dashboard renkleri, başlık ve dönemler — kaynak/test tamam; canlı kurulum bekliyor (23 Ekim 2026)
 
 - 🔴✓ Üç operatör ekranı incelendi. İlk ekrandaki dört özet kartı aynı #1D4D73 lacivert zemin, beyaz başlık/sayı/açıklama ve aynı kenarlıkla eşitlendi. Sertifika, CPU/RAM/disk ve bağımsız durum kartlarındaki pembe üst çizgiler kaldırıldı; tüm kartları laciverte çevirmek yerine ekrandaki dört özet kartı esas alındı.
