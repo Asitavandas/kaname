@@ -31,14 +31,14 @@ s.serve_forever()`;
   async function login(p,name='admin',password='Kaname'){
    await p.goto('http://127.0.0.1:'+port);await p.locator('#login-user').fill(name);await p.locator('#login-password').fill(password);await p.locator('#unlock').click();await p.locator('#workspace').waitFor({state:'visible'});
   }
-  async function policiesView(){await page.locator('[data-view="policies"]').click();await page.waitForFunction(()=>networkState!==null&&!networkLoading);}
+  async function policiesView(){await require('./ui_navigation.cjs').navigate(page,'policies');await page.waitForFunction(()=>networkState!==null&&!networkLoading);}
   const snapshot=()=>page.evaluate(()=>api('/api/state'));
   const save=value=>page.evaluate(value=>api('/api/policies',{expected_revision:value.revision,policies:value.policies}),value);
   async function selectRow(id){if(await row(id).locator('.policy-action-row').isHidden())await row(id).locator('.policy-summary').click();}
   async function clickToggle(id,enabled){await selectRow(id);await toggle(id).click();await page.waitForFunction(({id,enabled})=>!policySaving&&state.policies.find(p=>p.id===id)?.enabled===enabled,{id,enabled});}
   async function decision(access_type){return page.evaluate(async access_type=>(await api('/api/simulate',{authenticated:true,directory_available:true,account_enabled:true,domain_device:true,group_sids:['S-1-5-21-10-20-30-40'],access_type,nas_ip:access_type==='wired'?'192.0.2.2':'192.0.2.52',eap_method:'EAP-TLS'})).decision,access_type);}
   await login(page);await policiesView();
-  assert.match(await page.locator('#panel-version').textContent(),/0\.14\.0-dev\.19/);
+  assert.match(await page.locator('#panel-version').textContent(),/0\.14\.0-dev\.20/);
   const original=await snapshot();assert.equal((await decision('wireless')).vlan,140);
   assert.deepEqual(await page.locator('#policy-list th').allTextContents(),['Kural Adı','Erişim Türü','Kullanıcı/Grup','VLAN','Karar','Durum']);
   const toolbar=await page.locator('.policy-toolbar').boundingBox(),create=await page.locator('#new-policy').boundingBox(),search=await page.locator('#policy-query').boundingBox();
@@ -89,7 +89,7 @@ s.serve_forever()`;
   // Existing server-side write and CSRF boundaries also protect the new control.
   assert.equal(await page.evaluate(async()=>{const s=await api('/api/state');return (await fetch('/api/policies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({expected_revision:s.revision,policies:s.policies})})).status;}),403);
   await page.evaluate(async()=>{let s=await api('/api/system');await api('/api/system/users/save',{expected_revision:s.revision,user:{id:'',username:'reader',profile_id:s.profiles.find(p=>p.mode==='Admin_ReadOnly').id,password:'fixture-policy-read-42',enabled:true}});});
-  const readerContext=await browser.newContext(),reader=await readerContext.newPage();await login(reader,'reader','fixture-policy-read-42');await reader.locator('[data-view="policies"]').click();await reader.waitForFunction(()=>networkState!==null&&!networkLoading);
+  const readerContext=await browser.newContext(),reader=await readerContext.newPage();await login(reader,'reader','fixture-policy-read-42');await require('./ui_navigation.cjs').navigate(reader,'policies');await reader.waitForFunction(()=>networkState!==null&&!networkLoading);
   assert.equal(await reader.locator('[data-policy-toggle]').count(),0);assert.equal(await reader.locator('[data-policy-id="wireless"] .object-status').textContent(),'Etkin');
   assert.equal(await reader.evaluate(async()=>{const s=await api('/api/state');return (await fetch('/api/policies',{method:'POST',headers:{'Content-Type':'application/json','X-Kaname-CSRF':csrf},body:JSON.stringify({expected_revision:s.revision,policies:s.policies.map(p=>({...p,enabled:false}))})})).status;}),403);
   assert.deepEqual((await snapshot()).policies,beforeConflict.policies);

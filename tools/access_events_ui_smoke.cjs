@@ -24,7 +24,7 @@ s.serve_forever()`;
   page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(new URL(r.url()).pathname==='/api/services/action')serviceActions++;});
   async function login(p,name='admin',password='Kaname'){await p.goto('http://127.0.0.1:'+port);await p.locator('#login-user').fill(name);await p.locator('#login-password').fill(password);await p.locator('#unlock').click();await p.locator('#workspace').waitFor({state:'visible'});}
   async function apply(){await page.locator('#access-apply').click();await page.waitForFunction(()=>!accessLoading&&accessPage&&accessLoadedKey===accessKey());}
-  await login(page);await page.locator('[data-view="access-events"]').click();await page.waitForFunction(()=>accessPage?.events.length===100);
+  await login(page);await require('./ui_navigation.cjs').navigate(page,'access-events');await page.waitForFunction(()=>accessPage?.events.length===100);
   const ids=await page.evaluate(()=>accessPage.events.map(e=>e.id));assert.equal(ids[0],205);
   await page.locator('#access-next').click();await page.waitForFunction(()=>!accessLoading&&accessPage?.events[0]?.id===105);ids.push(...await page.evaluate(()=>accessPage.events.map(e=>e.id)));
   await page.locator('#access-next').click();await page.waitForFunction(()=>!accessLoading&&accessPage?.events[0]?.id===5);ids.push(...await page.evaluate(()=>accessPage.events.map(e=>e.id)));
@@ -50,7 +50,7 @@ s.serve_forever()`;
   await page.route('**/api/radius/events*',async r=>{seen();await gate;await r.continue();handled();});await page.evaluate(()=>{window.accessPendingFixture=run(()=>loadAccessEvents());});await started;
   await page.locator('#account-toggle').click();await page.locator('#logout').click();release();await routeDone;await page.evaluate(()=>window.accessPendingFixture);await page.unroute('**/api/radius/events*');
   assert.equal(await page.evaluate(()=>accessPage),null);assert.equal(await page.locator('#access-export').isDisabled(),true);
-  await login(page);await page.locator('[data-view="access-events"]').click();await page.waitForFunction(()=>!!accessPage&&!accessLoading);
+  await login(page);await require('./ui_navigation.cjs').navigate(page,'access-events');await page.waitForFunction(()=>!!accessPage&&!accessLoading);
   if(process.env.KANAME_UI_ARTIFACTS){fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'access-events-desktop.png'),fullPage:true});}
   for(const width of [390,1366,1920]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'page overflow '+width);}
   assert.deepEqual(errors,[]);assert.equal(serviceActions,0);

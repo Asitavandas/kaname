@@ -28,7 +28,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     const errors=[];
     page.on('pageerror',err=>{errors.push(err.message);console.log('KANAME_UI_SCRIPT_ERROR '+err.message);});
     page.on('response',async response=>{if(response.status()>=400&&new URL(response.url()).pathname.startsWith('/api/')){let code='';try{code=(await response.json()).error;}catch(_){}console.log('KANAME_UI_HTTP '+new URL(response.url()).pathname+' '+response.status()+' '+code);}});
-    async function navigate(view){console.log('KANAME_UI_STAGE '+view);await page.locator('[data-view="'+view+'"] ').click();}
+    const navigate=view=>require('./ui_navigation.cjs').navigate(page,view);
     await page.goto(`http://127.0.0.1:${port}`);
     if(process.env.KANAME_UI_ARTIFACTS){
       fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});
@@ -56,7 +56,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     const healthResponse=await page.request.get(new URL('/healthz',page.url()).href);assert.equal((await healthResponse.json()).product,'AuthWire');
 
     const colors=await page.evaluate(()=>({background:getComputedStyle(document.body).backgroundColor,sidebar:getComputedStyle(document.querySelector('aside')).backgroundColor,nav:getComputedStyle(document.querySelector('[data-view="overview"]')).color}));
-    assert.deepEqual(colors,{background:'rgb(243, 234, 216)',sidebar:'rgb(243, 234, 216)',nav:'rgb(44, 44, 44)'});
+    assert.deepEqual(colors,{background:'rgb(246, 248, 250)',sidebar:'rgb(255, 255, 255)',nav:'rgb(29, 77, 115)'});
     // Check real rendered text/background pairs, including the deliberately dark CTA text.
     const contrastPairs=await page.evaluate(()=>{
       function ratio(foreground,background){
@@ -73,12 +73,12 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     for(const width of [1366,1920]){
       await page.setViewportSize({width,height:900});
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'Desktop page must fit '+width);
-      assert.equal(await page.locator('[data-view="profiles"]').isVisible(),true);
+      assert.equal(await page.locator('[data-nav-group="system"]>.nav-heading').isVisible(),true);
     }
     await page.setViewportSize({width:1440,height:1000});
     assert.deepEqual(await page.locator('[data-nav-section]').evaluateAll(groups=>groups.map(g=>g.dataset.navSection)),['Erişim','Sertifikalar','RADIUS','İzleme','Yönetim']);
-    assert.equal(await page.locator('[data-view="setup"]').isVisible(),true);
-    assert.equal(await page.locator('[data-view="directory"]').isVisible(),true);
+    assert.equal(await page.locator('[data-nav-group="system"]>.nav-heading').isVisible(),true);
+    assert.equal(await page.locator('[data-nav-group="system"]>.nav-heading').isVisible(),true);
     assert.equal(await page.locator('[data-view="overview"]').getAttribute('aria-current'),'page');
     await page.locator('#page-search').fill('Kullanıcılar ve gruplar');await page.locator('#page-go').click();
     await page.locator('#identities').waitFor({state:'visible'});
@@ -87,13 +87,13 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     if(process.env.KANAME_UI_ARTIFACTS){
       fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-empty.png'),fullPage:true,animations:'disabled'});
-      await page.setViewportSize({width:390,height:844});
+      await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-palette-mobile.png'),fullPage:true,animations:'disabled'});
       await page.locator('#nav-toggle').click();
       assert.equal(await page.locator('#nav-toggle').getAttribute('aria-expanded'),'true');
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'branding-mobile-menu.png'),fullPage:true,animations:'disabled'});
-      await page.locator('[data-view="directory"]').click();
+      await navigate('directory');
       assert.equal(await page.locator('#nav-toggle').getAttribute('aria-expanded'),'false');
       await page.locator('#nav-toggle').click();await page.keyboard.press('Escape');
       assert.equal(await page.locator('#nav-scrim').isVisible(),false);
@@ -230,7 +230,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.unroute('**/api/directory/connectivity',tcpRoute);await page.unroute('**/api/directory/test-credentials',credentialRoute);
     if(process.env.KANAME_UI_ARTIFACTS){
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'ldap-servers-desktop.png'),fullPage:true,animations:'disabled'});
-      await page.setViewportSize({width:390,height:844});
+      await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'LDAP form must fit mobile viewport');
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'ldap-servers-mobile.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:1440,height:1000});
@@ -248,7 +248,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.waitForFunction(()=>!document.querySelector('#directory-sync').disabled);
     assert.equal(await page.locator('#ad-password').inputValue(),'');
     await navigate('identities');
-    await page.waitForFunction(()=>document.querySelectorAll('#directory-users-list .policy-row').length===2&&document.querySelectorAll('#directory-groups-list .policy-row').length===5);
+    await page.waitForFunction(()=>document.querySelectorAll('#directory-users-list tbody tr').length===2&&document.querySelectorAll('#directory-groups-list tbody tr').length===5);
     assert.match(await page.locator('#directory-groups-list').textContent(),/<script>alert\(1\)<\/script>/);
     assert.equal(await page.locator('#directory-groups-list script').count(),0);
     assert.ok(!fs.readFileSync(path.join(temp,'kaname.sqlite3')).includes(fixturePassword));
@@ -258,7 +258,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.keyboard.press('Home');assert.equal(await page.locator('#identity-panel-users').isVisible(),true);
     if(process.env.KANAME_UI_ARTIFACTS){
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'users-desktop.png'),fullPage:true,animations:'disabled'});
-      await page.setViewportSize({width:390,height:844});
+      await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'users-mobile.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:1440,height:1000});
@@ -272,9 +272,9 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     }
 
     await page.locator('#directory-users-query').fill('Alice');await page.locator('#directory-users-search').click();
-    await page.waitForFunction(()=>document.querySelectorAll('#directory-users-list .policy-row').length===1);
+    await page.waitForFunction(()=>document.querySelectorAll('#directory-users-list tbody tr').length===1);
     await page.locator('#directory-users-query').fill('');await page.locator('#directory-users-search').click();
-    await page.waitForFunction(()=>document.querySelectorAll('#directory-users-list .policy-row').length===2);
+    await page.waitForFunction(()=>document.querySelectorAll('#directory-users-list tbody tr').length===2);
     await page.locator('#directory-users-list [data-object-id="00000000-0000-0000-0000-000000000001"]').click();
     await page.waitForFunction(()=>document.querySelector('#detail-title').textContent.includes('Alice')&&document.querySelector('#detail-list').textContent.includes('Parent'));
     assert.match(await page.locator('#detail-list').textContent(),/Primary group/);
@@ -296,14 +296,14 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#identity-tab-groups').focus();await page.keyboard.press('ArrowRight');
     assert.equal(await page.locator('#identity-panel-computers').isVisible(),true);
     assert.equal(await page.locator('#identity-computers-total').textContent(),'6');
-    await page.waitForFunction(()=>document.querySelectorAll('#directory-computers-list .policy-row').length===6);
+    await page.waitForFunction(()=>document.querySelectorAll('#directory-computers-list tbody tr').length===6);
     assert.equal(await page.locator('#directory-computers-list script').count(),0);
     await page.locator('#directory-computers-query').fill('LAB-PC05$');
     await page.locator('#directory-computers-search').click();
-    await page.waitForFunction(()=>document.querySelectorAll('#directory-computers-list .policy-row').length===1);
-    assert.match(await page.locator('#directory-computers-list').textContent(),/Bilgisayar · Kapalı hesap/);
+    await page.waitForFunction(()=>document.querySelectorAll('#directory-computers-list tbody tr').length===1);
+    assert.match(await page.locator('#directory-computers-list').textContent(),/Devre dışı/);
     await page.locator('#directory-computers-query').fill('');await page.locator('#directory-computers-search').click();
-    await page.waitForFunction(()=>document.querySelectorAll('#directory-computers-list .policy-row').length===6);
+    await page.waitForFunction(()=>document.querySelectorAll('#directory-computers-list tbody tr').length===6);
     await page.locator('#identity-tab-groups').click();
     await page.locator('#directory-groups-list [data-object-id="00000000-0000-0000-0000-000000000008"]').click();
     await page.waitForFunction(()=>document.querySelector('#detail-title').textContent.includes('Domain Computers')&&document.querySelectorAll('#detail-list .policy-row').length===6);
@@ -315,7 +315,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'domain-computers-members.png'),fullPage:true,animations:'disabled'});
       await page.locator('#detail-close').click();
       await page.locator('#identity-tab-computers').click();
-      await page.setViewportSize({width:390,height:844});
+      await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'computers-mobile.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:1440,height:1000});
@@ -344,9 +344,9 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#detail-close').click();
     await page.unroute('**/api/directory/detail?*',legacyDetail);
     await page.locator('#identity-tab-groups').click();
-    const distribution=page.locator('#directory-groups-list .policy-row').filter({hasText:'Department'});
-    assert.equal(await distribution.getByText('Politikada kullan',{exact:true}).count(),0);
-    await page.locator('#directory-groups-list .policy-row').filter({hasText:'<script>alert(1)</script>'}).getByText('Politikada kullan',{exact:true}).click();
+    const distribution=page.locator('#directory-groups-list tbody tr').filter({hasText:'Department'});
+    assert.equal(await distribution.getByText('Kuralda kullan',{exact:true}).count(),0);
+    await page.locator('#directory-groups-list tbody tr').filter({hasText:'<script>alert(1)</script>'}).getByText('Kuralda kullan',{exact:true}).click();
     await page.waitForFunction(()=>policySelected.has('S-1-5-21-1-2-3-1100'));
     assert.equal(await page.locator('#policy-selected script').count(),0);
     await page.reload();
@@ -354,7 +354,8 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.equal(await page.locator('#fqdn').inputValue(),'kaname.kurum.example');
     assert.equal(await page.locator('#login-password').inputValue(),'');
     assert.equal((await page.context().cookies()).find(c=>c.name==='kaname_session').httpOnly,true);
-    assert.equal(await page.evaluate(()=>localStorage.length),0);
+    assert.deepEqual(await page.evaluate(()=>Object.keys(localStorage).filter(key=>key!=='authwire.navigation.hidden')),[]);
+    assert.match(await page.evaluate(()=>localStorage.getItem('authwire.navigation.hidden')||'false'),/^(true|false)$/);
     await navigate('policies');
     assert.equal(await page.locator('#policy-list .policy-row').count(),1);
     assert.equal(await page.getByText('Aç/Kapat',{exact:true}).count(),0);

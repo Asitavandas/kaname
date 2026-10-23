@@ -31,7 +31,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.joi
   const header=await page.locator('main>header').boundingBox(),account=await page.locator('#account-toggle').boundingBox();
   assert.ok(account.x+account.width>header.x+header.width-12,'Username sits at the right edge of the top header');
   assert.equal(await page.locator('#account-name').textContent(),'admin');assert.equal(await page.locator('#account-menu').isHidden(),true);
-  await page.locator('#account-toggle').click();assert.match(await page.locator('#account-version').textContent(),/0\.14\.0-dev\.19/);
+  await page.locator('#account-toggle').click();assert.match(await page.locator('#account-version').textContent(),/0\.14\.0-dev\.20/);
   await page.locator('#account-system').hover();await page.waitForFunction(()=>accountPowerState?.available&&!accountPowerLoading);
   const rootMenu=await page.locator('#account-menu').boundingBox(),sub=await page.locator('#account-system-menu').boundingBox();assert.ok(sub.x<rootMenu.x&&sub.x+sub.width<=rootMenu.x+2,'Desktop submenu opens to the left');
   assert.deepEqual(await page.locator('#account-system-menu button').allTextContents(),['↻Yeniden başlat','⏻Kapat']);
@@ -42,7 +42,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.joi
   await page.keyboard.press('Escape');assert.equal(await page.locator('#account-menu').isHidden(),true);
   await page.locator('#account-toggle').focus();await page.keyboard.press('ArrowDown');assert.equal(await page.locator('#account-menu').isVisible(),true);await page.keyboard.press('Escape');assert.equal(await page.locator('#account-toggle').evaluate(x=>x===document.activeElement),true);
   await page.locator('#account-toggle').click();await page.locator('#my-password').click();assert.equal(await page.locator('#account').isVisible(),true);assert.equal(await page.locator('#account-menu').isHidden(),true);
-  await page.locator('[data-view="services"]').click();await page.locator('#services-list tr').first().waitFor();
+  await require('./ui_navigation.cjs').navigate(page,'services');await page.locator('#services-list tr').first().waitFor();
   assert.equal(await page.locator('#services-list tr').count(),4);assert.match(await page.locator('#services-list').textContent(),/Bekliyor · Son çalışma başarılı/);
   await page.locator('#services-restart').click();await page.locator('#services-confirm').waitFor({state:'visible'});
   assert.match(await page.locator('#services-confirm-impact').textContent(),/kimlik doğrulamaları/);
@@ -58,7 +58,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.joi
   if(process.env.KANAME_UI_ARTIFACTS){fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'services.png'),fullPage:true});}
   for(const width of [390,1366,1920]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'fits '+width);}
   unavailable=true;await page.locator('#services-refresh').click();await page.waitForFunction(()=>document.querySelector('#services-feedback').textContent.includes('kullanılamıyor'));
-  assert.equal(await page.locator('#workspace').isVisible(),true);await page.locator('[data-view="overview"]').click();assert.equal(await page.locator('#overview').isVisible(),true);
+  assert.equal(await page.locator('#workspace').isVisible(),true);await require('./ui_navigation.cjs').navigate(page,'overview');assert.equal(await page.locator('#overview').isVisible(),true);
   await page.locator('#account-toggle').click();await page.locator('#logout').click();await page.locator('#login').waitFor({state:'visible'});assert.equal(await page.locator('#services-list').textContent(),'');assert.equal(await page.locator('#services-operations').textContent(),'');
   assert.equal(powerPosts,1);assert.ok(powerReads>0);assert.deepEqual(errors,[]);console.log('AUTHWIRE_SERVICES_UI_OK');
  }finally{if(browser)await browser.close();child.kill();fs.rmSync(temp,{recursive:true,force:true});}
