@@ -591,6 +591,7 @@ window.matchMedia('(max-width:760px)').addEventListener('change',restoreNavigati
 
 
 function positionNavigationMenu(button){
+ if(document.body.classList.contains('linear-navigation'))return;
  const menu=$(button.getAttribute('aria-controls'));if(menu.hidden)return;
  const rect=button.getBoundingClientRect(),width=Math.min(248,innerWidth-24);
  menu.style.setProperty('--menu-width',width+'px');

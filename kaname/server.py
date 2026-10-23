@@ -29,6 +29,7 @@ from .services import Services, ServiceError, validate as validate_service_actio
 from .audit import history as audit_history, AuditQueryLimit
 from .radius_events import history as access_history, EventStorageError
 from .dashboard import summary as dashboard_summary
+from .resources import snapshot as resource_snapshot
 from .directory_sync import DirectorySync
 from .vault import VaultError
 from .admin import AdminStore, AdminError, COOKIE, TTL, RESOURCES, permits
@@ -447,8 +448,12 @@ class Handler(BaseHTTPRequestHandler):
             value.update(product='AuthWire', version=VERSION, runtime_ready=False,
                          integrations={'ad': 'catalog-only' if value['directory_public']['catalog_available'] else 'pending', 'pki': 'pending', 'radius': 'pending', 'ovf': 'not-built'})
             self.respond(200, self.state_projection(value))
+        elif urlsplit(self.path).path == '/api/system/resources' and self.guard(resource='system.services'):
+            if urlsplit(self.path).query:
+                self.respond(400, {'error':'INVALID_INPUT'}); return
+            self.respond(200, resource_snapshot(self.server.store.root))
         elif urlsplit(self.path).path == '/api/dashboard' and self.guard():
-            allowed = {r: permits(self.actor, r) for r in ('audit.events', 'certificates.authority')}
+            allowed = {r: permits(self.actor, r) for r in ('audit.events', 'certificates.authority', 'system.services')}
             if not any(allowed.values()):
                 self.respond(403, {'error': 'FORBIDDEN'}); return
             try:
@@ -569,7 +574,7 @@ class Handler(BaseHTTPRequestHandler):
             except LookupError: self.respond(404, {'error': 'CATALOG_OBJECT_NOT_FOUND'})
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
             except sqlite3.Error as error: self.store_error(error)
-        elif urlsplit(self.path).path not in {'/api/dashboard', '/api/radius/events', '/api/services', '/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/audit/history', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/policies/labels', '/api/system/power', '/api/directory/settings'}:
+        elif urlsplit(self.path).path not in {'/api/system/resources', '/api/dashboard', '/api/radius/events', '/api/services', '/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/audit/history', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/policies/labels', '/api/system/power', '/api/directory/settings'}:
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
