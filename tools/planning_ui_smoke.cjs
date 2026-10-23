@@ -13,7 +13,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.joi
     browser=await chromium.launch({headless:true,...(process.env.KANAME_CHROMIUM?{executablePath:process.env.KANAME_CHROMIUM}:{})});
     const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.goto('http://127.0.0.1:'+port);await page.locator('#login-user').fill('admin');await page.locator('#login-password').fill('Kaname');await page.locator('#unlock').click();await page.locator('#workspace').waitFor({state:'visible'});
-    await page.locator('[data-view="network-devices"]').click();await page.waitForFunction(()=>inventory!==null);
+    await require('./ui_navigation.cjs').navigate(page,'network-devices');await page.waitForFunction(()=>inventory!==null);
     await page.locator('#inventory-editor summary').click();await page.locator('#inventory-name').fill('<script>switch</script>');await page.locator('#inventory-vendor').fill('Cisco');await page.locator('#inventory-model').fill('C9300');await page.locator('#inventory-ip').fill('192.0.2.20');
     assert.equal(await page.locator('#inventory-connection').isDisabled(),true);
     await page.locator('#inventory-save').click();await page.waitForFunction(()=>inventory?.items.length===1&&!planningBusy);
@@ -22,11 +22,11 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.joi
     await page.locator('#inventory-list').getByRole('button',{name:'Düzenle'}).click();await page.locator('#inventory-name').fill('SW-01');await page.locator('#inventory-mode').selectOption('managed');await page.locator('#inventory-connection').selectOption('cloud');await page.locator('#inventory-save').click();await page.waitForFunction(()=>inventory?.items[0]?.management_mode==='managed'&&!planningBusy);
     await page.locator('#inventory-mode-filter').selectOption('manual');assert.match(await page.locator('#inventory-count').textContent(),/^0 \/ 1/);await page.locator('#inventory-mode-filter').selectOption('');
     if(process.env.KANAME_UI_ARTIFACTS){fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'network-devices.png'),fullPage:true});}
-    await page.locator('[data-view="policies"]').click();await page.waitForFunction(()=>networkState!==null);
+    await require('./ui_navigation.cjs').navigate(page,'policies');await page.waitForFunction(()=>networkState!==null);
     assert.equal(await page.locator('#draft-editor,#draft-list,#draft-form').count(),0);
     assert.equal(await page.getByText('Yeni gelişmiş kural taslağı',{exact:true}).count(),0);
     await page.reload();await page.locator('#workspace').waitFor({state:'visible'});
-    await page.locator('[data-view="network-devices"]').click();await page.waitForFunction(()=>inventory?.items.length===1);
+    await require('./ui_navigation.cjs').navigate(page,'network-devices');await page.waitForFunction(()=>inventory?.items.length===1);
     assert.equal(await page.locator('#inventory-list').textContent().then(x=>x.includes('SW-01')),true);
     for(const width of [390,1366,1920]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'Page fits '+width);}
     await page.locator('#account-toggle').click();await page.locator('#logout').click();await page.locator('#login').waitFor({state:'visible'});assert.equal(await page.locator('#inventory-list').textContent(),'');

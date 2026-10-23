@@ -20,7 +20,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.joi
   async function login(p,name='admin',password='Kaname'){
    await p.goto('http://127.0.0.1:'+port);await p.locator('#login-user').fill(name);await p.locator('#login-password').fill(password);await p.locator('#unlock').click();await p.locator('#workspace').waitFor({state:'visible'});
   }
-  async function editFqdn(value){await page.locator('[data-view="setup"]').click();await page.locator('[data-step="0"]').click();await page.locator('#fqdn').fill(value);await page.locator('[data-step="3"]').click();}
+  async function editFqdn(value){await require('./ui_navigation.cjs').navigate(page,'setup');await page.locator('[data-step="0"]').click();await page.locator('#fqdn').fill(value);await page.locator('[data-step="3"]').click();}
   async function reload(){page.once('dialog',d=>d.accept());await page.locator('#setup-reload').click();await page.waitForFunction(()=>!setupAwaitingRead&&setupBaseRevision===state.revision&&!setupHasEdits());}
   function protectedSecrets(){
    const result=spawnSync(python,['-I','-B','-c','import sqlite3,hashlib,sys;db=sqlite3.connect(sys.argv[1]+"?mode=ro",uri=True);print(hashlib.sha256(repr(db.execute("SELECT name,ciphertext FROM protected_secrets ORDER BY name").fetchall()).encode()).hexdigest());db.close()',new URL('file://'+path.join(temp,'kaname.sqlite3')).href],{encoding:'utf8'});
@@ -33,7 +33,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.joi
   available=false;await page.locator('#overview-radius-refresh').click();await page.waitForFunction(()=>document.getElementById('overview-radius-health').textContent==='Bilgi alınamadı');
   assert.equal(await page.locator('#workspace').isVisible(),true);available=true;health='running';cases.push('service-summary-is-read-only-and-outage-does-not-lock-panel');
 
-  await page.locator('[data-view="setup"]').click();await page.locator('#fqdn').fill('authwire.lab.example');
+  await require('./ui_navigation.cjs').navigate(page,'setup');await page.locator('#fqdn').fill('authwire.lab.example');
   await page.locator('[data-step="1"]').click();await page.locator('#domain').fill('lab.example');await page.locator('#dc').fill('192.0.2.10');
   await page.locator('[data-step="2"]').click();await page.locator('#clients').fill('broken row');
   await page.locator('[data-step="3"]').click();assert.equal(await page.locator('#save').isDisabled(),true);assert.equal(posts.length,0);
@@ -94,13 +94,13 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.joi
   });
   const context=await browser.newContext(),reader=await context.newPage();reader.on('pageerror',e=>errors.push(e.message));let forbiddenReads=0;
   reader.on('request',r=>{if(new URL(r.url()).pathname==='/api/services')forbiddenReads++;});
-  await login(reader,'setup-reader','fixture-reader-password-42');await reader.locator('[data-view="setup"]').click();await reader.locator('[data-step="3"]').click();
+  await login(reader,'setup-reader','fixture-reader-password-42');await require('./ui_navigation.cjs').navigate(reader,'setup');await reader.locator('[data-step="3"]').click();
   assert.equal(await reader.locator('#save').isVisible(),false);assert.equal(await reader.locator('#fqdn').isDisabled(),true);
   assert.equal(await reader.locator('#review').textContent().then(t=>t.includes('ad_domain')),false);
   assert.equal(await reader.locator('#overview-radius-row').isVisible(),false);assert.equal(forbiddenReads,0);
   await context.close();cases.push('narrow-read-only-account-keeps-field-and-service-boundaries');
 
-  await page.locator('[data-view="setup"]').click();await page.locator('[data-step="3"]').click();
+  await require('./ui_navigation.cjs').navigate(page,'setup');await page.locator('[data-step="3"]').click();
   if(process.env.KANAME_UI_ARTIFACTS){fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'setup-review.png'),fullPage:true});}
   for(const width of [390,1366,1920]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'Setup fits '+width);}
   assert.equal(protectedSecrets(),secretsBefore);assert.equal(serviceActions,0);assert.deepEqual(errors,[]);

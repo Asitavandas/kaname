@@ -14,7 +14,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.joi
   // Trust override belongs ONLY to this disposable Playwright fixture.
   const page=await browser.newPage({ignoreHTTPSErrors:true,viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto(`https://127.0.0.1:${port}`);await page.locator('#login-user').fill('admin');await page.locator('#login-password').fill('Kaname');await page.locator('#unlock').click();await page.locator('#workspace').waitFor({state:'visible'});
-  await page.locator('[data-view="certificates"]').click();await page.locator('#device-new-profile').click();
+  await require('./ui_navigation.cjs').navigate(page,'certificates');await page.locator('#device-new-profile').click();
   await page.locator('#device-profile-group option').first().waitFor({state:'attached'});
   await page.locator('#device-profile-name').fill('Pilot bilgisayarları');await page.locator('#device-profile-days').fill('120');await page.locator('#device-profile-renew').fill('20');
   await page.locator('#device-profile-save').click();await page.waitForFunction(()=>document.querySelector('#device-profile-list').textContent.includes('Pilot bilgisayarları'));
