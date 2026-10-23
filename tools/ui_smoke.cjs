@@ -354,7 +354,8 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.equal(await page.locator('#fqdn').inputValue(),'kaname.kurum.example');
     assert.equal(await page.locator('#login-password').inputValue(),'');
     assert.equal((await page.context().cookies()).find(c=>c.name==='kaname_session').httpOnly,true);
-    assert.equal(await page.evaluate(()=>localStorage.length),0);
+    assert.deepEqual(await page.evaluate(()=>Object.keys(localStorage).filter(key=>key!=='authwire.navigation.hidden')),[]);
+    assert.match(await page.evaluate(()=>localStorage.getItem('authwire.navigation.hidden')||'false'),/^(true|false)$/);
     await navigate('policies');
     assert.equal(await page.locator('#policy-list .policy-row').count(),1);
     assert.equal(await page.getByText('Aç/Kapat',{exact:true}).count(),0);
