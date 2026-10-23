@@ -531,6 +531,7 @@ html:has(body.central-theme){overflow-x:clip}
 /* Compact top bar: the divider sits just below the account control. */
 .central-theme main>header{min-height:62px;padding:8px 0 9px;margin-bottom:16px;align-items:center}
 .central-theme main>header .page-heading h1{margin:0}
+.central-theme #account-bar #account-toggle{min-height:40px}
 .linear-navigation .dashboard-heat-cell[data-level="1"],.linear-navigation .dashboard-scale i:nth-of-type(1){background:#F8DDE9}
 .linear-navigation .dashboard-heat-cell[data-level="2"],.linear-navigation .dashboard-scale i:nth-of-type(2){background:#EFA5C4}
 .linear-navigation .dashboard-heat-cell[data-level="3"],.linear-navigation .dashboard-scale i:nth-of-type(3){background:#D56594}
