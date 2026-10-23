@@ -1,0 +1,121 @@
+{
+  "version": "0.14.0-dev.26",
+  "source_commit": "cf4b34926b206aa4e3c1e52e7d08b264782e643c",
+  "merge_commit": "42049a612b8207197834402db5807499e17b6848",
+  "previous_release": "3baa25868bccf69b930b69404c37d69cc3746090",
+  "source_manifest_sha256": "d9debe0e4dc78e190645c1c7c2210c9cf9c663bb1e6818bf8d30e182232f1887",
+  "installer_path": "/home/segmentiq/authwire-login-chart-20261023.py",
+  "installer_sha256": "6cba72c84e818bcaf12dcd789a0e7f578447bbc61e88ff113bbed8d4a5565f65",
+  "stage_verified": true,
+  "files": 148,
+  "changed_files": 6,
+  "live_installed": false,
+  "operator_acceptance_pending": true,
+  "full_data_backup_created": false,
+  "isolated_data_restore_exercised": false,
+  "source_rollback_probe_passed": true,
+  "only_panel_restart_planned": true,
+  "radius_pid": "832810",
+  "broker_pid": "887154",
+  "backend_source_unchanged": true,
+  "logo_sha256": "677e49220d7ca57376735a9792b8067e8aaca223ee73806d91ff3dc1eb8d728e",
+  "remove_only_while_editing": true,
+  "auth_screen_without_workspace_chrome": true,
+  "fresh_navigation_opens": true,
+  "background_poll_preserves_manual_collapse": true,
+  "traffic_chart": "animated paired accept/reject columns, maximum 36 contiguous bins, totals preserved",
+  "foundation": {
+    "run": 40020516622,
+    "job": 120643572498,
+    "tests": 595,
+    "skipped": 25,
+    "success": true
+  },
+  "browser": {
+    "run": 40020516718,
+    "job": 120643570520,
+    "flows": 12,
+    "success": true,
+    "artifact": {
+      "id": 12530022887,
+      "name": "kaname-flow-panel",
+      "size_in_bytes": 5955500,
+      "url": "https://api.github.com/repos/Asitavandas/kaname/actions/artifacts/12530022887",
+      "archive_download_url": "https://api.github.com/repos/Asitavandas/kaname/actions/artifacts/12530022887/zip",
+      "expired": false,
+      "created_at": "2026-10-23T20:38:32Z",
+      "expires_at": "2026-10-30T20:38:31Z",
+      "updated_at": "2026-10-23T20:38:32Z",
+      "digest": "sha256:0b0cb4405ad0561324077cdc2a9931941e28603f1ac83bf981121de4ccdd366a",
+      "workflow_run": {
+        "id": 40020516718,
+        "repository_id": 1403270912,
+        "head_repository_id": 1403270912,
+        "head_branch": "feat/login-navigation-traffic-dev26",
+        "head_sha": "cf4b34926b206aa4e3c1e52e7d08b264782e643c"
+      }
+    }
+  },
+  "workflows": [
+    {
+      "id": 40020516704,
+      "name": "KANAME real RADIUS protocol proof",
+      "status": "in_progress",
+      "conclusion": null,
+      "run_number": 167,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40020516704/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40020516704/logs",
+      "workflow_id": 374237481
+    },
+    {
+      "id": 40020516841,
+      "name": "AuthWire bounded retry network probe checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 206,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40020516841/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40020516841/logs",
+      "workflow_id": 390643325
+    },
+    {
+      "id": 40020516666,
+      "name": "KANAME Linux source preparation",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 190,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40020516666/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40020516666/logs",
+      "workflow_id": 374720112
+    },
+    {
+      "id": 40020517064,
+      "name": "AuthWire device enrollment pilot checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 176,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40020517064/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40020517064/logs",
+      "workflow_id": 375399159
+    },
+    {
+      "id": 40020516718,
+      "name": "KANAME browser checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 204,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40020516718/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40020516718/logs",
+      "workflow_id": 374037298
+    },
+    {
+      "id": 40020516622,
+      "name": "KANAME foundation checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 680,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40020516622/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40020516622/logs",
+      "workflow_id": 373980015
+    }
+  ]
+}
