@@ -18,27 +18,31 @@ function dashboardTip(host,title,detail,x=50,y=10){
  let tip=host.querySelector('.dashboard-chart-tip');if(!tip){tip=dashText('div','','dashboard-chart-tip');tip.setAttribute('role','status');host.append(tip);}
  tip.replaceChildren(dashText('strong',title),dashText('span',detail));tip.style.left=Math.max(35,Math.min(65,x))+'%';tip.style.top=Math.max(5,Math.min(75,y))+'%';tip.hidden=false;
 }
+function dashboardTrafficBins(rows){
+ const size=Math.max(1,Math.ceil(rows.length/36)),bins=[];
+ for(let i=0;i<rows.length;i+=size){const group=rows.slice(i,i+size);bins.push({at:group[0].at,last:group[group.length-1].at,accept:group.reduce((sum,row)=>sum+row.accept,0),reject:group.reduce((sum,row)=>sum+row.reject,0)});}
+ return bins;
+}
 function renderDashboardTrend(events){
  const host=$('dashboard-trend');host.replaceChildren();
  if(!events?.available){dashEmpty('dashboard-trend',can('audit.events')?'Erişim verileri alınamadı.':'Bu verilere erişim yetkiniz yok.');return;}
  if(!events.total){dashEmpty('dashboard-trend','Seçilen dönemde kayıtlı yanıt yok.');return;}
- const rows=events.series,svg=dashSVG('svg',{viewBox:'0 0 740 250',role:'img','aria-label':'Kabul ve ret yanıtlarının zaman içindeki dağılımı'}),max=Math.max(1,...rows.map(r=>Math.max(r.accept,r.reject))),left=44,width=670,base=205,height=175;
- const defs=dashSVG('defs');for(const [id,color]of [['accept','#1D4D73'],['reject','#B5346B']]){const gradient=dashSVG('linearGradient',{id:'dashboard-fill-'+id,x1:0,y1:0,x2:0,y2:1});gradient.append(dashSVG('stop',{offset:'0%','stop-color':color,'stop-opacity':'.32'}),dashSVG('stop',{offset:'100%','stop-color':color,'stop-opacity':'.015'}));defs.append(gradient);}svg.append(defs);
- for(let i=0;i<=4;i++){const y=base-i*height/4;svg.append(dashSVG('line',{x1:left,x2:724,y1:y,y2:y,stroke:'#DFE7EE','stroke-dasharray':'3 5'}));const label=dashSVG('text',{x:34,y:y+4,'text-anchor':'end',fill:'#697D8F','font-size':10});label.textContent=String(Math.round(max*i/4));svg.append(label);}
- const x=i=>left+(rows.length===1?width/2:width*i/(rows.length-1)),y=n=>base-n/max*height;
- for(const [key,color]of [['accept','#1D4D73'],['reject','#B5346B']]){
-  const line=rows.map((row,i)=>(i?'L':'M')+x(i)+' '+y(row[key])).join(' '),area=line+' L'+x(rows.length-1)+' '+base+' L'+x(0)+' '+base+' Z';
-  svg.append(dashSVG('path',{d:area,fill:'url(#dashboard-fill-'+key+')',class:'dashboard-area'}),dashSVG('path',{d:line,fill:'none',stroke:color,'stroke-width':3.2,'stroke-linejoin':'round','stroke-linecap':'round',class:'dashboard-line'}));
- }
- const guide=dashSVG('line',{x1:0,x2:0,y1:15,y2:base,stroke:'#83A6C1','stroke-dasharray':'4 4',class:'dashboard-crosshair',visibility:'hidden'});svg.append(guide);
+ const rows=dashboardTrafficBins(events.series),svg=dashSVG('svg',{viewBox:'0 0 740 250',role:'img','aria-label':'Zamana göre kabul ve ret yanıtlarını karşılaştıran sütun grafiği',class:'dashboard-traffic-svg'}),max=Math.max(1,...rows.map(r=>Math.max(r.accept,r.reject))),left=44,width=670,base=205,height=166,step=width/rows.length,bar=Math.min(24,step*.29);
+ const defs=dashSVG('defs');
+ for(const [id,a,b]of [['accept','#68A9CF','#1D4D73'],['reject','#ED8BB5','#B5346B']]){const gradient=dashSVG('linearGradient',{id:'traffic-'+id,x1:0,y1:0,x2:0,y2:1});gradient.append(dashSVG('stop',{offset:'0%','stop-color':a}),dashSVG('stop',{offset:'100%','stop-color':b}));defs.append(gradient);}svg.append(defs);
+ for(let i=0;i<=4;i++){const y=base-i*height/4;svg.append(dashSVG('line',{x1:left,x2:724,y1:y,y2:y,stroke:'#DFE7EE','stroke-dasharray':i?'3 5':'none'}));const label=dashSVG('text',{x:34,y:y+4,'text-anchor':'end',fill:'#697D8F','font-size':10});label.textContent=String(Math.round(max*i/4));svg.append(label);}
+ const time=['1h','24h'].includes(dashboardData.period),dateOptions=time?{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit'}:{timeZone:'Europe/Istanbul',day:'2-digit',month:'short',...(['6m','1y'].includes(dashboardData.period)?{year:'2-digit'}:{})};
  rows.forEach((row,i)=>{
-  const date=new Date(row.at).toLocaleString('tr-TR',{timeZone:'Europe/Istanbul'}),group=dashSVG('g',{tabindex:0,role:'img','aria-label':date+': '+row.accept+' kabul, '+row.reject+' ret',class:'dashboard-point'}),step=rows.length>1?width/(rows.length-1):width;
-  group.append(dashSVG('rect',{x:x(i)-Math.min(22,step/2),y:10,width:Math.min(44,step),height:height+25,fill:'transparent'}));
-  for(const [key,color]of [['accept','#1D4D73'],['reject','#B5346B']])group.append(dashSVG('circle',{cx:x(i),cy:y(row[key]),r:4,fill:'white',stroke:color,'stroke-width':2}));
-  const reveal=()=>{guide.setAttribute('x1',x(i));guide.setAttribute('x2',x(i));guide.setAttribute('visibility','visible');dashboardTip(host,date,dashboardNumber(row.accept)+' kabul · '+dashboardNumber(row.reject)+' ret',x(i)/740*100,8);};
-  const hide=()=>{guide.setAttribute('visibility','hidden');host.querySelector('.dashboard-chart-tip')?.setAttribute('hidden','');};
+  const x=left+(i+.5)*step,first=new Date(row.at).toLocaleString('tr-TR',dateOptions),last=new Date(row.last).toLocaleString('tr-TR',dateOptions),label=first===last?first:first+' – '+last;
+  const group=dashSVG('g',{tabindex:0,role:'img','aria-label':label+': '+row.accept+' kabul, '+row.reject+' ret',class:'dashboard-point traffic-bin','data-accept':row.accept,'data-reject':row.reject});
+  group.append(dashSVG('rect',{x:x-step/2+1,y:22,width:Math.max(1,step-2),height:base-22,rx:5,fill:'#DDEAF0',class:'traffic-bin-glow'}),dashSVG('rect',{x:x-step/2,y:15,width:step,height:base-15,fill:'transparent'}));
+  for(const [key,color,offset]of [['accept','#1D4D73',-bar-1.5],['reject','#B5346B',1.5]]){
+   const h=row[key]/max*height,column=dashSVG('rect',{x:x+offset,y:base-h,width:bar,height:h,rx:Math.min(4,bar/3),fill:'url(#traffic-'+key+')',stroke:color,'stroke-width':0,class:'traffic-column'});column.style.setProperty('--bar-delay',i*12+'ms');group.append(column);
+   const value=dashSVG('text',{x:x+offset+bar/2,y:Math.max(14,base-h-6),'text-anchor':'middle',fill:color,class:'traffic-count'});value.textContent=dashboardNumber(row[key]);group.append(value);
+  }
+  const reveal=()=>dashboardTip(host,label,dashboardNumber(row.accept)+' kabul · '+dashboardNumber(row.reject)+' ret',x/740*100,5),hide=()=>host.querySelector('.dashboard-chart-tip')?.setAttribute('hidden','');
   group.addEventListener('pointerenter',reveal);group.addEventListener('focus',reveal);group.addEventListener('pointerleave',hide);group.addEventListener('blur',hide);svg.append(group);
-  if(i===0||i===rows.length-1||i%Math.max(1,Math.floor(rows.length/5))===0){const label=dashSVG('text',{x:x(i),y:233,'text-anchor':'middle',fill:'#697D8F','font-size':10});label.textContent=new Date(row.at).toLocaleString('tr-TR',['1h','24h'].includes(dashboardData.period)?{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit'}:{timeZone:'Europe/Istanbul',day:'2-digit',month:'short'});svg.append(label);}
+  if(i===0||i===rows.length-1||i%Math.max(1,Math.ceil(rows.length/5))===0){const tick=dashSVG('text',{x,y:233,'text-anchor':'middle',fill:'#697D8F','font-size':10});tick.textContent=first;svg.append(tick);}
  });
  host.append(svg);$('dashboard-trend-summary').textContent=dashboardNumber(events.accept)+' kabul · '+dashboardNumber(events.reject)+' ret · '+(events.accept/events.total*100).toFixed(1)+'% kabul oranı';
 }
@@ -173,7 +177,7 @@ function dashboardChangeWidgets(next){
  dashboardLayout=next;dashboardApplyLayout();dashboardLayoutControls();dashboardRenderCatalog();dashboardScheduleResources();return true;
 }
 function dashboardAddWidget(id){const definition=dashboardWidgetDefinitions.find(x=>x[0]===id);if(!definition||!dashboardWidgetAllowed(id)||dashboardLayout.some(x=>x.id===id))return;const [key,_title,_selector,cols,rows]=definition;if(dashboardChangeWidgets([...dashboardLayout,{id:key,cols,rows}]))dashboardAnnounce(definition[1]+' eklendi.');}
-function dashboardRemoveWidget(id){if(!dashboardLayout.some(x=>x.id===id))return;const title=dashboardWidgetDefinitions.find(x=>x[0]===id)?.[1];if(dashboardChangeWidgets(dashboardLayout.filter(x=>x.id!==id)))dashboardAnnounce(title+' kaldırıldı. Widget Ekle ile geri ekleyebilirsiniz.');}
+function dashboardRemoveWidget(id){if(!dashboardEditing)return;if(!dashboardLayout.some(x=>x.id===id))return;const title=dashboardWidgetDefinitions.find(x=>x[0]===id)?.[1];if(dashboardChangeWidgets(dashboardLayout.filter(x=>x.id!==id)))dashboardAnnounce(title+' kaldırıldı. Widget Ekle ile geri ekleyebilirsiniz.');}
 function dashboardRenderCatalog(){
  const host=$('dashboard-widget-list');if(!host)return;host.replaceChildren();const query=$('dashboard-widget-search').value.trim().toLocaleLowerCase('tr');
  for(const category of ['Erişim','Sertifikalar','Sistem']){
@@ -231,7 +235,7 @@ function dashboardApplyLayout(){
 function dashboardLayoutControls(){
  const canvas=$('dashboard-canvas');canvas.classList.toggle('is-editing',dashboardEditing);$('dashboard-layout-edit').hidden=dashboardEditing;$('dashboard-layout-edit').setAttribute('aria-pressed',String(dashboardEditing));
  for(const action of ['save','cancel','default'])$('dashboard-layout-'+action).hidden=!dashboardEditing;
- for(const button of canvas.querySelectorAll('.widget-handle,.widget-resize,.widget-step'))button.hidden=!dashboardEditing;
+ for(const button of canvas.querySelectorAll('.widget-handle,.widget-resize,.widget-step,.widget-remove'))button.hidden=!dashboardEditing;
 }
 function dashboardEditLayout(){if(!session)return;dashboardLayoutHydrate();dashboardEditing=true;dashboardLayoutControls();dashboardAnnounce('Düzenleme açık. Taşıma ve boyutlandırma tutamaçları hazır.');}
 function dashboardCancelLayout(){dashboardFinishGesture(false);dashboardLayout=structuredClone(dashboardSavedLayout);dashboardEditing=false;dashboardApplyLayout();dashboardLayoutControls();dashboardScheduleResources();dashboardAnnounce('Kaydedilmemiş düzen değişiklikleri geri alındı.');}

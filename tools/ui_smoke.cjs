@@ -36,6 +36,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
       await page.waitForFunction(()=>document.querySelector('.login-logo').complete);
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'login-branding.png'),fullPage:true,animations:'disabled'});
     }
+    assert.equal(await page.locator('#sidebar').isVisible(),false);assert.equal(await page.locator('main>header').isVisible(),false);assert.equal(await page.locator('#nav-toggle').isVisible(),false);
     await page.locator('#login-user').fill('admin');
     await page.locator('#login-password').fill('Kaname');
     await page.locator('#unlock').click();
