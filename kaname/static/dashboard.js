@@ -99,8 +99,8 @@ function dashboardCertificates(expiring=false){if(!can('certificates.authority')
 async function loadDashboard(){
  if(!session||dashboardLoading||$('overview').hidden)return;
  const allowed=can('audit.events')||can('certificates.authority');if(!allowed){dashboardData={checked_at:new Date().toISOString()};renderDashboard();$('dashboard-feedback').textContent='Grafik ve sertifika özetleri için görüntüleme yetkisi gerekiyor.';return;}
- const request=++dashboardRequest,generation=authGeneration,period=$('dashboard-period').value;dashboardLoading=true;$('dashboard-refresh').disabled=true;$('dashboard-feedback').textContent='Özet okunuyor…';
- try{const value=await api('/api/dashboard?period='+encodeURIComponent(period));if(generation!==authGeneration||request!==dashboardRequest)return;dashboardData=value;renderDashboard();$('dashboard-feedback').textContent=[value.events&&!value.events.available?'Erişim özeti alınamadı.':'',value.certificates&&!value.certificates.available?'Sertifika özeti alınamadı.':''].filter(Boolean).join(' ')||'Kayıtlı veriler · '+(value.period==='24h'?'Son 24 saat':value.period==='7d'?'Son 7 gün':'Son 30 gün')+' · Saat dilimi: İstanbul';}
+ const request=++dashboardRequest,generation=authGeneration,period=$('dashboard-period').value;dashboardLoading=true;$('dashboard-refresh').disabled=true;$('dashboard-feedback').textContent='';
+ try{const value=await api('/api/dashboard?period='+encodeURIComponent(period));if(generation!==authGeneration||request!==dashboardRequest)return;dashboardData=value;renderDashboard();$('dashboard-feedback').textContent=[value.events&&!value.events.available?'Erişim özeti alınamadı.':'',value.certificates&&!value.certificates.available?'Sertifika özeti alınamadı.':''].filter(Boolean).join(' ');}
  catch(error){if(generation!==authGeneration||request!==dashboardRequest)return;dashboardData={checked_at:new Date().toISOString()};renderDashboard();$('dashboard-feedback').textContent='Dashboard verileri alınamadı. Yenile ile tekrar deneyin.';}
  finally{if(generation===authGeneration&&request===dashboardRequest){dashboardLoading=false;$('dashboard-refresh').disabled=false;if(dashboardVisible())dashboardTimer=setTimeout(loadDashboard,60000);}}
 }
@@ -154,7 +154,6 @@ function dashboardApplyLayout(){
 function dashboardLayoutControls(){
  const canvas=$('dashboard-canvas');canvas.classList.toggle('is-editing',dashboardEditing);$('dashboard-layout-edit').hidden=dashboardEditing;$('dashboard-layout-edit').setAttribute('aria-pressed',String(dashboardEditing));
  for(const action of ['save','cancel','default'])$('dashboard-layout-'+action).hidden=!dashboardEditing;
- $('dashboard-layout-hint').textContent=dashboardEditing?'Başlıktan sürükleyin; sağ alt köşeden boyutlandırın. Ok tuşlarıyla da düzenleyebilirsiniz.':'Düzeniniz bu tarayıcıda, hesabınız için saklanır.';
  for(const button of canvas.querySelectorAll('.widget-handle,.widget-resize,.widget-step'))button.hidden=!dashboardEditing;
 }
 function dashboardEditLayout(){if(!session)return;dashboardLayoutHydrate();dashboardEditing=true;dashboardLayoutControls();dashboardAnnounce('Düzenleme açık. Taşıma ve boyutlandırma tutamaçları hazır.');}

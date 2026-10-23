@@ -456,3 +456,11 @@ html:has(body.central-theme){overflow-x:clip}
 @keyframes dashboard-badge{0%,100%{transform:scale(1)}45%{transform:scale(1.08)}}
 @media(max-width:760px){:root{--sidebar:240px}.dashboard-layout-toolbar{padding:10px;gap:10px}.layout-actions{width:100%}.layout-intro{font-size:10px}.central-theme .widget-body>.dashboard-panel{padding:16px}.dashboard-canvas{gap:16px}.central-theme .widget-body>.dashboard-stat{padding:16px}.central-theme .widget-body>.dashboard-stat>span{font-size:12px}.central-theme .widget-body>.dashboard-stat>strong{font-size:32px}.central-theme .widget-body>.dashboard-stat>small{font-size:11px}.central-theme #sidebar{overflow-y:auto}.central-theme .nav-items button{min-height:42px}}
 @media(prefers-reduced-motion:reduce){.dashboard-canvas *,.dashboard-canvas.data-refreshed .dashboard-widget,.central-theme .orbit-node,.central-theme #sidebar .nav-items{animation:none!important;transition:none!important}.dashboard-widget .widget-body,.dashboard-widget:hover .widget-body{transform:none!important}.dashboard-widget:hover .dashboard-heat-cell{animation:none!important}.data-refreshed .dashboard-line{stroke-dasharray:none;stroke-dashoffset:0}}
+
+/* Compact dashboard controls; no duplicate introduction or success metadata. */
+.central-theme .dashboard-heading{justify-content:flex-end;min-height:36px;margin:0 0 16px}
+.central-theme .dashboard-toolbar{margin-left:auto;flex-wrap:wrap;justify-content:flex-end;gap:8px;max-width:100%}
+.central-theme .dashboard-toolbar>.layout-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;width:auto;gap:8px}
+.dashboard-feedback:empty{display:none}
+.central-theme #account-bar.account-dropdown{margin-left:auto}
+@media(max-width:600px){.central-theme .dashboard-heading{align-items:flex-end}.central-theme .dashboard-toolbar{width:100%;flex-shrink:1}.central-theme .dashboard-toolbar select{flex:1;min-width:110px}.central-theme .dashboard-toolbar>.layout-actions{max-width:100%}}

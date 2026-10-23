@@ -80,7 +80,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     assert.equal(await page.locator('[data-nav-group="system"]>.nav-heading').isVisible(),true);
     assert.equal(await page.locator('[data-nav-group="system"]>.nav-heading').isVisible(),true);
     assert.equal(await page.locator('[data-view="overview"]').getAttribute('aria-current'),'page');
-    await page.locator('#page-search').fill('Kullanıcılar ve gruplar');await page.locator('#page-go').click();
+    await navigate('identities');
     await page.locator('#identities').waitFor({state:'visible'});
     assert.equal(await page.locator('[data-view="identities"]').getAttribute('aria-current'),'page');
     await navigate('overview');
