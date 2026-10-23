@@ -14,7 +14,7 @@ s=DevelopmentServer(sys.argv[1],0)
 from kaname.admin import password_hash
 import uuid
 with s.admin.connect() as db:
- profile=db.execute("SELECT id FROM admin_profiles WHERE mode='ReadOnly'").fetchone()[0]
+ profile=db.execute("SELECT id FROM admin_profiles WHERE mode='Admin_ReadOnly'").fetchone()[0]
  db.execute('INSERT INTO admin_users VALUES (?,?,?,?,?,?,?)',(str(uuid.uuid4()),'layout-reader','layout-reader',password_hash('fixture-layout-reader-42'),profile,1,1))
 initialize(s.store.root)
 s.operations.network=lambda:{'radius_clients':[{'ip':'192.0.2.2','name':'SW-PILOT','access_type':'wired'},{'ip':'192.0.2.3','name':'AP-PILOT','access_type':'wireless'}],'vlans':[]}
@@ -25,9 +25,9 @@ for n in range(205):
 s.services.status=lambda:{'available':True,'checked_at':now.isoformat(),'busy':False,'operations':[],'backup':{'available':True,'last_success_at':now.isoformat(),'last_run_succeeded':True,'archive_read_verified':True,'sqlite_integrity_verified':True},'services':[{'id':'radius','health':'running','active_state':'active','listener_present':True}]}
 print(s.server_port,flush=True)
 s.serve_forever()`;
- const child=spawn(python,['-u','-c',script,temp],{cwd:root,stdio:['ignore','pipe','pipe']});let browser;
+ const child=spawn(python,['-u','-c',script,temp],{cwd:root,stdio:['ignore','pipe','pipe']});child.stderr.on('data',d=>process.stderr.write(d));let browser;
  try{
-  const port=await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('start timeout')),10000);child.once('error',reject);child.once('exit',c=>reject(Error('fixture exited '+c)));child.stdout.once('data',d=>{clearTimeout(t);resolve(Number(d.toString().trim()));});});child.stderr.on('data',d=>process.stderr.write(d));
+  const port=await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('start timeout')),10000);child.once('error',reject);child.once('exit',c=>reject(Error('fixture exited '+c)));child.stdout.once('data',d=>{clearTimeout(t);resolve(Number(d.toString().trim()));});});
   browser=await chromium.launch({headless:true,...(process.env.KANAME_CHROMIUM?{executablePath:process.env.KANAME_CHROMIUM}:{})});
   const context=await browser.newContext({viewport:{width:1440,height:1100},timezoneId:'Europe/Istanbul'}),page=await context.newPage(),errors=[];let actions=0;
   page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.method()==='POST'&&!new URL(r.url()).pathname.startsWith('/api/auth/'))actions++;});
