@@ -1,0 +1,27 @@
+{
+  "event": "CLEAN_UI_FINISHED",
+  "verified": true,
+  "version": "0.14.0-dev.22",
+  "release": "e128a8a2426c0aa3e9a62f6544eef9dbeed388b4",
+  "changed": true,
+  "checks": {
+    "files": true,
+    "pids": true,
+    "timers": true,
+    "business_state": true
+  },
+  "radius_active": true,
+  "radius_restarted": false,
+  "radius_process_preserved": true,
+  "broker_process_preserved": true,
+  "policy_changed": false,
+  "certificates_changed": false,
+  "windows_changed": false,
+  "full_data_backup_created": false,
+  "isolated_restore_exercised": false,
+  "backup_timer_preserved": true,
+  "operator_browser_acceptance_pending": true,
+  "rollback_source_commit": "ad21a77d99d5cf1cbf0d6a71cf933af2586092a6",
+  "evidence": "/var/lib/authwire-ui-updates/clean-ui-dev22-20261023T134813Z-dea4c1fb",
+  "source": "operator supplied live deployment output"
+}

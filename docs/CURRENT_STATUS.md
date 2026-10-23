@@ -17,6 +17,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.22 canlı kurulum ve koruma kontrolleri tamam — görünüm kabulü bekliyor (23 Ekim 2026)
+
+- 🔴✓ Operatörün CLEAN_UI_FINISHED çıktısı 0.14.0-dev.22, kaynak e128a8a2426c0aa3e9a62f6544eef9dbeed388b4 kurulumunu doğruladı. Dosya, süreç, zamanlayıcı ve iş verisi kontrollerinin tümü başarılı.
+- 🔴✓ Kurulum öncesi beş, sonrası on bir API yolu üçer kez HTTP 200 döndürdü. Dashboard medyan 4,0 ms / en uzun 5,0 ms; son kontrollerin en uzun yanıtı 38,5 ms.
+- 🔴✓ RADIUS aktif ve yeniden başlatılmadı; PID 832810 korundu. Broker PID 887154 korundu. Kurallar, sertifikalar ve Windows kaynakları değişmedi; günlük yedek zamanlayıcısı korundu.
+- 🔴✓ Operatör tercihi doğrultusunda tam veri yedeği veya izole restore yapılmadı. Bu kayıt turunda ek kurulum veya servis müdahalesi uygulanmadı.
+- Bekliyor: Ctrl+F5 sonrası işaretli açıklama/arama alanlarının kaldırılması ve Düzenle düğmesinin Yenile sağındaki yerleşimi için operatör görünüm kabulü. Kurulum çıktısı yeni uç cihaz EAP-TLS kabulü sayılmaz; önceki açık işler ayrıca korunur.
+- Kanıt: /var/lib/authwire-ui-updates/clean-ui-dev22-20261023T134813Z-dea4c1fb. Makine okunur kayıt: docs/checkpoints/2026-10-23-clean-ui-live-result.json.
+
 ## 🔴✓ dev.22 dashboard başlıklarını sadeleştirme — kaynak/test tamam; canlı kurulum bekliyor (23 Ekim 2026)
 
 - 🔴✓ Operatörün kırmızı işaretli ekranına göre üst başlık açıklaması, bölüm arama/Git alanı, Ağınızın erişim özeti başlığı ve açıklaması, ayrı düzenleme şeridi ve başarılı okumadaki dönem/saat dilimi metni kaldırıldı. Boş alan bırakılmadı; kaldırılan arama elemanlarının olay bağları ve kısayolu da temizlendi.
