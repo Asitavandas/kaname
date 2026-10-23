@@ -586,9 +586,25 @@ function setIdentityTab(tab){for(const name of ['users','groups','computers']){c
 document.querySelectorAll('[data-identity-tab]').forEach(button=>{button.addEventListener('click',()=>setIdentityTab(button.dataset.identityTab));button.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const names=['users','groups','computers'],index=names.indexOf(button.dataset.identityTab);const tab=event.key==='Home'?names[0]:event.key==='End'?names[names.length-1]:names[(index+(event.key==='ArrowRight'?1:names.length-1))%names.length];setIdentityTab(tab);$('identity-tab-'+tab).focus();});});
 $('nav-toggle').addEventListener('click',()=>setNavigation(!document.body.classList.contains('nav-open'),{remember:true}));$('nav-scrim').addEventListener('click',()=>{setNavigation(false);$('nav-toggle').focus();});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.body.classList.contains('nav-open')&&(window.matchMedia('(max-width:760px)').matches||$('sidebar').contains(document.activeElement))){const groupButton=document.querySelector('.nav-heading[aria-expanded="true"]');if(groupButton){closeNavigationGroups();groupButton.focus();}else{setNavigation(false,{remember:true});$('nav-toggle').focus();}}if(event.key==='/'&&session&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&!pkiDrawer&&!$('directory-detail').open&&!$('policy-editor').open){event.preventDefault();$('page-search').focus();}});
 
-document.querySelectorAll('.nav-group .nav-heading').forEach(button=>button.addEventListener('click',()=>{const open=button.getAttribute('aria-expanded')!=='true';closeNavigationGroups();button.setAttribute('aria-expanded',String(open));$(button.getAttribute('aria-controls')).hidden=!open;}));
+document.querySelectorAll('.nav-group .nav-heading').forEach(button=>button.addEventListener('click',()=>{const open=button.getAttribute('aria-expanded')!=='true';closeNavigationGroups();button.setAttribute('aria-expanded',String(open));$(button.getAttribute('aria-controls')).hidden=!open;if(open)positionNavigationMenu(button);}));
 document.addEventListener('click',event=>{if(!$('sidebar').contains(event.target))closeNavigationGroups();});
 document.addEventListener('keydown',event=>{if(event.key==='Escape'){const button=document.querySelector('.nav-heading[aria-expanded="true"]');if(button){closeNavigationGroups();button.focus();}}});
 function restoreNavigation(){let hidden=false;try{hidden=localStorage.getItem('authwire.navigation.hidden')==='true';}catch(_){}setNavigation(!window.matchMedia('(max-width:760px)').matches&&!hidden);}
 window.matchMedia('(max-width:760px)').addEventListener('change',restoreNavigation);restoreNavigation();
 
+
+function positionNavigationMenu(button){
+ const menu=$(button.getAttribute('aria-controls'));if(menu.hidden)return;
+ const rect=button.getBoundingClientRect(),width=Math.min(248,innerWidth-24);
+ menu.style.setProperty('--menu-width',width+'px');
+ const height=Math.min(menu.scrollHeight,innerHeight-24),beside=rect.right+width+18<=innerWidth;
+ let left=beside?rect.right+12:Math.max(12,Math.min(rect.left,innerWidth-width-12));
+ let top=beside?Math.max(12,Math.min(rect.top,innerHeight-height-12)):rect.bottom+10;
+ if(!beside&&top+height>innerHeight-12)top=Math.max(12,rect.top-height-10);
+ menu.style.setProperty('--menu-left',Math.round(left)+'px');menu.style.setProperty('--menu-top',Math.round(top)+'px');
+ menu.style.setProperty('--menu-arrow',Math.max(16,Math.min(height-16,rect.top+rect.height/2-top))+'px');
+ menu.dataset.placement=beside?'beside':'below';
+}
+function repositionNavigationMenu(){const button=document.querySelector('.nav-heading[aria-expanded="true"]');if(button)positionNavigationMenu(button);}
+window.addEventListener('resize',repositionNavigationMenu);$('sidebar').addEventListener('scroll',repositionNavigationMenu,{passive:true});
+document.querySelectorAll('.orbit-node').forEach(button=>button.addEventListener('transitionend',repositionNavigationMenu));
