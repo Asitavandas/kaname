@@ -1,7 +1,7 @@
 from pathlib import Path
 import runpy,tempfile
 from unittest.mock import patch
-ns=runpy.run_path(str(Path(__file__).with_name('authwire-widgets-20261023.py')));g=ns['patch_source'].__globals__
+ns=runpy.run_path(str(Path(__file__).with_name('2026-10-23-widgets-deploy.py')));g=ns['patch_source'].__globals__
 for failure in (None,'write','start','health'):
  with tempfile.TemporaryDirectory() as folder:
   root=Path(folder);old={'kaname/__init__.py':b'VERSION="0.14.0-dev.23"\n','kaname/static/styles.css':b'old ui'};new={**old,'kaname/__init__.py':b'VERSION="0.14.0-dev.24"\n','kaname/static/styles.css':b'new ui','kaname/resources.py':b'# resource helper\n','tests/test_resources.py':b'# checks\n','kaname/device_client/AuthWire-Client.ps1':b'preserved'}
