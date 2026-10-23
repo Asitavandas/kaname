@@ -5,13 +5,14 @@ function dashText(tag,text,className=''){const e=document.createElement(tag);e.t
 function dashEmpty(id,text){$(id).replaceChildren(dashText('p',text,'dashboard-empty'));}
 function dashboardVisible(){return !!session&&!$('overview').hidden&&!document.hidden;}
 function dashboardPermissions(){
+ if(typeof renderDashboardResources==='function')renderDashboardResources();if($('dashboard-canvas'))dashboardApplyLayout();
  for(const [id,permission]of [['dashboard-accept-card','audit.events'],['dashboard-reject-card','audit.events'],['dashboard-all-events','audit.events'],['dashboard-cert-card','certificates.authority'],['dashboard-expiring-card','certificates.authority']])$(id).disabled=!can(permission);
  $('dashboard-crl-row').hidden=!can('certificates.authority');
  if(!can('system.services'))renderDashboardBackup(null);
  if(dashboardData&&((dashboardData.events&&!can('audit.events'))||(dashboardData.certificates&&!can('certificates.authority'))))resetDashboard();
 }
-function resetDashboard(){dashboardResetLayoutSession();dashboardRequest++;clearTimeout(dashboardTimer);dashboardLoading=false;dashboardData=null;for(const id of ['dashboard-accept','dashboard-reject','dashboard-certificates','dashboard-expiring'])$(id).textContent='—';for(const id of ['dashboard-trend','dashboard-donut','dashboard-types','dashboard-nas','dashboard-heatmap','dashboard-recent','dashboard-alerts'])$(id).replaceChildren();$('dashboard-alerts').hidden=true;$('dashboard-feedback').textContent='';$('dashboard-updated').textContent='Henüz yenilenmedi';$('dashboard-period').value='7d';renderDashboardBackup(null);}
-function openDashboard(id){dashboardLayoutHydrate();clearTimeout(dashboardTimer);document.querySelector('.notice').hidden=id==='overview';if(id==='overview')loadDashboard();}
+function resetDashboard(){dashboardResourceReset();dashboardResetLayoutSession();dashboardRequest++;clearTimeout(dashboardTimer);dashboardLoading=false;dashboardData=null;for(const id of ['dashboard-accept','dashboard-reject','dashboard-certificates','dashboard-expiring'])$(id).textContent='—';for(const id of ['dashboard-trend','dashboard-donut','dashboard-types','dashboard-nas','dashboard-heatmap','dashboard-recent','dashboard-alerts'])$(id).replaceChildren();$('dashboard-alerts').hidden=true;$('dashboard-feedback').textContent='';$('dashboard-updated').textContent='Henüz yenilenmedi';$('dashboard-period').value='7d';renderDashboardBackup(null);}
+function openDashboard(id){dashboardLayoutHydrate();clearTimeout(dashboardTimer);document.querySelector('.notice').hidden=id==='overview';if(id==='overview'){loadDashboard();dashboardScheduleResources();}else{clearTimeout(dashboardResourceTimer);dashboardResourceRequest++;dashboardResourcesLoading=false;}}
 function dashSVG(tag,attrs={}){const e=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [key,value]of Object.entries(attrs))e.setAttribute(key,String(value));return e;}
 function dashboardTip(host,title,detail,x=50,y=10){
  let tip=host.querySelector('.dashboard-chart-tip');if(!tip){tip=dashText('div','','dashboard-chart-tip');tip.setAttribute('role','status');host.append(tip);}
@@ -22,10 +23,10 @@ function renderDashboardTrend(events){
  if(!events?.available){dashEmpty('dashboard-trend',can('audit.events')?'Erişim verileri alınamadı.':'Bu verilere erişim yetkiniz yok.');return;}
  if(!events.total){dashEmpty('dashboard-trend','Seçilen dönemde kayıtlı yanıt yok.');return;}
  const rows=events.series,svg=dashSVG('svg',{viewBox:'0 0 740 250',role:'img','aria-label':'Kabul ve ret yanıtlarının zaman içindeki dağılımı'}),max=Math.max(1,...rows.map(r=>Math.max(r.accept,r.reject))),left=44,width=670,base=205,height=175;
- const defs=dashSVG('defs');for(const [id,color]of [['accept','#1D4D73'],['reject','#D96B52']]){const gradient=dashSVG('linearGradient',{id:'dashboard-fill-'+id,x1:0,y1:0,x2:0,y2:1});gradient.append(dashSVG('stop',{offset:'0%','stop-color':color,'stop-opacity':'.32'}),dashSVG('stop',{offset:'100%','stop-color':color,'stop-opacity':'.015'}));defs.append(gradient);}svg.append(defs);
+ const defs=dashSVG('defs');for(const [id,color]of [['accept','#1D4D73'],['reject','#B5346B']]){const gradient=dashSVG('linearGradient',{id:'dashboard-fill-'+id,x1:0,y1:0,x2:0,y2:1});gradient.append(dashSVG('stop',{offset:'0%','stop-color':color,'stop-opacity':'.32'}),dashSVG('stop',{offset:'100%','stop-color':color,'stop-opacity':'.015'}));defs.append(gradient);}svg.append(defs);
  for(let i=0;i<=4;i++){const y=base-i*height/4;svg.append(dashSVG('line',{x1:left,x2:724,y1:y,y2:y,stroke:'#DFE7EE','stroke-dasharray':'3 5'}));const label=dashSVG('text',{x:34,y:y+4,'text-anchor':'end',fill:'#697D8F','font-size':10});label.textContent=String(Math.round(max*i/4));svg.append(label);}
  const x=i=>left+(rows.length===1?width/2:width*i/(rows.length-1)),y=n=>base-n/max*height;
- for(const [key,color]of [['accept','#1D4D73'],['reject','#D96B52']]){
+ for(const [key,color]of [['accept','#1D4D73'],['reject','#B5346B']]){
   const line=rows.map((row,i)=>(i?'L':'M')+x(i)+' '+y(row[key])).join(' '),area=line+' L'+x(rows.length-1)+' '+base+' L'+x(0)+' '+base+' Z';
   svg.append(dashSVG('path',{d:area,fill:'url(#dashboard-fill-'+key+')',class:'dashboard-area'}),dashSVG('path',{d:line,fill:'none',stroke:color,'stroke-width':3.2,'stroke-linejoin':'round','stroke-linecap':'round',class:'dashboard-line'}));
  }
@@ -33,7 +34,7 @@ function renderDashboardTrend(events){
  rows.forEach((row,i)=>{
   const date=new Date(row.at).toLocaleString('tr-TR',{timeZone:'Europe/Istanbul'}),group=dashSVG('g',{tabindex:0,role:'img','aria-label':date+': '+row.accept+' kabul, '+row.reject+' ret',class:'dashboard-point'}),step=rows.length>1?width/(rows.length-1):width;
   group.append(dashSVG('rect',{x:x(i)-Math.min(22,step/2),y:10,width:Math.min(44,step),height:height+25,fill:'transparent'}));
-  for(const [key,color]of [['accept','#1D4D73'],['reject','#D96B52']])group.append(dashSVG('circle',{cx:x(i),cy:y(row[key]),r:4,fill:'white',stroke:color,'stroke-width':2}));
+  for(const [key,color]of [['accept','#1D4D73'],['reject','#B5346B']])group.append(dashSVG('circle',{cx:x(i),cy:y(row[key]),r:4,fill:'white',stroke:color,'stroke-width':2}));
   const reveal=()=>{guide.setAttribute('x1',x(i));guide.setAttribute('x2',x(i));guide.setAttribute('visibility','visible');dashboardTip(host,date,dashboardNumber(row.accept)+' kabul · '+dashboardNumber(row.reject)+' ret',x(i)/740*100,8);};
   const hide=()=>{guide.setAttribute('visibility','hidden');host.querySelector('.dashboard-chart-tip')?.setAttribute('hidden','');};
   group.addEventListener('pointerenter',reveal);group.addEventListener('focus',reveal);group.addEventListener('pointerleave',hide);group.addEventListener('blur',hide);svg.append(group);
@@ -91,14 +92,14 @@ function renderDashboard(){
  if(c?.available&&c.expiring_computers){const b=dashText('button',c.expiring_computers+' cihaz sertifikasının süresi 30 gün içinde doluyor. İncele →');b.type='button';b.addEventListener('click',()=>dashboardCertificates(true));alerts.append(b);}
  if(crl&&(!crl.current||!crl.signature_valid))alerts.append(dashText('p','CRL güncelliği veya imzası kontrol edilmeli.'));
  if(e?.observer&&(!e.observer.enabled||e.observer.dropped>0))alerts.append(dashText('p','Erişim kayıt modülünde uyarı var. Erişim kayıtlarındaki gözlem ayrıntılarını kontrol edin.'));
- alerts.hidden=!alerts.childElementCount;dashboardPermissions();
+ alerts.hidden=!alerts.childElementCount;dashboardPermissions();dashboardRenderExtraStatus();
  $('dashboard-canvas').classList.remove('data-refreshed');void $('dashboard-canvas').offsetWidth;$('dashboard-canvas').classList.add('data-refreshed');
  $('dashboard-updated').textContent='Son okuma: '+new Date(dashboardData.checked_at).toLocaleString('tr-TR',{timeZone:'Europe/Istanbul'});
 }
 function dashboardCertificates(expiring=false){if(!can('certificates.authority'))return;showView('certificates');setPKITab('users');$('pki-search').value='';message(expiring?'Sertifika listesinde son geçerlilik tarihlerini kontrol edin. Dashboard sayacı tüm kayıtlı cihaz sertifikalarını kapsar; liste sayfalıdır.':'Geçerli cihaz sertifikaları: sertifika listesinden tarih ve durum ayrıntılarını inceleyin.');}
 async function loadDashboard(){
  if(!session||dashboardLoading||$('overview').hidden)return;
- const allowed=can('audit.events')||can('certificates.authority');if(!allowed){dashboardData={checked_at:new Date().toISOString()};renderDashboard();$('dashboard-feedback').textContent='Grafik ve sertifika özetleri için görüntüleme yetkisi gerekiyor.';return;}
+ const allowed=can('audit.events')||can('certificates.authority')||can('system.services');if(!allowed){dashboardData={checked_at:new Date().toISOString()};renderDashboard();$('dashboard-feedback').textContent='Grafik ve sertifika özetleri için görüntüleme yetkisi gerekiyor.';return;}
  const request=++dashboardRequest,generation=authGeneration,period=$('dashboard-period').value;dashboardLoading=true;$('dashboard-refresh').disabled=true;$('dashboard-feedback').textContent='';
  try{const value=await api('/api/dashboard?period='+encodeURIComponent(period));if(generation!==authGeneration||request!==dashboardRequest)return;dashboardData=value;renderDashboard();$('dashboard-feedback').textContent=[value.events&&!value.events.available?'Erişim özeti alınamadı.':'',value.certificates&&!value.certificates.available?'Sertifika özeti alınamadı.':''].filter(Boolean).join(' ');}
  catch(error){if(generation!==authGeneration||request!==dashboardRequest)return;dashboardData={checked_at:new Date().toISOString()};renderDashboard();$('dashboard-feedback').textContent='Dashboard verileri alınamadı. Yenile ile tekrar deneyin.';}
@@ -107,16 +108,82 @@ async function loadDashboard(){
 $('dashboard-refresh').addEventListener('click',()=>{clearTimeout(dashboardTimer);loadDashboard();loadRadiusOverview();});
 $('dashboard-period').addEventListener('change',()=>{dashboardRequest++;dashboardLoading=false;clearTimeout(dashboardTimer);loadDashboard();});
 $('dashboard-accept-card').addEventListener('click',()=>dashboardAccess('accept'));$('dashboard-reject-card').addEventListener('click',()=>dashboardAccess('reject'));$('dashboard-all-events').addEventListener('click',()=>dashboardAccess());$('dashboard-cert-card').addEventListener('click',()=>dashboardCertificates());$('dashboard-expiring-card').addEventListener('click',()=>dashboardCertificates(true));
-document.addEventListener('visibilitychange',()=>{clearTimeout(dashboardTimer);if(dashboardVisible())loadDashboard();});
+document.addEventListener('visibilitychange',()=>{clearTimeout(dashboardTimer);clearTimeout(dashboardResourceTimer);if(dashboardVisible()){loadDashboard();dashboardScheduleResources();}});
 
 function renderDashboardBackup(value){
+ dashboardBackupData=value;
  const badge=$('dashboard-backup'),detail=$('dashboard-backup-detail');
- if(!can('system.services')){badge.textContent='Yetki yok';badge.dataset.status='pending';detail.textContent='Servis görüntüleme yetkisi gerekiyor.';return;}
+ if(!can('system.services')){badge.textContent='Yetki yok';badge.dataset.status='pending';detail.textContent='Servis görüntüleme yetkisi gerekiyor.';dashboardRenderExtraStatus();return;}
  const at=Date.parse(value?.last_success_at),age=Date.now()-at;
- if(!value?.available||!Number.isFinite(at)){badge.textContent='Bilgi alınamadı';badge.dataset.status='pending';detail.textContent='Son yedek durum kaydı okunamadı.';return;}
+ if(!value?.available||!Number.isFinite(at)){badge.textContent='Bilgi alınamadı';badge.dataset.status='pending';detail.textContent='Son yedek durum kaydı okunamadı.';dashboardRenderExtraStatus();return;}
  const okay=value.last_run_succeeded&&value.archive_read_verified&&value.sqlite_integrity_verified&&age>=-300000&&age<=36*3600000;
- badge.textContent=okay?'Başarılı':'Kontrol gerekli';badge.dataset.status=okay?'ready':'error';detail.textContent='Son başarılı yedek: '+new Date(at).toLocaleString('tr-TR',{timeZone:'Europe/Istanbul'})+(value.last_run_succeeded?' · Son çalışma başarılı.':' · Son çalışma başarısız.')+' Durum kaydıdır; sunucu dışı kopya ve tam açılış geri yükleme testi anlamına gelmez.';
+ badge.textContent=okay?'Başarılı':'Kontrol gerekli';badge.dataset.status=okay?'ready':'error';detail.textContent='Son başarılı yedek: '+new Date(at).toLocaleString('tr-TR',{timeZone:'Europe/Istanbul'})+(value.last_run_succeeded?' · Son çalışma başarılı.':' · Son çalışma başarısız.')+' Durum kaydıdır; sunucu dışı kopya ve tam açılış geri yükleme testi anlamına gelmez.';dashboardRenderExtraStatus();
 }
+
+// Optional widgets use current, permission-filtered server readings.
+let dashboardResourceData=null,dashboardResourceTimer=0,dashboardResourceRequest=0,dashboardResourcesLoading=false,dashboardBackupData=null;
+function dashboardResourceReset(){clearTimeout(dashboardResourceTimer);dashboardResourceRequest++;dashboardResourcesLoading=false;dashboardResourceData=null;dashboardBackupData=null;renderDashboardResources();}
+function dashboardResourcesWanted(){return dashboardVisible()&&can('system.services')&&dashboardLayout.some(x=>['cpu','memory','disk','uptime'].includes(x.id));}
+function dashboardScheduleResources(){clearTimeout(dashboardResourceTimer);if(dashboardResourcesWanted())loadDashboardResources();}
+async function loadDashboardResources(){
+ if(!dashboardResourcesWanted()||dashboardResourcesLoading)return;
+ const request=++dashboardResourceRequest,generation=authGeneration;dashboardResourcesLoading=true;
+ try{const value=await api('/api/system/resources');if(generation!==authGeneration||request!==dashboardResourceRequest||!dashboardVisible())return;dashboardResourceData=value;renderDashboardResources();}
+ catch(_){if(generation!==authGeneration||request!==dashboardResourceRequest)return;dashboardResourceData=null;renderDashboardResources();}
+ finally{if(generation===authGeneration&&request===dashboardResourceRequest){dashboardResourcesLoading=false;if(dashboardResourcesWanted())dashboardResourceTimer=setTimeout(loadDashboardResources,10000);}}
+}
+function dashboardBytes(n){if(!Number.isFinite(n))return '—';const units=['B','KB','MB','GB','TB'];let i=0;while(n>=1024&&i<units.length-1){n/=1024;i++;}return n.toLocaleString('tr-TR',{maximumFractionDigits:1})+' '+units[i];}
+function dashboardDuration(n){if(!Number.isFinite(n))return '—';const days=Math.floor(n/86400),hours=Math.floor(n%86400/3600),minutes=Math.floor(n%3600/60);return (days?days+' gün ':'')+(hours?hours+' sa ':'')+minutes+' dk';}
+function dashboardMetricTemplate(id,title,icon){
+ const article=dashText('article','','dashboard-panel resource-panel');article.id='dashboard-'+id+'-panel';
+ const head=dashText('div','','dashboard-panel-head'),heading=dashText('h3',title);head.append(heading,dashText('span',icon,'resource-icon'));article.append(head);
+ const gauge=dashText('div','','resource-gauge'),svg=dashSVG('svg',{viewBox:'0 0 140 140',class:'resource-svg','aria-hidden':'true'});
+ svg.append(dashSVG('circle',{cx:70,cy:70,r:53,fill:'none',stroke:'#ECF1F5','stroke-width':9}),dashSVG('circle',{cx:70,cy:70,r:53,fill:'none','stroke-width':9,'stroke-linecap':'round',class:'resource-progress',pathLength:100,'stroke-dasharray':'0 100',transform:'rotate(-90 70 70)'}));
+ const value=dashText('strong','—','resource-value');value.id='dashboard-'+id+'-value';gauge.append(svg,value);article.append(gauge);
+ const detail=dashText('p','Veri bekleniyor.','resource-detail');detail.id='dashboard-'+id+'-detail';article.append(detail);
+ const sampled=dashText('small','','resource-sampled');sampled.id='dashboard-'+id+'-sampled';article.append(sampled);return article;
+}
+function dashboardPrepareOptionalWidgets(){
+ const grid=document.querySelector('.dashboard-grid');
+ for(const [id,title,icon]of [['cpu','CPU kullanımı','◈'],['memory','RAM kullanımı','▤'],['disk','AuthWire veri diski','▥']])grid.append(dashboardMetricTemplate(id,title,icon));
+ for(const [id,title,icon]of [['uptime','Sunucu çalışma süresi','◷'],['backup','Son yedek durumu','↺'],['crl','CRL güncelliği','✓']]){
+  const article=dashText('article','','dashboard-panel status-widget');article.id='dashboard-'+id+'-panel';const head=dashText('div','','dashboard-panel-head');head.append(dashText('h3',title),dashText('span',icon,'resource-icon'));const value=dashText('strong','—','status-widget-value');value.id='dashboard-'+id+'-value';const detail=dashText('p','Veri bekleniyor.','resource-detail');detail.id='dashboard-'+id+'-widget-detail';article.append(head,value,detail);grid.append(article);
+ }
+}
+function renderDashboardResources(){
+ for(const id of ['cpu','memory','disk']){
+  const host=$('dashboard-'+id+'-panel');if(!host)continue;const allowed=can('system.services'),data=allowed?dashboardResourceData?.[id]:null,percent=data?.available&&Number.isFinite(data.percent)?data.percent:null;
+  $('dashboard-'+id+'-value').textContent=percent===null?'—':percent.toLocaleString('tr-TR',{maximumFractionDigits:1})+'%';
+  host.querySelector('.resource-progress').setAttribute('stroke-dasharray',(percent===null?0:Math.max(0,Math.min(100,percent)))+' 100');
+  let detail=!allowed?'Görüntüleme yetkisi gerekiyor.':!data?.available?'Sunucu verisi alınamadı.':id==='cpu'?(percent===null?'İlk CPU örneği hazırlanıyor.':data.logical_cpus+' mantıksal işlemci · '+data.sample_seconds+' sn örnek aralığı'):id==='memory'?dashboardBytes(data.used_bytes)+' / '+dashboardBytes(data.total_bytes)+' kullanılıyor':dashboardBytes(data.free_bytes)+' boş · '+dashboardBytes(data.total_bytes)+' toplam';
+  $('dashboard-'+id+'-detail').textContent=detail;$('dashboard-'+id+'-sampled').textContent=dashboardResourceData?.checked_at&&allowed?'Son ölçüm '+new Date(dashboardResourceData.checked_at).toLocaleTimeString('tr-TR'):'';host.dataset.level=percent!==null&&percent>=90?'high':'normal';
+ }
+ if($('dashboard-uptime-value')){const u=can('system.services')?dashboardResourceData?.uptime:null;$('dashboard-uptime-value').textContent=u?.available?dashboardDuration(u.seconds):'—';$('dashboard-uptime-widget-detail').textContent=u?.available?'AuthWire sunucusunun son açılışından bu yana.':'Sunucu verisi alınamadı.';}
+}
+function dashboardRenderExtraStatus(){
+ if(!$('dashboard-backup-value'))return;
+ const b=$('dashboard-backup');$('dashboard-backup-value').textContent=b.textContent;$('dashboard-backup-value').dataset.status=b.dataset.status;$('dashboard-backup-widget-detail').textContent=$('dashboard-backup-detail').textContent;
+ const c=$('dashboard-crl');$('dashboard-crl-value').textContent=can('certificates.authority')?c.textContent:'Yetki yok';$('dashboard-crl-value').dataset.status=c.dataset.status;$('dashboard-crl-widget-detail').textContent=can('certificates.authority')?$('dashboard-crl-detail').textContent:'Sertifika görüntüleme yetkisi gerekiyor.';
+}
+function dashboardWidgetAllowed(id){const permission=dashboardWidgetMeta[id]?.permission;return !permission||can(permission);}
+function dashboardPersistLayout(layout){try{localStorage.setItem(dashboardLayoutKey(),JSON.stringify({version:2,items:layout}));return true;}catch(_){dashboardAnnounce('Düzen kaydedilemedi.');message('Düzen bu tarayıcıya kaydedilemedi.','error');return false;}}
+function dashboardChangeWidgets(next){
+ if(!session)return false;dashboardFinishGesture(false);
+ if(!dashboardEditing){if(!dashboardPersistLayout(next))return false;dashboardSavedLayout=structuredClone(next);}
+ dashboardLayout=next;dashboardApplyLayout();dashboardLayoutControls();dashboardRenderCatalog();dashboardScheduleResources();return true;
+}
+function dashboardAddWidget(id){const definition=dashboardWidgetDefinitions.find(x=>x[0]===id);if(!definition||!dashboardWidgetAllowed(id)||dashboardLayout.some(x=>x.id===id))return;const [key,_title,_selector,cols,rows]=definition;if(dashboardChangeWidgets([...dashboardLayout,{id:key,cols,rows}]))dashboardAnnounce(definition[1]+' eklendi.');}
+function dashboardRemoveWidget(id){if(!dashboardLayout.some(x=>x.id===id))return;const title=dashboardWidgetDefinitions.find(x=>x[0]===id)?.[1];if(dashboardChangeWidgets(dashboardLayout.filter(x=>x.id!==id)))dashboardAnnounce(title+' kaldırıldı. Widget Ekle ile geri ekleyebilirsiniz.');}
+function dashboardRenderCatalog(){
+ const host=$('dashboard-widget-list');if(!host)return;host.replaceChildren();const query=$('dashboard-widget-search').value.trim().toLocaleLowerCase('tr');
+ for(const category of ['Erişim','Sertifikalar','Sistem']){
+  const matches=dashboardWidgetDefinitions.filter(([id,title])=>dashboardWidgetAllowed(id)&&dashboardWidgetMeta[id].category===category&&[title,dashboardWidgetMeta[id].description].join(' ').toLocaleLowerCase('tr').includes(query));if(!matches.length)continue;
+  const section=dashText('section','','widget-catalog-group');section.append(dashText('h4',category));
+  for(const [id,title]of matches){const meta=dashboardWidgetMeta[id],row=dashText('div','','widget-catalog-row'),copy=dashText('div');copy.append(dashText('strong',title),dashText('p',meta.description));const active=dashboardLayout.some(x=>x.id===id),button=dashText('button',active?'Eklendi':'+ Ekle');button.type='button';button.dataset.addWidget=id;button.disabled=active;button.setAttribute('aria-label',title+' '+(active?'eklendi':'ekle'));button.addEventListener('click',()=>dashboardAddWidget(id));row.append(copy,button);section.append(row);}host.append(section);
+ }if(!host.childElementCount)host.append(dashText('p','Eşleşen widget bulunamadı.','dashboard-empty'));
+}
+function dashboardOpenCatalog(){if(!session)return;dashboardLayoutHydrate();$('dashboard-widget-search').value='';dashboardRenderCatalog();$('dashboard-widget-catalog').showModal();$('dashboard-widget-search').focus();}
+function dashboardCloseCatalog(){if($('dashboard-widget-catalog').open)$('dashboard-widget-catalog').close();$('dashboard-widget-add').focus();}
 
 // Personal layout stores geometry only, never authentication or dashboard data.
 const dashboardWidgetDefinitions=[
@@ -129,14 +196,22 @@ const dashboardWidgetDefinitions=[
  ['nas','Switch / AP hareketliliği','.dashboard-nas',6,9],
  ['density','Haftanın erişim ritmi','.dashboard-density',6,9],
  ['recent','Son erişim denemeleri','.dashboard-recent',8,14],
- ['health','Sistem sağlığı','.dashboard-health',4,14]
+ ['health','Sistem sağlığı','.dashboard-health',4,14],
+ ['cpu','CPU kullanımı','#dashboard-cpu-panel',4,7],
+ ['memory','RAM kullanımı','#dashboard-memory-panel',4,7],
+ ['disk','AuthWire veri diski','#dashboard-disk-panel',4,7],
+ ['uptime','Sunucu çalışma süresi','#dashboard-uptime-panel',6,6],
+ ['backup','Son yedek durumu','#dashboard-backup-panel',6,6],
+ ['crl','CRL güncelliği','#dashboard-crl-panel',6,6]
 ];
+const dashboardWidgetMeta={};
+for(const [id]of dashboardWidgetDefinitions){const system=['health','cpu','memory','disk','uptime','backup'].includes(id),certificate=['certificates','expiring','crl'].includes(id);dashboardWidgetMeta[id]={category:system?'Sistem':certificate?'Sertifikalar':'Erişim',permission:id==='health'?null:system?'system.services':certificate?'certificates.authority':'audit.events',description:{cpu:'Sunucunun örnek aralığındaki işlemci kullanımı.',memory:'Sunucunun kullanılan ve kullanılabilir RAM miktarı.',disk:'AuthWire verilerinin bulunduğu dosya sisteminin kapasitesi.',uptime:'Sunucunun son açılışından bu yana geçen süre.',backup:'Son doğrulanmış yedek durum kaydı.',crl:'Çalışan sertifika iptal listesinin güncelliği.'}[id]||'Seçilen döneme ait '+dashboardWidgetDefinitions.find(x=>x[0]===id)[1].toLocaleLowerCase('tr')+'.'};}
 let dashboardLayout=[],dashboardSavedLayout=[],dashboardLayoutAccount=null,dashboardEditing=false,dashboardGesture=null,dashboardColumns=12,dashboardTiltFrame=0;
-const dashboardDefaultLayout=()=>dashboardWidgetDefinitions.map(([id,_title,_selector,cols,rows])=>({id,cols,rows}));
-function dashboardLayoutKey(){return 'authwire.dashboard.layout.v1.'+encodeURIComponent(session?.user?.id||'');}
-function dashboardReadLayout(value){
- if(!value||value.version!==1||!Array.isArray(value.items)||value.items.length!==dashboardWidgetDefinitions.length)return null;
- const allowed=new Set(dashboardWidgetDefinitions.map(x=>x[0])),seen=new Set();
+const dashboardDefaultLayout=()=>[...dashboardWidgetDefinitions.slice(0,4),...dashboardWidgetDefinitions.slice(10,13),...dashboardWidgetDefinitions.slice(4,10)].map(([id,_title,_selector,cols,rows])=>({id,cols,rows}));
+function dashboardLayoutKey(){return 'authwire.dashboard.layout.v2.'+encodeURIComponent(session?.user?.id||'');}
+function dashboardReadLayout(value,legacy=false){
+ if(!value||value.version!==(legacy?1:2)||!Array.isArray(value.items)||value.items.length>(legacy?10:dashboardWidgetDefinitions.length)||legacy&&value.items.length!==10)return null;
+ const allowed=new Set(dashboardWidgetDefinitions.slice(0,legacy?10:undefined).map(x=>x[0])),seen=new Set();
  for(const row of value.items){if(!row||Object.keys(row).sort().join(',')!=='cols,id,rows'||!allowed.has(row.id)||seen.has(row.id)||!Number.isInteger(row.cols)||row.cols<3||row.cols>12||!Number.isInteger(row.rows)||row.rows<4||row.rows>24)return null;seen.add(row.id);}
  return value.items.map(({id,cols,rows})=>({id,cols,rows}));
 }
@@ -144,12 +219,14 @@ function dashboardAnnounce(text){$('dashboard-layout-status').textContent=text;}
 function dashboardLayoutHydrate(){
  const account=session?.user?.id;if(!account||dashboardLayoutAccount===account)return;
  dashboardLayoutAccount=account;dashboardEditing=false;let layout=null;
- try{const raw=localStorage.getItem(dashboardLayoutKey())||'null';if(raw.length<=8000)layout=dashboardReadLayout(JSON.parse(raw));}catch(_){}
+ try{const raw=localStorage.getItem(dashboardLayoutKey());if(raw!==null&&raw.length<=8000)layout=dashboardReadLayout(JSON.parse(raw));else if(raw===null){const previous=localStorage.getItem('authwire.dashboard.layout.v1.'+encodeURIComponent(account));if(previous&&previous.length<=8000)layout=dashboardReadLayout(JSON.parse(previous),true);}}catch(_){}
  dashboardSavedLayout=layout||dashboardDefaultLayout();dashboardLayout=structuredClone(dashboardSavedLayout);dashboardApplyLayout();dashboardLayoutControls();
 }
 function dashboardApplyLayout(){
  const canvas=$('dashboard-canvas');if(!canvas)return;
- for(const item of dashboardLayout){const widget=canvas.querySelector('[data-widget="'+item.id+'"]');if(!widget)continue;widget.style.setProperty('--widget-cols',dashboardColumns===6&&item.cols>3?6:Math.min(item.cols,dashboardColumns));widget.style.setProperty('--widget-rows',item.rows);widget.dataset.size=item.cols;if(canvas.children[dashboardLayout.indexOf(item)]!==widget)canvas.insertBefore(widget,canvas.children[dashboardLayout.indexOf(item)]||null);}
+ const ids=new Set(dashboardLayout.map(x=>x.id)),ordered=[...dashboardLayout.map(x=>x.id),...dashboardWidgetDefinitions.map(x=>x[0]).filter(id=>!ids.has(id))];
+ for(const [index,id]of ordered.entries()){const widget=canvas.querySelector('[data-widget="'+id+'"]');if(!widget)continue;const item=dashboardLayout.find(x=>x.id===id);widget.hidden=!item||!dashboardWidgetAllowed(id);if(item){widget.style.setProperty('--widget-cols',dashboardColumns===6&&item.cols>3?6:Math.min(item.cols,dashboardColumns));widget.style.setProperty('--widget-rows',item.rows);widget.dataset.size=item.cols;}if(canvas.children[index]!==widget)canvas.insertBefore(widget,canvas.children[index]||null);}
+ $('dashboard-empty-layout').hidden=!!canvas.querySelector('.dashboard-widget:not([hidden])');
 }
 function dashboardLayoutControls(){
  const canvas=$('dashboard-canvas');canvas.classList.toggle('is-editing',dashboardEditing);$('dashboard-layout-edit').hidden=dashboardEditing;$('dashboard-layout-edit').setAttribute('aria-pressed',String(dashboardEditing));
@@ -157,15 +234,14 @@ function dashboardLayoutControls(){
  for(const button of canvas.querySelectorAll('.widget-handle,.widget-resize,.widget-step'))button.hidden=!dashboardEditing;
 }
 function dashboardEditLayout(){if(!session)return;dashboardLayoutHydrate();dashboardEditing=true;dashboardLayoutControls();dashboardAnnounce('Düzenleme açık. Taşıma ve boyutlandırma tutamaçları hazır.');}
-function dashboardCancelLayout(){dashboardFinishGesture(false);dashboardLayout=structuredClone(dashboardSavedLayout);dashboardEditing=false;dashboardApplyLayout();dashboardLayoutControls();dashboardAnnounce('Kaydedilmemiş düzen değişiklikleri geri alındı.');}
+function dashboardCancelLayout(){dashboardFinishGesture(false);dashboardLayout=structuredClone(dashboardSavedLayout);dashboardEditing=false;dashboardApplyLayout();dashboardLayoutControls();dashboardScheduleResources();dashboardAnnounce('Kaydedilmemiş düzen değişiklikleri geri alındı.');}
 function dashboardSaveLayout(){
  if(!session)return;dashboardFinishGesture(false);
- try{localStorage.setItem(dashboardLayoutKey(),JSON.stringify({version:1,items:dashboardLayout}));}
- catch(_){dashboardAnnounce('Düzen kaydedilemedi. Tarayıcı depolama ayarlarını kontrol edin.');message('Düzen bu tarayıcıya kaydedilemedi. Değişiklikler ekranda korunuyor.','error');return;}
+ if(!dashboardPersistLayout(dashboardLayout))return;
  dashboardSavedLayout=structuredClone(dashboardLayout);dashboardEditing=false;dashboardLayoutControls();dashboardAnnounce('Dashboard düzeniniz kaydedildi.');message('Dashboard düzeniniz kaydedildi.');
 }
 function dashboardResetLayoutSession(){
- dashboardFinishGesture(false);dashboardEditing=false;dashboardLayoutAccount=null;dashboardLayout=dashboardDefaultLayout();dashboardSavedLayout=structuredClone(dashboardLayout);dashboardApplyLayout();dashboardLayoutControls();
+ dashboardFinishGesture(false);if($('dashboard-widget-catalog').open)$('dashboard-widget-catalog').close();dashboardEditing=false;dashboardLayoutAccount=null;dashboardLayout=dashboardDefaultLayout();dashboardSavedLayout=structuredClone(dashboardLayout);dashboardApplyLayout();dashboardLayoutControls();
 }
 function dashboardMoveWidget(id,offset){
  const index=dashboardLayout.findIndex(x=>x.id===id),next=Math.max(0,Math.min(dashboardLayout.length-1,index+offset));if(index===next)return;
@@ -203,8 +279,9 @@ function dashboardFinishGesture(commit=true){
  $('dashboard-drag-ghost')?.remove();$('dashboard-canvas')?.classList.remove('has-gesture');document.querySelectorAll('.widget-engaged,.dashboard-drop-target').forEach(x=>x.classList.remove('widget-engaged','dashboard-drop-target'));
 }
 function dashboardLayoutInit(){
+ dashboardPrepareOptionalWidgets();
  const canvas=dashText('div','','dashboard-canvas');canvas.id='dashboard-canvas';
- const stats=document.querySelector('.dashboard-stats'),grid=document.querySelector('.dashboard-grid');stats.before(canvas);
+ const stats=document.querySelector('.dashboard-stats'),grid=document.querySelector('.dashboard-grid');stats.before(canvas);const empty=dashText('div','','dashboard-empty-layout');empty.id='dashboard-empty-layout';empty.append(dashText('p','Henüz widget yok.'),dashText('button','Widget Ekle'));empty.lastChild.type='button';empty.lastChild.addEventListener('click',dashboardOpenCatalog);canvas.after(empty);
  for(const [id,title,selector]of dashboardWidgetDefinitions){
   const content=document.querySelector(selector),widget=dashText('div','','dashboard-widget');widget.dataset.widget=id;
   const controls=dashText('div','','widget-controls'),handle=dashText('button','','widget-handle');handle.type='button';handle.setAttribute('aria-label',title+' kartını taşı');handle.title='Sürükleyin veya ok tuşlarıyla taşıyın';handle.append(dashText('span','⠿'),dashText('span',title));
@@ -213,7 +290,7 @@ function dashboardLayoutInit(){
   const body=dashText('div','','widget-body');body.append(content);
   const resize=dashText('button','◢','widget-resize');resize.type='button';resize.setAttribute('aria-label',title+' kartını boyutlandır');resize.title='Sürükleyin; ok tuşlarıyla genişlik ve yüksekliği değiştirin';resize.addEventListener('pointerdown',e=>dashboardGestureStart(e,id,'resize'));
   resize.addEventListener('keydown',event=>{if(!dashboardEditing||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;event.preventDefault();const item=dashboardLayout.find(x=>x.id===id);dashboardResizeWidget(id,item.cols+(event.key==='ArrowRight'?1:event.key==='ArrowLeft'?-1:0),item.rows+(event.key==='ArrowDown'?1:event.key==='ArrowUp'?-1:0));dashboardAnnounce(title+' boyutu değişti.');resize.focus();});
-  widget.append(controls,body,resize);canvas.append(widget);
+  const remove=dashText('button','×','widget-remove');remove.type='button';remove.title='Widget kaldır';remove.setAttribute('aria-label',title+' widget’ını kaldır');remove.addEventListener('click',()=>dashboardRemoveWidget(id));widget.append(controls,body,resize,remove);canvas.append(widget);
  }
  stats.remove();grid.remove();dashboardLayout=dashboardDefaultLayout();dashboardSavedLayout=structuredClone(dashboardLayout);dashboardApplyLayout();dashboardLayoutControls();
  const resize=new ResizeObserver(entries=>{const width=entries[0].contentRect.width,next=width<570?1:width<970?6:12;if(next!==dashboardColumns){dashboardColumns=next;canvas.style.setProperty('--canvas-cols',next);canvas.dataset.columns=next;dashboardApplyLayout();}});resize.observe(canvas);
@@ -225,8 +302,9 @@ function dashboardLayoutInit(){
  canvas.addEventListener('pointerout',event=>{const widget=event.target.closest('.dashboard-widget');if(widget&&!widget.contains(event.relatedTarget)){widget.style.setProperty('--tilt-x','0deg');widget.style.setProperty('--tilt-y','0deg');}});
  canvas.addEventListener('pointerup',()=>dashboardFinishGesture(true));canvas.addEventListener('pointercancel',()=>dashboardFinishGesture(false));canvas.addEventListener('lostpointercapture',()=>{if(dashboardGesture)dashboardFinishGesture(false);});
  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&dashboardGesture){event.preventDefault();dashboardFinishGesture(false);}});
+ $('dashboard-widget-add').addEventListener('click',dashboardOpenCatalog);$('dashboard-widget-close').addEventListener('click',dashboardCloseCatalog);$('dashboard-widget-done').addEventListener('click',dashboardCloseCatalog);$('dashboard-widget-search').addEventListener('input',dashboardRenderCatalog);$('dashboard-widget-catalog').addEventListener('click',event=>{if(event.target===$('dashboard-widget-catalog')){const rect=event.target.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)dashboardCloseCatalog();}});
  $('dashboard-layout-edit').addEventListener('click',dashboardEditLayout);$('dashboard-layout-cancel').addEventListener('click',dashboardCancelLayout);$('dashboard-layout-save').addEventListener('click',dashboardSaveLayout);
- $('dashboard-layout-default').addEventListener('click',()=>{dashboardFinishGesture(false);dashboardLayout=dashboardDefaultLayout();dashboardApplyLayout();dashboardAnnounce('Varsayılan düzen hazır. Uygulamak için Kaydet seçin.');});
+ $('dashboard-layout-default').addEventListener('click',()=>{dashboardFinishGesture(false);dashboardLayout=dashboardDefaultLayout();dashboardApplyLayout();dashboardScheduleResources();dashboardAnnounce('Varsayılan düzen hazır. Uygulamak için Kaydet seçin.');});
  document.addEventListener('visibilitychange',()=>{if(document.hidden)dashboardFinishGesture(false);});
 }
 dashboardLayoutInit();
