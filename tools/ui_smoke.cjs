@@ -301,7 +301,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.locator('#directory-computers-query').fill('LAB-PC05$');
     await page.locator('#directory-computers-search').click();
     await page.waitForFunction(()=>document.querySelectorAll('#directory-computers-list tbody tr').length===1);
-    assert.match(await page.locator('#directory-computers-list').textContent(),/Bilgisayar · Kapalı hesap/);
+    assert.match(await page.locator('#directory-computers-list').textContent(),/Devre dışı/);
     await page.locator('#directory-computers-query').fill('');await page.locator('#directory-computers-search').click();
     await page.waitForFunction(()=>document.querySelectorAll('#directory-computers-list tbody tr').length===6);
     await page.locator('#identity-tab-groups').click();
@@ -309,7 +309,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.waitForFunction(()=>document.querySelector('#detail-title').textContent.includes('Domain Computers')&&document.querySelectorAll('#detail-list .policy-row').length===6);
     assert.match(await page.locator('#detail-count').textContent(),/6 sonuç/);
     assert.match(await page.locator('#detail-list').textContent(),/Primary group/);
-    assert.match(await page.locator('#detail-list').textContent(),/Bilgisayar · Kapalı hesap/);
+    assert.match(await page.locator('#detail-list').textContent(),/Devre dışı/);
     assert.equal(await page.locator('#detail-list script').count(),0);
     if(process.env.KANAME_UI_ARTIFACTS){
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'domain-computers-members.png'),fullPage:true,animations:'disabled'});
