@@ -38,6 +38,7 @@ s.serve_forever()`;
   const widget=id=>page.locator('[data-widget="'+id+'"]');
   await login();assert.equal(await page.locator('.dashboard-widget').count(),10);
   assert.equal(await page.locator('.dashboard-area').count(),2);assert.equal(await page.locator('.dashboard-donut-segment').count(),3);
+  assert.equal(await page.locator('.dashboard-donut-svg').evaluate(svg=>{const outer=svg.getBoundingClientRect();return [...svg.querySelectorAll('.dashboard-donut-segment')].every(el=>{const b=el.getBoundingClientRect();return b.x>=outer.x&&b.y>=outer.y&&b.right<=outer.right&&b.bottom<=outer.bottom;});}),true,'donut arcs remain centered inside chart');
   assert.equal(await page.locator('.orbit-hub').evaluate(e=>getComputedStyle(e,':before').display),'none');
   await page.locator('.dashboard-point').first().focus();assert.equal(await page.locator('.dashboard-chart-tip').isVisible(),true);await page.locator('#dashboard-refresh').focus();
   const circle=page.locator('[data-nav-group=monitoring]>.nav-heading');await circle.scrollIntoViewIfNeeded();const normal=await circle.boundingBox();await circle.hover();await page.waitForTimeout(250);const grown=await circle.boundingBox();assert.ok(grown.width>normal.width+5);assert.ok(normal.width<85);
