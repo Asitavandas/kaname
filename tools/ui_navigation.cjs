@@ -1,6 +1,7 @@
 'use strict';
 // Exercise the real circular group buttons before selecting an allowed page.
 async function navigate(page,view){
+ await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
  if(await page.locator('#nav-toggle').getAttribute('aria-expanded')!=='true')await page.locator('#nav-toggle').click();
  const item=page.locator('[data-view="'+view+'"]');
  const group=page.locator('.nav-group').filter({has:item});
