@@ -381,8 +381,8 @@ html:has(body.central-theme){overflow-x:clip}
 .central-theme .widget-body .dashboard-panel-head p{font-size:11px}
 .widget-body .dashboard-chart{position:relative;flex:1;min-height:135px;display:grid;align-items:center}
 .widget-body .dashboard-chart>svg{width:100%;height:100%;max-height:300px;overflow:visible}
-.widget-body #dashboard-donut{min-height:150px;flex:1;display:grid;place-items:center}
-.dashboard-donut-svg{width:min(100%,220px);height:100%;max-height:230px;overflow:visible}
+.widget-body #dashboard-donut{min-height:170px;flex:1;display:grid;place-items:center}
+.dashboard-donut-svg{width:min(100%,160px);height:160px;overflow:visible}
 .donut-number{font:700 27px Inter,"Segoe UI",sans-serif;fill:#1D4D73;pointer-events:none}
 .donut-caption{font:11px Inter,"Segoe UI",sans-serif;fill:#60798D;pointer-events:none}
 .dashboard-donut-segment{cursor:crosshair;transition:stroke-width .22s,filter .22s}
