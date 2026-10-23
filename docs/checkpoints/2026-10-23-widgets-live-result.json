@@ -1,0 +1,229 @@
+{
+  "recorded_date": "2026-10-23",
+  "source": "operator-provided deployment output",
+  "preflight": {
+    "protected_radius_source_identical": true,
+    "readonly_dashboard_scope_verified": true,
+    "radius_active": true,
+    "service_pids": {
+      "authwire-radius.service": "832810",
+      "authwire-service-control.service": "887154"
+    },
+    "full_data_backup": false,
+    "isolated_restore": false,
+    "evidence": "/var/lib/authwire-ui-updates/widgets-dev24-20261023T195448Z-6d4ad4fe"
+  },
+  "api_checks": [
+    {
+      "phase": "before",
+      "authenticated": true,
+      "loopback": true,
+      "results": [
+        {
+          "path": "/api/auth/session",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 1.8,
+          "max_ms": 3.2
+        },
+        {
+          "path": "/api/state",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 7.3,
+          "max_ms": 10.6
+        },
+        {
+          "path": "/api/pki/certificates?offset=0",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 2.4,
+          "max_ms": 3
+        },
+        {
+          "path": "/api/network",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 2.7,
+          "max_ms": 2.8
+        },
+        {
+          "path": "/api/services",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 2.3,
+          "max_ms": 21.3
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "authenticated": true,
+      "loopback": true,
+      "results": [
+        {
+          "path": "/api/auth/session",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 1.7,
+          "max_ms": 1.8
+        },
+        {
+          "path": "/api/state",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 7.1,
+          "max_ms": 7.7
+        },
+        {
+          "path": "/api/pki/certificates?offset=0",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 2.4,
+          "max_ms": 34.7
+        },
+        {
+          "path": "/api/network",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 2.4,
+          "max_ms": 2.5
+        },
+        {
+          "path": "/api/services",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 2.2,
+          "max_ms": 2.2
+        },
+        {
+          "path": "/api/system/resources",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 1.5,
+          "max_ms": 2.1
+        },
+        {
+          "path": "/api/dashboard?period=7d",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 3.9,
+          "max_ms": 4.7
+        },
+        {
+          "path": "/api/system/power",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 2.5,
+          "max_ms": 5.5
+        },
+        {
+          "path": "/api/policies/labels",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 4.8,
+          "max_ms": 5.3
+        },
+        {
+          "path": "/api/audit/history",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 3,
+          "max_ms": 3.3
+        },
+        {
+          "path": "/api/audit/history?source=administrators",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 2.6,
+          "max_ms": 2.9
+        },
+        {
+          "path": "/api/radius/events",
+          "statuses": [
+            200,
+            200,
+            200
+          ],
+          "median_ms": 2.8,
+          "max_ms": 2.8
+        }
+      ]
+    }
+  ],
+  "result": {
+    "event": "WIDGETS_FINISHED",
+    "verified": true,
+    "version": "0.14.0-dev.24",
+    "release": "3a3f1e4e68bb0d832ee3b715dc69195df0a562cd",
+    "changed": true,
+    "checks": {
+      "files": true,
+      "pids": true,
+      "timers": true,
+      "business_state": true
+    },
+    "radius_active": true,
+    "radius_restarted": false,
+    "radius_process_preserved": true,
+    "broker_process_preserved": true,
+    "policy_changed": false,
+    "certificates_changed": false,
+    "windows_changed": false,
+    "full_data_backup_created": false,
+    "isolated_restore_exercised": false,
+    "backup_timer_preserved": true,
+    "operator_browser_acceptance_pending": true,
+    "rollback_source_commit": "d4cc83e80eeff69c50732c11fecdd4eb3cae5b9f",
+    "evidence": "/var/lib/authwire-ui-updates/widgets-dev24-20261023T195448Z-6d4ad4fe"
+  },
+  "extra_service_actions_executed": false
+}

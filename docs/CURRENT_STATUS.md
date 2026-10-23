@@ -17,6 +17,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.24 widget ve menü canlı kurulumu tamam — operatör görünüm kabulü bekliyor (23 Ekim 2026)
+
+- 🔴✓ Operatörün WIDGETS_FINISHED çıktısı 0.14.0-dev.24, kaynak 3a3f1e4e68bb0d832ee3b715dc69195df0a562cd kurulumunu doğruladı. Dosya, süreç, zamanlayıcı ve iş verisi kontrollerinin tamamı başarılı.
+- 🔴✓ Kurulum öncesi beş, sonrası on iki API yolu üçer kez HTTP 200 döndürdü. Yeni /api/system/resources medyan 1,5 ms / en uzun 2,1 ms; dashboard medyan 3,9 ms / en uzun 4,7 ms. Son kontrollerde en uzun yanıt 34,7 ms.
+- 🔴✓ RADIUS aktif, yeniden başlatılmadı; PID 832810 korundu. Broker PID 887154 korundu. Kurallar, sertifikalar ve Windows değişmedi; günlük yedek zamanlayıcısı korundu. Yeni tam yedek/izole veri restore yapılmadı.
+- Bu kayıt turunda ek kaynak değişikliği veya servis eylemi uygulanmadı. Canlı kurulum bekleme maddesi kapanmıştır. Bekliyor: Ctrl+F5 sonrası Widget Ekle/kaldırma, düzen ve yeni dikey menünün gerçek tarayıcı görünüm kabulü. Önceki bağımsız fonksiyonel açık işler bu sonuçla kapatılmaz.
+- Kanıt: /var/lib/authwire-ui-updates/widgets-dev24-20261023T195448Z-6d4ad4fe. Makine okunur kayıt: docs/checkpoints/2026-10-23-widgets-live-result.json.
+
 ## 🔴✓ dev.24 widget kataloğu, kaynak kartları ve dikey menü — kaynak/test tamam; canlı kurulum bekliyor (23 Ekim 2026)
 
 - 🔴✓ Operatör dev.23 metalik siyah logoyu “logo oldu” diyerek kabul etti. Onaylı PNG ve çizgi geometrisi bu turda değişmedi; SHA256 677e49220d7ca57376735a9792b8067e8aaca223ee73806d91ff3dc1eb8d728e. Önceki logo görünüm kabulü bekleme maddesi kapanmıştır.
