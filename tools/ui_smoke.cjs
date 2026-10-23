@@ -48,11 +48,12 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     const wordmark=await page.locator('.brand-wordmark').boundingBox();
     assert.ok(wordmark.x+wordmark.width<=brand.x+brand.width,'Wordmark must fit sidebar brand area');
     const emblem=await page.locator('.logo img').evaluate(img=>({ratio:img.naturalWidth/img.naturalHeight,fit:getComputedStyle(img).objectFit}));
-    assert.ok(emblem.ratio>1.6&&emblem.ratio<1.7,'Approved wide emblem must retain its proportions');
+    assert.equal(emblem.ratio,1,'Approved square source remains unstretched; frame shows the emblem');
     assert.equal(emblem.fit,'contain');
     const logoResponse=await page.request.get(new URL('/authwire-logo.png',page.url()).href);
     assert.equal(logoResponse.status(),200);
     assert.match(logoResponse.headers()['content-type'],/image\/png/);
+    assert.equal(require('node:crypto').createHash('sha256').update(await logoResponse.body()).digest('hex'),'677e49220d7ca57376735a9792b8067e8aaca223ee73806d91ff3dc1eb8d728e','Approved black emblem pixels must remain unchanged');
     const healthResponse=await page.request.get(new URL('/healthz',page.url()).href);assert.equal((await healthResponse.json()).product,'AuthWire');
 
     const colors=await page.evaluate(()=>({background:getComputedStyle(document.body).backgroundColor,sidebar:getComputedStyle(document.querySelector('aside')).backgroundColor,nav:getComputedStyle(document.querySelector('[data-view="overview"]')).color}));

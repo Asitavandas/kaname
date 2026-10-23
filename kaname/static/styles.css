@@ -465,3 +465,11 @@ html:has(body.central-theme){overflow-x:clip}
 .dashboard-feedback:empty{display:none}
 .central-theme #account-bar.account-dropdown{margin-left:auto}
 @media(max-width:600px){.central-theme .dashboard-heading{align-items:flex-end}.central-theme .dashboard-toolbar{width:100%;flex-shrink:1}.central-theme .dashboard-toolbar select{flex:1;min-width:110px}.central-theme .dashboard-toolbar>.layout-actions{max-width:100%}}
+
+/* Approved 23 October metallic-black emblem. The PNG stays byte-for-byte
+   identical to the approved preview; only surrounding whitespace is framed. */
+.central-theme .approved-emblem{--emblem-width:42px;display:block;position:relative;overflow:hidden;flex:none;width:var(--emblem-width);height:calc(var(--emblem-width)*.48);background:#fff;transform:none}
+.central-theme .approved-emblem>img{display:block;position:absolute;left:50%;top:50%;width:calc(var(--emblem-width)*1.2);height:calc(var(--emblem-width)*1.2);max-width:none;object-fit:contain;transform:translate(-50%,-46.1%);margin:0}
+.central-theme .brand .logo.approved-emblem{width:42px;height:33px;border-radius:0}
+.central-theme .hub-emblem{--emblem-width:80px}
+.central-theme .login-emblem{--emblem-width:144px;height:90px;margin:0 auto 18px}
