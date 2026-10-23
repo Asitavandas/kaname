@@ -49,9 +49,22 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
       assert.equal(await f.page.locator('#login-form').isVisible(),false);
       assert.equal(await f.page.locator('#panel-loading').isVisible(),true);
       assert.equal(await f.page.locator('#workspace').isVisible(),false);
+      assert.equal(await f.page.locator('#sidebar').isVisible(),false);assert.equal(await f.page.locator('main>header').isVisible(),false);
       release();await f.page.locator('#workspace').waitFor({state:'visible'});
       assert.equal(await f.page.locator('#login').isVisible(),false);
       await passed('reload-hides-credentials-until-session-check-completes',f);
+    }
+    // A new workspace entry ignores a previous collapsed preference. Polling does not.
+    {
+      const f=await fresh();assert.equal(await f.page.locator('#sidebar').isVisible(),false);assert.equal(await f.page.locator('main>header').isVisible(),false);
+      await f.page.evaluate(()=>localStorage.setItem('authwire.navigation.hidden','true'));await login(f.page);await f.page.locator('#workspace').waitFor({state:'visible'});
+      assert.equal(await f.page.locator('#nav-toggle').getAttribute('aria-expanded'),'true');await f.page.locator('#nav-toggle').click();
+      await f.page.evaluate(()=>refresh({includeAudit:false}));assert.equal(await f.page.locator('#nav-toggle').getAttribute('aria-expanded'),'false');
+      await f.page.locator('#account-toggle').click();await f.page.locator('#logout').click();await f.page.locator('#login-form').waitFor({state:'visible'});
+      assert.equal(await f.page.locator('#sidebar').isVisible(),false);assert.equal(await f.page.locator('main>header').isVisible(),false);
+      await login(f.page);await f.page.locator('#workspace').waitFor({state:'visible'});assert.equal(await f.page.locator('#nav-toggle').getAttribute('aria-expanded'),'true');
+      await f.page.setViewportSize({width:390,height:844});await f.page.reload();await f.page.locator('#workspace').waitFor({state:'visible'});assert.equal(await f.page.locator('#nav-toggle').getAttribute('aria-expanded'),'true');await f.page.locator('#nav-scrim').click({position:{x:370,y:500}});assert.equal(await f.page.locator('#nav-toggle').getAttribute('aria-expanded'),'false');
+      await passed('login-and-recovery-without-chrome-fresh-entry-opens-navigation',f);
     }
     // Only positively classified SQLite contention is retried, with a fixed bound.
     {
@@ -77,7 +90,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
       await f.page.route('**/api/state',route=>++reads===1?route.fulfill({status:503,json:{error:'STORE_UNAVAILABLE'}}):route.continue());
       await login(f.page);await f.page.locator('#panel-recovery').waitFor({state:'visible'});
       assert.equal(logins,1);assert.equal(reads,1);
-      assert.equal(await f.page.locator('#login-form').isVisible(),false);
+      assert.equal(await f.page.locator('#login-form').isVisible(),false);assert.equal(await f.page.locator('#sidebar').isVisible(),false);assert.equal(await f.page.locator('main>header').isVisible(),false);
       assert.match(await f.page.locator('#panel-recovery-message').textContent(),/Girişiniz doğrulandı/);
       await f.page.locator('#panel-retry').click();await f.page.locator('#workspace').waitFor({state:'visible'});
       assert.equal(logins,1,'recovery must reuse the valid session');
