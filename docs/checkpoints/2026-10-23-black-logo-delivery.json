@@ -1,0 +1,47 @@
+{
+  "event": "BLACK_LOGO_PREPARED",
+  "version": "0.14.0-dev.23",
+  "release": "d4cc83e80eeff69c50732c11fecdd4eb3cae5b9f",
+  "merge": "e90602d320030671eb184061c0b18581a5baef23",
+  "approved_image_sha256": "677e49220d7ca57376735a9792b8067e8aaca223ee73806d91ff3dc1eb8d728e",
+  "approved_image_git_blob": "cfc942223bf90b477cb34d2437818f8731d5b888",
+  "approved_image_unchanged": true,
+  "geometry_lock": "Do not change without a new explicit operator request; docs/BRANDING.md",
+  "manifest_sha256": "b4eb90e5b92082fee42db7bd8cbb97a7b315298353b7aab958f741b44b818a13",
+  "deployer": "/home/segmentiq/authwire-black-logo-20261023.py",
+  "deployer_sha256": "65ee734e477f8d91c22f657c513b0d5248db33d2f739e69038982a67a7ba4e63",
+  "stage": "/home/segmentiq/authwire-stage-dev23-d4cc83e80eef",
+  "source_guard": true,
+  "live_install_pending": true,
+  "operator_acceptance_pending": true,
+  "service_actions_executed": false,
+  "full_data_backup": false,
+  "tests": {
+    "browser_flows": 12,
+    "foundation": "passed",
+    "png_atomic_binary_rollback": "passed",
+    "windows_client": "passed",
+    "native_kerberos": "passed",
+    "windows_retry_fixture": "deadline_rearmed timeout; remains open",
+    "real_eap_tls": "in_progress"
+  },
+  "artifact": {
+    "id": 12525687825,
+    "name": "kaname-flow-panel",
+    "size_in_bytes": 6463702,
+    "url": "https://api.github.com/repos/Asitavandas/kaname/actions/artifacts/12525687825",
+    "archive_download_url": "https://api.github.com/repos/Asitavandas/kaname/actions/artifacts/12525687825/zip",
+    "expired": false,
+    "created_at": "2026-10-23T19:16:01Z",
+    "expires_at": "2026-10-30T19:15:59Z",
+    "updated_at": "2026-10-23T19:16:01Z",
+    "digest": "sha256:5e0b443c090de6ed076e4141e38254c0d0f010ee70459b898b49dfd7fe8c3983",
+    "workflow_run": {
+      "id": 40009749994,
+      "repository_id": 1403270912,
+      "head_repository_id": 1403270912,
+      "head_branch": "feat/approved-black-emblem-dev23",
+      "head_sha": "d4cc83e80eeff69c50732c11fecdd4eb3cae5b9f"
+    }
+  }
+}

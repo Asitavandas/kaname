@@ -17,6 +17,17 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.23 onaylı metalik siyah logo — kaynak/test tamam; canlı kurulum bekliyor (23 Ekim 2026)
+
+- 🔴✓ Operatör metalik siyah önizlemeyi onaylayıp uygula talimatı verdi. Beş çizginin tamamı aynı siyah metal yüzeyde; onaylı PNG dosyası yeniden üretilmeden, kırpılmadan veya yeniden örneklenmeden birebir depoya alındı. SHA256 677e49220d7ca57376735a9792b8067e8aaca223ee73806d91ff3dc1eb8d728e, 1254 × 1254. Git blob cfc942223bf90b477cb34d2437818f8731d5b888 yerel dosyanın Git özetiyle eşleşir.
+- 🔴✓ Sol üst amblem, dairesel menü merkezi, giriş ekranı ve mevcut favicon aynı görseli kullanır. CSS çerçevesi yalnız çevredeki beyaz boşluğu görünüm alanında gizler; çizgilerin oranı, açısı, konumu ve aralıkları değiştirilmez. Mevcut yazı logosu ve panel davranışı korunur.
+- 🔴✓ Sen istemedikçe şekli değiştirmeme talimatı docs/BRANDING.md içine kalıcı olarak kaydedildi. Yeni görsel üretimi/yeniden çizim/geometri değişikliği için yeni açık talimat gerekir.
+- 🔴✓ Son kaynakta 12 tarayıcı akışı, temel/HTTP sınır testleri, Linux hazırlık ve sınırlı ağ probu başarılı; branding kontrolü HTTP üzerinden gelen PNG'nin tam SHA256 eşitliğini doğrular. Masaüstü/giriş ekranı görüntüleri incelendi. Windows istemci ve native Kerberos işleri geçti; bağımsız Windows retry fixture'ı deadline_rearmed durumunda süre sınırına takıldı (run40009749999/job120606771408). Tarihsel aralıklı fixture sorunu kapatılmadı; bu UI turunda Windows kaynakları değiştirilmedi ve bu iş başarılı diye gösterilmedi. Gerçek normal/debug EAP-TLS workflow'u bu kayıt anında çalışıyor.
+- 🔴✓ 146 kaynak dosyasında değişen kapsam yalnız sürüm bilgileri, PNG, index.html ve styles.css. Sunucuda korunan dev.22 kaynakları ile salt okunur kontrol başarılı. PNG için atomik ikili yazma, PNG değiştirme/yazma/başlatma/HTTPS hatasında eski baytlara geri dönüş, tekrarlı çalışma ve yalnız panel servis sınırı izole kontrolde doğrulandı.
+- Canlı sürüm hâlâ dev.22. RADIUS PID 832810 ve broker PID 887154 aktif, bu turda servis müdahalesi yapılmadı. Tam veri yedeği veya izole veri restore yapılmadı; günlük yedek/CRL düzeni korunur. Yalnız panel servisi kurulurken yenilenecek.
+- Bekliyor: hash sabitlenmiş sudo kurulumu, BLACK_LOGO_FINISHED koruma çıktısı ve Ctrl+F5 sonrası gerçek panel görünüm kabulü.
+- Kaynak d4cc83e80eeff69c50732c11fecdd4eb3cae5b9f; PR #54 birleştirildi (e90602d320030671eb184061c0b18581a5baef23). Manifest b4eb90e5b92082fee42db7bd8cbb97a7b315298353b7aab958f741b44b818a13. Yardımcı /home/segmentiq/authwire-black-logo-20261023.py; SHA256 65ee734e477f8d91c22f657c513b0d5248db33d2f739e69038982a67a7ba4e63. Tarayıcı run40009749994/job120606771139/artifact12525687825, arşiv SHA256 5e0b443c090de6ed076e4141e38254c0d0f010ee70459b898b49dfd7fe8c3983.
+
 ## 🔴✓ dev.22 canlı kurulum ve koruma kontrolleri tamam — görünüm kabulü bekliyor (23 Ekim 2026)
 
 - 🔴✓ Operatörün CLEAN_UI_FINISHED çıktısı 0.14.0-dev.22, kaynak e128a8a2426c0aa3e9a62f6544eef9dbeed388b4 kurulumunu doğruladı. Dosya, süreç, zamanlayıcı ve iş verisi kontrollerinin tümü başarılı.
