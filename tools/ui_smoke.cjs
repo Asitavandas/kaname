@@ -87,7 +87,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     if(process.env.KANAME_UI_ARTIFACTS){
       fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-empty.png'),fullPage:true,animations:'disabled'});
-      await page.setViewportSize({width:390,height:844});
+      await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'overview-palette-mobile.png'),fullPage:true,animations:'disabled'});
       await page.locator('#nav-toggle').click();
@@ -230,7 +230,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.unroute('**/api/directory/connectivity',tcpRoute);await page.unroute('**/api/directory/test-credentials',credentialRoute);
     if(process.env.KANAME_UI_ARTIFACTS){
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'ldap-servers-desktop.png'),fullPage:true,animations:'disabled'});
-      await page.setViewportSize({width:390,height:844});
+      await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'LDAP form must fit mobile viewport');
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'ldap-servers-mobile.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:1440,height:1000});
@@ -258,7 +258,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
     await page.keyboard.press('Home');assert.equal(await page.locator('#identity-panel-users').isVisible(),true);
     if(process.env.KANAME_UI_ARTIFACTS){
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'users-desktop.png'),fullPage:true,animations:'disabled'});
-      await page.setViewportSize({width:390,height:844});
+      await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'users-mobile.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:1440,height:1000});
@@ -315,7 +315,7 @@ const {chromium} = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'domain-computers-members.png'),fullPage:true,animations:'disabled'});
       await page.locator('#detail-close').click();
       await page.locator('#identity-tab-computers').click();
-      await page.setViewportSize({width:390,height:844});
+      await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
       await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'computers-mobile.png'),fullPage:true,animations:'disabled'});
       await page.setViewportSize({width:1440,height:1000});
