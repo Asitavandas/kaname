@@ -204,6 +204,22 @@ function Protected-AuthWireUserPost($Path,$Data) {
     return [Text.Encoding]::UTF8.GetString($message)|ConvertFrom-Json
 }
 function Get-AuthWireUserProof($Payload) {return [Convert]::ToBase64String($private.SignData([Convert]::FromBase64String($Payload),[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1))}
+function Invoke-AuthWireUserCertreq([string[]]$Arguments) {
+    $start=New-Object Diagnostics.ProcessStartInfo
+    $start.FileName=Join-Path ([Environment]::GetFolderPath('System')) 'certreq.exe'
+    foreach($argument in $Arguments){if($argument.Contains('"')){throw 'Invalid certreq argument.'}}
+    $start.Arguments=($Arguments|ForEach-Object {'"'+$_+'"'}) -join ' '
+    $start.UseShellExecute=$false;$start.CreateNoWindow=$true
+    $start.RedirectStandardOutput=$true;$start.RedirectStandardError=$true
+    $process=New-Object Diagnostics.Process
+    $process.StartInfo=$start
+    try {
+        $null=$process.Start();$stdout=$process.StandardOutput.ReadToEndAsync();$stderr=$process.StandardError.ReadToEndAsync()
+        if(!$process.WaitForExit(60000)){try{$process.Kill()}catch{};throw 'User certificate operation timed out.'}
+        $process.WaitForExit()
+        if($process.ExitCode -ne 0){throw 'User certificate operation failed.'}
+    } finally {$process.Dispose()}
+}
 function Invoke-AuthWireUserEnrollment([string]$Directory,$Config,[switch]$NoJitter) {
     $sid=Get-AuthWireUserContext;$profile=[string]$Config.profile_id
     Initialize-AuthWireUserDirectory $Directory $profile $sid
@@ -264,8 +280,7 @@ SuppressDefaults=TRUE
 "@
             $infFile=Join-Path $Directory 'request.inf';$csrFile=Join-Path $Directory 'request.pem';Assert-AuthWireUserPath $infFile;Assert-AuthWireUserPath $csrFile
             [IO.File]::WriteAllText($infFile,$inf,[Text.Encoding]::ASCII)
-            & (Join-Path ([Environment]::GetFolderPath('System')) 'certreq.exe') -new -user -q -f $infFile $csrFile | Out-Null
-            if($LASTEXITCODE -ne 0){throw 'User CSR creation failed.'}
+            Invoke-AuthWireUserCertreq @('-new','-user','-q','-f',$infFile,$csrFile)
             $pending.csr=(Get-Content -LiteralPath $csrFile -Raw).Replace('BEGIN NEW CERTIFICATE REQUEST','BEGIN CERTIFICATE REQUEST').Replace('END NEW CERTIFICATE REQUEST','END CERTIFICATE REQUEST')
             Save-AuthWireUserState $Directory 'pending.json' @{container=$container;csr=$pending.csr} $sid $profile
         }
@@ -288,7 +303,7 @@ SuppressDefaults=TRUE
         } finally {$chain.Dispose();$issuer.Dispose();$root.Dispose()}
         $stage='install_certificate';$certFile=Join-Path $Directory 'issued.pem';Assert-AuthWireUserPath $certFile;[IO.File]::WriteAllText($certFile,$issued.certificate,[Text.Encoding]::ASCII)
         $found=Get-Item ('Cert:\CurrentUser\My\'+$cert.Thumbprint) -ErrorAction SilentlyContinue
-        if(!$found -or !$found.HasPrivateKey){& (Join-Path ([Environment]::GetFolderPath('System')) 'certreq.exe') -accept -user -q $certFile|Out-Null;if($LASTEXITCODE -ne 0){throw 'User certificate installation failed.'}}
+        if(!$found -or !$found.HasPrivateKey){Invoke-AuthWireUserCertreq @('-accept','-user','-q',$certFile)}
         $verified=Get-Item ('Cert:\CurrentUser\My\'+$cert.Thumbprint)
         if(!$verified.HasPrivateKey){throw 'User installed private key unavailable.'}
         $stage='final_receipt';$receipt=Protected-AuthWireUserPost '/api/user/receipt' @{serial=$issued.serial;proof=(Get-AuthWireUserProof $issued.receipt_payload)}

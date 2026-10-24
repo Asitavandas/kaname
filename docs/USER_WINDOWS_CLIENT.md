@@ -33,9 +33,13 @@ The authorized /api/user-admin/package download contains both user scripts and
 public CA/TLS assets/config, never a private key/PFX. Asset hashes are embedded in
 BOTH scripts before the operator signs them with the same enterprise publisher.
 The signed installer validates the package and copies it to the private user
-folder, installs only CurrentUser trust and registers its own user task. The
-launcher verifies signatures/assets on every invocation. Initial trust of the
-enterprise signing publisher is still the customer's approved GPO prerequisite.
+folder, checks that CA/HTTPS roots already exist in CurrentUser or LocalMachine
+Root, installs only the intermediate CA in CurrentUser, and registers its own
+user task. It does not add roots or request interactive trust approval. The
+launcher verifies signatures/assets on every invocation. Root trust and the
+enterprise signing publisher are the customer's approved GPO prerequisites.
+Native certreq operations have a 60-second process limit and preserve retry state
+on failure or timeout.
 
 Deploy Install-AuthWire-User.ps1 through USER Configuration logon scripts with
 AllSigned, not Computer startup/SYSTEM. Creating/linking the GPO, user-profile

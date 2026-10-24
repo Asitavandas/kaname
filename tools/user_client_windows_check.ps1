@@ -15,10 +15,18 @@ function Force-Due {
 }
 function Fixture-Call([string]$Step){$output=& python -m tools.user_client_fixture --root $fixture --step $Step;if($LASTEXITCODE -ne 0){throw ('User issuer fixture failed: '+$Step)};return ($output|ConvertFrom-Json)}
 try {
+    Write-Host 'USER_CI_STAGE prepare'
     Set-Location $repo
     $ready=Fixture-Call 'prepare';$profile=$ready.profile_id;$package=Join-Path $fixture 'package'
+    Write-Host 'USER_CI_STAGE signing'
     $signer=New-SelfSignedCertificate -Type CodeSigningCert -Subject ('CN=AuthWire User CI '+[guid]::NewGuid()) -CertStoreLocation Cert:\CurrentUser\My
-    foreach($storeName in @('Root','TrustedPublisher')){$store=New-Object Security.Cryptography.X509Certificates.X509Store($storeName,'CurrentUser');try{$store.Open('ReadWrite');$store.Add((New-Object Security.Cryptography.X509Certificates.X509Certificate2(,$signer.RawData)))}finally{$store.Close()};$trust+=@{store=$storeName;thumbprint=$signer.Thumbprint}}
+    foreach($storeName in @('Root','TrustedPublisher')){$store=New-Object Security.Cryptography.X509Certificates.X509Store($storeName,'LocalMachine');try{$store.Open('ReadWrite');$store.Add((New-Object Security.Cryptography.X509Certificates.X509Certificate2(,$signer.RawData)))}finally{$store.Close()};$trust+=@{store=$storeName;thumbprint=$signer.Thumbprint}}
+    foreach($name in @('root-ca.pem','https-trust.pem')) {
+        $cert=New-Object Security.Cryptography.X509Certificates.X509Certificate2((Join-Path $package $name))
+        $store=New-Object Security.Cryptography.X509Certificates.X509Store('Root','LocalMachine')
+        try {$store.Open('ReadWrite');$store.Add($cert);$trust+=@{store='Root';thumbprint=$cert.Thumbprint}}finally{$store.Close();$cert.Dispose()}
+    }
+    Write-Host 'USER_CI_STAGE package-signatures'
     foreach($name in @('AuthWire-User-Client.ps1','Install-AuthWire-User.ps1')) {
         $source=Join-Path $package $name;$tokens=$null;$errors=$null
         $null=[Management.Automation.Language.Parser]::ParseFile($source,[ref]$tokens,[ref]$errors);Check ($errors.Count -eq 0) ('Windows PowerShell parse failed: '+($errors|Out-String))
@@ -38,6 +46,7 @@ exit 0
 '@
     [IO.File]::WriteAllText((Join-Path $package 'AuthWire-User-Client.ps1'),$stub,(New-Object Text.UTF8Encoding($true)))
     Check ((Set-AuthenticodeSignature (Join-Path $package 'AuthWire-User-Client.ps1') $signer -HashAlgorithm SHA256).Status -eq 'Valid') 'Stub signature failed.'
+    Write-Host 'USER_CI_STAGE install-and-interactive-task'
     & (Join-Path $package 'Install-AuthWire-User.ps1')
     if($LASTEXITCODE -and $LASTEXITCODE -ne 0){throw 'User installer failed.'}
     . (Join-Path $package 'Install-AuthWire-User.ps1') -ValidateOnly
@@ -73,6 +82,7 @@ exit 0
         if($script:mode -eq 'lose-issue' -and $Path -eq '/api/user/issue' -and !$script:lost){$script:lost=$true;throw 'Synthetic response lost after committed issuance.'}
         return $answer
     }
+    Write-Host 'USER_CI_STAGE native-enrollment'
     $machineBefore=@(Get-ChildItem Cert:\LocalMachine\My|Where-Object {$_.Subject -like 'CN=AuthWire*'}|Select-Object -ExpandProperty Thumbprint)
     Check ((Invoke-AuthWireUserEnrollment $target $config -NoJitter) -eq 0) 'Native user enrollment failed.'
     $first=Read-State 'installed.json';$createdContainers+=$first.container;$createdThumbs+=$first.thumbprint
@@ -82,16 +92,19 @@ exit 0
         Check (!$key.IsMachineKey) 'User key was created in machine scope.';Check ($key.ExportPolicy -eq [Security.Cryptography.CngExportPolicies]::None) 'User key export is allowed.'
         $rsa=New-Object Security.Cryptography.RSACng($key);try{$export=$false;try{$null=$rsa.ExportParameters($true);$export=$true}catch [Security.Cryptography.CryptographicException]{};Check (!$export) 'User private key exported.'}finally{$rsa.Dispose()}
     }finally{$key.Dispose()}
+    Write-Host 'USER_CI_STAGE native-renewal'
     $null=Fixture-Call 'renew';Force-Due
     Check ((Invoke-AuthWireUserEnrollment $target $config -NoJitter) -eq 0) 'Native user renewal failed.'
     $second=Read-State 'installed.json';$createdContainers+=$second.container;$createdThumbs+=$second.thumbprint
     Check ($second.serial -ne $first.serial -and $second.key_hash -cne $first.key_hash) 'Renewal did not rotate the user key.'
     Check (Test-Path ('Cert:\CurrentUser\My\'+$first.thumbprint)) 'Old user leaf removed too early.'
+    Write-Host 'USER_CI_STAGE offline-recovery'
     $script:mode='offline';Force-Due
     Check ((Invoke-AuthWireUserEnrollment $target $config -NoJitter) -eq 1) 'Offline user request did not persist retry.'
     $beforeCalls=$script:calls;Check ((Invoke-AuthWireUserEnrollment $target $config -NoJitter) -eq 0) 'Not-due poll failed.';Check ($beforeCalls -eq $script:calls) 'Backoff did not suppress network calls.'
     $script:mode='normal';Force-Due;Check ((Invoke-AuthWireUserEnrollment $target $config -NoJitter) -eq 0) 'User receipt recovery failed.'
     Check (!(Test-Path (Join-Path $target 'retry.json'))) 'Retry was not cleared.';Check ((Read-State 'status.json').state -eq 'installed') 'Stale retry status remained.'
+    Write-Host 'USER_CI_STAGE lost-issuance'
     $null=Fixture-Call 'renew';Force-Due;$script:mode='lose-issue';$script:lost=$false
     Check ((Invoke-AuthWireUserEnrollment $target $config -NoJitter) -eq 1) 'Committed/lost issuance did not fail locally.'
     $pending=Read-State 'pending.json';$createdContainers+=$pending.container
@@ -108,6 +121,7 @@ exit 0
     Check (Test-Path ('Cert:\CurrentUser\My\'+$third.thumbprint)) 'Current leaf was removed.'
     # A second, ordinary local user cannot open the first user's CNG name,
     # and can create an own non-exportable user key/task without elevation.
+    Write-Host 'USER_CI_STAGE standard-user-isolation'
     $probe=Join-Path $fixture 'standard-user';$null=New-Item $probe -ItemType Directory
     $accountName='AWUCI'+[guid]::NewGuid().ToString('N').Substring(0,10)
     $password=[guid]::NewGuid().ToString('N')+'!aA1'
@@ -122,7 +136,7 @@ exit 0
     $childCode=@'
 $ErrorActionPreference='Stop'
 $probe='__PROBE__'
-foreach($store in @('Root','TrustedPublisher')){Import-Certificate -FilePath (Join-Path $probe 'publisher.cer') -CertStoreLocation ('Cert:\CurrentUser\'+$store)|Out-Null}
+# Public fixture publisher is already trusted in LocalMachine by the parent.
 . (Join-Path $probe 'client.ps1') -ValidateOnly
 . (Join-Path $probe 'installer.ps1') -ValidateOnly
 $sid=Get-AuthWireUserContext
@@ -149,7 +163,8 @@ try {
     $credential=New-Object Management.Automation.PSCredential(($env:COMPUTERNAME+'\'+$accountName),(ConvertTo-SecureString $password -AsPlainText -Force))
     try {
         Start-Service seclogon
-        $process=Start-Process -FilePath (Join-Path ([Environment]::GetFolderPath('System')) 'WindowsPowerShell\v1.0\powershell.exe') -Credential $credential -LoadUserProfile -ArgumentList ('-NoProfile -NonInteractive -ExecutionPolicy AllSigned -EncodedCommand '+$encoded) -Wait -PassThru -RedirectStandardOutput (Join-Path $probe 'stdout.txt') -RedirectStandardError (Join-Path $probe 'stderr.txt')
+        $process=Start-Process -FilePath (Join-Path ([Environment]::GetFolderPath('System')) 'WindowsPowerShell\v1.0\powershell.exe') -Credential $credential -LoadUserProfile -ArgumentList ('-NoProfile -NonInteractive -ExecutionPolicy AllSigned -EncodedCommand '+$encoded) -PassThru -RedirectStandardOutput (Join-Path $probe 'stdout.txt') -RedirectStandardError (Join-Path $probe 'stderr.txt')
+        if(!$process.WaitForExit(90000)){try{$process.Kill()}catch{};throw 'Standard-user native fixture timed out.'}
         $process.Refresh()
         if($process.ExitCode -ne 0){throw ('Standard user native fixture failed: '+(Get-Content (Join-Path $probe 'stderr.txt') -Raw))}
         $ordinary=Get-Content (Join-Path $probe 'result.json') -Raw|ConvertFrom-Json;Check ($ordinary.nonadmin -and $ordinary.foreign_key_rejected -and $ordinary.own_task_registered) 'Standard user isolation incomplete.'
@@ -174,7 +189,7 @@ try {
         foreach($storeName in @('Root','CA')){foreach($name in @('root-ca.pem','issuer-ca.pem','https-trust.pem')){if(Test-Path (Join-Path $target $name)){$c=New-Object Security.Cryptography.X509Certificates.X509Certificate2((Join-Path $target $name));Remove-Item ('Cert:\CurrentUser\'+$storeName+'\'+$c.Thumbprint) -ErrorAction SilentlyContinue;$c.Dispose()}}}
         Remove-Item $target -Recurse -Force -ErrorAction SilentlyContinue
     }
-    foreach($t in $trust){Remove-Item ('Cert:\CurrentUser\'+$t.store+'\'+$t.thumbprint) -ErrorAction SilentlyContinue}
+    foreach($t in $trust){Remove-Item ('Cert:\LocalMachine\'+$t.store+'\'+$t.thumbprint) -ErrorAction SilentlyContinue}
     if($signer){Remove-Item ('Cert:\CurrentUser\My\'+$signer.Thumbprint) -ErrorAction SilentlyContinue;$signer.Dispose()}
     Remove-Item $fixture -Recurse -Force -ErrorAction SilentlyContinue
 }

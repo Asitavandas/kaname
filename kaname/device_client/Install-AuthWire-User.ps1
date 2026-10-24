@@ -100,10 +100,25 @@ try {
         elseif([IO.Path]::GetFullPath((Join-Path $PSScriptRoot $name)) -ine [IO.Path]::GetFullPath($destination)){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination $destination -Force}
     }
     $null=Assert-AuthWireUserPackage $target
-    foreach($entry in @(@('root-ca.pem','Root'),@('issuer-ca.pem','CA'),@('https-trust.pem','Root'))) {
-        $file=Join-Path $target $entry[0]
-        if(Test-Path -LiteralPath $file){$cert=New-Object Security.Cryptography.X509Certificates.X509Certificate2($file);$store=New-Object Security.Cryptography.X509Certificates.X509Store($entry[1],'CurrentUser');try{$store.Open('ReadWrite');$store.Add($cert)}finally{$store.Close();$cert.Dispose()}}
+    # Root/publisher trust is an approved GPO prerequisite. A user logon
+    # installer must never block on a protected-root consent dialog.
+    foreach($name in @('root-ca.pem','https-trust.pem')) {
+        $file=Join-Path $target $name
+        if(Test-Path -LiteralPath $file) {
+            $cert=New-Object Security.Cryptography.X509Certificates.X509Certificate2($file)
+            try {
+                $trusted=$false
+                foreach($scope in @('CurrentUser','LocalMachine')) {
+                    $store=New-Object Security.Cryptography.X509Certificates.X509Store('Root',$scope)
+                    try {$store.Open('ReadOnly');if($store.Certificates.Find('FindByThumbprint',$cert.Thumbprint,$false).Count -gt 0){$trusted=$true}}finally{$store.Close()}
+                }
+                if(!$trusted){throw 'Approved user CA/HTTPS root trust must be deployed by GPO before installation.'}
+            } finally {$cert.Dispose()}
+        }
     }
+    $cert=New-Object Security.Cryptography.X509Certificates.X509Certificate2((Join-Path $target 'issuer-ca.pem'))
+    $store=New-Object Security.Cryptography.X509Certificates.X509Store('CA','CurrentUser')
+    try {$store.Open('ReadWrite');$store.Add($cert)}finally{$store.Close();$cert.Dispose()}
     $existing=Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
     if($existing -and ($existing.Description -ne 'AuthWire managed user certificate enrollment' -or $existing.Principal.UserId -notin @($sid,[Security.Principal.WindowsIdentity]::GetCurrent().Name))){throw 'Unexpected existing user enrollment task.'}
     $xml=Get-AuthWireUserTaskXml $sid (Join-Path $target 'Install-AuthWire-User.ps1')
