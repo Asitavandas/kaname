@@ -72,6 +72,7 @@ print(s.server_port,flush=True);s.serve_forever()`;
   const readerContext=await browser.newContext({ignoreHTTPSErrors:true,viewport:{width:1440,height:1000}}),reader=await readerContext.newPage();reader.on('pageerror',e=>errors.push(e.message));await login(reader,'user-cert-reader','fixture-user-reader-password');await require('./ui_navigation.cjs').navigate(reader,'certificates');await reader.locator('#pki-tab-user-profiles').click();await reader.waitForFunction(()=>document.querySelector('#ue-profiles').textContent.includes('Kaybolan yanıt'));assert.equal(await reader.locator('#ue-new').isVisible(),false);assert.equal(await reader.locator('#ue-profiles button').count(),0);await reader.locator('#pki-tab-user-enrollments').click();await reader.waitForFunction(()=>document.querySelector('#ue-records').textContent.toLowerCase().includes('alice'));assert.equal(await reader.locator('#ue-records button').count(),0);
   await readerContext.close();
   const artifacts=process.env.KANAME_UI_ARTIFACTS;
+  await page.evaluate(()=>message(''));
   await page.locator('#pki-tab-user-profiles').click();await page.locator('#ue-new').click();await page.locator('#ue-name').fill('Pazartesi kullanıcı pilotu');
   if(artifacts){fs.mkdirSync(artifacts,{recursive:true});await page.screenshot({path:path.join(artifacts,'user-profile-desktop.png'),fullPage:true,animations:'disabled'});}
   await page.locator('#ue-cancel').click();await page.setViewportSize({width:390,height:844});
