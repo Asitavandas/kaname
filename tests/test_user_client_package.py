@@ -40,7 +40,7 @@ class UserPackageTests(unittest.TestCase):
             if name!='SHA256SUMS.txt':self.assertIn(hashlib.sha256(data).hexdigest()+'  '+name,sums)
     def test_user_key_store_task_and_transport_do_not_fall_back_to_machine_identity(self):
         files=self.contents();client=files['AuthWire-User-Client.ps1'].decode();installer=files['Install-AuthWire-User.ps1'].decode()
-        self.assertIn('MachineKeySet=FALSE',client);self.assertIn('-new -user',client);self.assertIn('-accept -user',client)
+        self.assertIn('MachineKeySet=FALSE',client);self.assertIn("@('-new','-user'",client);self.assertIn("@('-accept','-user'",client)
         self.assertNotIn('Cert:\\LocalMachine',client);self.assertNotIn('::MachineKey)',client);self.assertIn('::None)',client)
         self.assertIn('<LogonType>InteractiveToken</LogonType>',installer);self.assertIn('<RunLevel>LeastPrivilege</RunLevel>',installer)
         self.assertIn('<Interval>PT5M</Interval>',installer);self.assertIn('ExecutionPolicy AllSigned',installer);self.assertNotIn('Bypass',installer)

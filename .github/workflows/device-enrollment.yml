@@ -2,9 +2,9 @@ name: AuthWire device enrollment pilot checks
 on:
   push:
     branches: [main, 'feat/bulk-enrollment-0.12']
-    paths: ['kaname/**', 'tests/test_device*.py', 'tools/device_*.ps1', '.github/workflows/device-enrollment.yml']
+    paths: ['kaname/**', 'tests/test_device*.py', 'tools/device_*.ps1', 'tests/test_user*.py', 'tools/user_client*', '.github/workflows/device-enrollment.yml']
   pull_request:
-    paths: ['kaname/**', 'tests/test_device*.py', 'tools/device_*.ps1', '.github/workflows/device-enrollment.yml']
+    paths: ['kaname/**', 'tests/test_device*.py', 'tools/device_*.ps1', 'tests/test_user*.py', 'tools/user_client*', '.github/workflows/device-enrollment.yml']
   workflow_dispatch:
 permissions:
   contents: read

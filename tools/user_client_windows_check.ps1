@@ -119,6 +119,35 @@ exit 0
     Check (!(Test-Path ('Cert:\CurrentUser\My\'+$first.thumbprint))) 'Old leaf was not cleaned.'
     Check (![Security.Cryptography.CngKey]::Exists($first.container,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::None)) 'Old CNG key was not cleaned.'
     Check (Test-Path ('Cert:\CurrentUser\My\'+$third.thumbprint)) 'Current leaf was removed.'
+    Write-Host 'USER_CI_STAGE expired-pending-recovery'
+    $null=Fixture-Call 'renew';Force-Due;$script:mode='lose-issue';$script:lost=$false
+    Check ((Invoke-AuthWireUserEnrollment $target $config -NoJitter) -eq 1) 'Expired-pending setup did not retain pending state.'
+    $expiredPending=Read-State 'pending.json';$createdContainers+=$expiredPending.container
+    $null=Fixture-Call 'expire';$script:mode='normal';Force-Due
+    Check ((Invoke-AuthWireUserEnrollment $target $config -NoJitter) -eq 1) 'Expired committed issuance was accepted.'
+    Check (!(Test-Path (Join-Path $target 'pending.json'))) 'Expired pending intent was not archived.'
+    Check ((Read-State 'status.json').expired_pending_archived -and (Read-State 'installed.json').serial -eq $third.serial) 'Expired recovery replaced working state.'
+    $archive=@(Get-ChildItem (Join-Path $target 'expired-pending') -Filter '*.json')
+    Check ($archive.Count -eq 1 -and (Get-Content $archive[0].FullName -Raw|ConvertFrom-Json).container -ceq $expiredPending.container) 'Expired pending diagnosis was lost.'
+    Force-Due;Check ((Invoke-AuthWireUserEnrollment $target $config -NoJitter) -eq 0) 'Fresh enrollment after expired pending failed.'
+    $fourth=Read-State 'installed.json';$createdContainers+=$fourth.container;$createdThumbs+=$fourth.thumbprint
+    Check ($fourth.container -cne $expiredPending.container -and $fourth.serial -ne $third.serial) 'Expired pending key was reused.'
+    Write-Host 'USER_CI_STAGE interrupted-key-intent'
+    $null=Fixture-Call 'renew';Force-Due
+    $intent='AuthWire-User-'+$profile+'-'+[guid]::NewGuid().ToString('N');$createdContainers+=$intent
+    $parameters=New-Object Security.Cryptography.CngKeyCreationParameters
+    $parameters.Provider=[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider
+    $parameters.ExportPolicy=[Security.Cryptography.CngExportPolicies]::None
+    $parameters.Parameters.Add((New-Object Security.Cryptography.CngProperty('Length',([BitConverter]::GetBytes([int]2048)),[Security.Cryptography.CngPropertyOptions]::None)))
+    $intentKey=[Security.Cryptography.CngKey]::Create([Security.Cryptography.CngAlgorithm]::Rsa,$intent,$parameters)
+    $intentRsa=New-Object Security.Cryptography.RSACng($intentKey)
+    try {$intentHash=Get-AuthWireUserPublicHash $intentRsa}finally{$intentRsa.Dispose();$intentKey.Dispose()}
+    Save-AuthWireUserState $target 'pending.json' @{container=$intent;csr=$null} $sid $profile
+    Check ((Invoke-AuthWireUserEnrollment $target $config -NoJitter) -eq 0) 'Interrupted native key intent was not recovered.'
+    $current=Read-State 'installed.json';$createdContainers+=$current.container;$createdThumbs+=$current.thumbprint
+    Check ($current.container -ceq $intent -and $current.key_hash -ceq $intentHash) 'Intent recovery changed the existing user key.'
+    $facts=Fixture-Call 'status'
+    Check ($facts.users.Count -eq 6 -and $facts.machine_issuances -eq 0 -and @($facts.csr_counts|Where-Object {$_ -ne 1}).Count -eq 0) 'Recovery duplicated issuance or changed machine enrollment.'
     # A second, ordinary local user cannot open the first user's CNG name,
     # and can create an own non-exportable user key/task without elevation.
     Write-Host 'USER_CI_STAGE standard-user-isolation'
@@ -158,12 +187,14 @@ try {
  [IO.File]::WriteAllText((Join-Path $probe 'result.json'),(@{nonadmin=$true;foreign_key_rejected=$true;own_key_user_scope=$true;own_task_registered=$true}|ConvertTo-Json -Compress))
 }finally{Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue;$key.Delete();$key.Dispose()}
 '@
-    $childCode=$childCode.Replace('__PROBE__',$probe.Replace("'","''")).Replace('__FOREIGN__',$third.container)
-    $encoded=[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($childCode))
+    $childCode=$childCode.Replace('__PROBE__',$probe.Replace("'","''")).Replace('__FOREIGN__',$current.container)
+    $probeScript=Join-Path $probe 'standard-user-check.ps1'
+    [IO.File]::WriteAllText($probeScript,$childCode,(New-Object Text.UTF8Encoding($true)))
+    Check ((Set-AuthenticodeSignature $probeScript $signer -HashAlgorithm SHA256).Status -eq 'Valid') 'Standard probe signature failed.'
     $credential=New-Object Management.Automation.PSCredential(($env:COMPUTERNAME+'\'+$accountName),(ConvertTo-SecureString $password -AsPlainText -Force))
     try {
         Start-Service seclogon
-        $process=Start-Process -FilePath (Join-Path ([Environment]::GetFolderPath('System')) 'WindowsPowerShell\v1.0\powershell.exe') -Credential $credential -LoadUserProfile -ArgumentList ('-NoProfile -NonInteractive -ExecutionPolicy AllSigned -EncodedCommand '+$encoded) -PassThru -RedirectStandardOutput (Join-Path $probe 'stdout.txt') -RedirectStandardError (Join-Path $probe 'stderr.txt')
+        $process=Start-Process -FilePath (Join-Path ([Environment]::GetFolderPath('System')) 'WindowsPowerShell\v1.0\powershell.exe') -Credential $credential -LoadUserProfile -WorkingDirectory $probe -ArgumentList ('-NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$probeScript+'"') -PassThru -RedirectStandardOutput (Join-Path $probe 'stdout.txt') -RedirectStandardError (Join-Path $probe 'stderr.txt')
         if(!$process.WaitForExit(90000)){try{$process.Kill()}catch{};throw 'Standard-user native fixture timed out.'}
         $process.Refresh()
         if($process.ExitCode -ne 0){throw ('Standard user native fixture failed: '+(Get-Content (Join-Path $probe 'stderr.txt') -Raw))}
@@ -177,7 +208,7 @@ try {
     $record.owner_sid=$sid;Write-State 'installed.json' $record
     $machineAfter=@(Get-ChildItem Cert:\LocalMachine\My|Where-Object {$_.Subject -like 'CN=AuthWire*'}|Select-Object -ExpandProperty Thumbprint)
     Check (($machineBefore -join ',') -ceq ($machineAfter -join ',')) 'Machine certificate store changed.'
-    Write-Output 'AUTHWIRE_USER_WINDOWS_OK native_current_user_cng=true nonexportable=true signed_package=true interactive_limited_task=true renewal_new_key=true retry_idempotence=true cleanup=true machine_store_preserved=true standard_user_isolation=true synthetic_transport_only=true'
+    Write-Output 'AUTHWIRE_USER_WINDOWS_OK native_current_user_cng=true nonexportable=true signed_package=true interactive_limited_task=true renewal_new_key=true retry_idempotence=true cleanup=true machine_store_preserved=true standard_user_isolation=true expired_pending_recovery=true interrupted_key_intent=true synthetic_transport_only=true'
 } finally {
     if($taskName){Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue}
     if($target -and (Test-Path $target)) {
