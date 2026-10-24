@@ -54,6 +54,8 @@ async function previewDeployment(plan){
   box.append(depNode('p',plan.name+' · v'+plan.version),depNode('p','Bilgisayar hedefi: '+(p.computer_targets.available?p.computer_targets.enabled+' etkin / '+p.computer_targets.count+' toplam':'Üyelik bilgisi yok')));
   if(p.user_targets)box.append(depNode('p','Kullanıcı sertifika hedefi: '+(p.user_targets.available?p.user_targets.enabled+' etkin / '+p.user_targets.count+' toplam':'Üyelik bilgisi yok')));
   box.append(depNode('p','AD okuma zamanı: '+(p.catalog_synced_at||'—')),depNode('p','RADIUS sunucusu: '+p.plan.server_name));
+  box.append(depNode('p','Kimlik doğrulama: '+depKinds[p.plan.auth_mode]),depNode('p','Ağ profilleri: '+[p.plan.wired?'Ethernet':'',p.plan.wireless?'Wi-Fi · '+p.plan.ssid:''].filter(Boolean).join(' + ')));
+  for(const profile of p.enrollment_profiles)box.append(depNode('p',(profile.id===p.plan.machine_profile_id?'Bilgisayar':'Kullanıcı')+' sertifikası: '+profile.name+' · v'+profile.version));
   if(p.trust.ready)box.append(depNode('p','Güvenilen kök: '+p.trust.root_thumbprint.toUpperCase()));
   p.artifact_blockers.forEach(code=>box.append(depNode('p',depBlockers[code]||code)));
   box.append(depNode('p','GPO uygulaması: Windows yönetim bağlantısının kurulması bekleniyor. Hedef sayıları kurulum teyidi değildir.'));$('dep-preview').hidden=false;$('dep-preview').scrollIntoView({block:'nearest',behavior:'smooth'});

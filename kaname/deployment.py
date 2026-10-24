@@ -180,7 +180,7 @@ class Deployment:
         trust=self._trust(s,p)
         if not trust['ready']:blockers.append('RADIUS_SERVER_TRUST_NOT_READY')
         token=digest({'plan':p,'profiles':profiles,'catalog':s['catalog'],'config':s['config'],'trust':trust,'revision':s['revision']})
-        result={'id':p['id'],'version':p['version'],'revision':s['revision'],'domain':p['domain'],'plan':p,'preview_hash':token,
+        result={'id':p['id'],'version':p['version'],'revision':s['revision'],'domain':p['domain'],'plan':p,'preview_hash':token,'enrollment_profiles':profiles,
                 'computer_targets':computers,'user_targets':users,'catalog_synced_at':(s['catalog'] or {}).get('synced_at'),
                 'trust':trust,'artifact_blockers':sorted(set(blockers)),'can_export_profiles':not blockers,
                 'can_apply':False,'apply_blockers':['WINDOWS_CONNECTOR_NOT_CONFIGURED'],
