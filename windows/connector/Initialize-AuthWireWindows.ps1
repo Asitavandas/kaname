@@ -78,17 +78,43 @@ function Assert-AuthWireAccountShape {
     }
 }
 
+function Get-AuthWireCodeSigningUsage {
+    param([System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate)
+    # Cert: provider EnhancedKeyUsageList.ObjectId may be a string or an Oid.
+    # Decode the certificate's actual DER extension instead of provider display properties.
+    $result = [pscustomobject]@{CodeSigningEku=$false;EkuReadState='absent'}
+    try {
+        $extensions = @($Certificate.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.37' })
+        if ($extensions.Count -eq 0) { return $result }
+        if ($extensions.Count -ne 1) { throw 'EKU_EXTENSION_AMBIGUOUS' }
+        $raw = $extensions[0].RawData
+        if ($raw.Length -lt 2 -or $raw[0] -ne 0x30) { throw 'EKU_DER_SEQUENCE_REQUIRED' }
+        $eku = New-Object System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension
+        $eku.CopyFrom($extensions[0])
+        if ($eku.EnhancedKeyUsages.Count -eq 0) { throw 'EKU_USAGE_REQUIRED' }
+        foreach ($oid in $eku.EnhancedKeyUsages) {
+            if ($oid.Value -eq '1.3.6.1.5.5.7.3.3') { $result.CodeSigningEku = $true }
+        }
+        $result.EkuReadState = 'valid'
+    } catch {
+        $result.CodeSigningEku = $false
+        $result.EkuReadState = 'invalid'
+    }
+    return $result
+}
+
 function Get-AuthWirePublisherInventory {
     param([string]$Thumbprint)
     if (-not $Thumbprint) { return @() }
     $found = @()
     foreach ($store in @('Cert:\CurrentUser\My','Cert:\LocalMachine\My')) {
         foreach ($cert in @(Get-ChildItem -Path $store -ErrorAction Stop | Where-Object Thumbprint -eq $Thumbprint)) {
-            $codeSigning = @($cert.EnhancedKeyUsageList | Where-Object { $_.ObjectId.Value -eq '1.3.6.1.5.5.7.3.3' }).Count -gt 0
+            $usage = Get-AuthWireCodeSigningUsage -Certificate $cert
             $found += [pscustomobject]@{
                 Store = $store
                 Thumbprint = $cert.Thumbprint
-                CodeSigningEku = $codeSigning
+                CodeSigningEku = $usage.CodeSigningEku
+                EkuReadState = $usage.EkuReadState
                 HasPrivateKey = [bool]$cert.HasPrivateKey
                 CurrentlyValid = ($cert.NotBefore.ToUniversalTime() -le [datetime]::UtcNow -and $cert.NotAfter.ToUniversalTime() -gt [datetime]::UtcNow)
                 ServiceKeyAccessVerified = $false
@@ -190,6 +216,7 @@ function Invoke-AuthWireConnectorBootstrap {
     [pscustomobject]@{
         Event = 'WINDOWS_CONNECTOR_BOOTSTRAP'
         Version = 1
+        BootstrapVersion = '1.0.1'
         Mode = $Mode
         Computer = $env:COMPUTERNAME
         Domain = $domain.DNSRoot

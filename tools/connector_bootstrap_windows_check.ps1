@@ -17,7 +17,7 @@ function Reset-Fixture {
         Keys = @([pscustomobject]@{Name='9d17dba6-76d1-424c-bd74-1bba56f5509b';whenCreated=[datetime]::UtcNow.AddDays(-2);'msKds-UseStartTime'=[datetime]::UtcNow.AddDays(-2).ToFileTimeUtc()})
         KdsValid = $true; KdsTests = 0; Account = $null; Creates = 0
         LookupCount = 0; Collision = ''; Race = $false; PostCreateUnknown = $false
-        DirectoryReadFails = $false; Modules = @()
+        DirectoryReadFails = $false; Modules = @(); Publishers = @(); DisplayEku = @()
     }
 }
 function Computer-Fixture {
@@ -75,16 +75,41 @@ function New-ADServiceAccount {
 }
 function Get-GPO { [CmdletBinding()]param([guid]$Guid,[string]$Domain,[string]$Server) [pscustomobject]@{Id=$Guid;DisplayName='Existing customer pilot';GpoStatus='AllSettingsEnabled'} }
 function Get-GPPermission { [CmdletBinding()]param([guid]$Guid,[switch]$All,[string]$Domain,[string]$Server) [pscustomobject]@{Trustee=[pscustomobject]@{Name='Pilot-Computers'};Permission='GpoApply'} }
-function Get-ChildItem { [CmdletBinding()]param([string]$Path) return }
+function Get-ChildItem {
+    [CmdletBinding()]param([string]$Path)
+    if ($Path -eq 'Cert:\CurrentUser\My') { return $global:AwConnectorFixture.Publishers }
+    if ($Path -eq 'Cert:\LocalMachine\My') { return }
+    throw 'Unexpected certificate-store path.'
+}
 function Check([bool]$Value,[string]$Name) { if (-not $Value) { throw $Name }; $script:checks += $Name }
-function Run-Fixture([string]$Mode='Inspect') {
-    & $source -Mode $Mode -ExpectedDomain 'test.example' -ConnectorComputer 'DC01' -InstanceId $instance -GpoId $gpoGuid -PublisherThumbprint ('A' * 40) | ConvertFrom-Json
+function Run-Fixture([string]$Mode='Inspect',[string]$Thumbprint=('A' * 40)) {
+    & $source -Mode $Mode -ExpectedDomain 'test.example' -ConnectorComputer 'DC01' -InstanceId $instance -GpoId $gpoGuid -PublisherThumbprint $Thumbprint | ConvertFrom-Json
 }
 function Expect-Blocked([string]$Code,[string]$Mode='PrepareAccount') {
     $caught = $false
     try { $null = Run-Fixture $Mode } catch { if ($_.Exception.Message -notlike ('*' + $Code + '*')) { throw }; $caught=$true }
     Check $caught ('Rejected ' + $Code)
     Check ($global:AwConnectorFixture.Creates -eq 0) ('No AD writes for ' + $Code)
+}
+$nativeCerts = @()
+$nativeRsa = New-Object System.Security.Cryptography.RSACng -ArgumentList 2048
+Update-TypeData -TypeName 'AuthWire.EkuShapeFixture' -MemberType ScriptProperty -MemberName EnhancedKeyUsageList -Value { $global:AwConnectorFixture.DisplayEku } -Force
+function New-EkuFixture([string]$Usage,[switch]$Absent,[switch]$Malformed) {
+    $request = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
+        'CN=AuthWire disposable bootstrap fixture',$nativeRsa,
+        [System.Security.Cryptography.HashAlgorithmName]::SHA256,
+        [System.Security.Cryptography.RSASignaturePadding]::Pkcs1)
+    if ($Malformed) {
+        $request.CertificateExtensions.Add([System.Security.Cryptography.X509Certificates.X509Extension]::new(
+            '2.5.29.37',[byte[]]@(0x01,0x01,0xFF),$false))
+    } elseif (-not $Absent) {
+        $oids = New-Object System.Security.Cryptography.OidCollection
+        $null = $oids.Add([System.Security.Cryptography.Oid]::new($Usage))
+        $request.CertificateExtensions.Add([System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]::new($oids,$false))
+    }
+    $cert = $request.CreateSelfSigned([datetimeoffset]::UtcNow.AddMinutes(-1),[datetimeoffset]::UtcNow.AddDays(1))
+    $script:nativeCerts += $cert
+    return $cert
 }
 try {
     Reset-Fixture
@@ -160,5 +185,43 @@ try {
     $caught=$false
     try {$null=Run-Fixture 'PrepareAccount'} catch {if ($_.Exception.Message -notlike '*ACCOUNT_CREATE_RESULT_UNKNOWN*') {throw}; $caught=$true}
     Check ($caught -and $global:AwConnectorFixture.Creates -eq 1) 'Lost create receipt never triggers second create'
-    Write-Output ('AUTHWIRE_CONNECTOR_BOOTSTRAP_FIXTURE_OK ' + (@{checks=$checks.Count;native_powershell=$PSVersionTable.PSVersion.ToString();directory_kds_gpmc_calls_mocked=$true;real_ad_tested=$false;real_gmsa_installed=$false;customer_state_used=$false;network_calls=0}|ConvertTo-Json -Compress))
-} finally { Remove-Variable AwConnectorFixture -Scope Global -ErrorAction SilentlyContinue }
+
+    # Actual native certificates/DER decoding; no customer keys or certificate-store writes.
+    Reset-Fixture
+    $codeCert = New-EkuFixture '1.3.6.1.5.5.7.3.3'
+    $codeCert.PSObject.TypeNames.Insert(0,'AuthWire.EkuShapeFixture')
+    $global:AwConnectorFixture.DisplayEku=@([pscustomobject]@{ObjectId='1.3.6.1.5.5.7.3.3'})
+    Check ($codeCert.EnhancedKeyUsageList[0].ObjectId -is [string]) 'Fixture reproduces string ObjectId provider shape'
+    $global:AwConnectorFixture.Publishers=@($codeCert)
+    $r=Run-Fixture 'Inspect' $codeCert.Thumbprint
+    Check ($r.Publishers.Count -eq 1 -and $r.Publishers[0].CodeSigningEku -and $r.Publishers[0].EkuReadState -eq 'valid') 'Real DER code-signing EKU works with string ObjectId display shape'
+    Check (-not $r.AdChanged -and -not $r.Publishers[0].ServiceKeyAccessVerified -and $global:AwConnectorFixture.Creates -eq 0) 'Publisher inventory remains read only and does not imply service key access'
+
+    $global:AwConnectorFixture.DisplayEku=@([pscustomobject]@{ObjectId=[System.Security.Cryptography.Oid]::new('1.3.6.1.5.5.7.3.3')})
+    Check ($codeCert.EnhancedKeyUsageList[0].ObjectId -is [System.Security.Cryptography.Oid]) 'Fixture reproduces Oid ObjectId provider shape'
+    $r=Run-Fixture 'Inspect' $codeCert.Thumbprint
+    Check $r.Publishers[0].CodeSigningEku 'Real DER code-signing EKU also works with Oid display shape'
+
+    $serverCert = New-EkuFixture '1.3.6.1.5.5.7.3.1'
+    $serverCert.PSObject.TypeNames.Insert(0,'AuthWire.EkuShapeFixture')
+    $global:AwConnectorFixture.DisplayEku=@([pscustomobject]@{ObjectId='1.3.6.1.5.5.7.3.3'})
+    $global:AwConnectorFixture.Publishers=@($serverCert)
+    $r=Run-Fixture 'Inspect' $serverCert.Thumbprint
+    Check (-not $r.Publishers[0].CodeSigningEku -and $r.Publishers[0].EkuReadState -eq 'valid') 'Display properties cannot turn a server certificate into a code signer'
+
+    $noEkuCert = New-EkuFixture -Absent
+    $global:AwConnectorFixture.Publishers=@($noEkuCert)
+    $r=Run-Fixture 'Inspect' $noEkuCert.Thumbprint
+    Check (-not $r.Publishers[0].CodeSigningEku -and $r.Publishers[0].EkuReadState -eq 'absent') 'Missing EKU is reported without inventing explicit code-signing usage'
+
+    $badEkuCert = New-EkuFixture -Malformed
+    $global:AwConnectorFixture.Publishers=@($badEkuCert)
+    $r=Run-Fixture 'Inspect' $badEkuCert.Thumbprint
+    Check (-not $r.Publishers[0].CodeSigningEku -and $r.Publishers[0].EkuReadState -eq 'invalid') 'Malformed DER EKU is reported invalid without crashing inspection'
+    Write-Output ('AUTHWIRE_CONNECTOR_BOOTSTRAP_FIXTURE_OK ' + (@{checks=$checks.Count;native_powershell=$PSVersionTable.PSVersion.ToString();directory_kds_gpmc_calls_mocked=$true;actual_x509_eku_decoding=$true;native_certificate_variants=4;certificate_store_writes=0;real_ad_tested=$false;real_gmsa_installed=$false;customer_state_used=$false;network_calls=0}|ConvertTo-Json -Compress))
+} finally {
+    foreach ($cert in $nativeCerts) { $cert.Dispose() }
+    $nativeRsa.Dispose()
+    Remove-TypeData -TypeName 'AuthWire.EkuShapeFixture' -ErrorAction SilentlyContinue
+    Remove-Variable AwConnectorFixture -Scope Global -ErrorAction SilentlyContinue
+}
