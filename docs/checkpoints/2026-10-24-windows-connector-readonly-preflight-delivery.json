@@ -1,0 +1,27 @@
+{
+  "event": "WINDOWS_CONNECTOR_READONLY_PREFLIGHT_PREPARED",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "script": "docs/checkpoints/2026-10-24-windows-connector-readonly-preflight.ps1",
+  "sha256": "7be8f5097422a6fe6a539716e91c05a1e6bb72cf53faccd63dd100e8b0c08fe9",
+  "executed_on_customer_windows": false,
+  "customer_results_pending": true,
+  "scope": [
+    "OS and PowerShell versions",
+    "AD/GPMC/KDS module availability",
+    "domain mode and schema",
+    "existing AuthWire pilot GPO permissions",
+    "existing publisher certificate store and private-key presence flag",
+    "execution policies"
+  ],
+  "does_not_prove": [
+    "service identity access to signing private key",
+    "effective delegated GPO write authority",
+    "GPO application or endpoint acceptance"
+  ],
+  "ad_gpo_changed": false,
+  "trust_store_changed": false,
+  "private_key_exported": false,
+  "execution_policy_changed": false,
+  "requires": "operator runs inline commands on DC01; do not relax AllSigned or execution policy"
+}
