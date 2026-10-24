@@ -23,7 +23,6 @@
     },
     "domain_mode": "Windows2016Domain",
     "schema_version": 88,
-    "kds_root_key_count": 1,
     "gpo": {
       "name": "AuthWire-Pilot-Trust",
       "id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
@@ -93,7 +92,8 @@
     "ad_changed": false,
     "gpo_changed": false,
     "trust_store_changed": false,
-    "private_key_access_tested": false
+    "private_key_access_tested": false,
+    "kds_root_key_count_original_raw": 1
   },
   "assessment": {
     "module_and_domain_facts_received": true,
@@ -107,8 +107,12 @@
     "ad_gpo_application_tested": false,
     "kds_root_key_count_verified": false,
     "initial_kds_count_reliability_withdrawn": true,
-    "kds_metadata_read_pending": true
+    "kds_metadata_read_pending": false,
+    "latest_direct_ad_visible_root_count": 0,
+    "latest_direct_ad_visible_root_count_verified": true,
+    "kds_creation_pending": true
   },
-  "next_gate": "Read enum names and KDS dates from DC01 without making configuration changes",
-  "names_result": "2026-10-24-windows-connector-readonly-names-result.json"
+  "next_gate": "Operator executes guarded KDS preparation once if still absent; allow 10 hours before gMSA readiness validation",
+  "names_result": "2026-10-24-windows-connector-readonly-names-result.json",
+  "kds_metadata_result": "2026-10-24-windows-connector-kds-metadata-result.json"
 }

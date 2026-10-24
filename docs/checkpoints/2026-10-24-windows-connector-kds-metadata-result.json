@@ -1,0 +1,39 @@
+{
+  "event": "WINDOWS_CONNECTOR_KDS_METADATA_RESULT",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "source": "operator_supplied_DC01_output",
+  "observed": {
+    "Event": "WINDOWS_CONNECTOR_KDS_METADATA_READONLY",
+    "Computer": "DC01",
+    "ServerQueried": "dc01.vizyonveri.local",
+    "Caller": "VIZYONVERI\\administrator",
+    "RootKeyObjectsVisible": 0,
+    "RootKeys": [],
+    "DomainControllers": [
+      {
+        "HostName": "dc01.vizyonveri.local",
+        "OperatingSystem": "Windows Server 2019 Standard",
+        "IsReadOnly": false
+      }
+    ],
+    "AdChanged": false,
+    "GpoChanged": false,
+    "KeyMaterialRequested": false
+  },
+  "assessment": {
+    "direct_configuration_partition_query_complete": true,
+    "visible_root_count_verified": 0,
+    "verification_scope": "DC01 queried by VIZYONVERI\\administrator",
+    "initial_cmdlet_wrapped_count_1_is_not_proof_of_presence": true,
+    "initial_counting_cause_proven": false,
+    "domain_writable_dc_count_reported": 1,
+    "forest_wide_dc_inventory_verified": false,
+    "kds_creation_pending": true,
+    "gmsa_created": false,
+    "gmsa_readiness_verified": false,
+    "connector_installed": false,
+    "service_signing_key_access_verified": false
+  },
+  "next_gate": "Operator executes guarded KDS preparation once if still absent; allow 10 hours before gMSA readiness validation"
+}

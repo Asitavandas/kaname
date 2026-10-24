@@ -1,0 +1,23 @@
+{
+  "event": "WINDOWS_CONNECTOR_KDS_PREPARE_DELIVERY",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "script": "docs/checkpoints/2026-10-24-windows-connector-kds-prepare.ps1",
+  "sha256": "141bb2a7d7c2703d8dda5884722806975621c346352f39ac16f566238a9a9b03",
+  "delivery": "inline_PowerShell_for_operator",
+  "requires_host": "DC01",
+  "requires_domain": "vizyonveri.local",
+  "executed": false,
+  "native_windows_execution_tested": false,
+  "review": "PowerShell 5.1 standard syntax manually reviewed; Windows output pending",
+  "guarded_operation": "Requery AD metadata, add KDS root only if no object visible, verify metadata; no deletion or backdating",
+  "normal_propagation_allowance_hours": 10,
+  "gmsa_readiness_verified": false,
+  "gpo_changed": false,
+  "certificates_changed": false,
+  "product_release_changed": false,
+  "product_services_restarted": false,
+  "references": [
+    "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/group-managed-service-accounts/group-managed-service-accounts/create-the-key-distribution-services-kds-root-key"
+  ]
+}

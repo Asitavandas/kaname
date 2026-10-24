@@ -4,6 +4,15 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ KDS metadata kontrolü tamamlandı; anahtar oluşturma bekliyor — 24 Ekim 2026
+
+- Operatörün doğrudan DC01 configuration partition sorgusunda, VIZYONVERI\\administrator hesabıyla **RootKeyObjectsVisible=0**, RootKeys=[] doğrulandı. Mevcut domain sorgusu tek yazılabilir DC (DC01, Windows Server 2019) bildirdi; tüm forest için tek DC olduğu varsayılmadı.
+- İlk kontrolün ham `1` sayımı tarihçe olarak korunur, anahtar varlığı kanıtı olarak kullanılmaz. Boş koleksiyonun dış wrapper ile sayılmış olması olası açıklamadır; cmdlet nesne şekli ayrıca kanıtlanmadı. Anahtarın silindiğine dair kanıt yok.
+- KDS sorgusu salt okunurdu: AD/GPO değişmedi, anahtar malzemesi istenmedi. Mevcut GPO AllSettingsEnabled ve mevcut izinler korunuyor.
+- Sıradaki bir defalık AD önkoşulu için DC01/domain korumalı betik hazırlandı: anahtar hâlâ yoksa `Add-KdsRootKey -EffectiveImmediately`, ardından metadata doğrulaması ve oluşturma zamanından 10 saat sonrası için kontrol zamanı. Var olan anahtarı silmez/yenilemez, geri tarih kullanmaz; GPO, CA/sertifika, policy ve Windows istemci dosyalarına yazmaz. **Betik henüz çalıştırılmadı; KDS oluşturuldu veya gMSA hazır denemez.**
+- gMSA oluşturma/kurulum, sınırlı GPO yetkisi, hizmet kimliğiyle imzalama anahtarına erişim ve gerçek uç kabulü açık. Canlı AuthWire dev.34; bu kayıt ürün kodu veya çalışan servisleri değiştirmez. A03/A04 ve pazartesi uç testleri açık; 54/94 (%57) hesabı değişmedi.
+- Kanıt: `checkpoints/2026-10-24-windows-connector-kds-metadata-result.json`. Hazırlanan işlem: `checkpoints/2026-10-24-windows-connector-kds-prepare.ps1`.
+
 ## 🔴✓ Windows GPO/izin isimleri doğrulandı; KDS hazırlığı açık — 24 Ekim 2026
 
 - Operatör WINDOWS_CONNECTOR_READONLY_NAMES sonucunu paylaştı. AuthWire-Pilot-Trust durumunun **AllSettingsEnabled** olduğu doğrudan DC01 enum adından doğrulandı. Pilot grupGpoApply; Domain Admins/Enterprise Admins/SYSTEM GpoEditDeleteModifySecurity; Authenticated Users/ENTERPRISE DOMAIN CONTROLLERS GpoRead olarak okundu. Yeni hizmet hesabı veya delegasyon oluşturulmadı.
