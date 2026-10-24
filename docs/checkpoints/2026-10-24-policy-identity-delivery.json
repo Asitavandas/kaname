@@ -62,7 +62,6 @@
     "windows_ad_gpo_changed": false
   },
   "acceptance_pending": [
-    "operator browser acceptance",
     "Monday actual user/device AD/GPO wired/Wi-Fi/VLAN tests"
   ],
   "progress": {
@@ -72,5 +71,7 @@
     "remaining": 40,
     "percent_remaining": 43
   },
-  "live_result": "2026-10-24-policy-identity-live-result.json"
+  "live_result": "2026-10-24-policy-identity-live-result.json",
+  "operator_browser_acceptance_confirmed": true,
+  "operator_browser_acceptance_scope": "Authentication scope field visible in live policy editor; no policy save or endpoint test inferred"
 }

@@ -50,7 +50,12 @@
     }
   },
   "operator_browser_acceptance": {
-    "confirmed": false
+    "confirmed": true,
+    "date": "2026-10-24",
+    "evidence": "Evet doğrulama kapsamı görünüyor.",
+    "scope": "Authentication scope field visible in live policy editor",
+    "policy_save_verified": false,
+    "real_endpoint_verified": false
   },
   "actual_user_device_ad_gpo_wired_wireless_vlan_acceptance": {
     "confirmed": false,
