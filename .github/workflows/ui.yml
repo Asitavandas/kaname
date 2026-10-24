@@ -36,6 +36,11 @@ jobs:
         env:
           KANAME_PYTHON: python
           KANAME_UI_ARTIFACTS: ui-artifacts
+      - name: Central Windows preparation with real HTTPS and disposable public PKI
+        run: node tools/deployment_ui_smoke.cjs
+        env:
+          KANAME_PYTHON: python
+          KANAME_UI_ARTIFACTS: ui-artifacts
       - name: Browser flow with temporary directory fixture (no real AD)
         run: |
           browser_test_status=0

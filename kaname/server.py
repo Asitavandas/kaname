@@ -25,6 +25,7 @@ from .store import ConflictError, Store
 from .directory import DirectoryError, read_windows_directory, check_windows_directory, validate_connection
 from .operations import Operations
 from .planning import Planning
+from .deployment import Deployment, DeploymentError
 from .services import Services, ServiceError, validate as validate_service_action
 from .audit import history as audit_history, AuditQueryLimit
 from .radius_events import history as access_history, EventStorageError
@@ -35,7 +36,7 @@ from .vault import VaultError
 from .admin import AdminStore, AdminError, COOKIE, TTL, RESOURCES, permits
 
 STATIC = Path(__file__).parent / 'static'
-ASSETS = {'/user-enrollment.js': ('user-enrollment.js','application/javascript'), '/dashboard.js': ('dashboard.js','application/javascript'), '/device.js': ('device.js','application/javascript'), '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
+ASSETS = {'/deployment.js': ('deployment.js','application/javascript'), '/user-enrollment.js': ('user-enrollment.js','application/javascript'), '/dashboard.js': ('dashboard.js','application/javascript'), '/device.js': ('device.js','application/javascript'), '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
           '/audit.js': ('audit.js','application/javascript'),
           '/access-events.js': ('access-events.js','application/javascript'),
           '/services.js': ('services.js','application/javascript'),
@@ -95,6 +96,7 @@ class DevelopmentServer(ThreadingHTTPServer):
             self.directory_health_reader = check_linux_directory
         self.operations = Operations(self.store)
         self.planning = Planning(self.operations)
+        self.deployment = Deployment(self.operations)
         self.services = Services()
         self.public_name = public_name
         self.web_certificate = Path(tls_cert).read_bytes() if tls_cert else b''
@@ -450,6 +452,15 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get('Host') not in self.server.hosts:
             self.respond(403, {'error': 'INVALID_HOST'})
             return
+        if urlsplit(self.path).path == '/api/deployment/status':
+            if not self.guard(resource='certificates.authority'):return
+            try:
+                query=parse_qs(urlsplit(self.path).query,keep_blank_values=True)
+                if set(query)-{'q','offset'} or any(len(v)!=1 for v in query.values()):raise ValueError()
+                self.respond(200,self.server.deployment.status(q=query.get('q',[''])[0],offset=int(query.get('offset',['0'])[0])))
+            except (ValidationError,ValueError,TypeError):self.respond(400,{'error':'DEPLOYMENT_INPUT_INVALID'})
+            except sqlite3.Error as error:self.store_error(error)
+            return
         if urlsplit(self.path).path in {'/api/user-admin/status','/api/user-admin/package'}:
             if not self.guard(resource='certificates.authority'): return
             try:
@@ -715,7 +726,8 @@ class Handler(BaseHTTPRequestHandler):
         resources.update({path:'certificates.authority' for path in
             ('/api/device-admin/profile','/api/device-admin/unlock','/api/device-admin/lock','/api/device-admin/renew-now')})
         resources.update({path: 'certificates.authority' for path in ('/api/user-admin/profile', '/api/user-admin/renew-now')})
-        if not self.guard(write=True, resource=resources.get(self.path), permission_write=self.path != '/api/simulate'):
+        resources.update({path:'certificates.authority' for path in ('/api/deployment/save','/api/deployment/preview','/api/deployment/package')})
+        if not self.guard(write=True, resource=resources.get(self.path), permission_write=self.path not in {'/api/simulate','/api/deployment/preview'}):
             return
         if self.path not in resources:
             self.respond(404, {'error': 'NOT_FOUND'})
@@ -730,7 +742,14 @@ class Handler(BaseHTTPRequestHandler):
                 return
             raw = self.rfile.read(size); self.body_read = True
             value = strict_json(raw)
-            if self.path.startswith('/api/user-admin/'):
+            if self.path.startswith('/api/deployment/'):
+                if self.path.endswith('/save'):self.respond(200,self.server.deployment.save(value,self.actor['id']))
+                elif self.path.endswith('/preview'):self.respond(200,self.server.deployment.preview(value))
+                else:
+                    if not self.server.tls:raise DeploymentError('DEPLOYMENT_HTTPS_REQUIRED')
+                    import base64
+                    self.respond(200,{'name':'AuthWire-Network-Profiles.zip','content_base64':base64.b64encode(self.server.deployment.package(value)).decode(),'gpo_changed':False,'runtime_applied':False})
+            elif self.path.startswith('/api/user-admin/'):
                 self.user_admin_post(value)
             elif self.path.startswith('/api/device-admin/'):
                 self.device_admin_post(value)
@@ -825,6 +844,8 @@ class Handler(BaseHTTPRequestHandler):
                 keys(value, {'expected_revision', section}, {'expected_revision', section})
                 revision = self.server.store.save(value['expected_revision'], **{section: value[section]})
                 self.respond(200, {'revision': revision, 'runtime_applied': False})
+        except DeploymentError as exc:
+            self.respond(409 if exc.code=='DEPLOYMENT_PREVIEW_STALE' else 400,{'error':exc.code})
         except PolicyConflictError as exc:
             self.respond(409, {'error': 'POLICY_CONFLICT', 'conflicts': exc.conflicts})
         except ConflictError:
