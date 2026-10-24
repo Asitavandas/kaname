@@ -98,6 +98,9 @@ class DevelopmentServer(ThreadingHTTPServer):
         self.services = Services()
         self.public_name = public_name
         self.web_certificate = Path(tls_cert).read_bytes() if tls_cert else b''
+        self.users = None
+        self.user_sessions = None
+        self.user_init_lock = threading.Lock()
         self.devices = None
         self.device_sessions = None
         self.device_init_lock = threading.Lock()
@@ -250,6 +253,58 @@ class Handler(BaseHTTPRequestHandler):
                         self.server.public_name,config.get('ad_domain'))
         return self.server.devices, self.server.device_sessions
 
+    def user_services(self):
+        devices, _ = self.device_services()
+        with self.server.user_init_lock:
+            from .device_auth import UserKerberosSessions
+            if self.server.users is None:
+                from .user_enrollment import UserEnrollment
+                self.server.users = UserEnrollment(devices)
+            config = self.server.store.snapshot()['config'] or {}
+            if self.server.user_sessions is None or self.server.user_sessions.domain != config.get('ad_domain'):
+                self.server.user_sessions = UserKerberosSessions(self.server.store.root,
+                    self.server.public_name, config.get('ad_domain'))
+        return self.server.users, self.server.user_sessions
+
+    def user_post(self):
+        if not self.server.tls or self.headers.get('Host') not in self.server.hosts or self.headers.get('Origin'):
+            self.respond(403, {'error': 'USER_HTTPS_REQUIRED'}); return
+        try:
+            from .enrollment import EnrollmentError
+            users, sessions = self.user_services()
+            value = self.read_body()
+            if self.path == '/api/user/session':
+                self.respond(200, sessions.start(value)); return
+            principal, message, context = sessions.verify(self.path, value)
+            result = {'/api/user/challenge': users.challenge,
+                '/api/user/issue': users.issue, '/api/user/receipt': users.receipt}[self.path](principal, message)
+            self.respond(200, sessions.response(self.path, context, result))
+            if self.path == '/api/user/receipt':
+                sessions.end(value['id'], context)
+        except EnrollmentError as error:
+            self.respond(429 if error.code in {'USER_BUSY', 'USER_RETRY_LATER', 'DEVICE_BUSY'} else
+                503 if error.code in {'DEVICE_KERBEROS_NOT_READY', 'DEVICE_SIGNER_LOCKED', 'DEVICE_SIGNER_UNAVAILABLE', 'USER_DIRECTORY_UNAVAILABLE'} else 403,
+                {'error': error.code})
+        except (ValueError, TypeError, KeyError, UnicodeError):
+            self.respond(400, {'error': 'USER_INPUT_INVALID'})
+        except (ImportError, OSError, sqlite3.Error):
+            self.respond(503, {'error': 'USER_SERVICE_UNAVAILABLE'})
+
+    def user_admin_post(self, value):
+        from .enrollment import EnrollmentError
+        try:
+            if not self.server.tls:
+                raise EnrollmentError('PKI_HTTPS_REQUIRED')
+            users, _ = self.user_services()
+            if self.path == '/api/user-admin/profile':
+                result = users.save_profile(value, self.actor['id'])
+            else:
+                keys(value, {'serial'}, {'serial'})
+                result = users.request_renewal(value['serial'], self.actor['id'])
+            self.respond(200, result)
+        except EnrollmentError as error:
+            self.respond(409 if error.code == 'REVISION_CONFLICT' else 400, {'error': error.code})
+
     def device_post(self):
         if not self.server.tls or self.headers.get('Host') not in self.server.hosts or self.headers.get('Origin'):
             self.respond(403, {'error': 'DEVICE_HTTPS_REQUIRED'}); return
@@ -378,7 +433,7 @@ class Handler(BaseHTTPRequestHandler):
         base = (code & 255) if type(code) is int else None
         busy = base in (sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED)
         path = urlsplit(self.path).path
-        area = 'session' if path.startswith('/api/auth/') else 'certificates' if path.startswith(('/api/pki/', '/api/device-admin/')) else 'panel'
+        area = 'session' if path.startswith('/api/auth/') else 'certificates' if path.startswith(('/api/pki/', '/api/device-admin/', '/api/user-admin/')) else 'panel'
         logging.getLogger('authwire.panel').warning(json.dumps({
             'event': 'PANEL_DATABASE_ERROR', 'area': area,
             'method': 'GET' if self.command == 'GET' else 'POST',
@@ -394,6 +449,21 @@ class Handler(BaseHTTPRequestHandler):
     def get_response(self):
         if self.headers.get('Host') not in self.server.hosts:
             self.respond(403, {'error': 'INVALID_HOST'})
+            return
+        if urlsplit(self.path).path == '/api/user-admin/status':
+            if not self.guard(resource='certificates.authority'): return
+            try:
+                query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                if len(self.path) > 256 or set(query) - {'offset'} or any(len(v) != 1 for v in query.values()): raise ValueError()
+                users, sessions = self.user_services()
+                result = users.status(offset=int(query.get('offset', ['0'])[0]))
+                result.update(https_ready=self.server.tls, kerberos_ready=sessions.readiness(),
+                    service_spn='HTTP/' + self.server.public_name if self.server.public_name else None)
+                self.respond(200, result)
+            except sqlite3.Error as error:
+                self.store_error(error)
+            except (ValueError, TypeError, KeyError, ImportError, OSError):
+                self.respond(400, {'error': 'USER_SETUP_REQUIRED'})
             return
         if urlsplit(self.path).path in {'/api/device-admin/status','/api/device-admin/package'}:
             if not self.guard(resource='certificates.authority'): return
@@ -614,6 +684,8 @@ class Handler(BaseHTTPRequestHandler):
             except (AdminError,ValidationError,ValueError,TypeError,KeyError):self.respond(400,{'error':'INVALID_INPUT'})
             except sqlite3.Error as error:self.store_error(error)
             return
+        if self.path in {'/api/user/session', '/api/user/challenge', '/api/user/issue', '/api/user/receipt'}:
+            self.user_post(); return
         if self.path in {'/api/device/session','/api/device/challenge','/api/device/issue','/api/device/receipt'}:
             self.device_post(); return
         if self.path == '/api/auth/login':
@@ -634,6 +706,7 @@ class Handler(BaseHTTPRequestHandler):
         resources.update({path: 'certificates.authority' for path in ('/api/pki/initialize', '/api/pki/enroll-user', '/api/pki/revoke', '/api/pki/refresh-crl', '/api/pki/archive')})
         resources.update({path:'certificates.authority' for path in
             ('/api/device-admin/profile','/api/device-admin/unlock','/api/device-admin/lock','/api/device-admin/renew-now')})
+        resources.update({path: 'certificates.authority' for path in ('/api/user-admin/profile', '/api/user-admin/renew-now')})
         if not self.guard(write=True, resource=resources.get(self.path), permission_write=self.path != '/api/simulate'):
             return
         if self.path not in resources:
@@ -649,7 +722,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             raw = self.rfile.read(size); self.body_read = True
             value = strict_json(raw)
-            if self.path.startswith('/api/device-admin/'):
+            if self.path.startswith('/api/user-admin/'):
+                self.user_admin_post(value)
+            elif self.path.startswith('/api/device-admin/'):
                 self.device_admin_post(value)
             elif self.path.startswith('/api/pki/'):
                 self.pki_write(value)

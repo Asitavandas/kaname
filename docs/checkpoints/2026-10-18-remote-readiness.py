@@ -15,7 +15,7 @@ import time
 STATE=Path('/var/lib/kaname-lab')
 PHASE='preflight'
 TOOL=Path('/home/segmentiq/authwire-offline-restore-check-20261018.py')
-TOOL_SHA='c9a1cba667eee28e5e6a3579ced0b457b17e1e7193f254b74e6638a87e48f610'
+TOOL_SHA='8d887e14588d8f9b5fe1b164678aef0feb24fd5b2288ffcec1d6da4d062ceab5'
 
 
 def emit(event,**values):print(json.dumps({'event':event,**values}),flush=True)

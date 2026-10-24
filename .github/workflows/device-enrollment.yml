@@ -21,7 +21,7 @@ jobs:
           /usr/bin/python3 -m venv --system-site-packages "$RUNNER_TEMP/authwire-native"
           "$RUNNER_TEMP/authwire-native/bin/python" -m pip install cryptography==46.0.0
       - name: Actual mutual Kerberos, replay/integrity and issuance boundaries
-        run: '"$RUNNER_TEMP/authwire-native/bin/python" -m unittest tests.test_device_auth tests.test_device_enrollment tests.test_device_http -v'
+        run: '"$RUNNER_TEMP/authwire-native/bin/python" -m unittest tests.test_device_auth tests.test_device_enrollment tests.test_device_http tests.test_user_enrollment tests.test_user_enrollment_http tests.test_user_directory -v'
         env:
           AUTHWIRE_REQUIRE_KERBEROS: '1'
       - name: 1000-device synthetic directory load fixture

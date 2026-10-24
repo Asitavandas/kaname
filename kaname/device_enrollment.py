@@ -434,7 +434,9 @@ class DeviceEnrollment:
             issuer, key, number = self._issuer(db,now)
             for serial, in due:
                 db.execute("UPDATE pki_certificates SET revoked_at=?,reason='superseded' WHERE serial=?",(now.isoformat(),serial))
-                self.pki._audit(db,'device_certificate_superseded:'+serial)
+                binding = db.execute('SELECT kind FROM radius_certificate_bindings WHERE serial=?', (serial,)).fetchone()
+                prefix = 'user' if binding and binding[0] == 'user' else 'device'
+                self.pki._audit(db,prefix+'_certificate_superseded:'+serial)
             rows = db.execute('SELECT serial,revoked_at,reason FROM pki_certificates WHERE revoked_at IS NOT NULL ORDER BY serial').fetchall()
             crl = self.pki._build_crl(issuer,key,rows,number+1,now)
             db.execute('UPDATE pki_authority SET crl=?,crl_number=? WHERE id=1',(crl.public_bytes(PEM),number+1))
