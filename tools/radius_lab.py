@@ -536,6 +536,19 @@ def run_lab(prefix, *, debug=False, access_events=False):
                             db.execute('INSERT INTO radius_certificate_bindings VALUES (?,?,?,?,?,?,?)',
                                        (info['issuer_sha256'], serial, b['domain'], b['object_guid'],
                                         b['sid'], b['kind'], int(b['active'])))
+                    if data.get('local_groups_fixture'):
+                        from kaname.operations import Operations
+                        from kaname.access_groups import DEFINITIONS, member_key
+                        ops = Operations(PKIService(root / 'state').store)
+                        with ops.store.connect() as db:
+                            local_id = data['policies'][0]['conditions']['local_group_ids'][0]
+                            db.execute("DELETE FROM runtime_settings WHERE name GLOB 'authwire-access-member:*'")
+                            ops._save(db, DEFINITIONS, [{'id':local_id,'name':'Protocol local group','domain':DOMAIN}])
+                            db.execute('UPDATE state SET policies=? WHERE id=1', (json.dumps(data['policies']),))
+                            if data.get('local_member', True):
+                                account = data['accounts'][GUID]
+                                ops._save(db, member_key(DOMAIN, GUID), {'domain':DOMAIN,'guid':GUID,
+                                    'sid':data.get('local_member_sid',SID),'kind':account['kind'],'group_id':local_id})
                     target = root / 'fixture.json'
                     staging = root / 'fixture-next.json'
                     private_file(staging, json.dumps(data))
@@ -574,6 +587,19 @@ def run_lab(prefix, *, debug=False, access_events=False):
                     facts.append(fact)
 
                 case('valid-computer', expected=2, reason='POLICY_ALLOW')
+                def local_group_case(data, *, member=True, wrong_sid=False, user=False):
+                    data['local_groups_fixture'] = True
+                    data['local_member'] = member
+                    if wrong_sid: data['local_member_sid'] = 'S-1-5-21-1-2-3-99999'
+                    data['policies'][0]['conditions']['group_sids'] = []
+                    data['policies'][0]['conditions']['local_group_ids'] = ['11111111-2222-4333-8444-555555555555']
+                    data['policies'][0]['constraints']['require_domain_device'] = not user
+                    if user: data['accounts'][GUID]['kind'] = 'user'
+                case('local-group-computer', expected=2, reason='POLICY_ALLOW', change=local_group_case)
+                case('local-group-member-removed', reason='NO_MATCHING_POLICY', change=lambda d:local_group_case(d,member=False))
+                case('local-group-wrong-immutable-sid', reason='NO_MATCHING_POLICY', change=lambda d:local_group_case(d,wrong_sid=True))
+                case('local-group-user', cert='user', expected=2, reason='POLICY_ALLOW', change=lambda d:local_group_case(d,user=True))
+
                 if access_events:
                     from kaname.radius_events import history as event_history
                     before_records = event_history(root / 'state', {})['storage']['records']

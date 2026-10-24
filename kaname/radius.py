@@ -7,6 +7,7 @@ the display catalog is a source of authentication or current AD rights.
 """
 from dataclasses import dataclass
 import re
+import sqlite3
 import uuid
 
 from .models import ValidationError, address, dns_name, enum, text, validate_policies
@@ -111,10 +112,11 @@ class TLSAuthorization:
     identity. Linux live provider and read-only persistent registry are available;
     network service and authenticated endpoint enrollment are still separate.
     """
-    def __init__(self, policies, *, registry=None, directory=None):
+    def __init__(self, policies, *, registry=None, directory=None, local_groups=None):
         self.policies = validate_policies(policies)
         self.registry = registry
         self.directory = directory
+        self.local_groups = local_groups
 
     def authorize(self, certificate, *, nas_ip, access_type):
         # These arguments originate in the configured native TLS adapter.
@@ -145,10 +147,18 @@ class TLSAuthorization:
             latest = self.registry.lookup(certificate)
             if type(latest) is not CertificateBinding or latest != binding:
                 return Decision('deny', 'CERTIFICATE_BINDING_CHANGED')
+            policies, group_ids = self.policies, frozenset()
+            if self.local_groups is not None:
+                try:
+                    policies, group_ids = self.local_groups.authorization(account)
+                except (ValueError, TypeError, KeyError, sqlite3.Error, OSError):
+                    return Decision('deny', 'LOCAL_GROUPS_UNAVAILABLE')
+            elif any(p['conditions'].get('local_group_ids') for p in policies):
+                return Decision('deny', 'LOCAL_GROUPS_UNAVAILABLE')
             identity = VerifiedIdentity(True, True, account.enabled, account.kind == 'computer',
                                         account.security_group_sids, access_type, nas_ip, 'EAP-TLS',
                                         account_sid=account.sid)
-            return evaluate(self.policies, identity)
+            return evaluate(policies, identity, local_group_ids=group_ids)
         except DirectoryUnavailable:
             return Decision('deny', 'DIRECTORY_UNAVAILABLE')
         except (ValidationError, ValueError, TypeError, AttributeError, OSError):

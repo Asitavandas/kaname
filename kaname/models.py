@@ -2,6 +2,7 @@
 import ipaddress
 import json
 import re
+import uuid
 
 
 class ValidationError(ValueError):
@@ -113,7 +114,7 @@ def validate_policies(value):
             raise ValidationError("Invalid policy identifier")
         conditions = policy['conditions']
         constraints = policy['constraints']
-        keys(conditions, {'group_sids', 'access_types', 'nas_ips'}, {'group_sids', 'access_types', 'nas_ips'})
+        keys(conditions, {'group_sids', 'access_types', 'nas_ips', 'local_group_ids'}, {'group_sids', 'access_types', 'nas_ips'})
         keys(constraints, {'eap_methods', 'require_domain_device'}, {'eap_methods', 'require_domain_device'})
         methods = array(constraints['eap_methods'], lambda x: enum(x, {'EAP-TLS', 'PEAP-TLS', 'PEAP-MSCHAPV2'}), 3)
         if not methods:
@@ -121,6 +122,9 @@ def validate_policies(value):
         groups = array(conditions['group_sids'], lambda x: text(x, 184))
         if any(not re.fullmatch(r'S-1-[0-9]+(?:-[0-9]+)+', x) for x in groups):
             raise ValidationError("Expected immutable AD principal SID")
+        local = array(conditions.get('local_group_ids', []), lambda x: text(x,36))
+        if any(str(uuid.UUID(x)) != x or uuid.UUID(x).int == 0 for x in local):
+            raise ValidationError('Invalid local group identifier')
         action = enum(policy['action'], {'allow', 'deny'})
         vlan = policy['vlan']
         if action == 'allow':
@@ -134,6 +138,8 @@ def validate_policies(value):
                                       'nas_ips': array(conditions['nas_ips'], address)},
                        'constraints': {'eap_methods': methods, 'require_domain_device': boolean(constraints['require_domain_device'])},
                        'action': action, 'vlan': vlan})
+        if 'local_group_ids' in conditions:
+            result[-1]['conditions']['local_group_ids'] = local
     if len({x['id'] for x in result}) != len(result):
         raise ValidationError("Duplicate policy identifier")
     return result
