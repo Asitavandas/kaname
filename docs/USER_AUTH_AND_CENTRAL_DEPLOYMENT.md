@@ -31,11 +31,28 @@ başarılı. PR62 main'e birleştirildi; canlı sürüm son doğrulamada dev.29 
 Kod imzalayan yayıncı ve CA/HTTPS kök güveni onaylı GPO ile önceden dağıtılır.
 Kullanıcı kurucusu kök depoya yazmaz; mevcut güveni kontrol eder. İmzalı iki
 script açık config/CA varlıklarını bağlar. Özel anahtar veya kullanıcı parolası
-pakete konmaz. Kullanıcı profili/policy panel işleri, gerçek AD/GPO/kullanıcı
+pakete konmaz. Kullanıcı policy kimlik kapsamı, gerçek AD/GPO/kullanıcı
 802.1X/VLAN kabulü ve tam merkezi otomasyon hâlâ açıktır. Teknik Windows
 testinde Kerberos/HTTP taşıması ve AD sentetiktir; gerçek sunucu Kerberos/HTTPS
 ayrı test edildi. Ayrıntı: USER_WINDOWS_CLIENT.md ve
 checkpoints/2026-10-24-user-windows-client.json.
+
+## 🔴✓ Kullanıcı profili panel yönetimi teknik kabulü — 24 Ekim 2026
+
+Dev.32 kaynağında Sertifikalar → Kullanıcı profilleri / Kullanıcı kayıtları hazır.
+Açık AD güvenlik grubu seçimi, süre/yenileme/kayıt izni, profil sürüm kontrolü,
+kullanıcı paketi indirme ve kurulum teyidi/yenileme durumu yönetilir. Yeni profil
+varsayılan kapalıdır. Kayıt iznini kapatmak sertifikayı iptal etmez; VLAN/ağ erişim
+kararı bu profilde belirlenmez. Ayrı erişim grubu özelliği geri eklenmedi.
+
+690 Python testi (28 atlama), yeni akış dahil 13 tarayıcı akışı ve mevcut
+Windows/kullanıcı/backend/RADIUS kontrolleri geçti; altı CI workflow başarılı.
+Operatör uzak bağlantıyı düzeltti. Dev.29 servisleri/timer aktif; kurulu kaynak,
+updater ve staging ön kontrolleriyle yedi izole kurucu testi Linux'ta geçti.
+Dev.32 kurucusu hazır, fakat özel DB/uygulama evresi yerel sudo parolası bekler.
+Henüz canlı kurulum veya operatör panel kabulü yapılmadı. Gerçek test bilgisayarı kabulü operatör
+isteğiyle pazartesiye bırakıldı. A03/A04 tamamlandı sayılmaz.
+Ayrıntı: USER_PROFILE_PANEL.md ve checkpoints/2026-10-24-user-profile-panel.json.
 
 ## A03 — Kullanıcı kimlik doğrulaması (mevcut açık yol haritasının devamı)
 
@@ -90,7 +107,7 @@ iddia etmez.
 2. Önce mevcut fonksiyonel kabul listesinin kaldığı yer doğrulanır:
    kullanıcı EAP-TLS yeni ana çalışma başlığıdır; önceki B02/B04/B06/B08/B10/
    B11/B12 açık alt işleri kendi kanıt sınırlarıyla korunur.
-3. A03 kullanıcı profili panel yönetimi/policy kimlik kapsamı ve saha pilotu ile A04 merkezi dağıtım/GPO tasarım ve uygulaması,
+3. A03 kullanıcı/AD grubu policy kimlik kapsamı ve saha pilotu ile A04 merkezi dağıtım/GPO tasarım ve uygulaması,
    ardından kontrollü ölçek kabulü için ayrı tamamlanma kapıları açılır.
    Bu kayıt uygulama veya canlı değişiklik değildir.
 4. Gerçek expiry testi ayrı cihaz bekliyor. Off-host yedek ve tam appliance

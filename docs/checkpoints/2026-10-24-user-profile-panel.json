@@ -1,0 +1,203 @@
+{
+  "event": "USER_PROFILE_PANEL_PREPARED",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "candidate_version": "0.14.0-dev.32",
+  "release": "422ab022c0fe2e54848772934575e035b45610ac",
+  "main_merge": "7e9844718d0b8f8a772a4b135dc568ec484137ef",
+  "pr": 63,
+  "pr_url": "https://github.com/Asitavandas/kaname/pull/63",
+  "scope": "A03/A04 user-profile panel technical acceptance; real user endpoints deferred to Monday",
+  "workflows": [
+    {
+      "id": 40091590401,
+      "name": "KANAME foundation checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 741,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40091590401/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40091590401/logs",
+      "workflow_id": 373980015
+    },
+    {
+      "id": 40091590410,
+      "name": "KANAME browser checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 229,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40091590410/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40091590410/logs",
+      "workflow_id": 374037298
+    },
+    {
+      "id": 40091590440,
+      "name": "KANAME real RADIUS protocol proof",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 192,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40091590440/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40091590440/logs",
+      "workflow_id": 374237481
+    },
+    {
+      "id": 40091590415,
+      "name": "AuthWire bounded retry network probe checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 267,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40091590415/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40091590415/logs",
+      "workflow_id": 390643325
+    },
+    {
+      "id": 40091590430,
+      "name": "KANAME Linux source preparation",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 215,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40091590430/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40091590430/logs",
+      "workflow_id": 374720112
+    },
+    {
+      "id": 40091590434,
+      "name": "AuthWire device enrollment pilot checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 201,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40091590434/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40091590434/logs",
+      "workflow_id": 375399159
+    }
+  ],
+  "tests": {
+    "foundation": {
+      "job": 120865206808,
+      "tests": 690,
+      "skipped": 28,
+      "failures": 0
+    },
+    "browser": {
+      "job": 120865206545,
+      "flows": 13,
+      "new_flow": "AUTHWIRE_USER_ENROLLMENT_UI_OK",
+      "prewrite_read_race": true,
+      "committed_lost_reply_no_replay": true,
+      "stale_revision_preserves_draft": true,
+      "explicit_group_selection": true,
+      "selected_group_persists": true,
+      "off_default": true,
+      "read_only_role": true,
+      "logout_isolation": true,
+      "mobile": true
+    },
+    "native_kerberos": {
+      "job": 120865206819,
+      "tests": 107,
+      "status": "success"
+    },
+    "windows_user": {
+      "job": 120865206836,
+      "status": "success"
+    },
+    "windows_machine": {
+      "job": 120865206739,
+      "status": "success"
+    },
+    "windows_retry": {
+      "job": 120865206637,
+      "status": "success",
+      "historic_intermittence_resolved": false
+    },
+    "native_radius": {
+      "job": 120865206605,
+      "status": "success",
+      "normal_debug_systemd": true
+    },
+    "delivery_boundary": {
+      "tests": 7,
+      "local": true,
+      "isolated_linux_venv": true,
+      "real_root_execution": false
+    }
+  },
+  "changes": [
+    "Separate User profiles and User enrollment certificate tabs",
+    "Explicit AD group, validity, renewal and opt-in registration permission",
+    "User package download and installation receipt tracking",
+    "Explicit renewal request, not immediate network change",
+    "Fresh read after writes; uncertain-write reconciliation without replay",
+    "Cached group display labels preserve immutable SID",
+    "Existing broker test waits for persistence under its lock; product broker unchanged"
+  ],
+  "preserved_source": [
+    "kaname/radius.py",
+    "kaname/radius_adapter.py",
+    "kaname/radius_directory.py",
+    "kaname/policy.py",
+    "kaname/device_client/AuthWire-Client.ps1",
+    "kaname/device_client/Install-AuthWire.ps1",
+    "kaname/device_client/AuthWire-User-Client.ps1",
+    "kaname/device_client/Install-AuthWire-User.ps1",
+    "tools/service_control_broker.py",
+    "kaname/static/authwire-logo.png"
+  ],
+  "package": {
+    "files": 161,
+    "manifest": "LINUX_SOURCE_MANIFEST.json",
+    "manifest_sha256": "d7ad429bc3d7d0a8fea3dc948a75eff5356de8e2b4b0bf11802f6c4f099cdb80",
+    "stage": "/home/segmentiq/authwire-stage-dev32-422ab022c0fe",
+    "installed_base_files": 149,
+    "changed_new_files": 31,
+    "source_root_hashes_verified": true
+  },
+  "delivery": {
+    "helper": "/home/segmentiq/authwire-user-panel-20261024.py",
+    "helper_sha256": "c187df945b9ae9d4839f7e92e38fe6de6b3057cd8da7a4d80265d685d21eab91",
+    "transfer_sha256": "2c59bffd096ec0f3b9ad01a6b0249a4fe12ebe71545f583bc5faf6642ad70484",
+    "planned_panel_restart": true,
+    "planned_radius_restart": false,
+    "full_data_backup_requested": false,
+    "source_rollback_evidence_planned": true,
+    "additive_empty_user_tables": 4,
+    "backup_workers": [
+      "scheduled_backup.py",
+      "offline_restore_check.py"
+    ],
+    "root_apply_pending": true,
+    "private_database_preservation_not_yet_executed": true,
+    "root_reason": "Local sudo password required; sudo -n true reports password required."
+  },
+  "live_readonly": {
+    "version": "0.14.0-dev.29",
+    "panel_pid": 1136447,
+    "radius_pid": 1136462,
+    "broker_pid": 1069437,
+    "services_active": true,
+    "backup_crl_timers_active_enabled": true,
+    "remote_reconnected": true,
+    "installed_updater_pin_and_owner_verified": true,
+    "stage_manifest_and_scope_verified": true,
+    "live_source_changed": false,
+    "services_restarted": false,
+    "policy_changed": false,
+    "certificates_changed": false,
+    "ad_gpo_changed": false,
+    "windows_changed": false,
+    "timers_mutated": false,
+    "full_backup_created": false
+  },
+  "remaining": [
+    "Local sudo guarded dev32 application and preservation/API result",
+    "Operator panel acceptance",
+    "Real Windows user/AD/GPO/user 802.1X/VLAN/negative/transition acceptance Monday",
+    "User/AD-group policy identity scope verification",
+    "Full constrained GPO automation and scale acceptance"
+  ],
+  "overall_original_94": {
+    "done": 54,
+    "remaining": 40,
+    "total": 94
+  },
+  "cancelled_local_groups_reintroduced": false
+}
