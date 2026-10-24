@@ -413,7 +413,7 @@ def wait_ready(process, log):
 
 
 def eap_case(root, relay, secret, name, cert='computer', *, expected=2, reason=None,
-             ca='root-ca.pem', server_name=FQDN, identity='untrusted-outer-identity', method='TLS'):
+             ca='root-ca.pem', server_name=FQDN, identity='untrusted-outer-identity', method='TLS', expected_vlan=33):
     certdir = root / 'certs'
     conf = root / (name + '.conf')
     private_file(conf, f'''network={{
@@ -442,7 +442,7 @@ def eap_case(root, relay, secret, name, cert='computer', *, expected=2, reason=N
     if expected == 2:
         if result.returncode != 0 or b'SUCCESS' not in result.stdout:
             raise AssertionError(name + ': supplicant did not confirm success')
-        if finals[-1]['vlan'] != {64: 13, 65: 6, 81: '33'}:
+        if finals[-1]['vlan'] != {64: 13, 65: 6, 81: str(expected_vlan)}:
             raise AssertionError(name + ': VLAN response did not match policy')
     elif result.returncode == 0 or any(f['code'] == 2 or f['vlan'] for f in facts):
         raise AssertionError(name + ': rejected session had success/VLAN attributes')
@@ -457,7 +457,7 @@ def eap_case(root, relay, secret, name, cert='computer', *, expected=2, reason=N
     return {'case': name, 'passed': True, 'radius_code': expected,
             'access_challenges': sum(f['code'] == 11 for f in facts),
             'response_integrity_checked': True, 'policy_reason': reason,
-            'vlan': 33 if expected == 2 else None}
+            'vlan': expected_vlan if expected == 2 else None}
 
 
 def drop_case(port, secret, name, *, source='127.0.0.1', mac='invalid', non_eap=False):
@@ -520,7 +520,7 @@ def run_lab(prefix, *, debug=False, access_events=False):
                 wait_ready(process, log)
                 relay = Relay(port, secret)
 
-                def case(name, cert='computer', expected=3, reason=None, change=None, *, history_busy=False, **options):
+                def case(name, cert='computer', expected=3, reason=None, change=None, *, history_busy=False, expected_vlan=33, **options):
                     data = fixture(info)
                     data['case'] = name
                     if change:
@@ -547,7 +547,7 @@ def run_lab(prefix, *, debug=False, access_events=False):
                         if access_events and history_busy:
                             blocker = sqlite3.connect(root / 'state/radius-events/access.sqlite3')
                             blocker.execute('BEGIN EXCLUSIVE')
-                        fact = eap_case(root, relay, secret, name, cert, expected=expected, reason=reason, **options)
+                        fact = eap_case(root, relay, secret, name, cert, expected=expected, reason=reason, expected_vlan=expected_vlan, **options)
                     finally:
                         if blocker is not None: blocker.close()
                     if access_events:
@@ -564,7 +564,7 @@ def run_lab(prefix, *, debug=False, access_events=False):
                         event = rows[0]
                         if reason and event['reason'] != reason:
                             raise AssertionError(name + ': history policy reason mismatch: ' + event['reason'])
-                        if event['vlan'] != (33 if expected == 2 else None):
+                        if event['vlan'] != (expected_vlan if expected == 2 else None):
                             raise AssertionError(name + ': history VLAN mismatch')
                         if not reason and (event['tls_verified'] or event['object_guid'] or event['certificate_serial']):
                             raise AssertionError(name + ': pre-callback failure promoted an unverified identity')
@@ -620,6 +620,28 @@ def run_lab(prefix, *, debug=False, access_events=False):
                     data['policies'][0]['constraints']['require_domain_device'] = False
 
                 case('valid-user-policy', cert='user', expected=2, reason='POLICY_ALLOW', change=allow_user)
+
+                def typed_pair(data):
+                    user = policy(id='user-scoped', vlan=50)
+                    user['conditions']['identity_types'] = ['user']
+                    user['constraints']['require_domain_device'] = False
+                    computer = policy(id='computer-scoped', vlan=110)
+                    computer['conditions']['identity_types'] = ['computer']
+                    data['policies'] = [user, computer]
+
+                def typed_user(data):
+                    as_user(data); typed_pair(data)
+
+                case('typed-user-group-vlan50', cert='user', expected=2, expected_vlan=50,
+                     reason='POLICY_ALLOW', identity='host/spoofed-computer-name', change=typed_user)
+                case('typed-computer-group-vlan110', expected=2, expected_vlan=110,
+                     reason='POLICY_ALLOW', identity='claimed-user@lab.example.test', change=typed_pair)
+                def only_users(data):
+                    typed_pair(data); data['policies'] = data['policies'][:1]
+                case('computer-cannot-use-user-scoped-group', reason='NO_MATCHING_POLICY', change=only_users)
+                def only_computers(data):
+                    typed_user(data); data['policies'] = data['policies'][1:]
+                case('user-cannot-use-computer-scoped-group', cert='user', reason='NO_MATCHING_POLICY', change=only_computers)
                 case('revoked-certificate', cert='revoked')
                 case('expired-certificate', cert='expired')
                 case('untrusted-client-ca', cert='rogue')

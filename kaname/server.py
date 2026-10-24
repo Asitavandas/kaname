@@ -800,13 +800,14 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(200, {'secret': self.server.operations.radius_secret(value['ip'])})
             elif self.path == '/api/simulate':
                 required = {'authenticated', 'directory_available', 'account_enabled', 'domain_device', 'group_sids', 'access_type', 'nas_ip', 'eap_method'}
-                keys(value, required, required)
+                keys(value, required | {'account_kind'}, required)
                 context = VerifiedIdentity(
                     boolean(value['authenticated']), boolean(value['directory_available']),
                     boolean(value['account_enabled']), boolean(value['domain_device']),
                     frozenset(array(value['group_sids'], lambda x: text(x, 184))),
                     enum(value['access_type'], {'wired', 'wireless'}), address(value['nas_ip']),
-                    enum(value['eap_method'], {'EAP-TLS', 'PEAP-TLS', 'PEAP-MSCHAPV2'}))
+                    enum(value['eap_method'], {'EAP-TLS', 'PEAP-TLS', 'PEAP-MSCHAPV2'}),
+                    account_kind=value.get('account_kind', ''))
                 decision = evaluate(self.server.store.snapshot()['policies'], context)
                 self.respond(200, {'simulation_only': True, 'network_enforced': False,
                                    'decision': asdict(decision), 'radius_attributes': radius_vlan_attributes(decision)})
@@ -837,7 +838,7 @@ class Handler(BaseHTTPRequestHandler):
         except sqlite3.IntegrityError:
             self.respond(409 if self.path.startswith('/api/system/') else 503, {'error': 'ADMIN_NAME_EXISTS' if self.path.startswith('/api/system/') else 'STORE_UNAVAILABLE'})
         except ValidationError as exc:
-            allowed = {'DEVICE_IP_EXISTS', 'DEVICE_MODE_CONNECTION_INVALID', 'PLANNING_ITEM_NOT_FOUND', 'DRAFT_TARGET_REQUIRED', 'CATALOG_OBJECT_NOT_FOUND', 'AD_SCOPE_INVALID', 'AD_PASSWORD_REQUIRED', 'CONFIG_REQUIRED', 'VLAN_IN_USE', 'VLAN_NOT_DEFINED', 'RADIUS_CLIENTS_MANAGED', 'RADIUS_SECRET_INVALID', 'RADIUS_PORT_CONFLICT', 'RADIUS_SECRET_MISSING'}
+            allowed = {'POLICY_IDENTITY_SCOPE_MISMATCH', 'POLICY_IDENTITY_SCOPE_INVALID', 'DEVICE_IP_EXISTS', 'DEVICE_MODE_CONNECTION_INVALID', 'PLANNING_ITEM_NOT_FOUND', 'DRAFT_TARGET_REQUIRED', 'CATALOG_OBJECT_NOT_FOUND', 'AD_SCOPE_INVALID', 'AD_PASSWORD_REQUIRED', 'CONFIG_REQUIRED', 'VLAN_IN_USE', 'VLAN_NOT_DEFINED', 'RADIUS_CLIENTS_MANAGED', 'RADIUS_SECRET_INVALID', 'RADIUS_PORT_CONFLICT', 'RADIUS_SECRET_MISSING'}
             self.respond(400, {'error': str(exc) if str(exc) in allowed else 'INVALID_INPUT'})
         except (ValueError, TypeError, KeyError):
             self.respond(400, {'error': 'INVALID_INPUT'})
