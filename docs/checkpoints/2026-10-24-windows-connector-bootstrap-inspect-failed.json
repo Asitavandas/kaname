@@ -1,0 +1,25 @@
+{
+  "event": "WINDOWS_CONNECTOR_BOOTSTRAP_INSPECTION_FAILED",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "source": "operator_supplied_DC01_PowerShell_error",
+  "mode": "Inspect",
+  "source_sha256": "75b8e21e21796dcf2a3023f45dd8d87c9cc6c2f7d8176bf7096fe4b2afe1dfc1",
+  "location": "AuthWire-Windows-Bootstrap-v1.ps1:87",
+  "error": "PropertyNotFoundStrict: EnhancedKeyUsageList.ObjectId has no Value property",
+  "cause": "Certificate provider display shape assumed to be System.Security.Cryptography.Oid; DC01 result does not expose Value at this path",
+  "assessment": {
+    "live_inspection_completed": false,
+    "account_creation_requested": false,
+    "no_AD_GPO_or_certificate_store_writes_in_Inspect_implementation": true,
+    "product_files_or_services_changed_by_assistant": false,
+    "initial_48_fixture_checks_had_empty_publisher_inventory": true,
+    "recovery_requires_reinspect": true
+  },
+  "fix": {
+    "approach": "Decode canonical DER EKU extension through X509EnhancedKeyUsageExtension; emit absent/invalid states explicitly",
+    "bootstrap_version": "1.0.1",
+    "real_certificate_fixture_added": true,
+    "existing_account_or_GPO_actions_unchanged": true
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "event": "WINDOWS_CONNECTOR_BOOTSTRAP_EKU_FIX_DELIVERY",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "bootstrap_version": "1.0.1",
+  "source_commit": "51308432fb6a7db1126df317f8200220f5225a9b",
+  "pr": 67,
+  "source": "windows/connector/Initialize-AuthWireWindows.ps1",
+  "source_sha256": "1a416a475ee4e56b7b35f2f9b928e698f15dca9f3847499c7c6fb7f446d0700b",
+  "remote_staged_path": "/home/segmentiq/authwire-windows-bootstrap-v1-r2-20261024.ps1",
+  "remote_hash_verified": true,
+  "staged_bytes": 13310,
+  "old_staged_file_preserved": true,
+  "root_cause": "Cert provider EKU display ObjectId lacks Value on DC01",
+  "fix": "Read canonical X509 DER EKU through X509EnhancedKeyUsageExtension; absent or invalid EKU reported without provider-shape assumption",
+  "validation": {
+    "native_powershell": "5.1.26100.33648",
+    "checks": 56,
+    "actual_native_X509_certificates": true,
+    "certificate_variants": 4,
+    "provider_display_shapes": [
+      "string ObjectId",
+      "System.Security.Cryptography.Oid ObjectId"
+    ],
+    "certificate_store_writes": 0,
+    "AD_KDS_GPMC_calls_mocked": true,
+    "real_AD_tested": false,
+    "real_gmsa_installed": false,
+    "run_id": 40121882136,
+    "job_id": 120955038224,
+    "conclusion": "success"
+  },
+  "pilot": {
+    "domain": "vizyonveri.local",
+    "connector_computer": "DC01",
+    "instance_id": "4c23eebe-0715-46d1-88ee-a2e96ad7ee46",
+    "proposed_account_name": "aw-deploy",
+    "operator_mode": "Inspect"
+  },
+  "live_reinspection_pending": true,
+  "account_created": false,
+  "existing_KDS_changed": false,
+  "GPO_changed": false,
+  "certificates_changed": false,
+  "product_version_unchanged": "0.14.0-dev.34",
+  "product_sources_or_units_changed": false,
+  "services_restarted": false,
+  "full_data_backup_created": false,
+  "merge_commit": "1313d6f4929bbfa99ffcbeb2542d74ac24480cdb",
+  "checks_all_passed": true,
+  "foundation": {
+    "run_id": 40121882115,
+    "job_id": 120955038071,
+    "tests": 724,
+    "skipped": 28,
+    "conclusion": "success"
+  },
+  "network_probe": {
+    "run_id": 40121882234,
+    "conclusion": "success"
+  }
+}

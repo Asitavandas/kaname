@@ -11,7 +11,7 @@
   "remote_staged_path": "/home/segmentiq/authwire-windows-bootstrap-v1-20261024.ps1",
   "staged_bytes": 12008,
   "remote_hash_verified": true,
-  "source_executed_on_customer_windows": false,
+  "source_executed_on_customer_windows": true,
   "operator_mode": "Inspect",
   "pilot": {
     "domain": "vizyonveri.local",
@@ -60,5 +60,9 @@
   "network_probe": {
     "run_id": 40121100717,
     "conclusion": "success"
-  }
+  },
+  "live_inspection_completed": false,
+  "live_inspection_error": "EKU display ObjectId.Value property not present",
+  "live_inspection_evidence": "2026-10-24-windows-connector-bootstrap-inspect-failed.json",
+  "superseded_by": "2026-10-24-windows-connector-bootstrap-r2-delivery.json"
 }

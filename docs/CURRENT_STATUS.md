@@ -17,6 +17,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Windows hazırlık EKU okuma düzeltmesi test edildi; DC01 tekrar kontrolü açık — 24 Ekim 2026
+
+- İlk gerçek Inspect çalıştırması yayıncı envanterinde durdu: `PropertyNotFoundStrict`, EnhancedKeyUsageList.ObjectId.Value. DC01'de ObjectId görüntüleme nesnesinin Value özelliği olmadığı bildirildi. İlk48kontrol boş yayıncı deposu kullandığından bu yol kapsanmamıştı. **İlk canlı Inspect başarılı sayılmaz.** Inspect uygulaması AD/GPO/sertifika deposu yazması yapmaz; hesap oluşturma istenmedi.
+- 🔴✓ Bootstrap **1.0.1** EKU'yu Cert: görüntüleme nesnesinden değil gerçek X.509 DER uzantısından X509EnhancedKeyUsageExtension ile okur. Eksik/bozuk EKU absent/invalid ve CodeSigningEku=false olarak açık raporlanır. Bozuk DER'in native decoder tarafından boş OID listesine çevrilmesi de geçerli sayılmaz.
+- 🔴✓ Native Windows PowerShell **5.1.26100.33648** üzerinde **56 kontrol** geçti (run40121882136/job120955038224). Gerçek geçici bellekteki X.509 sertifikalarıyla code-signing, server-auth, eksik ve bozuk EKU; string ve Oid ObjectId görüntüleme biçimleri doğrulandı. Sertifika deposuna yazılmadı. AD/KDS/GPMC hâlâ simüledir; gerçek gMSA/KDS çoğaltma/servis kabulü değildir. Kaynak `51308432fb6a7db1126df317f8200220f5225a9b`, PR67; merge `1313d6f4929bbfa99ffcbeb2542d74ac24480cdb`. Foundation724test/28ortam atlaması, syntax ve bounded-network-probe kontrolleri de başarılı.
+- Yeni dosya `/home/segmentiq/authwire-windows-bootstrap-v1-r2-20261024.ps1`:13310bayt, SHA256 `1a416a475ee4e56b7b35f2f9b928e698f15dca9f3847499c7c6fb7f446d0700b` Linux'ta doğrulandı; eski sahne dosyası korundu. Canlı AuthWiredev.34 ürün dosyası, RADIUS/broker, policy/CA/Windows paketleri veya GPO değiştirilmedi; yeni tam yedek alınmadı.
+- **Açık:** güncel dosyayı hash doğrulaması ve aynı kurumsal imza sonrası DC01'de **Inspect** ile yeniden çalıştırma. Aynı kurulum GUID'si `4c23eebe-0715-46d1-88ee-a2e96ad7ee46` korunur. KDS en erken25Ekim07:18:13Türkiye kontrol kapısı, gerçek hesap oluşturma/kurulum, sınırlı GPO/imzalama yetkisi ve connector/uç kabulü açık. A03/A04 ve54/94 (%57) hesabı değişmedi.
+- Kanıt: `checkpoints/2026-10-24-windows-connector-bootstrap-inspect-failed.json`, `checkpoints/2026-10-24-windows-connector-bootstrap-r2-delivery.json`; güncel blok `checkpoints/2026-10-24-windows-connector-bootstrap-r2-inspect.ps1`.
+
 ## 🔴✓ Standart Windows AD hazırlık betiği geliştirildi ve test edildi — 24 Ekim 2026
 
 - Her müşteride ayrı komut dizileri yerine kullanılacak domain/hedef bilgisayar/kurulum GUID parametreli `windows/connector/Initialize-AuthWireWindows.ps1` v1 eklendi. Varsayılan **Inspect**: AD/GPO/sertifika/yerel policy, hizmet ve görevlere yazmaz. Domain, yazılabilir DC, hedef bilgisayar, KDS metadata/süre/yapılandırma, hesap adı/kimliği çakışmaları; isteğe bağlı mevcut GPO izinleri ve public yayıncı sertifika durumu kontrol edilir.
