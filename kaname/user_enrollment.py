@@ -342,6 +342,10 @@ class UserEnrollment:
             rows = db.execute('''SELECT u.serial,u.profile_id,u.principal,u.installed_at,u.last_seen,u.renew_at,
                 c.certificate,c.revoked_at FROM user_enrollment_issuances u JOIN pki_certificates c ON c.serial=u.serial
                 WHERE c.archived_at IS NULL ORDER BY u.rowid DESC LIMIT 100 OFFSET ?''', (offset,)).fetchall()
+        catalog = self.store.directory_catalog() or {}
+        group_names = {g['sid']: g['name'] for g in catalog.get('groups', [])}
+        for profile in profiles:
+            profile['group_name'] = group_names.get(profile['group_sid'])
         now, users = instant(), []
         for serial, profile, principal, installed, seen, renew, pem, revoked in rows:
             cert = x509.load_pem_x509_certificate(pem)
