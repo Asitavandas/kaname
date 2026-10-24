@@ -108,11 +108,15 @@
     "kds_root_key_count_verified": false,
     "initial_kds_count_reliability_withdrawn": true,
     "kds_metadata_read_pending": false,
-    "latest_direct_ad_visible_root_count": 0,
+    "latest_direct_ad_visible_root_count": 1,
     "latest_direct_ad_visible_root_count_verified": true,
-    "kds_creation_pending": true
+    "kds_creation_pending": false,
+    "kds_created_after_initial_audits": true,
+    "kds_normal_propagation_wait_pending": true,
+    "gmsa_readiness_verified": false
   },
-  "next_gate": "Operator executes guarded KDS preparation once if still absent; allow 10 hours before gMSA readiness validation",
+  "next_gate": "At or after 2026-10-25 07:18:13 Europe/Istanbul, validate KDS readiness before gMSA provisioning; do not recreate/backdate root",
   "names_result": "2026-10-24-windows-connector-readonly-names-result.json",
-  "kds_metadata_result": "2026-10-24-windows-connector-kds-metadata-result.json"
+  "kds_metadata_result": "2026-10-24-windows-connector-kds-metadata-result.json",
+  "kds_prepared_result": "2026-10-24-windows-connector-kds-prepared-result.json"
 }

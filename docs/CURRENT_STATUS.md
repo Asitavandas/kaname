@@ -17,6 +17,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ KDS kök anahtarı oluşturuldu; yayılım beklemesi sürüyor — 24 Ekim 2026
+
+- Operatör DC01'de WINDOWS_CONNECTOR_KDS_PREPARED sonucunu paylaştı: **Created=true, RootKeyObjectsVisible=1**. Anahtar oluşturma ve ardından metadata sayımı doğrulandı. Önceki salt okunur kontrolde görünür anahtar sayısı 0 idi; ilk betiğin ham1 sayımı bu yeni oluşturma kanıtıyla karıştırılmaz.
+- **AD'de bir defalık KDS önkoşulu oluşturuldu. GPO ve sertifikalar değiştirilmedi.** Bu adım, mevcut 802.1X policy/CA/Windows paketi değişikliği veya connector kurulumu değildir.
+- Normal bekleme sonrası en erken kontrol: **25 Ekim 2026 Pazar 07:18:13, Türkiye saati (+03:00)**; UTC 04:18:13. GmsaReadinessVerified=false; yalnız zamanın dolması gMSA çalışabilirliğinin test edildiği anlamına gelmez. Anahtar yeniden oluşturulmayacak veya geri tarihlenmeyecek.
+- Sonraki açık adımlar: KDS kullanılabilirlik doğrulaması, sınırlı Windows hizmet hesabı/gMSA hazırlığı, sınırlı GPO delegasyonu, hizmet kimliğiyle imzalama anahtarına erişim ve connector uygulaması. Uç cihaz kabul testleri 26 Ekim Pazartesi için açık. Canlı ürün dev.34 ve A03/A04 açık; ana kontrol listesi 54/94 (%57), alt hazırlık tamamlandı diye oran artırılmadı.
+- Kanıt: `checkpoints/2026-10-24-windows-connector-kds-prepared-result.json`.
+
 ## 🔴✓ KDS metadata kontrolü tamamlandı; anahtar oluşturma bekliyor — 24 Ekim 2026
 
 - Operatörün doğrudan DC01 configuration partition sorgusunda, VIZYONVERI\\administrator hesabıyla **RootKeyObjectsVisible=0**, RootKeys=[] doğrulandı. Mevcut domain sorgusu tek yazılabilir DC (DC01, Windows Server 2019) bildirdi; tüm forest için tek DC olduğu varsayılmadı.

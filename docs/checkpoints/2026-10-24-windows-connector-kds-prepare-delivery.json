@@ -7,9 +7,9 @@
   "delivery": "inline_PowerShell_for_operator",
   "requires_host": "DC01",
   "requires_domain": "vizyonveri.local",
-  "executed": false,
-  "native_windows_execution_tested": false,
-  "review": "PowerShell 5.1 standard syntax manually reviewed; Windows output pending",
+  "executed": true,
+  "native_windows_execution_tested": true,
+  "review": "Operator executed guarded preparation on DC01; root created and count verified; gMSA readiness not verified",
   "guarded_operation": "Requery AD metadata, add KDS root only if no object visible, verify metadata; no deletion or backdating",
   "normal_propagation_allowance_hours": 10,
   "gmsa_readiness_verified": false,
@@ -19,5 +19,9 @@
   "product_services_restarted": false,
   "references": [
     "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/group-managed-service-accounts/group-managed-service-accounts/create-the-key-distribution-services-kds-root-key"
-  ]
+  ],
+  "execution_evidence": "operator_supplied_DC01_output",
+  "result": "2026-10-24-windows-connector-kds-prepared-result.json",
+  "ad_changed": true,
+  "earliest_readiness_check_local": "2026-10-25T07:18:13.0000000+03:00"
 }
