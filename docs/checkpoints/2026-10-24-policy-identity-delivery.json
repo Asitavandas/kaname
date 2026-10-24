@@ -38,25 +38,30 @@
     "helper": "/home/segmentiq/authwire-policy-identity-20261024.py",
     "helper_sha256": "cd15ea86cf7b96b9052a723470a4fd92a6996ef9bfb931302e804a862b21ab9c",
     "disposable_apply_rollback_checks": 5,
-    "local_sudo_application_pending": true,
+    "local_sudo_application_pending": false,
     "planned_radius_restart": true,
     "planned_panel_restart": true,
     "broker_restart_planned": false,
     "full_data_backup_created": false,
-    "database_write_planned": false
+    "database_write_planned": false,
+    "live_apply_verified": true,
+    "evidence": "/var/lib/authwire-updates/policy-identity-dev33-20261024T165150Z-570a7ccb"
   },
   "live_state": {
-    "last_verified_version": "0.14.0-dev.32",
-    "radius_pid": "1136462",
-    "panel_pid": "1224014",
+    "last_verified_version": "0.14.0-dev.33",
+    "source_release": "3dbf32d5ea903e94ae017bc0ed1ff66e23daa4fa",
+    "radius_pid_before": "1136462",
+    "radius_pid": "1243360",
     "broker_pid": "1069437",
-    "live_source_changed": false,
+    "radius_active": true,
+    "radius_restarted": true,
+    "broker_process_preserved": true,
+    "live_source_changed": true,
     "policies_changed": false,
     "certificates_changed": false,
     "windows_ad_gpo_changed": false
   },
   "acceptance_pending": [
-    "local sudo apply and protection checks",
     "operator browser acceptance",
     "Monday actual user/device AD/GPO wired/Wi-Fi/VLAN tests"
   ],
@@ -66,5 +71,6 @@
     "percent_completed": 57,
     "remaining": 40,
     "percent_remaining": 43
-  }
+  },
+  "live_result": "2026-10-24-policy-identity-live-result.json"
 }

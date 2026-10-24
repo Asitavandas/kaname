@@ -1,0 +1,60 @@
+{
+  "event": "POLICY_IDENTITY_LIVE_RESULT_RECORDED",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "source": "operator_supplied_root_deployment_output",
+  "direct_assistant_read_after_apply": false,
+  "finished": {
+    "event": "POLICY_IDENTITY_FINISHED",
+    "verified": true,
+    "version": "0.14.0-dev.33",
+    "release": "3dbf32d5ea903e94ae017bc0ed1ff66e23daa4fa",
+    "changed": true,
+    "checks": {
+      "protected_files": true,
+      "broker_process": true,
+      "planned_radius_transition": true,
+      "timers": true,
+      "business_state": true
+    },
+    "radius_active": true,
+    "radius_restarted": true,
+    "radius_pid_before": "1136462",
+    "radius_pid_after": "1243360",
+    "broker_process_preserved": true,
+    "policy_changed": false,
+    "legacy_policies_migrated": false,
+    "certificates_changed": false,
+    "windows_endpoints_changed": false,
+    "windows_packages_changed": false,
+    "ad_gpo_changed": false,
+    "native_module_changed": false,
+    "backup_workers_changed": false,
+    "full_data_backup_created": false,
+    "backup_timer_preserved": true,
+    "operator_browser_acceptance_pending": true,
+    "real_endpoint_acceptance_pending": true,
+    "evidence": "/var/lib/authwire-updates/policy-identity-dev33-20261024T165150Z-570a7ccb"
+  },
+  "panel_reads": {
+    "before": {
+      "paths": 6,
+      "attempts_per_path": 3,
+      "all_http_200": true
+    },
+    "after": {
+      "paths": 18,
+      "attempts_per_path": 3,
+      "all_http_200": true,
+      "max_ms": 161.3
+    }
+  },
+  "operator_browser_acceptance": {
+    "confirmed": false
+  },
+  "actual_user_device_ad_gpo_wired_wireless_vlan_acceptance": {
+    "confirmed": false,
+    "deferred_to": "Monday"
+  },
+  "scope_migration_executed": false
+}
