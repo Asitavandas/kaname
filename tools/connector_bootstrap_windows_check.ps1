@@ -17,7 +17,7 @@ function Reset-Fixture {
         Keys = @([pscustomobject]@{Name='9d17dba6-76d1-424c-bd74-1bba56f5509b';whenCreated=[datetime]::UtcNow.AddDays(-2);'msKds-UseStartTime'=[datetime]::UtcNow.AddDays(-2).ToFileTimeUtc()})
         KdsValid = $true; KdsTests = 0; Account = $null; Creates = 0
         LookupCount = 0; Collision = ''; Race = $false; PostCreateUnknown = $false
-        DirectoryReadFails = $false; Modules = @(); Publishers = @()
+        DirectoryReadFails = $false; Modules = @(); Publishers = @(); DisplayEku = @()
     }
 }
 function Computer-Fixture {
@@ -93,6 +93,7 @@ function Expect-Blocked([string]$Code,[string]$Mode='PrepareAccount') {
 }
 $nativeCerts = @()
 $nativeRsa = New-Object System.Security.Cryptography.RSACng -ArgumentList 2048
+Update-TypeData -TypeName 'AuthWire.EkuShapeFixture' -MemberType ScriptProperty -MemberName EnhancedKeyUsageList -Value { $global:AwConnectorFixture.DisplayEku } -Force
 function New-EkuFixture([string]$Usage,[switch]$Absent,[switch]$Malformed) {
     $request = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
         'CN=AuthWire disposable bootstrap fixture',$nativeRsa,
@@ -188,18 +189,22 @@ try {
     # Actual native certificates/DER decoding; no customer keys or certificate-store writes.
     Reset-Fixture
     $codeCert = New-EkuFixture '1.3.6.1.5.5.7.3.3'
-    $codeCert | Add-Member -MemberType NoteProperty -Name EnhancedKeyUsageList -Value @([pscustomobject]@{ObjectId='1.3.6.1.5.5.7.3.3'}) -Force
+    $codeCert.PSObject.TypeNames.Insert(0,'AuthWire.EkuShapeFixture')
+    $global:AwConnectorFixture.DisplayEku=@([pscustomobject]@{ObjectId='1.3.6.1.5.5.7.3.3'})
+    Check ($codeCert.EnhancedKeyUsageList[0].ObjectId -is [string]) 'Fixture reproduces string ObjectId provider shape'
     $global:AwConnectorFixture.Publishers=@($codeCert)
     $r=Run-Fixture 'Inspect' $codeCert.Thumbprint
     Check ($r.Publishers.Count -eq 1 -and $r.Publishers[0].CodeSigningEku -and $r.Publishers[0].EkuReadState -eq 'valid') 'Real DER code-signing EKU works with string ObjectId display shape'
     Check (-not $r.AdChanged -and -not $r.Publishers[0].ServiceKeyAccessVerified -and $global:AwConnectorFixture.Creates -eq 0) 'Publisher inventory remains read only and does not imply service key access'
 
-    $codeCert | Add-Member -MemberType NoteProperty -Name EnhancedKeyUsageList -Value @([pscustomobject]@{ObjectId=[System.Security.Cryptography.Oid]::new('1.3.6.1.5.5.7.3.3')}) -Force
+    $global:AwConnectorFixture.DisplayEku=@([pscustomobject]@{ObjectId=[System.Security.Cryptography.Oid]::new('1.3.6.1.5.5.7.3.3')})
+    Check ($codeCert.EnhancedKeyUsageList[0].ObjectId -is [System.Security.Cryptography.Oid]) 'Fixture reproduces Oid ObjectId provider shape'
     $r=Run-Fixture 'Inspect' $codeCert.Thumbprint
     Check $r.Publishers[0].CodeSigningEku 'Real DER code-signing EKU also works with Oid display shape'
 
     $serverCert = New-EkuFixture '1.3.6.1.5.5.7.3.1'
-    $serverCert | Add-Member -MemberType NoteProperty -Name EnhancedKeyUsageList -Value @([pscustomobject]@{ObjectId='1.3.6.1.5.5.7.3.3'}) -Force
+    $serverCert.PSObject.TypeNames.Insert(0,'AuthWire.EkuShapeFixture')
+    $global:AwConnectorFixture.DisplayEku=@([pscustomobject]@{ObjectId='1.3.6.1.5.5.7.3.3'})
     $global:AwConnectorFixture.Publishers=@($serverCert)
     $r=Run-Fixture 'Inspect' $serverCert.Thumbprint
     Check (-not $r.Publishers[0].CodeSigningEku -and $r.Publishers[0].EkuReadState -eq 'valid') 'Display properties cannot turn a server certificate into a code signer'
@@ -217,5 +222,6 @@ try {
 } finally {
     foreach ($cert in $nativeCerts) { $cert.Dispose() }
     $nativeRsa.Dispose()
+    Remove-TypeData -TypeName 'AuthWire.EkuShapeFixture' -ErrorAction SilentlyContinue
     Remove-Variable AwConnectorFixture -Scope Global -ErrorAction SilentlyContinue
 }
