@@ -20,7 +20,10 @@ try {
         Select-Object @{Name='Trustee';Expression={$_.Trustee.Name}},
             @{Name='Permission';Expression={$_.Permission.ToString()}})
 } catch { $awErrors += 'GPO_READ_FAILED:' + $_.Exception.GetType().Name }
-try { $awKdsCount = @(Get-KdsRootKey -ErrorAction Stop).Count }
+try {
+    $awKdsKeys = Get-KdsRootKey -ErrorAction Stop
+    $awKdsCount = $(if ($null -eq $awKdsKeys) { 0 } else { $awKdsKeys.Count })
+}
 catch { $awErrors += 'KDS_READ_UNAVAILABLE:' + $_.Exception.GetType().Name }
 $awPublishers = @(Get-ChildItem Cert:\CurrentUser\My,Cert:\LocalMachine\My `
     -ErrorAction SilentlyContinue |

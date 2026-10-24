@@ -1,0 +1,80 @@
+{
+  "event": "WINDOWS_CONNECTOR_READONLY_NAMES_RESULT",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "source": "operator_supplied_DC01_output",
+  "facts": {
+    "computer": "DC01",
+    "gpo_name": "AuthWire-Pilot-Trust",
+    "gpo_status": "AllSettingsEnabled",
+    "permissions": [
+      {
+        "trustee": "AuthWire-Pilot-Computers",
+        "permission": "GpoApply"
+      },
+      {
+        "trustee": "Domain Admins",
+        "permission": "GpoEditDeleteModifySecurity"
+      },
+      {
+        "trustee": "Enterprise Admins",
+        "permission": "GpoEditDeleteModifySecurity"
+      },
+      {
+        "trustee": "Authenticated Users",
+        "permission": "GpoRead"
+      },
+      {
+        "trustee": "ENTERPRISE DOMAIN CONTROLLERS",
+        "permission": "GpoRead"
+      },
+      {
+        "trustee": "SYSTEM",
+        "permission": "GpoEditDeleteModifySecurity"
+      }
+    ],
+    "execution_policies": [
+      {
+        "scope": "MachinePolicy",
+        "policy": "Undefined"
+      },
+      {
+        "scope": "UserPolicy",
+        "policy": "Undefined"
+      },
+      {
+        "scope": "Process",
+        "policy": "Undefined"
+      },
+      {
+        "scope": "CurrentUser",
+        "policy": "Undefined"
+      },
+      {
+        "scope": "LocalMachine",
+        "policy": "RemoteSigned"
+      }
+    ],
+    "kds_times": [],
+    "ad_changed": false,
+    "gpo_changed": false,
+    "execution_policy_changed": false
+  },
+  "assessment": {
+    "gpo_names_verified": true,
+    "execution_policy_names_verified": true,
+    "kds_key_count_verified": false,
+    "kds_effective_time_verified": false,
+    "earlier_count_1_is_not_proof_of_key_presence": true,
+    "possible_collection_counting_issue": true,
+    "collection_counting_cause_proven": false,
+    "direct_ad_metadata_query_pending": true,
+    "connector_installed": false,
+    "gmsa_provisioned": false,
+    "service_signing_key_access_verified": false
+  },
+  "references": [
+    "https://learn.microsoft.com/en-us/powershell/module/kds/get-kdsrootkey",
+    "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-adsc/67cd9709-f545-4484-a01d-9461efb0f3b3"
+  ]
+}

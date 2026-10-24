@@ -4,6 +4,16 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ Windows GPO/izin isimleri doğrulandı; KDS hazırlığı açık — 24 Ekim 2026
+
+- Operatör WINDOWS_CONNECTOR_READONLY_NAMES sonucunu paylaştı. AuthWire-Pilot-Trust durumunun **AllSettingsEnabled** olduğu doğrudan DC01 enum adından doğrulandı. Pilot grupGpoApply; Domain Admins/Enterprise Admins/SYSTEM GpoEditDeleteModifySecurity; Authenticated Users/ENTERPRISE DOMAIN CONTROLLERS GpoRead olarak okundu. Yeni hizmet hesabı veya delegasyon oluşturulmadı.
+- 🔴✓ ExecutionPolicy isimleri doğrulandı: LocalMachine RemoteSigned, diğer dört scope Undefined. Herhangi bir execution-policy veya GPO durumu değiştirilmedi; paketlerde AllSigned gereği korunur.
+- **KDS belirsizliği:** sonraki çıktı KdsTimes=[] döndü. İlk betikteki `@(Get-KdsRootKey).Count=1` gerçek anahtar varlığı için yeterli kanıt sayılmıyor. Microsoft cmdlet çıktısı generic root-key listesi; boş liste/koleksiyon sayımı olasılığı çıkarımdır, henüz yerel nesne şekliyle kanıtlanmadı. “Anahtar silindi” veya “kesinlikle anahtar yok” sonucu çıkarılmadı. İlk kaydın ham1değeri tarihçe olarak korunup doğrulanmışlık kaldırıldı.
+- Doğrudan DC01'in configuration partition'ında msKds-ProvRootKey nesnelerini ve yalnız oluşturma/başlangıç zamanı metadata'sını okuyacak kısa betik hazırlandı. msKds-RootKeyData istenmez/yazdırılmaz; DC listesi okunur. Sonuç gelmeden KDS/gMSA oluşturma, anahtar silme veya bekleme süresini geri tarihleme yapılmadı.
+- Gelecekteki v2 önkontrolde dış array-wrapper sayımı yerine dönen koleksiyonun kendi Count özelliği kullanılacak. İlk çalıştırılan v1 hash'i `7be8f5097422a6fe6a539716e91c05a1e6bb72cf53faccd63dd100e8b0c08fe9` ve kaynak dosyası aynen korunur.
+- İmzalama anahtarı hâlâ Administrator CurrentUser/My deposunda; hizmet kimliği erişimi ayrıca kurulacak/doğrulanacak. AuthWiredev.34, RADIUS, policy/sertifika, Windows paketleri ve AD/GPO bu kayıt sırasında değişmedi. A04 ve gerçek uç/pazartesi testleri açık;54/94 (%57) hesabı korunur.
+- Kanıt: `checkpoints/2026-10-24-windows-connector-readonly-names-result.json`. Açık kontrol: `checkpoints/2026-10-24-windows-connector-kds-metadata-readonly.ps1`.
+
 ## 🔴✓ Windows yönetim bileşeni DC01 salt okunur hazırlık kontrolü tamam — 24 Ekim 2026
 
 - Operatör WINDOWS_CONNECTOR_READONLY_PREFLIGHT sonucunu paylaştı; Errors=[] ve AD/GPO/trust değişikliği yok. DC01, Windows Server2019Standard build17763, PowerShell5.1.17763.592; ActiveDirectory1.0.1.0, GroupPolicy1.0.0.0 ve Kds1.0.0.0 modülleri var.

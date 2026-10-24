@@ -28,7 +28,8 @@
       "name": "AuthWire-Pilot-Trust",
       "id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
       "status_raw": 3,
-      "status_name_verified": false
+      "status_name_verified": true,
+      "status_name": "AllSettingsEnabled"
     },
     "gpo_permissions_raw": [
       {
@@ -99,11 +100,15 @@
     "gmsa_candidate": true,
     "gmsa_installed": false,
     "kds_effective_time_verified": false,
-    "gpo_status_name_pending": true,
+    "gpo_status_name_pending": false,
     "effective_service_gpo_write_authority_verified": false,
     "service_signing_key_access_verified": false,
     "connector_installed": false,
-    "ad_gpo_application_tested": false
+    "ad_gpo_application_tested": false,
+    "kds_root_key_count_verified": false,
+    "initial_kds_count_reliability_withdrawn": true,
+    "kds_metadata_read_pending": true
   },
-  "next_gate": "Read enum names and KDS dates from DC01 without making configuration changes"
+  "next_gate": "Read enum names and KDS dates from DC01 without making configuration changes",
+  "names_result": "2026-10-24-windows-connector-readonly-names-result.json"
 }
