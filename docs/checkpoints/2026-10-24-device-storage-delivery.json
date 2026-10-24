@@ -1,0 +1,175 @@
+{
+  "release": "e6b899b2dccbd74e07b7feaac3d5a22e6b7d93ce",
+  "base_release": "cf4b34926b206aa4e3c1e52e7d08b264782e643c",
+  "files": 148,
+  "scope": [
+    "kaname/__init__.py",
+    "kaname/device_enrollment.py",
+    "pyproject.toml",
+    "tests/test_device_enrollment.py",
+    "tools/device_load_smoke.py"
+  ],
+  "manifest_sha256": "f9dd9ad2a1e44d76043cf487b763ad930af2bbbb8c37cd0cc479f4ca1a81fa23",
+  "helper_sha256": "45695d2030290abb924d5c7e8b5d922912344a801662542d6b02d748582f4910",
+  "transfer_sha256": "3794ce5c5eb0b0a424788aeab0f1aab30ccae2acdcfb01406f029b755e02da9d",
+  "stage": "/home/segmentiq/authwire-stage-dev27-e6b899b2dccb",
+  "full_data_backup_created": false,
+  "isolated_data_restore_exercised": false,
+  "radius_restart_planned": false,
+  "broker_restart_planned": false,
+  "windows_changed": false,
+  "policy_changed": false,
+  "sqlite_timeout_changed": false,
+  "journal_mode_changed": false,
+  "live_installation_pending": true,
+  "historical_exact_timing_reproduced": false,
+  "controlled_baseline_collision_reproduced": true,
+  "local_test_result": {
+    "tests": 601,
+    "skipped": 25,
+    "passed": true,
+    "sqlite": "3.45.1",
+    "cryptography": "46.0.0"
+  },
+  "baseline_probe": {
+    "unchanged_source_runs": 30,
+    "failures": 0,
+    "not_proof_of_fix": true,
+    "observed_max_query_wait_seconds": 0.4294
+  },
+  "local_load": [
+    {
+      "python_sqlite": "3.45.1",
+      "cryptography": "46.0.0"
+    },
+    {
+      "attempt": 1,
+      "fixture_only": true,
+      "devices": 200,
+      "workers": 4,
+      "unique_certificates": 200,
+      "wall_seconds": 3.11,
+      "cpu_seconds": 2.425,
+      "live_ad_tested": false,
+      "windows_gpo_tested": false,
+      "registry_binding_key_counts_verified": true,
+      "issuance_and_receipt_audits_verified": true,
+      "database_integrity_verified": true,
+      "rollback_journal_preserved": true
+    },
+    {
+      "attempt": 2,
+      "fixture_only": true,
+      "devices": 1000,
+      "workers": 4,
+      "unique_certificates": 1000,
+      "wall_seconds": 14.958,
+      "cpu_seconds": 11.926,
+      "live_ad_tested": false,
+      "windows_gpo_tested": false,
+      "registry_binding_key_counts_verified": true,
+      "issuance_and_receipt_audits_verified": true,
+      "database_integrity_verified": true,
+      "rollback_journal_preserved": true
+    },
+    {
+      "attempt": 3,
+      "fixture_only": true,
+      "devices": 1000,
+      "workers": 4,
+      "unique_certificates": 1000,
+      "wall_seconds": 15.487,
+      "cpu_seconds": 12.108,
+      "live_ad_tested": false,
+      "windows_gpo_tested": false,
+      "registry_binding_key_counts_verified": true,
+      "issuance_and_receipt_audits_verified": true,
+      "database_integrity_verified": true,
+      "rollback_journal_preserved": true
+    },
+    {
+      "attempt": 4,
+      "fixture_only": true,
+      "devices": 1000,
+      "workers": 4,
+      "unique_certificates": 1000,
+      "wall_seconds": 15.908,
+      "cpu_seconds": 12.488,
+      "live_ad_tested": false,
+      "windows_gpo_tested": false,
+      "registry_binding_key_counts_verified": true,
+      "issuance_and_receipt_audits_verified": true,
+      "database_integrity_verified": true,
+      "rollback_journal_preserved": true
+    }
+  ],
+  "host_isolated_load": {
+    "devices": 200,
+    "workers": 4,
+    "wall_seconds": 8.53,
+    "cpu_seconds": 3.205,
+    "service_processes_preserved": true,
+    "live_ad_tested": false,
+    "windows_gpo_tested": false,
+    "service_pids": {
+      "kaname-lab.service": "1069472",
+      "authwire-radius.service": "1069559",
+      "authwire-service-control.service": "1069437"
+    }
+  },
+  "pull_request": 58,
+  "historical_failure_job": 119851757698,
+  "corrected_browser_fixture_assertions_only": [
+    "tools/policy_ui_smoke.cjs",
+    "tools/services_ui_smoke.cjs"
+  ],
+  "workflow_runs": [
+    {
+      "id": 40065410150,
+      "name": "AuthWire bounded retry network probe checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40065410059,
+      "name": "KANAME Linux source preparation",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40065410072,
+      "name": "AuthWire device enrollment pilot checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40065410053,
+      "name": "KANAME foundation checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40065410109,
+      "name": "KANAME browser checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40065410048,
+      "name": "KANAME real RADIUS protocol proof",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "merge_commit": "8b445732b04b98b6f0c97b021574855478142326",
+  "native_radius_normal_and_debug_passed": true,
+  "native_kerberos_ci_load": {
+    "devices": 1000,
+    "workers": 4,
+    "wall_seconds": 13.843,
+    "cpu_seconds": 11.171,
+    "integrity_and_counts_verified": true
+  },
+  "operator_sudo_pending": true,
+  "live_installed_version": "0.14.0-dev.26"
+}
