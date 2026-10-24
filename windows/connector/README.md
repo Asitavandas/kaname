@@ -21,7 +21,10 @@ deleted, refreshed or backdated by this entry point.
 
 Optional GPO GUID and publisher thumbprint provide read-only inventories. A
 matching CurrentUser certificate with HasPrivateKey does not prove a service can
-use its key. An existing GPO is inspected without being adopted as product-owned
+use its key. Bootstrap 1.0.1 reads EKU from the certificate's actual X.509 DER
+extension using X509EnhancedKeyUsageExtension, not the Cert: provider's display
+ObjectId shape (string on some Windows versions, Oid on others). Missing or
+malformed EKU is reported as absent/invalid with CodeSigningEku=false. An existing GPO is inspected without being adopted as product-owned
 or receiving new permissions. The cmdlets never request managed account
 passwords or export private keys, PFX or keytab data.
 
@@ -68,6 +71,9 @@ under native Windows PowerShell 5.1 on a disposable hosted runner. AD, KDS, GPMC
 and certificate-store calls are simulated; it verifies denied writes for wrong
 domain/DC/RODC, KDS wait/failure/count, existing identities, scope drift, races
 and lost receipts, plus exactly one bounded create and unchanged reruns.
+Actual disposable in-memory X.509 certificates cover Code Signing, Server Auth,
+missing and malformed EKU, including string/Oid display-property variants. No
+certificate store is written and no customer certificate or key is used.
 This is not a real AD forest, KDS replication, gMSA password retrieval, service
 logon or GPO acceptance test. Live verification remains required.
 
