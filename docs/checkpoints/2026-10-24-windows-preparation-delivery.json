@@ -1,0 +1,66 @@
+{
+  "event": "WINDOWS_PREPARATION_DELIVERY_READY",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "version": "0.14.0-dev.34",
+  "source_commit": "8bcc043b1d763f79e1c071241d755ec1c6a8ead4",
+  "pr": 65,
+  "scope": "group-based preparation, versioned plan and public pinned XML archive; no GPO writer",
+  "ci": {
+    "all_success": true,
+    "native_radius_pending": false,
+    "foundation": 40116315129,
+    "browser": 40116315138,
+    "native_radius": 40116315116,
+    "linux_preparation": 40116315118,
+    "enrollment": 40116315115,
+    "bounded_network_probe": 40116315119,
+    "python_tests": 724,
+    "environment_skips": 28,
+    "new_backend_http_tests": 13,
+    "browser_flows": 14,
+    "native_kerberos_tests": 107,
+    "normal_eap_tls_cases": 33,
+    "debug_eap_tls_cases": 31,
+    "production_runtime_tests": 35
+  },
+  "ui": {
+    "artifact_id": 12569060257,
+    "zip_sha256": "647d3032ef459205de0410ceea2df15c776ac87b94e1ce80678655aa3e5e95b7",
+    "desktop_and_mobile_inspected": true
+  },
+  "delivery": {
+    "candidate_files": 167,
+    "baseline_files": 163,
+    "reviewed_package_changes": 10,
+    "protected_source_files": 18,
+    "manifest_sha256": "5f7e033e431e775b07cf60b911f1cbfdc2d79922c77a114be4d482d44d6eb106",
+    "stage": "/home/segmentiq/authwire-stage-dev34-8bcc043b1d76",
+    "helper": "/home/segmentiq/authwire-windows-preparation-20261024.py",
+    "helper_sha256": "9a4a3707be854fb880ad4110b5fcbd54801fba2bed35995a55a4d50117957d04",
+    "stage_verified": true,
+    "installed_source_guard_passed": true,
+    "apply_rollback_fixture_tests": 5,
+    "local_sudo_application_pending": true,
+    "planned_panel_restart": true,
+    "planned_radius_restart": false,
+    "planned_broker_restart": false,
+    "full_data_backup_created": false,
+    "live_source_changed": false
+  },
+  "acceptance_pending": [
+    "local sudo apply and protected state comparison",
+    "operator central distribution screen acceptance",
+    "restricted Windows connector authorization/transport/signing",
+    "live AD GPO creation/linking/apply and OU targeting",
+    "Monday actual Windows interface/GPO/user-device pilot acceptance",
+    "rollback and 200-endpoint scale acceptance"
+  ],
+  "progress": {
+    "completed": 54,
+    "total": 94,
+    "remaining": 40,
+    "completed_percent": 57
+  },
+  "merge_commit": "3e74805d4eea1890d65297712c3130b459e7c008"
+}
