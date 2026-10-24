@@ -3,6 +3,22 @@
 24 Ekim 2026. A04 bütünü açıktır. Bu belge bir Windows bileşeninin
 kurulduğu veya GPO yazıldığı anlamına gelmez.
 
+## Standart AD hazırlık giriş noktası — bootstrap v1
+
+`windows/connector/Initialize-AuthWireWindows.ps1` ve yanındaki README, tekrar
+kullanılabilir DC hazırlık giriş noktasıdır. Inspect varsayılanı salt okunurdur;
+PrepareAccount ayrı açık moddur ve KDS beklemesi/yapılandırması, kurulum sahipliği,
+tek hedef bilgisayar ve ad/izin çakışması kontrollerini geçmeden gMSA oluşturmaz.
+Var olan KDS kökü, GPO, istemci ve sertifikalar korunur; uygun hesap tekrarında
+onarım/yazma yoktur. Bu giriş noktası çalışan connector, GPO uygulama veya servis
+kurulumu değildir. Önce gerçek Inspect, sonra KDS kullanılabilirliği ve hesap
+hazırlığı kabul edilecektir. GPO delegasyonu, yerel hizmet oturumu, imzalama anahtarı
+erişimi, yönetim TLS/protokolü ve uç kabulü sonraki ayrı kapılardır.
+
+Müşteride bir defalık yetkili kurulum sonrası kontrollerin standart akışta
+yürütülmesi hedefi korunur; günlük dağıtım AuthWire üzerinden olacaktır.
+Mevcut v1 elle başlatılan hazırlıktır; panelden tam otomasyon olarak sunulmaz.
+
 ## dev.34 hazırlık teslimi
 
 Sertifikalar → Dağıtım ekranı sürümlü plan, bilgisayar AD grubu, ayrı kullanıcı

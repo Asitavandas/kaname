@@ -4,6 +4,16 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ Standart Windows AD hazırlık betiği geliştirildi ve test edildi — 24 Ekim 2026
+
+- Her müşteride ayrı komut dizileri yerine kullanılacak domain/hedef bilgisayar/kurulum GUID parametreli `windows/connector/Initialize-AuthWireWindows.ps1` v1 eklendi. Varsayılan **Inspect**: AD/GPO/sertifika/yerel policy, hizmet ve görevlere yazmaz. Domain, yazılabilir DC, hedef bilgisayar, KDS metadata/süre/yapılandırma, hesap adı/kimliği çakışmaları; isteğe bağlı mevcut GPO izinleri ve public yayıncı sertifika durumu kontrol edilir.
+- **PrepareAccount** modu, KDS oluşturma+10 saat ve kayıtlı etkinlik zamanının geçmesini ve yerel Test-KdsRootKey=true sonucunu şart koşar. Yalnız seçilen bilgisayarın parola alabileceği, AES128/256 ve Kerberos delegasyonu kapalı gMSA oluşturur. KDS anahtarı oluşturmaz/değiştirmez; var olan müşteri hesabını sahiplenmez/onarmaz/silmez. Kurulum ve bilgisayar GUID'leriyle eşleşen hesap aynı ayarlarda ise yazmadan kullanılır; drift, yarış veya kayıp oluşturma teyidi otomatik ikinci yazmaya dönüşmez.
+- 🔴✓ Native Windows PowerShell **5.1.26100.33648** üzerinde **48 kontrol** geçti (run40121100889/job120952593225). AD/KDS/GPMC/sertifika çağrıları test doubles ile yürütüldü; gerçek AD/KDS çoğaltması, gMSA kurulumu veya hizmet oturumu kabulü sayılmadı. Foundation **724 test/28 ortam atlaması**, syntax ve bounded-network-probe kontrolleri de başarılı. Kaynak `91e18f979fe63136fc180617c69f87c0c3bdaa1a`, PR66; merge `1778aeca16b3ac9c3a0d9e5ed4881e877a89987d`.
+- Dosya `/home/segmentiq/authwire-windows-bootstrap-v1-20261024.ps1` konumuna sahnelendi; 12008 bayt ve SHA256 `75b8e21e21796dcf2a3023f45dd8d87c9cc6c2f7d8176bf7096fe4b2afe1dfc1` Linux'ta doğrulandı. Canlı ürün kaynak/servis/unit/policy/CA/istemci/GPO değiştirilmedi; sürüm dev.34. Yeni tam yedek alınmadı.
+- Pilot kurulum kimliği `4c23eebe-0715-46d1-88ee-a2e96ad7ee46`, domain vizyonveri.local, hedef DC01, önerilen gMSA aw-deploy$. Şimdiki operatör adımı dosya hash'ini doğrulayıp mevcut kurumsal yayıncıyla Windows'ta imzalamak ve **yalnız Inspect** çalıştırmak. ExecutionPolicy düşürülmez; GPO paketleri AllSigned kalır. Bu betik henüz DC01'de çalıştırılmadı; hesap oluşturulmadı.
+- **Açık:** 25 Ekim 07:18:13 Türkiye saati sonrası KDS kabulü, gerçek gMSA oluşturma/yerel kurulum/oturum, sınırlı GPO delegasyonu ve imzalama anahtar ACL'si, yönetim TLS/protokolü, gerçek GPO/uç dağıtımı ve geri alma. CanApplyGpo/ConnectorInstalled/GmsaReadinessVerified=false kalır. A03/A04 açık;54/94 (%57) değişmedi.
+- Kanıt ve çalıştırma bloğu: `checkpoints/2026-10-24-windows-connector-bootstrap-delivery.json`, `checkpoints/2026-10-24-windows-connector-bootstrap-inspect.ps1`.
+
 ## 🔴✓ KDS kök anahtarı oluşturuldu; yayılım beklemesi sürüyor — 24 Ekim 2026
 
 - Operatör DC01'de WINDOWS_CONNECTOR_KDS_PREPARED sonucunu paylaştı: **Created=true, RootKeyObjectsVisible=1**. Anahtar oluşturma ve ardından metadata sayımı doğrulandı. Önceki salt okunur kontrolde görünür anahtar sayısı 0 idi; ilk betiğin ham1 sayımı bu yeni oluşturma kanıtıyla karıştırılmaz.

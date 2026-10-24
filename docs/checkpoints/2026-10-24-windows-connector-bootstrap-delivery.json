@@ -1,0 +1,64 @@
+{
+  "event": "WINDOWS_CONNECTOR_BOOTSTRAP_DELIVERY",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "source_commit": "91e18f979fe63136fc180617c69f87c0c3bdaa1a",
+  "pr": 66,
+  "version": "bootstrap-v1",
+  "live_authwire_version_unchanged": "0.14.0-dev.34",
+  "source": "windows/connector/Initialize-AuthWireWindows.ps1",
+  "sha256": "75b8e21e21796dcf2a3023f45dd8d87c9cc6c2f7d8176bf7096fe4b2afe1dfc1",
+  "remote_staged_path": "/home/segmentiq/authwire-windows-bootstrap-v1-20261024.ps1",
+  "staged_bytes": 12008,
+  "remote_hash_verified": true,
+  "source_executed_on_customer_windows": false,
+  "operator_mode": "Inspect",
+  "pilot": {
+    "domain": "vizyonveri.local",
+    "connector_computer": "DC01",
+    "instance_id": "4c23eebe-0715-46d1-88ee-a2e96ad7ee46",
+    "proposed_account_name": "aw-deploy",
+    "gpo_id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
+    "publisher_thumbprint": "6E74B513F766E01730719684A41B2664380CA68A",
+    "earliest_kds_check_local": "2026-10-25T07:18:13+03:00"
+  },
+  "validation": {
+    "native_windows_powershell": "5.1.26100.33648",
+    "checks": 48,
+    "directory_kds_gpmc_calls_mocked": true,
+    "real_ad_tested": false,
+    "real_gmsa_installed": false,
+    "run_id": 40121100889,
+    "job_id": 120952593225,
+    "conclusion": "success"
+  },
+  "pending": [
+    "live_readonly_inspection",
+    "KDS_readiness_after_wait",
+    "gmsa_creation",
+    "local_gmsa_installation_and_logon",
+    "least_privilege_GPO_delegation",
+    "service_signing_key_access",
+    "management_TLS_protocol",
+    "real_endpoint_acceptance"
+  ],
+  "ad_changed": false,
+  "gpo_changed": false,
+  "certificates_changed": false,
+  "radius_restarted": false,
+  "product_source_or_units_changed": false,
+  "full_data_backup_created": false,
+  "merge_commit": "1778aeca16b3ac9c3a0d9e5ed4881e877a89987d",
+  "checks_all_passed": true,
+  "foundation": {
+    "run_id": 40121100979,
+    "job_id": 120952593556,
+    "tests": 724,
+    "skipped": 28,
+    "conclusion": "success"
+  },
+  "network_probe": {
+    "run_id": 40121100717,
+    "conclusion": "success"
+  }
+}
