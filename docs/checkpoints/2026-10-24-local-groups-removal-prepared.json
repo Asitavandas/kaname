@@ -1,0 +1,167 @@
+{
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "event": "LOCAL_GROUP_REMOVAL_PREPARED",
+  "source_release": "3b522160d34a0ebaf952f707c611490ccf1a9b5f",
+  "main_merge": "611f5fad874e7bec12a2c062bef2e7d84520733d",
+  "version": "0.14.0-dev.29",
+  "live_version": "0.14.0-dev.28",
+  "live_apply_pending": true,
+  "reason": "Operator canceled local access groups; preserve direct account/AD group policy selection",
+  "scope_removed": [
+    "local group CRUD and memberships",
+    "one local group membership restriction",
+    "local_group selector and APIs",
+    "A01/A02 active plan and report items"
+  ],
+  "protected": [
+    "policies",
+    "certificates and keys",
+    "Windows/GPO",
+    "AD memberships",
+    "native RADIUS module",
+    "broker and units",
+    "logo",
+    "backup/CRL timers"
+  ],
+  "full_data_backup_created": false,
+  "isolated_restore_exercised": false,
+  "planned_services_restarted": [
+    "kaname-lab.service",
+    "authwire-radius.service"
+  ],
+  "broker_restart_planned": false,
+  "root_authentication": "local operator sudo password required; nonroot cannot inspect DB",
+  "policy_reference_guard": "CANCELLED_SELECTOR_STILL_REFERENCED aborts before mutation; no policy auto-conversion",
+  "cleanup": {
+    "tables": [
+      "runtime_settings"
+    ],
+    "exact_key": "authwire_access_groups",
+    "key_glob": "authwire-access-member:*",
+    "transaction": "BEGIN IMMEDIATE",
+    "revision_and_audit_atomic": true,
+    "business_state_compare_inside_transaction": true,
+    "in_memory_expected_state_preview": true,
+    "stale_state_guard": true
+  },
+  "delivery": {
+    "release": "3b522160d34a0ebaf952f707c611490ccf1a9b5f",
+    "base_release": "95a0db8d372349801a5fe47dab0fed7fc2858f53",
+    "files": 149,
+    "scope": [
+      "kaname/__init__.py",
+      "kaname/access_groups.py",
+      "kaname/models.py",
+      "kaname/policy.py",
+      "kaname/radius.py",
+      "kaname/radius_adapter.py",
+      "kaname/server.py",
+      "kaname/static/access-groups.js",
+      "kaname/static/app.js",
+      "kaname/static/index.html",
+      "kaname/static/styles.css",
+      "kaname/store.py",
+      "pyproject.toml",
+      "tests/radius_fixture.py",
+      "tests/test_access_groups.py",
+      "tests/test_access_groups_http.py",
+      "tests/test_local_group_feature_removed.py",
+      "tools/radius_lab.py"
+    ],
+    "removed_files": [
+      "kaname/access_groups.py",
+      "kaname/static/access-groups.js",
+      "tests/test_access_groups.py",
+      "tests/test_access_groups_http.py"
+    ],
+    "new_files": [
+      "tests/test_local_group_feature_removed.py"
+    ],
+    "manifest_sha256": "1c6309dcb4e413ef50e09e74e14e7ff31538a3de0d12713a47501e06027a717c",
+    "manifest_filename": "LINUX_SOURCE_MANIFEST.json",
+    "helper_sha256": "12697cfd3fa0673cd40f7d4e4fb4ba71bda2d8de239f05e01606b3b5f84a2c76",
+    "transfer_sha256": "4256a121e76447f6302636336abceff2761aaac4c6f5ad29d677ca64ba975cd6",
+    "stage": "/home/segmentiq/authwire-stage-dev29-3b522160d34a"
+  },
+  "tests": {
+    "python": {
+      "run": 603,
+      "skipped": 25,
+      "failures": 0
+    },
+    "isolated_host_tests": 10,
+    "browser_flows": 12,
+    "workflows": [
+      {
+        "id": 40072157680,
+        "name": "AuthWire bounded retry network probe checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 40072157645,
+        "name": "KANAME Linux source preparation",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 40072157659,
+        "name": "KANAME browser checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 40072157663,
+        "name": "KANAME foundation checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 40072157688,
+        "name": "KANAME real RADIUS protocol proof",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 40072157650,
+        "name": "AuthWire device enrollment pilot checks",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "native_radius_modes": [
+      "normal",
+      "debug"
+    ],
+    "deploy_boundary": "LOCAL_GROUP_REMOVAL_ROLLBACK_IDEMPOTENCE_AND_PLANNED_SERVICE_BOUNDARY_OK",
+    "data_boundary": "LOCAL_GROUP_REMOVAL_DATA_BOUNDARY_ATOMICITY_STALE_GUARD_AND_IDEMPOTENCE_OK",
+    "stage_validation": "LOCAL_GROUP_REMOVAL_STAGE_VALIDATED"
+  },
+  "open_independent_issue": "Windows retry fractional deadline failed once then passed at unchanged source; deadline_rearmed with empty NextRunTime remains open B04 root-cause work",
+  "report": {
+    "pdf_library_file_id": "libfile_bb0d369929308191b017ae9549fdfda2",
+    "docx_library_file_id": "libfile_13aa43aae2d8819184e6c30b5af3ded7",
+    "current_version_number": 1,
+    "pages": 9,
+    "local_input_sha256": {
+      "pdf": "a8cdfad6f0d4d38b50b017a30a182157d45f06b40726c36a81a02f5e3033312b",
+      "docx": "aebd8a9dfede55f59af9c421376d445204aec27337391a4626398e143703714f"
+    },
+    "feature_removed_from_active_report": true,
+    "completion_original_list": {
+      "done": 54,
+      "total": 94,
+      "remaining": 40
+    }
+  },
+  "last_readonly_live": {
+    "radius_pid": 1095612,
+    "panel_pid": 1095597,
+    "broker_pid": 1069437,
+    "services_and_timers_active": true,
+    "helper_hash_verified": true,
+    "no_live_mutations": true
+  },
+  "next": "Operator runs pinned helper, verify panel absence/direct policy selection, then A03 user EAP-TLS and A04 central Windows/GPO technical preparation; real endpoint later"
+}

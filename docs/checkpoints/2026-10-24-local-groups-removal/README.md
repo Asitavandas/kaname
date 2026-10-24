@@ -1,0 +1,7 @@
+# Cancelled feature removal, 24 October 2026
+
+This is the pinned, tested operator delivery for dev.29; it has NOT yet been run as root. See ../2026-10-24-local-groups-removal-prepared.json for boundaries, test evidence, pending live acceptance and report identity. The helper is already on the server at /home/segmentiq/authwire-remove-groups-20261024.py. Match its SHA256 before execution. It uses the staged 149-file source tree and installed pinned updater/backup fingerprint helpers.
+
+The deploy and data checks are preserved exactly as exercised in scratch. Deploy check expects the helper alongside it. Data check was run from a working directory containing the source checkout named authwire-remove-groups-20261024 and the helper. It uses disposable SQLite data and in-memory expectation modeling; never run it against customer state. The remote stage check builds a new, absent stage from pinned installed/dev.27 bytes and the transfer; it is recorded evidence, not a repeatable mutation of the existing stage. No real data backup/restore or service action was performed by those checks.
+
+The root helper checks for any policy still using local_group_ids before source or metadata changes. It never silently broadens, deletes or converts policies. Metadata deletion is limited to the canceled feature's names, with an atomic revision/audit update and transaction rollback on failure. Existing audit records remain historical evidence. Windows retry timing remains independently open despite a successful same-source CI rerun.

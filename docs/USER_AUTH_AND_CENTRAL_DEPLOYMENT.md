@@ -1,0 +1,69 @@
+# AuthWire kullanıcı kimliği ve merkezi Windows dağıtımı
+
+Tarih: 24 Ekim 2026, Europe/Istanbul.
+Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
+Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
+
+## A03 — Kullanıcı kimlik doğrulaması (mevcut açık yol haritasının devamı)
+
+- Kullanıcı EAP-TLS sertifikası üretim/kurulum/yenileme/iptal ve kullanıcı
+  deposu/özel anahtar izinleri için gerçek Windows kabulü.
+- Kullanıcı veya kullanıcı grubu politikasından kablolu/kablosuz VLAN kararı.
+- Bilgisayar doğrulaması ile kullanıcı doğrulaması ve desteklenen
+  kullanıcı/bilgisayar geçiş davranışı ayrı ayrı kanıtlanır. Windows'taki
+  kullanıcı veya bilgisayar modu eşzamanlı iki kimlik kanıtı diye sunulmaz.
+  TEAP ile eşzamanlı kimlik zincirleme bu onayla kendiliğinden eklenmez.
+- Çalışan makine EAP-TLS pilotları ve bilgisayar sertifika yaşam döngüsü korunur.
+
+## A04 — Merkezi Windows dağıtımı ve GPO tam otomasyonu (açık)
+
+Hedef: Bir defalık yetkilendirilmiş müşteri kurulumundan sonra günlük dağıtım
+ve yönetim AuthWire panelinden yürüsün; her bilgisayarın Ethernet/Wi-Fi
+özellikleri elle açılıp düzenlenmesin.
+
+- Panelden hedef OU/bilgisayar grubu, kayıt profili, kablolu ve kablosuz
+  kimlik doğrulama yöntemi, SSID, sunucu adı ve güvenilen CA seçimi.
+- CA güveni, sertifika kayıt/yenileme istemcisi ve görevleri, kablolu 802.1X
+  profili ve WLAN EAP-TLS profili için sürümlü merkezi paket.
+- Kullanıcı sertifikası dağıtımı için kullanıcı kapsamı; makine sertifikası
+  ve ağ profilleri için uygun bilgisayar kapsamı ayrı tasarlanır. Seçilen
+  kullanıcı listesinden kullandığı bilgisayarlar kendiliğinden varsayılmaz.
+- Sınırlı yetkili Windows yönetim bileşeni üzerinden AuthWire'a ait GPO'nun
+  oluşturulması/güncellenmesi/uygun kapsamına bağlanması. İlk yetki devri
+  ve bileşen kurulumu müşteri yöneticisi tarafından bir kez yapılır.
+- Günlük salt okunur AD eşitlemesi GPO yazma yetkisine dönüştürülmez.
+  Mevcut LDAP hesabına sessiz Domain Admin yetkisi verilmez.
+- İmzalı paket ve AllSigned korunur; kurumsal kod imzalama özel anahtarı
+  AuthWire'a taşınmaz. Yetkili Windows imzalama/dağıtım yolu tasarlanır.
+- GPO değişikliğinden önce hedef ve fark önizlemesi, kapsamlı hata raporu,
+  kontrollü pilot yayılım, sürüm/geri alma ve işlemi yapan yönetici kaydı.
+  İlgisiz müşteri GPO'ları/üyelikleri değiştirilmez.
+- Panelden dağıtım, son uygulama/sertifika durumu ve hata/yeniden deneme
+  takibi. GPO güncellemesi veya yeniden açılış gerektiren zamanlamalar
+  görünür olur; anında uygulanmış gibi gösterilmez.
+- İlk pilot sonrasında 200 kullanıcı/bilgisayar ölçeğinde kayıt, yenileme,
+  politika/üyelik, GPO güncellemesi ve hata toparlama kabulü.
+
+Mevcut durum: GPO ile pilot bilgisayar sertifika istemcisi ve SYSTEM görevleri
+dağıtıldı/test edildi. GPO/SYSVOL hazırlığı merkezi fakat yetkili operatör
+tarafından yapıldı. Ethernet/Wi-Fi profilleri pilotta elle ayarlandı.
+Panelden GPO oluşturma/bağlama ve uçtan uca profil dağıtımı henüz yoktur.
+Bu plan, bunların bugün hazır olduğunu veya 200 cihaz kabulünün geçtiğini
+iddia etmez.
+
+## Devam sırası ve koruma
+
+1. Panel görsel işleri operatör isteğiyle beklemede.
+2. Önce mevcut fonksiyonel kabul listesinin kaldığı yer doğrulanır:
+   kullanıcı EAP-TLS yeni ana çalışma başlığıdır; önceki B02/B04/B06/B08/B10/
+   B11/B12 açık alt işleri kendi kanıt sınırlarıyla korunur.
+3. A03 kullanıcı pilotu ve A04 merkezi dağıtım/GPO tasarım ve uygulaması,
+   ardından kontrollü ölçek kabulü için ayrı tamamlanma kapıları açılır.
+   Bu kayıt uygulama veya canlı değişiklik değildir.
+4. Gerçek expiry testi ayrı cihaz bekliyor. Off-host yedek ve tam appliance
+   restore/boot kabulü açık. NTP uzun süre/reboot izlemi duraklatılmıştır.
+   DHCP/DNS dağıtım mimarisi operatör kararıyla kapsam dışı kalır.
+5. Canlı sürüm dev.28'dir. Operatörün iptal talebi için dev.29 kaldırma
+   paketi hazır ve teknik testleri geçti; canlı uygulama yerel sudo komutunu
+   bekliyor. Policy, CA/sertifika, Windows/GPO, AD üyelikleri, logo,
+   broker ve günlük yedek/CRL zamanlayıcıları korunur.
