@@ -17,6 +17,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Güncel durum raporu hazırlandı — 24 Ekim 2026
+
+- 🔴✓ 9 Ekim başlangıç ve 21 Ekim raporları, güncel kaynak/kurulum kayıtları ve operatör dev.28 çıktısı karşılaştırılarak yeni tarihli 9 sayfalık Word ve PDF raporu hazırlandı. Tamamlanan dar adımlar kırmızı tikli; geliştirme, canlı kurulum ve gerçek kabul ayrı gösterildi.
+- İlk94alt iş için önceki sayım korunuyor: temel44/59 (%75), geliştirme10/35 (%29), toplam54/94 (%57), kalan40/94 (%43). Aynı yöntem9Ekim başlangıcına uygulandığında36/94tü; o tarihten sonra18ilavealt iş kapanmış durumda. Yeni görsel işler aynı alt işe ikinci puan eklemez. Sonradan eklenenA01–A04 ayrı kapsamdır; genişletilmiş projenin tek üretime hazır olma yüzdesi ilan edilmez.
+- A01/A02 kaynak/test/kurulum tamam; operatör panel ve uç kabulü açık. A03 kullanıcı EAP-TLS, G01/A04 tam Windows/GPO otomasyonu, B04 aralıklı retry/yük, AD/sertifika negatifleri, accounting/saklama ve tam appliance kurtarma kapıları raporda açık tutuldu. DNS dağıtım mimarisi ve istenmeyen misafir tekrar testi yapılacaklara geri eklenmedi.
+- Raporlar: AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-24.pdf ve .docx. Önceki tarihli raporlar korundu. Belge kontrolünde9sayfanın tamamı görsel incelendi; son değişmeyen sayfaların görüntüleri birebir aynı doğrulandı. Kaynak sınırı a4ec0f2ae643, kurulu ürün0.14.0-dev.28.
+- Sıradaki adım aynı: AW-Test-1’e seçilen test kullanıcısını eklemek; AW-Test-2’ye aynı hesabın eklenmesini eski grup adıyla engelleyen uyarıyı operatörün doğrulaması. Bu rapor turunda yeni grup/policy, AD/GPO, servis veya canlı kaynak değişikliği yapılmadı.
+- Arşiv kaydı: docs/checkpoints/2026-10-24-status-report.json.
+
 ## 🔴✓ dev.28 canlı kurulum ve koruma kontrolleri tamam — 24 Ekim 2026
 
 - 🔴✓ Operatör ACCESS_GROUPS_FINISHED/verified=true, sürüm0.14.0-dev.28, source95a0db8d372349801a5fe47dab0fed7fc2858f53 ile kurulumu doğruladı.

@@ -1,0 +1,39 @@
+{
+  "event": "STATUS_REPORT_CREATED",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "pages": 9,
+  "source_status_commit": "a4ec0f2ae643f10d398d0ab6493182b745950291",
+  "installed_version": "0.14.0-dev.28",
+  "source_release": "95a0db8d372349801a5fe47dab0fed7fc2858f53",
+  "counts": {
+    "method": "same94_baseline_items; completed1_partial0; added_A01_A04_tracked_separately",
+    "base_completed": 44,
+    "base_total": 59,
+    "enhancements_completed": 10,
+    "enhancements_total": 35,
+    "total_completed": 54,
+    "total": 94,
+    "remaining": 40,
+    "completed_percent_rounded": 57,
+    "remaining_percent_rounded": 43,
+    "original_20261009_completed": 36,
+    "new_completions_since_20261009": 18
+  },
+  "files": [
+    {
+      "name": "AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-24.pdf",
+      "library_file_id": "libfile_bb0d369929308191b017ae9549fdfda2",
+      "sha256": "096c62871c16dd758e67aeb11b4cb1e098cfec3bbac488838e1cd0617234863e"
+    },
+    {
+      "name": "AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-24.docx",
+      "library_file_id": "libfile_13aa43aae2d8819184e6c30b5af3ded7",
+      "sha256": "f10a6c2053c882f459068c8950b10125ba635b8fa24d8ab2d80f754ec6f32dad"
+    }
+  ],
+  "new_live_actions": false,
+  "local_group_operator_acceptance_pending": true,
+  "user_eap_tls_field_acceptance_pending": true,
+  "full_windows_gpo_automation_pending": true
+}

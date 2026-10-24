@@ -1,11 +1,11 @@
 # AuthWire yerel erişim grupları ve merkezi Windows dağıtımı
 
 Tarih: 24 Ekim 2026, Europe/Istanbul.
-Durum: Operatör tarafından onaylanmış geliştirme kapsamı; henüz uygulanmadı.
+Durum: A01/A02 kaynak, teknik test ve dev.28 canlı kurulum tamam; panel ve gerçek uç kabulü bekliyor. A03/A04 kapsamı açık.
 Bu belge eski tarihli kapsam belgelerine aşağıdaki konularda ek/güncellemedir.
 Güncel ilerleme kaydı: CURRENT_STATUS.md.
 
-## A01 — AuthWire içinde yerel VLAN erişim grupları (açık)
+## A01 — AuthWire içinde yerel VLAN erişim grupları (teknik ve kurulum tamam; kabul açık)
 
 - AD'den alınan kullanıcı veya bilgisayarlar AuthWire içinde oluşturulan isimli
   yerel erişim grubuna seçilerek eklenebilir. Örnek: VLAN50-Kullanicilari,
@@ -20,14 +20,15 @@ Güncel ilerleme kaydı: CURRENT_STATUS.md.
 - Kullanıcı grubu, doğrulanmış kullanıcı kimliğiyle; bilgisayar grubu,
   doğrulanmış bilgisayar kimliğiyle değerlendirilir. Makine EAP-TLS oturumundan
   oturum açan kullanıcıya yetki çıkarılmaz.
-- Şu an doğrudan hesap SID'si veya AD güvenlik grubu seçimi bulunması,
-  isimli yerel grup CRUD/üyelik yaşam döngüsünün hazır olduğu anlamına gelmez.
+- dev.28 ile yerel grup CRUD/üyelik saklama, kullanıcı/bilgisayar seçimi ve
+  aktif policy bağlantısı geliştirildi, teknik test edildi ve kuruldu.
+  Gerçek panel ve kullanıcı/bilgisayar VLAN saha kabulü henüz kapanmadı.
 
 Kabul: Farklı AD güvenlik gruplarındaki on kullanıcının yerel gruba seçilmesi,
 kalıcı saklama/okuma ve gerçek kullanıcı EAP-TLS ile VLAN50 DHCP; AD üyelikleri
 değişmeden kalmalı. Bilgisayar kimliği için ayrı eşdeğer kabul yapılmalı.
 
-## A02 — Tek yerel erişim grubu ve kural çakışmasını engelleme (açık)
+## A02 — Tek yerel erişim grubu ve kural çakışmasını engelleme (teknik ve kurulum tamam; kabul açık)
 
 - Bir kullanıcı veya bilgisayar aynı anda yalnız bir AuthWire yerel VLAN
   erişim grubunda bulunabilir. Başka gruba eklemek için önce eski üyelikten
@@ -112,5 +113,7 @@ iddia etmez.
 4. Gerçek expiry testi ayrı cihaz bekliyor. Off-host yedek ve tam appliance
    restore/boot kabulü açık. NTP uzun süre/reboot izlemi duraklatılmıştır.
    DHCP/DNS dağıtım mimarisi operatör kararıyla kapsam dışı kalır.
-5. Canlı dev.26, çalışan RADIUS/broker, kurallar, CA/sertifikalar, Windows/GPO,
-   logo, mevcut hizmet ve günlük yedek/CRL zamanlayıcıları bu kayıtta değişmez.
+5. Canlı sürüm dev.28'dir. Yerel gruplar kurulurken RADIUS planlı yeniden
+   başlatıldı ve aktif; broker, kurallar, CA/sertifikalar, Windows/GPO, logo
+   ve günlük yedek/CRL zamanlayıcıları korundu. Bu belge güncellemesi canlı
+   sistemde yeni işlem yapmaz.
