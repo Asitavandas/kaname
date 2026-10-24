@@ -18,6 +18,25 @@ gerçek kullanıcı kablolu/Wi-Fi/VLAN/geçiş kabulü açıktır. A03 veya A04 
 tamamlandı sayılmaz. Ayrıntılar: USER_ENROLLMENT_BACKEND.md ve
 checkpoints/2026-10-24-user-enrollment-backend.json.
 
+## 🔴✓ Kullanıcı Windows istemcisi/paketi teknik kabulü — 24 Ekim 2026
+
+Ayrı CurrentUser CNG istemcisi, imzalanabilir kullanıcı logon paketi, kullanıcı
+SID/profiline ait state/retry, yeni anahtarla yenileme ve güvenli eski anahtar
+temizliği dev.31 kaynağında hazır. Standart kullanıcı anahtar/görev izolasyonu,
+gerçek Windows certreq/kurulum/yenileme, kesinti ve expired-pending toparlanma
+testleri geçti. Altı CI workflow, 688 Python testi (28 atlama), zorunlu native
+Kerberos/backend/HTTP 107 test ve mevcut Windows/RADIUS/tarayıcı kontrolleri
+başarılı. PR62 main'e birleştirildi; canlı sürüm son doğrulamada dev.29 kalır.
+
+Kod imzalayan yayıncı ve CA/HTTPS kök güveni onaylı GPO ile önceden dağıtılır.
+Kullanıcı kurucusu kök depoya yazmaz; mevcut güveni kontrol eder. İmzalı iki
+script açık config/CA varlıklarını bağlar. Özel anahtar veya kullanıcı parolası
+pakete konmaz. Kullanıcı profili/policy panel işleri, gerçek AD/GPO/kullanıcı
+802.1X/VLAN kabulü ve tam merkezi otomasyon hâlâ açıktır. Teknik Windows
+testinde Kerberos/HTTP taşıması ve AD sentetiktir; gerçek sunucu Kerberos/HTTPS
+ayrı test edildi. Ayrıntı: USER_WINDOWS_CLIENT.md ve
+checkpoints/2026-10-24-user-windows-client.json.
+
 ## A03 — Kullanıcı kimlik doğrulaması (mevcut açık yol haritasının devamı)
 
 - Kullanıcı EAP-TLS sertifikası üretim/kurulum/yenileme/iptal ve kullanıcı
@@ -71,7 +90,7 @@ iddia etmez.
 2. Önce mevcut fonksiyonel kabul listesinin kaldığı yer doğrulanır:
    kullanıcı EAP-TLS yeni ana çalışma başlığıdır; önceki B02/B04/B06/B08/B10/
    B11/B12 açık alt işleri kendi kanıt sınırlarıyla korunur.
-3. A03 kullanıcı Windows istemcisi/profil yönetimi ve pilotu ile A04 merkezi dağıtım/GPO tasarım ve uygulaması,
+3. A03 kullanıcı profili panel yönetimi/policy kimlik kapsamı ve saha pilotu ile A04 merkezi dağıtım/GPO tasarım ve uygulaması,
    ardından kontrollü ölçek kabulü için ayrı tamamlanma kapıları açılır.
    Bu kayıt uygulama veya canlı değişiklik değildir.
 4. Gerçek expiry testi ayrı cihaz bekliyor. Off-host yedek ve tam appliance

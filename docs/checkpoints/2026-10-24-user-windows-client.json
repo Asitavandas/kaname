@@ -1,0 +1,182 @@
+{
+  "event": "USER_WINDOWS_CLIENT_TECHNICAL_ACCEPTANCE",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "scope": "A03/A04 partial delivery; isolated CurrentUser client and signed package",
+  "release": "0b5bf7fc33a723a8cb1093378e5956afb5774cfc",
+  "main_merge": "e40f8ba0aae5835370b426d7148603cd3b147a97",
+  "pr": 62,
+  "pr_url": "https://github.com/Asitavandas/kaname/pull/62",
+  "candidate_version": "0.14.0-dev.31",
+  "last_confirmed_live_version": "0.14.0-dev.29",
+  "workflows": [
+    {
+      "id": 40088920798,
+      "name": "KANAME foundation checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 726,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40088920798/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40088920798/logs",
+      "workflow_id": 373980015
+    },
+    {
+      "id": 40088920514,
+      "name": "AuthWire bounded retry network probe checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 252,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40088920514/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40088920514/logs",
+      "workflow_id": 390643325
+    },
+    {
+      "id": 40088920484,
+      "name": "KANAME Linux source preparation",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 208,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40088920484/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40088920484/logs",
+      "workflow_id": 374720112
+    },
+    {
+      "id": 40088920476,
+      "name": "AuthWire device enrollment pilot checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 194,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40088920476/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40088920476/logs",
+      "workflow_id": 375399159
+    },
+    {
+      "id": 40088920475,
+      "name": "KANAME browser checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 222,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40088920475/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40088920475/logs",
+      "workflow_id": 374037298
+    },
+    {
+      "id": 40088920468,
+      "name": "KANAME real RADIUS protocol proof",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 185,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40088920468/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40088920468/logs",
+      "workflow_id": 374237481
+    }
+  ],
+  "validation": {
+    "foundation": {
+      "job": 120857400640,
+      "tests": 688,
+      "skipped": 28,
+      "failures": 0
+    },
+    "native_kerberos": {
+      "job": 120857399893,
+      "tests": 107,
+      "failures": 0,
+      "synthetic_machine_count": 1000,
+      "unique_certificates": 1000,
+      "wall_seconds": 10.62,
+      "live_ad_tested": false,
+      "windows_gpo_tested": false
+    },
+    "windows_user": {
+      "job": 120857399888,
+      "current_user_cng": true,
+      "nonexportable": true,
+      "signed_package": true,
+      "actual_interactive_limited_task": true,
+      "renewal_new_key": true,
+      "offline_backoff": true,
+      "committed_lost_response_idempotence": true,
+      "expired_pending_recovery": true,
+      "interrupted_key_intent_reuse": true,
+      "predecessor_cleanup": true,
+      "standard_user_own_key_and_task": true,
+      "foreign_user_key_rejected": true,
+      "machine_store_preserved": true,
+      "ad_and_http_transport_synthetic": true
+    },
+    "windows_machine": {
+      "job": 120857399709,
+      "status": "success"
+    },
+    "windows_machine_retry": {
+      "job": 120857399804,
+      "status": "success",
+      "historic_intermittence_resolved": false
+    },
+    "browser": {
+      "job": 120857399617,
+      "status": "success"
+    },
+    "radius": {
+      "job": 120857399732,
+      "status": "success",
+      "normal_debug_and_systemd_rollback": true
+    }
+  },
+  "root_trust": "Require approved predeployed publisher and CA/HTTPS roots; installer only adds intermediate CurrentUser CA",
+  "native_process_limit_seconds": 60,
+  "user_task": {
+    "scope": "InteractiveToken / LeastPrivilege",
+    "poll_minutes": 5,
+    "healthy_check_hours": 6,
+    "persistent_backoff_minutes": {
+      "minimum": 10,
+      "maximum": 720
+    },
+    "password_stored": false
+  },
+  "package": {
+    "files": 159,
+    "manifest": "LINUX_SOURCE_MANIFEST.json",
+    "manifest_sha256": "620232c3ac97ac7e96f597f15c68d55a835c42b53f26749c7d1ebc083a2e8654",
+    "exact_changed_files_verified": 16
+  },
+  "protected_source_identical": [
+    "kaname/radius.py",
+    "kaname/radius_adapter.py",
+    "kaname/policy.py",
+    "kaname/device_client/AuthWire-Client.ps1",
+    "kaname/device_client/Install-AuthWire.ps1",
+    "kaname/static/index.html",
+    "kaname/static/authwire-logo.png"
+  ],
+  "logo_sha256": "677e49220d7ca57376735a9792b8067e8aaca223ee73806d91ff3dc1eb8d728e",
+  "live": {
+    "source_updated": false,
+    "services_restarted": false,
+    "policy_changed": false,
+    "certificates_changed": false,
+    "windows_changed": false,
+    "ad_gpo_changed": false,
+    "full_data_backup_created": false,
+    "timer_mutated": false,
+    "refresh_query_completed": false,
+    "refresh_note": "Read-only remote query did not return within bounded wait; previous live observations are not a fresh liveness check."
+  },
+  "remaining": [
+    "Panel user enrollment-profile management",
+    "User/AD-group policy identity scope verification",
+    "Approved enterprise signing and SYSVOL/GPO distribution",
+    "Real Windows domain user logon/enrollment and wired/WiFi/VLAN negatives",
+    "Computer/user transition acceptance",
+    "Full constrained GPO automation and scale acceptance"
+  ],
+  "cancelled_local_access_groups_reintroduced": false,
+  "overall_94_items": {
+    "done": 54,
+    "remaining": 40,
+    "total": 94
+  },
+  "next": "Panel user enrollment-profile controls"
+}
