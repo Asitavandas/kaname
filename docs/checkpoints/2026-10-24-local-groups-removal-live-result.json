@@ -1,0 +1,68 @@
+{
+  "recorded_date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "source": "operator terminal output; not an independently repeated root inspection",
+  "result": {
+    "event": "LOCAL_GROUP_REMOVAL_FINISHED",
+    "verified": true,
+    "version": "0.14.0-dev.29",
+    "release": "3b522160d34a0ebaf952f707c611490ccf1a9b5f",
+    "changed": true,
+    "checks": {
+      "files": true,
+      "broker_process": true,
+      "planned_radius_transition": true,
+      "timers": true,
+      "business_state": true
+    },
+    "radius_active": true,
+    "radius_restarted": true,
+    "radius_pid_before": "1095612",
+    "radius_pid_after": "1136462",
+    "radius_process_preserved": false,
+    "broker_process_preserved": true,
+    "policy_changed": false,
+    "certificates_changed": false,
+    "windows_changed": false,
+    "full_data_backup_created": false,
+    "isolated_restore_exercised": false,
+    "backup_timer_preserved": true,
+    "operator_browser_acceptance_pending": true,
+    "real_endpoint_acceptance_pending": true,
+    "local_groups_removed": true,
+    "local_group_selector_removed": true,
+    "local_membership_restriction_removed": true,
+    "ad_membership_changed": false,
+    "feature_cleanup": {
+      "deleted_rows": 2,
+      "groups_removed": 1,
+      "memberships_removed": 1,
+      "revision_advanced": true,
+      "other_business_data_preserved": true
+    },
+    "rollback_source_commit": "95a0db8d372349801a5fe47dab0fed7fc2858f53",
+    "evidence": "/var/lib/authwire-updates/remove-groups-dev29-20261024T082604Z-33f27fa0"
+  },
+  "removed_endpoints": {
+    "/api/access-groups": 404,
+    "/access-groups.js": 404
+  },
+  "panel_read_check": {
+    "authenticated": true,
+    "loopback": true,
+    "phase": "after",
+    "paths": 16,
+    "requests_per_path": 3,
+    "all_http_200": true,
+    "longest_response_ms": 145.2
+  },
+  "interpretation": {
+    "live_removal_complete": true,
+    "planned_radius_pid_transition": true,
+    "policy_and_certificate_state_preserved": true,
+    "cancelled_scope_not_reintroduced": true,
+    "operator_browser_check_still_pending": true,
+    "live_eap_tls_regression_not_retested": true
+  },
+  "next": "Refresh panel; verify absent local group menu/selector and preserved direct user/computer/AD group policy selection. Continue A03 user authentication and A04 central Windows/GPO preparation; endpoint acceptance waits for test PC."
+}

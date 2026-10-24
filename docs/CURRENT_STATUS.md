@@ -17,6 +17,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.29 canlı kaldırma tamam — 24 Ekim 2026
+
+- 🔴✓ Operatör LOCAL_GROUP_REMOVAL_FINISHED/verified=true çıktısıyla dev.29 ve source3b522160d34a0ebaf952f707c611490ccf1a9b5f canlı uygulamasını doğruladı. Önceki yerel sudo/kurulum beklemesi kapandı.
+- 🔴✓ İptal edilen ayrı grup özelliğinin menüsü, API/static kaynağı ve kural seçicisi kaldırıldı; tek yerel gruba üyelik kısıtı da kaldırıldı. İlgili iki veri satırı (bir grup ve bir üyelik) atomik temizlendi, kayıt revizyonu ilerledi. Diğer iş verisi korundu. A01/A02 aktif plan ve rapora tekrar eklenmez.
+- 🔴✓ RADIUS planlı yeniden başlatmayla1095612→1136462 geçti ve aktif. radius_process_preserved=false bu kontrollü geçiştir. Broker süreci, dosyalar, timer ve iş verisi kontrolleri başarılı. Policy, sertifika, Windows ve AD üyelikleri değişmedi. Yeni tam veri yedeği/izole restore yapılmadı; günlük yedek timer korundu.
+- 🔴✓ On altı mevcut API yolu üçer kez HTTP200; iptal edilen /api/access-groups ve /access-groups.js HTTP404. En uzun yanıt145,2ms (device-admin/status); bu kısa loopback kontrolü uzun süreli/yük veya uç cihaz kabulü değildir.
+- Sadece tarayıcıdaki menü/seçici yokluğu ve doğrudan kullanıcı/bilgisayar/AD grubu seçimlerinin operatör kontrolü bekliyor. Gerçek uç 802.1X regresyon kabulü henüz yapılmadı; cihaz erişimi bekler. Bu kayıt canlı policy/sertifika üzerinde ek işlem yapmadı.
+- Sonraki ana çalışma A03 kullanıcı EAP-TLS ve G01/A04 merkezi Windows/GPO dağıtımı teknik hazırlığıdır. Bağımsız aralıklı Windows retry takibi açıktır.
+- Kanıt: docs/checkpoints/2026-10-24-local-groups-removal-live-result.json ve /var/lib/authwire-updates/remove-groups-dev29-20261024T082604Z-33f27fa0.
+
 ## 🔴✓ İptal edilen özellik kaynak ve rapordan çıkarıldı — 24 Ekim 2026
 
 - Operatörün son talebiyle AuthWire içinde ayrı erişim grubu oluşturma/üyelik yönetimi, yerel grup seçicisi ve tek yerel gruba üyelik kısıtı iptal edildi. A01/A02 aktif iş planından ve güncel Word/PDF raporundan çıkarıldı; bekleyen iş olarak taşınmadı. Tarihsel audit/Git kanıtları silinmedi.

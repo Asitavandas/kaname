@@ -63,7 +63,9 @@ iddia etmez.
 4. Gerçek expiry testi ayrı cihaz bekliyor. Off-host yedek ve tam appliance
    restore/boot kabulü açık. NTP uzun süre/reboot izlemi duraklatılmıştır.
    DHCP/DNS dağıtım mimarisi operatör kararıyla kapsam dışı kalır.
-5. Canlı sürüm dev.28'dir. Operatörün iptal talebi için dev.29 kaldırma
-   paketi hazır ve teknik testleri geçti; canlı uygulama yerel sudo komutunu
-   bekliyor. Policy, CA/sertifika, Windows/GPO, AD üyelikleri, logo,
-   broker ve günlük yedek/CRL zamanlayıcıları korunur.
+5. Canlı sürüm dev.29'dur. Operatör kaldırma paketinin verified=true
+   sonucunu doğruladı. Ayrı grup yönetimi aktif kapsamdan çıkarılmıştır.
+   Doğrudan kullanıcı/bilgisayar ve AD grubu policy seçimi korunur.
+   RADIUS planlı yeniden başladı ve aktif; broker, policy, CA/sertifika,
+   Windows/GPO, AD üyelikleri, logo ve günlük yedek/CRL timer korundu.
+   Son menü/seçici tarayıcı kontrolü ve gerçek uç regresyon kabulü bekliyor.
