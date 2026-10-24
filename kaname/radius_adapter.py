@@ -9,7 +9,6 @@ from pathlib import Path
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 
-from .access_groups import AccessGroups
 from .operations import Operations
 from .policy import Decision
 from .radius import CertificateReference, TLSAuthorization, freeradius_result
@@ -61,7 +60,6 @@ def decision_for_pairs(pairs, *, state=STATE, directory_factory=LiveDirectory):
         store.snapshot()['policies'],
         registry=CertificateRegistry(store),
         directory=directory_factory(operations),
-        local_groups=AccessGroups(operations),
     )
     return service.authorize(reference, nas_ip=source_ip, access_type=access_type)
 
