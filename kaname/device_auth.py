@@ -35,6 +35,9 @@ class KerberosSessions:
         self.lock = threading.Lock()
         self.gate = threading.BoundedSemaphore(4)
 
+    def principal_allowed(self, principal):
+        return bool(re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,19}\$@' + re.escape(self.domain.upper()), principal, re.I))
+
     def credentials(self):
         try:
             import gssapi
@@ -76,7 +79,7 @@ class KerberosSessions:
                 principal = str(context.initiator_name)
                 if not context.complete or context.mech != gssapi.MechType.kerberos or not required <= set(context.actual_flags):
                     raise ValueError()
-                if not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,19}\$@' + re.escape(self.domain.upper()), principal, re.I):
+                if not self.principal_allowed(principal):
                     raise ValueError()
                 identity = secrets.token_hex(32)
                 self.sessions[identity] = (context, principal, now + 900)
@@ -116,3 +119,13 @@ class KerberosSessions:
         with self.lock:
             if identity in self.sessions and self.sessions[identity][0] is context:
                 del self.sessions[identity]
+
+
+class UserKerberosSessions(KerberosSessions):
+    """Separate user-only contexts; never accepts a machine/service principal.
+
+    The caller must use a dedicated instance for /api/user/* so a valid
+    machine enrollment session cannot be reused to request a user certificate.
+    """
+    def principal_allowed(self, principal):
+        return bool(re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,19}@' + re.escape(self.domain.upper()), principal, re.I))

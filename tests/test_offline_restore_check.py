@@ -61,6 +61,18 @@ class OfflineRestoreTests(unittest.TestCase):
         self.assertEqual(1,result['protected_secret_count_verified']);self.assertTrue(result['ownership_and_modes_verified'])
         self.assertFalse(result['services_started']);self.assertFalse(result['restored_code_executed'])
         self.assertEqual([],list((self.root/'work').iterdir()))
+    def test_optional_user_schema_must_be_complete_and_readable(self):
+        copy=self.root/'restored';restore_data(self.archive,copy)
+        path=copy/'var/lib/kaname-lab/kaname.sqlite3'
+        tables=('user_enrollment_profiles','user_enrollment_challenges','user_enrollment_issuances','user_enrollment_rate')
+        with closing(sqlite3.connect(path)) as db:
+            db.execute('CREATE TABLE '+tables[0]+' (id TEXT)');db.commit()
+        with self.assertRaisesRegex(ValueError,'Incomplete user enrollment schema'):validate_copy(copy)
+        with closing(sqlite3.connect(path)) as db:
+            for table in tables[1:]:db.execute('CREATE TABLE '+table+' (id TEXT)')
+            db.commit()
+        self.assertTrue(validate_copy(copy)['checks']['user_enrollment_tables_readable'])
+
     def test_unit_dropin_is_rehydrated_without_running_it(self):
         copy=self.root/'restored';restore_data(self.archive,copy)
         p=copy/'etc/systemd/system/authwire-radius.service.d/override.conf'

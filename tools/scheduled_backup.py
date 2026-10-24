@@ -28,7 +28,7 @@ UNITS = ('kaname-lab.service', 'authwire-radius.service', 'authwire-service-cont
          'authwire-backup.service', 'authwire-backup.timer')
 PRODUCT_UNITS = UNITS[:3]
 VOLATILE = {'audit', 'admin_audit', 'access_events', 'admin_sessions', 'admin_login_rate',
-            'device_challenges', 'device_rate', 'pki_enrollment_rate', 'directory_catalog', 'sqlite_sequence'}
+            'user_enrollment_challenges', 'user_enrollment_rate', 'device_challenges', 'device_rate', 'pki_enrollment_rate', 'directory_catalog', 'sqlite_sequence'}
 NAME = re.compile(r'authwire-scheduled-\d{8}T\d{6}Z-[0-9a-f]{12}\.tar\.gz')
 
 

@@ -75,6 +75,21 @@ class ScheduledBackupTests(unittest.TestCase):
         self.assertFalse(any(p.name.startswith('.capture-') for p in self.target.iterdir()))
         self.assertNotIn('fixture private', json.dumps(result))
 
+    def test_user_profiles_issuances_are_business_data_but_challenges_rates_are_volatile(self):
+        with sqlite3.connect(self.db()) as db:
+            for table in ('user_enrollment_profiles','user_enrollment_issuances','user_enrollment_challenges','user_enrollment_rate'):
+                db.execute('CREATE TABLE '+table+' (id PRIMARY KEY,value)')
+                db.execute('INSERT INTO '+table+' VALUES (1,?)',('original',))
+        before=worker.db_fingerprint(self.db())
+        with sqlite3.connect(self.db()) as db:
+            for table in ('user_enrollment_challenges','user_enrollment_rate'):
+                db.execute('UPDATE '+table+' SET value=?',('activity',))
+        self.assertEqual(before,worker.db_fingerprint(self.db()))
+        for table in ('user_enrollment_profiles','user_enrollment_issuances'):
+            with sqlite3.connect(self.db()) as db:db.execute('UPDATE '+table+' SET value=?',('changed',))
+            self.assertNotEqual(before,worker.db_fingerprint(self.db()))
+            with sqlite3.connect(self.db()) as db:db.execute('UPDATE '+table+' SET value=?',('original',))
+
     def test_open_wal_database_is_copied_through_sqlite_backup(self):
         db = sqlite3.connect(self.db()); self.addCleanup(db.close)
         db.execute('PRAGMA journal_mode=WAL')

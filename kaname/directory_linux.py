@@ -35,8 +35,12 @@ def _helper_python():
     return str(candidate)
 
 
-def read_linux_directory(value, config, *, probe=False, object_guid=None, authenticate_self=False, computer_sam=None):
+def read_linux_directory(value, config, *, probe=False, object_guid=None, authenticate_self=False, computer_sam=None, user_sam=None):
     request = validate_connection(value, config)
+    if user_sam is not None:
+        if probe or object_guid is not None or authenticate_self or computer_sam is not None or type(user_sam) is not str or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,19}', user_sam):
+            raise DirectoryError('AD_INPUT_INVALID')
+        request['user_sam'] = user_sam
     if computer_sam is not None:
         if probe or object_guid is not None or authenticate_self or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,19}\$', computer_sam):
             raise DirectoryError('AD_INPUT_INVALID')
@@ -95,7 +99,7 @@ def read_linux_directory(value, config, *, probe=False, object_guid=None, authen
             pass
     if object_guid is not None:
         return decode_account_response(output, process.returncode, request, object_guid)
-    if computer_sam is not None:
+    if computer_sam is not None or user_sam is not None:
         try:
             if process.returncode:
                 failure = strict_json(output)
@@ -104,7 +108,10 @@ def read_linux_directory(value, config, *, probe=False, object_guid=None, authen
                     raise DirectoryError(failure['error'])
                 raise ValueError()
             guid = strict_json(output)['account']['object_guid']
-            return decode_account_response(output, process.returncode, request, guid)
+            account = decode_account_response(output, process.returncode, request, guid)
+            if user_sam is not None and (account is None or account.kind != 'user'):
+                raise ValueError()
+            return account
         except (ValueError, TypeError, KeyError):
             raise DirectoryError('AD_INVALID_RESPONSE') from None
     if authenticate_self:

@@ -5,7 +5,7 @@ from pathlib import Path
 
 STAGE = Path('/home/segmentiq/authwire-backup-package-access-history-20261018')
 INSTALLER_SHA = 'ed18f5c0c3e65aa6d2a6fe8311ddd1fa604b128c724e5854214e986118faf347'
-MANIFEST_SHA = '3fd5b7b58785c4539aafdbfda1c44c6e4e1a5956304434f8f40813ece642cbec'
+MANIFEST_SHA = 'fdac03f34af5ce8fc59175ecd585ae9a962eabd0b14b9ac485e3107bb702bbc0'
 
 
 def main():

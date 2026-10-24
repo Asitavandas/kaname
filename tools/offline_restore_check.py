@@ -125,6 +125,12 @@ def validate_copy(root):
         for table in ('device_profiles','radius_certificate_bindings','pki_certificates','pki_client_keys','device_issuances','device_retirements'):
             db.execute('SELECT count(*) FROM '+table).fetchone()
         checks['enrollment_registry_tables_readable']=True
+        user_tables = {'user_enrollment_profiles', 'user_enrollment_challenges', 'user_enrollment_issuances', 'user_enrollment_rate'}
+        present = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if present & user_tables:
+            if not user_tables <= present: raise ValueError('Incomplete user enrollment schema')
+            for table in sorted(user_tables): db.execute('SELECT count(*) FROM '+table).fetchone()
+            checks['user_enrollment_tables_readable']=True
         checks['database_foreign_keys_consistent']=all(not c.execute('PRAGMA foreign_key_check').fetchall() for c in (db,admin))
         for serial,pem in db.execute('SELECT serial,certificate FROM pki_certificates'):
             cert=x509.load_pem_x509_certificate(pem);cert.verify_directly_issued_by(issuer)
