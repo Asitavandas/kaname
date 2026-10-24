@@ -1,0 +1,70 @@
+{
+  "event": "POLICY_IDENTITY_DELIVERY_READY",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "version": "0.14.0-dev.33",
+  "source_commit": "3dbf32d5ea903e94ae017bc0ed1ff66e23daa4fa",
+  "merge_commit": "fd129424b01f674a64503214cb969b68fb0d7533",
+  "pr": 64,
+  "ci": {
+    "all_success": true,
+    "foundation": 40095459080,
+    "browser": 40095459048,
+    "native_radius": 40095459054,
+    "linux_preparation": 40095459072,
+    "device_user_enrollment": 40095459076,
+    "bounded_network_probe": 40095459066,
+    "python_tests": 711,
+    "python_environment_skips": 28,
+    "native_kerberos_tests": 107,
+    "browser_flows": 13,
+    "normal_eap_tls_cases": 33,
+    "debug_eap_tls_cases": 31,
+    "production_runtime_tests": 35
+  },
+  "ui": {
+    "artifact_id": 12560966377,
+    "zip_sha256": "3c8a98a3f14c8e2e421d1707685682a2e7a2f453406e40b3a99198192d12507a",
+    "desktop_and_mobile_inspected": true
+  },
+  "delivery": {
+    "staged": true,
+    "installed_source_guard_passed": true,
+    "baseline_files": 161,
+    "candidate_files": 163,
+    "reviewed_changes": 13,
+    "manifest_sha256": "77cf3d87cd3469f91ea12dd749f7b568936e187b6cbb28f4e08e1d291cc2d577",
+    "stage": "/home/segmentiq/authwire-stage-dev33-3dbf32d5ea90",
+    "helper": "/home/segmentiq/authwire-policy-identity-20261024.py",
+    "helper_sha256": "cd15ea86cf7b96b9052a723470a4fd92a6996ef9bfb931302e804a862b21ab9c",
+    "disposable_apply_rollback_checks": 5,
+    "local_sudo_application_pending": true,
+    "planned_radius_restart": true,
+    "planned_panel_restart": true,
+    "broker_restart_planned": false,
+    "full_data_backup_created": false,
+    "database_write_planned": false
+  },
+  "live_state": {
+    "last_verified_version": "0.14.0-dev.32",
+    "radius_pid": "1136462",
+    "panel_pid": "1224014",
+    "broker_pid": "1069437",
+    "live_source_changed": false,
+    "policies_changed": false,
+    "certificates_changed": false,
+    "windows_ad_gpo_changed": false
+  },
+  "acceptance_pending": [
+    "local sudo apply and protection checks",
+    "operator browser acceptance",
+    "Monday actual user/device AD/GPO wired/Wi-Fi/VLAN tests"
+  ],
+  "progress": {
+    "completed": 54,
+    "total": 94,
+    "percent_completed": 57,
+    "remaining": 40,
+    "percent_remaining": 43
+  }
+}
