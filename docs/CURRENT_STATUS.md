@@ -17,6 +17,20 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ A03 kullanıcı kayıt sunucu altyapısı teknik olarak tamam — 24 Ekim 2026
+
+- 🔴✓ Parolasız kullanıcı Kerberos kayıt oturumu, bilgisayar oturumundan ayrı kabul ve session store ile geliştirildi. Kullanıcıya özgü kayıt profilleri açık yönetici seçimi gerektirir; otomatik kullanıcı profili/grup oluşturulmaz. İptal edilen ayrı AuthWire grupları özelliği geri eklenmedi.
+- 🔴✓ Güncel AD SAM→GUID/SID/hesap durumu/tokenGroups kontrolü, imzalı CSR ve anahtar kanıtı; tekrar/eşzamanlı isteklerde aynı sertifikayı döndürme; kurulum teyidi, yeni anahtarla yenileme ve eski yaprağın kurulumdan sonra emekliliği teknik testlerden geçti. AD sorgusu sırasında sertifika sona ererse teyit reddedilir; çalışan eski yaprak devreden çıkarılmaz.
+- 🔴✓ Kullanıcı/bilgisayar oturumları birbirine çevrilemiyor; başka realm/SPN, değiştirilmiş path/JSON, replay, kullanıcı silip yeniden oluşturma, grup çekilmesi/hesap devre dışı ve profil sürüm değişimi retleri test edildi. Sunucu kullanıcı parolası veya istemciden GUID/SID kabul etmez. İlk desteklenen ad biçimi ASCII SAM@configured-domain, SAM en çok20karakterdir; alternatif UPN/forest desteği ilan edilmez.
+- 🔴✓ PR61, kaynak e97e66cf16178ace2ca6ded5025e1786d8e2e63f, main merge bd5f4b6864c4bb771fc77020aca07ca60ed39e05. Son kaynakta8CI workflow başarılı: 665 Python testi (28 ortama bağlı skip), zorunlu native Kerberos/backend/HTTP107test, gerçek kullanıcı Kerberos+HTTPS+sertifika/teyit akışı; 12 tarayıcı akışı; normal/debug native RADIUS, systemd aktivasyon/rollback, Windows CNG/startup/expired/retry, yedek ve opsiyonel kullanıcı şeması restore kontrolleri.
+- 🔴✓ 1000 bilgisayarlı sentetik kayıt/teyit yükü1000ayrısertifika ile14,386s duvar süresinde geçti; gerçek AD/GPO veya200müşteri cihaz kabulü değildir. Önceden izlenen Windows retry aralıklılığı başarılı bu koşuyla kök neden çözülmüş sayılmaz.
+- 🔴✓ Yeni profil/issuance tabloları iş verisi, kısa ömürlü challenge/rate satırları volatile olarak yedek tutarlılığına bağlandı. Tam kullanıcı şeması okunabilir, kısmi şema reddedilir. Tarihsel yedek worker geçişinde bulunan hash uyumsuzluğu iki sabit, gözden geçirilmiş byte değişimi ve bilinen eski SHA sınırlarıyla düzeltildi; koruma gevşetilmedi.
+- 🔴✓ 153dosyalı dev.30 aday paket hazır; manifest SHA256 6ec493376e5c8c0e45703b3a18f07f78fea7c6c508730f13da1b27a4db7d2fc7. RADIUS çekirdek adapter/policy, mevcut Windows istemci/installer, HTML ve logo kaynakları dev.29 ile birebir aynı. Panelin bilgisayar endpoint/profilleri korunur; ortak signer, sınırlı worker bütçesi ve SQLite writer lock yeniden kullanılır.
+- Bu aşama yalnız kaynak/teknik kabuldür. Canlı kurulum yapılmadı: son salt okunur kontrolde dev.29, panel1136447/RADIUS1136462/broker1069437 aktif, günlük yedek ve CRL timer aktif. Kaynak/servis/policy/sertifika/Windows/AD-GPO değiştirilmedi; canlı tam veri yedeği/restore veya kullanıcı profili oluşturma yapılmadı.
+- A03 bütünü açık kalır: imzalı CurrentUser Windows CNG istemcisi, kullanıcıya ait korumalı state/retry/yenileme/anahtar temizliği, kullanıcı kayıt profili panel yönetimi ve kullanıcı gruplarında kural kimlik kapsamı, gerçek kullanıcı kablolu/Wi-Fi/VLAN ve kullanıcı/bilgisayar geçiş/negatif kabulü bekliyor. API status windows_client_available=false ve endpoint_acceptance_pending=true döndürüyor.
+- A04 merkezi Windows/GPO otomasyonu açık. Sonraki iş kullanıcı istemcisi ve dağıtım paketidir; canlı güncelleme bundan önce uygulanmaz. Sonraki kuruluma yeni schema/uyumlu yedek worker koruma kontrolleri eklenmeli. İlk94alt iş puanı54/94 (%57), kalan40/94 (%43) değişmedi; henüz bütün bir kabul maddesi kapanmadı.
+- Kanıt: USER_ENROLLMENT_BACKEND.md ve docs/checkpoints/2026-10-24-user-enrollment-backend.json.
+
 ## 🔴✓ dev.29 canlı kaldırma tamam — 24 Ekim 2026
 
 - 🔴✓ Operatör LOCAL_GROUP_REMOVAL_FINISHED/verified=true çıktısıyla dev.29 ve source3b522160d34a0ebaf952f707c611490ccf1a9b5f canlı uygulamasını doğruladı. Önceki yerel sudo/kurulum beklemesi kapandı.

@@ -4,6 +4,20 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ A03 sunucu altyapısı teknik kabulü — 24 Ekim 2026
+
+Ayrı kullanıcı Kerberos/MIC oturumu, kullanıcı AD kayıt profili, güncel GUID/SID
+ve üyelik kontrolü, anahtar kanıtlı kayıt/teyit/yenileme, emeklilik/CRL ve yedek
+şema desteği dev.30 kaynağında geliştirildi; 8 CI workflow, 665 Python testi
+(28 ortama bağlı atlama), gerçek Kerberos/HTTPS kullanıcı kayıt akışı ve
+mevcut bilgisayar/Windows/RADIUS regresyon kontrolleri geçti.
+
+Bu kaynak kilometre taşı canlıya kurulmadı. Windows CurrentUser istemcisi,
+kullanıcı profili panel yönetimi, kullanıcı grubu policy kimlik kapsamı ve
+gerçek kullanıcı kablolu/Wi-Fi/VLAN/geçiş kabulü açıktır. A03 veya A04 bütünü
+tamamlandı sayılmaz. Ayrıntılar: USER_ENROLLMENT_BACKEND.md ve
+checkpoints/2026-10-24-user-enrollment-backend.json.
+
 ## A03 — Kullanıcı kimlik doğrulaması (mevcut açık yol haritasının devamı)
 
 - Kullanıcı EAP-TLS sertifikası üretim/kurulum/yenileme/iptal ve kullanıcı
@@ -57,7 +71,7 @@ iddia etmez.
 2. Önce mevcut fonksiyonel kabul listesinin kaldığı yer doğrulanır:
    kullanıcı EAP-TLS yeni ana çalışma başlığıdır; önceki B02/B04/B06/B08/B10/
    B11/B12 açık alt işleri kendi kanıt sınırlarıyla korunur.
-3. A03 kullanıcı pilotu ve A04 merkezi dağıtım/GPO tasarım ve uygulaması,
+3. A03 kullanıcı Windows istemcisi/profil yönetimi ve pilotu ile A04 merkezi dağıtım/GPO tasarım ve uygulaması,
    ardından kontrollü ölçek kabulü için ayrı tamamlanma kapıları açılır.
    Bu kayıt uygulama veya canlı değişiklik değildir.
 4. Gerçek expiry testi ayrı cihaz bekliyor. Off-host yedek ve tam appliance

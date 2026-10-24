@@ -1,0 +1,170 @@
+{
+  "event": "USER_ENROLLMENT_BACKEND_TECHNICAL_ACCEPTANCE",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "scope": "A03 separate user certificate enrollment backend; A03 field acceptance and A04 central deployment remain open",
+  "release": "e97e66cf16178ace2ca6ded5025e1786d8e2e63f",
+  "candidate_version": "0.14.0-dev.30",
+  "live_version": "0.14.0-dev.29",
+  "pr": 61,
+  "changes": [
+    "user-only Kerberos acceptor with separate session store",
+    "fresh exact-domain user SAM to immutable AD GUID/SID plus tokenGroups",
+    "explicit opt-in user enrollment profiles",
+    "CSR and per-message/key proof",
+    "idempotent issuance with shared key registry and bounded worker/writer lock",
+    "installation receipt and due renewal with new key",
+    "shared retirement/CRL with user audit prefix",
+    "expiry after AD lookup cannot retire a working leaf",
+    "backup/optional restore schema plus exact pinned worker migration"
+  ],
+  "protected_core_source_identical": [
+    "kaname/radius.py",
+    "kaname/radius_adapter.py",
+    "kaname/policy.py",
+    "kaname/device_client/AuthWire-Client.ps1",
+    "kaname/device_client/Install-AuthWire.ps1",
+    "kaname/static/index.html",
+    "kaname/static/authwire-logo.png"
+  ],
+  "local_checks": {
+    "full_tests_before_last_three_small_additions": {
+      "tests": 662,
+      "skipped": 28,
+      "failures": 0
+    },
+    "final_user_lifecycle": 35,
+    "final_http_directory_backup_restore_boundaries": 78,
+    "compatibility_user_tests": 39,
+    "restore_tests": 11
+  },
+  "ci_final_head": {
+    "foundation": {
+      "job": 120830341456,
+      "tests": 665,
+      "skipped": 28,
+      "failures": 0
+    },
+    "native_kerberos": {
+      "job": 120830341944,
+      "tests": 107,
+      "failures": 0,
+      "user_https_issuance": true,
+      "host_user_role_isolation": true,
+      "mic_relay_and_replay_rejected": true,
+      "synthetic_machine_count": 1000,
+      "synthetic_unique_certificates": 1000,
+      "synthetic_wall_seconds": 14.386,
+      "live_ad_tested": false,
+      "windows_gpo_tested": false
+    },
+    "windows_client": {
+      "job": 120830341850,
+      "status": "success"
+    },
+    "windows_retry": {
+      "job": 120830341935,
+      "status": "success"
+    },
+    "browser_flows": 12,
+    "radius_normal_debug_and_systemd_activation": {
+      "run": 40079651608,
+      "status": "success"
+    }
+  },
+  "package": {
+    "files": 153,
+    "manifest": "LINUX_SOURCE_MANIFEST.json",
+    "manifest_sha256": "6ec493376e5c8c0e45703b3a18f07f78fea7c6c508730f13da1b27a4db7d2fc7"
+  },
+  "live_read_only": {
+    "panel_pid": 1136447,
+    "radius_pid": 1136462,
+    "broker_pid": 1069437,
+    "services_active": true,
+    "backup_and_crl_timers_active": true,
+    "live_source_changed": false,
+    "services_restarted": false,
+    "certificates_changed": false,
+    "policy_changed": false,
+    "ad_gpo_changed": false,
+    "windows_changed": false,
+    "full_data_backup_created": false,
+    "user_profiles_created": false
+  },
+  "limitations": [
+    "No Windows CurrentUser client/package implemented or deployed yet; status flags this explicitly",
+    "No panel user-profile management yet",
+    "No real user wired/WiFi/VLAN or user/computer transition acceptance",
+    "ASCII SAM@configured realm only, 20-character SAM; no alternate suffix/SPN/foreign realm enrollment",
+    "Shared software issuer key remains in existing protected vault, not HSM",
+    "Backend not installed on live customer server; future deployment needs explicit schema/backup worker migration checks",
+    "Independent historic Windows retry fractional deadline issue remains open despite successful current fixture"
+  ],
+  "next": [
+    "signed CurrentUser CNG client with private-key protection and user-scoped state/retry/cleanup",
+    "user enrollment-profile controls and user-group policy identity scope",
+    "A04 constrained GPO user/computer distribution with signing/version/rollback",
+    "real test PC user enrollment, wired/WiFi VLAN and negative acceptance"
+  ],
+  "cancelled_local_access_groups_reintroduced": false,
+  "original_94_item_completion_unchanged": {
+    "done": 54,
+    "total": 94,
+    "remaining": 40
+  },
+  "main_merge": "bd5f4b6864c4bb771fc77020aca07ca60ed39e05",
+  "workflows": [
+    {
+      "id": 40079651600,
+      "name": "AuthWire private backup acceptance",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40079651621,
+      "name": "AuthWire bounded retry network probe checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40079651625,
+      "name": "AuthWire offline restore and GPO audit checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40079651599,
+      "name": "KANAME Linux source preparation",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40079651624,
+      "name": "AuthWire device enrollment pilot checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40079651643,
+      "name": "KANAME browser checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40079651594,
+      "name": "KANAME foundation checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40079651608,
+      "name": "KANAME real RADIUS protocol proof",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "development_milestone_complete": true,
+  "live_installation_pending": true,
+  "pr_url": "https://github.com/Asitavandas/kaname/pull/61"
+}
