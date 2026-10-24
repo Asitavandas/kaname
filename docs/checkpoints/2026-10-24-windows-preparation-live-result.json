@@ -1,0 +1,73 @@
+{
+  "event": "WINDOWS_PREPARATION_LIVE_RESULT_RECORDED",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "source": "operator_supplied_root_deployment_output",
+  "direct_assistant_read_after_apply": false,
+  "finished": {
+    "event": "WINDOWS_PREPARATION_FINISHED",
+    "verified": true,
+    "version": "0.14.0-dev.34",
+    "release": "8bcc043b1d763f79e1c071241d755ec1c6a8ead4",
+    "changed": true,
+    "checks": {
+      "protected_files": true,
+      "broker_process": true,
+      "radius_process": true,
+      "timers": true,
+      "business_state": true
+    },
+    "radius_active": true,
+    "radius_restarted": false,
+    "radius_process_preserved": true,
+    "radius_pid_before": "1243360",
+    "radius_pid_after": "1243360",
+    "broker_process_preserved": true,
+    "policy_changed": false,
+    "deployment_plans_created": false,
+    "gpo_changed": false,
+    "connector_configured": false,
+    "certificates_changed": false,
+    "windows_endpoints_changed": false,
+    "windows_packages_changed": false,
+    "ad_gpo_changed": false,
+    "native_module_changed": false,
+    "backup_workers_changed": false,
+    "full_data_backup_created": false,
+    "backup_timer_preserved": true,
+    "operator_browser_acceptance_pending": true,
+    "real_endpoint_acceptance_pending": true,
+    "evidence": "/var/lib/authwire-updates/windows-preparation-dev34-20261024T173830Z-e0334c8c"
+  },
+  "panel_reads": {
+    "before": {
+      "paths": 6,
+      "attempts_per_path": 3,
+      "all_http_200": true
+    },
+    "after": {
+      "paths": 20,
+      "attempts_per_path": 3,
+      "all_http_200": true,
+      "max_ms": 173.7,
+      "deployment_status": {
+        "median_ms": 3.8,
+        "max_ms": 4.2
+      },
+      "deployment_js": {
+        "median_ms": 1.5,
+        "max_ms": 1.8
+      }
+    }
+  },
+  "operator_browser_acceptance": {
+    "confirmed": false
+  },
+  "restricted_windows_connector": {
+    "configured": false
+  },
+  "actual_endpoint_gpo_acceptance": {
+    "confirmed": false,
+    "deferred_to": "Monday"
+  }
+}

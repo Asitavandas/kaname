@@ -41,15 +41,16 @@
     "stage_verified": true,
     "installed_source_guard_passed": true,
     "apply_rollback_fixture_tests": 5,
-    "local_sudo_application_pending": true,
+    "local_sudo_application_pending": false,
     "planned_panel_restart": true,
     "planned_radius_restart": false,
     "planned_broker_restart": false,
     "full_data_backup_created": false,
-    "live_source_changed": false
+    "live_source_changed": true,
+    "live_apply_verified": true,
+    "evidence": "/var/lib/authwire-updates/windows-preparation-dev34-20261024T173830Z-e0334c8c"
   },
   "acceptance_pending": [
-    "local sudo apply and protected state comparison",
     "operator central distribution screen acceptance",
     "restricted Windows connector authorization/transport/signing",
     "live AD GPO creation/linking/apply and OU targeting",
@@ -62,5 +63,21 @@
     "remaining": 40,
     "completed_percent": 57
   },
-  "merge_commit": "3e74805d4eea1890d65297712c3130b459e7c008"
+  "merge_commit": "3e74805d4eea1890d65297712c3130b459e7c008",
+  "live_state": {
+    "version": "0.14.0-dev.34",
+    "release": "8bcc043b1d763f79e1c071241d755ec1c6a8ead4",
+    "radius_active": true,
+    "radius_pid": "1243360",
+    "radius_restarted": false,
+    "broker_process_preserved": true,
+    "protected_state_preserved": true,
+    "policy_changed": false,
+    "certificates_changed": false,
+    "windows_packages_changed": false,
+    "ad_gpo_changed": false,
+    "deployment_plans_created": false,
+    "connector_configured": false
+  },
+  "live_result": "2026-10-24-windows-preparation-live-result.json"
 }
