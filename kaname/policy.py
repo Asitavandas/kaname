@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from .models import ValidationError, address, boolean, enum, validate_policies
 import re
+import uuid
 
 
 @dataclass(frozen=True)
@@ -49,7 +50,7 @@ class PolicyConflictError(ValueError):
         super().__init__('POLICY_CONFLICT')
 
 
-def policy_conflicts(policies, catalog=None):
+def policy_conflicts(policies, catalog=None, local_groups=None):
     """Detect shared conditions and observed cross-group membership overlaps.
 
     Separate AD groups may coexist in future. Runtime evaluation remains
@@ -70,11 +71,16 @@ def policy_conflicts(policies, catalog=None):
                 if node in seen: continue
                 seen.add(node); queue.extend(children[node] - seen)
             members[group] = seen.intersection(accounts)
+    if catalog:
+        for plural in ('users', 'computers'):
+            for account in catalog[plural]:
+                members[account['sid']] = {account['sid']}
     member_sets = {}
     for policy in policies:
-        key = frozenset(policy['conditions']['group_sids'])
-        if key not in member_sets:
-            member_sets[key] = set().union(*(members.get(g, set()) for g in key))
+        key = policy['id']
+        direct = policy['conditions']['group_sids']
+        local = policy['conditions'].get('local_group_ids', [])
+        member_sets[key] = set().union(*(members.get(g, set()) for g in direct), *((local_groups or {}).get(g,set()) for g in local))
     conflicts = []
     active = [p for p in policies if p['enabled']]
     for index, left in enumerate(active):
@@ -83,7 +89,8 @@ def policy_conflicts(policies, catalog=None):
             if any(lc[k] and rc[k] and not set(lc[k]).intersection(rc[k]) for k in ('access_types', 'nas_ips')):
                 continue
             lg, rg = set(lc['group_sids']), set(rc['group_sids'])
-            if lg and rg and not lg.intersection(rg) and not member_sets[frozenset(lg)].intersection(member_sets[frozenset(rg)]):
+            ll, rl = set(lc.get('local_group_ids', [])), set(rc.get('local_group_ids', []))
+            if (lg or ll) and (rg or rl) and not lg.intersection(rg) and not ll.intersection(rl) and not member_sets[left['id']].intersection(member_sets[right['id']]):
                 continue
             # Constraint mismatches can create allow/deny conflicts too.
             same = (left['action'], left['vlan'], set(left['constraints']['eap_methods']), left['constraints']['require_domain_device']) == (right['action'], right['vlan'], set(right['constraints']['eap_methods']), right['constraints']['require_domain_device'])
@@ -95,8 +102,10 @@ def policy_conflicts(policies, catalog=None):
     return conflicts
 
 
-def evaluate(policies, identity):
+def evaluate(policies, identity, *, local_group_ids=frozenset()):
     policies = validate_policies(policies)
+    if type(local_group_ids) is not frozenset or len(local_group_ids)>1 or any(type(x) is not str or str(uuid.UUID(x))!=x or uuid.UUID(x).int==0 for x in local_group_ids):
+        raise ValidationError('Invalid verified local group set')
     if not isinstance(identity, VerifiedIdentity):
         raise ValidationError('Verified adapter identity context is required')
     if not identity.authenticated:
@@ -110,7 +119,8 @@ def evaluate(policies, identity):
         if not policy['enabled']:
             continue
         c = policy['conditions']
-        if c['group_sids'] and not (identity.group_sids.intersection(c['group_sids']) or identity.account_sid in c['group_sids']):
+        local = c.get('local_group_ids', [])
+        if (c['group_sids'] or local) and not (identity.group_sids.intersection(c['group_sids']) or identity.account_sid in c['group_sids'] or local_group_ids.intersection(local)):
             continue
         if c['access_types'] and identity.access_type not in c['access_types']:
             continue
