@@ -6,7 +6,7 @@ const ueErrors={
  USER_DIRECTORY_NOT_READY:'Önce AD bağlantısını hazırlayın.',USER_PROFILE_NOT_FOUND:'Kullanıcı profili bulunamadı. Listeyi yenileyin.',
  USER_PROFILE_LIMIT:'En fazla 100 kullanıcı profili oluşturulabilir.',USER_INPUT_INVALID:'Profil adı, AD grubu ve süreleri kontrol edin.',
  USER_SETUP_REQUIRED:'Kullanıcı kaydı için HTTPS ve sunucuyla eşleşen DNS/sertifika yapılandırması gerekiyor.',
- USER_CERTIFICATE_NOT_FOUND:'Kullanıcı sertifikası bulunamadı.',USER_CERTIFICATE_REVOKED:'İptal edilmiş sertifika için yenileme talebi oluşturulamaz.',
+ USER_CERTIFICATE_UNAVAILABLE:'Sertifika kurulu, geçerli ve iptal edilmemiş olmalı. Kayıtlı durumu yenileyip kontrol edin.',USER_CERTIFICATE_NOT_FOUND:'Kullanıcı sertifikası bulunamadı.',USER_CERTIFICATE_REVOKED:'İptal edilmiş sertifika için yenileme talebi oluşturulamaz.',
  USER_CERTIFICATE_EXPIRED:'Süresi dolmuş sertifika normal kurtarma/kayıt akışıyla ele alınmalı.',
  USER_INSTALLATION_PENDING:'Sertifikanın istemci kurulum teyidi henüz gelmedi.',
  REVISION_CONFLICT:'Profil başka bir işlemde değişti. Düzenlemeleriniz korunuyor; pencereyi kapatıp güncel profili yeniden açın.'

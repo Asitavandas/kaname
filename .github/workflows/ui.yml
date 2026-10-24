@@ -31,10 +31,15 @@ jobs:
           else
             npx playwright install --with-deps chromium
           fi
+      - name: User enrollment profile management with disposable HTTPS issuer
+        run: node tools/user_enrollment_ui_smoke.cjs
+        env:
+          KANAME_PYTHON: python
+          KANAME_UI_ARTIFACTS: ui-artifacts
       - name: Browser flow with temporary directory fixture (no real AD)
         run: |
           browser_test_status=0
-          for browser_test_file in tools/motion_ui_smoke.cjs tools/central_ui_smoke.cjs tools/ui_smoke.cjs tools/dashboard_ui_smoke.cjs tools/policy_ui_smoke.cjs tools/setup_ui_smoke.cjs tools/audit_ui_smoke.cjs tools/access_events_ui_smoke.cjs tools/session_ui_smoke.cjs tools/device_ui_smoke.cjs tools/user_enrollment_ui_smoke.cjs tools/planning_ui_smoke.cjs tools/services_ui_smoke.cjs; do
+          for browser_test_file in tools/motion_ui_smoke.cjs tools/central_ui_smoke.cjs tools/ui_smoke.cjs tools/dashboard_ui_smoke.cjs tools/policy_ui_smoke.cjs tools/setup_ui_smoke.cjs tools/audit_ui_smoke.cjs tools/access_events_ui_smoke.cjs tools/session_ui_smoke.cjs tools/device_ui_smoke.cjs tools/planning_ui_smoke.cjs tools/services_ui_smoke.cjs; do
             node "$browser_test_file" || browser_test_status=1
           done
           exit "$browser_test_status"
