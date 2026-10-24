@@ -4,6 +4,17 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ dev.32 canlı kurulum doğrulandı — 24 Ekim 2026
+
+Operatörün verified=true çıktısıyla dev.32 canlı uygulaması tamamlandı.
+RADIUS yeniden başlamadı; RADIUS/broker süreçleri, korunan dosyalar, timer ve
+önceden var olan iş verisi korundu. Kullanıcı profili oluşturulmadı. Policy,
+sertifikalar, Windows/AD-GPO değişmedi; tam veri yedeği alınmadı.
+Kullanıcı status API'si ve yeni JS dahil on sekiz yol üçer kez HTTP200 döndü.
+Operatörün yeni sekmeleri tarayıcıda görme kabulü açık; gerçek kullanıcı
+AD/GPO/802.1X saha testi pazartesiye bırakıldı. A03/A04 bütünü hâlâ açık.
+Kanıt: checkpoints/2026-10-24-user-profile-panel-live-result.json.
+
 ## 🔴✓ A03 sunucu altyapısı teknik kabulü — 24 Ekim 2026
 
 Ayrı kullanıcı Kerberos/MIC oturumu, kullanıcı AD kayıt profili, güncel GUID/SID

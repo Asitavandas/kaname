@@ -17,6 +17,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.32 canlı kullanıcı profili panel kurulumu tamam — 24 Ekim 2026
+
+- 🔴✓ Operatör USER_PANEL_FINISHED / verified=true çıktısıyla dev.32 (kaynak 422ab022c0fe2e54848772934575e035b45610ac) kurulumunu doğruladı. Yerel sudo/kurulum beklemesi kapandı. Hazırlık kaydındaki dev.29 canlı sürüm bilgisi bu sonuçla güncellendi.
+- 🔴✓ Korunan dosyalar, RADIUS/broker PID'leri, timer ve önceden var olan iş verisi kontrolleri başarılı. RADIUS aktif ve yeniden başlatılmadı; önceki PID 1136462 korundu. Broker süreci korundu. Policy, mevcut sertifikalar/anahtarlar, bilgisayar istemcisi, Windows uçları ve AD/GPO değişmedi.
+- 🔴✓ Yedek worker uyumu güncellendi; kullanıcı kayıt altyapısı için boş şema eklendi. Kullanıcı kayıt profili oluşturulmadı veya kayıt izni kendiliğinden açılmadı. Yeni tam veri yedeği alınmadı; günlük yedek zamanlayıcısı korundu.
+- 🔴✓ Önce altı, sonra kullanıcı status API ve yeni JS dahil on sekiz yol üçer kez HTTP200 döndü. Son kontrolde kullanıcı status medyan 7,0ms/en uzun 10,9ms; tüm yolların en uzunu 159,4ms (bilgisayar kayıt status). Bu kısa yerel ölçüm uzun süre/yük veya tarayıcı/uç kabulü değildir.
+- Açık kalan panel kabulü: operatör dev.32 sürümünü, Sertifikalar → Kullanıcı profilleri / Kullanıcı kayıtları sekmelerini ve hata olmadan açılmalarını görsel olarak kontrol edecek. Gerçek kullanıcı AD/GPO/kablolu-Wi-Fi/VLAN/geçiş/negatif testleri operatörün isteğiyle pazartesiye bırakıldı; A03/A04 bütünü kapatılmadı.
+- İlk94 alt iş sayımı 54/94 (%57), kalan40/94 (%43) korunur; bu kayıt canlı kurulum alt adımını kapatır. Kanıt: checkpoints/2026-10-24-user-profile-panel-live-result.json ve /var/lib/authwire-updates/user-panel-dev32-20261024T121809Z-08fe3866.
+
 ## 🔴✓ Kullanıcı kayıt profilleri panel yönetimi — teknik kabul tamam, 24 Ekim 2026
 
 - 🔴✓ Sertifikalar bölümüne ayrı Kullanıcı profilleri ve Kullanıcı kayıtları sekmeleri eklendi. Profil oluşturma/düzenleme penceresi; açık AD güvenlik grubu seçimi, grup arama/sayfalama, geçerlilik ve yenileme aralığı ile kayıt iznini yönetiyor. Yeni profilde kayıt varsayılan olarak kapalı; sayfa açılınca profil veya AD grubu oluşturulmaz.

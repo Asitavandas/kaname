@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "source": "Operator-supplied output of pinned root installer",
+  "result": {
+    "event": "USER_PANEL_FINISHED",
+    "verified": true,
+    "version": "0.14.0-dev.32",
+    "release": "422ab022c0fe2e54848772934575e035b45610ac",
+    "changed": true,
+    "checks": {
+      "protected_files": true,
+      "pids": true,
+      "timers": true,
+      "preexisting_business_state": true
+    },
+    "radius_active": true,
+    "radius_restarted": false,
+    "radius_process_preserved": true,
+    "broker_process_preserved": true,
+    "backup_workers_updated": true,
+    "user_schema_added": true,
+    "user_profiles_created": false,
+    "policy_changed": false,
+    "certificates_changed": false,
+    "windows_endpoints_changed": false,
+    "machine_client_changed": false,
+    "ad_gpo_changed": false,
+    "full_data_backup_created": false,
+    "backup_timer_preserved": true,
+    "operator_browser_acceptance_pending": true,
+    "real_endpoint_acceptance_pending": true,
+    "evidence": "/var/lib/authwire-updates/user-panel-dev32-20261024T121809Z-08fe3866"
+  },
+  "read_checks": {
+    "before_paths": 6,
+    "after_paths": 18,
+    "requests_per_path": 3,
+    "all_http_200": true,
+    "after_max_ms": 159.4,
+    "user_admin_status": {
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "median_ms": 7,
+      "max_ms": 10.9
+    },
+    "scope": "Short server-local authenticated checks; browser and real endpoint acceptance remain open"
+  },
+  "completion": {
+    "technical_development": true,
+    "live_installation": true,
+    "operator_browser": false,
+    "real_user_ad_gpo_8021x": false
+  },
+  "overall_original_94": {
+    "done": 54,
+    "remaining": 40,
+    "total": 94
+  }
+}
