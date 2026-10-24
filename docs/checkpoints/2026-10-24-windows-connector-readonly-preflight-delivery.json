@@ -4,8 +4,8 @@
   "timezone": "Europe/Istanbul",
   "script": "docs/checkpoints/2026-10-24-windows-connector-readonly-preflight.ps1",
   "sha256": "7be8f5097422a6fe6a539716e91c05a1e6bb72cf53faccd63dd100e8b0c08fe9",
-  "executed_on_customer_windows": false,
-  "customer_results_pending": true,
+  "executed_on_customer_windows": true,
+  "customer_results_pending": false,
   "scope": [
     "OS and PowerShell versions",
     "AD/GPMC/KDS module availability",
@@ -23,5 +23,9 @@
   "trust_store_changed": false,
   "private_key_exported": false,
   "execution_policy_changed": false,
-  "requires": "operator runs inline commands on DC01; do not relax AllSigned or execution policy"
+  "requires": "operator runs inline commands on DC01; do not relax AllSigned or execution policy",
+  "result_file": "2026-10-24-windows-connector-readonly-preflight-result.json",
+  "gpo_enum_names_and_kds_dates_pending": true,
+  "service_identity_provisioning_pending": true,
+  "signing_key_service_access_pending": true
 }

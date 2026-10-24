@@ -17,6 +17,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Windows yönetim bileşeni DC01 salt okunur hazırlık kontrolü tamam — 24 Ekim 2026
+
+- Operatör WINDOWS_CONNECTOR_READONLY_PREFLIGHT sonucunu paylaştı; Errors=[] ve AD/GPO/trust değişikliği yok. DC01, Windows Server2019Standard build17763, PowerShell5.1.17763.592; ActiveDirectory1.0.1.0, GroupPolicy1.0.0.0 ve Kds1.0.0.0 modülleri var.
+- DomainModeWindows2016Domain, schema88, KDS root key count1. Bunlar gMSA yaklaşımı için temel ortam verileridir; anahtarın etkinlik/çoğaltma zamanı, kurulacak hizmet hesabının parola alabilmesi ve gerçek görev/servis oturumu henüz doğrulanmadı. Yeni KDS anahtarı veya hizmet hesabı bu kontrolde oluşturulmadı.
+- Mevcut AuthWire-Pilot-Trust GPO'su aynı GUID ile bulundu. JSON GpoStatus3 ve izin65536/65792/65794değerleri ham olarak saklandı; isim karşılığı tahmin edilmedi ve GPO'nun etkin/devre dışı olduğu ilan edilmedi. Sonraki kısa salt okunur kontrolde yerel enum isimleri ve KDS zamanları alınacak.
+- Kod imzalama sertifikası `6E74B513F766E01730719684A41B2664380CA68A`, Administrator kullanıcısının CurrentUser/My deposunda ve HasPrivateKey=true. Bitiş2027-10-06T09:48:11UTC. Bu bayrak kurulacak servis/gMSA hesabının anahtarı kullanabileceğini kanıtlamaz; PrivateKeyAccessTested=false olarak korundu. Özel anahtar dışa aktarılmadı veya imzalama erişimi verilmedi.
+- 🔴✓ İlk ortam okuması tamam; ayrı hesap/delegasyon/imzalama/bağlantı kurulumu açık. A04 bütünü, gerçek GPO ve uç kabulü tamamlanmadı.54/94 (%57) hesabı değişmedi. Çalışan AuthWiredev.34, RADIUS/policy/sertifika/Windows paketlerine bu kayıt sırasında işlem yapılmadı.
+- İlk çalıştırılan betik eski hash/commit ile aynen korunur. Sonraki kullanımlar için enum isimlerini açık string'e çeviren v2 hazırlandı; kısa isim/KDS kontrolü henüz çalıştırılmadı. Kanıt: `checkpoints/2026-10-24-windows-connector-readonly-preflight-result.json`.
+
 ## 🔴✓ dev.34 merkezi dağıtım hazırlık ekranı operatör kabulü tamam — 24 Ekim 2026
 
 - Operatör “Kontrol ettim. sorun görünmüyor” diyerek Sertifikalar → Dağıtım / Windows dağıtım planları / Yeni dağıtım penceresi kontrolünü onayladı. Canlı ekran görünümü kabulü tamamlandı.

@@ -1,0 +1,109 @@
+{
+  "event": "WINDOWS_CONNECTOR_READONLY_PREFLIGHT_RESULT",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "source": "operator_supplied_DC01_output",
+  "direct_assistant_windows_access": false,
+  "executed_script": {
+    "path": "docs/checkpoints/2026-10-24-windows-connector-readonly-preflight.ps1",
+    "commit": "2f2e37f5a20bfef42a18722f9ce89f70aaa75840",
+    "sha256": "7be8f5097422a6fe6a539716e91c05a1e6bb72cf53faccd63dd100e8b0c08fe9"
+  },
+  "facts": {
+    "computer": "DC01",
+    "domain": "vizyonveri.local",
+    "part_of_domain": true,
+    "windows": "Microsoft Windows Server 2019 Standard",
+    "build": "17763",
+    "powershell": "5.1.17763.592",
+    "modules": {
+      "ActiveDirectory": "1.0.1.0",
+      "GroupPolicy": "1.0.0.0",
+      "Kds": "1.0.0.0"
+    },
+    "domain_mode": "Windows2016Domain",
+    "schema_version": 88,
+    "kds_root_key_count": 1,
+    "gpo": {
+      "name": "AuthWire-Pilot-Trust",
+      "id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
+      "status_raw": 3,
+      "status_name_verified": false
+    },
+    "gpo_permissions_raw": [
+      {
+        "trustee": "AuthWire-Pilot-Computers",
+        "permission": 65536
+      },
+      {
+        "trustee": "Domain Admins",
+        "permission": 65794
+      },
+      {
+        "trustee": "Enterprise Admins",
+        "permission": 65794
+      },
+      {
+        "trustee": "Authenticated Users",
+        "permission": 65792
+      },
+      {
+        "trustee": "ENTERPRISE DOMAIN CONTROLLERS",
+        "permission": 65792
+      },
+      {
+        "trustee": "SYSTEM",
+        "permission": 65794
+      }
+    ],
+    "publisher_certificates": [
+      {
+        "subject": "CN=Administrator, CN=Users, DC=vizyonveri, DC=local",
+        "thumbprint": "6E74B513F766E01730719684A41B2664380CA68A",
+        "has_private_key": true,
+        "not_after_microsoft_json": "/Date(1822816091000)/",
+        "not_after_utc": "2027-10-06T09:48:11+00:00",
+        "store": "CurrentUser/My"
+      }
+    ],
+    "execution_policies_raw": [
+      {
+        "scope": 4,
+        "policy": 5
+      },
+      {
+        "scope": 3,
+        "policy": 5
+      },
+      {
+        "scope": 0,
+        "policy": 5
+      },
+      {
+        "scope": 1,
+        "policy": 5
+      },
+      {
+        "scope": 2,
+        "policy": 1
+      }
+    ],
+    "errors": [],
+    "ad_changed": false,
+    "gpo_changed": false,
+    "trust_store_changed": false,
+    "private_key_access_tested": false
+  },
+  "assessment": {
+    "module_and_domain_facts_received": true,
+    "gmsa_candidate": true,
+    "gmsa_installed": false,
+    "kds_effective_time_verified": false,
+    "gpo_status_name_pending": true,
+    "effective_service_gpo_write_authority_verified": false,
+    "service_signing_key_access_verified": false,
+    "connector_installed": false,
+    "ad_gpo_application_tested": false
+  },
+  "next_gate": "Read enum names and KDS dates from DC01 without making configuration changes"
+}
