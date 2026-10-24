@@ -165,9 +165,12 @@ exit 0
     $childCode=@'
 $ErrorActionPreference='Stop'
 $probe='__PROBE__'
+trap { [IO.File]::WriteAllText((Join-Path $probe 'failure.txt'),($_|Out-String));exit 1 }
+Write-Output 'STANDARD_USER_STAGE load-signed-code'
 # Public fixture publisher is already trusted in LocalMachine by the parent.
 . (Join-Path $probe 'client.ps1') -ValidateOnly
 . (Join-Path $probe 'installer.ps1') -ValidateOnly
+Write-Output 'STANDARD_USER_STAGE identity-and-cng'
 $sid=Get-AuthWireUserContext
 $principal=New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){throw 'Standard fixture unexpectedly elevated.'}
@@ -180,6 +183,7 @@ $key=[Security.Cryptography.CngKey]::Create([Security.Cryptography.CngAlgorithm]
 $taskName='AuthWire User Standard CI '+[guid]::NewGuid().ToString('N')
 try {
  if($key.IsMachineKey -or $key.ExportPolicy -ne [Security.Cryptography.CngExportPolicies]::None){throw 'Invalid standard user key.'}
+ Write-Output 'STANDARD_USER_STAGE task-registration'
  $xml=Get-AuthWireUserTaskXml $sid (Join-Path $probe 'installer.ps1')
  $null=Register-ScheduledTask -TaskName $taskName -Xml $xml
  $task=Get-ScheduledTask -TaskName $taskName
@@ -195,9 +199,13 @@ try {
     try {
         Start-Service seclogon
         $process=Start-Process -FilePath (Join-Path ([Environment]::GetFolderPath('System')) 'WindowsPowerShell\v1.0\powershell.exe') -Credential $credential -LoadUserProfile -WorkingDirectory $probe -ArgumentList ('-NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$probeScript+'"') -PassThru -RedirectStandardOutput (Join-Path $probe 'stdout.txt') -RedirectStandardError (Join-Path $probe 'stderr.txt')
+        $null=$process.Handle # Retain the native handle before a fast child exits.
         if(!$process.WaitForExit(90000)){try{$process.Kill()}catch{};throw 'Standard-user native fixture timed out.'}
         $process.Refresh()
-        if($process.ExitCode -ne 0){throw ('Standard user native fixture failed: '+(Get-Content (Join-Path $probe 'stderr.txt') -Raw))}
+        if($process.ExitCode -ne 0 -or !(Test-Path (Join-Path $probe 'result.json'))) {
+            foreach($name in @('stdout.txt','stderr.txt','failure.txt')){if(Test-Path (Join-Path $probe $name)){Write-Host ($name+': '+(Get-Content (Join-Path $probe $name) -Raw))}}
+            throw ('Standard user native fixture failed; exit='+$process.ExitCode)
+        }
         $ordinary=Get-Content (Join-Path $probe 'result.json') -Raw|ConvertFrom-Json;Check ($ordinary.nonadmin -and $ordinary.foreign_key_rejected -and $ordinary.own_task_registered) 'Standard user isolation incomplete.'
     } finally {Remove-LocalUser -Name $accountName -ErrorAction SilentlyContinue;$password=$null;$credential=$null}
     $original=[IO.File]::ReadAllBytes((Join-Path $target 'config.json'));[IO.File]::AppendAllText((Join-Path $target 'config.json'),' ')
