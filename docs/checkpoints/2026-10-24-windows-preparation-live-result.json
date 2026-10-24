@@ -61,7 +61,13 @@
     }
   },
   "operator_browser_acceptance": {
-    "confirmed": false
+    "confirmed": true,
+    "date": "2026-10-24",
+    "evidence": "Kontrol ettim. sorun görünmüyor",
+    "scope": "Central distribution plan screen and new-plan dialog visibility",
+    "deployment_plan_saved_verified": false,
+    "gpo_application_verified": false,
+    "real_endpoint_verified": false
   },
   "restricted_windows_connector": {
     "configured": false

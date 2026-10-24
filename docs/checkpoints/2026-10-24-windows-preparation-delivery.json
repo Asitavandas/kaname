@@ -51,7 +51,6 @@
     "evidence": "/var/lib/authwire-updates/windows-preparation-dev34-20261024T173830Z-e0334c8c"
   },
   "acceptance_pending": [
-    "operator central distribution screen acceptance",
     "restricted Windows connector authorization/transport/signing",
     "live AD GPO creation/linking/apply and OU targeting",
     "Monday actual Windows interface/GPO/user-device pilot acceptance",
@@ -79,5 +78,7 @@
     "deployment_plans_created": false,
     "connector_configured": false
   },
-  "live_result": "2026-10-24-windows-preparation-live-result.json"
+  "live_result": "2026-10-24-windows-preparation-live-result.json",
+  "operator_browser_acceptance_confirmed": true,
+  "operator_browser_acceptance_scope": "Central distribution plan screen and new-plan dialog visible without errors; no plan save or GPO application inferred"
 }

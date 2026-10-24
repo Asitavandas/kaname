@@ -17,6 +17,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.34 merkezi dağıtım hazırlık ekranı operatör kabulü tamam — 24 Ekim 2026
+
+- Operatör “Kontrol ettim. sorun görünmüyor” diyerek Sertifikalar → Dağıtım / Windows dağıtım planları / Yeni dağıtım penceresi kontrolünü onayladı. Canlı ekran görünümü kabulü tamamlandı.
+- Bu onay dağıtım planı oluşturulduğu, profil XML'inin uç cihaza uygulandığı veya GPO yazıldığı anlamına gelmez. Kısıtlı Windows yönetim bileşeninin bir defalık yetkilendirmesi ve imzalı GPO yolu sıradaki açık adımdır.
+- Gerçek kullanıcı/bilgisayar AD-GPO, Ethernet/Wi-Fi, geçiş ve ölçek kabulü pazartesi için açık kalır. A04 bütünü ve54/94 (%57) tamamlanma hesabı değişmedi. Bu kayıt sırasında canlı kaynak, servis, policy, sertifika ve AD/GPO değişikliği yapılmadı.
+- Kanıt: checkpoints/2026-10-24-windows-preparation-live-result.json içindeki operator_browser_acceptance.
+
 ## 🔴✓ dev.34 merkezi Windows hazırlık ekranı canlı kurulum tamam — 24 Ekim 2026
 
 - 🔴✓ Operatör WINDOWS_PREPARATION_FINISHED / verified=true / version0.14.0-dev.34 sonucunu paylaştı. Kaynak `8bcc043b1d763f79e1c071241d755ec1c6a8ead4` canlıya uygulandı; yerel sudo/kurulum beklemesi kapandı. Kanıt: `/var/lib/authwire-updates/windows-preparation-dev34-20261024T173830Z-e0334c8c`.
