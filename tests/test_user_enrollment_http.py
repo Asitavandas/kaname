@@ -22,5 +22,5 @@ class UserEnrollmentHTTPTests(EnrollmentHTTPTests):
             status,body,_=self.request('POST','/api/user-admin/profile',{},headers)
         self.assertEqual('PKI_HTTPS_REQUIRED',body['error'])
         status,body,_=self.request('GET','/api/user-admin/status',headers=headers)
-        self.assertEqual(200,status);self.assertEqual([],body['profiles']);self.assertFalse(body['windows_client_available'])
+        self.assertEqual(200,status);self.assertEqual([],body['profiles']);self.assertTrue(body['windows_client_available'])
         self.assertEqual(400,self.request('GET','/api/user-admin/status?offset=0&offset=1',headers=headers)[0])

@@ -39,7 +39,7 @@ s.serve_forever()`;
   async function decision(access_type){return page.evaluate(async access_type=>(await api('/api/simulate',{authenticated:true,directory_available:true,account_enabled:true,domain_device:true,group_sids:['S-1-5-21-10-20-30-40'],access_type,nas_ip:access_type==='wired'?'192.0.2.2':'192.0.2.52',eap_method:'EAP-TLS'})).decision,access_type);}
   await login(page);await policiesView();
   assert.equal(await page.locator('#access-groups-section').count(),0);assert.equal(await page.locator('#access-group-editor').count(),0);assert.equal(await page.locator('#policy-kind option[value=local_group]').count(),0);assert.equal(await page.evaluate(async()=>(await fetch('/api/access-groups')).status),404);assert.equal(await page.evaluate(async()=>(await fetch('/access-groups.js')).status),404);
-  assert.match(await page.locator('#panel-version').textContent(),/0\.14\.0-dev\.30/);
+  assert.match(await page.locator('#panel-version').textContent(),/0\.14\.0-dev\.31/);
   const original=await snapshot();assert.equal((await decision('wireless')).vlan,140);
   assert.deepEqual(await page.locator('#policy-list th').allTextContents(),['Kural Adı','Erişim Türü','Kullanıcı/Grup','VLAN','Karar','Durum']);
   const toolbar=await page.locator('.policy-toolbar').boundingBox(),create=await page.locator('#new-policy').boundingBox(),search=await page.locator('#policy-query').boundingBox();
