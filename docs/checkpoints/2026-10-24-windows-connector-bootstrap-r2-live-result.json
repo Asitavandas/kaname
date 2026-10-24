@@ -1,0 +1,111 @@
+{
+  "event": "WINDOWS_CONNECTOR_BOOTSTRAP_LIVE_INSPECTION_RESULT",
+  "date": "2026-10-24",
+  "timezone": "Europe/Istanbul",
+  "source": "operator_supplied_DC01_output",
+  "observed": {
+    "Event": "WINDOWS_CONNECTOR_BOOTSTRAP",
+    "Version": 1,
+    "BootstrapVersion": "1.0.1",
+    "Mode": "Inspect",
+    "Computer": "DC01",
+    "Domain": "vizyonveri.local",
+    "ConnectorComputer": "DC01",
+    "ConnectorComputerGuid": "0fa4143f-aae3-4bc3-9cd3-db8a1de24acd",
+    "InstanceId": "4c23eebe-0715-46d1-88ee-a2e96ad7ee46",
+    "Kds": {
+      "Count": 1,
+      "Ready": false,
+      "Keys": [
+        {
+          "State": "propagation_wait",
+          "CheckAfterUtc": "2026-10-25T04:18:13.0000000Z",
+          "CheckAfterLocal": "2026-10-25T07:18:13.0000000+03:00",
+          "ConfigurationValid": false
+        }
+      ]
+    },
+    "Blockers": [
+      "KDS_WAIT_OR_CONFIGURATION_CHECK_REQUIRED"
+    ],
+    "ReadyForAccountPreparation": false,
+    "Account": {
+      "Name": "aw-deploy$",
+      "Exists": false,
+      "Created": false,
+      "Sid": null,
+      "AllowedPasswordHost": "DC01",
+      "LocalInstallationVerified": false,
+      "ServiceLogonVerified": false
+    },
+    "Gpo": {
+      "Id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
+      "Name": "AuthWire-Pilot-Trust",
+      "Status": "AllSettingsEnabled",
+      "Permissions": [
+        {
+          "Trustee": "AuthWire-Pilot-Computers",
+          "Permission": "GpoApply"
+        },
+        {
+          "Trustee": "Domain Admins",
+          "Permission": "GpoEditDeleteModifySecurity"
+        },
+        {
+          "Trustee": "Enterprise Admins",
+          "Permission": "GpoEditDeleteModifySecurity"
+        },
+        {
+          "Trustee": "Authenticated Users",
+          "Permission": "GpoRead"
+        },
+        {
+          "Trustee": "ENTERPRISE DOMAIN CONTROLLERS",
+          "Permission": "GpoRead"
+        },
+        {
+          "Trustee": "SYSTEM",
+          "Permission": "GpoEditDeleteModifySecurity"
+        }
+      ],
+      "OwnershipAdopted": false,
+      "ServiceWriteAccessVerified": false
+    },
+    "Publishers": [
+      {
+        "Store": "Cert:\\CurrentUser\\My",
+        "Thumbprint": "6E74B513F766E01730719684A41B2664380CA68A",
+        "CodeSigningEku": true,
+        "EkuReadState": "valid",
+        "HasPrivateKey": true,
+        "CurrentlyValid": true,
+        "ServiceKeyAccessVerified": false
+      }
+    ],
+    "GmsaReadinessVerified": false,
+    "ConnectorInstalled": false,
+    "CanApplyGpo": false,
+    "AdChanged": false,
+    "GpoChanged": false,
+    "CertificatesChanged": false,
+    "LocalPolicyChanged": false,
+    "SecretsExported": false
+  },
+  "assessment": {
+    "live_inspection_completed": true,
+    "EKU_fix_live_acceptance_complete": true,
+    "one_KDS_root_visible": true,
+    "KDS_configuration_test_executed": false,
+    "KDS_propagation_wait_pending": true,
+    "configuration_valid_false_is_not_a_failed_test_at_wait_state": true,
+    "account_absence_verified": true,
+    "account_created": false,
+    "publisher_valid_explicit_code_signing_EKU_verified": true,
+    "publisher_current_user_private_key_flag_does_not_prove_service_access": true,
+    "existing_GPO_status_and_permissions_read": true,
+    "AD_GPO_certificate_and_local_policy_changes_reported": false,
+    "gmsa_readiness_verified": false,
+    "connector_installed": false
+  },
+  "next_gate": "Re-run Inspect after 2026-10-25 07:18:13 Europe/Istanbul; require native KDS configuration success before separate account preparation"
+}

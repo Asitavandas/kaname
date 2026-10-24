@@ -17,6 +17,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Windows hazırlık 1.0.1 gerçek DC01 kontrolü ve EKU düzeltmesi kabul edildi — 24 Ekim 2026
+
+- Operatör tam WINDOWS_CONNECTOR_BOOTSTRAP JSON sonucunu paylaştı: bootstrap1.0.1, Inspect, DC01/vizyonveri.local. Hazırlık envanterinin gerçek Windows okuması hatasız tamamlandı. Önceki ObjectId.Value hatası bu çalıştırmada tekrarlanmadı.
+- 🔴✓ Kurumsal yayıncı `6E74B513F766E01730719684A41B2664380CA68A`, CurrentUser/My: CodeSigningEku=true, EkuReadState=valid, HasPrivateKey=true, CurrentlyValid=true. **Hizmet kimliği anahtar erişimi doğrulanmadı** (ServiceKeyAccessVerified=false); bu sonuç yalnız mevcut yönetici deposunu doğrular.
+- 🔴✓ Hedef bilgisayar DC01 GUID `0fa4143f-aae3-4bc3-9cd3-db8a1de24acd`, sabit kurulum GUID `4c23eebe-0715-46d1-88ee-a2e96ad7ee46` doğrulandı. Önerilen aw-deploy$ hesabı mevcut değil ve oluşturulmadı. AuthWire-Pilot-Trust aynı GUID/AllSettingsEnabled ve mevcut izinlerle okundu; sahiplenilmedi, yeni yazma yetkisi verilmedi.
+- Tek hazırlık engeli **KDS_WAIT_OR_CONFIGURATION_CHECK_REQUIRED**:1kök, propagation_wait, Kds.Ready=false. En erken kontrol **25 Ekim07:18:13Türkiye (+03:00)** /04:18:13UTC. Bu durumda **ConfigurationValid=false başarısız kriptografik test değildir; süre nedeniyle Test-KdsRootKey henüz çağrılmadı.**
+- Operatör çıktısında AdChanged/GpoChanged/CertificatesChanged/LocalPolicyChanged/SecretsExported=false. Bu kayıt sırasında yeni canlı ürün/servis işlemi yapılmadı; AuthWiredev.34 korunur. Inspect tamamlandı; KDS kabulü, gerçek gMSA oluşturma/kurulum/oturum, GPO delegasyonu ve imzalama anahtar ACL'si, yönetim TLS/protokolü ve uç kabulü açık. A03/A04 ve54/94 (%57) hesabı değişmedi.
+- Sonraki kapı: bekleme dolunca aynı imzalı betikte Inspect'i yeniden çalıştırıp KDS yapılandırma sonucunu doğrulamak; bundan sonra ayrı PrepareAccount adımına geçmek. Anahtar yeniden oluşturulmayacak.
+- Kanıt: `checkpoints/2026-10-24-windows-connector-bootstrap-r2-live-result.json`.
+
 ## 🔴✓ Windows hazırlık EKU okuma düzeltmesi test edildi; DC01 tekrar kontrolü açık — 24 Ekim 2026
 
 - İlk gerçek Inspect çalıştırması yayıncı envanterinde durdu: `PropertyNotFoundStrict`, EnhancedKeyUsageList.ObjectId.Value. DC01'de ObjectId görüntüleme nesnesinin Value özelliği olmadığı bildirildi. İlk48kontrol boş yayıncı deposu kullandığından bu yol kapsanmamıştı. **İlk canlı Inspect başarılı sayılmaz.** Inspect uygulaması AD/GPO/sertifika deposu yazması yapmaz; hesap oluşturma istenmedi.

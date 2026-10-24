@@ -37,7 +37,7 @@
     "proposed_account_name": "aw-deploy",
     "operator_mode": "Inspect"
   },
-  "live_reinspection_pending": true,
+  "live_reinspection_pending": false,
   "account_created": false,
   "existing_KDS_changed": false,
   "GPO_changed": false,
@@ -58,5 +58,17 @@
   "network_probe": {
     "run_id": 40121882234,
     "conclusion": "success"
+  },
+  "live_reinspection_completed": true,
+  "live_reinspection_evidence": "2026-10-24-windows-connector-bootstrap-r2-live-result.json",
+  "live_reinspection": {
+    "computer": "DC01",
+    "mode": "Inspect",
+    "EKU_valid": true,
+    "code_signing_EKU": true,
+    "KDS_state": "propagation_wait",
+    "account_exists": false,
+    "account_created": false,
+    "changes_reported": false
   }
 }
