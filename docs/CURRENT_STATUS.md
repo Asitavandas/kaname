@@ -1,6 +1,6 @@
 # AuthWire current work record
 
-Updated: 23 October 2026, Europe/Istanbul. This record supplements the 9 October
+Updated: 24 October 2026, Europe/Istanbul. This record supplements the 9 October
 `AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-09.docx` / `.pdf`; those reports are a
 dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
@@ -16,6 +16,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## 🔴✓ Yerel grup ve merkezi Windows otomasyon kapsamı kaydedildi — 24 Ekim 2026
+
+- 🔴✓ Operatörün düzeltmesi: örnekteki VLAN50-Kullanicilari **AuthWire içinde oluşturulacak yerel erişim grubu**; yeni AD grubu değildir. On kullanıcı farklı AD güvenlik gruplarında kalabilir. Yerel grup ve üyelik yönetimi yeni açık geliştirme maddesidir; mevcut tekil hesap/AD grubu seçimiyle tamamlandı sayılmaz.
+- 🔴✓ Tekillik kararı kaydedildi: bir kullanıcı/bilgisayar aynı anda yalnız bir AuthWire yerel VLAN erişim grubuna üye olabilir. İkinci gruba eklemeden önce eskisinden çıkarılmalı; mevcut grup adıyla uyarı ve sunucu tarafı kayıt engeli gerekir. AD'nin olağan çoklu güvenlik grupları silinmez/değişmez. AD/doğrudan/genel kural çakışması ayrıca kontrol edilir; örtülü öncelik yok, çalışma anında POLICY_CONFLICT reddi korunur.
+- 🔴✓ Kullanıcı EAP-TLS ve kullanıcı/bilgisayar geçişleri mevcut açık yol haritası olarak teyit edildi. Kullanıcı sertifikası yaşam döngüsü ve gerçek kullanıcı VLAN kabulü henüz tamamlanmadı; makine doğrulaması kullanıcıyı doğrulamış sayılmaz.
+- 🔴✓ Merkezi Windows dağıtımı ve tam GPO otomasyonu açık kapsama eklendi/pekiştirildi: bir defalık sınırlı AD/Windows yetki kurulumu, panelden hedef seçimi, imzalı istemci/güven/kablolu-WLAN profili, AuthWire'a ait GPO oluşturma/güncelleme/bağlama, izleme ve geri alma, ardından 200 cihaz ölçek kabulü. Günlük LDAP okuma ve yetkili GPO yazma ayrıdır; AllSigned ve Windows'ta kalan imza anahtarı korunur. Ayrıntılar: [onaylı kapsam](CENTRAL_DEPLOYMENT_AND_ACCESS_GROUPS.md). **Kayıt tamamlandı; özelliklerin uygulanması açık.**
+- Panel öncesi son kabul 21 Ekim: yanlış sunucu adı/kök ile kablosuz ret ve doğru profile dönüş; güncel cert/policy ile VLAN140 DHCP; policy disabled NO_MATCHING_POLICY reddi ve yeniden izin/VLAN140 bağlantısı; Ret/boş VLAN incelemesi operatörün eski elle deny kaydı açıklamasıyla kapandı. Doğru Wi-Fi profili geri yüklendi. Saf allow140→disable→enable turu tüm ayrıntılarıyla ayrıca kanıtlanmış sayılmaz; B08/B10 bütünü kapanmadı.
+- Devam için yeni ana başlık **kullanıcı EAP-TLS pilotu**; önce geçerli makine pilotu ve hedef kullanıcı/sertifika kaydı salt okunur tespit edilecek. Önceki diğer AD/kapasite, SQLite/Windows fixture aralıklılığı, gerçek expiry/ayrı cihaz, accounting/oturum takibi, off-host ve tam appliance kurtarma işleri açık kalır. Yeni kapsam eklendiği için eski yüzde yeni payda olmadan tekrar kullanılmayacak.
+- Operatör panel tasarımını şimdilik durdurdu. Bu tur yalnız belge/iş planı güncellemesidir; canlı sunucuya erişim, servis veya AD/GPO/policy/sertifika/Windows değişikliği yapılmadı. Dev.26 görünüm kabulü önceki bağımsız bekleme kaydı olarak kalır. DHCP/DNS mimarisi kapsam dışı, NTP uzun süre/reboot izlemi duraklatılmıştır.
 
 ## 🔴✓ dev.26 giriş/menü/grafik canlı kurulumu tamam — görünüm kabulü bekliyor (23 Ekim 2026)
 
