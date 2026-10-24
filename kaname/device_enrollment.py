@@ -11,6 +11,7 @@ import json
 import os
 import re
 import secrets
+import sqlite3
 import threading
 import time
 import uuid
@@ -74,10 +75,27 @@ class DeviceEnrollment:
             ''')
 
     @contextmanager
+    def database_turn(self):
+        # SQLite rollback-journal writers can exclude new readers. Give this
+        # service's short reads and writes the same admission boundary, while
+        # leaving AD/network work outside it. Do not increase SQLite's timeout
+        # or change the on-disk journal mode to hide contention.
+        if not self.write_lock.acquire(timeout=3):
+            raise EnrollmentError('DEVICE_BUSY')
+        try:
+            yield
+        except sqlite3.OperationalError as error:
+            # Only lock contention is retryable; corrupt schema, disk and other
+            # storage failures must remain visible. Never return cached AD data.
+            if (getattr(error, 'sqlite_errorcode', 0) & 0xff) in (sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED):
+                raise EnrollmentError('DEVICE_BUSY') from None
+            raise
+        finally:
+            self.write_lock.release()
+
+    @contextmanager
     def transaction(self):
-        # At most four authenticated device workers wait here. Serialize SQLite
-        # writers explicitly; busy_timeout alone can starve a writer under load.
-        with self.write_lock:
+        with self.database_turn():
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
                 yield db
@@ -150,7 +168,8 @@ class DeviceEnrollment:
         integer(value['validity_days'], 2, 365)
         integer(value['renew_before_days'], 1, value['validity_days'] - 1)
         boolean(value['enabled'])
-        config = self.store.snapshot()['config']
+        with self.database_turn():
+            config = self.store.snapshot()['config']
         if not config:
             raise EnrollmentError('DEVICE_DIRECTORY_NOT_READY')
         with self.transaction() as db:
@@ -169,7 +188,7 @@ class DeviceEnrollment:
 
     def profile(self, identity):
         identifier(identity)
-        with self.store.connect() as db:
+        with self.database_turn(), self.store.connect() as db:
             row = db.execute('SELECT * FROM device_profiles WHERE id=?', (identity,)).fetchone()
         if not row:
             raise EnrollmentError('DEVICE_PROFILE_NOT_FOUND')
@@ -178,7 +197,7 @@ class DeviceEnrollment:
     def status(self, *, offset=0):
         integer(offset, 0, 100000)
         now = instant()
-        with self.store.connect() as db:
+        with self.database_turn(), self.store.connect() as db:
             profiles = [dict(zip(('id','version','name','domain','group_sid','validity_days','renew_before_days','enabled'), x))
                 for x in db.execute('SELECT * FROM device_profiles ORDER BY name,id')]
             signer = db.execute('SELECT 1 FROM device_signer').fetchone() is not None
@@ -231,17 +250,19 @@ class DeviceEnrollment:
         match = re.fullmatch(r'([A-Za-z0-9_][A-Za-z0-9_.-]{0,19}\$)@' + re.escape(profile['domain']), principal, re.I)
         if not match or not profile['enabled']:
             raise EnrollmentError('DEVICE_IDENTITY_REJECTED')
-        snapshot = self.store.snapshot()
-        settings = self.operations.directory()
-        if not snapshot['config'] or snapshot['config']['ad_domain'] != profile['domain']:
-            raise EnrollmentError('DEVICE_DIRECTORY_NOT_READY')
-        connection = self.operations.directory_connection()
+        with self.database_turn():
+            snapshot = self.store.snapshot()
+            settings = self.operations.directory()
+            if not snapshot['config'] or snapshot['config']['ad_domain'] != profile['domain']:
+                raise EnrollmentError('DEVICE_DIRECTORY_NOT_READY')
+            connection = self.operations.directory_connection()
         try:
             account = self.resolver(connection, snapshot['config'], computer_sam=match[1])
             if type(account) is not CurrentDirectoryAccount or account.domain != profile['domain'] or account.kind != 'computer' or not account.enabled or profile['group_sid'] not in account.security_group_sids:
                 raise EnrollmentError('DEVICE_IDENTITY_REJECTED')
-            if self.store.snapshot()['revision'] != snapshot['revision'] or self.operations.directory() != settings:
-                raise EnrollmentError('REVISION_CONFLICT')
+            with self.database_turn():
+                if self.store.snapshot()['revision'] != snapshot['revision'] or self.operations.directory() != settings:
+                    raise EnrollmentError('REVISION_CONFLICT')
             return account, snapshot['revision'], settings
         except DirectoryError:
             raise EnrollmentError('DEVICE_DIRECTORY_UNAVAILABLE') from None
@@ -309,7 +330,7 @@ class DeviceEnrollment:
         identifier(value['challenge_id'])
         csr = client_csr(value['csr'].encode('ascii'))
         csr_hash = digest(csr.public_bytes(serialization.Encoding.DER))
-        with self.store.connect() as db:
+        with self.database_turn(), self.store.connect() as db:
             challenge = db.execute('SELECT * FROM device_challenges WHERE id=?', (value['challenge_id'],)).fetchone()
         if not challenge or challenge[1] != principal.casefold() or challenge[4] != csr_hash or time.time() >= challenge[6]:
             raise EnrollmentError('DEVICE_CHALLENGE_REJECTED')
