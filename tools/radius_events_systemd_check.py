@@ -81,7 +81,7 @@ password=secrets.token_hex(24).encode();PKIService(s.root).initialize(password);
         command('/usr/sbin/runuser', '-u', install.ACCOUNT, '--', '/opt/kaname-lab/venv/bin/python', '-B', '-c', script,
                 cwd=install.SOURCE, env=env)
         candidate = (repo / 'tools/scheduled_backup.py').read_bytes()
-        original_worker = candidate.replace(install.BACKUP_CHANGE[1], install.BACKUP_CHANGE[0], 1)
+        original_worker = candidate.replace(install.USER_BACKUP_CHANGE[1], install.USER_BACKUP_CHANGE[0], 1).replace(install.BACKUP_CHANGE[1], install.BACKUP_CHANGE[0], 1)
         assert install.digest(original_worker) == install.OLD_WORKER_SHA
         install.WORKER.parent.mkdir(mode=0o755)
         install.atomic(install.WORKER, original_worker)

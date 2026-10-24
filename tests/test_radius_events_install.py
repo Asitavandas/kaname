@@ -70,6 +70,20 @@ class EventActivationTests(unittest.TestCase):
                           ('/usr/bin/systemctl', 'restart', 'authwire-radius.service')], self.calls)
         self.assertTrue((Path(result['evidence']) / 'finished.json').exists())
 
+    def test_pinned_worker_migration_adds_only_user_and_access_volatility(self):
+        for already_access in (False, True):
+            old = installer.BACKUP_CHANGE[0] + b", 'device_challenges', 'device_rate', 'fixture'}\n"
+            if already_access: old=old.replace(*installer.BACKUP_CHANGE,1)
+            new=old.replace(*installer.BACKUP_CHANGE,1).replace(*installer.USER_BACKUP_CHANGE,1)
+            installer.WORKER.write_bytes(old)
+            (installer.SOURCE/'tools/scheduled_backup.py').write_bytes(new)
+            checker=installer.WORKER.parent/'offline_restore_check.py'
+            installer.RELEASE.write_text(json.dumps({'scheduled_backup.py':installer.digest(old),'offline_restore_check.py':installer.digest(checker.read_bytes())}))
+            key='ACCESS_WORKER_SHA' if already_access else 'OLD_WORKER_SHA'
+            with patch.object(installer,key,installer.digest(old)):
+                result=installer.activate()
+            self.assertTrue(result['verified']);self.assertEqual(new,installer.WORKER.read_bytes())
+
     def test_bad_native_preflight_never_changes_worker_unit_or_running_service(self):
         self.preflight.side_effect = ValueError('native rejected')
         with self.assertRaises(ValueError): installer.activate()

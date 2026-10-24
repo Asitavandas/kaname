@@ -34,9 +34,12 @@ EVIDENCE_ROOT = Path('/var/backups/authwire')
 ACCOUNT = 'kaname-lab'
 ROOT_OWNER = 0
 OLD_WORKER_SHA = 'fc1f6f3efabf8159dd9edbfab415deb547614b630261b2833c81d739086e020c'
+ACCESS_WORKER_SHA = '06961ebec421158bf7141755355f351e206544a5dc727af89226ffe97ae6f548'
 NATIVE_SHA = '00f7b9fec04ddfd6abd3e32ea9c96fe4966ac3309a00ce0225c6c57716a147bb'
 BACKUP_CHANGE = (b"VOLATILE = {'audit', 'admin_audit', 'admin_sessions'",
                  b"VOLATILE = {'audit', 'admin_audit', 'access_events', 'admin_sessions'")
+USER_BACKUP_CHANGE = (b"'device_challenges', 'device_rate',",
+                      b"'user_enrollment_challenges', 'user_enrollment_rate', 'device_challenges', 'device_rate',")
 
 
 class ActivationError(ValueError):
@@ -182,7 +185,10 @@ def activate():
                 release['scheduled_backup.py'] != digest(old_worker) or
                 release['offline_restore_check.py'] != digest(trusted(WORKER.parent / 'offline_restore_check.py'))):
             raise ActivationError('BACKUP_RELEASE_DIFFERS')
-        if old_worker != candidate and (digest(old_worker) != OLD_WORKER_SHA or old_worker.replace(*BACKUP_CHANGE, 1) != candidate):
+        # Only the two reviewed volatility additions may migrate a pinned
+        # historical worker. Arbitrary candidate edits still fail before restart.
+        migrated = old_worker.replace(*BACKUP_CHANGE, 1).replace(*USER_BACKUP_CHANGE, 1)
+        if old_worker != candidate and (digest(old_worker) not in {OLD_WORKER_SHA, ACCESS_WORKER_SHA} or migrated != candidate):
             raise ActivationError('UNEXPECTED_BACKUP_WORKER_CHANGE')
         release['scheduled_backup.py'] = new_sha
         new_release = (json.dumps(release, sort_keys=True, indent=2) + '\n').encode()
