@@ -127,7 +127,7 @@ class Deployment:
             v['history']=((old.get('history',[])+[{k:x for k,x in old.items() if k!='history'}])[-5:]) if old else []
             plans=[p for p in s['plans'] if p['id']!=v['id']]+[v]
             if len(plans)>100:raise DeploymentError('DEPLOYMENT_PLAN_LIMIT')
-            self.ops._save(db,SECTION,plans);self.ops._audit(db,'windows_deployment_plan_saved:'+v['id'],revision)
+            self.ops._save(db,SECTION,plans);self.ops._audit(db,'windows_deployment_plan_saved:'+v['id']+':v'+str(v['version'])+':actor:'+actor,revision)
         return {'id':v['id'],'version':v['version'],'runtime_applied':False,'gpo_changed':False}
 
     def _targets(self,s,sid,kind):

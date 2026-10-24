@@ -33,7 +33,7 @@ class DeploymentTests(unittest.TestCase):
   self.save();after=self.store.snapshot();self.assertEqual(before['config'],after['config']);self.assertEqual(before['policies'],after['policies']);self.assertEqual(profiles,self.users.status()['profiles'])
   current=self.store.snapshot();p=self.preview();self.assertTrue(p['can_export_profiles']);self.assertFalse(p['can_apply']);self.assertFalse(p['gpo_changed']);self.assertEqual(current,self.store.snapshot())
  def test_version_history_and_global_and_plan_leases(self):
-  result=self.save();self.assertEqual(1,result['version']);before=self.store.snapshot()
+  result=self.save();self.assertEqual(1,result['version']);self.assertIn(':v1:actor:fixture-admin',self.store.audit()[0]['event']);before=self.store.snapshot()
   with self.assertRaises(ConflictError):self.save()
   self.assertEqual(before,self.store.snapshot());v=self.value|{'version':1,'name':'Second'};self.save(v)
   p=self.dep.status()['plans'][0];self.assertEqual(2,p['version']);self.assertEqual('Pilot <name>',p['history'][0]['name']);self.assertNotIn('history',p['history'][0])
