@@ -38,6 +38,9 @@ print(s.server_port,flush=True);s.serve_forever()`;
   await page.waitForFunction(()=>document.querySelector('#ue-profiles').textContent.includes('Kullanıcı pilotu'));
   assert.equal(await page.locator('#ue-profiles tr').count(),1);
   // No implicit activation/creation on open. Explicit group selection and off default.
+  let releasePrewrite,enteredPrewrite;const prewriteHeld=new Promise(r=>releasePrewrite=r),prewriteStarted=new Promise(r=>enteredPrewrite=r);
+  await page.route('**/api/user-admin/status*',async route=>{const reply=await route.fetch();enteredPrewrite();await prewriteHeld;await route.fulfill({response:reply});},{times:1});
+  await page.locator('#ue-refresh').click();await prewriteStarted;
   await page.locator('#ue-new').click();await page.locator('#ue-group option').nth(1).waitFor({state:'attached'});
   assert.equal(await page.locator('#ue-enabled').isChecked(),false);assert.equal(await page.locator('#ue-group').inputValue(),'');
   await page.locator('#ue-name').fill('Yeni kullanıcı profili');await page.locator('#ue-group').selectOption({index:1});await page.locator('#ue-days').fill('120');await page.locator('#ue-renew').fill('120');
@@ -46,6 +49,7 @@ print(s.server_port,flush=True);s.serve_forever()`;
   await page.locator('#ue-renew').fill('20');await page.locator('#ue-enabled').check();await page.locator('#ue-save').dblclick();await page.locator('#ue-editor').waitFor({state:'hidden'});assert.equal(profilePosts,1);
   await page.waitForFunction(()=>document.querySelector('#ue-profiles').textContent.includes('Yeni kullanıcı profili'));
   assert.match(await page.locator('#ue-profiles').textContent(),/120 gün/);
+  releasePrewrite();await page.waitForTimeout(150);assert.equal(await page.locator('#ue-profiles tr').filter({hasText:'Yeni kullanıcı profili'}).count(),1);
   const created=await page.evaluate(async()=>(await api('/api/user-admin/status')).profiles.find(p=>p.name==='Yeni kullanıcı profili'));
   const row=()=>page.locator('#ue-profiles tr').filter({hasText:'Yeni kullanıcı profili'});
   await row().getByRole('button',{name:'Düzenle',exact:true}).click();assert.equal(await page.locator('#ue-days').inputValue(),'120');
@@ -83,6 +87,6 @@ print(s.server_port,flush=True);s.serve_forever()`;
   await page.route('**/api/user-admin/status*',async route=>{const reply=await route.fetch();entered();await held;await route.fulfill({response:reply});},{times:1});
   await page.locator('#ue-refresh').click();await started;await page.locator('#account-toggle').click();await page.locator('#logout').click();await page.locator('#login').waitFor({state:'visible'});release();await page.waitForTimeout(150);
   assert.equal(await page.locator('#ue-profiles').textContent(),'');assert.equal(await page.locator('#ue-records').textContent(),'');assert.deepEqual(errors,[]);
-  console.log('AUTHWIRE_USER_ENROLLMENT_UI_OK '+JSON.stringify({actual_https_profile_save:true,off_default:true,explicit_group:true,validation_no_post:true,single_write:true,profile_disable_not_revoke:true,selected_group_preserved:true,package_download:true,stale_revision_preserves_form:true,lost_reply_reconciled_without_replay:true,read_failure_keeps_session:true,renewal_pending_not_instant:true,read_only_role:true,logout_discards_pending:true,mobile:true,machine_profiles_and_policies_preserved:true,live_ad_or_gpo:false}));
+  console.log('AUTHWIRE_USER_ENROLLMENT_UI_OK '+JSON.stringify({actual_https_profile_save:true,off_default:true,explicit_group:true,validation_no_post:true,single_write:true,profile_disable_not_revoke:true,selected_group_preserved:true,package_download:true,stale_revision_preserves_form:true,prewrite_read_cannot_hide_committed_profile:true,lost_reply_reconciled_without_replay:true,read_failure_keeps_session:true,renewal_pending_not_instant:true,read_only_role:true,logout_discards_pending:true,mobile:true,machine_profiles_and_policies_preserved:true,live_ad_or_gpo:false}));
  }catch(error){if(page){console.error('USER_PANEL_FAILURE_STATE',await page.evaluate(()=>({feedback:document.querySelector('#ue-profile-feedback').textContent,form:document.querySelector('#ue-form-error').textContent,records:document.querySelector('#ue-records').textContent})).catch(()=>null));if(process.env.KANAME_UI_ARTIFACTS){fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'user-panel-failure.png'),fullPage:true}).catch(()=>{});}}throw error;}finally{if(browser)await browser.close();child.kill();fs.rmSync(temp,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});

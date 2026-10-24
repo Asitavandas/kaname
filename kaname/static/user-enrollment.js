@@ -19,6 +19,7 @@ function ueDate(value){if(!value)return '—';const date=new Date(value);return 
 function ueControls(){
  const write=!!can('certificates.authority',true),open=$('ue-editor').open;
  $('ue-new').hidden=!write;$('ue-new').disabled=!write||ueBusy;
+ for(const id of ['ue-refresh','ue-record-refresh'])$(id).disabled=ueBusy||!can('certificates.authority');
  $('ue-form').querySelectorAll('input,select,button').forEach(input=>input.disabled=!write||ueBusy||!!ueUncertain);
  for(const id of ['ue-cancel','ue-close'])$(id).disabled=ueBusy;
  $('ue-reconcile').hidden=!ueUncertain;$('ue-reconcile').disabled=ueBusy||!write;
@@ -29,8 +30,9 @@ function ueControls(){
  $('ue-next').disabled=!ueState||ueBusy||ueOffset+ueState.users.length>=ueState.total;
  document.querySelectorAll('[data-ue-mutation]').forEach(button=>button.disabled=!write||ueBusy);
 }
-async function loadUserEnrollment(offset=ueOffset){
+async function loadUserEnrollment(offset=ueOffset,force=false){
  if(!can('certificates.authority'))return null;
+ if(force){ueRequest++;ueFlight=null;}
  const generation=authGeneration;
  if(ueFlight?.offset===offset&&ueFlight.auth===generation)return ueFlight.promise;
  const request=++ueRequest;
@@ -39,7 +41,7 @@ async function loadUserEnrollment(offset=ueOffset){
    const value=await api('/api/user-admin/status?offset='+offset);
    if(request!==ueRequest||!ueCurrent(generation))return null;
    ueState=value;ueOffset=value.offset;renderUserEnrollment();return value;
-  }catch(error){if(ueCurrent(generation)&&error.code!=='SESSION_CHANGED')ueFeedback(ueText(error),true);throw error;}
+  }catch(error){if(request===ueRequest&&ueCurrent(generation)&&error.code!=='SESSION_CHANGED')ueFeedback(ueText(error),true);throw error;}
   finally{if(ueFlight?.request===request)ueFlight=null;}
  })();ueFlight={offset,auth:generation,request,promise};return promise;
 }
@@ -106,7 +108,7 @@ async function saveUserProfile(event){
   await api('/api/user-admin/profile',payload);committed=true;
   if(!ueCurrent(generation)||epoch!==ueEditorEpoch)return;
   closeUserProfile(true);ueFeedback('Kullanıcı profili kaydedildi. Mevcut sertifikalar ve ağ erişim kuralları değişmedi.');
-  try{await loadUserEnrollment();}catch(error){if(ueCurrent(generation))ueFeedback('Profil kaydedildi; liste yenilenemedi. Yenile düğmesiyle kayıtlı sonucu kontrol edin.',true);}
+  try{await loadUserEnrollment(ueOffset,true);}catch(error){if(ueCurrent(generation))ueFeedback('Profil kaydedildi; liste yenilenemedi. Yenile düğmesiyle kayıtlı sonucu kontrol edin.',true);}
  }catch(error){
   if(!ueCurrent(generation)||epoch!==ueEditorEpoch||error.code==='SESSION_CHANGED')return;
   $('ue-form-error').textContent=ueText(error);
@@ -116,7 +118,7 @@ async function saveUserProfile(event){
 async function reconcileUserProfile(){
  if(!ueUncertain||ueBusy)return;const generation=authGeneration,epoch=ueEditorEpoch,attempt=ueUncertain;ueBusy=true;ueControls();
  try{
-  const value=await loadUserEnrollment();if(!value||!ueCurrent(generation)||epoch!==ueEditorEpoch)return;
+  const value=await loadUserEnrollment(ueOffset,true);if(!value||!ueCurrent(generation)||epoch!==ueEditorEpoch)return;
   const p=attempt.payload,matches=value.profiles.filter(item=>(p.id?item.id===p.id:!attempt.priorIds.includes(item.id))&&item.version===p.version+1&&['name','group_sid','validity_days','renew_before_days','enabled'].every(key=>key==='enabled'?!!item[key]===p[key]:item[key]===p[key]));
   if(matches.length===1){closeUserProfile(true);ueFeedback('Gönderilen bilgilerle eşleşen profil listede doğrulandı. İşlem yeniden gönderilmedi.');}
   else $('ue-form-error').textContent='Kaydetme sonucu kesinleştirilemedi. İşlem yeniden gönderilmedi; listeyi ve işlem geçmişini kontrol edin. Girdiğiniz bilgiler bu pencerede korunuyor.';
@@ -139,7 +141,7 @@ async function downloadUserPackage(profile){
 async function requestUserRenewal(user){
  if(!can('certificates.authority',true)||ueBusy||!confirm('“'+user.principal+'” için yeni anahtar ve sertifika talebi işaretlensin mi? İstemcinin sonraki kontrolünde uygulanır; mevcut bağlantı hemen değişmez.'))return;
  const generation=authGeneration;ueBusy=true;ueControls();let committed=false;
- try{await api('/api/user-admin/renew-now',{serial:user.serial});committed=true;await loadUserEnrollment();if(ueCurrent(generation))ueFeedback('Yenileme talebi işaretlendi. Kullanıcı istemcisinin bir sonraki kontrolü bekleniyor.');}
+ try{await api('/api/user-admin/renew-now',{serial:user.serial});committed=true;await loadUserEnrollment(ueOffset,true);if(ueCurrent(generation))ueFeedback('Yenileme talebi işaretlendi. Kullanıcı istemcisinin bir sonraki kontrolü bekleniyor.');}
  catch(error){if(ueCurrent(generation)&&error.code!=='SESSION_CHANGED')ueFeedback(committed?'Yenileme talebi kaydedildi; liste yenilenemedi. Yenile ile sonucu kontrol edin.':ueText(error)+' İşlem otomatik tekrar edilmedi; yeniden talep etmeden önce listeyi kontrol edin.',true);}
  finally{if(ueCurrent(generation)){ueBusy=false;ueControls();}}
 }
