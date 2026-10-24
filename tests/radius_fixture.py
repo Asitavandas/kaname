@@ -61,12 +61,7 @@ def authorize(pairs, root, *, observe=False):
                     return CurrentDirectoryAccount(**row)
 
             registry = CertificateRegistry(Store(root / 'state')) if data.get('persistent_registry') is True else Registry()
-            local_groups = None
-            if data.get('local_groups_fixture'):
-                from kaname.access_groups import AccessGroups
-                from kaname.operations import Operations
-                local_groups = AccessGroups(Operations(Store(root / 'state')))
-            service = TLSAuthorization(data['policies'], registry=registry, directory=Directory(), local_groups=local_groups)
+            service = TLSAuthorization(data['policies'], registry=registry, directory=Directory())
             decision = service.authorize(cert, nas_ip=data['nas_ip'], access_type=data['access_type'])
         reply, config = freeradius_result(decision)
         if observe:

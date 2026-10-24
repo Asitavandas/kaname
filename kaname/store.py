@@ -81,18 +81,8 @@ class Store:
                 raise ConflictError('State changed; refresh before saving')
             if policies is not None:
                 from .policy import PolicyConflictError, policy_conflicts
-                from .access_groups import catalog_in, conflict_view, definitions, require_current_catalog, AccessGroupError
-                raw_config = db.execute('SELECT config FROM state WHERE id=1').fetchone()[0]
-                domain = (json.loads(raw_config) if raw_config else {}).get('ad_domain', '')
-                catalog = catalog_in(db, domain)
-                has_runtime = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='runtime_settings'").fetchone()
-                local = definitions(db) if has_runtime else {}
-                refs = {g for p in value for g in p['conditions'].get('local_group_ids', [])}
-                if any(g not in local or local[g]['domain'] != domain for g in refs):
-                    raise AccessGroupError('ACCESS_GROUP_NOT_FOUND')
-                if any(p['enabled'] and p['conditions'].get('local_group_ids') for p in value):
-                    require_current_catalog(catalog)
-                conflicts = policy_conflicts(value, catalog, conflict_view(db, catalog) if has_runtime else {})
+                catalog = self.directory_catalog()
+                conflicts = policy_conflicts(value, catalog)
                 if conflicts:
                     raise PolicyConflictError(conflicts)
                 if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='runtime_settings'").fetchone():
@@ -195,22 +185,7 @@ class Store:
                 for obj in catalog[plural]:
                     if obj['sid'] in selected:
                         items.append({**_directory_display(obj, plural), 'kind': kind})
-        from .access_groups import definitions
-        with self.connect() as db:
-            local = definitions(db)
-        selected_local = {g for p in self.snapshot()['policies'] for g in p['conditions'].get('local_group_ids', [])}
-        items.extend({**g, 'sid':'local:'+g['id'], 'kind':'local_group'} for g in local.values() if g['id'] in selected_local)
         return {'items': items, 'catalog_available': catalog is not None}
-
-    def current_policy_conflicts(self, policies=None):
-        from .access_groups import catalog_in, conflict_view
-        from .policy import policy_conflicts
-        with self.connect() as db:
-            db.execute('BEGIN')
-            row = db.execute('SELECT config,policies FROM state WHERE id=1').fetchone()
-            domain = (json.loads(row[0]) if row[0] else {}).get('ad_domain', '')
-            catalog = catalog_in(db, domain)
-            return policy_conflicts(policies if policies is not None else json.loads(row[1]), catalog, conflict_view(db,catalog))
 
     def directory_detail(self, kind, object_id, offset=0, query=''):
         import uuid

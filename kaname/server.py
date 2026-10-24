@@ -24,7 +24,6 @@ from .policy import VerifiedIdentity, evaluate, radius_vlan_attributes, policy_c
 from .store import ConflictError, Store
 from .directory import DirectoryError, read_windows_directory, check_windows_directory, validate_connection
 from .operations import Operations
-from .access_groups import AccessGroups, AccessGroupError
 from .planning import Planning
 from .services import Services, ServiceError, validate as validate_service_action
 from .audit import history as audit_history, AuditQueryLimit
@@ -41,7 +40,6 @@ ASSETS = {'/dashboard.js': ('dashboard.js','application/javascript'), '/device.j
           '/access-events.js': ('access-events.js','application/javascript'),
           '/services.js': ('services.js','application/javascript'),
           '/styles.css': ('styles.css', 'text/css'),
-          '/access-groups.js': ('access-groups.js', 'application/javascript'),
           '/planning.js': ('planning.js', 'application/javascript'),
           '/authwire-logo.png': ('authwire-logo.png', 'image/png')}
 
@@ -97,7 +95,6 @@ class DevelopmentServer(ThreadingHTTPServer):
             self.directory_health_reader = check_linux_directory
         self.operations = Operations(self.store)
         self.planning = Planning(self.operations)
-        self.access_groups = AccessGroups(self.operations)
         self.services = Services()
         self.public_name = public_name
         self.web_certificate = Path(tls_cert).read_bytes() if tls_cert else b''
@@ -447,7 +444,7 @@ class Handler(BaseHTTPRequestHandler):
             value['directory_public'] = self.server.store.directory_status()
             value['directory_public']['automatic_sync_enabled'] = self.server.operations.directory()['automatic_sync']
             value['directory_health'] = self.server.operations.health()
-            value['policy_conflicts'] = self.server.store.current_policy_conflicts(value['policies'])
+            value['policy_conflicts'] = policy_conflicts(value['policies'], self.server.store.directory_catalog())
             value.update(product='AuthWire', version=VERSION, runtime_ready=False,
                          integrations={'ad': 'catalog-only' if value['directory_public']['catalog_available'] else 'pending', 'pki': 'pending', 'radius': 'pending', 'ovf': 'not-built'})
             self.respond(200, self.state_projection(value))
@@ -492,15 +489,6 @@ class Handler(BaseHTTPRequestHandler):
             except ServiceError as error:self.respond(503,{'error':error.code})
         elif self.path == '/api/network/devices' and self.guard(resource='network.devices'):
             self.respond(200, self.server.planning.devices())
-        elif urlsplit(self.path).path == '/api/access-groups' and self.guard():
-            if not any(permits(self.actor,r) for r in ('directory.catalog','policies.rules')):
-                self.respond(403, {'error':'FORBIDDEN'}); return
-            try:
-                query = parse_qs(urlsplit(self.path).query,keep_blank_values=True)
-                if len(self.path)>128 or set(query)-{'id'} or any(len(v)!=1 for v in query.values()):raise ValueError()
-                self.respond(200,self.server.access_groups.detail(query['id'][0]) if 'id' in query else self.server.access_groups.list())
-            except AccessGroupError as error:self.respond(404 if error.code=='ACCESS_GROUP_NOT_FOUND' else 503,{'error':error.code})
-            except (ValueError,TypeError):self.respond(400,{'error':'INVALID_INPUT'})
         elif self.path == '/api/policies/labels' and self.guard(resource='policies.rules'):
             self.respond(200, self.server.store.policy_labels())
         elif self.path == '/api/policies/drafts' and self.guard(resource='policies.rules'):
@@ -510,7 +498,7 @@ class Handler(BaseHTTPRequestHandler):
                 query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
                 if len(self.path) > 1024 or set(query) - {'kind', 'offset', 'q'} or any(len(v) != 1 for v in query.values()):
                     raise ValueError()
-                self.respond(200, self.server.access_groups.targets(int(query.get('offset',['0'])[0]),query.get('q',[''])[0]) if query.get('kind',[''])[0]=='local_group' else self.server.planning.targets(query.get('kind', [''])[0], int(query.get('offset', ['0'])[0]), query.get('q', [''])[0]))
+                self.respond(200, self.server.planning.targets(query.get('kind', [''])[0], int(query.get('offset', ['0'])[0]), query.get('q', [''])[0]))
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
             except sqlite3.Error as error: self.store_error(error)
         elif self.path == '/api/network' and self.guard():
@@ -586,7 +574,7 @@ class Handler(BaseHTTPRequestHandler):
             except LookupError: self.respond(404, {'error': 'CATALOG_OBJECT_NOT_FOUND'})
             except (ValueError, TypeError): self.respond(400, {'error': 'INVALID_INPUT'})
             except sqlite3.Error as error: self.store_error(error)
-        elif urlsplit(self.path).path not in {'/api/access-groups', '/api/system/resources', '/api/dashboard', '/api/radius/events', '/api/services', '/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/audit/history', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/policies/labels', '/api/system/power', '/api/directory/settings'}:
+        elif urlsplit(self.path).path not in {'/api/system/resources', '/api/dashboard', '/api/radius/events', '/api/services', '/api/pki/certificate', '/api/pki/certificates', '/api/pki/public', '/api/state', '/api/audit', '/api/audit/history', '/api/auth/session', '/api/system', '/api/directory/catalog', '/api/directory/detail', '/api/policies/groups', '/api/network', '/api/network/devices', '/api/policies/drafts', '/api/policies/targets', '/api/policies/labels', '/api/system/power', '/api/directory/settings'}:
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
@@ -641,7 +629,6 @@ class Handler(BaseHTTPRequestHandler):
             except sqlite3.Error as error: self.store_error(error)
             return
         resources = {'/api/config': None, '/api/policies': 'policies.rules', '/api/simulate': 'simulate.scenarios', '/api/directory/sync': 'directory.connection', '/api/directory/settings': 'directory.connection', '/api/directory/connectivity': 'directory.connection', '/api/directory/test-credentials': 'directory.connection', '/api/network/vlans': 'network.vlans', '/api/network/radius': 'network.radius', '/api/network/secret/generate': 'network.radius', '/api/network/secret/reveal': 'network.radius', '/api/system/users/save': 'system.administrators', '/api/system/users/delete': 'system.administrators', '/api/system/profiles/save': 'system.profiles', '/api/system/profiles/delete': 'system.profiles', '/api/auth/logout': None, '/api/auth/password': None}
-        resources.update({'/api/access-groups/save':'policies.rules','/api/access-groups/delete':'policies.rules'})
         resources.update({'/api/network/devices/save': 'network.devices', '/api/network/devices/delete': 'network.devices',
                           '/api/policies/drafts/save': 'policies.rules', '/api/policies/drafts/delete': 'policies.rules'})
         resources.update({path: 'certificates.authority' for path in ('/api/pki/initialize', '/api/pki/enroll-user', '/api/pki/revoke', '/api/pki/refresh-crl', '/api/pki/archive')})
@@ -681,12 +668,6 @@ class Handler(BaseHTTPRequestHandler):
                 elif self.path == '/api/system/users/delete': self.server.admin.delete(self.actor, value, 'user')
                 else: self.server.admin.delete(self.actor, value, 'profile')
                 self.respond(200, {'saved': True})
-            elif self.path == '/api/access-groups/save':
-                keys(value,{'expected_revision','group'},{'expected_revision','group'})
-                self.respond(200,self.server.access_groups.save(value['expected_revision'],value['group']))
-            elif self.path == '/api/access-groups/delete':
-                keys(value,{'expected_revision','id'},{'expected_revision','id'})
-                self.respond(200,self.server.access_groups.delete(value['expected_revision'],value['id']))
             elif self.path == '/api/directory/settings':
                 keys(value, {'expected_revision', 'settings'}, {'expected_revision', 'settings'})
                 try: result = self.server.operations.save_directory(value['expected_revision'], value['settings'])
@@ -760,9 +741,6 @@ class Handler(BaseHTTPRequestHandler):
                 keys(value, {'expected_revision', section}, {'expected_revision', section})
                 revision = self.server.store.save(value['expected_revision'], **{section: value[section]})
                 self.respond(200, {'revision': revision, 'runtime_applied': False})
-        except AccessGroupError as error:
-            code=error.code
-            self.respond(503 if code in {'ACCESS_GROUP_STORE_INVALID','ACCESS_GROUP_CATALOG_REFRESH_REQUIRED'} else 404 if code=='ACCESS_GROUP_NOT_FOUND' else 409,{'error':code,**error.details})
         except PolicyConflictError as exc:
             self.respond(409, {'error': 'POLICY_CONFLICT', 'conflicts': exc.conflicts})
         except ConflictError:

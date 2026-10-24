@@ -550,5 +550,3 @@ html:has(body.central-theme){overflow-x:clip}
 .traffic-bin:hover .traffic-count,.traffic-bin:focus .traffic-count{opacity:1}
 @keyframes traffic-rise{from{transform:scaleY(0);opacity:.25}to{transform:scaleY(1);opacity:1}}
 @media(prefers-reduced-motion:reduce){.traffic-bin *{animation:none!important;transition:none!important}}
-
-.access-groups-panel{margin-top:28px;padding:22px;border:1px solid var(--line,#dae2e8);border-radius:16px;background:var(--surface,#fff);box-shadow:0 8px 24px #1d4d730a}.access-groups-panel>input{max-width:320px}#access-group-main{padding:24px;max-height:calc(100dvh - 40px);overflow:auto}#access-group-error{color:#a72246}.access-groups-panel .identity-table td:last-child{white-space:nowrap}.access-groups-panel button+button{margin-left:8px}#access-group-selected{max-height:320px;overflow:auto;padding:12px 0}#access-group-form>.actions{margin-top:16px}#access-group-form>.actions>label{margin:0}@media(max-width:600px){#access-group-main{padding:16px}.access-groups-panel{padding:14px}.access-groups-panel .section-head{align-items:flex-start;flex-direction:column}}
