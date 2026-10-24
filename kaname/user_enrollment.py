@@ -7,6 +7,9 @@ Windows CurrentUser installation/distribution is a separate acceptance step.
 """
 import base64
 import json
+import io
+import zipfile
+from pathlib import Path
 import re
 import secrets
 import time
@@ -21,7 +24,7 @@ from .device_enrollment import digest, identifier
 from .directory import DirectoryError
 from .directory_linux import read_linux_directory
 from .enrollment import EnrollmentError, client_csr
-from .models import boolean, integer, keys, text
+from .models import boolean, dns_name, integer, keys, text
 from .pki import PEM, instant, public_der
 from .radius import CurrentDirectoryAccount, account_sid, serial_number
 
@@ -287,6 +290,49 @@ class UserEnrollment:
             self.pki._audit(db, 'user_renewal_requested:' + serial, actor)
         return {'serial': serial, 'renewal_due': True, 'renew_at': now.isoformat()}
 
+    def package(self, profile_id, *, hostname, port, tls_pem):
+        profile = self.profile(profile_id)
+        hostname = dns_name(hostname)
+        integer(port, 1, 65535)
+        tls = x509.load_pem_x509_certificate(tls_pem)
+        names = tls.extensions.get_extension_for_class(x509.SubjectAlternativeName).value.get_values_for_type(x509.DNSName)
+        if hostname not in names:
+            raise EnrollmentError('USER_TLS_NAME_MISMATCH')
+        bundle = self.pki.public_bundle()
+        files = {name: bundle[name] for name in ('root-ca.pem', 'issuer-ca.pem')}
+        if tls.issuer == tls.subject:
+            tls.verify_directly_issued_by(tls)
+            files['https-trust.pem'] = tls_pem
+        files['config.json'] = json.dumps({'kind':'user', 'url':f'https://{hostname}:{port}',
+            'spn':'HTTP/'+hostname, 'domain':profile['domain'], 'profile_id':profile_id,
+            'tls_sha256':tls.fingerprint(hashes.SHA256()).hex()}, sort_keys=True, indent=2).encode()
+        pins = json.dumps({name:digest(data) for name,data in files.items()}, sort_keys=True, separators=(',', ':')).encode()
+        for name in ('AuthWire-User-Client.ps1', 'Install-AuthWire-User.ps1'):
+            source = (Path(__file__).parent/'device_client'/name).read_bytes()
+            if source.count(b'__AUTHWIRE_USER_ASSET_HASHES__') != 1:
+                raise EnrollmentError('USER_PACKAGE_INVALID')
+            files[name] = source.replace(b'__AUTHWIRE_USER_ASSET_HASHES__', pins)
+        files['README.txt'] = ("AuthWire USER certificate enrollment pilot\r\n"
+            "Sign BOTH PowerShell files with the same trusted enterprise Authenticode publisher.\r\n"
+            "Their signatures bind config and public trust assets. Do not edit assets after signing.\r\n"
+            "Publish on an administrator-write-only SYSVOL/share. Use a USER Configuration logon script:\r\n"
+            "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File <Install-AuthWire-User.ps1>\r\n"
+            "Signing publisher and CA/HTTPS roots must be deployed through approved GPO beforehand.\r\n"
+            "Never deploy this installer as SYSTEM/computer startup, and never use Bypass or shared PFX.\r\n"
+            "It installs into the current user's LocalAppData, validates predeployed root trust\r\n"
+            "and registers a limited InteractiveToken task for that SID/profile.\r\n"
+            "Logon and 5-minute checks honor a persistent 10-minute to 12-hour retry backoff.\r\n"
+            "Healthy enrollment checks occur every 6 hours; no task stores a user password.\r\n"
+            "Private keys are non-exportable CurrentUser CNG keys; no machine certificate/task is changed.\r\n"
+            "Ethernet/WiFi 802.1X settings and GPO creation/linking are NOT included in this package.\r\n"
+            "Real domain logon/GPO, EAP-TLS wired/WiFi and user/computer transition acceptance remain open.\r\n").encode()
+        files['SHA256SUMS.txt'] = ('\n'.join(digest(data)+'  '+name for name,data in sorted(files.items()))+'\n').encode()
+        output = io.BytesIO()
+        with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as archive:
+            for name,data in files.items():
+                archive.writestr(name,data)
+        return output.getvalue()
+
     def status(self, *, offset=0):
         integer(offset, 0, 100000)
         with self.store.connect() as db:
@@ -303,4 +349,4 @@ class UserEnrollment:
             users.append({'serial': serial, 'profile_id': profile, 'principal': principal, 'status': state,
                 'installed_at': installed, 'last_seen': seen, 'renew_at': renew, 'not_after': cert.not_valid_after_utc.isoformat()})
         return {'profiles': profiles, 'users': users, 'total': total, 'offset': offset, 'radius_changed': False,
-            'windows_client_available': False, 'endpoint_acceptance_pending': True}
+            'windows_client_available': True, 'enterprise_signing_required': True, 'endpoint_acceptance_pending': True}

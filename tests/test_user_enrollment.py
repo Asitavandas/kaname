@@ -82,7 +82,7 @@ class UserEnrollmentTests(unittest.TestCase):
         self.receipt(result); self.assertEqual('installed',self.users.status()['users'][0]['status'])
         self.assertEqual([], self.devices.status()['profiles']); self.assertEqual([],self.devices.status()['devices'])
         self.assertTrue(all(c['password']=='' for c in self.connections))
-        self.assertFalse(self.users.status()['windows_client_available'])
+        self.assertTrue(self.users.status()['windows_client_available'])
 
     def test_proof_replay_is_idempotent_across_service_restart(self):
         value=self.prepare(); first=self.users.issue(USER,value)

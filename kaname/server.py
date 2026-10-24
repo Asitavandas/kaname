@@ -450,12 +450,20 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get('Host') not in self.server.hosts:
             self.respond(403, {'error': 'INVALID_HOST'})
             return
-        if urlsplit(self.path).path == '/api/user-admin/status':
+        if urlsplit(self.path).path in {'/api/user-admin/status','/api/user-admin/package'}:
             if not self.guard(resource='certificates.authority'): return
             try:
                 query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
-                if len(self.path) > 256 or set(query) - {'offset'} or any(len(v) != 1 for v in query.values()): raise ValueError()
+                if len(self.path) > 256 or any(len(v) != 1 for v in query.values()): raise ValueError()
                 users, sessions = self.user_services()
+                if urlsplit(self.path).path.endswith('/package'):
+                    if not permits(self.actor,'certificates.authority',True): self.respond(403,{'error':'FORBIDDEN'}); return
+                    if not self.server.tls: raise ValueError()
+                    keys(query,{'profile_id'},{'profile_id'})
+                    self.respond(200,users.package(query['profile_id'][0],hostname=self.server.public_name,
+                        port=self.server.server_port,tls_pem=self.server.web_certificate),'application/zip')
+                    return
+                if set(query)-{'offset'}: raise ValueError()
                 result = users.status(offset=int(query.get('offset', ['0'])[0]))
                 result.update(https_ready=self.server.tls, kerberos_ready=sessions.readiness(),
                     service_spn='HTTP/' + self.server.public_name if self.server.public_name else None)
