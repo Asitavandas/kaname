@@ -17,6 +17,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.27 canlı kurulum ve koruma kontrolleri tamam — 24 Ekim 2026
+
+- 🔴✓ Operatör DEVICE_STORAGE_FINISHED/verified=true ile 0.14.0-dev.27, source e6b899b2dccbd74e07b7feaac3d5a22e6b7d93ce kurulumunu doğruladı. Önceki staging manifest ad hatası sonrası gerçek kurulum tamamlandı; yerel sudo/kurulum çıktısı beklemesi kapandı.
+- 🔴✓ Dosya, PID, timer ve iş verisi kontrolleri başarılı. RADIUS1069559/broker1069437 süreçleri korundu; RADIUS yeniden başlatılmadı. Policy, sertifika ve Windows dosyaları değişmedi. Günlük yedek zamanlayıcısı korundu; yeni tam veri yedeği/izole veri restore yapılmadı.
+- 🔴✓ Önce altı, sonra on altı API yolu üçer kez HTTP200. Sonrasında device-admin/status medyan3,7ms/en uzun157,5ms, state7,3/8,1ms; diğer son API'ler en çok65,1ms. Bu üçer okuma bir uzun süre/yük veya gerçek uç cihaz kabulü değildir.
+- Teknik ve canlı kurulum alt adımı tamamlandı. B04'ün diğer yük/negatif kayıt senaryoları, gerçek uç kabulü ve bağımsız Windows retry aralıklılığı açık; bu çıktı bunları topluca kapatmaz. Sonraki onaylı geliştirme A01/A02 yerel AuthWire erişim grupları ve çakışma engelidir; kullanıcı EAP-TLS gerçek saha kabulü cihaz erişimi bekler.
+- Kanıt: /var/lib/authwire-updates/device-storage-dev27-20261024T052453Z-3eee794d; makine okunur sonuç docs/checkpoints/2026-10-24-device-storage-live-result.json. Bu kayıt turunda yeni canlı kaynak/servis/AD işlemi yapılmadı.
+
 ## 🔴✓ dev.27 staging manifest adı düzeltildi; gerçek kurucu ön kontrolü geçti — 24 Ekim 2026
 
 - Operatör DEVICE_STORAGE_FAILED/phase=preflight_helpers/ValueError/evidence=null bildirdi. Canlı dev.26 ve panel1069472/RADIUS1069559/broker1069437 aktif/sabit; source swap veya servis restart olmadı.

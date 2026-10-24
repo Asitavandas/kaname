@@ -1,0 +1,37 @@
+{
+  "reported_by": "operator",
+  "event": "DEVICE_STORAGE_FINISHED",
+  "verified": true,
+  "version": "0.14.0-dev.27",
+  "release": "e6b899b2dccbd74e07b7feaac3d5a22e6b7d93ce",
+  "changed": true,
+  "checks": {
+    "files": true,
+    "pids": true,
+    "timers": true,
+    "business_state": true
+  },
+  "radius_active": true,
+  "radius_restarted": false,
+  "radius_process_preserved": true,
+  "broker_process_preserved": true,
+  "policy_changed": false,
+  "certificates_changed": false,
+  "windows_changed": false,
+  "full_data_backup_created": false,
+  "isolated_restore_exercised": false,
+  "backup_timer_preserved": true,
+  "real_endpoint_acceptance_pending": true,
+  "rollback_source_commit": "cf4b34926b206aa4e3c1e52e7d08b264782e643c",
+  "evidence": "/var/lib/authwire-updates/device-storage-dev27-20261024T052453Z-3eee794d",
+  "service_pids": {
+    "authwire-radius.service": "1069559",
+    "authwire-service-control.service": "1069437"
+  },
+  "api_checks": {
+    "before_paths": 6,
+    "after_paths": 16,
+    "repeats_per_path": 3,
+    "all_statuses": 200
+  }
+}
