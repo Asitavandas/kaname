@@ -1,0 +1,57 @@
+{
+  "reported_by": "operator",
+  "event": "ACCESS_GROUPS_FINISHED",
+  "verified": true,
+  "version": "0.14.0-dev.28",
+  "release": "95a0db8d372349801a5fe47dab0fed7fc2858f53",
+  "changed": true,
+  "checks": {
+    "files": true,
+    "broker_process": true,
+    "planned_radius_transition": true,
+    "timers": true,
+    "business_state": true
+  },
+  "radius_active": true,
+  "radius_restarted": true,
+  "radius_pid_before": "1069559",
+  "radius_pid_after": "1095612",
+  "radius_process_preserved": false,
+  "broker_process_preserved": true,
+  "policy_changed": false,
+  "certificates_changed": false,
+  "windows_changed": false,
+  "full_data_backup_created": false,
+  "isolated_restore_exercised": false,
+  "backup_timer_preserved": true,
+  "operator_browser_acceptance_pending": true,
+  "real_endpoint_acceptance_pending": true,
+  "local_groups_created": false,
+  "ad_membership_changed": false,
+  "rollback_source_commit": "e6b899b2dccbd74e07b7feaac3d5a22e6b7d93ce",
+  "evidence": "/var/lib/authwire-updates/access-groups-dev28-20261024T060430Z-19b7617b",
+  "api_checks": {
+    "before_paths": 6,
+    "after_paths": 18,
+    "repeats_per_path": 3,
+    "all_statuses": 200,
+    "after": {
+      "access_groups": {
+        "median_ms": 2.7,
+        "max_ms": 15.9
+      },
+      "local_group_targets": {
+        "median_ms": 2.1,
+        "max_ms": 2.2
+      },
+      "state": {
+        "median_ms": 7.4,
+        "max_ms": 9
+      },
+      "device_admin_status": {
+        "median_ms": 5.4,
+        "max_ms": 181.8
+      }
+    }
+  }
+}

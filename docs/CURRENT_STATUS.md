@@ -17,6 +17,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.28 canlı kurulum ve koruma kontrolleri tamam — 24 Ekim 2026
+
+- 🔴✓ Operatör ACCESS_GROUPS_FINISHED/verified=true, sürüm0.14.0-dev.28, source95a0db8d372349801a5fe47dab0fed7fc2858f53 ile kurulumu doğruladı.
+- 🔴✓ RADIUS planlı stop/start ile1069559→1095612 geçti ve aktif. radius_process_preserved=false bu planlı geçişi anlatır. Broker1069437 korundu; dosya, timer ve iş verisi kontrolleri geçti. Policy, sertifika, Windows ve AD üyelikleri değişmedi; henüz yerel grup oluşturulmadı.
+- 🔴✓ Önce6, sonra18 API yolu üçer kez HTTP200. Yerel gruplar2,7/15,9ms, yerel grup seçicisi2,1/2,2ms (medyan/en uzun); device-admin/status5,4/181,8ms. Bu ölçümler uzun süreli/yük veya uç cihaz kabulü yerine geçmez.
+- Yeni tam veri yedeği/izole restore yapılmadı; günlük yedek timer korundu. Kanıt:/var/lib/authwire-updates/access-groups-dev28-20261024T060430Z-19b7617b ve docs/checkpoints/2026-10-24-access-groups-live-result.json.
+- Canlı kurulum alt adımı tamamlandı. Sıradaki operatör kontrolü: panelde yerel kullanıcı grubu oluşturma ve aynı hesabı ikinci gruba ekleme girişiminin eski grup adıyla reddi. Yeni etkin erişim kuralı/AD değişikliği bu kayıt turunda yapılmadı. Panel kabulü ve gerçek uç kabulü, A03 kullanıcı EAP-TLS, A04 merkezi Windows/GPO otomasyonu ve bağımsız aralıklı retry takibi açık kalır.
+
 ## 🔴✓ A01/A02 yerel AuthWire erişim grupları — teknik geliştirme tamam; canlı kabul bekliyor — 24 Ekim 2026
 
 - 🔴✓ Kullanıcılar ve gruplar sayfasına AuthWire Grupları eklendi: yeni grup, arama, düzenleme/silme, kullanıcı/bilgisayar türüne göre sayfalı üye seçimi ve TAMAM ile kayıt. Kural seçicisinde AuthWire Grubu var. AD grupları ve üyelikleri değiştirilmez.
