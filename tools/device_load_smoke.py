@@ -46,8 +46,17 @@ def run(count):
         assert len(set(serials))==count
         with store.connect() as db:
             assert db.execute('SELECT count(*) FROM device_issuances WHERE installed_at IS NOT NULL').fetchone()[0]==count
+            for table in ('pki_certificates','radius_certificate_bindings','pki_client_keys'):
+                assert db.execute('SELECT count(*) FROM '+table).fetchone()[0]==count
+            for event in ('device_certificate_issued:','device_certificate_installed:'):
+                assert db.execute('SELECT count(*) FROM audit WHERE event LIKE ?', (event+'%',)).fetchone()[0]==count
+            assert db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
+            assert db.execute('PRAGMA foreign_key_check').fetchall()==[]
+            assert db.execute('PRAGMA journal_mode').fetchone()[0]=='delete'
         return {'fixture_only':True,'devices':count,'workers':4,'unique_certificates':len(set(serials)),
-            'wall_seconds':round(elapsed,3),'cpu_seconds':round(cpu,3),'live_ad_tested':False,'windows_gpo_tested':False}
+            'wall_seconds':round(elapsed,3),'cpu_seconds':round(cpu,3),'live_ad_tested':False,'windows_gpo_tested':False,
+            'registry_binding_key_counts_verified':True,'issuance_and_receipt_audits_verified':True,
+            'database_integrity_verified':True,'rollback_journal_preserved':True}
 
 
 if __name__=='__main__':

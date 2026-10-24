@@ -3,11 +3,14 @@ import base64
 import io
 import json
 import shutil
+import sqlite3
 import tempfile
+import threading
 import unittest
 import uuid
 import zipfile
 from datetime import datetime, timedelta, timezone
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -78,6 +81,81 @@ class DeviceTests(unittest.TestCase):
 
     def count(self):
         with self.service.store.connect() as db: return db.execute('SELECT count(*) FROM pki_certificates').fetchone()[0]
+
+    def test_profile_read_waits_out_service_writer_without_sqlite_reader_race(self):
+        # Deterministic rollback-journal collision, not a timing-dependent load
+        # rerun. Short fixture SQLite timeout exposes the same connection race
+        # quickly; production timeout and journal configuration are unchanged.
+        ready, release = threading.Event(), threading.Event()
+        connect = sqlite3.connect
+        def short_connect(*args, **kwargs):
+            kwargs['timeout'] = .03
+            return connect(*args, **kwargs)
+        def writer():
+            with self.service.write_lock, self.service.store.connect() as db:
+                db.execute('BEGIN EXCLUSIVE')
+                db.execute("UPDATE state SET revision=revision WHERE id=1")
+                ready.set()
+                if not release.wait(3):
+                    raise AssertionError('Fixture writer was not released')
+        with patch('kaname.store.sqlite3.connect', short_connect), ThreadPoolExecutor(max_workers=2) as pool:
+            writing = pool.submit(writer)
+            try:
+                self.assertTrue(ready.wait(2))
+                reading = pool.submit(self.service.profile, self.profile['id'])
+                with self.assertRaises(FutureTimeout):
+                    reading.result(timeout=.15)
+            finally:
+                release.set()
+            writing.result(timeout=2)
+            self.assertEqual(self.profile['id'], reading.result(timeout=2)['id'])
+        with self.service.store.connect() as db:
+            self.assertEqual('delete', db.execute('PRAGMA journal_mode').fetchone()[0])
+            self.assertEqual('ok', db.execute('PRAGMA integrity_check').fetchone()[0])
+
+    def test_external_storage_lock_is_retryable_and_does_not_issue(self):
+        connect = sqlite3.connect
+        def short_connect(*args, **kwargs):
+            kwargs['timeout'] = .03
+            return connect(*args, **kwargs)
+        before = self.service.store.snapshot(), self.service.store.audit(), self.count()
+        with connect(self.service.store.path) as writer:
+            writer.execute('BEGIN EXCLUSIVE')
+            with patch('kaname.store.sqlite3.connect', short_connect):
+                self.reject('DEVICE_BUSY', lambda: self.service.profile(self.profile['id']))
+                self.reject('DEVICE_BUSY', lambda: self.service.request_renewal('1', 'test'))
+        self.assertEqual(before, (self.service.store.snapshot(), self.service.store.audit(), self.count()))
+
+    def test_database_admission_timeout_is_bounded_and_retryable(self):
+        with patch.object(self.service, 'write_lock') as lock:
+            lock.acquire.return_value = False
+            self.reject('DEVICE_BUSY', lambda: self.service.profile(self.profile['id']))
+            lock.acquire.assert_called_once_with(timeout=3)
+            lock.release.assert_not_called()
+
+    def test_storage_error_does_not_mask_non_lock_failure_or_retain_turn(self):
+        with self.assertRaises(sqlite3.OperationalError):
+            with self.service.transaction() as db:
+                db.execute('SELECT * FROM nonexistent_storage_fixture')
+        self.assertEqual(self.profile['id'], self.service.profile(self.profile['id'])['id'])
+
+    def test_live_ad_query_does_not_hold_database_turn(self):
+        original = self.service.resolver
+        def resolve(*args, **kwargs):
+            self.assertTrue(self.service.write_lock.acquire(blocking=False))
+            self.service.write_lock.release()
+            return original(*args, **kwargs)
+        self.service.resolver = resolve
+        self.enrollment()
+
+    def test_failed_write_rolls_back_and_releases_turn(self):
+        before = self.service.store.audit()
+        with self.assertRaisesRegex(RuntimeError, 'fixture rollback'):
+            with self.service.transaction() as db:
+                db.execute("INSERT INTO audit(event, revision) VALUES ('storage_fixture_rollback', 0)")
+                raise RuntimeError('fixture rollback')
+        self.assertEqual(before, self.service.store.audit())
+        self.assertEqual(self.profile['id'], self.service.profile(self.profile['id'])['id'])
 
     def test_computer_binding_installed_receipt_and_restart_idempotency(self):
         result,value=self.enrollment()
