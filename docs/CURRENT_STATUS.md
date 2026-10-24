@@ -17,6 +17,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.27 staging manifest adı düzeltildi; gerçek kurucu ön kontrolü geçti — 24 Ekim 2026
+
+- Operatör DEVICE_STORAGE_FAILED/phase=preflight_helpers/ValueError/evidence=null bildirdi. Canlı dev.26 ve panel1069472/RADIUS1069559/broker1069437 aktif/sabit; source swap veya servis restart olmadı.
+- Neden asistanın staging hazırlama hatasıydı: manifest SOURCE_MANIFEST.json adıyla konmuştu, kurulu hash-sabit tools/linux_update.py verified_files fonksiyonu LINUX_SOURCE_MANIFEST.json bekliyordu. Önceki özel hash/AST kontrolleri bu arayüz farkını yakalamadı. Salt okunur gerçek validator çalışması installed_tree=True, stage_manifest=False/Invalid manifest ile nedeni doğruladı.
+- 🔴✓ Yalnız kullanıcı staging dizinindeki manifest beklenen LINUX_SOURCE_MANIFEST.json adına taşındı, 0600 yapıldı; içerik SHA f9dd9ad2a1e44d76043cf487b763ad930af2bbbb8c37cd0cc479f4ca1a81fa23 korundu. Kurulum helper'ı ve incelenen ürün kodu değişmedi; helper SHA45695d2030290abb924d5c7e8b5d922912344a801662542d6b02d748582f4910 aynıdır.
+- 🔴✓ Bu kez helper'ın kendi load_pinned → kurulu safe_tree(owner=0) → kurulu verified_files(STAGE,EXPECTED) → source_check zinciri salt okunur çalıştırıldı. 148 dosya, installed source güvenliği, kapsam ve drift koruması başarılı; RADIUS1069559/broker1069437 PID korundu. PRIVATE root DB/preservation/apply evreleri çalıştırılmadı; canlı kurulum hâlâ yerel sudo ve DEVICE_STORAGE_FINISHED çıktısı bekliyor.
+- Aynı sudo komutu tekrar kullanılabilir. Bu onarım stage dosya adı/içerik doğrulamasıyla sınırlı olduğu için ürün/Windows/RADIUS CI'ı yeniden çalıştırılmadı; önceki başarılı kaynak testleri korunur. Teslim JSON'una doğru manifest adı ve gerçek ön kontrol kanıtı eklendi. B04 düzeltmesinin canlı kurulum kabulü kapanmadı.
+
 ## 🔴✓ dev.27 sertifika kayıt okumaları/yazmaları için kilit düzeltmesi — teknik kabul tamam, canlı kurulum bekliyor (24 Ekim 2026)
 
 - Operatör 24–25 Ekim test bilgisayarına erişemiyor; AD ve AuthWire'a uzaktan erişebiliyor. Onaylanan sırayla önce B04 yük altında SQLite kilitlenmesi incelendi. Panel görsel düzenlemesi yapılmadı.

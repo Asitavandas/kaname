@@ -171,5 +171,21 @@
     "integrity_and_counts_verified": true
   },
   "operator_sudo_pending": true,
-  "live_installed_version": "0.14.0-dev.26"
+  "live_installed_version": "0.14.0-dev.26",
+  "stage_manifest_filename": "LINUX_SOURCE_MANIFEST.json",
+  "preflight_repair": {
+    "failure_phase": "preflight_helpers",
+    "failure_category": "ValueError",
+    "cause": "staged manifest named SOURCE_MANIFEST.json while installed verified_files requires LINUX_SOURCE_MANIFEST.json",
+    "staging_filename_corrected": true,
+    "manifest_bytes_preserved": true,
+    "helper_unchanged": true,
+    "installed_validator_verified_files": 148,
+    "installed_tree_safe": true,
+    "source_guard_passed": true,
+    "live_source_changed": false,
+    "services_restarted": false,
+    "live_version": "0.14.0-dev.26",
+    "operator_sudo_pending": true
+  }
 }
