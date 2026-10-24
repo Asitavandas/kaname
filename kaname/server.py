@@ -35,7 +35,7 @@ from .vault import VaultError
 from .admin import AdminStore, AdminError, COOKIE, TTL, RESOURCES, permits
 
 STATIC = Path(__file__).parent / 'static'
-ASSETS = {'/dashboard.js': ('dashboard.js','application/javascript'), '/device.js': ('device.js','application/javascript'), '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
+ASSETS = {'/user-enrollment.js': ('user-enrollment.js','application/javascript'), '/dashboard.js': ('dashboard.js','application/javascript'), '/device.js': ('device.js','application/javascript'), '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
           '/audit.js': ('audit.js','application/javascript'),
           '/access-events.js': ('access-events.js','application/javascript'),
           '/services.js': ('services.js','application/javascript'),

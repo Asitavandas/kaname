@@ -50,9 +50,14 @@ class BrokerTests(unittest.TestCase):
         v=action(service,verb);v.pop('confirmed');return {'kind':'action',**v,'actor':'operator'}
     def finish(self):
         limit=time.monotonic()+4
-        while self.control.busy and time.monotonic()<limit:time.sleep(.01)
-        self.assertFalse(self.control.busy)
-        return self.control.jobs[-1]
+        while time.monotonic()<limit:
+            # busy is cleared before the final save, under this same lock.
+            # Observe it while locked so fixture teardown cannot race the write.
+            with self.control.lock:
+                if not self.control.busy:
+                    return dict(self.control.jobs[-1])
+            time.sleep(.01)
+        self.fail('Service fixture worker did not finish')
     def test_allowlist_blocks_shell_other_units_and_self_stop(self):
         for service,verb in [('sshd','stop'),('panel','stop'),('radius;id','restart'),('radius','enable'),('radius','disable'),('crl-sync','restart')]:
             with self.assertRaises(broker.ControlError):self.control.submit(self.request(service,verb))
