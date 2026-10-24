@@ -17,6 +17,19 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ A01/A02 yerel AuthWire erişim grupları — teknik geliştirme tamam; canlı kabul bekliyor — 24 Ekim 2026
+
+- 🔴✓ Kullanıcılar ve gruplar sayfasına AuthWire Grupları eklendi: yeni grup, arama, düzenleme/silme, kullanıcı/bilgisayar türüne göre sayfalı üye seçimi ve TAMAM ile kayıt. Kural seçicisinde AuthWire Grubu var. AD grupları ve üyelikleri değiştirilmez.
+- 🔴✓ Bir domain/object GUID yalnız bir yerel erişim grubunda bulunabilir. Önceki grubundan açıkça çıkarılmadan diğerine eklenemez; eski grup adıyla uyarı ve sunucuda atomik ret uygulanır. Toplu seçim, global revision ve audit aynı transaction içindedir. Üyelik/kural çakışması da kayıt sırasında engellenir; sonraki AD değişikliği çakışma oluşturursa RADIUS POLICY_CONFLICT ile reddeder.
+- 🔴✓ RADIUS üyeliği mevcut sertifika bağlama ve canlı AD kontrollerinden sonra domain/GUID/SID/kimlik türüyle eşleştirir. Kullanıcı sertifikası olmayan makine oturumu kullanıcı üyeliğini ispatlamaz; A03 kullanıcı EAP-TLS saha adımı hâlâ açıktır. Eski policy biçimleri korunur; yerel grup seçimi boş grup için genel izne dönüşmez.
+- 🔴✓ 625 Python testi, 25 ortama bağlı skip, hata yok. Sunucuda izole geçici verilerle 24 yeni backend/HTTP testi geçti. 200 sentetik kullanıcı, eşzamanlı üyelik ekleme, rollback, doğrudan/AD/yerel kural çakışmaları, GUID/SID değişimi, CSRF/Origin/RBAC ve istemciden sahte yerel üyelik iddiası kontrol edildi.
+- 🔴✓ 95a0db8d exact-head altı CI workflow başarıyla tamamlandı (Windows retry için aynı kaynaklı tekrar gerekti; aralıklılık aşağıda açık tutulur). 13 tarayıcı akışı ve masaüstü/mobil görsel kontrol geçti. Native loopback EAP-TLS normal/debug modlarında yerel bilgisayar/kullanıcı izni ve kaldırılmış/yanlış SID üyeliği retleri test edildi. Bunlar geçici sertifika ve sentetik AD kanıtıdır; müşteri uç cihazı veya gerçek 200 cihaz yük kabulü değildir.
+- 🔴✓ 152 dosyalı paket, kurulu linux_update.py'nin gerçek verified_files/safe_tree/source_guard kontrollerinden geçti. Dosya yazma, panel/RADIUS başlatma, HTTPS sağlık ve dinleyici hataları için kaynak rollback/idempotence sınır testleri geçti. Tam veri yedeği veya izole restore tekrar yapılmadı.
+- Canlı kurulum için terminalde sudo komutu bekleniyor; yeni adapterin etkinleşmesi kontrollü RADIUS stop/start gerektirir. Canlı kaynak/servis/AD üyeliği/grup/policy henüz değiştirilmedi; production dev.27, RADIUS1069559/broker1069437 korundu. Günlük yedek/CRL timer, Windows/GPO, CA/sertifika/anahtarlar, logo ve native modül korunacak.
+- Sınırlar: en çok 256 grup, grupta 500 üye, toplam 10.000 yerel üyelik. Yeni üye veya etkin yerel kural için 15 dakikadan yeni, üyelik içeren AD kataloğu gerekir. Kullanılmış grup (kural devre dışı olsa da) silinemez.
+- Bağımsız aralıklı test takibi açık: 301cea88 CI ilk denemesinde CRL systemd başlangıcı ve expired recovery; aynı kaynak tekrarı başarılı. 95a0db8d Windows retry testinde JSON'un kesirli saniyeli deadline'ından erken tetikleme, deadline_rearmed ve NextRunTime=null tekrar gözlendi. Windows/client/CRL kaynakları bu geliştirmede değiştirilmedi; başarılı tekrar kök neden çözümü sayılmaz. B04 takibi ve gerçek uç kabulü açık kalır.
+- Kaynak/kurulum/CI kanıtı: docs/LOCAL_ACCESS_GROUPS.md ve docs/checkpoints/2026-10-24-access-groups-*. Canlı kurulum ve panel operatör kabulü, gerçek grup üyeliği/policy saha testi, A03 kullanıcı kimliği ve A04 merkezi Windows/GPO tam otomasyonu henüz tamamlandı sayılmıyor.
+
 ## 🔴✓ dev.27 canlı kurulum ve koruma kontrolleri tamam — 24 Ekim 2026
 
 - 🔴✓ Operatör DEVICE_STORAGE_FINISHED/verified=true ile 0.14.0-dev.27, source e6b899b2dccbd74e07b7feaac3d5a22e6b7d93ce kurulumunu doğruladı. Önceki staging manifest ad hatası sonrası gerçek kurulum tamamlandı; yerel sudo/kurulum çıktısı beklemesi kapandı.

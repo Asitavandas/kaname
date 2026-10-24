@@ -1,0 +1,272 @@
+{
+  "event": "ACCESS_GROUPS_TECHNICAL_CHECKPOINT",
+  "date": "2026-10-24",
+  "version": "0.14.0-dev.28",
+  "source": "95a0db8d372349801a5fe47dab0fed7fc2858f53",
+  "base_release": "e6b899b2dccbd74e07b7feaac3d5a22e6b7d93ce",
+  "source_pr": 59,
+  "installed": false,
+  "production_version": "0.14.0-dev.27",
+  "source_tests": {
+    "run": 625,
+    "skipped": 25,
+    "failures": 0
+  },
+  "host_isolated_tests": {
+    "run": 24,
+    "failures": 0,
+    "customer_state_used": false
+  },
+  "browser": {
+    "flows": 13,
+    "run_id": 40068177812,
+    "artifact_id": 12549638370,
+    "artifact_sha256": "5c79b2c8d04c891e76a2fbc38d0004ac16507c2b2f1f4bf05fa6856e36915246",
+    "passed": true,
+    "desktop_reviewed": true,
+    "mobile_reviewed": true
+  },
+  "native_cases": [
+    "local-group-computer",
+    "local-group-member-removed",
+    "local-group-wrong-immutable-sid",
+    "local-group-user"
+  ],
+  "native_customer_ad_used": false,
+  "staging": {
+    "validated": true,
+    "files": 152,
+    "manifest": "e1970fb071a2fa2f5cfc2fffec21ef292b7265921cdbb2d4364e61f0993a1186",
+    "actual_installed_updater_used": true,
+    "copy_from_previous_verified_stage": "/home/segmentiq/authwire-stage-dev28-301cea88e870",
+    "original_transfer_sha256": "c65f46ce4d078a17fad6afcf51de88f2234f63d488bdf1dd3f58e17bee2bf13e"
+  },
+  "delivery": {
+    "release": "95a0db8d372349801a5fe47dab0fed7fc2858f53",
+    "base_release": "e6b899b2dccbd74e07b7feaac3d5a22e6b7d93ce",
+    "files": 152,
+    "new_files": [
+      "kaname/access_groups.py",
+      "kaname/static/access-groups.js",
+      "tests/test_access_groups.py",
+      "tests/test_access_groups_http.py"
+    ],
+    "scope": [
+      "kaname/__init__.py",
+      "kaname/access_groups.py",
+      "kaname/models.py",
+      "kaname/policy.py",
+      "kaname/radius.py",
+      "kaname/radius_adapter.py",
+      "kaname/server.py",
+      "kaname/static/access-groups.js",
+      "kaname/static/app.js",
+      "kaname/static/index.html",
+      "kaname/static/styles.css",
+      "kaname/store.py",
+      "pyproject.toml",
+      "tests/radius_fixture.py",
+      "tests/test_access_groups.py",
+      "tests/test_access_groups_http.py",
+      "tools/radius_lab.py"
+    ],
+    "manifest_sha256": "e1970fb071a2fa2f5cfc2fffec21ef292b7265921cdbb2d4364e61f0993a1186",
+    "manifest_filename": "LINUX_SOURCE_MANIFEST.json",
+    "helper_sha256": "1eb6cbae1e5d91e2c1eaf27409d89e85a5a1c6036eee0a42291eb869d8f66da2",
+    "transfer_sha256": "298bcd38e4c39aa99e23f668ba10ebf230e31516ca2e8df224305691356b1597",
+    "stage": "/home/segmentiq/authwire-stage-dev28-95a0db8d3723",
+    "transfer_used": false
+  },
+  "deployment_boundary": {
+    "source_files_changed": 17,
+    "requires_local_sudo": true,
+    "planned_radius_restart": true,
+    "broker_restart": false,
+    "full_backup": false,
+    "isolated_restore": false,
+    "existing_business_state_changed": false,
+    "windows_changed": false,
+    "ad_membership_changed": false,
+    "policies_changed": false,
+    "certificates_changed": false,
+    "native_module_changed": false
+  },
+  "rollback_tests": [
+    "partial_write",
+    "panel_start",
+    "radius_start",
+    "https_health",
+    "radius_listener",
+    "idempotence"
+  ],
+  "pending": [
+    "local_sudo_deployment",
+    "operator_browser_acceptance",
+    "real_local_group_endpoint_acceptance",
+    "user_eap_tls_field_pilot",
+    "central_windows_gpo_automation"
+  ],
+  "independent_flaky_checks": [
+    {
+      "head": "301cea88e8709d67784aaeb9f87a52650566e810",
+      "checks": [
+        "crl_sync_service_start",
+        "expired_pending_recovery"
+      ],
+      "repeat": "passed",
+      "root_cause_resolved": false
+    },
+    {
+      "head": "95a0db8d372349801a5fe47dab0fed7fc2858f53",
+      "job_id": 120795711059,
+      "kind": "retry_deadline_fractional_early_trigger",
+      "facts": {
+        "next_attempt": "2026-10-24T08:56:37.7259576+03:00",
+        "retry_last_run": "2026-10-24T05:56:37+00:00",
+        "result": "deadline_rearmed",
+        "next_run": null
+      },
+      "root_cause_resolved": false,
+      "repeat": "passed"
+    }
+  ],
+  "merge_commit": "0ca75af0f32dfd496ab270f7b059a89be0b1ea08",
+  "ci": [
+    {
+      "id": 40068177859,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40068177808,
+      "name": "KANAME Linux source preparation",
+      "conclusion": "success"
+    },
+    {
+      "id": 40068177849,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40068177812,
+      "name": "KANAME browser checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40068177802,
+      "name": "AuthWire device enrollment pilot checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40068177842,
+      "name": "KANAME real RADIUS protocol proof",
+      "conclusion": "success"
+    }
+  ],
+  "native_protocol": {
+    "run_id": 40068177842,
+    "job_id": 120795711277,
+    "modes": [
+      "normal",
+      "debug"
+    ],
+    "local_group_results": [
+      {
+        "case": "local-group-computer",
+        "passed": true,
+        "radius_code": 2,
+        "access_challenges": 12,
+        "response_integrity_checked": true,
+        "policy_reason": "POLICY_ALLOW",
+        "vlan": 33,
+        "final_response_history_verified": true,
+        "recorded_reason": "POLICY_ALLOW",
+        "verified_tls_context": true
+      },
+      {
+        "case": "local-group-member-removed",
+        "passed": true,
+        "radius_code": 3,
+        "access_challenges": 12,
+        "response_integrity_checked": true,
+        "policy_reason": "NO_MATCHING_POLICY",
+        "vlan": null,
+        "final_response_history_verified": true,
+        "recorded_reason": "NO_MATCHING_POLICY",
+        "verified_tls_context": true
+      },
+      {
+        "case": "local-group-wrong-immutable-sid",
+        "passed": true,
+        "radius_code": 3,
+        "access_challenges": 12,
+        "response_integrity_checked": true,
+        "policy_reason": "NO_MATCHING_POLICY",
+        "vlan": null,
+        "final_response_history_verified": true,
+        "recorded_reason": "NO_MATCHING_POLICY",
+        "verified_tls_context": true
+      },
+      {
+        "case": "local-group-user",
+        "passed": true,
+        "radius_code": 2,
+        "access_challenges": 12,
+        "response_integrity_checked": true,
+        "policy_reason": "POLICY_ALLOW",
+        "vlan": 33,
+        "final_response_history_verified": true,
+        "recorded_reason": "POLICY_ALLOW",
+        "verified_tls_context": true
+      },
+      {
+        "case": "local-group-computer",
+        "passed": true,
+        "radius_code": 2,
+        "access_challenges": 12,
+        "response_integrity_checked": true,
+        "policy_reason": "POLICY_ALLOW",
+        "vlan": 33,
+        "final_response_history_verified": true,
+        "recorded_reason": "POLICY_ALLOW",
+        "verified_tls_context": true
+      },
+      {
+        "case": "local-group-member-removed",
+        "passed": true,
+        "radius_code": 3,
+        "access_challenges": 12,
+        "response_integrity_checked": true,
+        "policy_reason": "NO_MATCHING_POLICY",
+        "vlan": null,
+        "final_response_history_verified": true,
+        "recorded_reason": "NO_MATCHING_POLICY",
+        "verified_tls_context": true
+      },
+      {
+        "case": "local-group-wrong-immutable-sid",
+        "passed": true,
+        "radius_code": 3,
+        "access_challenges": 12,
+        "response_integrity_checked": true,
+        "policy_reason": "NO_MATCHING_POLICY",
+        "vlan": null,
+        "final_response_history_verified": true,
+        "recorded_reason": "NO_MATCHING_POLICY",
+        "verified_tls_context": true
+      },
+      {
+        "case": "local-group-user",
+        "passed": true,
+        "radius_code": 2,
+        "access_challenges": 12,
+        "response_integrity_checked": true,
+        "policy_reason": "POLICY_ALLOW",
+        "vlan": 33,
+        "final_response_history_verified": true,
+        "recorded_reason": "POLICY_ALLOW",
+        "verified_tls_context": true
+      }
+    ]
+  }
+}
