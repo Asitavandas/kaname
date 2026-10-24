@@ -80,8 +80,9 @@ class Store:
             if revision != expected_revision:
                 raise ConflictError('State changed; refresh before saving')
             if policies is not None:
-                from .policy import PolicyConflictError, policy_conflicts
+                from .policy import PolicyConflictError, policy_conflicts, validate_identity_targets
                 catalog = self.directory_catalog()
+                validate_identity_targets(value, catalog)
                 conflicts = policy_conflicts(value, catalog)
                 if conflicts:
                     raise PolicyConflictError(conflicts)

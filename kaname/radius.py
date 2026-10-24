@@ -147,7 +147,7 @@ class TLSAuthorization:
                 return Decision('deny', 'CERTIFICATE_BINDING_CHANGED')
             identity = VerifiedIdentity(True, True, account.enabled, account.kind == 'computer',
                                         account.security_group_sids, access_type, nas_ip, 'EAP-TLS',
-                                        account_sid=account.sid)
+                                        account_sid=account.sid, account_kind=account.kind)
             return evaluate(self.policies, identity)
         except DirectoryUnavailable:
             return Decision('deny', 'DIRECTORY_UNAVAILABLE')

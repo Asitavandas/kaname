@@ -39,7 +39,7 @@ s.serve_forever()`;
   async function decision(access_type){return page.evaluate(async access_type=>(await api('/api/simulate',{authenticated:true,directory_available:true,account_enabled:true,domain_device:true,group_sids:['S-1-5-21-10-20-30-40'],access_type,nas_ip:access_type==='wired'?'192.0.2.2':'192.0.2.52',eap_method:'EAP-TLS'})).decision,access_type);}
   await login(page);await policiesView();
   assert.equal(await page.locator('#access-groups-section').count(),0);assert.equal(await page.locator('#access-group-editor').count(),0);assert.equal(await page.locator('#policy-kind option[value=local_group]').count(),0);assert.equal(await page.evaluate(async()=>(await fetch('/api/access-groups')).status),404);assert.equal(await page.evaluate(async()=>(await fetch('/access-groups.js')).status),404);
-  assert.match(await page.locator('#panel-version').textContent(),/0\.14\.0-dev\.32/);
+  assert.match(await page.locator('#panel-version').textContent(),/0\.14\.0-dev\.33/);
   const original=await snapshot();assert.equal((await decision('wireless')).vlan,140);
   assert.deepEqual(await page.locator('#policy-list th').allTextContents(),['Kural Adı','Erişim Türü','Kullanıcı/Grup','VLAN','Karar','Durum']);
   const toolbar=await page.locator('.policy-toolbar').boundingBox(),create=await page.locator('#new-policy').boundingBox(),search=await page.locator('#policy-query').boundingBox();
@@ -98,7 +98,7 @@ s.serve_forever()`;
   assert.equal(await row('wired').locator('.policy-summary td').nth(0).locator('.object-status').count(),0);
   assert.equal(await row('wired').locator('.policy-summary td').nth(5).textContent(),'Etkin');
   await page.locator('#new-policy').click();await page.locator('#policy-editor').waitFor({state:'visible'});
-  assert.deepEqual(await page.locator('.rule-fields>label').allTextContents(),['Kural Adı','Erişim Türü','Kullanıcı/Grup','VLAN','Karar','Etkin/Devre Dışı']);
+  assert.deepEqual(await page.locator('.rule-fields>label').allTextContents(),['Kural Adı','Erişim Türü','Kullanıcı/Grup','Doğrulama Kapsamı','VLAN','Karar','Etkin/Devre Dışı']);
   await page.locator('#policy-name').fill('Selected computers');await page.locator('#policy-access').selectOption('wireless');await page.locator('#policy-vlan').selectOption('140');await page.locator('#policy-enabled').selectOption('false');
   await page.locator('#policy-kind').selectOption('computer');await page.locator('#policy-target-results input').first().waitFor();
   const modalBox=await page.locator('#policy-editor').boundingBox(),pickerBox=await page.locator('#policy-picker').boundingBox();assert.ok(pickerBox.x>modalBox.x&&pickerBox.width<modalBox.width*.9,'Picker leaves part of the modal visible');
@@ -119,6 +119,31 @@ s.serve_forever()`;
   await selectRow(added.id);await row(added.id).getByRole('button',{name:'Sil',exact:true}).click();assert.match(await page.locator('#delete-policy-description').textContent(),/Selected computers/);const beforeCancel=writes;await page.locator('#delete-policy-confirm button[value="cancel"]').click();assert.equal(writes,beforeCancel);assert.ok((await snapshot()).policies.some(p=>p.id===added.id));
   await row(added.id).getByRole('button',{name:'Sil',exact:true}).click();const concurrent=await snapshot();concurrent.policies.find(p=>p.id==='wired').name='Newer rule name';await save(concurrent);await page.locator('#delete-policy-submit').click();await page.waitForFunction(()=>!policySaving&&state.policies.find(p=>p.id==='wired').name==='Newer rule name');assert.ok((await snapshot()).policies.some(p=>p.id===added.id));
   const beforeDelete=await snapshot();await selectRow(added.id);await row(added.id).getByRole('button',{name:'Sil',exact:true}).click();await page.locator('#delete-policy-submit').click();await page.waitForFunction(()=>!policySaving&&!state.policies.some(p=>p.name==='Selected computers'));assert.deepEqual((await snapshot()).policies,beforeDelete.policies.filter(p=>p.id!==added.id));
+  // Explicit scope: a group may contain both account kinds; no inferred AD edits.
+  await save({...await snapshot(),policies:[]});await page.evaluate(()=>refresh());
+  async function pickFirst(kind){await page.locator('#policy-kind').selectOption(kind);await page.locator('#policy-target-results input').first().waitFor();await page.locator('#policy-target-results input').first().check();await page.locator('#policy-picker-done').click();}
+  await page.locator('#new-policy').click();await page.locator('#policy-editor').waitFor({state:'visible'});
+  assert.equal(await page.locator('#policy-identity-scope').inputValue(),'computer');
+  await page.locator('#policy-name').fill('Group user VLAN');await page.locator('#policy-vlan').selectOption('140');
+  await page.locator('#policy-identity-scope').selectOption('user');await pickFirst('group');
+  assert.equal(await page.locator('#policy-identity-scope').inputValue(),'user');
+  if(process.env.KANAME_UI_ARTIFACTS)await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'policy-user-scope-desktop.png'),animations:'disabled'});
+  await page.locator('#add-policy').click();await page.waitForFunction(()=>!policySaving&&!document.getElementById('policy-editor').open);
+  let userRule=(await snapshot()).policies.find(p=>p.name==='Group user VLAN');
+  assert.deepEqual(userRule.conditions.identity_types,['user']);assert.equal(userRule.constraints.require_domain_device,false);
+  const computerRule={...userRule,id:'typed-computer',name:'Group computer VLAN',vlan:110,conditions:{...userRule.conditions,identity_types:['computer']},constraints:{...userRule.constraints,require_domain_device:true}};
+  await save({...await snapshot(),policies:[userRule,computerRule]});await page.evaluate(()=>refresh());
+  for(const [kind,vlan]of [['user',140],['computer',110]])assert.equal(await page.evaluate(async({kind,group})=>(await api('/api/simulate',{authenticated:true,directory_available:true,account_enabled:true,domain_device:kind==='computer',account_kind:kind,group_sids:group,access_type:'wired',nas_ip:'192.0.2.2',eap_method:'EAP-TLS'})).decision.vlan,{kind,group:userRule.conditions.group_sids}),vlan);
+  await selectRow(userRule.id);await row(userRule.id).getByRole('button',{name:'Düzenle',exact:true}).click();await page.locator('#policy-editor').waitFor({state:'visible'});
+  assert.equal(await page.locator('#policy-identity-scope').inputValue(),'user');await page.locator('#add-policy').click();await page.waitForFunction(()=>!policySaving&&!document.getElementById('policy-editor').open);
+  assert.deepEqual((await snapshot()).policies.find(p=>p.id===userRule.id),userRule);
+  // A new direct user selects user scope; a manual incompatible scope cannot POST.
+  await page.locator('#new-policy').click();await page.locator('#policy-editor').waitFor({state:'visible'});await page.locator('#policy-name').fill('Direct user');await page.locator('#policy-vlan').selectOption('140');await pickFirst('user');
+  assert.equal(await page.locator('#policy-identity-scope').inputValue(),'user');
+  await page.locator('#policy-identity-scope').selectOption('computer');const mismatchWrites=writes;await page.locator('#add-policy').click();
+  await page.waitForFunction(()=>document.getElementById('policy-form-error').textContent.includes('kapsamıyla uyumlu değil'));assert.equal(writes,mismatchWrites);
+  if(process.env.KANAME_UI_ARTIFACTS){await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'policy-user-scope-mobile.png'),animations:'disabled'});await page.setViewportSize({width:1440,height:1050});}
+  await page.locator('#cancel-policy').click();assert.equal((await snapshot()).policies.length,2);
   for(const width of [390,1366,1920]){await page.setViewportSize({width,height:1050});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
   if(process.env.KANAME_UI_ARTIFACTS){fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'policy-toggle.png'),fullPage:true,animations:'disabled'});}
   assert.deepEqual(errors,[]);console.log('Policy UI: aligned columns, compact search, row menus, keyboard selection, read-only filtering, new-rule button, persistence, preserved VLAN/selectors, disabled evaluation, editing, single POST, failures, stale revision, activation conflict, RBAC, CSRF and responsive layout passed.');

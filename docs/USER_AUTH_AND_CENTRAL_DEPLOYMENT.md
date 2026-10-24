@@ -4,6 +4,15 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## Kullanıcı/bilgisayar policy kapsamı — dev.33 teknik hazırlık, 24 Ekim 2026
+
+- Grup seçimi tek başına kullanıcı/bilgisayar ayrımı yapmıyordu. Yeni kurallar için açık kullanıcı, bilgisayar veya iki kimlik kapsamı hazırlanıyor. Gerçek RADIUS türü sertifikadaki değişmez bağ ve güncel AD nesnesinden gelir; dış EAP adı veya panel talebi kimlik kanıtı değildir.
+- Eski kuralların optional alanı yoksa eski anlamı aynen korunur; veri göçü veya otomatik scope ekleme yapılmaz. Aynı AD grubuna ait kullanıcı ve bilgisayar kuralları açıkça ayrı kapsamla farklı VLAN alabilir. Kesişen kararlar kayıt ve çalışma anında reddedilmeye devam eder; öncelik/first-match eklenmez.
+- Modalda Doğrulama Kapsamı alanı, doğrudan hesap türüne göre yeni-kural önerisi, yanlış kullanıcı/bilgisayar seçimi koruması ve tipli simülasyon hazırlanıyor. Mevcut kuralda kapsam değiştirilmeden kaydetmek eski koşulları korur.
+- İlk21yeni model/store/RADIUS/HTTP sınır testi geçti. Tam test, gerçek native RADIUS fixture ve tarayıcı kabulü henüz bekliyor. Canlı kaynak dev.32; canlı policy/sertifika/Windows/AD-GPO değiştirilmedi.
+- Bu adım policy motorunu değiştirdiğinden kurulumda **planlı RADIUS yeniden başlatma** gerekir. Broker/native modül/ünite, CA/sertifika, policy verisi ve Windows paketleri korunacak. Tam veri yedeği tekrar alınmayacak; kod geri alma noktası tutulacak.
+- Gerçek kullanıcı/cihaz GPO ve kablolu/Wi-Fi/VLAN kabulü pazartesiye bırakılmıştır. A03/A04 bütünü açık; mevcut94iş üzerinden54tamam (%57),40kalan (%43) hesabı bu teknik hazırlıkla artırılmaz.
+
 ## 🔴✓ Kullanıcı sekmelerinin tarayıcı kabulü tamam — 24 Ekim 2026
 
 Operatör iki yeni sekmenin hatasız açıldığını doğruladı. Dev.32 canlı kurulum

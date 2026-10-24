@@ -20,6 +20,7 @@ class VerifiedIdentity:
     nas_ip: str
     eap_method: str
     account_sid: str = ''
+    account_kind: str = ''
 
     def __post_init__(self):
         for value in (self.authenticated, self.directory_available, self.account_enabled, self.domain_device):
@@ -30,6 +31,9 @@ class VerifiedIdentity:
             raise ValidationError('Invalid verified group SID')
         if type(self.account_sid) is not str or (self.account_sid and (len(self.account_sid) > 184 or not re.fullmatch(r'S-1-[0-9]+(?:-[0-9]+)+', self.account_sid))):
             raise ValidationError('Invalid verified account SID')
+        enum(self.account_kind, {'', 'user', 'computer'})
+        if self.account_kind == 'user' and self.domain_device:
+            raise ValidationError('User identity cannot prove a domain computer')
         enum(self.access_type, {'wired', 'wireless'})
         enum(self.eap_method, {'EAP-TLS', 'PEAP-TLS', 'PEAP-MSCHAPV2'})
         object.__setattr__(self, 'nas_ip', address(self.nas_ip))
@@ -47,6 +51,21 @@ class PolicyConflictError(ValueError):
     def __init__(self, conflicts):
         self.conflicts = conflicts
         super().__init__('POLICY_CONFLICT')
+
+
+def validate_identity_targets(policies, catalog):
+    """A cached direct-account label may reject an impossible author selection.
+
+    Runtime kind always comes from the bound certificate + fresh AD object.
+    Missing labels never supply a kind or substitute for the runtime proof.
+    """
+    if not catalog:
+        return
+    kinds = {a['sid']: kind for plural, kind in (('users', 'user'), ('computers', 'computer')) for a in catalog[plural]}
+    for policy in policies:
+        scope = policy['conditions'].get('identity_types')
+        if scope and any(sid in kinds and kinds[sid] not in scope for sid in policy['conditions']['group_sids']):
+            raise ValidationError('POLICY_IDENTITY_SCOPE_MISMATCH')
 
 
 def policy_conflicts(policies, catalog=None):
@@ -75,6 +94,7 @@ def policy_conflicts(policies, catalog=None):
         key = frozenset(policy['conditions']['group_sids'])
         if key not in member_sets:
             member_sets[key] = set().union(*(members.get(g, set()) for g in key))
+    account_kinds = {a['sid']: kind for plural, kind in (('users', 'user'), ('computers', 'computer')) for a in (catalog or {}).get(plural, [])}
     conflicts = []
     active = [p for p in policies if p['enabled']]
     for index, left in enumerate(active):
@@ -82,8 +102,11 @@ def policy_conflicts(policies, catalog=None):
             lc, rc = left['conditions'], right['conditions']
             if any(lc[k] and rc[k] and not set(lc[k]).intersection(rc[k]) for k in ('access_types', 'nas_ips')):
                 continue
+            common_kinds = set(lc.get('identity_types', ['user', 'computer'])).intersection(rc.get('identity_types', ['user', 'computer']))
+            if not common_kinds:
+                continue
             lg, rg = set(lc['group_sids']), set(rc['group_sids'])
-            if lg and rg and not lg.intersection(rg) and not member_sets[frozenset(lg)].intersection(member_sets[frozenset(rg)]):
+            if lg and rg and not lg.intersection(rg) and not any(account_kinds.get(sid) in common_kinds for sid in member_sets[frozenset(lg)].intersection(member_sets[frozenset(rg)])):
                 continue
             # Constraint mismatches can create allow/deny conflicts too.
             same = (left['action'], left['vlan'], set(left['constraints']['eap_methods']), left['constraints']['require_domain_device']) == (right['action'], right['vlan'], set(right['constraints']['eap_methods']), right['constraints']['require_domain_device'])
@@ -110,6 +133,8 @@ def evaluate(policies, identity):
         if not policy['enabled']:
             continue
         c = policy['conditions']
+        if c.get('identity_types') and identity.account_kind not in c['identity_types']:
+            continue
         if c['group_sids'] and not (identity.group_sids.intersection(c['group_sids']) or identity.account_sid in c['group_sids']):
             continue
         if c['access_types'] and identity.access_type not in c['access_types']:
