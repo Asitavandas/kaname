@@ -800,14 +800,14 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(200, {'secret': self.server.operations.radius_secret(value['ip'])})
             elif self.path == '/api/simulate':
                 required = {'authenticated', 'directory_available', 'account_enabled', 'domain_device', 'group_sids', 'access_type', 'nas_ip', 'eap_method'}
-                keys(value, required | {'account_kind', 'account_sid'}, required)
+                keys(value, required | {'account_kind'}, required)
                 context = VerifiedIdentity(
                     boolean(value['authenticated']), boolean(value['directory_available']),
                     boolean(value['account_enabled']), boolean(value['domain_device']),
                     frozenset(array(value['group_sids'], lambda x: text(x, 184))),
                     enum(value['access_type'], {'wired', 'wireless'}), address(value['nas_ip']),
                     enum(value['eap_method'], {'EAP-TLS', 'PEAP-TLS', 'PEAP-MSCHAPV2'}),
-                    account_sid=value.get('account_sid', ''), account_kind=value.get('account_kind', ''))
+                    account_kind=value.get('account_kind', ''))
                 decision = evaluate(self.server.store.snapshot()['policies'], context)
                 self.respond(200, {'simulation_only': True, 'network_enforced': False,
                                    'decision': asdict(decision), 'radius_attributes': radius_vlan_attributes(decision)})

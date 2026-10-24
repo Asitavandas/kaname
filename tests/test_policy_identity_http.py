@@ -28,6 +28,7 @@ class PolicyIdentityHTTPTests(unittest.TestCase):
         before = self.server.store.snapshot()
         for kind, vlan in [('user', 50), ('computer', 110)]:
             payload = asdict(identity(account_kind=kind, domain_device=kind == 'computer'))
+            payload.pop('account_sid')
             payload['group_sids'] = list(payload['group_sids'])
             code, result, _ = self.call('POST', '/api/simulate', payload)
             self.assertEqual(200, code, result)
