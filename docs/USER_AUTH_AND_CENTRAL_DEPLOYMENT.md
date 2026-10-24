@@ -4,6 +4,12 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ Kullanıcı sekmelerinin tarayıcı kabulü tamam — 24 Ekim 2026
+
+Operatör iki yeni sekmenin hatasız açıldığını doğruladı. Dev.32 canlı kurulum
+ve sekme görünürlüğü kabulü tamam; kullanıcı sertifika dağıtımı, AD/GPO ve
+gerçek kullanıcı 802.1X/VLAN testleri pazartesiye bırakılmış olarak açıktır.
+
 ## 🔴✓ dev.32 canlı kurulum doğrulandı — 24 Ekim 2026
 
 Operatörün verified=true çıktısıyla dev.32 canlı uygulaması tamamlandı.

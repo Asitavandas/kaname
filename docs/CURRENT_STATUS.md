@@ -17,6 +17,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ dev.32 kullanıcı sekmeleri operatör kabulü tamam — 24 Ekim 2026
+
+- Operatör Sertifikalar → Kullanıcı profilleri ve Kullanıcı kayıtları sekmelerinin ikisinin de hatasız açıldığını doğruladı. Canlı kurulum sonrasındaki sekme görünürlüğü/tarayıcı kabulü tamamlandı olarak işaretlendi.
+- Bu onay profil oluşturma, gerçek kullanıcı sertifikası dağıtımı veya kullanıcı 802.1X/VLAN kabulü değildir. Gerçek kullanıcı/cihaz AD-GPO ve kablolu/Wi-Fi testleri pazartesiye bırakılmıştır; A03/A04 bütünü açık kalır.
+- Bu kayıt güncellemesinde canlı sisteme, profile, policy'ye, sertifikalara veya AD/GPO'ya ek işlem yapılmadı. Kanıt: checkpoints/2026-10-24-user-profile-panel-live-result.json içindeki operator_acceptance.
+
 ## 🔴✓ dev.32 canlı kullanıcı profili panel kurulumu tamam — 24 Ekim 2026
 
 - 🔴✓ Operatör USER_PANEL_FINISHED / verified=true çıktısıyla dev.32 (kaynak 422ab022c0fe2e54848772934575e035b45610ac) kurulumunu doğruladı. Yerel sudo/kurulum beklemesi kapandı. Hazırlık kaydındaki dev.29 canlı sürüm bilgisi bu sonuçla güncellendi.

@@ -52,12 +52,21 @@
   "completion": {
     "technical_development": true,
     "live_installation": true,
-    "operator_browser": false,
+    "operator_browser": true,
     "real_user_ad_gpo_8021x": false
   },
   "overall_original_94": {
     "done": 54,
     "remaining": 40,
     "total": 94
+  },
+  "operator_acceptance": {
+    "confirmed": true,
+    "date": "2026-10-24",
+    "user_profiles_tab_opened_without_error": true,
+    "user_enrollments_tab_opened_without_error": true,
+    "evidence": "Operator: iki sekmede hatasız açılıyor.",
+    "scope": "Tab visibility/opening only; no user profile/enrollment or 802.1X acceptance",
+    "field_tests_deferred_to_monday": true
   }
 }
