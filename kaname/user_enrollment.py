@@ -251,6 +251,11 @@ class UserEnrollment:
             if (account.object_guid, account.sid) != (row[7], row[8]):
                 raise EnrollmentError('USER_IDENTITY_REJECTED')
             with self.transaction() as db:
+                # Directory lookup/another writer may have consumed the last
+                # valid seconds. Never retire a working leaf for an expired replacement.
+                now = instant()
+                if not cert.not_valid_before_utc <= now < cert.not_valid_after_utc:
+                    raise EnrollmentError('USER_CERTIFICATE_EXPIRED')
                 if db.execute('SELECT revision FROM state WHERE id=1').fetchone()[0] != revision or self.operations.directory() != settings:
                     raise EnrollmentError('REVISION_CONFLICT')
                 if db.execute('SELECT version,enabled FROM user_enrollment_profiles WHERE id=?', (profile['id'],)).fetchone() != (profile['version'], 1):

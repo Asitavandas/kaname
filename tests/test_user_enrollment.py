@@ -173,6 +173,16 @@ class UserEnrollmentTests(unittest.TestCase):
         self.users.save_profile(self.fields|self.profile|{'enabled':False},'fixture')
         self.reject('USER_IDENTITY_REJECTED',lambda:self.receipt(result))
 
+    def test_expiry_during_ad_lookup_does_not_confirm_install_or_retire_current_leaf(self):
+        first=self.issue();self.receipt(first);self.users.request_renewal(first['serial'],'fixture')
+        key=ec.generate_private_key(ec.SECP256R1());second=self.issue(key)
+        cert=x509.load_pem_x509_certificate(second['certificate'].encode())
+        with patch('kaname.user_enrollment.instant',side_effect=[instant(),cert.not_valid_after_utc+timedelta(seconds=1)]):
+            self.reject('USER_CERTIFICATE_EXPIRED',lambda:self.receipt(second,key))
+        with self.users.store.connect() as db:
+            self.assertIsNone(db.execute('SELECT installed_at FROM user_enrollment_issuances WHERE serial=?',(second['serial'],)).fetchone()[0])
+            self.assertIsNone(db.execute('SELECT retire_at FROM device_retirements WHERE serial=?',(first['serial'],)).fetchone())
+
     def test_issuer_lock_and_rate_limit_fail_closed(self):
         self.devices.lock_signer('fixture')
         self.reject('DEVICE_SIGNER_LOCKED',lambda:self.prepare())
