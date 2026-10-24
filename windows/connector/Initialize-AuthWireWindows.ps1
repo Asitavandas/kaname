@@ -87,8 +87,11 @@ function Get-AuthWireCodeSigningUsage {
         $extensions = @($Certificate.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.37' })
         if ($extensions.Count -eq 0) { return $result }
         if ($extensions.Count -ne 1) { throw 'EKU_EXTENSION_AMBIGUOUS' }
+        $raw = $extensions[0].RawData
+        if ($raw.Length -lt 2 -or $raw[0] -ne 0x30) { throw 'EKU_DER_SEQUENCE_REQUIRED' }
         $eku = New-Object System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension
         $eku.CopyFrom($extensions[0])
+        if ($eku.EnhancedKeyUsages.Count -eq 0) { throw 'EKU_USAGE_REQUIRED' }
         foreach ($oid in $eku.EnhancedKeyUsages) {
             if ($oid.Value -eq '1.3.6.1.5.5.7.3.3') { $result.CodeSigningEku = $true }
         }
