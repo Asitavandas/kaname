@@ -30,6 +30,14 @@ passwords or export private keys, PFX or keytab data.
 
 ## Account preparation
 
+Bootstrap 1.0.3 treats an absent SPN or membership attribute ($null) and an empty
+collection as zero entries. PowerShell's @($null).Count is one, which previously
+produced a false settings mismatch on the real DC. Every actual SPN or group
+entry remains disallowed, including malformed empty strings or null array
+elements. The native fixture uses the observed absent-SPN/empty-AD-membership
+shape and wrapped ADKerberosEncryptionType enum. Account settings are not changed.
+
+
 Bootstrap 1.0.2 normalizes single-valued integer and Boolean AD attributes when
 the AD module returns ADPropertyValueCollection instead of a scalar. Exactly
 one value is required. Missing, multiple, nested, non-integral, overflowing or
