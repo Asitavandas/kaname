@@ -17,6 +17,17 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Hizmet bağlamında gerçek Authenticode test aracı Windows'ta geçti; DC01 sonucu açık — 25 Ekim 2026
+
+- **Test-AuthWireServiceAuthenticode1.0.0**, PR82 merge **c3fab6d5493b571805a83fde560ec427e3e77e52**. **33 native Windows PowerShell5.1 kontrolü başarılı**: gerçek signed SCM/LocalService worker key Read yokken başarısız, signer trust yokken başarısız; Read+fixture-root trust ile disposable UTF16 ps1 imzalama ve native Valid doğrulaması başarılı. Üç temporary hizmet de temizlendi.
+- 🔴✓ Controller signed artifact için exact signer/thumb/full-file hash ve Windows Authenticode Valid durumunu bağımsız kontrol etti; wrong signer/hash ve **tampered signed body (güncel dosya hash'i verilse bile)** reddedildi. Korunan public signed audit copy de Valid. **Artifact hiçbir aşamada çalıştırılmadı; fixture private key export yok.**
+- SDK host **InitialSessionState.NoLanguage** + sabit **Set/Get-AuthenticodeSignature AddCommand** çağrıları kullanır; AddScript/script evaluation/PowerShell execution-policy override yok. Compiler PowerShell SDK referansı PSHOME varsayımı yerine **[PSObject].Assembly.Location** ile gerçek GAC konumundan alınır; ilk native testteki pre-service duruş canlıya taşınmadan düzeltildi. Worker hata ayrıntıları korumalı summary'ye aktarılır.
+- Araç mevcut owned SCM/null-password/runtimeSID-PID-host-nonce/cleanup/keyACL-before-after guard'larını korur. Disposable comment-only artifact, gMSA writable result dizininde imzalanır, controller doğrulanmış public copy'yi admin/SYSTEM evidence root'a alır; worker/service/result/binary kaldırılır. EvidenceArtifactPath altında public imzalı örnek korunur.
+- **AuthenticodePackageSigningVerified** bu araçta disposable dosyayla imzalama yeteneğinin doğrulanmasıdır; mevcut SYSVOL/endpoint paketlerinin imzalandığı/yayıldığı anlamına gelmez. **CertificateChainValidationPerformed=false** standalone certutil probe'ın bu araçta tekrar yapılmadığını belirtir; önceki DC01 machine-context chain/base-deltaCRL başarısı ayrı kanıtta kabul edilmiştir.
+- Diğer SCM35/GPO66/keyACL25/raw-signing23/bootstrap/foundation/bounded-network kontrolleri başarılı. Gerçek müşteri gMSA ve key bu CI'da kullanılmadı. **DC01 Authenticode canlı sonucu hâlâ bekleniyor.**
+- Staged **authwire-service-authenticode-probe-v1-20261025.ps1**, SHA256 **41cb745fa25afa9e020b6a616836e805b81fa220b748254561da56465031c1a9**, remote digest doğrulandı. Operatör komutu checkpoints/2026-10-25-windows-connector-service-authenticode-probe-run.ps1; native kanıt checkpoints/2026-10-25-windows-connector-service-authenticode-prepared.json.
+- DC01 gerçek sonuçtan sonra yeni publisher public trust/managed GPO/endpoint execution ve merkezi connector-daemon kapıları açık. **GPO/trust/keyACL/endpoint package değişikliği yok**. AuthWire app dev.34, **54/94 (%57),40 açık**, A03/A04 açık; formal rapor yenilenmedi.
+
 ## 🔴✓ Makine signer güven zinciri ve CRL iptal kontrolü başarılı — 25 Ekim 2026
 
 - Operatör exact signer **FFC134BC305757457163F99C7479B4168E397129** için **certutil -verify -urlfetch / HCCE_LOCAL_MACHINE / CERT_CHAIN_POLICY_BASE** çıktısını paylaştı. Leaf ve issuer **dwErrorStatus=0**, **Leaf certificate revocation check passed**, exitcode0.

@@ -1,0 +1,71 @@
+{
+  "event": "WINDOWS_CONNECTOR_SERVICE_AUTHENTICODE_TOOL_PREPARED",
+  "date": "2026-10-25",
+  "probe_version": "1.0.0",
+  "pull_request": 82,
+  "head": "1c9c6eb52e884a2f7e1a9fc3da23185b13431a09",
+  "merge_commit": "c3fab6d5493b571805a83fde560ec427e3e77e52",
+  "native_checks": 33,
+  "native_service_runs": 3,
+  "actual_nonexportable_cng_signing": true,
+  "actual_authenticode_signed_and_verified": true,
+  "denied_without_key_read": true,
+  "untrusted_signer_rejected": true,
+  "changed_signed_body_rejected": true,
+  "artifact_executed": false,
+  "fixture_runtime_identity": "LocalService",
+  "customer_gmsa_tested": false,
+  "customer_keys_used": false,
+  "private_keys_exported": 0,
+  "native_summary": [
+    "2026-10-25T16:52:33.3347228Z AUTHWIRE_SERVICE_AUTHENTICODE_NATIVE_OK {\"untrusted_signer_rejected\":true,\"private_keys_exported\":0,\"native_service_runs\":3,\"customer_keys_used\":false,\"actual_nonexportable_cng_signing\":true,\"artifact_executed\":false,\"customer_gmsa_tested\":false,\"actual_authenticode_signed_and_verified\":true,\"actual_signed_scm_service\":true,\"runtime_identity\":\"LocalService\",\"denied_without_key_read\":true,\"checks\":33,\"native_powershell\":\"5.1.26100.33648\"}\r"
+  ],
+  "workflow_runs": [
+    {
+      "id": 40213645268,
+      "name": "AuthWire bounded retry network probe checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 411,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40213645268/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40213645268/logs",
+      "workflow_id": 390643325
+    },
+    {
+      "id": 40213645281,
+      "name": "KANAME foundation checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 885,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40213645281/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40213645281/logs",
+      "workflow_id": 373980015
+    },
+    {
+      "id": 40213645266,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 44,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40213645266/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40213645266/logs",
+      "workflow_id": 395329531
+    }
+  ],
+  "staged_path": "/home/segmentiq/authwire-service-authenticode-probe-v1-20261025.ps1",
+  "sha256": "41cb745fa25afa9e020b6a616836e805b81fa220b748254561da56465031c1a9",
+  "remote_digest_verified": true,
+  "operator_computer": "DC01",
+  "signer_thumbprint": "FFC134BC305757457163F99C7479B4168E397129",
+  "service_sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+  "live_authenticode_pending": true,
+  "prior_dc01_raw_signing_verified": true,
+  "prior_dc01_machine_chain_revocation_verified": true,
+  "prior_chain_root_thumbprint": "4D6D3C94B878B75AE02B436C0A19D3A3104C68BB",
+  "endpoint_packages_changed": false,
+  "publisher_trust_rollout_pending": true,
+  "connector_installed": false,
+  "can_apply_gpo": false,
+  "completed": 54,
+  "total": 94
+}
