@@ -23,6 +23,8 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 TAG = 'AUTHWIRE-CONNECTOR-HEALTH-V1'
 PATH = '/api/connector/v1/health'
+POLL_TAG = 'AUTHWIRE-CONNECTOR-POLL-V1'
+POLL_PATH = '/api/connector/v1/challenge'
 LIFETIME = 60
 MAX_PENDING = 4
 
@@ -120,6 +122,7 @@ class ConnectorHealth:
         self._public = serialization.load_pem_public_key(binding.public_key_pem)
         self._monotonic, self._wall = monotonic, wall_clock
         self._pending, self._last_seen = {}, None
+        self._polls = {}
         self._revoked = False
         self._lock = threading.Lock()
 
@@ -183,10 +186,56 @@ class ConnectorHealth:
             return {'channel_proof_verified': True, 'can_apply': False,
                     'directory_sync_ready': False, 'kerberos_ready': False}
 
+    def poll(self, raw):
+        """Authenticate a short-lived poll before allocating a server challenge.
+
+        The peer signs a fixed operation/binding frame, never an arbitrary
+        command. A replayed poll cannot authenticate health: the response still
+        requires a fresh unpredictable server challenge signature.
+        """
+        _require(type(raw) is bytes and 1 <= len(raw) <= 4096)
+        def pairs(items):
+            result = {}
+            for k, v in items:
+                _require(k not in result); result[k] = v
+            return result
+        try:
+            value = json.loads(raw.decode('utf-8'), object_pairs_hook=pairs)
+            _require(type(value) is dict and set(value) == {'frame', 'signature'})
+            encoded, signed = value['frame'], value['signature']
+            _require(type(encoded) is str and len(encoded) <= 2732 and type(signed) is str and len(signed) <= 684)
+            frame, signature = base64.b64decode(encoded, validate=True), base64.b64decode(signed, validate=True)
+            _require(len(frame) <= 2048 and base64.b64encode(frame).decode() == encoded and
+                     len(signature) == self._public.key_size//8 and base64.b64encode(signature).decode() == signed)
+            fields = frame.decode('ascii').split('\n')
+            _require(len(fields) == 17 and fields[-1] == '' and fields[0] == POLL_TAG and
+                     fields[1:10] == self.binding.fields() and fields[14:16] == ['POST', POLL_PATH])
+            _require(all(re.fullmatch('[0-9a-f]{64}', v) for v in fields[10:12]) and
+                     all(re.fullmatch('[1-9][0-9]{0,10}', v) for v in fields[12:14]))
+            issued, expires = int(fields[12]), int(fields[13])
+            _require(expires-issued == LIFETIME and issued-5 <= int(self._wall()) < expires)
+        except (ValueError, TypeError, UnicodeError, RecursionError):
+            raise ChannelError('CONNECTOR_PROOF_REJECTED') from None
+        with self._lock:
+            _require(not self._revoked, 'CONNECTOR_REVOKED')
+            now = self._monotonic()
+            self._polls = {k: v for k, v in self._polls.items() if now < v}
+            identity = hashlib.sha256(frame).hexdigest()
+            _require(identity not in self._polls)
+            _require(len(self._polls) < 128, 'CONNECTOR_BUSY')
+            try:
+                self._public.verify(signature, frame, padding.PKCS1v15(), hashes.SHA256())
+            except InvalidSignature:
+                raise ChannelError('CONNECTOR_PROOF_REJECTED') from None
+            _require(issued-5 <= int(self._wall()) < expires)
+            self._polls[identity] = self._monotonic() + 65
+        return self.challenge()
+
     def revoke(self):
         with self._lock:
             self._revoked = True
             self._pending.clear()
+            self._polls.clear()
             self._last_seen = None
 
     def status(self):
@@ -196,3 +245,4 @@ class ConnectorHealth:
                     'online': not self._revoked and age is not None and 0 <= age < 90,
                     'channel_proof_verified': not self._revoked and age is not None and 0 <= age < 90,
                     'can_apply': False, 'directory_sync_ready': False, 'kerberos_ready': False}
+

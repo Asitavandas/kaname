@@ -13,12 +13,13 @@ function Get-AuthWireChannelPublicKeyId {
     finally { $sha.Dispose() }
 }
 
-function New-AuthWireConnectorHealthProof {
+function New-AuthWireConnectorFrameProof {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)][string]$FrameBase64,
         [Parameter(Mandatory=$true)][hashtable]$Binding,
-        [Parameter(Mandatory=$true)][Security.Cryptography.RSACng]$ChannelKey
+        [Parameter(Mandatory=$true)][Security.Cryptography.RSACng]$ChannelKey,
+        [ValidateSet('Health','Poll')][string]$Kind='Health'
     )
     $names=@('instance_id','connector_id','generation','host_guid','host_fqdn','service_sid','appliance_fqdn','appliance_tls_sha256','channel_key_sha256')
     if ($Binding.Count -ne $names.Count -or @($names|Where-Object {-not $Binding.ContainsKey($_)}).Count) { throw 'CONNECTOR_BINDING_INVALID' }
@@ -52,7 +53,9 @@ function New-AuthWireConnectorHealthProof {
     if ([Convert]::ToBase64String($raw) -cne $FrameBase64 -or $raw.Length -gt 2048) { throw 'CONNECTOR_FRAME_REJECTED' }
     foreach ($b in $raw) { if ($b -ne 10 -and ($b -lt 32 -or $b -gt 126)) { throw 'CONNECTOR_FRAME_REJECTED' } }
     $parts=[Text.Encoding]::ASCII.GetString($raw).Split([char]10)
-    if ($parts.Count -ne 17 -or $parts[16] -cne '' -or $parts[0] -cne 'AUTHWIRE-CONNECTOR-HEALTH-V1' -or $parts[14] -cne 'POST' -or $parts[15] -cne '/api/connector/v1/health') { throw 'CONNECTOR_FRAME_REJECTED' }
+    $tag=if($Kind -eq 'Health'){'AUTHWIRE-CONNECTOR-HEALTH-V1'}else{'AUTHWIRE-CONNECTOR-POLL-V1'}
+    $path=if($Kind -eq 'Health'){'/api/connector/v1/health'}else{'/api/connector/v1/challenge'}
+    if ($parts.Count -ne 17 -or $parts[16] -cne '' -or $parts[0] -cne $tag -or $parts[14] -cne 'POST' -or $parts[15] -cne $path) { throw 'CONNECTOR_FRAME_REJECTED' }
     for ($i=0; $i -lt $names.Count; $i++) {
         $expected=if ($names[$i] -eq 'generation') { $Binding.generation.ToString([Globalization.CultureInfo]::InvariantCulture) } else { $Binding[$names[$i]] }
         if ($parts[$i+1] -cne $expected) { throw 'CONNECTOR_FRAME_BINDING_MISMATCH' }
@@ -62,4 +65,26 @@ function New-AuthWireConnectorHealthProof {
     if ($expires-$issued -ne 60 -or $now -lt $issued-5 -or $now -ge $expires) { throw 'CONNECTOR_FRAME_EXPIRED' }
     $signature=$ChannelKey.SignData($raw,[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)
     [pscustomobject]@{challenge_id=$parts[10]; signature=[Convert]::ToBase64String($signature)}
+}
+
+function New-AuthWireConnectorHealthProof {
+    param([string]$FrameBase64,[hashtable]$Binding,[Security.Cryptography.RSACng]$ChannelKey)
+    New-AuthWireConnectorFrameProof -FrameBase64 $FrameBase64 -Binding $Binding -ChannelKey $ChannelKey -Kind Health
+}
+
+function New-AuthWireConnectorPollProof {
+    param([hashtable]$Binding,[Security.Cryptography.RSACng]$ChannelKey)
+    $names=@('instance_id','connector_id','generation','host_guid','host_fqdn','service_sid','appliance_fqdn','appliance_tls_sha256','channel_key_sha256')
+    if($Binding.Count -ne 9 -or @($names|Where-Object{-not $Binding.ContainsKey($_)}).Count){throw 'CONNECTOR_BINDING_INVALID'}
+    $random=[Security.Cryptography.RandomNumberGenerator]::Create()
+    try{
+        $a=New-Object byte[] 32;$b=New-Object byte[] 32;$random.GetBytes($a);$random.GetBytes($b)
+        $id=([BitConverter]::ToString($a)).Replace('-','').ToLowerInvariant()
+        $nonce=([BitConverter]::ToString($b)).Replace('-','').ToLowerInvariant()
+    }finally{$random.Dispose()}
+    $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+    $fields=@('AUTHWIRE-CONNECTOR-POLL-V1')+@($names|ForEach-Object{[string]$Binding[$_]})+@($id,$nonce,[string]$now,[string]($now+60),'POST','/api/connector/v1/challenge')
+    $frame=[Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(($fields -join "`n")+"`n"))
+    $proof=New-AuthWireConnectorFrameProof -FrameBase64 $frame -Binding $Binding -ChannelKey $ChannelKey -Kind Poll
+    [pscustomobject]@{frame=$frame;signature=$proof.signature}
 }
