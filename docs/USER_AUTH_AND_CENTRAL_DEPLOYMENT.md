@@ -4,6 +4,16 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ CA RequestId6 sertifikası LocalMachine/My deposuna yüklendi ve private key eşleşti — 25 Ekim 2026
+
+- Operatör **Installed Certificate / WINDOWS_CONNECTOR_MACHINE_SIGNER_INSTALLED**, RequestId6, **LocalMachine/My / HasPrivateKey=true** sonucunu paylaştı. Thumbprint **FFC134BC305757457163F99C7479B4168E397129**, serial **6A000000067A2B82B44DD3676E000000000006**.
+- Subject **CN=dc01.vizyonveri.local**, issuer **CN=vizyonveri-DC01-CA, DC=vizyonveri, DC=local**; NotAfter **2027-10-25T16:37:01+03:00**. Önceki Accept komutundaki public subject/issuerCN/validity/code-signing-only EKU/RSA3072 guard'ları geçti. Bu issuerCN guard'ı kriptografik chain/signature doğrulaması yerine geçmez.
+- **ServiceKeyAccessVerified=false** beklenen durum. Sertifika kurulu/HasPrivateKey olması gMSA imza yetkisinin veya tam otomasyonun tamamlandığı anlamına gelmez. Yeni Request/Submit yapılmaz.
+- Sonraki readonly kapı, yalnız exact thumbprint için **IX509ExtensionTemplate.InitializeDecode** ile certificate template OID kontrolü ve **GetRSAPrivateKey/RSACng** ile provider/machine/ephemeral/exportPolicy/keyUsage/keySize özelliklerini okumak. Private key admin bağlamında açılır; **sign/export/ACL değişikliği yapılmaz**. Anahtar byte'ları/loga private key çıkışı yok. ExportPolicy0/None ve IsMachineKeytrue beklenir; gerçek çıktı henüz gelmedi.
+- Sonuç machine-signing-v2-key-check.json olarak mevcut protected receipt klasöründe saklanacak. TemplateOID/CNG metadata sonucundan sonra chain/pinned issuer ve owned key ACL/gMSA runtime signing probe ayrı kapılar olarak kalır. Public signer trust/endpoint paket geçişi henüz yapılmadı.
+- Kaynaklar: https://learn.microsoft.com/windows/win32/api/certenroll/nf-certenroll-ix509extensiontemplate-initializedecode ; https://learn.microsoft.com/dotnet/api/system.security.cryptography.cngkey.exportpolicy ; https://learn.microsoft.com/dotnet/api/system.security.cryptography.cngkey.ismachinekey
+- Kanıt checkpoints/2026-10-25-windows-connector-machine-signer-installed-live-result.json; readonly komut checkpoints/2026-10-25-windows-connector-machine-signer-key-readonly.ps1. AuthWire app dev.34, **54/94 (%57),40 açık**, A03/A04 açık; formal rapor yenilenmedi.
+
 ## 🔴✓ CA makine imzalama sertifikasını üretti; RequestId6 — 25 Ekim 2026
 
 - Operatör **RequestId:6 / Certificate retrieved(Issued) Issued**, **ExitCode=0 / CertificateFileExists=true** sonucunu paylaştı. Aynı SHA-pinned CSR için issuance kabul edildi; yeni istek veya anahtar üretimi yapılmayacak.
