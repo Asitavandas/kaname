@@ -118,6 +118,7 @@ class ConnectorChannelTests(unittest.TestCase):
     def test_malformed_unknown_duplicate_and_oversized_envelopes(self):
         p = json.loads(self.proof(self.channel.challenge()))
         cases = [b'', b'\xff', b'x'*2049, b'[]', b'null', b'NaN', b'{',
+            json.dumps(p).encode('utf-16'), json.dumps(p).encode('utf-32'),
             json.dumps(p|{'command':'powershell.exe'}).encode(),
             json.dumps(p|{'challenge_id':True}).encode(),
             json.dumps(p|{'challenge_id':'F'*64}).encode(),

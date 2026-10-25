@@ -149,7 +149,7 @@ class ConnectorHealth:
                 result[k] = v
             return result
         try:
-            value = json.loads(raw, object_pairs_hook=pairs,
+            value = json.loads(raw.decode('utf-8'), object_pairs_hook=pairs,
                 parse_constant=lambda _: (_ for _ in ()).throw(ChannelError('CONNECTOR_PROOF_REJECTED')))
             _require(type(value) is dict and set(value) == {'challenge_id', 'signature'})
             identity, encoded = value['challenge_id'], value['signature']

@@ -22,8 +22,12 @@ def main():
     script = Path(__file__).with_name('connector_channel_windows_fixture.ps1')
     with tempfile.TemporaryDirectory(prefix='authwire-channel-') as directory:
         def run(mode):
+            # GitHub's default pwsh shell can export its .NET/Core module path.
+            # Let the child Windows PowerShell 5.1 rebuild its own module path.
+            child_env = {k: v for k, v in os.environ.items() if k.upper() != 'PSMODULEPATH'}
             subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-File',
-                str(script), '-Mode', mode, '-Directory', directory], check=True, timeout=60)
+                str(script), '-Mode', mode, '-Directory', directory],
+                check=True, timeout=60, env=child_env)
         try:
             run('Create')
             fixture = json.loads((Path(directory)/'fixture.json').read_text(encoding='utf-8-sig'))
