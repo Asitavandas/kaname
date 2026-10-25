@@ -59,14 +59,66 @@ function Get-AuthWireAccountCandidate {
     Get-ADServiceAccount -Server $Server -Identity $found[0].ObjectGUID -Properties Description,Enabled,DNSHostName,PrincipalsAllowedToRetrieveManagedPassword,KerberosEncryptionType,AccountNotDelegated,TrustedForDelegation,TrustedToAuthForDelegation,ServicePrincipalNames,MemberOf,PrimaryGroupID -ErrorAction Stop
 }
 
+function Get-AuthWireAdScalar {
+    param($Value,[string]$Attribute)
+    # AD module versions expose single-valued properties either directly or as
+    # ADPropertyValueCollection. Require exactly one value; never select a first
+    # value from an ambiguous collection or recursively flatten nested values.
+    if ($null -eq $Value) { throw ('ACCOUNT_ATTRIBUTE_MISSING:' + $Attribute) }
+    if ($Value -is [System.Collections.IEnumerable] -and $Value -isnot [string]) {
+        $iterator = $Value.GetEnumerator()
+        try {
+            if (-not $iterator.MoveNext()) { throw ('ACCOUNT_ATTRIBUTE_MISSING:' + $Attribute) }
+            $scalar = $iterator.Current
+            if ($iterator.MoveNext()) { throw ('ACCOUNT_ATTRIBUTE_MULTIPLE:' + $Attribute) }
+        } finally {
+            if ($iterator -is [System.IDisposable]) { $iterator.Dispose() }
+        }
+        if ($null -eq $scalar -or ($scalar -is [System.Collections.IEnumerable] -and $scalar -isnot [string])) {
+            throw ('ACCOUNT_ATTRIBUTE_INVALID:' + $Attribute)
+        }
+        return $scalar
+    }
+    return $Value
+}
+
+function ConvertTo-AuthWireAdInt32 {
+    param($Value,[string]$Attribute)
+    $scalar = Get-AuthWireAdScalar -Value $Value -Attribute $Attribute
+    $code = [System.Type]::GetTypeCode($scalar.GetType())
+    if ($scalar -is [System.Enum]) {
+        $text = [System.Convert]::ToInt64($scalar).ToString([Globalization.CultureInfo]::InvariantCulture)
+    } elseif ($code -in @([System.TypeCode]::Byte,[System.TypeCode]::SByte,[System.TypeCode]::Int16,
+        [System.TypeCode]::UInt16,[System.TypeCode]::Int32,[System.TypeCode]::UInt32,
+        [System.TypeCode]::Int64,[System.TypeCode]::UInt64)) {
+        $text = $scalar.ToString([Globalization.CultureInfo]::InvariantCulture)
+    } elseif ($scalar -is [string]) { $text = $scalar }
+    else { throw ('ACCOUNT_ATTRIBUTE_INTEGER_REQUIRED:' + $Attribute) }
+    $number = 0
+    if (-not [int]::TryParse($text,[Globalization.NumberStyles]::None,
+        [Globalization.CultureInfo]::InvariantCulture,[ref]$number)) {
+        throw ('ACCOUNT_ATTRIBUTE_INTEGER_REQUIRED:' + $Attribute)
+    }
+    return $number
+}
+
+function ConvertTo-AuthWireAdBoolean {
+    param($Value,[string]$Attribute)
+    $scalar = Get-AuthWireAdScalar -Value $Value -Attribute $Attribute
+    if ($scalar -isnot [bool]) { throw ('ACCOUNT_ATTRIBUTE_BOOLEAN_REQUIRED:' + $Attribute) }
+    return $scalar
+}
+
 function Assert-AuthWireAccountShape {
     param($Account,$Computer,[string]$Marker,[string]$DnsName,[string]$Name)
     if ($Account.Description -cne $Marker -or $Account.SamAccountName -ine ($Name + '$') -or
-        $Account.DNSHostName -ine $DnsName -or -not $Account.Enabled -or
-        -not $Account.AccountNotDelegated -or $Account.TrustedForDelegation -or
-        $Account.TrustedToAuthForDelegation -or [int]$Account.KerberosEncryptionType -ne 24 -or
+        $Account.DNSHostName -ine $DnsName -or -not (ConvertTo-AuthWireAdBoolean $Account.Enabled 'Enabled') -or
+        -not (ConvertTo-AuthWireAdBoolean $Account.AccountNotDelegated 'AccountNotDelegated') -or
+        (ConvertTo-AuthWireAdBoolean $Account.TrustedForDelegation 'TrustedForDelegation') -or
+        (ConvertTo-AuthWireAdBoolean $Account.TrustedToAuthForDelegation 'TrustedToAuthForDelegation') -or
+        (ConvertTo-AuthWireAdInt32 $Account.KerberosEncryptionType 'KerberosEncryptionType') -ne 24 -or
         @($Account.ServicePrincipalNames).Count -ne 0 -or @($Account.MemberOf).Count -ne 0 -or
-        [int]$Account.PrimaryGroupID -notin @(513,515)) { throw 'ACCOUNT_OWNERSHIP_OR_SETTINGS_MISMATCH' }
+        (ConvertTo-AuthWireAdInt32 $Account.PrimaryGroupID 'PrimaryGroupID') -notin @(513,515)) { throw 'ACCOUNT_OWNERSHIP_OR_SETTINGS_MISMATCH' }
     $readers = @($Account.PrincipalsAllowedToRetrieveManagedPassword)
     $readerDn = $null
     if ($readers.Count -eq 1) {
@@ -216,7 +268,7 @@ function Invoke-AuthWireConnectorBootstrap {
     [pscustomobject]@{
         Event = 'WINDOWS_CONNECTOR_BOOTSTRAP'
         Version = 1
-        BootstrapVersion = '1.0.1'
+        BootstrapVersion = '1.0.2'
         Mode = $Mode
         Computer = $env:COMPUTERNAME
         Domain = $domain.DNSRoot
@@ -249,3 +301,4 @@ function Invoke-AuthWireConnectorBootstrap {
 }
 
 Invoke-AuthWireConnectorBootstrap -Mode $Mode -ExpectedDomain $ExpectedDomain -ConnectorComputer $ConnectorComputer -InstanceId $InstanceId -AccountName $AccountName -GpoId $GpoId -PublisherThumbprint $PublisherThumbprint | ConvertTo-Json -Depth 8
+
