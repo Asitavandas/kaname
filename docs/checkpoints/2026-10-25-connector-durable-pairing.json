@@ -1,0 +1,113 @@
+{
+  "event": "CONNECTOR_DURABLE_PAIRING_SOURCE_ACCEPTED",
+  "date": "2026-10-25",
+  "repository": "Asitavandas/kaname",
+  "pr": 84,
+  "source_head": "8ba3519bd796807325ce1fbdf478440ebb599b20",
+  "merge_commit": "f15035a47b527294ad5f6600b8217d3759fc0039",
+  "implementation": {
+    "storage": "runtime_settings.windows_connector_pairing in existing protected SQLite",
+    "api": [
+      "GET /api/deployment/connector",
+      "POST /api/deployment/connector/preview",
+      "POST /api/deployment/connector/apply"
+    ],
+    "new_permission": "system.connectors",
+    "https_required": true,
+    "panel_session_for_writes": true,
+    "host_origin_csrf_required": true,
+    "principal_revalidated_before_commit": true,
+    "preview_revision_context_and_key_bound": true,
+    "explicit_key_confirmation": true,
+    "audit_and_binding_atomic": true,
+    "cross_process_revocation_verified": true,
+    "generation_tombstone_persisted": true,
+    "restart_keeps_pairing_not_nonces_or_online": true,
+    "backup_keeps_public_binding": true,
+    "backup_stability_tracks_rotation": true,
+    "peer_health_route_active": false,
+    "transport_active": false,
+    "can_apply": false,
+    "directory_sync_ready": false,
+    "kerberos_ready": false
+  },
+  "identity_namespaces": {
+    "instance_id": "AuthWire appliance PKI installation UUID; read locally, not inferred from Windows bootstrap",
+    "connector_id": "Existing Windows bootstrap InstanceId used by owned gMSA/GPO markers",
+    "pilot_connector_id": "4c23eebe-0715-46d1-88ee-a2e96ad7ee46",
+    "pilot_host_guid": "0fa4143f-aae3-4bc3-9cd3-db8a1de24acd",
+    "existing_windows_markers_rewritten": false
+  },
+  "tests": {
+    "new_registry_tests": 17,
+    "new_https_tests": 9,
+    "prior_channel_tests": 13,
+    "targeted_total": 39,
+    "foundation_tests": 763,
+    "foundation_skipped": 28,
+    "foundation_run": 40220442424,
+    "foundation_job": 121250655980,
+    "all_workflows": [
+      {
+        "id": 40220442486,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40220442393,
+        "name": "KANAME Linux source preparation",
+        "conclusion": "success"
+      },
+      {
+        "id": 40220442444,
+        "name": "AuthWire device enrollment pilot checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40220442365,
+        "name": "KANAME browser checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40220442424,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40220442439,
+        "name": "KANAME real RADIUS protocol proof",
+        "conclusion": "success"
+      }
+    ],
+    "windows_retry_job": 121250656275,
+    "retry_passed_first_attempt": true,
+    "prior_intermittent_retry_root_cause_closed": false
+  },
+  "customer": {
+    "live_version": "0.14.0-dev.34",
+    "appliance_updated": false,
+    "ad_accounts_created_changed_or_removed": false,
+    "customer_private_keys_exported": false,
+    "gpo_changed": false,
+    "certificates_changed": false,
+    "endpoint_packages_changed": false,
+    "product_services_actions_executed": false,
+    "full_backup_created": false,
+    "readonly_pki_instance_query": {
+      "attempted_with_sudo_noninteractive": true,
+      "succeeded": false,
+      "reason": "sudo required a password; no private material requested or returned; no mutation performed"
+    }
+  },
+  "next": [
+    "Dedicated non-exportable Windows channel key provisioning and least-privilege gMSA ACL",
+    "Actual validated outbound HTTPS Connector transport and service lifecycle",
+    "Bounded idempotent job/result channel; no arbitrary PowerShell",
+    "Directory and Kerberos migration under the existing single gMSA; explicit SPN/cache/rollback handling",
+    "Scope/publisher trust and pilot/scale acceptance, then legacy account retirement",
+    "Old-backup trust re-approval and full appliance restore activation gate"
+  ],
+  "completed": 54,
+  "total": 94,
+  "formal_report_regenerated": false
+}

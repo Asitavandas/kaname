@@ -197,3 +197,21 @@ proofs do not survive that copy. No backup worker changes are needed for storage
 Restoring an older appliance/database is still a separate activation/re-approval
 gate: this code does not claim rollback-resistant revocation across old backups
 or full appliance boot-restore acceptance.
+
+
+## Installation identity namespaces
+
+Do not equate the appliance and Windows bootstrap installation IDs:
+
+| Field | Authority / existing use |
+|---|---|
+| Binding.instance_id | Local appliance pki_authority.instance_id |
+| Binding.connector_id | Windows bootstrap InstanceId, retained in its owned gMSA/GPO markers |
+| Binding.host_guid | AD computer object GUID, not hardware/SMBIOS UUID |
+
+For the current pilot, connector_id is4c23eebe-0715-46d1-88ee-a2e96ad7ee46.
+The existing Windows tools keep that value in their InstanceId parameter. The
+future adapter maps Binding.connector_id to that parameter; it never rewrites
+ownership markers to the appliance PKI UUID or recreates the prepared account/GPO.
+The appliance UUID must be read from its trusted local metadata, not guessed
+from a root certificate CN or inferred from the Windows bootstrap value.

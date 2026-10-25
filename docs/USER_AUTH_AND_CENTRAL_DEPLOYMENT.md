@@ -4,6 +4,18 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ Kalıcı Connector eşleştirmesi ve HTTPS yönetim sınırı hazır — 25 Ekim 2026
+
+- **PR84 / kaynak 8ba3519bd796807325ce1fbdf478440ebb599b20 / main merge f15035a47b527294ad5f6600b8217d3759fc0039**: tek public Connector kaydı mevcut korunan SQLite runtime_settings içine eklendi. Eşleştirme/anahtar değiştirme/iptal, global sürüm ve audit aynı transaction içinde kaydedilir. Yeni hesap/credential veritabanı veya özel anahtar saklanmaz.
+- 🔴✓ Önizleme mevcut kayıt, revizyon, appliance PKI/domain/TLS kapsamı ve public anahtara bağlıdır. Ayrı **system.connectors** yetkisi; HTTPS, panel oturumu, Host/Origin/CSRF ve kayıt öncesi güncel principal kontrolü zorunlu. Directory/certificate write veya bakım bearer tokenı trust yazma hakkı kazanmaz. Parmak izi açıkça doğrulanır; kayıp yanıt GET ile uzlaştırılır, ikinci yazma yapılmaz.
+- 🔴✓ Eşleştirme ve iptal tombstone/sürümü yeniden başlatmada korunur; eski nonce/online durumu korunmaz. Anahtar değiştirme/iptal başka gerçek süreçte de önceden bekleyen kanıtı geçersiz kılar. Başarısız audit/transaction değişikliği atomik geri alır; eski geçerli kanıtı gereksiz yere tüketmez. TLS/domain/PKI drift'i kanıtları engeller, iptal yapılabilir kalır.
+- 🔴✓ **17 SQLite/public-PKI + 9 gerçek doğrulanmış HTTPS testi** eklendi; önceki13 kanal testiyle hedefli39 test geçti. Genel **763 test /28 ortam atlaması**, altı PR workflow başarılı. Windows machine/user/Kerberos/SYSTEM retry, browser ve native RADIUS kontrolleri ilk koşularında başarılı; önceki aralıklı retry kök neden maddesi kapanmadı.
+- 🔴✓ Public binding SQLite yedeğinde korunur, mevcut yedek kararlılık fingerprint'i rotasyonu izler; worker kodu değiştirilmedi. Eski yedeğe geri dönüşte trust yeniden onayı ve tam appliance restore/boot kabulü ayrı açık kapıdır; geri alınmaya dayanıklı iptal garantisi verilmez.
+- **Kimlik ayrımı:** Binding.instance_id appliance PKI kurulum UUID'sidir; Binding.connector_id mevcut Windows bootstrap InstanceId'sidir. Pilot Windows kimliği **4c23eebe-0715-46d1-88ee-a2e96ad7ee46** aynı gMSA/GPO sahiplik marker'larında korunur. Bir UUID diğerinin yerine yazılmaz; hesap/GPO yeniden oluşturulmaz. Appliance gerçek UUID'si bu çalışmada alınamadı (sudo -n public-only sorgusunda parola gerekti); değer uydurulmadı.
+- Bu yalnız kaynak hazırlığıdır: yönetici API'si fixture HTTPS ile test edildi, canlı dev.34'e uygulanmadı. Peer health endpoint'i, çalışan Connector hizmeti/transport veya AD/GPO işi açılmadı; **transport_active/can_apply/directory_sync_ready/kerberos_ready=false**. Mevcut hesaplar, GPO, CA/sertifikalar, Windows paketleri ve çalışan 802.1X için değişiklik yapılmadı; tam yedek üretilmedi.
+- Sonraki somut iş: ayrı non-exportable Windows kanal anahtarının hazırlanması/yalnız mevcut gMSA erişimi ve gerçek outbound HTTPS Connector bağlantısı. Sonra iş/sonuç, canlı AD/Kerberos geçişi ve eski hesapların kontrollü kaldırılması. A03/A04 açık, **54/94 (%57),40 açık** değişmedi; resmi rapor yeniden üretilmedi.
+- Kanıt: **checkpoints/2026-10-25-connector-durable-pairing.json**; sözleşme: **CONNECTOR_SINGLE_ACCOUNT_CHANNEL.md**.
+
 ## 🔴✓ Tek hesaplı Connector için kanal mesajı doğrulama temeli — 25 Ekim 2026
 
 - **A04 alt parçası:** Python sunucu doğrulayıcısı ve Windows PowerShell5.1 istemci yardımcısı, ayrı dışa aktarılamayan makine kanal anahtarıyla sınırlı health kanıtı üretip doğrular. Kanal anahtarı yeni AD hesabı değildir; mevcut kod imzalama anahtarından ayrıdır.
