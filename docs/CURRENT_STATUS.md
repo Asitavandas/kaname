@@ -17,6 +17,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Makine imzalama şablonu canlı önizlemesi kabul edildi — 25 Ekim 2026
+
+- Operatör **SigningTemplatePreparation1.0.0 Inspect** sonucunu paylaştı: DC01/vizyonveri.local/instance4c23eebe/serviceSID1648; **ReadyForPrepare=true**.
+- 🔴✓ Doğrulanmış enrollment makinesi **DC01 SID1000**; önerilen protected ACL Domain Admins SID512/SYSTEM yönetim, Authenticated Users yalnız read, DC01 SID1000 yalnız explicit Enroll. gMSA SID1648'e template enrollment/admin izni önerilmiyor. Bu kayıt plan/metadata kabulüdür; henüz gerçek template/sertifika/key kullanım testi değildir.
+- Önerilen yeni template **AuthWireConnectorCodeSigning-4c23eebe**, schema3/machine, RSA3072/SHA256/Microsoft Software Key Storage Provider/code-signing-only/no-export/no-supplied-subject. Forest-specific OID ve exact DN kontrolü gerçek çıktıda başarılı. CA **dc01.vizyonveri.local\\vizyonveri-DC01-CA**.
+- **TemplateCreated/TemplatePublished/AdChanged/CaChanged/GpoChanged/CertificatesChanged/KeyAclChanged/TrustStoreChanged/EnrollmentRequested=false**. SourceTemplatePreserved/CaConfigurationPreserved=true; ReceiptPath=null. ServiceKeyAccessVerified/ConnectorInstalled/CanApplyGpo=false.
+- Sonraki operatör adımı aynı doğrulanmış araçla **PrepareTemplate**: iki yeni template/OID nesnesi ve protected receipt, readback. İlk create sonrası hata olursa kör tekrar/auto-delete yapılmaz; receipt incelenir. CA publication/certificate request/key ACL/publisher trust ve gerçek service signing sonraki ayrı kapılardır.
+- Kanıt: checkpoints/2026-10-25-windows-connector-signing-template-inspect-live-result.json. AuthWire app dev.34, **54/94 (%57),40 açık**; A03/A04 açık. Formal rapor yenilenmedi.
+
 ## 🔴✓ Ayrı makine imzalama şablonu hazırlık aracı hazır; canlı Inspect/oluşturma açık — 25 Ekim 2026
 
 - Yeni `windows/connector/Initialize-AuthWireSigningTemplate.ps1` **1.0.0**, varsayılan **Inspect** ile yalnız envanter/plan okur. **PrepareTemplate** iki yeni owned AD objesi oluşturabilir: **AuthWireConnectorCodeSigning-4c23eebe** template ve forest OID kökü altında instance/host/service bağlı OID kaydı. Mevcut AuthWireGPOCodeSigning template'i ve CA publication listesi değiştirilmez.
