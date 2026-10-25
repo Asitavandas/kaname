@@ -291,3 +291,40 @@ Native hosted Windows tests exercise the real file engine and signed SCM helper
 under LocalService. Only the test-compiled helper substitutes the LDAP adapter
 and UNC path with an in-memory directory and local fixture directory. Production
 contains no fixture-mode switch. Customer AD/SMB/gMSA acceptance remains separate.
+
+
+## Read-only service-signing readiness
+
+Get-AuthWireSigningReadiness.ps1 has only Inspect mode. It validates the signed
+owned-account bootstrap, explicit host/domain/instance/SID, then inventories the
+current corporate publisher and any locally marked machine signer certificate.
+Native CertGetCertificateContextProperty reads only provider metadata: CNG/CSP,
+keyset flags and a hash of the container identifier. It does not acquire, use or
+export the private key. HasPrivateKey/provider metadata do not establish service
+access. CurrentUser and machine scope are reported independently of store name.
+
+The tool reads enterprise enrollment-service objects and code-signing template
+metadata from the forest configuration partition, including publication, EKU and
+application policies, machine/user flags, export/archive/UI/subject flags, minimum
+key size and raw enrollment ACEs. A shape-compatible template is not selected or
+authorized: effective group enrollment, issuer policy and provider compatibility
+require review. No CA template, certificate, key ACL, trust store, GPO or account
+is changed; no enrollment is submitted and automated signing remains false.
+
+The intended service signer uses a dedicated non-exportable machine key and
+code-signing-only certificate. The existing administrator publisher/key and
+already signed packages remain in place. Public trust for a new publisher must
+be prepared before switching endpoint packages; the protected trust GPO remains
+administrator controlled. This inventory does not claim that preparation or
+actual gMSA signing has occurred.
+
+Native Windows validation creates disposable user/machine CNG and legacy CSP
+certificates, reads actual provider metadata and removes the fixture keys. AD/CA
+discovery is simulated with genuine AD collection and ACL types; no customer key
+or CA is used. Production contains no mutation mode or key-acquisition API.
+
+References:
+- https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certgetcertificatecontextproperty
+- https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-crtd/f6122d87-b999-4b92-bff8-f465e8949667
+- https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/c07fc301-a7c1-4a61-ba91-142b751ad114
+- https://learn.microsoft.com/en-us/windows/win32/adschema/r-certificate-enrollment
