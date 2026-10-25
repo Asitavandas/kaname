@@ -17,6 +17,17 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Boş SPN alanının yanlış sayılması düzeltildi — 25 Ekim 2026
+
+- Operatör gerçek DC01 metadata çıktısını paylaştı: aw-deploy$ / msDS-GroupManagedServiceAccount, SID S-1-5-21-34256453-3348971241-2809240126-1648. Description kurulum/host GUID'siyle tam eşleşir; DNS aw-deploy.vizyonveri.local, Enabled/AccountNotDelegated=true, TrustedForDelegation/TrustedToAuthForDelegation=false, AES128/AES256 ve ham msDS-SupportedEncryptionTypes24, primaryGroupID515, tek okuyucu DC01 DN'sidir.
+- **Yanlış engelin nedeni kesinleşti:** ServicePrincipalNames=null iken @($null).Count=1; MemberOf gerçek boş ADPropertyValueCollection ve Count0. Bootstrap1.0.2 bu boş SPN alanını dolu sayarak ACCOUNT_OWNERSHIP_OR_SETTINGS_MISMATCH üretiyordu. Paylaşılan ayarlar için hesap değişikliği gerekmez.
+- 🔴✓ Bootstrap1.0.3 null veya gerçekten boş SPN/grup koleksiyonunu kabul eder; her gerçek giriş, boş dize, dizide null öğesi veya iç içe boş dizi dahil, engellenir. Hesap oluşturma parametreleri, sahiplik, AES24, delegasyon, primary-group ve tek okuyucu gereklilikleri korunur. KDS işlevi değişmedi.
+- 🔴✓ PR#69, kaynakb1f65459ffa63b8230c63f8f61d13c530ce9e51f, merge696468127fb28a611da252c4e1c34c17ddd23c5b. Gerçek AD koleksiyon/ADKerberosEncryptionType türleriyle ve gözlenen null-SPN biçimiyle native PowerShell5.1 testinde **147 kontrol geçti**. Genel724 test geçti (28skip), bounded retry probe başarılı. AD/KDS/GPMC çağrıları testte taklittir; canlı gMSA hizmet oturumu henüz doğrulanmadı.
+- CI: Windows40170087137/job121098982998; foundation40170087117/job121098982968; probe40170087162.
+- Public betik /home/segmentiq/authwire-windows-bootstrap-v1-r4-20261025.ps1 olarak hazırlandı; SHA256=458243b75970470005ea6a2c4bf2337887653812af74dd041a10f760e7c5ac79, uzak kopya özeti doğrulandı. AuthWiredev.34, GPO, çalışan RADIUS/broker, CA/sertifikalar, Windows paketleri için değişiklik/restart yapılmadı; tam yedek oluşturulmadı.
+- **Bekleyen:** kurumsal imzalı1.0.3 Inspect'in DC01'de gerçek kabulü. Hesap metadata/sahiplik değerleri olumlu; son bootstrap kabulü, yerel gMSA kurulumu/oturumu, sınırlı GPO/imzalama erişimi ve merkezi dağıtım kapıları ayrı kalır. CanApplyGpo=false; A03/A04 ve54/94 (%57) değişmedi.
+- Kanıt/teslim: checkpoints/2026-10-25-windows-connector-account-settings-result.json; checkpoints/2026-10-25-windows-connector-bootstrap-r4-delivery.json; checkpoints/2026-10-25-windows-connector-bootstrap-r4-inspect.ps1.
+
 ## Windows hesabı mevcut; ayar uyumsuzluğu için salt okunur inceleme açık — 25 Ekim 2026
 
 - Operatör DC01'de kurumsal imzalı bootstrap1.0.2 Inspect çalıştırdı. **aw-deploy$ Exists=true, Created=false**; hesap varlığı doğrulandı, önceki oluşturma sonucunun belirsizliği varlık açısından giderildi. Hesabın bu kurulumla tam eşleşmesi henüz doğrulanmadı.

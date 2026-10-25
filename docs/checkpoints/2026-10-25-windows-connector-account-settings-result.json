@@ -1,0 +1,51 @@
+{
+  "event": "WINDOWS_CONNECTOR_ACCOUNT_SETTINGS_READONLY_RECORDED",
+  "reported_by": "operator",
+  "computer": "DC01",
+  "domain": "vizyonveri.local",
+  "account": "aw-deploy$",
+  "object_class": "msDS-GroupManagedServiceAccount",
+  "sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+  "instance_id": "4c23eebe-0715-46d1-88ee-a2e96ad7ee46",
+  "connector_computer_guid": "0fa4143f-aae3-4bc3-9cd3-db8a1de24acd",
+  "expected_description": "AuthWireConnector:v1;instance=4c23eebe-0715-46d1-88ee-a2e96ad7ee46;host=0fa4143f-aae3-4bc3-9cd3-db8a1de24acd",
+  "actual_description_matches": true,
+  "dns_host_name": "aw-deploy.vizyonveri.local",
+  "enabled": true,
+  "account_not_delegated": true,
+  "trusted_for_delegation": false,
+  "trusted_to_auth_for_delegation": false,
+  "kerberos_encryption_type": {
+    "container": "Microsoft.ActiveDirectory.Management.ADPropertyValueCollection",
+    "count": 1,
+    "display_values": [
+      "AES128, AES256"
+    ]
+  },
+  "msds_supported_encryption_types": 24,
+  "primary_group_id": 515,
+  "member_of": {
+    "container": "Microsoft.ActiveDirectory.Management.ADPropertyValueCollection",
+    "bootstrap_array_count": 0,
+    "values": []
+  },
+  "service_principal_names": {
+    "container": "null",
+    "bootstrap_array_count": 1,
+    "values": []
+  },
+  "password_reader": {
+    "count": 1,
+    "distinguished_name": "CN=DC01,OU=Domain Controllers,DC=vizyonveri,DC=local",
+    "matches_expected": true
+  },
+  "root_cause": "@($null).Count equals 1; absent ServicePrincipalNames falsely treated as a configured SPN",
+  "account_state_matches_requested_fields": true,
+  "account_mutation_needed_for_reported_mismatch": false,
+  "ad_changed": false,
+  "corrected_bootstrap_inspect_pending": true,
+  "gmsa_local_installation_verified": false,
+  "service_logon_verified": false,
+  "connector_installed": false,
+  "can_apply_gpo": false
+}
