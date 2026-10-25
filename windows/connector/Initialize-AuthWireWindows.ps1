@@ -117,8 +117,16 @@ function Assert-AuthWireAccountShape {
         (ConvertTo-AuthWireAdBoolean $Account.TrustedForDelegation 'TrustedForDelegation') -or
         (ConvertTo-AuthWireAdBoolean $Account.TrustedToAuthForDelegation 'TrustedToAuthForDelegation') -or
         (ConvertTo-AuthWireAdInt32 $Account.KerberosEncryptionType 'KerberosEncryptionType') -ne 24 -or
-        @($Account.ServicePrincipalNames).Count -ne 0 -or @($Account.MemberOf).Count -ne 0 -or
         (ConvertTo-AuthWireAdInt32 $Account.PrimaryGroupID 'PrimaryGroupID') -notin @(513,515)) { throw 'ACCOUNT_OWNERSHIP_OR_SETTINGS_MISMATCH' }
+    # An absent AD multivalued attribute can be $null. @($null).Count is 1,
+    # so inspect actual entries rather than treating the null placeholder as one.
+    # Only a null attribute or an empty collection is accepted; every entry,
+    # including an empty string or a null element inside an array, is rejected.
+    foreach ($attribute in @('ServicePrincipalNames','MemberOf')) {
+        $value = $Account.$attribute
+        if ($null -eq $value) { continue }
+        foreach ($entry in $value) { throw 'ACCOUNT_OWNERSHIP_OR_SETTINGS_MISMATCH' }
+    }
     $readers = @($Account.PrincipalsAllowedToRetrieveManagedPassword)
     $readerDn = $null
     if ($readers.Count -eq 1) {
@@ -268,7 +276,7 @@ function Invoke-AuthWireConnectorBootstrap {
     [pscustomobject]@{
         Event = 'WINDOWS_CONNECTOR_BOOTSTRAP'
         Version = 1
-        BootstrapVersion = '1.0.2'
+        BootstrapVersion = '1.0.3'
         Mode = $Mode
         Computer = $env:COMPUTERNAME
         Domain = $domain.DNSRoot

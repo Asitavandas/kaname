@@ -42,7 +42,7 @@ function Account-Fixture {
         Description=('AuthWireConnector:v1;instance=' + $instance.ToString('D') + ';host=' + $computerGuid.ToString('D'))
         DNSHostName='aw-deploy.test.example';Enabled=$true;AccountNotDelegated=$true
         TrustedForDelegation=$false;TrustedToAuthForDelegation=$false;KerberosEncryptionType=24
-        ServicePrincipalNames=@();MemberOf=@();PrimaryGroupID=515
+        ServicePrincipalNames=$null;MemberOf=(Ad-Values @());PrimaryGroupID=515
         PrincipalsAllowedToRetrieveManagedPassword=@((Computer-Fixture))
         SID=[pscustomobject]@{Value='S-1-5-21-111-222-333-1234'}
     }
@@ -133,6 +133,47 @@ try {
     Check ($r.ReadyForAccountPreparation -and -not $r.AdChanged -and $global:AwConnectorFixture.Creates -eq 0) 'Default inspect is read only and ready'
     Check (-not $r.GmsaReadinessVerified -and -not $r.CanApplyGpo -and -not $r.Gpo.OwnershipAdopted) 'KDS configuration never implies service or GPO authority'
     Check ($r.Gpo.Status -eq 'AllSettingsEnabled' -and $r.Gpo.Permissions[0].Permission -eq 'GpoApply') 'Existing GPO enum names preserved'
+
+
+    # Exact real DC01 shape: absent SPN ($null), empty native MemberOf collection,
+    # and a wrapped native AES enum. No customer identity or state is used.
+    Reset-Fixture; $global:AwConnectorFixture.Account=Account-Fixture
+    $global:AwConnectorFixture.Account.KerberosEncryptionType=Ad-Values @([Microsoft.ActiveDirectory.Management.ADKerberosEncryptionType]24)
+    Check (@($global:AwConnectorFixture.Account.ServicePrincipalNames).Count -eq 1) 'Reproduces null SPN placeholder incorrectly counted as one'
+    Check ($global:AwConnectorFixture.Account.MemberOf -is $nativeCollectionType) 'Absent memberships use genuine empty AD collection'
+    $r=Run-Fixture
+    Check ($r.ReadyForAccountPreparation -and $r.Account.Exists -and -not $r.AdChanged -and $r.Account.Sid -eq 'S-1-5-21-111-222-333-1234') 'Real AD absence shapes pass Inspect and expose verified SID'
+    $r=Run-Fixture 'PrepareAccount'
+    Check (-not $r.Account.Created -and -not $r.AdChanged -and $global:AwConnectorFixture.Creates -eq 0) 'Existing account with absent SPN is never recreated'
+    foreach ($attribute in @('ServicePrincipalNames','MemberOf')) {
+        Reset-Fixture; $global:AwConnectorFixture.Account=Account-Fixture
+        $global:AwConnectorFixture.Account.$attribute=$null
+        $r=Run-Fixture
+        Check $r.ReadyForAccountPreparation ('Null absent attribute accepted: ' + $attribute)
+        Reset-Fixture; $global:AwConnectorFixture.Account=Account-Fixture
+        $global:AwConnectorFixture.Account.$attribute=Ad-Values @()
+        $r=Run-Fixture
+        Check $r.ReadyForAccountPreparation ('Native empty attribute accepted: ' + $attribute)
+        Reset-Fixture; $global:AwConnectorFixture.Account=Account-Fixture
+        $global:AwConnectorFixture.Account.$attribute=@()
+        $r=Run-Fixture
+        Check $r.ReadyForAccountPreparation ('Empty array accepted: ' + $attribute)
+        foreach ($shape in @('scalar','native','emptyString','nullEntry','nestedEmpty')) {
+            Reset-Fixture; $global:AwConnectorFixture.Account=Account-Fixture
+            switch ($shape) {
+                'scalar' { $value='CN=Unauthorized,DC=test,DC=example' }
+                'native' { $value=Ad-Values @('CN=Unauthorized,DC=test,DC=example') }
+                'emptyString' { $value='' }
+                'nullEntry' { $value=@($null) }
+                'nestedEmpty' {
+                    $value=New-Object System.Collections.ArrayList
+                    $null=$value.Add(@())
+                }
+            }
+            $global:AwConnectorFixture.Account.$attribute=$value
+            Expect-Blocked 'ACCOUNT_OWNERSHIP_OR_SETTINGS_MISMATCH'
+        }
+    }
 
     Reset-Fixture; $global:AwConnectorFixture.Keys=@()
     $r=Run-Fixture
