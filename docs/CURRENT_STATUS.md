@@ -17,6 +17,17 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Gerçek LSA okuması kabul edildi; sınırlı hizmet oturumu hakkı hazırlığı hazır — 25 Ekim 2026
+
+- Operatör DC01 LSA çıktısını paylaştı: ReadSucceeded=true; üç mevcut allow SID'si, deny listesi boş; aw-deploy$ SID S-1-5-21-34256453-3348971241-2809240126-1648 için **DirectAllowAssigned=false/DirectDenyAssigned=false**. Bu, doğrudan atama yokluğunu kanıtlar; grup üzerinden etkin izin veya gerçek hizmet oturumu iddiası yapılmaz. Önceki secedit boş listesi gerçek LSA atamalarının yokluğu değildi.
+- 🔴✓ Initialize-AuthWireServiceLogon.ps11.0.0 eklendi. Varsayılan Inspect; PrepareServiceRight, aynı kurumsal imzalı bootstrap1.0.3 üzerinden domain/host/kurulum GUID'si/hesap/SID ve KDS/sahiplik/ayarları yeniden doğrular. Yalnız **SeServiceLogonRight** eklenebilir. LsaAddAccountRights mevcut haklara ekleme yapar; hiçbir allow/deny listesi bütünüyle değiştirilmez, üretim betiğinde hak silme API'si yoktur. LSA account-entry oluşturma, AD hesabı oluşturma değildir.
+- Herhangi bir deny-service ataması varsa hazırlık grup incelemesi için durur. İşlem öncesi yalnız SYSTEM/Administrators erişimli benzersiz ProgramData klasörüne küçük işlem kaydı yazılır; drift tekrar kontrol edilir; hedef ekleme ve mevcut kayıtların korunması işlem sonunda doğrulanır. Kesilme/sonuç belirsizliğinde receipt ve Inspect kullanılır; otomatik geri alma veya hesabı yeniden oluşturma yapılmaz. Mevcut doğrudan atama varsa tekrar çalışma değişiklik yapmaz.
+- 🔴✓ PR#71 kaynak1c12d3717ac40c4a6a16a0784301b916a29ca850, merge76071767a044d7484c27a8ae1316087d4f033627. Native Windows PowerShell5.1'de benzersiz kullanılmayan fixture SID'sine gerçek LSA ekleme, korunacak ayrı batch hakkı, koruma reddi, idempotence, receipt ACL'si ve yalnız test haklarının temizlenmesi dahil **39 kontrol geçti**; tam PrepareServiceRight yolu test edildi. Bootstrap147 + LSA read16 + genel724 test (28skip) ve bounded retry probe başarılı. Müşteri AD'si veya gerçek gMSA hizmet oturumu test edilmedi.
+- CI Windows40171868961/job121104205842; foundation40171868914/job121104205644; probe40171868950.
+- İmzalanacak public araç /home/segmentiq/authwire-service-right-prepare-v1-20261025.ps1; SHA256=b795a3a153af632a8cd2cfd821c3d2172633b0925da9aa4c2bb22031be4204f4, uzak kopya özeti doğrulandı. **DC01'de bu hak henüz eklenmiş sayılmaz:** operator PrepareServiceRight çıktısı beklenir. Canlı işlem sıfır; RADIUS/broker, AuthWiredev.34, GPO/SYSVOL/imzalama ACL'leri ve Windows paketleri değişmedi. Tam yedek alınmadı; hedefli değişiklikte yalnız küçük receipt oluşturulur.
+- Açık kapılar: gerçek hak ekleme/readback, gerçek hizmet oturumu, GPO yenilemesi sonrası kalıcılık, sınırlı GPO/imzalama erişimi, connector/merkezi dağıtım ve uç/geri alma kabulü. ServiceLogonVerified/ConnectorInstalled/CanApplyGpo=false,54/94 (%57) değişmedi.
+- Kanıt: checkpoints/2026-10-25-windows-connector-lsa-rights-live-result.json; teslim: checkpoints/2026-10-25-windows-connector-service-right-prepare-delivery.json ve checkpoints/2026-10-25-windows-connector-service-right-prepare.ps1.
+
 ## Hizmet oturumu atamaları: boş secedit sonucu kaydedildi; doğrudan LSA okuması hazır — 25 Ekim 2026
 
 - Operatör DC01/aw-deploy$ için WINDOWS_CONNECTOR_SERVICE_RIGHTS_READONLY çıktısını paylaştı: **ExportedAssignments=[]**, PolicyChanged=false, ServiceLogonVerified=false. Bu yalnız dışa aktarılan INF'de iki atama satırının bulunmadığını kanıtlar; etkin izin yokluğu veya yasak yokluğu kabul edilmez. Yerel gMSA kullanım kabulü olumlu kalır.

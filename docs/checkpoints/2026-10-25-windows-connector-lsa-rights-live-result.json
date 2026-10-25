@@ -1,0 +1,24 @@
+{
+  "event": "WINDOWS_CONNECTOR_SERVICE_RIGHTS_LSA_READONLY",
+  "reported_by": "operator",
+  "probe_version": "1.0.0",
+  "computer": "DC01",
+  "account_sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+  "allow_assigned_sids": [
+    "S-1-5-82-3006700770-424185619-1745488364-794895919-4004696415",
+    "S-1-5-80-0",
+    "S-1-5-21-34256453-3348971241-2809240126-1616"
+  ],
+  "deny_assigned_sids": [],
+  "direct_allow_assigned": false,
+  "direct_deny_assigned": false,
+  "read_succeeded": true,
+  "group_evaluation_performed": false,
+  "effective_service_right_verified": false,
+  "service_logon_verified": false,
+  "policy_changed": false,
+  "ad_changed": false,
+  "services_created": false,
+  "secrets_exported": false,
+  "next": "Prepare only direct SeServiceLogonRight on the previously validated owned account; retain all existing assignments. Actual service logon remains a separate gate."
+}
