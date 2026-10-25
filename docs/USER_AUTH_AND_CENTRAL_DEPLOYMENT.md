@@ -4,6 +4,16 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ Gerçek gMSA AD/SYSVOL yazma, okuma, temizlik ve koruma testi tamamlandı — 25 Ekim 2026
+
+- Operatör DC01/vizyonveri.local üzerinde **GPO write probe1.0.1** sonucunu paylaştı. **ProbeVerified=true, ServiceWriteAccessVerified=true, TargetStatePreserved=true, ProtectedTrustPreserved=true**; Error/NativeErrorCode/OperationError=null, CleanupErrors/OperationCleanupErrors=[].
+- 🔴✓ Gerçek runtime hesabı **VIZYONVERI\\aw-deploy$ / SID1648**, SCM PID**9656**; hizmet **AuthWireLogonProbe-9be0d534201b41a1911e7fd36fa6585d**. Hedef yalnız **8c6808fd-a382-4bf2-9c9c-d9e1d46082a3 / AuthWire-Managed-Deployment-4c23eebe**. **AdWriteReadVerified/AdProbeRemoved/SysvolWriteReadVerified/SysvolProbeRemoved=true**.
+- 🔴✓ Geçici hizmet, EXE ve sonuç klasörü kaldırıldı. **BusinessStateIdentical=true, ChangedComponents=[]**: bu yeni denemenin baseline'ına göre hedef comment/ayar/version/link/delegasyon/dosya içeriği/dosya-dizin-root ACL karşılaştırmaları aynı. **ChangedRootMetadata=[ReadTime,ModifiedTime], MetadataOnlyDifference=true**: beklenen tarih farkları ayrı kanıtlandı. Önceki1.0.0 denemenin bellek içi baseline'ı geçmişe dönük yeniden oluşturulmuş sayılmaz; tam kabul yeni1.0.1 denemesine dayanır.
+- **AdChanged/GpoChanged=true** yalnız geçici test yazımlarını belirtir; değerler/dosya temizlenmiştir. LogonRightsChanged/SecretsExported=false. GPO link veya istemci dağıtımı yapılmamıştır; önceki verified_unlinked hazırlık geçerlidir.
+- Yerel kanıtlar: **C:\ProgramData\AuthWire-GpoWriteProbe-e9218814a6f848c797c04e70822a37c3\summary.json** ve **gpo-comparison.json**; korumalı gpo-before.json baseline'ı aynı evidence klasöründe test öncesi yazıldı. Operatör JSON kanıtı: checkpoints/2026-10-25-windows-connector-gpo-write-live-accepted.json.
+- **GpoPersistenceVerified/ConnectorInstalled/CanApplyGpo=false** halen beklenen açık kapılardır. Sıradaki iş, servis hesabının dağıtım betiklerini imzalayabilmesi için imzalama hazırlığı/uygun anahtar erişiminin doğrulanması; sonra connector kurulumu/güvenli panel iletişimi ve kontrollü GPO dağıtımı/kalıcılık/uç kabulüdür. Bu sonuç service signing-key erişimini veya merkezi otomasyonun tamamını kanıtlamaz.
+- Tamamlanan bir alt kabul kapısıdır; A03/A04 üst maddeleri açık kalır. Ürün dev.34 ve **54/94 (%57),40 açık** sayımı korunur. Formal rapor yeniden üretilmedi; çalışma kaydı güncellendi.
+
 ## 🔴✓ GPO write-probe tarih karşılaştırması düzeltildi; bileşen kanıtı hazır — 25 Ekim 2026
 
 - **Test-AuthWireGpoWrite1.0.1**: GPMC XML'de doğru root alanı **ModifiedTime** kullanıldı. Yalnız doğrudan root ReadTime/ModifiedTime karşılaştırma dışında tutulur; RawReport ve tarihler ayrıca kaydedilir. CreationTime ve nested ModifiedTime dahil ayar/version/link/delegation/owner farkları korunur.
