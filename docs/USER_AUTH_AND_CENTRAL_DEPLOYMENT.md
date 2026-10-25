@@ -4,6 +4,15 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ KDS beklemesi ve gerçek yapılandırma kontrolü tamamlandı — 25 Ekim 2026
+
+- Operatör DC01/vizyonveri.local üzerinde imzalı bootstrap1.0.1 **Inspect** sonucunu paylaştı: tek kök, **Kds.Ready=true**, State=configuration_valid, **ConfigurationValid=true**, Blockers=[] ve ReadyForAccountPreparation=true. Bekleme sonrası native KDS kontrol kapısı kapandı; anahtar yeniden oluşturulmadı.
+- aw-deploy$ hâlâ yok: Exists=false, Created=false, Sid=null. Mevcut pilot GPO AllSettingsEnabled; CodeSigningEku/EkuReadState/HasPrivateKey/CurrentlyValid yayıncı kontrolleri olumlu. Bu salt okunur kontrolde AD/GPO/sertifika/yerel policy değişmedi ve sır dışa aktarılmadı.
+- **Hesap kurulumu tamamlandı sayılmaz:** GmsaReadinessVerified/LocalInstallationVerified/ServiceLogonVerified/ServiceKeyAccessVerified/CanApplyGpo/ConnectorInstalled=false. KDS başarısı hizmetin çalışabildiği veya GPO yazma yetkisi verildiği anlamına gelmez.
+- Sıradaki somut işlem, aynı imzalı betikte **PrepareAccount**: sabit kurulum GUID'si `4c23eebe-0715-46d1-88ee-a2e96ad7ee46`, hedef DC01, hesap aw-deploy. Yalnız DC01 parola okuyucusu, AES128/256 ve delegasyon koruması; mevcut müşteri hesabını sahiplenme/onarım, yönetici grubu üyeliği, GPO, CA, imzalama ACL'si veya hizmet kurulumu yok. Komut teslimi henüz canlı hesap oluşturma sonucu değildir.
+- Sonraki kapılar: hesap readback/SID, yerel gMSA kurulum ve gerçek oturum, sınırlı GPO/imzalama erişimi, yönetim bağlantısı, gerçek GPO/uç ve geri alma kabulü. AuthWiredev.34 ve çalışan 802.1X değişmedi. A03/A04 ve54/94 (%57) hesabı korunur; yeni Word/PDF raporu bu alt sonuç için yeniden üretilmedi.
+- Kanıt: `checkpoints/2026-10-25-windows-connector-kds-ready-result.json`; teslim: `checkpoints/2026-10-25-windows-connector-account-prepare.ps1`, `checkpoints/2026-10-25-windows-connector-account-prepare-delivery.json`.
+
 ## 🔴✓ Windows hazırlık 1.0.1 gerçek DC01 kontrolü ve EKU düzeltmesi kabul edildi — 24 Ekim 2026
 
 - Operatör tam WINDOWS_CONNECTOR_BOOTSTRAP JSON sonucunu paylaştı: bootstrap1.0.1, Inspect, DC01/vizyonveri.local. Hazırlık envanterinin gerçek Windows okuması hatasız tamamlandı. Önceki ObjectId.Value hatası bu çalıştırmada tekrarlanmadı.

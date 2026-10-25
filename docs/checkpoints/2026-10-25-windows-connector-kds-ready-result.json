@@ -1,0 +1,66 @@
+{
+  "event": "WINDOWS_CONNECTOR_KDS_LIVE_READY",
+  "date": "2026-10-25",
+  "timezone": "Europe/Istanbul",
+  "source": "operator_supplied_DC01_bootstrap_1.0.1_Inspect_output",
+  "facts": {
+    "computer": "DC01",
+    "domain": "vizyonveri.local",
+    "connector_computer_guid": "0fa4143f-aae3-4bc3-9cd3-db8a1de24acd",
+    "instance_id": "4c23eebe-0715-46d1-88ee-a2e96ad7ee46",
+    "Kds": {
+      "Count": 1,
+      "Ready": true,
+      "Keys": [
+        {
+          "State": "configuration_valid",
+          "CheckAfterUtc": "2026-10-25T04:18:13.0000000Z",
+          "CheckAfterLocal": "2026-10-25T07:18:13.0000000+03:00",
+          "ConfigurationValid": true
+        }
+      ]
+    },
+    "Blockers": [],
+    "ReadyForAccountPreparation": true,
+    "Account": {
+      "Name": "aw-deploy$",
+      "Exists": false,
+      "Created": false,
+      "Sid": null,
+      "AllowedPasswordHost": "DC01",
+      "LocalInstallationVerified": false,
+      "ServiceLogonVerified": false
+    },
+    "Gpo": {
+      "Id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
+      "Name": "AuthWire-Pilot-Trust",
+      "Status": "AllSettingsEnabled",
+      "OwnershipAdopted": false,
+      "ServiceWriteAccessVerified": false
+    },
+    "Publisher": {
+      "Store": "Cert:\\CurrentUser\\My",
+      "Thumbprint": "6E74B513F766E01730719684A41B2664380CA68A",
+      "CodeSigningEku": true,
+      "EkuReadState": "valid",
+      "HasPrivateKey": true,
+      "CurrentlyValid": true,
+      "ServiceKeyAccessVerified": false
+    },
+    "GmsaReadinessVerified": false,
+    "ConnectorInstalled": false,
+    "CanApplyGpo": false,
+    "AdChanged": false,
+    "GpoChanged": false,
+    "CertificatesChanged": false,
+    "LocalPolicyChanged": false,
+    "SecretsExported": false
+  },
+  "assessment": {
+    "KDS_wait_gate_closed": true,
+    "native_KDS_configuration_verified": true,
+    "gmsa_account_still_absent": true,
+    "service_or_connector_not_yet_ready": true
+  },
+  "next_gate": "Operator runs same validated signed bootstrap in PrepareAccount mode; require readback and unchanged GPO/cert/local policy flags before local installation and logon gates"
+}

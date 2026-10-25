@@ -1,0 +1,22 @@
+{
+  "event": "WINDOWS_CONNECTOR_ACCOUNT_PREPARATION_DELIVERY",
+  "date": "2026-10-25",
+  "timezone": "Europe/Istanbul",
+  "bootstrap_version": "1.0.1",
+  "source_sha256": "1a416a475ee4e56b7b35f2f9b928e698f15dca9f3847499c7c6fb7f446d0700b",
+  "source": "windows/connector/Initialize-AuthWireWindows.ps1",
+  "source_commit": "51308432fb6a7db1126df317f8200220f5225a9b",
+  "pr": 67,
+  "mode": "PrepareAccount",
+  "authorized_scope": "Create only installation-owned aw-deploy gMSA with DC01 as sole password reader; no group elevation/GPO/CA/Windows endpoint/service changes",
+  "live_KDS_prerequisite_verified": true,
+  "live_account_creation_executed": false,
+  "local_gmsa_installation_verified": false,
+  "service_logon_verified": false,
+  "GPO_delegation_granted": false,
+  "service_signing_key_access_granted": false,
+  "connector_installed": false,
+  "source_changed": false,
+  "protection": "Existing account name/ownership/reader/encryption/delegation/group drift blocks; same matching account can be revalidated without mutation; unknown create result requires inspection rather than blind repeat",
+  "invocation": "2026-10-25-windows-connector-account-prepare.ps1"
+}
