@@ -4,6 +4,15 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## Gerçek yazma/okuma ve temizlik doğrulandı; hedef postcheck incelemede — 25 Ekim 2026
+
+- Operatör **GPO write probe1.0.0** sonucunu paylaştı: gerçek **VIZYONVERI\\aw-deploy$ / SID1648**, SCM PID1388, Stage=runtime_write_verified. **AdWriteReadVerified/AdProbeRemoved/SysvolWriteReadVerified/SysvolProbeRemoved=true**; OperationError=null, OperationCleanupErrors=[].
+- 🔴✓ Geçici hizmet73580e757e9d40ddbc87088b1629318e, EXE ve result directory kaldırılmış; ProtectedTrustPreserved=true. Bu alt kanıt gerçek hizmet hesabı AD/SYSVOL yazma, okuma ve test verisi temizliğini doğrular.
+- **ProbeVerified=false, ServiceWriteAccessVerified=false, TargetStatePreserved=false**, CleanupErrors=[GPO_POSTCHECK_REQUIRES_REVIEW]. Tam kabul veya hedefin bütün eski durumunun korunduğu ilan edilmez. Kaynak/yerel GPO ayarı geri alınmadı ve izin guard'ı atlanmadı.
+- İncelemede somut normalizasyon hatası bulundu: Get-GPOReport XML kökü **ModifiedTime** taşır;1.0.0 karşılaştırması yanlış **ModificationTime** adını dışarıda tutmuştu. Microsoft resmi XML örneği bunu doğrular. Bu beklenen tarih farkı sonucu açıklayabilir; eski çalışmada bileşen baseline'ı kalıcı yazılmadığı için ilk farkın kesin alanları geçmişe dönük kanıtlanamaz.
+- **1.0.1** düzeltmesi PR76'da hazırlanıyor: yalnız root ReadTime/ModifiedTime normalizasyonu; before/after raw rapor ve ayrı bileşenler, dosya/dizin ACL ve içerik karşılaştırmaları; servis oluşturmadan önce baseline kaydı. CreationTime/nested ayar/versiyon/link/izin farkları korunur. Native testlerden sonra kontrollü tekrar gerekir.
+- Kanıt: checkpoints/2026-10-25-windows-connector-gpo-write-live-postcheck-review.json. Mevcut yerel özet: C:\ProgramData\AuthWire-GpoWriteProbe-9ff03235ed39411ab210616a5d43cd19\summary.json. Ürün dev.34;54/94 (%57),40 açık değişmedi.
+
 ## 🔴✓ Gerçek hizmet hesabı GPO yazma/okuma test aracı hazır — 25 Ekim 2026
 
 - **Test-AuthWireGpoWrite.ps1 1.0.0**, varsayılan Inspect. Dört mevcut kurumsal imzalı yardımcı, hesap/hizmet hakkı ve **verified_unlinked** receipt ile aynı **8c6808fd-a382-4bf2-9c9c-d9e1d46082a3** boş/bağlantısız GPO doğrulanır. RunProbe yalnız bu GPO'da geçici test yapar; GPO link/ayar/izin, hesap hakkı, grup veya imzalama anahtarı ACL'si değiştirmez.
