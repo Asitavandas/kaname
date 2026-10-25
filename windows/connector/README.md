@@ -274,6 +274,19 @@ summary/manifest/proof remain. ServiceWriteAccessVerified requires actual write,
 read, cleanup and preservation acceptance. It does not imply signing-key access,
 connector installation, policy persistence or endpoint acceptance.
 
+Version 1.0.1 fixes the target postcheck's GPMC report field name: XML uses
+root ModifiedTime while the PowerShell Gpo object exposes ModificationTime.
+Only direct root ReadTime/ModifiedTime are excluded from the business comparison;
+CreatedTime, nested settings, versions, enabled state, links, permission rows,
+root ACL, and each existing SYSVOL file/directory ACL and file content remain
+covered. Raw reports and the observed timestamp values are retained separately.
+An admin-only gpo-before.json baseline is written before service creation;
+gpo-comparison.json stores before/after components and precise changed fields.
+Missing comparison evidence fails acceptance. Earlier 1.0.0 results without
+component baselines are not retroactively accepted; rerun the corrected probe
+to establish preservation. Real operation success and overall postcheck
+acceptance are separate results.
+
 Native hosted Windows tests exercise the real file engine and signed SCM helper
 under LocalService. Only the test-compiled helper substitutes the LDAP adapter
 and UNC path with an in-memory directory and local fixture directory. Production

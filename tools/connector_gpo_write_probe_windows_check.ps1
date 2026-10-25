@@ -39,6 +39,64 @@ $unitRoot=Join-Path $env:RUNNER_TEMP ('AuthWire-WriteUnit-'+[guid]::NewGuid().To
 $null=New-Item -ItemType Directory -Path $unitRoot
 $cert=$null;$public=$null;$roots=$null;$publishers=$null;$folders=@()
 try{
+    # GPMC XML root metadata differs from PowerShell Gpo property names.
+    # Use the real Report shape (ModifiedTime), and keep nested setting names covered.
+    $script:snapshotRoot=Join-Path $unitRoot 'sysvol'
+    $null=New-Item -ItemType Directory -Path $script:snapshotRoot
+    $snapshotFile=Join-Path $script:snapshotRoot 'gpt.ini'
+    [IO.File]::WriteAllText($snapshotFile,'[General] Version=0')
+    $script:snapshotDescription='AuthWire ownership marker'
+    $script:snapshotPermission='GpoEdit'
+    $script:snapshotXml='<GPO xmlns="http://www.microsoft.com/GroupPolicy/Settings"><Identifier>fixture</Identifier><CreatedTime>2026-10-25T10:00:00</CreatedTime><ModifiedTime>2026-10-25T10:01:00</ModifiedTime><ReadTime>2026-10-25T10:02:00Z</ReadTime><Computer><Enabled>true</Enabled><VersionDirectory>0</VersionDirectory><VersionSysvol>0</VersionSysvol><Setting><ModifiedTime>KEEP-NESTED</ModifiedTime></Setting></Computer><User/></GPO>'
+    $originalXml=$script:snapshotXml
+    function Get-GPO {[CmdletBinding()]param([guid]$Guid,[string]$Domain,[string]$Server)
+        [pscustomobject]@{Id=$Guid;Description=$script:snapshotDescription}}
+    function Get-AuthWireGpoDocument {param([guid]$Id,[string]$Domain,[string]$Server)
+        $doc=New-Object Xml.XmlDocument;$doc.XmlResolver=$null;$doc.LoadXml($script:snapshotXml);return ,$doc}
+    function Get-AuthWireGpoRoot {param([guid]$Id,[string]$Domain,[string]$Server) return $script:snapshotRoot}
+    function Get-AuthWireGpoPermissionRows {param([guid]$Id,[string]$Domain,[string]$Server)
+        [pscustomobject]@{Sid='S-1-5-21-111-222-333-1648';Permission=$script:snapshotPermission}}
+    $snapshotId=[guid]'8c6808fd-a382-4bf2-9c9c-d9e1d46082a3'
+    $baseline=Get-AuthWireGpoBusinessSnapshot $snapshotId 'test.example' 'dc.test.example'
+    $script:snapshotXml=$originalXml.Replace('2026-10-25T10:01:00','2026-10-25T10:11:00').Replace('2026-10-25T10:02:00Z','2026-10-25T10:12:00Z')
+    $changed=Get-AuthWireGpoBusinessSnapshot $snapshotId 'test.example' 'dc.test.example'
+    $difference=Compare-AuthWireGpoBusinessSnapshot $baseline $changed
+    Check ($difference.BusinessStateIdentical -and $difference.MetadataOnlyDifference -and $difference.ChangedComponents.Count -eq 0 -and $difference.ChangedRootMetadata.Count -eq 2) 'Only root ReadTime and ModifiedTime changes preserve business state'
+    Check ($baseline.RawReport -cne $changed.RawReport -and $baseline.Components.NormalizedReport -ceq $changed.Components.NormalizedReport) 'Raw before-after evidence retains timestamp difference'
+    Check ($baseline.Components.NormalizedReport.Contains('KEEP-NESTED') -and $baseline.Components.NormalizedReport.Contains('<CreatedTime>')) 'Creation time and nested ModifiedTime settings are never excluded'
+    foreach($case in @('created','nested','enabled','version','link','description','permission','file','fileAcl','rootAcl','extraFile')){
+        $script:snapshotXml=$originalXml;$script:snapshotDescription='AuthWire ownership marker';$script:snapshotPermission='GpoEdit'
+        $fileAcl=Get-Acl -LiteralPath $snapshotFile;$rootAcl=Get-Acl -LiteralPath $script:snapshotRoot
+        $expected='NormalizedReport'
+        switch($case){
+            'created' {$script:snapshotXml=$originalXml.Replace('2026-10-25T10:00:00','2026-10-24T10:00:00')}
+            'nested' {$script:snapshotXml=$originalXml.Replace('KEEP-NESTED','CHANGED-NESTED')}
+            'enabled' {$script:snapshotXml=$originalXml.Replace('<Enabled>true','<Enabled>false')}
+            'version' {$script:snapshotXml=$originalXml.Replace('<VersionDirectory>0','<VersionDirectory>1')}
+            'link' {$script:snapshotXml=$originalXml.Replace('<User/>','<User/><LinksTo><SOMPath>test.example</SOMPath></LinksTo>')}
+            'description' {$script:snapshotDescription='FOREIGN';$expected='Description'}
+            'permission' {$script:snapshotPermission='GpoEditDeleteModifySecurity';$expected='Permissions'}
+            'file' {[IO.File]::WriteAllText($snapshotFile,'[General] Version=1');$expected='SysvolEntries'}
+            'fileAcl' {
+                $modified=Get-Acl -LiteralPath $snapshotFile
+                $modified.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new([Security.Principal.SecurityIdentifier]::new('S-1-5-32-545'),[Security.AccessControl.FileSystemRights]::Write,[Security.AccessControl.AccessControlType]::Allow))
+                Set-Acl -LiteralPath $snapshotFile -AclObject $modified;$expected='SysvolEntries'
+            }
+            'rootAcl' {
+                $modified=Get-Acl -LiteralPath $script:snapshotRoot
+                $modified.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new([Security.Principal.SecurityIdentifier]::new('S-1-5-32-545'),[Security.AccessControl.FileSystemRights]::Write,[Security.AccessControl.AccessControlType]::Allow))
+                Set-Acl -LiteralPath $script:snapshotRoot -AclObject $modified;$expected='RootAcl'
+            }
+            'extraFile' {[IO.File]::WriteAllText((Join-Path $script:snapshotRoot 'extra.tmp'),'unexpected');$expected='SysvolEntries'}
+        }
+        $difference=Compare-AuthWireGpoBusinessSnapshot $baseline (Get-AuthWireGpoBusinessSnapshot $snapshotId 'test.example' 'dc.test.example')
+        Check (-not $difference.BusinessStateIdentical -and -not $difference.MetadataOnlyDifference -and $difference.ChangedComponents -contains $expected) ('Postcheck rejects actual drift: '+$case)
+        [IO.File]::WriteAllText($snapshotFile,'[General] Version=0')
+        Set-Acl -LiteralPath $script:snapshotRoot -AclObject $rootAcl
+        Set-Acl -LiteralPath $snapshotFile -AclObject $fileAcl
+        if(Test-Path -LiteralPath (Join-Path $script:snapshotRoot 'extra.tmp')){Remove-Item -LiteralPath (Join-Path $script:snapshotRoot 'extra.tmp')}
+    }
+    $script:snapshotXml=$originalXml;$script:snapshotDescription='AuthWire ownership marker';$script:snapshotPermission='GpoEdit'
     foreach($case in @('success','repeat','collision','existingDescription','targetMismatch','lostReply','concurrent','deleteFailure','missingDirectory')){
         $directory=New-Object AuthWire.GpoWriteProbe.FixtureDirectory
         $path=Join-Path $unitRoot ('probe-'+[guid]::NewGuid().ToString('N')+'.tmp')
@@ -104,13 +162,15 @@ try{
     $publishers.Open([Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite);$publishers.Add($public)
     $configuration=[pscustomobject]@{};foreach($key in $valid.Keys){if($key -ne 'Nonce'){$configuration|Add-Member -NotePropertyName $key -NotePropertyValue $valid[$key]}}
     $configuration.ExpectedSid='S-1-5-19'
-    $result=Invoke-AuthWireGpoWriteProbeCore -RuntimeAccount 'NT AUTHORITY\LocalService' -ExpectedSid 'S-1-5-19' -PublisherThumbprint $cert.Thumbprint -Configuration $configuration
+    $result=Invoke-AuthWireGpoWriteProbeCore -RuntimeAccount 'NT AUTHORITY\LocalService' -ExpectedSid 'S-1-5-19' -PublisherThumbprint $cert.Thumbprint -Configuration $configuration -BeforeSnapshot $baseline -ProtectedBeforeHash ('A'*64)
     Write-Host ('GPO_WRITE_FIXTURE_RESULT '+($result|ConvertTo-Json -Depth 6 -Compress))
     if(Test-Path -LiteralPath (Split-Path -Parent $result.EvidencePath)){$folders+=Split-Path -Parent $result.EvidencePath}
     Check ($result.ProbeVerified -and $result.ServiceLogonVerified -and $result.RuntimeSid -eq 'S-1-5-19' -and $result.AdWriteReadVerified -and $result.SysvolWriteReadVerified) 'Real signed SCM helper runs engine under low privilege with simulated directory'
     Check ($result.AdProbeRemoved -and $result.SysvolProbeRemoved -and $result.TemporaryServiceRemoved -and $result.TemporaryBinaryRemoved -and $result.TemporaryResultDirectoryRemoved) 'Helper cleans own probe data, service and artifacts'
     Check (-not $result.ServiceWriteAccessVerified -and -not $result.ConnectorInstalled -and -not $result.CanApplyGpo) 'Core cannot claim customer GPO write acceptance without independent postcheck'
     Check (-not [AuthWire.Connector.OwnedProbeServiceV1]::Exists($result.ServiceName)) 'SCM confirms write probe service absent'
+    $saved=Get-Content -LiteralPath (Join-Path (Split-Path -Parent $result.EvidencePath) 'gpo-before.json') -Raw|ConvertFrom-Json
+    Check ($saved.CapturedBeforeServiceCreation -and $saved.Target.Digest -ceq $baseline.Digest -and $saved.ProtectedTrustHash -ceq ('A'*64)) 'Protected component baseline is retained before native service creation'
     $proof=Get-Content -LiteralPath (Join-Path (Split-Path -Parent $result.EvidencePath) 'verified-proof.json') -Raw|ConvertFrom-Json
     Check (Test-AuthWireRuntimeProof $proof 'S-1-5-19' $proof.ServiceName $proof.Nonce $proof.ProcessId) 'Write proof binds runtime SID, SCM PID, nonce and host'
     Check (Test-AuthWireGpoOperationProof $proof $configuration) 'Write proof requires typed operation and cleanup acceptance'

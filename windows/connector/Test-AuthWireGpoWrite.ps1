@@ -32,24 +32,51 @@ function Import-AuthWireSignedProbeHelpers {
     if($definitions.Count -ne $Names.Count -or @($definitions.Name|Select-Object -Unique).Count -ne $Names.Count) { throw 'PROBE_HELPER_FUNCTION_SET_INVALID' }
     return (($definitions|ForEach-Object{$_.Extent.Text}) -join [Environment]::NewLine)
 }
-function Get-AuthWireGpoBusinessFingerprint {
+function Get-AuthWireGpoBusinessSnapshot {
     param([guid]$Id,[string]$Domain,[string]$Server)
     $gpo=Get-GPO -Guid $Id -Domain $Domain -Server $Server -ErrorAction Stop
     $doc=Get-AuthWireGpoDocument $Id $Domain $Server
-    foreach($node in @($doc.SelectNodes("//*[local-name()='ReadTime' or local-name()='ModificationTime']"))) { $null=$node.ParentNode.RemoveChild($node) }
+    $raw=$doc.OuterXml
+    $metadata=[ordered]@{}
+    # GPMC's XML uses ModifiedTime (not the PowerShell Gpo.ModificationTime property).
+    # Only these two direct root metadata fields are volatile. Nested settings stay covered.
+    foreach($name in @('ReadTime','ModifiedTime')) {
+        $nodes=@($doc.SelectNodes("/*[local-name()='GPO']/*[local-name()='"+$name+"']"))
+        $metadata[$name]=@($nodes|ForEach-Object {$_.InnerText})
+        foreach($node in $nodes) {$null=$node.ParentNode.RemoveChild($node)}
+    }
     $path=Get-AuthWireGpoRoot $Id $Domain $Server
-    $files=@(Get-ChildItem -LiteralPath $path -Recurse -Force -ErrorAction Stop | ForEach-Object {
+    $entries=@(Get-ChildItem -LiteralPath $path -Recurse -Force -ErrorAction Stop | ForEach-Object {
         if(($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {throw 'GPO_SYSVOL_REPARSE_POINT_REJECTED'}
-        if(-not $_.PSIsContainer) {
-            [pscustomobject]@{Path=$_.FullName.Substring($path.Length).ToLowerInvariant();Hash=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash}
-        }
+        $entryAcl=Get-Acl -LiteralPath $_.FullName -ErrorAction Stop
+        [pscustomobject]@{Path=$_.FullName.Substring($path.Length).ToLowerInvariant();Directory=[bool]$_.PSIsContainer
+            Hash=$(if(-not $_.PSIsContainer){(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash}else{$null})
+            Acl=$entryAcl.GetSecurityDescriptorSddlForm([Security.AccessControl.AccessControlSections]::All)}
     } | Sort-Object Path)
     $permissions=@(Get-AuthWireGpoPermissionRows $Id $Domain $Server|Sort-Object Sid,Permission)
     $acl=Get-Acl -LiteralPath $path -ErrorAction Stop
-    $value=([string]$gpo.Description)+$doc.OuterXml+($files|ConvertTo-Json -Compress)+($permissions|ConvertTo-Json -Compress)+$acl.GetSecurityDescriptorSddlForm([Security.AccessControl.AccessControlSections]::All)
+    $components=[pscustomobject][ordered]@{GpoId=$Id.ToString('D');Description=[string]$gpo.Description
+        NormalizedReport=$doc.OuterXml;SysvolEntries=$entries;Permissions=$permissions
+        RootAcl=$acl.GetSecurityDescriptorSddlForm([Security.AccessControl.AccessControlSections]::All)}
+    $value=ConvertTo-Json -InputObject $components -Depth 8 -Compress
     $sha=[Security.Cryptography.SHA256]::Create()
-    try{return ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($value)))).Replace('-','').ToLowerInvariant()}
+    try{$digest=([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($value)))).Replace('-','').ToLowerInvariant()}
     finally{$sha.Dispose()}
+    return [pscustomobject]@{Version=1;Digest=$digest;Components=$components;ObservedMetadata=[pscustomobject]$metadata;RawReport=$raw}
+}
+function Compare-AuthWireGpoBusinessSnapshot {
+    param($Before,$After)
+    if($null -eq $Before -or $null -eq $After -or $Before.Version -ne 1 -or $After.Version -ne 1) {throw 'GPO_COMPARISON_SNAPSHOT_REQUIRED'}
+    $changed=@(foreach($name in @('GpoId','Description','NormalizedReport','SysvolEntries','Permissions','RootAcl')) {
+        if((ConvertTo-Json -InputObject $Before.Components.$name -Depth 8 -Compress) -cne
+            (ConvertTo-Json -InputObject $After.Components.$name -Depth 8 -Compress)) {$name}
+    })
+    $metadata=@(foreach($name in @('ReadTime','ModifiedTime')) {
+        if((ConvertTo-Json -InputObject $Before.ObservedMetadata.$name -Compress) -cne
+            (ConvertTo-Json -InputObject $After.ObservedMetadata.$name -Compress)) {$name}
+    })
+    return [pscustomobject]@{BusinessStateIdentical=($changed.Count -eq 0 -and $Before.Digest -ceq $After.Digest)
+        ChangedComponents=$changed;ChangedRootMetadata=$metadata;MetadataOnlyDifference=($changed.Count -eq 0 -and $metadata.Count -gt 0)}
 }
 function Test-AuthWireGpoOperationProof {
     param($Proof,$Configuration)
@@ -329,7 +356,7 @@ function New-AuthWireSignedGpoWriteExecutable {
     }
 }
 function Invoke-AuthWireGpoWriteProbeCore {
-    param([string]$RuntimeAccount,[string]$ExpectedSid,[string]$PublisherThumbprint,$Configuration)
+    param([string]$RuntimeAccount,[string]$ExpectedSid,[string]$PublisherThumbprint,$Configuration,$BeforeSnapshot,[string]$ProtectedBeforeHash)
     Initialize-AuthWireProbeController
     $sid=[System.Security.Principal.SecurityIdentifier]::new($ExpectedSid).Value
     $serviceName='AuthWireLogonProbe-' + [guid]::NewGuid().ToString('N')
@@ -346,6 +373,10 @@ function Invoke-AuthWireGpoWriteProbeCore {
     try {
         New-AuthWireProbeDirectory -Path $root -Sid $sid
         New-AuthWireProbeDirectory -Path $resultDirectory -Sid $sid -Writable
+        if($null -ne $BeforeSnapshot) {
+            Write-AuthWireProbeEvidence -Path (Join-Path $root 'gpo-before.json') -Value ([ordered]@{
+                Target=$BeforeSnapshot;ProtectedTrustHash=$ProtectedBeforeHash;CapturedBeforeServiceCreation=$true})
+        }
         Write-AuthWireProbeEvidence -Path (Join-Path $root 'manifest.json') -Value ([ordered]@{
             Version=1;ServiceName=$serviceName;Nonce=$nonce;ExpectedSid=$sid;RuntimeAccount=$RuntimeAccount
             CreatedUtc=[datetime]::UtcNow.ToString('o');BinaryPath=$binary;PasswordSupplied=$false
@@ -433,7 +464,7 @@ function Invoke-AuthWireGpoWriteProbeCore {
         }
     }
     $result=[pscustomobject]@{
-        Event='WINDOWS_CONNECTOR_GPO_WRITE_PROBE';ProbeVersion='1.0.0'
+        Event='WINDOWS_CONNECTOR_GPO_WRITE_PROBE';ProbeVersion='1.0.1'
         Computer=[Environment]::MachineName;Account=$RuntimeAccount;ExpectedSid=$sid
         ServiceName=$serviceName;ServiceCreated=$created;ServiceLogonVerified=$runtimeVerified
         RuntimeSid=$(if($null -ne $proof){$proof.IdentitySid}else{$null})
@@ -494,24 +525,35 @@ $gpc=Get-ADObject -Identity $dn -Server $server -Properties description -ErrorAc
 $descriptions=@(foreach($value in $gpc.description){if($null -ne $value){[string]$value}})
 if($descriptions.Count -ne 0) {throw 'GPO_LDAP_DESCRIPTION_NOT_EMPTY'}
 $protectedBefore=Get-AuthWireProtectedGpoHash $ProtectedGpoId $ExpectedDomain $server
-$targetBefore=Get-AuthWireGpoBusinessFingerprint $ExpectedGpoId $ExpectedDomain $server
+$targetBefore=Get-AuthWireGpoBusinessSnapshot $ExpectedGpoId $ExpectedDomain $server
 if($Mode -eq 'Inspect') {
-    [pscustomobject]@{Event='WINDOWS_CONNECTOR_GPO_WRITE_PREFLIGHT';ProbeVersion='1.0.0';Computer=$ExpectedComputer
+    [pscustomobject]@{Event='WINDOWS_CONNECTOR_GPO_WRITE_PREFLIGHT';ProbeVersion='1.0.1';Computer=$ExpectedComputer
         Account=$runtime;GpoId=$ExpectedGpoId.ToString('D');ReadyForProbe=$true;ServiceCreated=$false
         AdChanged=$false;GpoChanged=$false;ServiceWriteAccessVerified=$false;ConnectorInstalled=$false;CanApplyGpo=$false}|ConvertTo-Json
 } else {
     $configuration=[pscustomobject]@{Computer=$ExpectedComputer;Domain=$ExpectedDomain;Server=$server;InstanceId=$InstanceId.ToString('D')
         GpoId=$ExpectedGpoId.ToString('D');ProtectedGpoId=$ProtectedGpoId.ToString('D');ExpectedSid=$AccountSid}
-    $result=Invoke-AuthWireGpoWriteProbeCore -RuntimeAccount $runtime -ExpectedSid $AccountSid -PublisherThumbprint $PublisherThumbprint -Configuration $configuration
+    $result=Invoke-AuthWireGpoWriteProbeCore -RuntimeAccount $runtime -ExpectedSid $AccountSid -PublisherThumbprint $PublisherThumbprint -Configuration $configuration -BeforeSnapshot $targetBefore -ProtectedBeforeHash $protectedBefore
+    $comparisonPath=Join-Path (Split-Path -Parent $result.EvidencePath) 'gpo-comparison.json'
+    $comparison=$null;$targetAfter=$null;$values=$null;$postcheckError=$null
     try {
         $result.ProtectedTrustPreserved=((Get-AuthWireProtectedGpoHash $ProtectedGpoId $ExpectedDomain $server) -ceq $protectedBefore)
         $after=Get-ADObject -Identity $dn -Server $server -Properties description -ErrorAction Stop
         $values=@(foreach($value in $after.description){if($null -ne $value){[string]$value}})
-        $result.TargetStatePreserved=($values.Count -eq 0 -and (Get-AuthWireGpoBusinessFingerprint $ExpectedGpoId $ExpectedDomain $server) -ceq $targetBefore)
+        $targetAfter=Get-AuthWireGpoBusinessSnapshot $ExpectedGpoId $ExpectedDomain $server
+        $comparison=Compare-AuthWireGpoBusinessSnapshot $targetBefore $targetAfter
+        $result.TargetStatePreserved=($values.Count -eq 0 -and $comparison.BusinessStateIdentical)
         if(-not $result.ProtectedTrustPreserved -or -not $result.TargetStatePreserved) {
             $result.ProbeVerified=$false;$result.CleanupErrors+= 'GPO_POSTCHECK_REQUIRES_REVIEW'
         }
-    } catch { $result.ProbeVerified=$false;$result.CleanupErrors+=('GPO_POSTCHECK:'+ $_.Exception.Message) }
+    } catch { $postcheckError=$_.Exception.Message;$result.ProbeVerified=$false;$result.CleanupErrors+=('GPO_POSTCHECK:'+ $postcheckError) }
+    $result|Add-Member -NotePropertyName ComparisonEvidencePath -NotePropertyValue $comparisonPath
+    $result|Add-Member -NotePropertyName TargetComparison -NotePropertyValue $comparison
+    try {
+        Write-AuthWireProbeEvidence -Path $comparisonPath -Value ([ordered]@{Version=1;Before=$targetBefore;After=$targetAfter
+            Comparison=$comparison;LdapDescriptionsAfter=$values;PostcheckError=$postcheckError
+            ProtectedTrustPreserved=$result.ProtectedTrustPreserved})
+    } catch {$result.ProbeVerified=$false;$result.CleanupErrors+=('GPO_COMPARISON_EVIDENCE:'+ $_.Exception.Message)}
     $result.ServiceWriteAccessVerified=($result.ProbeVerified -and $result.AdWriteReadVerified -and $result.AdProbeRemoved -and
         $result.SysvolWriteReadVerified -and $result.SysvolProbeRemoved -and $result.TargetStatePreserved -and $result.ProtectedTrustPreserved)
     Write-AuthWireProbeEvidence -Path $result.EvidencePath -Value $result
