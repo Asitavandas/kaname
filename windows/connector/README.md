@@ -186,3 +186,36 @@ runner and are removed. This validates SCM/helper mechanics, not a customer's
 gMSA password retrieval or logon. Live gMSA acceptance remains required.
 
 Reference: https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-createservicea
+
+## Separate managed deployment GPO preparation
+
+Initialize-AuthWireDeploymentGpo.ps1 defaults to Inspect. It previews the
+instance-bound AuthWire-Managed-Deployment name, validates the signed account
+bootstrap, same-domain security scope group and native service SID type.
+PrepareGpo creates only a new empty, unlinked GPO with an exact installation/
+host/service/scope ownership marker. It retains administrative ownership,
+changes Authenticated Users to read, gives only the selected group apply and
+gives only the owned gMSA GpoEdit. No GPO link or settings are written.
+
+The existing pilot trust GPO is protected by a before/after report/delegation/
+root-ACL fingerprint (excluding generated report ReadTime). It is not delegated
+or adopted: it contains trust anchors and stays under administrator control.
+No whole-permission-list replacement is used. GpoEditDeleteModifySecurity is
+never assigned to the service.
+
+Same-name foreign objects, settings, links, ownership drift, unexpected scope or
+partial preparation block automatic reuse. A complete matching preparation is
+a no-op. A protected receipt records creation and each permission stage; an
+interrupted create is inspected before retry and is never deleted/recreated.
+GPO/SYSVOL metadata checks do not prove actual service-account writes through
+AD/SMB; ServiceWriteAccessVerified and CanApplyGpo remain false.
+
+Native Windows tests exercise LookupAccountSid and both user/computer trustee
+mapping. The full preparation algorithm runs with AD/GPMC simulated, covering
+scope boundaries, races, partial writes and protected trust preservation. This
+does not claim actual GPO creation/delegation or endpoint acceptance.
+
+References:
+- https://learn.microsoft.com/en-us/powershell/module/grouppolicy/new-gpo
+- https://learn.microsoft.com/en-us/powershell/module/grouppolicy/set-gppermission
+- https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-lookupaccountsidw
