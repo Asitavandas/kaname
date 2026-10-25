@@ -1,0 +1,192 @@
+{
+  "reported_by": "operator",
+  "source_filename": "Yapıştırılan metin(3).txt",
+  "source_library_id": "libfile_0f7d9007896c8191b0dde1355fc2bcd0",
+  "result": {
+    "Event": "WINDOWS_CONNECTOR_GPO_SCOPE_READONLY",
+    "Computer": "DC01",
+    "Gpo": "AuthWire-Pilot-Trust",
+    "Id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
+    "Owner": "VIZYONVERI\\Domain Admins",
+    "Status": "AllSettingsEnabled",
+    "ComputerSections": [
+      "Scripts",
+      "Public Key",
+      "Registry"
+    ],
+    "UserSections": [],
+    "LinkedPaths": [
+      "vizyonveri.local"
+    ],
+    "Permissions": [
+      {
+        "Trustee": "AuthWire-Pilot-Computers",
+        "Permission": "GpoApply"
+      },
+      {
+        "Trustee": "Domain Admins",
+        "Permission": "GpoEditDeleteModifySecurity"
+      },
+      {
+        "Trustee": "Enterprise Admins",
+        "Permission": "GpoEditDeleteModifySecurity"
+      },
+      {
+        "Trustee": "Authenticated Users",
+        "Permission": "GpoRead"
+      },
+      {
+        "Trustee": "ENTERPRISE DOMAIN CONTROLLERS",
+        "Permission": "GpoRead"
+      },
+      {
+        "Trustee": "SYSTEM",
+        "Permission": "GpoEditDeleteModifySecurity"
+      }
+    ],
+    "Sysvol": [
+      {
+        "Path": "\\\\dc01.vizyonveri.local\\SYSVOL\\vizyonveri.local\\Policies\\{e5a9ab39-3709-49cb-837a-0208d2eb3b12}",
+        "Exists": true,
+        "OwnerSid": "S-1-5-21-34256453-3348971241-2809240126-512",
+        "InheritanceProtected": true,
+        "Rules": [
+          {
+            "Sid": "S-1-3-0",
+            "Type": "Allow",
+            "Rights": "FullControl",
+            "Inherited": false,
+            "Inheritance": "ContainerInherit, ObjectInherit",
+            "Propagation": "InheritOnly"
+          },
+          {
+            "Sid": "S-1-5-9",
+            "Type": "Allow",
+            "Rights": "ReadAndExecute, Synchronize",
+            "Inherited": false,
+            "Inheritance": "ContainerInherit, ObjectInherit",
+            "Propagation": "None"
+          },
+          {
+            "Sid": "S-1-5-11",
+            "Type": "Allow",
+            "Rights": "ReadAndExecute, Synchronize",
+            "Inherited": false,
+            "Inheritance": "ContainerInherit, ObjectInherit",
+            "Propagation": "None"
+          },
+          {
+            "Sid": "S-1-5-18",
+            "Type": "Allow",
+            "Rights": "FullControl",
+            "Inherited": false,
+            "Inheritance": "ContainerInherit, ObjectInherit",
+            "Propagation": "None"
+          },
+          {
+            "Sid": "S-1-5-21-34256453-3348971241-2809240126-512",
+            "Type": "Allow",
+            "Rights": "FullControl",
+            "Inherited": false,
+            "Inheritance": "ContainerInherit, ObjectInherit",
+            "Propagation": "None"
+          },
+          {
+            "Sid": "S-1-5-21-34256453-3348971241-2809240126-519",
+            "Type": "Allow",
+            "Rights": "FullControl",
+            "Inherited": false,
+            "Inheritance": "ContainerInherit, ObjectInherit",
+            "Propagation": "None"
+          },
+          {
+            "Sid": "S-1-5-21-34256453-3348971241-2809240126-1647",
+            "Type": "Allow",
+            "Rights": "ReadAndExecute, Synchronize",
+            "Inherited": false,
+            "Inheritance": "ContainerInherit, ObjectInherit",
+            "Propagation": "None"
+          }
+        ]
+      },
+      {
+        "Path": "\\\\dc01.vizyonveri.local\\SYSVOL\\vizyonveri.local\\Policies\\{e5a9ab39-3709-49cb-837a-0208d2eb3b12}\\Machine\\Scripts\\Startup",
+        "Exists": true,
+        "OwnerSid": "S-1-5-32-544",
+        "InheritanceProtected": false,
+        "Rules": [
+          {
+            "Sid": "S-1-5-21-34256453-3348971241-2809240126-512",
+            "Type": "Allow",
+            "Rights": "FullControl",
+            "Inherited": true,
+            "Inheritance": "ContainerInherit, ObjectInherit",
+            "Propagation": "None"
+          },
+          {
+            "Sid": "S-1-5-21-34256453-3348971241-2809240126-1647",
+            "Type": "Allow",
+            "Rights": "ReadAndExecute, Synchronize",
+            "Inherited": true,
+            "Inheritance": "ContainerInherit, ObjectInherit",
+            "Propagation": "None"
+          },
+          {
+            "Sid": "S-1-5-21-34256453-3348971241-2809240126-519",
+            "Type": "Allow",
+            "Rights": "FullControl",
+            "Inherited": true,
+            "Inheritance": "ContainerInherit, ObjectInherit",
+            "Propagation": "None"
+          },
+          {
+            "Sid": "S-1-5-9",
+            "Type": "Allow",
+            "Rights": "ReadAndExecute, Synchronize",
+            "Inherited": true,
+            "Inheritance": "ContainerInherit, ObjectInherit",
+            "Propagation": "None"
+          },
+          {
+            "Sid": "S-1-5-18",
+            "Type": "Allow",
+            "Rights": "FullControl",
+            "Inherited": true,
+            "Inheritance": "ContainerInherit, ObjectInherit",
+            "Propagation": "None"
+          },
+          {
+            "Sid": "S-1-5-32-544",
+            "Type": "Allow",
+            "Rights": "FullControl",
+            "Inherited": true,
+            "Inheritance": "None",
+            "Propagation": "None"
+          },
+          {
+            "Sid": "S-1-3-0",
+            "Type": "Allow",
+            "Rights": "FullControl",
+            "Inherited": true,
+            "Inheritance": "ContainerInherit, ObjectInherit",
+            "Propagation": "InheritOnly"
+          },
+          {
+            "Sid": "S-1-5-11",
+            "Type": "Allow",
+            "Rights": "ReadAndExecute, Synchronize",
+            "Inherited": true,
+            "Inheritance": "ContainerInherit, ObjectInherit",
+            "Propagation": "None"
+          }
+        ]
+      }
+    ],
+    "AdChanged": false,
+    "GpoChanged": false,
+    "PermissionsChanged": false
+  },
+  "scope_audit_accepted": true,
+  "effective_service_write_tested": false,
+  "decision": "Preserve pilot trust GPO; prepare a separate empty, unlinked, instance-owned deployment GPO with bounded edit and pilot apply scope."
+}
