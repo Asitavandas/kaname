@@ -4,6 +4,16 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ Gerçek makine signer template/key özellikleri doğrulandı — 25 Ekim 2026
+
+- Operatör **WINDOWS_CONNECTOR_MACHINE_SIGNER_KEY_READONLY**, exact thumbprint **FFC134BC305757457163F99C7479B4168E397129**, **TemplateOidMatches=true** sonucunu paylaştı. Certificate extension doğru owned template OID'ye bağlı.
+- 🔴✓ Gerçek key: **Microsoft Software Key Storage Provider / RSA3072 / IsMachineKey=true / IsEphemeral=false / ExportPolicy=None(0) / KeyUsage=Signing(2)**. Key admin bağlamında property okumak için açıldı; private key export veya signing yapılmadı. Non-exportability policy metadata kabulü, export denemesi olarak raporlanmaz.
+- **InspectedAs=VIZYONVERI\\administrator, KeyAclChanged=false, ServiceKeyAccessVerified=false**. gMSA erişimi henüz yok/kabul edilmedi; bu sonuç Administrator bağlamındaki okumadır.
+- Sonraki readonly operatör kapısı **aw-deploy SID1648** AD kimliği + exact owned KSP key UniqueName üzerinden yalnız ilgili normal makine key dosyasının owner/group/SDDL/rules/protection başlangıcını okumak. KeyFile reparse/directory/invalid basename durumunda durur. Certificate Thumb/metadata guard'ları tekrarlanır; private key içeriği okunmaz veya izin değişmez.
+- **machine-signing-v2-key-acl-before.json** protected receipt klasörüne kaydedilecek. Mevcut haklar görüldükten sonra yalnız service SID1648'e owned key erişimi ve actual signed SCM probe yapılacak; chain/pinned issuer/public publisher trust/endpoint deployment kapıları açık.
+- Kaynak: https://learn.microsoft.com/dotnet/api/system.security.cryptography.cngkey.uniquename ve https://learn.microsoft.com/windows/win32/seccng/key-storage-and-retrieval . Key path Microsoft Software KSP machine/shared key kapsamına özeldir; başka sağlayıcıya genellenmez.
+- Kanıt checkpoints/2026-10-25-windows-connector-machine-signer-key-live-result.json; readonly komut checkpoints/2026-10-25-windows-connector-machine-signer-key-acl-readonly.ps1. AuthWire app dev.34, **54/94 (%57),40 açık**, A03/A04 açık; formal rapor yenilenmedi.
+
 ## 🔴✓ CA RequestId6 sertifikası LocalMachine/My deposuna yüklendi ve private key eşleşti — 25 Ekim 2026
 
 - Operatör **Installed Certificate / WINDOWS_CONNECTOR_MACHINE_SIGNER_INSTALLED**, RequestId6, **LocalMachine/My / HasPrivateKey=true** sonucunu paylaştı. Thumbprint **FFC134BC305757457163F99C7479B4168E397129**, serial **6A000000067A2B82B44DD3676E000000000006**.
