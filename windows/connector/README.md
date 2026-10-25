@@ -241,3 +241,40 @@ References:
 - https://learn.microsoft.com/en-us/powershell/module/grouppolicy/set-gppermission
 - https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-lookupaccountsidw
 
+
+## Actual managed-GPO write probe
+
+Test-AuthWireGpoWrite.ps1 defaults to Inspect and requires the corporate-signed
+bootstrap, service-right, logon-probe and deployment-GPO tools. The receipt must
+already be verified_unlinked for the explicitly supplied managed GPO GUID.
+The GPO must be empty, unlinked, correctly owned/delegated and its LDAP
+description initially empty. Inspection performs no writes or service creation.
+
+RunProbe creates a signed short-lived own-process service under the validated
+gMSA with a NULL password, using the already tested owned SCM controller.
+The service authenticates to the fixed DC via Kerberos LDAP with signing, sealing
+and no referral following. It adds a nonce-bound value only to the managed GPC's
+LDAP description, reads it back and deletes only that exact value in finally.
+This is independent of GPMC Gpo.Description; no GPO comment, settings, version,
+links or delegation are written. The GPC modification timestamp can advance.
+Concurrent customer values are retained and explicitly fail preservation.
+
+The service opens a GUID/nonce-bound temporary file at that GPO's DC-pinned
+SYSVOL UNC root with CreateNew, writes/flushes/reads it and uses DeleteOnClose
+for handle-owned removal, including process exit. No existing file is replaced.
+A fixed admin-controlled configuration binds host, SID, instance, managed and
+protected GPO IDs. Runtime evidence must bind actual service SID, SCM PID, host
+and nonce; the controller independently checks target business/file/ACL state
+and protected trust fingerprints after service cleanup. It never repairs or
+removes arbitrary LDAP values or files as Administrator. A crash with unknown
+LDAP outcome is explicit and retains a nonce/config manifest for review.
+
+Temporary service, binary, config and result data are removed; admin-only
+summary/manifest/proof remain. ServiceWriteAccessVerified requires actual write,
+read, cleanup and preservation acceptance. It does not imply signing-key access,
+connector installation, policy persistence or endpoint acceptance.
+
+Native hosted Windows tests exercise the real file engine and signed SCM helper
+under LocalService. Only the test-compiled helper substitutes the LDAP adapter
+and UNC path with an in-memory directory and local fixture directory. Production
+contains no fixture-mode switch. Customer AD/SMB/gMSA acceptance remains separate.
