@@ -100,6 +100,8 @@ class DevelopmentServer(ThreadingHTTPServer):
         self.services = Services()
         self.public_name = public_name
         self.web_certificate = Path(tls_cert).read_bytes() if tls_cert else b''
+        self.connector_pairing = None
+        self.connector_init_lock = threading.Lock()
         self.users = None
         self.user_sessions = None
         self.user_init_lock = threading.Lock()
@@ -254,6 +256,60 @@ class Handler(BaseHTTPRequestHandler):
                     self.server.device_sessions = KerberosSessions(self.server.store.root,
                         self.server.public_name,config.get('ad_domain'))
         return self.server.devices, self.server.device_sessions
+
+    def connector_services(self):
+        # Keep the optional cryptography dependency lazy and do not create PKI,
+        # pairing records, services or keys while reading the ordinary panel.
+        with self.server.connector_init_lock:
+            if self.server.connector_pairing is None:
+                from .connector_registry import ConnectorRegistry
+                self.server.connector_pairing = ConnectorRegistry(self.server.operations, self.server.web_certificate)
+        return self.server.connector_pairing
+
+    def connector_admin(self, *, write=False):
+        if not self.guard(write=write, resource='system.connectors'):
+            return
+        if not self.server.tls:
+            self.respond(403, {'error': 'CONNECTOR_HTTPS_REQUIRED'}); return
+        if write and self.actor['maintenance']:
+            self.respond(403, {'error': 'CONNECTOR_PANEL_SESSION_REQUIRED'}); return
+        try:
+            from .connector_registry import RegistryError
+        except ImportError:
+            self.respond(503, {'error': 'CONNECTOR_SERVICE_UNAVAILABLE'}); return
+        try:
+            registry = self.connector_services()
+            if not write:
+                if self.path != '/api/deployment/connector':
+                    raise ValidationError('Unsupported query')
+                result = registry.status()
+            else:
+                value = self.read_body()
+                # Hold the administrator read transaction while committing the
+                # main-store trust change. A stale/demoted/disabled principal
+                # must not provision trust using a permissions snapshot.
+                with self.server.admin.connect() as adb:
+                    adb.execute('BEGIN')
+                    actor = self.server.admin.current_actor(adb, self.actor, 'system.connectors')
+                    if self.path.endswith('/preview'):
+                        result = registry.preview(value)
+                    else:
+                        result = registry.apply(value, actor['id'])
+            self.respond(200, result)
+        except RegistryError as error:
+            self.respond(503 if error.code == 'CONNECTOR_STORE_INVALID' else
+                         409 if error.code == 'CONNECTOR_PREVIEW_STALE' else 400, {'error': error.code})
+        except ConflictError:
+            self.respond(409, {'error': 'REVISION_CONFLICT'})
+        except AdminError as error:
+            status = {'UNAUTHORIZED': 401, 'FORBIDDEN': 403, 'JSON_REQUIRED': 415, 'BODY_LIMIT': 413}.get(error.code, 400)
+            self.respond(status, {'error': error.code})
+        except (ValueError, TypeError, KeyError):
+            self.respond(400, {'error': 'CONNECTOR_INPUT_INVALID'})
+        except sqlite3.Error as error:
+            self.store_error(error)
+        except ImportError:
+            self.respond(503, {'error': 'CONNECTOR_SERVICE_UNAVAILABLE'})
 
     def user_services(self):
         devices, _ = self.device_services()
@@ -452,6 +508,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get('Host') not in self.server.hosts:
             self.respond(403, {'error': 'INVALID_HOST'})
             return
+        if urlsplit(self.path).path == '/api/deployment/connector':
+            self.connector_admin(); return
         if urlsplit(self.path).path == '/api/deployment/status':
             if not self.guard(resource='certificates.authority'):return
             try:
@@ -667,6 +725,8 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
+        if self.path in {'/api/deployment/connector/preview', '/api/deployment/connector/apply'}:
+            self.connector_admin(write=True); return
         if self.path == '/api/system/power/action':
             if not self.guard(write=True,resource='system.power'):return
             if self.actor['maintenance']:
@@ -867,4 +927,5 @@ class Handler(BaseHTTPRequestHandler):
             self.store_error(error)
         except OSError:
             self.respond(503, {'error': 'STORE_UNAVAILABLE'})
+
 

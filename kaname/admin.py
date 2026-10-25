@@ -26,6 +26,7 @@ RESOURCES = {
     'network.vlans': ['Network', 'VLANs'], 'network.radius': ['Network', 'RADIUS Clients'],
     'system.services': ['System', 'Servisler'],
     'system.power': ['System', 'Sunucu yeniden başlatma / kapatma'],
+    'system.connectors': ['System', 'Windows Connector eşleştirmesi'],
 }
 LEVELS = {'none': 0, 'read': 1, 'write': 2}
 COOKIE = 'kaname_session'
@@ -290,4 +291,5 @@ class AdminStore:
             db.execute('DELETE FROM admin_sessions WHERE user_id=?', (actor['id'],))
             db.execute('UPDATE admin_meta SET revision=revision+1 WHERE id=1')
             self.record(db, 'admin_password_changed', actor['id'], actor['id'])
+
 
