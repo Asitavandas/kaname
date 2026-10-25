@@ -51,6 +51,20 @@ function Get-AuthWireGpoBusinessFingerprint {
     try{return ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($value)))).Replace('-','').ToLowerInvariant()}
     finally{$sha.Dispose()}
 }
+function Test-AuthWireGpoOperationProof {
+    param($Proof,$Configuration)
+    if($null -eq $Proof) {return $false}
+    foreach($name in @('AdWriteReadVerified','AdProbeRemoved','SysvolWriteReadVerified','SysvolProbeRemoved','AdWriteAttempted','SysvolWriteAttempted')) {
+        $property=$Proof.PSObject.Properties[$name]
+        if($null -eq $property -or $property.Value -isnot [bool] -or -not $property.Value) {return $false}
+    }
+    foreach($name in @('GpoId','InstanceId','Server','Error','CleanupErrors')) {
+        if($null -eq $Proof.PSObject.Properties[$name]) {return $false}
+    }
+    return ($Proof.GpoId -ceq $Configuration.GpoId -and $Proof.InstanceId -ceq $Configuration.InstanceId -and
+        $Proof.Server -ieq $Configuration.Server -and $null -eq $Proof.Error -and
+        $Proof.CleanupErrors -is [array] -and $Proof.CleanupErrors.Count -eq 0)
+}
 
 function Get-AuthWireGpoWriteExecutableSource {
     @'
@@ -335,6 +349,10 @@ function Invoke-AuthWireGpoWriteProbeCore {
         Write-AuthWireProbeEvidence -Path (Join-Path $root 'manifest.json') -Value ([ordered]@{
             Version=1;ServiceName=$serviceName;Nonce=$nonce;ExpectedSid=$sid;RuntimeAccount=$RuntimeAccount
             CreatedUtc=[datetime]::UtcNow.ToString('o');BinaryPath=$binary;PasswordSupplied=$false
+            InstanceId=$Configuration.InstanceId;GpoId=$Configuration.GpoId;ProtectedGpoId=$Configuration.ProtectedGpoId
+            Domain=$Configuration.Domain;Server=$Configuration.Server
+            OwnedLdapDescription=('AuthWireWriteProbe:v1;instance='+$Configuration.InstanceId+';gpo='+$Configuration.GpoId+';nonce='+$nonce)
+            OwnedSysvolFile=('\\'+$Configuration.Server+'\SYSVOL\'+$Configuration.Domain+'\Policies\{'+$Configuration.GpoId+'}\AuthWire-WriteProbe-'+$nonce+'.tmp')
         })
         $Configuration | Add-Member -NotePropertyName Nonce -NotePropertyValue $nonce -Force
         [IO.File]::WriteAllText($configPath,($Configuration | ConvertTo-Json -Depth 4),[Text.UTF8Encoding]::new($false))
@@ -361,10 +379,7 @@ function Invoke-AuthWireGpoWriteProbeCore {
         }
         $runtimeVerified=$true
         Write-AuthWireProbeEvidence -Path (Join-Path $root 'verified-proof.json') -Value $proof
-        if($proof.GpoId -cne $Configuration.GpoId -or $proof.InstanceId -cne $Configuration.InstanceId -or
-            $proof.Server -ine $Configuration.Server -or -not $proof.AdWriteReadVerified -or -not $proof.AdProbeRemoved -or
-            -not $proof.SysvolWriteReadVerified -or -not $proof.SysvolProbeRemoved -or
-            $null -ne $proof.Error -or @($proof.CleanupErrors).Count -ne 0) { throw 'SERVICE_GPO_WRITE_OR_CLEANUP_NOT_VERIFIED' }
+        if(-not (Test-AuthWireGpoOperationProof $proof $Configuration)) { throw 'SERVICE_GPO_WRITE_OR_CLEANUP_NOT_VERIFIED' }
         $stage='runtime_write_verified'
     } catch {
         $failure=$_.Exception.Message
@@ -430,7 +445,7 @@ function Invoke-AuthWireGpoWriteProbeCore {
         AdWriteReadVerified=($null -ne $proof -and $proof.AdWriteReadVerified);AdProbeRemoved=($null -ne $proof -and $proof.AdProbeRemoved)
         SysvolWriteReadVerified=($null -ne $proof -and $proof.SysvolWriteReadVerified);SysvolProbeRemoved=($null -ne $proof -and $proof.SysvolProbeRemoved)
         OperationError=$(if($null -ne $proof){$proof.Error}else{$null})
-        OperationCleanupErrors=$(if($null -ne $proof){@($proof.CleanupErrors)}else{@()})
+        OperationCleanupErrors=@(if($null -ne $proof){$proof.CleanupErrors})
         ServiceWriteAccessVerified=$false;ProtectedTrustPreserved=$false;TargetStatePreserved=$false
         AdChanged=$(if($null -ne $proof){[bool]$proof.AdWriteAttempted}elseif($created){$null}else{$false})
         GpoChanged=$(if($null -ne $proof){[bool]$proof.AdWriteAttempted}elseif($created){$null}else{$false})

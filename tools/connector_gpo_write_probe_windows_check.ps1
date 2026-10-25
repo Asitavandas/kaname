@@ -57,7 +57,7 @@ try{
             Check ($r.AdWriteReadVerified -and $r.SysvolWriteReadVerified -and $r.AdProbeRemoved -and $r.SysvolProbeRemoved -and $null -eq $r.Error -and $r.CleanupErrors.Count -eq 0) 'Engine writes reads and cleans exact temporary values'
             Check ($directory.Values.Count -eq 0 -and -not (Test-Path -LiteralPath $path)) 'DeleteOnClose file and LDAP value removed'
         }else{
-            Check ($null -ne $r.Error) ('Failure is explicit: '+$case)
+            Check ($null -ne $r.Error -or $r.CleanupErrors.Count -ne 0) ('Failure is explicit: '+$case)
         }
         switch($case){
             'collision' {Check ([IO.File]::ReadAllText($path) -eq 'CUSTOMER-FILE' -and $r.AdProbeRemoved) 'CreateNew preserves existing file and restores LDAP';Remove-Item -LiteralPath $path}
@@ -113,6 +113,24 @@ try{
     Check (-not [AuthWire.Connector.OwnedProbeServiceV1]::Exists($result.ServiceName)) 'SCM confirms write probe service absent'
     $proof=Get-Content -LiteralPath (Join-Path (Split-Path -Parent $result.EvidencePath) 'verified-proof.json') -Raw|ConvertFrom-Json
     Check (Test-AuthWireRuntimeProof $proof 'S-1-5-19' $proof.ServiceName $proof.Nonce $proof.ProcessId) 'Write proof binds runtime SID, SCM PID, nonce and host'
+    Check (Test-AuthWireGpoOperationProof $proof $configuration) 'Write proof requires typed operation and cleanup acceptance'
+    foreach($bad in @('GpoId','InstanceId','Server','Error','CleanupErrors','AdWriteReadVerified','AdProbeRemoved','SysvolWriteReadVerified','SysvolProbeRemoved','AdWriteAttempted','SysvolWriteAttempted')){
+        $changed=$proof|ConvertTo-Json -Depth 5|ConvertFrom-Json
+        switch($bad){
+            'GpoId' {$changed.GpoId=[guid]::NewGuid().ToString('D')}
+            'InstanceId' {$changed.InstanceId=[guid]::NewGuid().ToString('D')}
+            'Server' {$changed.Server='wrong.test.example'}
+            'Error' {$changed.Error='FAILED'}
+            'CleanupErrors' {$changed.CleanupErrors=@('FAILED')}
+            default {$changed.$bad='true'}
+        }
+        Check (-not (Test-AuthWireGpoOperationProof $changed $configuration)) ('Write proof rejects '+$bad)
+    }
+    $script:fixtureSource=$script:fixtureSource.Replace('new FixtureDirectory()','new FixtureDirectory(){FailDelete=true}')
+    $failed=Invoke-AuthWireGpoWriteProbeCore -RuntimeAccount 'NT AUTHORITY\LocalService' -ExpectedSid 'S-1-5-19' -PublisherThumbprint $cert.Thumbprint -Configuration $configuration
+    if(Test-Path -LiteralPath (Split-Path -Parent $failed.EvidencePath)){$folders+=Split-Path -Parent $failed.EvidencePath}
+    Check (-not $failed.ProbeVerified -and -not $failed.ServiceWriteAccessVerified -and $failed.ServiceLogonVerified -and -not $failed.AdProbeRemoved) 'Actual SCM identity success cannot hide operation cleanup failure'
+    Check ($failed.TemporaryServiceRemoved -and $failed.TemporaryBinaryRemoved -and $failed.TemporaryResultDirectoryRemoved -and $failed.OperationCleanupErrors.Count -eq 1) 'Failure still cleans service artifacts and retains explicit operation error'
     $caught=$false
     try{
         $params=@{ExpectedComputer='WRONG-HOST';ExpectedDomain='test.example';InstanceId=$valid.InstanceId;AccountSid=$valid.ExpectedSid
