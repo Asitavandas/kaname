@@ -82,6 +82,7 @@ try{
     $sid='S-1-5-21-111-222-333-1648'
     $global:AwSigningFixture=@{
         Signature=$true;Root='CN=Configuration,DC=test,DC=example';DirectoryFail=$false
+        TemplateRows=@((Template))
         Account=[pscustomobject]@{Event='WINDOWS_CONNECTOR_BOOTSTRAP';BootstrapVersion='1.0.3';Mode='Inspect';Computer=$computer;Domain='test.example'
             InstanceId=$instance.ToString('D');ConnectorComputerGuid='0fa4143f-aae3-4bc3-9cd3-db8a1de24acd'
             Account=[pscustomobject]@{Exists=$true;Sid=$sid;Name='aw-deploy$'};ReadyForAccountPreparation=$true;Blockers=@()
@@ -101,7 +102,7 @@ try{
         if($global:AwSigningFixture.DirectoryFail){throw 'DIRECTORY_READ_FAILURE'}
         if($SearchScope -ne 'OneLevel' -or $Server -ine ($computer+'.test.example')){throw 'Directory scope escaped'}
         if($SearchBase -like 'CN=Enrollment Services,*'){return [pscustomobject]@{Name='Test CA';dNSHostName=(Wrapped 'dc.test.example');certificateTemplates=(Wrapped 'AuthWireSigning')}}
-        if($SearchBase -like 'CN=Certificate Templates,*'){return (Template)}
+        if($SearchBase -like 'CN=Certificate Templates,*'){return $global:AwSigningFixture.TemplateRows}
         throw 'Unexpected directory base'
     }
     $inspectionParams=@{ExpectedComputer=$computer;ExpectedDomain='test.example';InstanceId=$instance;AccountName='aw-deploy';AccountSid=$sid;BootstrapPath=$fake;PublisherThumbprint=$cert.Thumbprint}
@@ -109,6 +110,35 @@ try{
     Check ($result.InspectionSucceeded -and $result.ShapeCompatibleTemplateCount -eq 1 -and $result.CodeSigningTemplates.Count -eq 1) 'Complete readonly inspection combines native cert metadata and simulated CA directory'
     Check (-not $result.AdChanged -and -not $result.GpoChanged -and -not $result.CertificatesChanged -and -not $result.KeyAclChanged -and -not $result.TrustStoreChanged -and -not $result.EnrollmentRequested) 'Readiness performs no AD/CA/key/trust mutations'
     Check (-not $result.ReadyForAutomatedSigning -and -not $result.ServiceKeyAccessVerified -and -not $result.ConnectorInstalled -and -not $result.CanApplyGpo -and $result.NewPublisherTrustDistributionPending) 'Inventory is not signing or deployment acceptance'
+    $unrelated=Template
+    $unrelated.Name='ServerAuthentication'
+    $unrelated.pKIExtendedKeyUsage=Wrapped '1.3.6.1.5.5.7.3.1'
+    $unrelated.'msPKI-Certificate-Application-Policy'=Wrapped '1.3.6.1.5.5.7.3.1'
+    Check (@(Get-AuthWireSigningTemplateShape $unrelated @($authority)).Count -eq 0) 'Unrelated template emits no null pipeline record'
+    foreach($case in @('mixed','allUnrelated','empty','allNull')){
+        switch($case){
+            'mixed' {$global:AwSigningFixture.TemplateRows=@($null,(Template),$unrelated,$null)}
+            'allUnrelated' {$global:AwSigningFixture.TemplateRows=@($null,$unrelated)}
+            'empty' {$global:AwSigningFixture.TemplateRows=@()}
+            'allNull' {$global:AwSigningFixture.TemplateRows=@($null,$null)}
+        }
+        $inventory=Invoke-AuthWireSigningInspection @inspectionParams
+        $expectedCount=$(if($case -eq 'mixed'){1}else{0})
+        Check ($inventory.ToolVersion -eq '1.0.1' -and $inventory.InspectionSucceeded -and $inventory.CodeSigningTemplates.Count -eq $expectedCount -and
+            $inventory.ShapeCompatibleTemplateCount -eq $expectedCount) ('Mixed/empty template discovery succeeds: '+$case)
+        $roundtrip=$inventory|ConvertTo-Json -Depth 10|ConvertFrom-Json
+        Check ($roundtrip.CodeSigningTemplates -is [array] -and $roundtrip.CodeSigningTemplates.Count -eq $expectedCount -and
+            @($roundtrip.CodeSigningTemplates|Where-Object {$null -eq $_}).Count -eq 0) 'JSON contains a real template array without null entries'
+        Check (-not $inventory.EnrollmentRequested -and -not $inventory.KeyAclChanged -and -not $inventory.CertificatesChanged -and
+            -not $inventory.ReadyForAutomatedSigning) 'Zero/mixed template inventory never requests or approves a signer'
+    }
+    $malformed=Template
+    $malformed.'msPKI-Private-Key-Flag'=Wrapped 'invalid'
+    $global:AwSigningFixture.TemplateRows=@($unrelated,$malformed)
+    $caught=$false
+    try{$null=Invoke-AuthWireSigningInspection @inspectionParams}catch{$caught=$_.Exception.Message -like '*INVALID_INTEGER_ATTRIBUTE*'}
+    Check $caught 'Malformed relevant signing template still fails rather than being hidden by null filtering'
+    $global:AwSigningFixture.TemplateRows=@((Template))
     foreach($case in @('host','signature','account','root','directory')){
         $global:AwSigningFixture.Signature=$true;$global:AwSigningFixture.Account.Account.Sid=$sid;$global:AwSigningFixture.Root='CN=Configuration,DC=test,DC=example';$global:AwSigningFixture.DirectoryFail=$false
         $values=$inspectionParams.Clone()

@@ -121,7 +121,8 @@ function Get-AuthWireSigningTemplateShape {
     param($Template,$Authorities)
     $eku=@(Get-AuthWireSigningStringValues $Template.pKIExtendedKeyUsage 'pKIExtendedKeyUsage')
     $application=@(Get-AuthWireSigningStringValues $Template.'msPKI-Certificate-Application-Policy' 'msPKI-Certificate-Application-Policy')
-    if($eku -notcontains '1.3.6.1.5.5.7.3.3' -and $application -notcontains '1.3.6.1.5.5.7.3.3') {return $null}
+    # Unrelated templates must emit no pipeline record.
+    if($eku -notcontains '1.3.6.1.5.5.7.3.3' -and $application -notcontains '1.3.6.1.5.5.7.3.3') {return}
     $flags=Get-AuthWireSigningFlags $Template.flags 'flags'
     $private=Get-AuthWireSigningFlags $Template.'msPKI-Private-Key-Flag' 'msPKI-Private-Key-Flag'
     $nameFlags=Get-AuthWireSigningFlags $Template.'msPKI-Certificate-Name-Flag' 'msPKI-Certificate-Name-Flag'
@@ -200,16 +201,20 @@ function Invoke-AuthWireSigningInspection {
     $properties=@('displayName','flags','pKIExtendedKeyUsage','msPKI-Certificate-Application-Policy','msPKI-Private-Key-Flag',
         'msPKI-Certificate-Name-Flag','msPKI-Enrollment-Flag','msPKI-Template-Schema-Version','msPKI-Minimal-Key-Size','pKIDefaultCSPs','nTSecurityDescriptor')
     $templates=@(Get-ADObject -Server $server -SearchBase ('CN=Certificate Templates,'+$pki) -SearchScope OneLevel -LDAPFilter '(objectClass=pKICertificateTemplate)' -Properties $properties -ErrorAction Stop|ForEach-Object {
-        Get-AuthWireSigningTemplateShape $_ $authorities
+        if($null -ne $_) {
+            $shape=Get-AuthWireSigningTemplateShape $_ $authorities
+            if($null -ne $shape) {$shape}
+        }
     })
     $trust=@(foreach($store in @('Cert:\CurrentUser\TrustedPublisher','Cert:\LocalMachine\TrustedPublisher')) {
         [pscustomobject]@{Store=$store;CurrentPublisherPresent=(@(Get-ChildItem -Path $store -ErrorAction Stop|Where-Object Thumbprint -ieq $PublisherThumbprint).Count -gt 0)}
     })
     [pscustomobject]@{
-        Event='WINDOWS_CONNECTOR_SIGNING_READONLY_PREFLIGHT';ToolVersion='1.0.0';Mode='Inspect';Computer=$ExpectedComputer;Domain=$ExpectedDomain
+        Event='WINDOWS_CONNECTOR_SIGNING_READONLY_PREFLIGHT';ToolVersion='1.0.1';Mode='Inspect';Computer=$ExpectedComputer;Domain=$ExpectedDomain
         InstanceId=$InstanceId.ToString('D');ServiceSid=$sid.Value;CurrentPublisher=$publishers;CurrentPublisherTrust=$trust
         ProposedServiceSignerStore='Cert:\LocalMachine\My';ProposedOwnershipMarker=$marker;ExistingMarkedMachineCertificates=$owned
-        EnterpriseAuthorities=$authorities;CodeSigningTemplates=$templates;ShapeCompatibleTemplateCount=@($templates|Where-Object ShapeCompatible).Count
+        EnterpriseAuthorities=$authorities;CodeSigningTemplates=$templates
+        ShapeCompatibleTemplateCount=@($templates|Where-Object {$null -ne $_ -and $_.ShapeCompatible}).Count
         InspectionSucceeded=$true;TemplateSelected=$false;EnrollmentRequested=$false;ServiceKeyAccessVerified=$false
         NewPublisherTrustDistributionPending=$true;ReadyForAutomatedSigning=$false
         AdChanged=$false;GpoChanged=$false;CertificatesChanged=$false;KeyAclChanged=$false;TrustStoreChanged=$false
