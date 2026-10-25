@@ -17,6 +17,18 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 gerçek gMSA Authenticode dosya imzalama ve bağımsız doğrulama tamamlandı — 25 Ekim 2026
+
+- Operatör **WINDOWS_CONNECTOR_SERVICE_AUTHENTICODE_PROBE1.0.0 / DC01 / VIZYONVERI\\aw-deploy$** sonucu verdi. **AuthenticodePackageSigningVerified/AuthenticodeSignatureVerified/ServiceKeyAccessVerified/RuntimeSigningTested/SignatureVerified/ServiceLogonVerified/ProbeVerified=true**.
+- 🔴✓ Gerçek runtimeSID **...-1648**, PID **348**, signer **FFC134BC305757457163F99C7479B4168E397129**. Hizmet yeni nonexportable machine CNG key ile disposable ps1'i imzaladı; controller Windows Valid/exact signer/hash kontrolü yaptı. **ArtifactExecuted=false**, mevcut SYSVOL/endpoint paketleri yeniden imzalanmadı veya dağıtılmadı.
+- 🔴✓ Temporary service **AuthWireLogonProbe-2f3a3f842f7347c28a8fcca5beb7e4ac** / binary / writable result directory kaldırıldı. **Error/NativeErrorCode=null, CleanupErrors boş; KeyAclPreserved=true, KeyAclChanged=false; AD/GPO/logon-right değişikliği=false, SecretsExported=false**.
+- Protected summary **C:\\ProgramData\\AuthWire-ServiceProbe-2db1f10d137b437ca5db372ca4db0ddb\\summary.json**, public signed audit artifact **verified-authenticode-test.ps1**. Verified key-access receipt hash44A7AAD8... öncekiyle aynı.
+- **CertificateChainValidationPerformed=false** bu probe'ın standalone certutil testini tekrar etmediğini belirtir; önceki machine-context CA/base-deltaCRL/code-signing-policy kontrolü zaten ayrı kanıtta başarılı. **GpoPersistenceVerified/ConnectorInstalled/CanApplyGpo=false** beklenen açık kapılardır; full connector otomasyonu tamamlandı denmez.
+- Sonraki kontrollü operatör adımı mevcut **DC01 bilgisayar ilkelerini gpupdate /target:computer /force ile yeniden uygulayıp** signed ServiceRightPrepare1.0.0 **Inspect** çıktısını öncesi/sonrası saklamak. Bu **salt okunur işlem olarak sunulmaz**: mevcut Computer policy ayarları tekrar uygulanır, GPO tanımları düzenlenmez. /boot veya /logoff verilmez. ModeInspect yeni hak eklemez; kayıp hak varsa otomatik geri ekleme yok.
+- GPUpdate konsolunun gerçek tamamlanma çıktısı + exitcode + direct service right + previous Allow entries + Deny list incelenecek. Tek snapshot gelecekte tüm policy değişikliklerine/reboot'a karşı kalıcılık garantisi değildir. Refresh sonrası gerçek runtime startup/signature ve gerekirse mevcut hakları koruyan scoped policy tasarımı ayrı kapı.
+- Kanıt checkpoints/2026-10-25-windows-connector-service-authenticode-live-result.json; operatör komutu checkpoints/2026-10-25-windows-connector-service-right-gpupdate-check.ps1. GPUpdate kaynağı: https://learn.microsoft.com/windows-server/administration/windows-commands/gpupdate .
+- A04 signer önkoşulu gerçek uçta tamamlandı; üst A04 connector/managedGPO/publisher-trust/endpoint dağıtımı/ölçek kapıları açık olduğu için **54/94 (%57),40 açık** sayımı korunur. AuthWire app dev.34, formal rapor yenilenmedi.
+
 ## 🔴✓ Hizmet bağlamında gerçek Authenticode test aracı Windows'ta geçti; DC01 sonucu açık — 25 Ekim 2026
 
 - **Test-AuthWireServiceAuthenticode1.0.0**, PR82 merge **c3fab6d5493b571805a83fde560ec427e3e77e52**. **33 native Windows PowerShell5.1 kontrolü başarılı**: gerçek signed SCM/LocalService worker key Read yokken başarısız, signer trust yokken başarısız; Read+fixture-root trust ile disposable UTF16 ps1 imzalama ve native Valid doğrulaması başarılı. Üç temporary hizmet de temizlendi.
