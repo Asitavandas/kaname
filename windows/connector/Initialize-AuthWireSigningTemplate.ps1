@@ -85,9 +85,9 @@ function Get-AuthWireTemplateAttributeSnapshot {
         if($value -is [DirectoryServices.ActiveDirectorySecurity]) {$snapshot[$name]=Get-AuthWireTemplateAclCanonical $value}
         elseif($value -is [byte[]]) {$snapshot[$name]=[Convert]::ToBase64String($value)}
         else {
-            $snapshot[$name]=@(foreach($entry in $value) {
+            $snapshot[$name]=@(@(foreach($entry in $value) {
                 if($entry -is [byte[]]) {[Convert]::ToBase64String($entry)} elseif($null -ne $entry){[string]$entry}
-            }|Sort-Object)
+            })|Sort-Object)
         }
     }
     return [pscustomobject]$snapshot
