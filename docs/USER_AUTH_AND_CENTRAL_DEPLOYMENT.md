@@ -4,6 +4,16 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## Hizmet oturumu atamaları: boş secedit sonucu kaydedildi; doğrudan LSA okuması hazır — 25 Ekim 2026
+
+- Operatör DC01/aw-deploy$ için WINDOWS_CONNECTOR_SERVICE_RIGHTS_READONLY çıktısını paylaştı: **ExportedAssignments=[]**, PolicyChanged=false, ServiceLogonVerified=false. Bu yalnız dışa aktarılan INF'de iki atama satırının bulunmadığını kanıtlar; etkin izin yokluğu veya yasak yokluğu kabul edilmez. Yerel gMSA kullanım kabulü olumlu kalır.
+- 🔴✓ Bağımsız Get-AuthWireServiceRights.ps11.0.0 eklendi. Yerel LsaOpenPolicy yalnız VIEW_LOCAL_INFORMATION|LOOKUP_NAMES (0x801) erişimi alır; LsaEnumerateAccountsWithUserRight ile SeServiceLogonRight/SeDenyServiceLogonRight SID listeleri okunur. NO_MORE_ENTRIES boş başarıdır; diğer hatalar Win32 koduyla başarısız olur. Buffer, metin ve policy handle finally ile bırakılır. İzin ekleme/silme, GPO/AD yazma, managed parola okuma, hizmet oluşturma veya oturum açma API'si yoktur.
+- Çıktı doğrudan hesap SID'si eşleşmesini ayrıca gösterir; grup üzerinden etkin izin değerlendirmesi ve ServiceLogonVerified hâlâ false. Boş liste ile erişim hatası karıştırılmaz. Yerel bilgisayar ve SID biçimi doğrulanır; başka sisteme policy sorgusu yapılmaz.
+- 🔴✓ PR#70 kaynak6f6b3632671943f601ac01c02b828e118e322ed8, merge823c064eff44d4c09c1c69269908ff7dfcf464fb. Native Windows PowerShell5.1 gerçek yerel LSA okuma/hata/kimlik korumaları için16 kontrol, mevcut bootstrap147 kontrol, genel724 test (28skip) ve bounded retry probe başarılı. Testte müşteri AD'si veya gerçek gMSA hizmet oturumu kullanılmadı; policy yazılmadı.
+- CI Windows40170958115/job121101503511; foundation40170958141/job121101503622; probe40170958190.
+- İmzalanacak public betik /home/segmentiq/authwire-service-rights-readonly-v1-20261025.ps1 olarak hazırlandı; SHA256=8084e949dd954833464d26224606e8a4ee41989ac17ed79f918c165ac9a2ef07, uzak kopya özeti doğrulandı. Yerel çıktı beklenir; hiçbir mevcut izin listesi üzerine yazılmadı. AuthWiredev.34, bootstrap1.0.3, RADIUS/broker ve müşteri GPO'su değiştirilmedi; tam yedek oluşturulmadı.
+- Kanıt: checkpoints/2026-10-25-windows-connector-service-rights-export-result.json; teslim: checkpoints/2026-10-25-windows-connector-lsa-rights-delivery.json ve checkpoints/2026-10-25-windows-connector-lsa-rights-inspect.ps1. Gerçek hizmet oturumu, sınırlı GPO/imzalama erişimi ve merkezi dağıtım kabulü açık;54/94 (%57) değişmedi.
+
 ## 🔴✓ DC01 yerel gMSA kullanım kontrolü tamamlandı — 25 Ekim 2026
 
 - Operatör WINDOWS_CONNECTOR_LOCAL_ACCOUNT_CHECK sonucunu paylaştı: DC01/aw-deploy$, SID S-1-5-21-34256453-3348971241-2809240126-1648, **LocalInstallationVerified=true, AccountReadyForUse=true**.

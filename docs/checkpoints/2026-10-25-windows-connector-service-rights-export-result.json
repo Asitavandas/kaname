@@ -1,0 +1,12 @@
+{
+  "event": "WINDOWS_CONNECTOR_SERVICE_RIGHTS_READONLY",
+  "reported_by": "operator",
+  "computer": "DC01",
+  "account": "aw-deploy$",
+  "sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+  "exported_assignments": [],
+  "policy_changed": false,
+  "service_logon_verified": false,
+  "conclusion": "No matching rows found in merged security database export; actual LSA assignments and effective group-derived rights not yet established.",
+  "next": "direct read-only local LSA assignment probe"
+}
