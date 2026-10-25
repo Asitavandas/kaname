@@ -17,6 +17,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 bilgisayar GPO yenilemesinde hizmet oturumu hakkı ve mevcut atamalar korundu — 25 Ekim 2026
+
+- Operatör **Computer Policy update has completed successfully / GpupdateExitCode0** ve **WINDOWS_CONNECTOR_SERVICE_RIGHT_AFTER_GPUPDATE** çıktısını paylaştı.
+- 🔴✓ **DirectServiceRightStillAssigned=true / BeforeAllowEntriesPreserved=true**, DenyAssignedSids ve RemovedAllowSids boş. Allow listesi SID1616, ownedgMSA1648, NT SERVICE all80-0 ve mevcut82-300670...9415 olarak korunmuş. **InspectionAddedRights=false**; kontrol eksik hakkı geri ekleyerek sonucu maskelemedi.
+- **GpoDefinitionsChangedByThisCommand=false**; var olan DC01 Computer policies yeniden uygulandı, GPO tanımı düzenlenmedi. Bu sonuç mevcut yenilemede hakkın korunmasıdır; reboot veya gelecekteki başka müşteri policy değişikliklerine garanti olarak sunulmaz.
+- Sonraki somut kabul: aynı signed **AuthWire-Service-Authenticode-Probe-v1.ps1 RunProbe** bir kez daha **refresh sonrasında** çalıştırılır. Sadece mevcut Right atamasını görmek yerine gerçek managed-account SCM startup + raw signature + Authenticode + independent verification + cleanup + keyACL korunmasını tekrar doğrular. Yeni değişiklik sonrası bu tekrar gerekli kabul testidir; gereksiz tekrar değildir.
+- Yeni download/sertifika/anahtar/ACL/AD/GPO değişikliği gerekmez. Gerekli before/after policy kontrol kanıtları önceki protected receipt klasöründe; proof aracı kendi ayrı owned evidence GUID klasörünü oluşturur.
+- Henüz post-refresh runtime çıktısı yok. Probe içindeki eski **GpoPersistenceVerified=false** genel alanı bu after-refresh aggregate kanıtını otomatik değerlendirmez; gerçek sonuçlar birlikte kaydedilecek. Üst A04/full connector rollout/reboot kapıları açık kalır.
+- Kanıt checkpoints/2026-10-25-windows-connector-service-right-gpupdate-live-result.json; operatör komutu checkpoints/2026-10-25-windows-connector-service-authenticode-after-gpupdate.ps1. AuthWire app dev.34, **54/94 (%57),40 açık**, A03/A04 açık; formal rapor yenilenmedi.
+
 ## 🔴✓ DC01 gerçek gMSA Authenticode dosya imzalama ve bağımsız doğrulama tamamlandı — 25 Ekim 2026
 
 - Operatör **WINDOWS_CONNECTOR_SERVICE_AUTHENTICODE_PROBE1.0.0 / DC01 / VIZYONVERI\\aw-deploy$** sonucu verdi. **AuthenticodePackageSigningVerified/AuthenticodeSignatureVerified/ServiceKeyAccessVerified/RuntimeSigningTested/SignatureVerified/ServiceLogonVerified/ProbeVerified=true**.

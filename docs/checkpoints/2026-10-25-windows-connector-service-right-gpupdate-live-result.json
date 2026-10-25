@@ -1,0 +1,26 @@
+{
+  "event": "WINDOWS_CONNECTOR_SERVICE_RIGHT_GPUPDATE_LIVE_ACCEPTED",
+  "date": "2026-10-25",
+  "source": "operator-pasted computer GPUpdate and before/after readonly rights output",
+  "computer": "DC01",
+  "gpupdate_message": "Computer Policy update has completed successfully.",
+  "gpupdate_exit_code": 0,
+  "direct_service_right_still_assigned": true,
+  "before_allow_entries_preserved": true,
+  "deny_assigned_sids": [],
+  "removed_allow_sids": [],
+  "allow_assigned_sids_after": [
+    "S-1-5-21-34256453-3348971241-2809240126-1616",
+    "S-1-5-21-34256453-3348971241-2809240126-1648",
+    "S-1-5-80-0",
+    "S-1-5-82-3006700770-424185619-1745488364-794895919-4004696415"
+  ],
+  "inspection_added_rights": false,
+  "gpo_definitions_changed_by_command": false,
+  "actual_post_refresh_service_start_and_signing_pending": true,
+  "reboot_persistence_tested": false,
+  "future_policy_change_guaranteed": false,
+  "next": "Repeat existing signed Authenticode probe after this completed refresh; no permission regrant or GPO edit",
+  "completed": 54,
+  "total": 94
+}
