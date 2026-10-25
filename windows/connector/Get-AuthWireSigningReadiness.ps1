@@ -58,7 +58,8 @@ namespace AuthWire.Connector {
                 result.Provider=Marshal.PtrToStringUni(info.Provider);
                 result.ProviderType=info.ProviderType;result.Flags=info.Flags;result.KeySpec=info.KeySpec;
                 result.MachineKeySet=(info.Flags&0x20)!=0;
-                result.Cng=(info.ProviderType==0 && info.KeySpec==0xffffffff);
+                // CRYPT_KEY_PROV_INFO uses ProviderType==0 for CNG; KeySpec is a legacy hint.
+                result.Cng=(info.ProviderType==0);
                 if(container!=null)using(SHA256 sha=SHA256.Create())
                     result.ContainerNameSha256=BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(container))).Replace("-","").ToLowerInvariant();
                 result.Available=true;
