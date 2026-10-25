@@ -17,6 +17,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Ayrı makine imzalama şablonu hazırlık aracı hazır; canlı Inspect/oluşturma açık — 25 Ekim 2026
+
+- Yeni `windows/connector/Initialize-AuthWireSigningTemplate.ps1` **1.0.0**, varsayılan **Inspect** ile yalnız envanter/plan okur. **PrepareTemplate** iki yeni owned AD objesi oluşturabilir: **AuthWireConnectorCodeSigning-4c23eebe** template ve forest OID kökü altında instance/host/service bağlı OID kaydı. Mevcut AuthWireGPOCodeSigning template'i ve CA publication listesi değiştirilmez.
+- Plan: schema3/machine, **RSA3072/SHA256**, Microsoft Software Key Storage Provider, yalnız code-signing EKU/application-policy, non-exportable/no-archive/no-interactive/no-supplied-subject/no-autoenrollment. Subject DC01 DNS adına dayanır; validity365gün/overlap30gün. Template ilk oluşturulduğunda **yayımlanmaz**, sertifika talep edilmez.
+- Protected DACL ile Domain Admins/SYSTEM yönetim, Authenticated Users yalnız okuma; yalnız doğrulanmış **DC01 computer SID** explicit Enroll. **aw-deploy$** template enrollment/admin izni almaz; owned machine key kullanım yetkisi ileride ayrıca verilip gerçek service signing probe ile doğrulanacak.
+- Yeni LDAP nesneleri nTSecurityDescriptor dahil tek AddRequest ile, sabit DC/Kerberos/signing/sealing/no-referral bağlantısında oluşturulur. Korumalı receipt source/CA hash ve yeni objectGUID'leri tutar. İsim/OID çakışması veya yarım oluşturma otomatik benimsenmez/silinmez/yeniden denenmez; receipt ile yeniden inceleme gerekir.
+- **31 native template kontrolü başarılı**; önceki Windows kontrolleri ve foundation/bounded-network kontrolleri başarılı. Native test sonucu ve kaynak SHA checkpoints/2026-10-25-windows-connector-signing-template-preparation.json içinde. Testler gerçek AD property/security tiplerini ve gerçek LDAP AddRequest yapısını kullanır; directory writes simulated. **Gerçek forest/CA oluşturma testi yapılmış değildir.**
+- DC01 operatör adımı önce **Inspect**: aktarım SHA256 + mevcut kurumsal publisher ile imza kontrolü. Komut checkpoints/2026-10-25-windows-connector-signing-template-inspect.ps1. Gerçek ReadyForPrepare/templateOID/ACL çıktısı gelmeden template/CA/cert/trust/key-ACL başarı kabulü yapılmaz.
+- Canlı AuthWire **dev.34**; bu adım app/runtime/RADIUS/policy/GPO/sertifika/uç paket değişikliği yapmadı. **54/94 (%57),40 açık** ve A03/A04 açık kalır; formal rapor yeniden üretilmedi.
+
 ## 🔴✓ Gerçek imzalama envanteri kabul edildi; ayrı makine imzalayıcısı hazırlığı açık — 25 Ekim 2026
 
 - Operatör **Yapıştırılan metin(4).txt** ekinde **SigningReadiness1.0.1 Inspect**, DC01/vizyonveri.local/instance4c23eebe/SID1648 sonucunu paylaştı. **InspectionSucceeded=true**, null-template hatası çözüldü; **ShapeCompatibleTemplateCount=0** geçerli envanter sonucudur.
