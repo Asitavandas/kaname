@@ -1,0 +1,72 @@
+{
+  "event": "WINDOWS_CONNECTOR_SERVICE_SIGNING_PROBE_TOOL_PREPARED",
+  "date": "2026-10-25",
+  "tool": "Test-AuthWireServiceSigning.ps1",
+  "probe_version": "1.0.0",
+  "default_mode": "Inspect",
+  "operator_mode": "RunProbe",
+  "pull_request": 81,
+  "head": "d6b2d9c2371de6fc7580dd453fb56637da23b49d",
+  "merge_commit": "a7c775a0ceca64663058cc361aeeb5f044537aa0",
+  "native_signing_checks": 23,
+  "native_service_runs": 2,
+  "actual_nonexportable_cng_signing": true,
+  "denied_without_key_read": true,
+  "fixture_runtime_identity": "LocalService",
+  "customer_gmsa_tested": false,
+  "customer_keys_used": false,
+  "private_keys_exported": 0,
+  "workflows": [
+    {
+      "id": 40202359658,
+      "name": "AuthWire bounded retry network probe checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 402,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40202359658/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40202359658/logs",
+      "workflow_id": 390643325
+    },
+    {
+      "id": 40202359654,
+      "name": "KANAME foundation checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 876,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40202359654/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40202359654/logs",
+      "workflow_id": 373980015
+    },
+    {
+      "id": 40202359733,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 40,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40202359733/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40202359733/logs",
+      "workflow_id": 395329531
+    }
+  ],
+  "native_summary": [
+    "2026-10-25T14:28:31.4459334Z AUTHWIRE_SERVICE_LOGON_PROBE_NATIVE_OK {\"fixture_certificate_stores_modified\":true,\"checks\":35,\"native_powershell\":\"5.1.26100.33648\",\"temporary_services_removed\":true,\"native_service_runs\":2,\"real_customer_gmsa_tested\":false,\"runtime_identity\":\"LocalService\",\"actual_scm_service_tested\":true,\"real_customer_ad_tested\":false,\"private_keys_exported\":0,\"signed_probe_executable_tested\":true}\r",
+    "2026-10-25T14:28:34.7161197Z AUTHWIRE_GPO_WRITE_PROBE_NATIVE_OK {\"fixture_certificate_stores_modified\":true,\"checks\":66,\"native_powershell\":\"5.1.26100.33648\",\"unc_substituted_with_local_fixture\":true,\"directory_operations_simulated\":true,\"private_keys_exported\":0,\"real_customer_gmsa_tested\":false,\"actual_scm_service_tested\":true,\"real_customer_ad_smb_tested\":false,\"actual_local_file_io_tested\":true}\r",
+    "2026-10-25T14:28:35.2751922Z AUTHWIRE_KEY_ACL_COMPARISON_NATIVE_OK {\"customer_keys_used\":false,\"native_powershell\":\"5.1.26100.33648\",\"actual_ntfs_roundtrip\":true,\"gmsa_signing_tested\":false,\"checks\":25}\r",
+    "2026-10-25T14:28:58.0604221Z AUTHWIRE_SERVICE_SIGNING_PROBE_NATIVE_OK {\"checks\":23,\"native_powershell\":\"5.1.26100.33648\",\"native_service_runs\":2,\"customer_gmsa_tested\":false,\"runtime_identity\":\"LocalService\",\"customer_keys_used\":false,\"private_keys_exported\":0,\"actual_nonexportable_cng_signing\":true,\"denied_without_key_read\":true,\"actual_signed_scm_service\":true}\r"
+  ],
+  "staged_path": "/home/segmentiq/authwire-service-signing-probe-v1-20261025.ps1",
+  "sha256": "85a21def1fcbcd542d599c7d7d71acb74ab3f2cc6f2704dbcd3e4c027b2d0152",
+  "remote_digest_verified": true,
+  "operator_computer": "DC01",
+  "operator_signer_thumbprint": "FFC134BC305757457163F99C7479B4168E397129",
+  "operator_service_sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+  "service_key_access_verified": false,
+  "real_endpoint_or_gmsa_acceptance_pending": true,
+  "authenticode_package_signing_verified": false,
+  "certificate_chain_validation_performed": false,
+  "connector_installed": false,
+  "can_apply_gpo": false,
+  "app_version": "0.14.0-dev.34",
+  "completed": 54,
+  "total": 94
+}

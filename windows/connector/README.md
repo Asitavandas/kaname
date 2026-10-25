@@ -372,3 +372,10 @@ References:
 - https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/b083a3c4-f57e-4925-b3f8-3dba81dae946
 - https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-crtd/1192823c-d839-4bc3-9b6b-fa8c53507ae1
 - https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-adsc/db4b45f7-e57a-4ae1-9b8f-1b107b69d98c
+
+
+## Managed-account machine key challenge signing
+
+`Test-AuthWireServiceSigning.ps1` defaults to Inspect. RunProbe reuses the owned signed SCM lifecycle and null managed-account password. The worker selects only the exact machine signer thumbprint, enforces RSA3072/SoftwareKSP/machine/persistent/nonexport/signing-only properties, and signs an SID/PID/host/service/nonce-bound challenge with SHA256/PKCS1. The controller independently verifies the public signature. Signed bootstrap/right helpers and a verified exact-key ACL receipt are required. Both current ACL and receipt scope are checked, and the key ACL is compared again after cleanup. No AD, GPO, logon-right, key ACL or trust mutation is performed.
+
+Native Windows tests run actual low-privilege LocalService workers both without and with key Read, reject tampered bindings/signatures/certificates/policy, and remove fixture artifacts. Customer gMSA acceptance remains separate. This proves challenge signing only: Authenticode package signing and issuer-chain/trust validation are not claimed. See checkpoints/2026-10-25-windows-connector-service-signing-probe-prepared.json for exact delivery and acceptance state.

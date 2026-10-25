@@ -4,6 +4,17 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ Gerçek CNG/SCM imzalama test aracı Windows'ta doğrulandı; DC01 gMSA sonucu açık — 25 Ekim 2026
+
+- **Test-AuthWireServiceSigning1.0.0** PR81 merge **a7c775a0ceca64663058cc361aeeb5f044537aa0**. **23 native Windows PowerShell5.1 kontrolü başarılı**: signed SCM worker LocalService bağlamında machine/nonexport/RSA3072/signing-only CNG key ile Read yokken başarısız, exact Read verildiğinde başarılı; public RSA/SHA256/PKCS1 doğrulaması geçti. Her iki temporary service ve dosyalar temizlendi; fixture key/cert/trust materyali kaldırıldı.
+- Nonce/serviceName/host/SID/PID/SignerThumbprint/Signature/policy boolean değişiklikleri ve başka sertifika public-key doğrulaması reddedildi. Private key export yok. Eski SCM35/GPO66/keyACL25/bootstrap, foundation ve bounded-network kontrolleri de başarılı.
+- Araç mevcut null-password gMSA SCM helper lifecycle'ını kullanır. Varsayılan **Inspect**; operatöre **RunProbe** somut komutu verilir. Signed bootstrap/right helpers owned gMSA/readiness ve SeServiceLogonRight'ı kontrol eder; exact LocalMachine/My cert ve verified key-ACL receipt/current-ACL scope guard'ı yapılır. Key ACL probe sonrasında da karşılaştırılır.
+- Worker yalnız bound owned signer ile identity-bound challenge imzalar. **AD/GPO/logon rights/CA/key ACL/trust/client package değişikliği yapmaz**; geçici signed executable mevcut Administrator publisher ile doğrulanır, test imzası yeni makine signer'ı ile hizmet bağlamında atılır. Mevcut publisher özel anahtarı gMSA'ya verilmez/taşınmaz.
+- **Raw challenge signing** sonucu ile **AuthenticodePackageSigningVerified/CertificateChainValidationPerformed** karıştırılmaz; bu ikisi false, ilgili kapılar açık. ProbeVerified ancak actual SID/PID/nonce binding + public signature verification + service/binary/result cleanup + keyACL korunması birlikte geçerse true.
+- Staged **/home/segmentiq/authwire-service-signing-probe-v1-20261025.ps1**, SHA256 **85a21def1fcbcd542d599c7d7d71acb74ab3f2cc6f2704dbcd3e4c027b2d0152**, remote digest doğrulandı. DC01 operatör komutu checkpoints/2026-10-25-windows-connector-service-signing-probe-run.ps1. Önceki signed Bootstrap1.0.3 / ServiceRightPrepare1.0.0 helper'ları TEMP altında kullanılır.
+- **Gerçek DC01/aw-deploy SID1648 signing sonucu henüz gelmedi**. Sonuç pending: ServiceKeyAccessVerified=false burada hazırlık kaydıdır; yeni probe çıktısından başarı türetilir. Kanıt checkpoints/2026-10-25-windows-connector-service-signing-probe-prepared.json.
+- AuthWire app dev.34, **54/94 (%57),40 açık**, A03/A04 açık; formal rapor yenilenmedi.
+
 ## 🔴✓ DC01 signer key izin doğrulama kaydı tamamlandı; gerçek hizmet signing probe hazırlanıyor — 25 Ekim 2026
 
 - Operatör **WINDOWS_CONNECTOR_SIGNER_KEY_ACL_VERIFIED / ComparisonVersion1.0.1**, thumbFFC134... / serviceSID1648 için **ReadPermissionVerified=true / ExistingRightsPreserved=true / AutoInheritedMetadataOnly=true / ChangedControlFlagsCode1024** sonucunu paylaştı.
