@@ -17,6 +17,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Makine signer güven zinciri ve CRL iptal kontrolü başarılı — 25 Ekim 2026
+
+- Operatör exact signer **FFC134BC305757457163F99C7479B4168E397129** için **certutil -verify -urlfetch / HCCE_LOCAL_MACHINE / CERT_CHAIN_POLICY_BASE** çıktısını paylaştı. Leaf ve issuer **dwErrorStatus=0**, **Leaf certificate revocation check passed**, exitcode0.
+- 🔴✓ CodeSigning application-policy **1.3.6.1.5.5.7.3.3** doğrulandı. Doğrulanmış self-signed issuer/root **CN=vizyonveri-DC01-CA, DC=vizyonveri, DC=local**, thumbprint **4D6D3C94B878B75AE02B436C0A19D3A3104C68BB**, NotAfter22May2029. Bu thumbprint sonraki issuer seçimleri için kayıtlı baseline'dır; AD enrollment object cACertificate byte karşılaştırması bağımsız olarak yapılmış sayılmaz.
+- 🔴✓ LDAP AIA certificate ve CDP **baseCRL0349** / **deltaCRL034A** doğrulandı. Base nextUpdate **1Kas2026 06:19+03**, delta nextUpdate **27Eki2026 06:20+03**. Revocation chain exclude-root; bu anlık başarı CRL yayımlama/erişim sağlığının gelecekte sürekli başarılı kalacağını kanıtlamaz. OCSP URL yok; CRL yolu başarılı olduğundan bu tek başına hata değildir.
+- **KeyAclChanged/TrustStoreChanged=false**. Kanıtlı log **machine-signing-v2-chain-verify.log**; mevcut CA, key ve endpoint paketlerine müdahale edilmedi.
+- Sonraki araç **Test-AuthWireServiceAuthenticode** PR82 hazırlanıyor: aynı owned SCM/gMSA worker, comment-only UTF16 disposable ps1 üzerinde Windows PowerShell SDK fixed Set/Get-AuthenticodeSignature cmdletleri. **AddScript / script execution / execution-policy override yok**; artifact çalıştırılmaz. Worker ve controller exact signer/status/hash doğrular, protected public signed audit copy tutar, temporary worker/result dizini kaldırılır. Native CI ve gerçek DC01 sonucu henüz açık.
+- Raw service RSA signing önceki kapıda başarılı; gerçek **AuthenticodePackageSigningVerified** bu kayıttan çıkarılmaz. Yeni publisher TrustedPublisher/endpoint execution/managed GPO scope/connector-daemon kapıları açık.
+- Kanıt checkpoints/2026-10-25-windows-connector-signer-chain-live-result.json. AuthWire app dev.34, **54/94 (%57),40 açık**, A03/A04 açık; formal rapor yenilenmedi.
+
 ## 🔴✓ DC01 gerçek gMSA machine-key imzalama testi başarıyla tamamlandı — 25 Ekim 2026
 
 - Operatör **WINDOWS_CONNECTOR_SERVICE_SIGNING_PROBE1.0.0 / DC01 / VIZYONVERI\\aw-deploy$** gerçek sonucunu paylaştı. **ServiceLogonVerified/SignatureVerified/RuntimeSigningTested/ServiceKeyAccessVerified/ProbeVerified=true**. Runtime SID **S-1-5-21-34256453-3348971241-2809240126-1648**, gerçek PID **7412**.

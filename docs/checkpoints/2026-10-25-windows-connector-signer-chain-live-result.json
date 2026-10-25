@@ -1,0 +1,42 @@
+{
+  "event": "WINDOWS_CONNECTOR_SIGNER_CHAIN_LIVE_ACCEPTED",
+  "date": "2026-10-25",
+  "source": "operator-pasted certutil verify-urlfetch output",
+  "signer_thumbprint": "FFC134BC305757457163F99C7479B4168E397129",
+  "signer_serial": "6A000000067A2B82B44DD3676E000000000006",
+  "machine_context": true,
+  "chain_policy": "CERT_CHAIN_POLICY_BASE",
+  "revocation_flag": "CERT_CHAIN_REVOCATION_CHECK_CHAIN_EXCLUDE_ROOT",
+  "leaf_error_status": 0,
+  "issuer_error_status": 0,
+  "leaf_revocation_check_passed": true,
+  "verified_application_policy": "1.3.6.1.5.5.7.3.3",
+  "issuer_subject": "CN=vizyonveri-DC01-CA, DC=vizyonveri, DC=local",
+  "issuer_root_thumbprint": "4D6D3C94B878B75AE02B436C0A19D3A3104C68BB",
+  "issuer_self_signed": true,
+  "issuer_not_after_local": "2029-05-22T14:14+03:00",
+  "aia_verified": true,
+  "base_crl": {
+    "number": "0349",
+    "sha1": "E33A890EB78DDA4E9BBCA7B39585F616F50C988F",
+    "this_update_local": "2026-10-24T17:59+03:00",
+    "next_update_local": "2026-11-01T06:19+03:00"
+  },
+  "delta_crl": {
+    "number": "034A",
+    "sha1": "FFA31EDB938647FF2CCAF33868A8212541C6D715",
+    "this_update_local": "2026-10-25T18:00+03:00",
+    "next_update_local": "2026-10-27T06:20+03:00"
+  },
+  "retrieval": "AD LDAP AIA/CDP",
+  "ocsp_url_present": false,
+  "certutil_exit_code": 0,
+  "key_acl_changed": false,
+  "trust_store_changed": false,
+  "log_file": "C:\\ProgramData\\AuthWire-SigningTemplate-b05c01482d03415897d290ccde085a37\\machine-signing-v2-chain-verify.log",
+  "verification_is_point_in_time": true,
+  "ad_published_ca_byte_pin_independently_compared": false,
+  "next": "Native validation and actual managed-account Authenticode test on disposable never-executed artifact; no endpoint package rollout",
+  "completed": 54,
+  "total": 94
+}
