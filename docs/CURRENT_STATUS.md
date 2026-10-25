@@ -17,6 +17,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Ayrı dağıtım GPO hazırlığı sahiplik readback kontrolünde durdu — 25 Ekim 2026
+
+- Operatör PrepareGpo çalıştırmasında GPO_OWNERSHIP_MARKER_MISMATCH bildirdi. Receipt: C:\ProgramData\AuthWire-GpoPreparation-6394ceadf50a4dc29f13787be5822806\gpo-preparation.json. Yeni boş GPO oluşmuş olabilir; gerçek GUID/evre/delegasyon durumu henüz okunmadı. Bu deneme için AD/GPO değişmedi veya hazırlık tamamlandı denmez.
+- Aynı guard hem groupPolicyContainer nesne türünü hem LDAP description sayısını/metnini kontrol eder; yalnız hata metni kesin neden sağlamaz. New-GPO -Comment için GPMC Description ile LDAP description eşitliği canlı kanıtla karşılaştırılacak; varsayım doğrulanmadan guard gevşetilmez.
+- Yeniden PrepareGpo, sil-yeniden oluştur veya otomatik sahiplenme yapılmaz. Receipt GUID'sine sabitlenmiş salt okunur metadata/izin sorgusu hazırlanmıştır. GPO adı ve korunan trust GUID'si denetlenir; ayar/izin/üyelik/anahtar değişikliği yoktur. Sonuç operatörden beklenir.
+- Önceden doğrulanan KDS, yerel gMSA, eklemeli hizmet hakkı ve gerçek SCM logon kabulü korunur. Yeni GPO oluşturma/doğrulama/delegasyon açık; uygulama dev.34 ve54/94 (%57) değişmedi.
+- Kanıt: checkpoints/2026-10-25-windows-connector-gpo-marker-failure.json; salt okunur komut: checkpoints/2026-10-25-windows-connector-gpo-marker-readonly.ps1.
+
 ## 🔴✓ Ayrı dağıtım GPO'sunun gerçek önizlemesi kabul edildi — 25 Ekim 2026
 
 - Operatör DC01/vizyonveri.local üzerinde Initialize-AuthWireDeploymentGpo1.0.0 **Inspect** sonucunu paylaştı: **Blockers=[], ReadyForPrepare=true, ProtectedTrustPreserved=true, GpoExists/GpoCreated=false**. Yeni AuthWire-Managed-Deployment-4c23eebe adı için çakışma yok; AD/GPO değiştirilmedi.

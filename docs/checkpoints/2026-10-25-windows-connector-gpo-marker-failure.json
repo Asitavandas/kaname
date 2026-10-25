@@ -1,0 +1,21 @@
+{
+  "event": "WINDOWS_CONNECTOR_DEPLOYMENT_GPO_PREPARATION_FAILED",
+  "reported_by": "operator",
+  "date": "2026-10-25",
+  "error": "GPO_PREPARATION_RESULT_REQUIRES_REINSPECTION",
+  "guard": "GPO_OWNERSHIP_MARKER_MISMATCH",
+  "receipt": "C:\\ProgramData\\AuthWire-GpoPreparation-6394ceadf50a4dc29f13787be5822806\\gpo-preparation.json",
+  "gpo_name": "AuthWire-Managed-Deployment-4c23eebe",
+  "creation_result_verified": false,
+  "partial_creation_possible": true,
+  "permission_result_verified": false,
+  "retry_prepare_instructed": false,
+  "automatic_adoption_or_deletion": false,
+  "readonly_diagnostic_pending": true,
+  "root_cause_confirmed": false,
+  "live_authwire_version": "0.14.0-dev.34",
+  "completion_counts": {
+    "complete": 54,
+    "total": 94
+  }
+}
