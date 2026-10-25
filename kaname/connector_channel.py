@@ -173,9 +173,13 @@ class ConnectorHealth:
                 if item[2] >= 3:
                     del self._pending[identity]
                 raise ChannelError('CONNECTOR_PROOF_REJECTED') from None
+            verified_at = self._monotonic()
+            if verified_at >= item[1]:
+                del self._pending[identity]
+                raise ChannelError('CONNECTOR_PROOF_REJECTED')
             # Consume and update last seen atomically: concurrent/replayed replies fail.
             del self._pending[identity]
-            self._last_seen = now
+            self._last_seen = verified_at
             return {'channel_proof_verified': True, 'can_apply': False,
                     'directory_sync_ready': False, 'kerberos_ready': False}
 

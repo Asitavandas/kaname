@@ -89,6 +89,19 @@ class ConnectorChannelTests(unittest.TestCase):
         self.assertFalse(restarted.status()['online'])
         with self.assertRaises(ChannelError): restarted.accept(pending)
 
+    def test_verification_finishing_at_deadline_does_not_accept_expired_proof(self):
+        proof = self.proof(self.channel.challenge())
+        public = self.private.public_key()
+        test = self
+        class FinishesLate:
+            key_size = public.key_size
+            def verify(self, *args):
+                public.verify(*args)
+                test.now += 60
+        self.channel._public = FinishesLate()
+        with self.assertRaises(ChannelError): self.channel.accept(proof)
+        self.assertFalse(self.channel.status()['online'])
+
     def test_rotation_generation_and_peer_instance_do_not_share_pending_state(self):
         proof = self.proof(self.channel.challenge())
         for binding in (dataclasses.replace(self.binding, generation=2),
