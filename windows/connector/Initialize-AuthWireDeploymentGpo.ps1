@@ -1,7 +1,9 @@
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-    [ValidateSet('Inspect','PrepareGpo')][string]$Mode='Inspect',
+    [ValidateSet('Inspect','PrepareGpo','ResumeGpo')][string]$Mode='Inspect',
+    [string]$PreparationReceiptPath,
+    [guid]$ExpectedGpoId=[guid]::Empty,
     [Parameter(Mandatory=$true)][ValidatePattern('^[A-Za-z0-9][A-Za-z0-9-]{0,14}$')][string]$ExpectedComputer,
     [Parameter(Mandatory=$true)][string]$ExpectedDomain,
     [Parameter(Mandatory=$true)][guid]$InstanceId,
@@ -102,13 +104,18 @@ function Get-AuthWireOwnedGpoState {
     if($Gpo.Id -eq $ProtectedId) { throw 'PROTECTED_TRUST_GPO_CANNOT_BE_MANAGED' }
     $id=[guid]$Gpo.Id
     $dn='CN={' + $id.ToString('D') + '},CN=Policies,CN=System,' + $DomainDn
-    $gpc=Get-ADObject -Identity $dn -Server $Server -Properties description,gPCFileSysPath -ErrorAction Stop
-    $descriptions=@(foreach($v in $gpc.description){[string]$v})
+    $gpc=Get-ADObject -Identity $dn -Server $Server -Properties gPCFileSysPath -ErrorAction Stop
+    # New-GPO -Comment is exposed by GPMC as Gpo.Description, not LDAP description.
+    # Re-read by GUID so a cached New-GPO/Get-GPO -All object cannot hide later drift.
+    $current=Get-GPO -Guid $id -Domain $Domain -Server $Server -ErrorAction Stop
+    if([guid]$current.Id -ne $id -or $current.DisplayName -cne $Gpo.DisplayName) { throw 'GPO_IDENTITY_READBACK_MISMATCH' }
+    if($gpc.ObjectClass -ne 'groupPolicyContainer') { throw 'GPO_OBJECT_CLASS_MISMATCH' }
+    $description=$current.PSObject.Properties['Description']
+    if($null -eq $description -or $description.Value -isnot [string] -or $description.Value -cne $Marker) { throw 'GPO_OWNERSHIP_MARKER_MISMATCH' }
     $paths=@(foreach($v in $gpc.gPCFileSysPath){[string]$v})
     $expectedPath=Get-AuthWireGpoRoot $id $Domain $Domain
-    if($gpc.ObjectClass -ne 'groupPolicyContainer' -or $descriptions.Count -ne 1 -or $descriptions[0] -cne $Marker) { throw 'GPO_OWNERSHIP_MARKER_MISMATCH' }
     if($paths.Count -ne 1 -or $paths[0].TrimEnd('\') -ine $expectedPath) { throw 'GPO_SYSVOL_LOCATION_MISMATCH' }
-    $actualOwner=Resolve-AuthWireDeploymentOwnerSid ([string]$Gpo.Owner)
+    $actualOwner=Resolve-AuthWireDeploymentOwnerSid ([string]$current.Owner)
     if($actualOwner -ne $OwnerSid) { throw 'GPO_ADMINISTRATIVE_OWNER_MISMATCH' }
     $doc=Get-AuthWireGpoDocument $id $Domain $Server
     $linked=($doc.SelectNodes("/*[local-name()='GPO']/*[local-name()='LinksTo']").Count -ne 0)
@@ -134,16 +141,64 @@ function Get-AuthWireOwnedGpoState {
         $authenticated.Count -eq 1 -and $authenticated[0].Permission -eq 'GpoRead' -and
         $otherApply.Count -eq 0 -and $custom.Count -eq 0 -and $write -and -not $administrative -and -not $directDeny)
     [pscustomobject]@{Id=$id.ToString('D');Name=$Gpo.DisplayName;OwnerSid=$actualOwner;Linked=$linked;ContainsSettings=$settings
-        Permissions=$rows;SysvolServiceWriteMetadata=$write;SysvolServiceAdministrativeRights=$administrative;MetadataComplete=$complete}
+        Permissions=$rows;SysvolServiceWriteMetadata=$write;SysvolServiceAdministrativeRights=$administrative;SysvolServiceDeny=$directDeny;MetadataComplete=$complete}
 }
 function Write-AuthWireGpoReceipt {
     param([string]$Path,$Value)
     $Value | ConvertTo-Json -Depth 7 | Set-Content -LiteralPath $Path -Encoding UTF8
 }
+function Read-AuthWireGpoResumeReceipt {
+    param([string]$Path,[guid]$ExpectedId,[guid]$InstanceId,[string]$Name,[string]$Marker,
+        [guid]$ProtectedId,[string]$ProtectedHash,[string]$OwnerSid)
+    if([string]::IsNullOrWhiteSpace($Path) -or $ExpectedId -eq [guid]::Empty -or $ExpectedId -eq $ProtectedId) { throw 'EXPLICIT_RECEIPT_AND_GPO_ID_REQUIRED' }
+    $root=[IO.Path]::GetFullPath([Environment]::GetFolderPath('CommonApplicationData')).TrimEnd('\')
+    $full=[IO.Path]::GetFullPath($Path)
+    $pattern='^' + [regex]::Escape($root) + '\\AuthWire-GpoPreparation-[a-fA-F0-9]{32}\\gpo-preparation\.json$'
+    if($full -notmatch $pattern) { throw 'GPO_RECEIPT_PATH_INVALID' }
+    $folder=Split-Path -Parent $full
+    foreach($itemPath in @($folder,$full)) {
+        $item=Get-Item -LiteralPath $itemPath -Force -ErrorAction Stop
+        if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'GPO_RECEIPT_REPARSE_POINT_REJECTED' }
+        if($itemPath -eq $full -and ($item.PSIsContainer -or $item.Length -gt 1048576)) { throw 'GPO_RECEIPT_FILE_INVALID' }
+        $acl=Microsoft.PowerShell.Security\Get-Acl -LiteralPath $itemPath -ErrorAction Stop
+        if($itemPath -eq $folder -and -not $acl.AreAccessRulesProtected) { throw 'GPO_RECEIPT_DIRECTORY_NOT_PROTECTED' }
+        $currentSid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+        $fileOwner=$acl.GetOwner([Security.Principal.SecurityIdentifier]).Value
+        if($fileOwner -notin @('S-1-5-18','S-1-5-32-544',$OwnerSid,$currentSid)) { throw 'GPO_RECEIPT_OWNER_UNEXPECTED' }
+        $mutation=[Security.AccessControl.FileSystemRights]::Write -bor [Security.AccessControl.FileSystemRights]::Delete -bor
+            [Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles -bor [Security.AccessControl.FileSystemRights]::ChangePermissions -bor
+            [Security.AccessControl.FileSystemRights]::TakeOwnership
+        foreach($rule in $acl.GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier])) {
+            if($rule.AccessControlType.ToString() -eq 'Allow' -and ($rule.FileSystemRights -band $mutation) -ne 0 -and
+                $rule.IdentityReference.Value -notin @('S-1-5-18','S-1-5-32-544')) { throw 'GPO_RECEIPT_WRITABLE_BY_OTHER_PRINCIPAL' }
+        }
+    }
+    $record=Get-Content -LiteralPath $full -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+    if($record.Version -ne 1 -or [guid]$record.InstanceId -ne $InstanceId -or [guid]$record.GpoId -ne $ExpectedId -or
+        $record.Name -cne $Name -or $record.Marker -cne $Marker -or [guid]$record.ProtectedGpoId -ne $ProtectedId -or
+        $record.ProtectedHash -cne $ProtectedHash) { throw 'GPO_RECEIPT_BINDING_OR_PROTECTED_BASELINE_MISMATCH' }
+    if($record.Phase -notin @('created_unlinked','verified_unlinked')) { throw 'GPO_RECEIPT_PHASE_REQUIRES_REVIEW' }
+    return $record
+}
+function Test-AuthWireGpoResumePermissions {
+    param($State,[string]$DomainSid,[string]$ServiceSid,[string]$ScopeSid)
+    # Only the initial creation failure is resumable. Partial permission stages require review.
+    if(@($State.Permissions | Where-Object {$_.Sid -in @($ServiceSid,$ScopeSid)}).Count -ne 0) { throw 'GPO_RESUME_TARGET_PERMISSIONS_UNEXPECTED' }
+    $authenticated=@($State.Permissions | Where-Object Sid -eq 'S-1-5-11')
+    if($authenticated.Count -ne 1 -or $authenticated[0].Permission -ne 'GpoApply') { throw 'GPO_RESUME_INITIAL_SCOPE_UNEXPECTED' }
+    foreach($row in $State.Permissions) {
+        if($row.Sid -eq 'S-1-5-11' -and $row.Permission -eq 'GpoApply') { continue }
+        if($row.Sid -in @(($DomainSid+'-512'),($DomainSid+'-519'),'S-1-5-18') -and $row.Permission -eq 'GpoEditDeleteModifySecurity') { continue }
+        if($row.Sid -eq 'S-1-5-9' -and $row.Permission -eq 'GpoRead') { continue }
+        throw 'GPO_RESUME_INITIAL_DELEGATION_REQUIRES_REVIEW'
+    }
+    if($State.SysvolServiceWriteMetadata -or $State.SysvolServiceAdministrativeRights -or $State.SysvolServiceDeny) { throw 'GPO_RESUME_SERVICE_SYSVOL_ACCESS_UNEXPECTED' }
+}
 function Invoke-AuthWireDeploymentGpoPreparation {
     [CmdletBinding()]
     param(
-        [ValidateSet('Inspect','PrepareGpo')][string]$Mode='Inspect',
+        [ValidateSet('Inspect','PrepareGpo','ResumeGpo')][string]$Mode='Inspect',
+        [string]$PreparationReceiptPath,[guid]$ExpectedGpoId=[guid]::Empty,
         [string]$ExpectedComputer,[string]$ExpectedDomain,[guid]$InstanceId,
         [ValidatePattern('^[A-Za-z][A-Za-z0-9-]{0,14}$')][string]$AccountName='aw-deploy',
         [string]$AccountSid,[string]$ScopeGroupSid,[string]$ScopeGroupName,[guid]$ProtectedGpoId,
@@ -153,6 +208,8 @@ function Invoke-AuthWireDeploymentGpoPreparation {
     Set-StrictMode -Version 2
     if(-not [Environment]::Is64BitProcess -or [Environment]::MachineName -ine $ExpectedComputer) { throw 'LOCAL_COMPUTER_MISMATCH' }
     if($InstanceId -eq [guid]::Empty -or $ProtectedGpoId -eq [guid]::Empty) { throw 'INSTALLATION_AND_PROTECTED_GPO_IDS_REQUIRED' }
+    $resumeRequested=($Mode -eq 'ResumeGpo' -or -not [string]::IsNullOrWhiteSpace($PreparationReceiptPath) -or $ExpectedGpoId -ne [guid]::Empty)
+    if($resumeRequested -and ($Mode -eq 'PrepareGpo' -or [string]::IsNullOrWhiteSpace($PreparationReceiptPath) -or $ExpectedGpoId -eq [guid]::Empty)) { throw 'EXPLICIT_RECEIPT_AND_GPO_ID_REQUIRED' }
     $sid=[Security.Principal.SecurityIdentifier]::new($AccountSid)
     $scopeSid=[Security.Principal.SecurityIdentifier]::new($ScopeGroupSid)
     if($sid.Value -eq $scopeSid.Value) { throw 'DISTINCT_SERVICE_AND_SCOPE_REQUIRED' }
@@ -185,10 +242,21 @@ function Invoke-AuthWireDeploymentGpoPreparation {
     $protectedHash=Get-AuthWireProtectedGpoHash $ProtectedGpoId $ExpectedDomain $server
     $candidates=@(Get-GPO -All -Domain $ExpectedDomain -Server $server -ErrorAction Stop | Where-Object DisplayName -ieq $name)
     if($candidates.Count -gt 1) { throw 'MANAGED_GPO_NAME_AMBIGUOUS' }
-    $state=$null; $created=$false; $receipt=$null; $blockers=@()
+    $state=$null; $created=$false; $resumed=$false; $permissionsChanged=$false; $receipt=$null; $blockers=@(); $readyForResume=$false
     if($candidates.Count -eq 1) {
         $state=Get-AuthWireOwnedGpoState $candidates[0] $marker $ExpectedDomain $server $domain.DistinguishedName $ownerSid $sid.Value $scopeSid.Value $ProtectedGpoId
         if(-not $state.MetadataComplete) { $blockers += 'OWNED_GPO_INCOMPLETE_REVIEW_REQUIRED' }
+    }
+    if($resumeRequested) {
+        $record=Read-AuthWireGpoResumeReceipt $PreparationReceiptPath $ExpectedGpoId $InstanceId $name $marker $ProtectedGpoId $protectedHash $ownerSid
+        if($null -eq $state -or [guid]$state.Id -ne $ExpectedGpoId) { throw 'GPO_RESUME_OBJECT_MISSING_OR_DIFFERENT' }
+        if($record.Phase -eq 'verified_unlinked') {
+            if(-not $state.MetadataComplete) { throw 'GPO_RESUME_VERIFIED_STATE_DRIFTED' }
+        } else {
+            Test-AuthWireGpoResumePermissions $state $domain.DomainSID.Value $sid.Value $scopeSid.Value
+        }
+        $receipt=[IO.Path]::GetFullPath($PreparationReceiptPath)
+        $readyForResume=$true
     }
     if($Mode -eq 'PrepareGpo') {
         if($blockers.Count -ne 0) { throw ($blockers -join ',') }
@@ -216,6 +284,7 @@ function Invoke-AuthWireDeploymentGpoPreparation {
                 $null=Set-GPPermission -Guid $new[0].Id -TargetName $scopePrincipal.QualifiedName -TargetType Group -PermissionLevel GpoApply -Domain $ExpectedDomain -Server $server -ErrorAction Stop
                 $record.Phase='pilot_scope_only';Write-AuthWireGpoReceipt $receipt $record
                 $null=Set-GPPermission -Guid $new[0].Id -TargetName $principal.QualifiedName -TargetType $principalType -PermissionLevel GpoEdit -Domain $ExpectedDomain -Server $server -ErrorAction Stop
+                $permissionsChanged=$true
                 $record.Phase='service_edit_only';Write-AuthWireGpoReceipt $receipt $record
                 $state=Get-AuthWireOwnedGpoState $new[0] $marker $ExpectedDomain $server $domain.DistinguishedName $ownerSid $sid.Value $scopeSid.Value $ProtectedGpoId
                 if(-not $state.MetadataComplete) { throw 'GPO_METADATA_POSTCHECK_FAILED' }
@@ -225,18 +294,45 @@ function Invoke-AuthWireDeploymentGpoPreparation {
             } catch { throw ('GPO_PREPARATION_RESULT_REQUIRES_REINSPECTION:' + $receipt + ':' + $_.Exception.Message) }
         }
     }
+    if($Mode -eq 'ResumeGpo' -and $record.Phase -eq 'created_unlinked') {
+        try {
+            # Repeat all live identity/state checks immediately before changing the pinned GUID.
+            $state=Get-AuthWireOwnedGpoState $candidates[0] $marker $ExpectedDomain $server $domain.DistinguishedName $ownerSid $sid.Value $scopeSid.Value $ProtectedGpoId
+            Test-AuthWireGpoResumePermissions $state $domain.DomainSID.Value $sid.Value $scopeSid.Value
+            if((Get-AuthWireProtectedGpoHash $ProtectedGpoId $ExpectedDomain $server) -ne $record.ProtectedHash) { throw 'PROTECTED_TRUST_GPO_CHANGED_REVIEW_REQUIRED' }
+            $record | Add-Member -NotePropertyName ResumeStartedUtc -NotePropertyValue ([datetime]::UtcNow.ToString('o')) -Force
+            $record | Add-Member -NotePropertyName ResumeToolVersion -NotePropertyValue '1.0.1' -Force
+            Write-AuthWireGpoReceipt $receipt $record
+            $null=Set-GPPermission -Guid $ExpectedGpoId -TargetName $authenticated.QualifiedName -TargetType Group -PermissionLevel GpoRead -Replace -Domain $ExpectedDomain -Server $server -ErrorAction Stop
+            $permissionsChanged=$true
+            $record.Phase='authenticated_read_only';Write-AuthWireGpoReceipt $receipt $record
+            $null=Set-GPPermission -Guid $ExpectedGpoId -TargetName $scopePrincipal.QualifiedName -TargetType Group -PermissionLevel GpoApply -Domain $ExpectedDomain -Server $server -ErrorAction Stop
+            $record.Phase='pilot_scope_only';Write-AuthWireGpoReceipt $receipt $record
+            $null=Set-GPPermission -Guid $ExpectedGpoId -TargetName $principal.QualifiedName -TargetType $principalType -PermissionLevel GpoEdit -Domain $ExpectedDomain -Server $server -ErrorAction Stop
+            $record.Phase='service_edit_only';Write-AuthWireGpoReceipt $receipt $record
+            $state=Get-AuthWireOwnedGpoState $candidates[0] $marker $ExpectedDomain $server $domain.DistinguishedName $ownerSid $sid.Value $scopeSid.Value $ProtectedGpoId
+            if(-not $state.MetadataComplete) { throw 'GPO_METADATA_POSTCHECK_FAILED' }
+            if((Get-AuthWireProtectedGpoHash $ProtectedGpoId $ExpectedDomain $server) -ne $record.ProtectedHash) { throw 'PROTECTED_TRUST_GPO_CHANGED_REVIEW_REQUIRED' }
+            $record.Phase='verified_unlinked'
+            $record | Add-Member -NotePropertyName State -NotePropertyValue $state -Force
+            Write-AuthWireGpoReceipt $receipt $record
+            $resumed=$true; $blockers=@()
+        } catch { throw ('GPO_PREPARATION_RESULT_REQUIRES_REINSPECTION:' + $receipt + ':' + $_.Exception.Message) }
+    }
     if((Get-AuthWireProtectedGpoHash $ProtectedGpoId $ExpectedDomain $server) -ne $protectedHash) { throw 'PROTECTED_TRUST_GPO_CHANGED_REVIEW_REQUIRED' }
     [pscustomobject]@{
-        Event='WINDOWS_CONNECTOR_DEPLOYMENT_GPO_PREPARATION';ToolVersion='1.0.0';Mode=$Mode;Computer=$ExpectedComputer;Domain=$ExpectedDomain
+        Event='WINDOWS_CONNECTOR_DEPLOYMENT_GPO_PREPARATION';ToolVersion='1.0.1';Mode=$Mode;Computer=$ExpectedComputer;Domain=$ExpectedDomain
         ProposedGpoName=$name;InstanceId=$InstanceId.ToString('D');ServiceAccount=$principal.QualifiedName;ServiceSid=$sid.Value;ServiceTargetType=$principalType
         ScopeGroup=$scope.Name;ScopeGroupSid=$scopeSid.Value;ScopeGroupApplyOnly=$true;ProtectedTrustGpoId=$ProtectedGpoId.ToString('D');ProtectedTrustPreserved=$true
-        GpoExists=($null -ne $state);GpoCreated=$created;GpoState=$state;OwnershipMarker=$marker;Blockers=$blockers;ReadyForPrepare=($blockers.Count -eq 0)
-        ReceiptPath=$receipt;AdChanged=$created;GpoChanged=$created;GpoLinked=$false;SettingsApplied=$false
+        GpoExists=($null -ne $state);GpoCreated=$created;GpoResumed=$resumed;GpoState=$state;OwnershipMarker=$marker;Blockers=$blockers;ReadyForPrepare=($blockers.Count -eq 0);ReadyForResume=$readyForResume
+        ReceiptPath=$receipt;AdChanged=($created -or $permissionsChanged);GpoChanged=($created -or $permissionsChanged);GpoLinked=$false;SettingsApplied=$false
         ServiceWriteAccessVerified=$false;SigningKeyAccessVerified=$false;ConnectorInstalled=$false;CanApplyGpo=$false
     }
 }
 
 Invoke-AuthWireDeploymentGpoPreparation -Mode $Mode -ExpectedComputer $ExpectedComputer -ExpectedDomain $ExpectedDomain `
+    -PreparationReceiptPath $PreparationReceiptPath -ExpectedGpoId $ExpectedGpoId `
     -InstanceId $InstanceId -AccountName $AccountName -AccountSid $AccountSid -ScopeGroupSid $ScopeGroupSid `
     -ScopeGroupName $ScopeGroupName -ProtectedGpoId $ProtectedGpoId -BootstrapPath $BootstrapPath `
     -PublisherThumbprint $PublisherThumbprint | ConvertTo-Json -Depth 8
+

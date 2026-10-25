@@ -210,6 +210,27 @@ interrupted create is inspected before retry and is never deleted/recreated.
 GPO/SYSVOL metadata checks do not prove actual service-account writes through
 AD/SMB; ServiceWriteAccessVerified and CanApplyGpo remain false.
 
+Version 1.0.1 verifies the ownership comment through a fresh GUID-bound GPMC
+Get-GPO Description read. LDAP groupPolicyContainer.description is not the
+GPO comment and may be empty; it is not used as ownership evidence.
+The GPC object class, SYSVOL path, administrative owner and absence of links
+or settings remain independent mandatory checks.
+
+ResumeGpo is an explicit recovery mode, not automatic adoption. Supply both
+PreparationReceiptPath and ExpectedGpoId. The original admin/SYSTEM-protected
+ProgramData receipt must bind that exact GUID, instance, marker, name and
+unchanged protected-trust fingerprint. Reparse points, other writable trustees,
+foreign markers, ambiguous names, links/settings and drift are refused.
+Only a created_unlinked receipt with initial default delegation is resumable:
+Authenticated Users apply, domain/enterprise administrators and SYSTEM admin
+roles, optional Enterprise Domain Controllers read, and no prior service/scope
+delegation or direct service SYSVOL access. Other default delegation shapes,
+including forest-root enterprise admins in a child domain, require review.
+The three original bounded permission assignments complete on the same GUID;
+New-GPO is never called by ResumeGpo. Intermediate interrupted permission phases
+require reinspection. A verified_unlinked matching rerun is a no-op.
+Inspect with the same receipt/GUID only previews ReadyForResume and makes no writes.
+
 Native Windows tests exercise LookupAccountSid and both user/computer trustee
 mapping. The full preparation algorithm runs with AD/GPMC simulated, covering
 scope boundaries, races, partial writes and protected trust preservation. This
@@ -219,3 +240,4 @@ References:
 - https://learn.microsoft.com/en-us/powershell/module/grouppolicy/new-gpo
 - https://learn.microsoft.com/en-us/powershell/module/grouppolicy/set-gppermission
 - https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-lookupaccountsidw
+
