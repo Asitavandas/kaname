@@ -17,6 +17,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ CA makine imzalama sertifikasını üretti; RequestId6 — 25 Ekim 2026
+
+- Operatör **RequestId:6 / Certificate retrieved(Issued) Issued**, **ExitCode=0 / CertificateFileExists=true** sonucunu paylaştı. Aynı SHA-pinned CSR için issuance kabul edildi; yeni istek veya anahtar üretimi yapılmayacak.
+- Public response **machine-signing-v2.cer**, gönderim receipt **machine-signing-v2-submit.json**, log **machine-signing-v2-submit.log**, mevcut protected **AuthWire-SigningTemplate-b05c01482d03415897d290ccde085a37** klasöründe. CSR SHA256 D07E3800345AFD62E8423B5E720047BDA3670CBDB1644153BDBD90BDEC689BDE.
+- Sonraki operatör kapısı public response subjectCN/DC01 + issuerCN/vizyonveri-DC01-CA + validity + code-signing-only EKU + RSA3072 kontrolünden sonra **certreq -accept -machine -q**. Aynı thumbprint LocalMachine/My/HasPrivateKey ise tekrar Accept yapılmaz; yeni certificate request gönderilmez. Sonuç machine-signing-v2-install.json içine kaydedilecek.
+- Basit CN karşılaştırması issuer imza/zincir doğrulaması yerine geçmez; certificate template extension, CA chain/signature, gerçek key provider/machine scope/export policy, owned-key gMSA ACL ve gerçek service signing probe halen sonraki kapılardır. Bu komut service key ACL/TrustedPublisher/GPO/client package değişikliği yapmaz.
+- Kanıt checkpoints/2026-10-25-windows-connector-machine-certificate-issued-live-result.json; operatör komutu checkpoints/2026-10-25-windows-connector-machine-certificate-accept.ps1. **Live installation sonucu henüz gelmedi.** AuthWire app dev.34, **54/94 (%57),40 açık**, A03/A04 açık; formal rapor yenilenmedi.
+
 ## 🔴✓ DC01 makine CSR oluşturma tamamlandı; aynı istek CA'ya gönderilecek — 25 Ekim 2026
 
 - Operatör **CertReq: Request Created / WINDOWS_CONNECTOR_MACHINE_CSR_PREPARED** çıktısını paylaştı. LDAP AD enrollment policy **EC3C46B2-ED74-4BF2-BB4C-5A8E7D9BB33C** görüldü. **SubmittedToCa=false**.

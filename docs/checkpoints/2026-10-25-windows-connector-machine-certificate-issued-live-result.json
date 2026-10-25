@@ -1,0 +1,23 @@
+{
+  "event": "WINDOWS_CONNECTOR_MACHINE_CERTIFICATE_ISSUANCE_ACCEPTED",
+  "date": "2026-10-25",
+  "source": "operator-pasted live output",
+  "computer": "DC01",
+  "ca": "dc01.vizyonveri.local\\vizyonveri-DC01-CA",
+  "request_id": 6,
+  "observed_disposition": "Certificate retrieved(Issued) Issued",
+  "exit_code": 0,
+  "certificate_file_exists": true,
+  "certificate_file": "C:\\ProgramData\\AuthWire-SigningTemplate-b05c01482d03415897d290ccde085a37\\machine-signing-v2.cer",
+  "submission_record": "C:\\ProgramData\\AuthWire-SigningTemplate-b05c01482d03415897d290ccde085a37\\machine-signing-v2-submit.json",
+  "submission_log": "C:\\ProgramData\\AuthWire-SigningTemplate-b05c01482d03415897d290ccde085a37\\machine-signing-v2-submit.log",
+  "csr_sha256": "D07E3800345AFD62E8423B5E720047BDA3670CBDB1644153BDBD90BDEC689BDE",
+  "installation_pending": true,
+  "template_extension_and_chain_validation_pending": true,
+  "machine_key_metadata_and_export_policy_validation_pending": true,
+  "service_key_access_verified": false,
+  "connector_installed": false,
+  "can_apply_gpo": false,
+  "completed": 54,
+  "total": 94
+}
