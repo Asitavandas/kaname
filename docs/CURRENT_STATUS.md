@@ -17,6 +17,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Gerçek hizmet hesabı GPO yazma/okuma test aracı hazır — 25 Ekim 2026
+
+- **Test-AuthWireGpoWrite.ps1 1.0.0**, varsayılan Inspect. Dört mevcut kurumsal imzalı yardımcı, hesap/hizmet hakkı ve **verified_unlinked** receipt ile aynı **8c6808fd-a382-4bf2-9c9c-d9e1d46082a3** boş/bağlantısız GPO doğrulanır. RunProbe yalnız bu GPO'da geçici test yapar; GPO link/ayar/izin, hesap hakkı, grup veya imzalama anahtarı ACL'si değiştirmez.
+- Kısa ömürlü imzalı SCM hizmeti **aw-deploy$** olarak NULL managed password ile çalışır. Hizmet, sabit DC/GPC üzerinde Kerberos LDAP signing/sealing kullanır; boş LDAP description alanına nonce-bound tek değer ekler/okur ve yalnız o değeri siler. GPMC Description/ownership marker değiştirilmez. GPC modification timestamp ilerleyebilir; ayar/version/permission korunur. Eşzamanlı yabancı değerler silinmez ve preservation başarısız sayılır.
+- SYSVOL testi sabit DC UNC yolunda CreateNew + DeleteOnClose ile yalnız benzersiz dosya oluşturur/yazar/flush/okur; mevcut dosyaya yazmaz. Actual service SID/SCM PID/host/nonce ve typed operation proof, test temizliği, hedef business/file/ACL fingerprint ve korunan trust fingerprint birlikte doğrulanmadan **ServiceWriteAccessVerified=true** verilmez.
+- Hizmet, EXE, config ve geçici sonuç klasörü temizlenir; admin/SYSTEM korumalı manifest/proof/summary kalır. Bilinmeyen LDAP sonucu açık gösterilir; manifest kesin nonce/GPO/DC/own-value/own-file bağlarını taşır. Yönetici adına arbitrary değer/dosya silme veya otomatik onarım yoktur. Signing-key service access, connector kurulum, GPO kalıcılık ve uç kabulü bu testin kapsamı değildir.
+- 🔴✓ PR75 finalsource **f83b25925d7c20571ecdc47e34deb06b35b1f3e9**, merge **baac2ed3f9781288e1f6723090d88c4b3c816b3c**. Native Windows PowerShell5.1: **yeni write-probe51 kontrol**, gerçek local file I/O ve iki signed SCM helper çalışması (başarı/temizlik başarısızlığı) geçti. AD adapter ve UNC testte simüle/localdir olarak derlendi; üretimde fixture switch yoktur. Müşteri AD/SMB/gMSA yazma kabulü değildir. Önceki bootstrap147/LSA16/right39/GPO108/SCM35 kontrolleri, foundation724/28skip ve bounded retry probe geçti.
+- Doğrulanmış teslim: /home/segmentiq/authwire-gpo-write-probe-v1-20261025.ps1, SHA256 **665032a52539a939bdceebe96249d050f5dc866a0c8efb295a2b2afd42deb2fe**; yerel ve uzak dosya hash'leri eşleşti. DC01 RunProbe komutu hash kontrolü ve mevcut publisher ile imza içerir. **Gerçek müşteri sonucu henüz bekleniyor**; komut teslimi kabul sayılmaz.
+- Ürün dev.34;54/94 (%57),40 açık sayımı korunur. Yeni tam yedek veya ürün servisi restart yapılmadı. Kanıt/komut: checkpoints/2026-10-25-windows-connector-gpo-write-probe-ci.json, checkpoints/2026-10-25-windows-connector-gpo-write-probe-run.ps1.
+
 ## 🔴✓ Ayrı dağıtım GPO'sunun gerçek izin hazırlığı tamamlandı — 25 Ekim 2026
 
 - Operatör DC01/vizyonveri.local üzerinde **Initialize-AuthWireDeploymentGpo1.0.1 ResumeGpo** sonucunu paylaştı. **GpoResumed=true, GpoCreated=false, MetadataComplete=true, Blockers=[]**. Aynı **8c6808fd-a382-4bf2-9c9c-d9e1d46082a3** GPO'su kullanıldı; ikinci nesne oluşturulmadı.
