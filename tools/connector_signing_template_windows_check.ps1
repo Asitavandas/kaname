@@ -11,7 +11,7 @@ $defs=@($ast.EndBlock.Statements|Where-Object {$_ -is [Management.Automation.Lan
 . ([scriptblock]::Create(($defs|ForEach-Object {$_.Extent.Text}) -join [Environment]::NewLine))
 $script:checks=0
 function Check([bool]$Value,[string]$Name){if(-not $Value){throw $Name};$script:checks++}
-$computer=[Environment]::MachineName;$instance=[guid]'4c23eebe-0715-46d1-88ee-a2e96ad7ee46';$hostGuid=[guid]'0fa4143f-aae3-4bc3-9cd3-db8a1de24acd'
+$script:fixtureComputer=[Environment]::MachineName;$instance=[guid]'4c23eebe-0715-46d1-88ee-a2e96ad7ee46';$hostGuid=[guid]'0fa4143f-aae3-4bc3-9cd3-db8a1de24acd'
 $domainSid='S-1-5-21-111-222-333';$serviceSid=$domainSid+'-1648';$machineSid=$domainSid+'-1001';$publisher='A'*40
 $pki='CN=Public Key Services,CN=Services,CN=Configuration,DC=test,DC=example'
 $prefix='1.3.6.1.4.1.311.21.8.100.200.300.400.500.1'
@@ -80,7 +80,7 @@ function Reset-Fixture {
     $global:AwTemplateFixture=@{Creates=0;Signature=$true;Objects=@{};Source=$sourceObject;FailCreate=0;SourceDrift=$false;CaDrift=$false;AllReads=0
         Ca=[pscustomobject]@{ObjectClass='pKIEnrollmentService';ObjectGUID=[guid]::NewGuid();Name='Test CA';certificateTemplates=(Wrap 'AuthWireGPOCodeSigning');dNSHostName=(Wrap 'ca.test.example');nTSecurityDescriptor=$caSecurity}
         Inspection=[pscustomobject]@{Event='WINDOWS_CONNECTOR_SIGNING_READONLY_PREFLIGHT';ToolVersion='1.0.1';InspectionSucceeded=$true
-            Computer=$computer;Domain='test.example';InstanceId=$instance.ToString('D');ServiceSid=$serviceSid
+            Computer=$script:fixtureComputer;Domain='test.example';InstanceId=$instance.ToString('D');ServiceSid=$serviceSid
             AdChanged=$false;GpoChanged=$false;CertificatesChanged=$false;KeyAclChanged=$false;TrustStoreChanged=$false;EnrollmentRequested=$false
             EnterpriseAuthorities=@([pscustomobject]@{Name='Test CA';Host='ca.test.example';Configuration='ca.test.example\Test CA';PublishedTemplates=@('AuthWireGPOCodeSigning')})
             CodeSigningTemplates=@([pscustomobject]@{Name='AuthWireGPOCodeSigning';CodeSigningOnly=$true;DistinguishedName=$sourceObject.DistinguishedName})
@@ -93,11 +93,11 @@ function Import-Module {[CmdletBinding()]param($Name)}
 function Get-ADDomain {[CmdletBinding()]param($Server)
     [pscustomobject]@{DNSRoot='test.example';DomainSID=[Security.Principal.SecurityIdentifier]::new($domainSid)}}
 function Get-ADComputer {[CmdletBinding()]param($Identity,$Server,$Properties)
-    [pscustomobject]@{ObjectGUID=$hostGuid;DNSHostName=($computer+'.test.example');SID=[Security.Principal.SecurityIdentifier]::new($machineSid)}}
+    [pscustomobject]@{ObjectGUID=$hostGuid;DNSHostName=($script:fixtureComputer+'.test.example');SID=[Security.Principal.SecurityIdentifier]::new($machineSid)}}
 function Get-ADRootDSE {[CmdletBinding()]param($Server)
     [pscustomobject]@{configurationNamingContext=(Wrap 'CN=Configuration,DC=test,DC=example')}}
 function Get-ADObject {[CmdletBinding()]param($Identity,$Server,$Properties,$SearchBase,$SearchScope,$LDAPFilter)
-    if($Server -ine ($computer+'.test.example')){throw 'Server scope escaped'}
+    if($Server -ine ($script:fixtureComputer+'.test.example')){throw 'Server scope escaped'}
     if($null -ne $Identity){
         if([string]$Identity -ieq ('CN=OID,'+$pki)){return [pscustomobject]@{'msPKI-Cert-Template-OID'=(Wrap $prefix)}}
         if([string]$Identity -ieq $global:AwTemplateFixture.Source.DistinguishedName){return $global:AwTemplateFixture.Source}
@@ -124,7 +124,7 @@ function Get-ADObject {[CmdletBinding()]param($Identity,$Server,$Properties,$Sea
 }
 function Add-AuthWireSigningDirectoryObject {
     param($Server,$Dn,$Class,$Attributes)
-    if($Server -ine ($computer+'.test.example') -or $Dn -notin @($plan.OidDn,$plan.TemplateDn)){throw 'Create escaped owned names'}
+    if($Server -ine ($script:fixtureComputer+'.test.example') -or $Dn -notin @($plan.OidDn,$plan.TemplateDn)){throw 'Create escaped owned names'}
     $global:AwTemplateFixture.Creates++
     if($global:AwTemplateFixture.FailCreate -eq $global:AwTemplateFixture.Creates){throw 'SIMULATED_CREATE_FAILURE'}
     $request=New-AuthWireDirectoryAddRequest $Dn $Class $Attributes
@@ -133,7 +133,7 @@ function Add-AuthWireSigningDirectoryObject {
     $global:AwTemplateFixture.Objects[$Dn]=Make-Object $Class $name $Dn $Attributes
 }
 function Run-Fixture([string]$Mode='Inspect'){
-    Invoke-AuthWireSigningTemplatePreparation -Mode $Mode -ExpectedComputer $computer -ExpectedDomain 'test.example' -InstanceId $instance -AccountName 'aw-deploy' -AccountSid $serviceSid -SourceTemplateName 'AuthWireGPOCodeSigning' -ExpectedCaName 'Test CA' -BootstrapPath $fake -ReadinessToolPath $fake -PublisherThumbprint $publisher
+    Invoke-AuthWireSigningTemplatePreparation -Mode $Mode -ExpectedComputer $script:fixtureComputer -ExpectedDomain 'test.example' -InstanceId $instance -AccountName 'aw-deploy' -AccountSid $serviceSid -SourceTemplateName 'AuthWireGPOCodeSigning' -ExpectedCaName 'Test CA' -BootstrapPath $fake -ReadinessToolPath $fake -PublisherThumbprint $publisher
 }
 try{
     Reset-Fixture;$preview=Run-Fixture
