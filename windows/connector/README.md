@@ -328,3 +328,9 @@ References:
 - https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-crtd/f6122d87-b999-4b92-bff8-f465e8949667
 - https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/c07fc301-a7c1-4a61-ba91-142b751ad114
 - https://learn.microsoft.com/en-us/windows/win32/adschema/r-certificate-enrollment
+
+Signing readiness 1.0.1 emits no output for unrelated templates and explicitly
+filters null discovery/shape records before counting. Mixed inventories and an
+empty code-signing template array are valid inspections, not signing approval.
+Malformed relevant signing metadata continues to fail. Native regression checks
+cover mixed, all-unrelated, empty and all-null discovery plus JSON array shape.
