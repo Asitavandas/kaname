@@ -12,12 +12,14 @@ HTTP accounts are not disabled or repurposed during this development stage.
 health challenge and proof primitive. They are deliberately not registered as
 live HTTP routes, installed as a service, or wired into RADIUS/deployment status.
 The path in the frame is a reserved protocol label, not an available endpoint.
+The later durable-pairing slice below adds only authenticated administrator API routes; it does not expose that connector health endpoint.
 
 An administrator-provisioned Binding pins installation GUID, connector GUID,
 binding generation, AD computer GUID/FQDN, exact gMSA SID, appliance FQDN/TLS
 leaf SHA256 and a dedicated public channel key. A peer-supplied key cannot
-enroll or replace that binding. Durable administrative pairing/revocation,
-authenticated HTTPS and its permission/audit boundary are the next slice.
+enroll or replace that binding. Durable administrative pairing/revocation is
+implemented by the companion registry described below. The actual Windows
+Connector transport and its machine-key provisioning remain a separate gate.
 
 The channel identity key is separate from the code-signing key and the Linux CA.
 It is not another AD account. Windows uses a persistent non-exportable
@@ -78,8 +80,10 @@ expires after90s independently of directory freshness or user authorization.
 
 ## Mandatory next integration gates
 
-- Authenticated admin pairing with protected persistent binding, revision lease,
-  audit, explicit rotation/revocation, and installer-owned channel key ACLs.
+- Installer-owned dedicated channel key creation/ACLs, independent host/account
+  and public-key confirmation, then authenticated Windows transport integration.
+  Durable administrator binding/lease/audit/rotation/revocation is implemented
+  below; it does not itself establish a running Connector or key possession.
 - Outbound HTTPS communication from Connector to appliance; normal TLS chain
   and FQDN validation plus the explicitly enrolled pin; no redirect, HTTP or
   certificate-error bypass. Merely copying a pin into the frame is not TLS
@@ -120,3 +124,76 @@ References:
 - https://learn.microsoft.com/en-us/entra/architecture/service-accounts-group-managed
 - https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.rsacng
 - https://learn.microsoft.com/en-us/windows/win32/secauthn/context-requirements
+
+
+## Durable administrator pairing (source prepared; customer rollout pending)
+
+`kaname/connector_registry.py` stores one public trust binding under
+`runtime_settings.windows_connector_pairing` in the existing protected SQLite
+store. Pair/rotate/revoke and append-only audit/revision updates share one
+transaction. No new credential database, AD account, private key, certificate,
+GPO or service is created. Status/preview reads do not create a trust row.
+
+Administrator API:
+
+| Method / path | Permission and behavior |
+|---|---|
+| GET /api/deployment/connector | system.connectors read; HTTPS; metadata only, no public PEM/private material |
+| POST /api/deployment/connector/preview | system.connectors write; interactive panel session, HTTPS, Origin and CSRF; read-only preview |
+| POST /api/deployment/connector/apply | Same write boundary; rechecks current principal under administrator DB read transaction; commits preview-bound trust change |
+
+The new permission is not inherited from directory or certificate write grants.
+SuperAdmin and explicitly delegated connector administrators may manage pairing;
+Admin_ReadOnly can inspect metadata only. A maintenance bearer token may inspect
+status but cannot provision/rotate/revoke trust. Authentication failure, CSRF,
+foreign Host/Origin, plaintext HTTP, unknown fields/queries, duplicate JSON and
+peer self-registration are rejected. No unauthenticated connector route is added.
+
+The preview body is exactly `expected_revision`, `operation`
+(`pair`, `rotate`, `revoke`) and `candidate`. A pair/rotate candidate contains
+all Binding fields except generation; its public PEM must be canonical
+RSA3072/4096/exponent65537 SPKI. The server assigns the next generation. Candidate
+instance, appliance FQDN and TLS leaf fingerprint must match local initialized
+PKI/configuration and the loaded valid serverAuth/SAN web certificate; connector
+host must be in the configured AD DNS domain. This scopes an administrator's
+explicit trust decision, not an independent AD lookup/host attestation.
+
+Apply also requires the exact `preview_hash` and `confirmed_key_sha256`
+(`''` for revoke). The administrator must compare the public key/host/account to
+the trusted installer output; blindly copying a peer-supplied fingerprint is not
+identity verification. The preview binds prior public trust, global revision and
+current context. Changing a candidate/context invalidates it. A stale writer
+gets409; a lost reply is reconciled through GET metadata/generation/fingerprint,
+without repeating a trust write or weakening the revision lease.
+
+Rotation keeps installation/connector/host/service identity fixed and changes
+only the dedicated public key and/or current appliance TLS pin. Moving identity
+requires explicit revoke then pair. Revocation retains a tombstone and generation;
+re-pair cannot reset the counter. Exhausting the generation range blocks new
+pair/rotate but still permits revocation. No-op rotations and duplicate pairing
+are rejected. An audit/commit failure rolls back trust and revision and preserves
+the previous volatile verifier until commit succeeds.
+
+Every internal health challenge/acceptance reloads the current binding. Acceptance
+holds a SQLite write transaction to serialize it with a concurrent revoke/rotate.
+Old local caches in other registry instances/processes are invalidated by durable
+state/generation changes. Restart retains public pairing but loses all nonces and
+online state. Configuration/PKI/TLS context drift blocks proofs; revocation remains
+available for a stale binding. Malformed stored records fail closed without repair.
+
+`paired=true` is a configured trust decision, not a running Connector:
+`transport_active/can_apply/directory_sync_ready/kerberos_ready` remain false.
+The health hooks are internal only. Windows key provisioning, actual Connector
+HTTPS polling, service lifecycle, jobs and legacy-account migration remain open.
+The new administrator API is source-prepared and tested; it has not been deployed
+to the customer's live dev.34 appliance.
+
+Validation adds17 SQLite/public-PKI tests and9 real verified HTTPS boundary tests,
+including a real second-process revoke, restart/rotation, concurrent stale
+writers, failed audit rollback, role demotion before commit, actual plaintext
+refusal, and lost-reply reconciliation. SQLite backup retains public pairing and
+the existing backup stability fingerprint tracks its rotation; volatile health
+proofs do not survive that copy. No backup worker changes are needed for storage.
+Restoring an older appliance/database is still a separate activation/re-approval
+gate: this code does not claim rollback-resistant revocation across old backups
+or full appliance boot-restore acceptance.
