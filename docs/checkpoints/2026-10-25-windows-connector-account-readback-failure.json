@@ -1,0 +1,18 @@
+{
+  "event": "WINDOWS_CONNECTOR_ACCOUNT_READBACK_FAILED",
+  "reported_by": "operator",
+  "computer": "DC01",
+  "bootstrap_version": "1.0.1",
+  "attempted_mode": "PrepareAccount",
+  "instance_id": "4c23eebe-0715-46d1-88ee-a2e96ad7ee46",
+  "account_name": "aw-deploy$",
+  "error": "ADPropertyValueCollection cannot be converted to System.Int32",
+  "specific_attribute_confirmed": false,
+  "creation_outcome": "unknown_pending_readonly_reinspection",
+  "account_deleted": false,
+  "account_recreated": false,
+  "kds_ready_previously_verified": true,
+  "live_account_readback_verified": false,
+  "account_preparation_complete": false,
+  "next_mode": "Inspect"
+}

@@ -4,6 +4,16 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## Windows hazırlığı 1.0.2: AD koleksiyonu okuma hatası düzeltildi — 25 Ekim 2026
+
+- Operatörün bootstrap1.0.1 PrepareAccount denemesi ADPropertyValueCollection → Int32 dönüşümünde kesildi. **Hesap oluşturma sonucu belirsizdir:** önceki Inspect'teki Exists=false artık güncel durum kanıtı değildir; aw-deploy$ oluşturulmuş, ardından readback doğrulaması hata vermiş olabilir. Hesap yok/başarıyla kuruldu varsayılmadı; silme/yeniden oluşturma veya mevcut hesabı değiştirme yapılmadı.
+- 🔴✓ Bootstrap1.0.2 sayısal ve Boolean alanları tam bir tek değer olarak okur. Gerçek ADPropertyValueCollection desteklenir; boş/çoklu/iç içe/yanlış tür/kesirli/taşan değerler engellenir. AES24, primary-group513/515, delegasyon, sahiplik ve tek parola okuyucusu kontrolleri korunur. Hesap oluşturma parametreleri ve KDS işlevi önceki sürümle birebir aynı.
+- 🔴✓ PR#68 / kaynak46d02973e63b495ab52992c0f89fc31145a87d1c, merge47b7c16d3fbe303f92786950a9cc036cb2a4944a. Native Windows PowerShell5.1 testinde gerçek AD modülü koleksiyon türüyle eski hata yeniden üretildi; mevcut hesabın salt okunur kontrolü, create sonrası readback ve ikinci create yapılmaması dahil **117 kontrol geçti**. AD/KDS/GPMC çağrıları testte taklittir; gerçek müşteri gMSA oturumu test edilmiş sayılmaz.
+- Genel724 test geçti (28skip); bounded retry probe başarılı. Windows CI run40169478310/job121097226642, foundation40169478328/job121097226591, probe40169478286.
+- Linux'ta yalnız public bootstrap dosyası hazırlandı: /home/segmentiq/authwire-windows-bootstrap-v1-r3-20261025.ps1; SHA256=696733d09ee6c4f5bea29df1b1d4fb60da47cac0e9b7d81d40f0f002c3a90361. Uzak kopyanın özeti doğrulandı. AuthWire uygulama sürümü/dev.34, çalışan servisler, GPO/policy/CA/sertifika/Windows paketleri için değişiklik veya restart işlemi yapılmadı.
+- **Sıradaki tek işlem Inspect:** DC01'de kurumsal imzalama, aynı instance4c23eebe-0715-46d1-88ee-a2e96ad7ee46 ile salt okunur hesap/SID/sahiplik/yetki doğrulaması. Gerçek çıktı gelmeden PrepareAccount tekrar teslim edilmez. KDS gerçek kontrolü tamamlanmış kalır; hesap readback, yerel gMSA oturumu, sınırlı GPO/imzalama erişimi ve merkezi dağıtım kabul kapıları açıktır. A03/A04 ve54/94 (%57) değişmedi.
+- Kanıt/teslim: checkpoints/2026-10-25-windows-connector-account-readback-failure.json; checkpoints/2026-10-25-windows-connector-bootstrap-r3-delivery.json; checkpoints/2026-10-25-windows-connector-bootstrap-r3-inspect.ps1.
+
 ## 🔴✓ KDS beklemesi ve gerçek yapılandırma kontrolü tamamlandı — 25 Ekim 2026
 
 - Operatör DC01/vizyonveri.local üzerinde imzalı bootstrap1.0.1 **Inspect** sonucunu paylaştı: tek kök, **Kds.Ready=true**, State=configuration_valid, **ConfigurationValid=true**, Blockers=[] ve ReadyForAccountPreparation=true. Bekleme sonrası native KDS kontrol kapısı kapandı; anahtar yeniden oluşturulmadı.
