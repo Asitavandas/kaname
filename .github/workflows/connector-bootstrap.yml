@@ -1,10 +1,10 @@
 name: AuthWire Windows connector bootstrap checks
 on:
   pull_request:
-    paths: ['windows/connector/**', 'tools/connector_bootstrap_windows_check.ps1', 'tools/connector_service_rights_windows_check.ps1', 'tools/connector_service_right_prepare_windows_check.ps1', 'tools/connector_service_logon_probe_windows_check.ps1', 'tools/connector_deployment_gpo_windows_check.ps1', '.github/workflows/connector-bootstrap.yml']
+    paths: ['windows/connector/**', 'tools/connector_bootstrap_windows_check.ps1', 'tools/connector_service_rights_windows_check.ps1', 'tools/connector_service_right_prepare_windows_check.ps1', 'tools/connector_service_logon_probe_windows_check.ps1', 'tools/connector_deployment_gpo_windows_check.ps1', 'tools/connector_gpo_write_probe_windows_check.ps1', '.github/workflows/connector-bootstrap.yml']
   push:
     branches: [main]
-    paths: ['windows/connector/**', 'tools/connector_bootstrap_windows_check.ps1', 'tools/connector_service_rights_windows_check.ps1', 'tools/connector_service_right_prepare_windows_check.ps1', 'tools/connector_service_logon_probe_windows_check.ps1', 'tools/connector_deployment_gpo_windows_check.ps1', '.github/workflows/connector-bootstrap.yml']
+    paths: ['windows/connector/**', 'tools/connector_bootstrap_windows_check.ps1', 'tools/connector_service_rights_windows_check.ps1', 'tools/connector_service_right_prepare_windows_check.ps1', 'tools/connector_service_logon_probe_windows_check.ps1', 'tools/connector_deployment_gpo_windows_check.ps1', 'tools/connector_gpo_write_probe_windows_check.ps1', '.github/workflows/connector-bootstrap.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -51,3 +51,7 @@ jobs:
       - name: Native signed short-lived SCM service and runtime identity with cleanup
         shell: powershell
         run: tools/connector_service_logon_probe_windows_check.ps1
+
+      - name: Native bounded GPO write engine and signed SCM helper with directory simulated
+        shell: powershell
+        run: tools/connector_gpo_write_probe_windows_check.ps1
