@@ -17,6 +17,18 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Key Read grant doğru; false-negative postcheck yalnız AI metadata farkından düzeltildi — 25 Ekim 2026
+
+- Operatör readonly postcheck sonucunda **Expected D:P → Actual/Current D:PAI** gösterdi. Tek control farkı **SE_DACL_AUTO_INHERITED bit1024**; **P/protection=true** korunuyor. Bütün ACE'ler explicit/inheritanceNone/propagationNone.
+- 🔴✓ Exact key için **SYSTEM ve BA FullControl2032127**, yalnız **aw-deploy service SID1648 Read+Synchronize1179785** var. Owner BA544, group DomainUsers513 değişmedi. Bu gerçek çıktı üzerinden **izin hazırlığı ve mevcut hakların korunması kabul edildi**. İzin yeniden yazılmaz/geri alınmaz; ilk postcheck bir false-negative idi.
+- İlk kontrolüm tüm SDDL'yi strict metin olarak karşılaştırdığı için Windows metadata bayrağını hak değişikliği saydı. Yeni **Compare-AuthWireSigningKeyAcl** yalnız DACL_AUTO_INHERITED bitini bellek içi RawSecurityDescriptor kopyasında karşılaştırmadan çıkarır; owner/group, diğer bütün control flags (özellikle protected), ordered ACE/right/SID/type/inheritance/propagation ve SACL aynı kalmalıdır. Null DACL reddedilir; broad replace/metadata wildcard yok.
+- 🔴✓ **25 native Windows PowerShell5.1 testi geçti**: gerçek NTFS Set-Acl roundtrip, Read+Synchronize, protected/owner/group korunması; fazla hak/yazma/deny/başka SID/extra ACE/eksik SYSTEM-BA/korumasız/inheritance/SACL/null-empty DACL reddi. Comparator dosyaya ACL yazmaz. Eski SCM35/GPO66 ve WindowsBootstrap/foundation/bounded-network kontrolleri başarılı. PR80, merge **31f1d86b7ab113f08c54b6a766c71fe00304a998**.
+- Eski staging grant dosyası tekrar çalıştırılmaz; zaten existing receipt guard'ı var. Repo operatör grant checkpoint'i aynı sınırlı comparator'ı kullanacak şekilde düzeltildi. Canlı izni değiştirmeyen r2 verifier staged: **authwire-signer-key-access-verify-v1-r2-20261025.ps1**, SHA256 **8559a9920dff23483a301e7f26dc9fd7c7e93ea087ed806891f1ab6aec47a99b**.
+- r2 verifier original receipt/expected baseline/exact key mapping/current ACL scope kontrolü yapıp **machine-signing-v2-key-access-verified.json** oluşturur. Orijinal failure receipt phasepostcheck geçmiş kanıt olarak korunur; yeni verified evidence onun SHA256'sını bağlar. Bu lokal evidence sonucu henüz gelmedi.
+- **ServiceKeyAccessVerified/RuntimeSigningTested=false** beklenen kapılar. İzin verilmesi gerçek gMSA anahtar kullanım testi yerine geçmez. Sonraki çalışma aynı gMSA altında geçici signed SCM worker ile sahipli key üzerinde challenge imzalama ve public doğrulama; cleanup ve runtime SID/PID/nonce kanıtı. Henüz bu yeni signing probe çalışmadı/hazırlandı denmez. Pinned CA-chain/public publisher trust/endpoint dağıtımı ve connector kapıları açık.
+- Kaynak: https://learn.microsoft.com/windows/win32/secauthz/security-descriptor-string-format . Kanıt checkpoints/2026-10-25-windows-connector-machine-signer-key-access-metadata-review.json; r2 kaynak checkpoints/2026-10-25-windows-connector-machine-signer-key-access-verify.ps1.
+- AuthWire app dev.34, **54/94 (%57),40 açık**, A03/A04 açık; formal rapor yenilenmedi.
+
 ## Owned signer key Read grant sonrası SDDL postcheck eşleşmedi; gerçek izinler yeniden okunacak — 25 Ekim 2026
 
 - Operatör staged **authwire-signer-key-access-prepare-v1-20261025.ps1** aktarımından sonra **Izin sonrasi kontrol eslesmedi** hatası bildirdi. Hata, Set-Acl ve ActualAfterSddl receipt yazımından **sonraki** strict string karşılaştırmasında. İzin yazma komutu döndü; **başarı/koruma doğrulaması kabul edilmez**.

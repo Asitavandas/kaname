@@ -1,0 +1,91 @@
+{
+  "event": "WINDOWS_CONNECTOR_KEY_ACCESS_POSTCHECK_REVIEW_ACCEPTED",
+  "date": "2026-10-25",
+  "source": "operator-pasted live readonly ACL output",
+  "thumbprint": "FFC134BC305757457163F99C7479B4168E397129",
+  "receipt_phase": "postcheck",
+  "before_sddl": "O:BAG:DUD:P(A;;FA;;;SY)(A;;FA;;;BA)",
+  "expected_after_sddl": "O:BAG:DUD:P(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)",
+  "recorded_and_current_sddl": "O:BAG:DUD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)",
+  "current_owner_sid": "S-1-5-32-544",
+  "current_group_sid": "S-1-5-21-34256453-3348971241-2809240126-513",
+  "current_dacl_protected": true,
+  "rules": [
+    {
+      "sid": "S-1-5-18",
+      "type": "Allow",
+      "rights_code": 2032127,
+      "inherited": false
+    },
+    {
+      "sid": "S-1-5-32-544",
+      "type": "Allow",
+      "rights_code": 2032127,
+      "inherited": false
+    },
+    {
+      "sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+      "type": "Allow",
+      "rights_code": 1179785,
+      "inherited": false
+    }
+  ],
+  "all_inheritance_and_propagation_none": true,
+  "only_changed_control_flag": "SE_DACL_AUTO_INHERITED",
+  "only_changed_control_flag_code": 1024,
+  "grant_semantics_verified_from_output": true,
+  "existing_rights_owner_group_and_protection_preserved": true,
+  "key_acl_reapplied": false,
+  "control_fix": {
+    "pull_request": 80,
+    "commit": "40f772e060de57228880b182b6e087f78c2579d3",
+    "merge": "31f1d86b7ab113f08c54b6a766c71fe00304a998",
+    "native_checks": 25,
+    "real_ntfs_roundtrip": true,
+    "workflow_runs": [
+      {
+        "id": 40201270372,
+        "name": "AuthWire bounded retry network probe checks",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 398,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40201270372/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40201270372/logs",
+        "workflow_id": 390643325
+      },
+      {
+        "id": 40201270376,
+        "name": "KANAME foundation checks",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 872,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40201270376/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40201270376/logs",
+        "workflow_id": 373980015
+      },
+      {
+        "id": 40201270415,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 38,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40201270415/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40201270415/logs",
+        "workflow_id": 395329531
+      }
+    ]
+  },
+  "verification_delivery": {
+    "path": "/home/segmentiq/authwire-signer-key-access-verify-v1-r2-20261025.ps1",
+    "sha256": "8559a9920dff23483a301e7f26dc9fd7c7e93ea087ed806891f1ab6aec47a99b",
+    "remote_digest_verified": true,
+    "changes_key_acl": false,
+    "local_evidence_seal_pending": true
+  },
+  "service_key_access_verified": false,
+  "runtime_signing_tested": false,
+  "connector_installed": false,
+  "can_apply_gpo": false,
+  "completed": 54,
+  "total": 94
+}

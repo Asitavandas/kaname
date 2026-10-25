@@ -1,4 +1,27 @@
 #Requires -Version 5.1
+# Pure comparison only: never writes an ACL or drops ACEs, owners, groups or protection flags.
+function Compare-AuthWireSigningKeyAcl {
+    param([Parameter(Mandatory=$true)][string]$ExpectedSddl,[Parameter(Mandatory=$true)][string]$ActualSddl)
+    $left=[Security.AccessControl.RawSecurityDescriptor]::new($ExpectedSddl)
+    $right=[Security.AccessControl.RawSecurityDescriptor]::new($ActualSddl)
+    $difference=[int]$left.ControlFlags -bxor [int]$right.ControlFlags
+    $metadata=[int][Security.AccessControl.ControlFlags]::DiscretionaryAclAutoInherited
+    $hasDacls=($null -ne $left.DiscretionaryAcl -and $null -ne $right.DiscretionaryAcl)
+    $allowed=($difference -eq 0 -or $difference -eq $metadata)
+    $left.SetFlags([Security.AccessControl.ControlFlags]([int]$left.ControlFlags -band (-bnot $metadata)))
+    $right.SetFlags([Security.AccessControl.ControlFlags]([int]$right.ControlFlags -band (-bnot $metadata)))
+    $same=($left.GetSddlForm([Security.AccessControl.AccessControlSections]::All) -ceq
+        $right.GetSddlForm([Security.AccessControl.AccessControlSections]::All))
+    $equivalent=($hasDacls -and $allowed -and $same)
+    [pscustomobject]@{
+        AclEquivalent=$equivalent
+        AutoInheritedMetadataOnly=($equivalent -and $difference -eq $metadata)
+        ChangedControlFlagsCode=$difference
+        IgnoredMetadataFlag='SE_DACL_AUTO_INHERITED'
+        AclWritten=$false
+    }
+}
+
 $ErrorActionPreference = 'Stop'
 if ($env:COMPUTERNAME -ine 'DC01') { throw 'DC01 uzerinde calistirilmali' }
 Import-Module ActiveDirectory
@@ -26,7 +49,7 @@ try {
     $awItem = Get-Item -LiteralPath $awPath -Force
     if ($awItem.PSIsContainer -or ($awItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'Normal anahtar dosyasi bekleniyordu' }
     $awAcl = Get-Acl -LiteralPath $awPath
-    if ($awAcl.Sddl -cne $awExpectedBefore) { throw 'Baslangic izinleri degismis; islem uygulanmadi' }
+    if (-not (Compare-AuthWireSigningKeyAcl $awExpectedBefore $awAcl.Sddl).AclEquivalent) { throw 'Baslangic izinleri degismis; islem uygulanmadi' }
 
     $awRule = [Security.AccessControl.FileSystemAccessRule]::new(
         [Security.Principal.SecurityIdentifier]::new($awSid),
@@ -50,13 +73,13 @@ try {
     $awFile = [IO.File]::Open($awReceiptPath, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
     try { $awFile.Write($awBytes, 0, $awBytes.Length) } finally { $awFile.Dispose() }
 
-    if ((Get-Acl -LiteralPath $awPath).Sddl -cne $awExpectedBefore) { throw 'Izinler islem oncesinde degisti; ciktiyi paylasin' }
+    if (-not (Compare-AuthWireSigningKeyAcl $awExpectedBefore (Get-Acl -LiteralPath $awPath).Sddl).AclEquivalent) { throw 'Izinler islem oncesinde degisti; ciktiyi paylasin' }
     Set-Acl -LiteralPath $awPath -AclObject $awAcl
     $awAfter = Get-Acl -LiteralPath $awPath
     $awReceipt.ActualAfterSddl = $awAfter.Sddl
     $awReceipt.Phase = 'postcheck'
     $awReceipt | ConvertTo-Json | Set-Content -LiteralPath $awReceiptPath -Encoding UTF8
-    if ($awAfter.Sddl -cne $awExpectedAfter) { throw 'Izin sonrasi kontrol eslesmedi; tekrar calistirmadan ciktiyi paylasin' }
+    if (-not (Compare-AuthWireSigningKeyAcl $awExpectedAfter $awAfter.Sddl).AclEquivalent) { throw 'Izin sonrasi kontrol eslesmedi; tekrar calistirmadan ciktiyi paylasin' }
     $awReceipt.Phase = 'verified'
     $awReceipt | ConvertTo-Json | Set-Content -LiteralPath $awReceiptPath -Encoding UTF8
 
