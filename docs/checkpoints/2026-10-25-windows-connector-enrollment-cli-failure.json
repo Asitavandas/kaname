@@ -1,0 +1,24 @@
+{
+  "event": "WINDOWS_CONNECTOR_MACHINE_ENROLLMENT_CLI_FAILED",
+  "date": "2026-10-25",
+  "computer": "DC01",
+  "source": "operator-pasted output",
+  "verb": "Enroll",
+  "unexpected_argument": "-AdminForceMachine",
+  "supported_options_shown": [
+    "PolicyServer",
+    "user",
+    "machine",
+    "pin"
+  ],
+  "hresult": "0x80070057",
+  "win32_error": 87,
+  "observed_phase": "parameter_validation",
+  "actual_process_exit_code_pending_record_read": true,
+  "existing_attempt_preserved": true,
+  "request_or_certificate_success_accepted": false,
+  "store_delta_verification_pending": true,
+  "new_enrollment_not_retried": true,
+  "template_creation_and_publication_acceptance_preserved": true,
+  "next": "Readonly local verb help and store delta before corrected enrollment path"
+}

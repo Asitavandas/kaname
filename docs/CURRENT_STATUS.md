@@ -17,6 +17,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Makine sertifikası isteği CLI parametre kontrolünde durdu; yeni istek gönderilmeden sürüm kontrolü — 25 Ekim 2026
+
+- Operatör yerel **certreq -Enroll** yardımında yalnız **PolicyServer/user/machine/pin** seçeneklerini ve **Unexpected argument: -AdminForceMachine / 0x80070057 (WIN32 87)** bildirdi. Verilen enroll çağrısı bu sürümün kabul ettiği seçeneklerle uyumlu değildi; genel certreq dokümanındaki seçenekler verb bazında doğrulanmadan birlikte kullanılmıştı.
+- Bu çıktı **CA tarafından sertifika reddi** veya geçerli enrollment sonucu değildir. Parametre ayrıştırma aşamasında duruş gözlendi; yeni certificate/key state kesinliği için before snapshot'a karşı readonly store farkı istenir. Başarı/sertifika oluştu kabulü yapılmaz.
+- Önceki **machine-enrollment-attempt.json korunur**; otomatik silme/retry ve daha geniş template enrollment yetkisi verilmez. Kaynak kayıttaki enroll komutu retired/fail-fast yapıldı; hatalı komut yeniden kullanılmaz.
+- Sonraki readonly operatör adımı **certreq -new -? / -submit -? / -accept -?**, mevcut attempt phase/exit code ve LocalMachine/My thumbprint farkı. Kullanılacak yeni verb/context yalnız bu makinenin çıktısı görüldükten sonra kesinleştirilecek. Yardım komutları istek oluşturmaz/göndermez.
+- Template oluşturma ve publication kabulü korunur. **Gerçek machine signer sertifikası, provider/machine/export policy incelemesi, gMSA private-key usage ve gerçek imza testi halen açık.** Mevcut Administrator publisher, CA/policy/GPO/client paketleri değiştirilmedi.
+- Kanıt checkpoints/2026-10-25-windows-connector-enrollment-cli-failure.json; readonly komut checkpoints/2026-10-25-windows-connector-certreq-cli-readonly.ps1. AuthWire app dev.34, **54/94 (%57),40 açık**, A03/A04 açık; formal rapor yenilenmedi.
+
 ## 🔴✓ Yeni imzalama şablonu CA'da yayımlandı — 25 Ekim 2026
 
 - Operatör certutil **Adding / command completed successfully** ve **WINDOWS_CONNECTOR_TEMPLATE_PUBLICATION** sonucunu paylaştı: **AuthWireConnectorCodeSigning-4c23eebe / PublishedNow=true / TemplatePublished=true / ExistingTemplatesPreserved=true**. Mevcut CA template listesi korunarak yalnız yeni template eklendi.
