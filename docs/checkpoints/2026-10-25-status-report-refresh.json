@@ -1,0 +1,60 @@
+{
+  "event": "STATUS_REPORT_UPDATED",
+  "date": "2026-10-25",
+  "timezone": "Europe/Istanbul",
+  "report_data_through": "2026-10-24",
+  "technical_snapshot_commit": "51a3c8cbd68efdd9b50e550208ac1953b973e321",
+  "artifacts": [
+    {
+      "library_file_id": "libfile_13aa43aae2d8819184e6c30b5af3ded7",
+      "file_id": "file_00000000110081fd8259a1f29d0a07c5",
+      "file_name": "AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-24.docx",
+      "version": 2,
+      "status": "saved",
+      "local_metadata_applied": true
+    },
+    {
+      "library_file_id": "libfile_bb0d369929308191b017ae9549fdfda2",
+      "file_id": "file_00000000c37481fdbb2754c23e009e8d",
+      "file_name": "AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-24.pdf",
+      "version": 2,
+      "status": "saved",
+      "local_metadata_applied": true
+    }
+  ],
+  "validation": {
+    "rendered_pages": 10,
+    "all_pages_visually_reviewed": true,
+    "red_tick_runs": 24,
+    "original_report_identity_preserved": true
+  },
+  "score": {
+    "completed": 54,
+    "total": 94,
+    "remaining": 40,
+    "completed_percent_rounded": 57,
+    "remaining_percent_rounded": 43,
+    "scope": "original 94-item checklist; A03/A04 remain open"
+  },
+  "content_updated": [
+    "live AuthWire dev.34",
+    "user enrollment technical foundation and Windows user client",
+    "user profile panel acceptance",
+    "explicit user/computer policy scope",
+    "central deployment preparation UI acceptance",
+    "standard Windows bootstrap 1.0.1 with 56 native checks",
+    "real DC01 read-only inspection and EKU fix acceptance",
+    "one KDS root created; account preparation still pending"
+  ],
+  "pause_checkpoint": {
+    "earliest_KDS_check_local": "2026-10-25T07:18:13+03:00",
+    "resume_reference_local": "2026-10-25T07:20:00+03:00",
+    "next_action": "Re-run signed bootstrap Inspect and require KDS configuration success before PrepareAccount",
+    "gmsa_account": "aw-deploy$",
+    "gmsa_exists_in_last_output": false,
+    "connector_installed": false,
+    "real_endpoint_tests_deferred_to": "2026-10-26"
+  },
+  "product_or_AD_operations_in_this_report_update": false,
+  "automatic_resume_or_reminder_created": false
+}
