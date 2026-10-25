@@ -2,6 +2,19 @@
 # This fixture never contacts a domain and does not claim real gMSA readiness.
 $ErrorActionPreference = 'Stop'
 if ($env:RUNNER_ENVIRONMENT -ne 'github-hosted') { throw 'Hosted fixture only.' }
+Microsoft.PowerShell.Core\Import-Module ActiveDirectory -ErrorAction Stop
+$nativeCollectionType = [Microsoft.ActiveDirectory.Management.ADPropertyValueCollection]
+function Ad-Values([object[]]$Values) {
+    $collection = New-Object Microsoft.ActiveDirectory.Management.ADPropertyValueCollection
+    foreach ($value in $Values) { $null = $collection.Add($value) }
+    return ,$collection
+}
+function Wrap-AccountValues($Account) {
+    foreach ($attribute in @('PrimaryGroupID','KerberosEncryptionType','Enabled','AccountNotDelegated','TrustedForDelegation','TrustedToAuthForDelegation')) {
+        $Account.$attribute = Ad-Values @($Account.$attribute)
+    }
+    return $Account
+}
 $source = Join-Path $PSScriptRoot '..\windows\connector\Initialize-AuthWireWindows.ps1'
 $tokens = $null; $parseErrors = $null
 $null = [Management.Automation.Language.Parser]::ParseFile($source,[ref]$tokens,[ref]$parseErrors)
@@ -17,7 +30,7 @@ function Reset-Fixture {
         Keys = @([pscustomobject]@{Name='9d17dba6-76d1-424c-bd74-1bba56f5509b';whenCreated=[datetime]::UtcNow.AddDays(-2);'msKds-UseStartTime'=[datetime]::UtcNow.AddDays(-2).ToFileTimeUtc()})
         KdsValid = $true; KdsTests = 0; Account = $null; Creates = 0
         LookupCount = 0; Collision = ''; Race = $false; PostCreateUnknown = $false
-        DirectoryReadFails = $false; Modules = @(); Publishers = @(); DisplayEku = @()
+        DirectoryReadFails = $false; Modules = @(); Publishers = @(); DisplayEku = @(); NativeAfterCreate = $false
     }
 }
 function Computer-Fixture {
@@ -72,6 +85,9 @@ function New-ADServiceAccount {
     $global:AwConnectorFixture.Creates++
     $global:AwConnectorFixture.Account = Account-Fixture
     $global:AwConnectorFixture.Account.Description = $Description
+    if ($global:AwConnectorFixture.NativeAfterCreate) {
+        $global:AwConnectorFixture.Account = Wrap-AccountValues $global:AwConnectorFixture.Account
+    }
 }
 function Get-GPO { [CmdletBinding()]param([guid]$Guid,[string]$Domain,[string]$Server) [pscustomobject]@{Id=$Guid;DisplayName='Existing customer pilot';GpoStatus='AllSettingsEnabled'} }
 function Get-GPPermission { [CmdletBinding()]param([guid]$Guid,[switch]$All,[string]$Domain,[string]$Server) [pscustomobject]@{Trustee=[pscustomobject]@{Name='Pilot-Computers'};Permission='GpoApply'} }
@@ -181,6 +197,67 @@ try {
     $r=Run-Fixture
     Check $r.ReadyForAccountPreparation 'Password reader DN string normalization'
 
+
+    # Real AD module collection objects, with no DC query or real account write.
+    Reset-Fixture
+    $global:AwConnectorFixture.Account = Wrap-AccountValues (Account-Fixture)
+    Check ($global:AwConnectorFixture.Account.PrimaryGroupID -is $nativeCollectionType) 'Regression uses genuine ADPropertyValueCollection'
+    $castFailed = $false
+    try { $null = [int]$global:AwConnectorFixture.Account.PrimaryGroupID } catch { $castFailed = $true }
+    Check $castFailed 'Native collection reproduces the previous Int32 cast failure'
+    $r = Run-Fixture
+    Check ($r.ReadyForAccountPreparation -and $r.Account.Exists -and -not $r.Account.Created -and -not $r.AdChanged -and $global:AwConnectorFixture.Creates -eq 0) 'Collection-shaped existing account inspected without mutation'
+    $r = Run-Fixture 'PrepareAccount'
+    Check ($r.ReadyForAccountPreparation -and -not $r.AdChanged -and $global:AwConnectorFixture.Creates -eq 0) 'Collection-shaped existing account never recreated'
+
+    Reset-Fixture; $global:AwConnectorFixture.NativeAfterCreate = $true
+    $r = Run-Fixture 'PrepareAccount'
+    Check ($r.Account.Created -and $r.Account.Exists -and $global:AwConnectorFixture.Creates -eq 1) 'Post-create native AD collection read-back succeeds'
+    $r = Run-Fixture
+    Check ($r.ReadyForAccountPreparation -and -not $r.AdChanged -and $global:AwConnectorFixture.Creates -eq 1) 'Inspect after create preserves the single created account'
+
+    foreach ($attribute in @('PrimaryGroupID','KerberosEncryptionType')) {
+        foreach ($bad in @(
+            @{Values=@();Code='ACCOUNT_ATTRIBUTE_MISSING'},
+            @{Values=@(24,515);Code='ACCOUNT_ATTRIBUTE_MULTIPLE'},
+            @{Values=@('not-an-integer');Code='ACCOUNT_ATTRIBUTE_INTEGER_REQUIRED'},
+            @{Values=@(24.5);Code='ACCOUNT_ATTRIBUTE_INTEGER_REQUIRED'},
+            @{Values=@($true);Code='ACCOUNT_ATTRIBUTE_INTEGER_REQUIRED'},
+            @{Values=@('2147483648');Code='ACCOUNT_ATTRIBUTE_INTEGER_REQUIRED'},
+            @{Values=@('-1');Code='ACCOUNT_ATTRIBUTE_INTEGER_REQUIRED'})) {
+            Reset-Fixture; $global:AwConnectorFixture.Account = Account-Fixture
+            $global:AwConnectorFixture.Account.$attribute = Ad-Values $bad.Values
+            Expect-Blocked ($bad.Code + ':' + $attribute)
+        }
+        Reset-Fixture; $global:AwConnectorFixture.Account = Account-Fixture
+        $global:AwConnectorFixture.Account.$attribute = $null
+        Expect-Blocked ('ACCOUNT_ATTRIBUTE_MISSING:' + $attribute)
+    }
+    Reset-Fixture; $global:AwConnectorFixture.Account = Account-Fixture
+    $global:AwConnectorFixture.Account.PrimaryGroupID = Ad-Values @(512)
+    Expect-Blocked 'ACCOUNT_OWNERSHIP_OR_SETTINGS_MISMATCH'
+    Reset-Fixture; $global:AwConnectorFixture.Account = Account-Fixture
+    $global:AwConnectorFixture.Account.KerberosEncryptionType = Ad-Values @(28)
+    Expect-Blocked 'ACCOUNT_OWNERSHIP_OR_SETTINGS_MISMATCH'
+    Reset-Fixture; $global:AwConnectorFixture.Account = Account-Fixture
+    $global:AwConnectorFixture.Account.PrimaryGroupID = Ad-Values @('515')
+    $global:AwConnectorFixture.Account.KerberosEncryptionType = Ad-Values @('24')
+    $r = Run-Fixture
+    Check $r.ReadyForAccountPreparation 'Single numeric LDAP string values are accepted'
+    Reset-Fixture; $global:AwConnectorFixture.Account = Account-Fixture
+    $nested = New-Object System.Collections.ArrayList
+    $null = $nested.Add(@(515))
+    $global:AwConnectorFixture.Account.PrimaryGroupID = $nested
+    Expect-Blocked 'ACCOUNT_ATTRIBUTE_INVALID:PrimaryGroupID'
+    foreach ($attribute in @('Enabled','AccountNotDelegated','TrustedForDelegation','TrustedToAuthForDelegation')) {
+        Reset-Fixture; $global:AwConnectorFixture.Account = Account-Fixture
+        $global:AwConnectorFixture.Account.$attribute = Ad-Values @('false')
+        Expect-Blocked ('ACCOUNT_ATTRIBUTE_BOOLEAN_REQUIRED:' + $attribute)
+        Reset-Fixture; $global:AwConnectorFixture.Account = Account-Fixture
+        $global:AwConnectorFixture.Account.$attribute = Ad-Values @(-not $global:AwConnectorFixture.Account.$attribute)
+        Expect-Blocked 'ACCOUNT_OWNERSHIP_OR_SETTINGS_MISMATCH'
+    }
+
     Reset-Fixture; $global:AwConnectorFixture.PostCreateUnknown=$true
     $caught=$false
     try {$null=Run-Fixture 'PrepareAccount'} catch {if ($_.Exception.Message -notlike '*ACCOUNT_CREATE_RESULT_UNKNOWN*') {throw}; $caught=$true}
@@ -218,10 +295,11 @@ try {
     $global:AwConnectorFixture.Publishers=@($badEkuCert)
     $r=Run-Fixture 'Inspect' $badEkuCert.Thumbprint
     Check (-not $r.Publishers[0].CodeSigningEku -and $r.Publishers[0].EkuReadState -eq 'invalid') 'Malformed DER EKU is reported invalid without crashing inspection'
-    Write-Output ('AUTHWIRE_CONNECTOR_BOOTSTRAP_FIXTURE_OK ' + (@{checks=$checks.Count;native_powershell=$PSVersionTable.PSVersion.ToString();directory_kds_gpmc_calls_mocked=$true;actual_x509_eku_decoding=$true;native_certificate_variants=4;certificate_store_writes=0;real_ad_tested=$false;real_gmsa_installed=$false;customer_state_used=$false;network_calls=0}|ConvertTo-Json -Compress))
+    Write-Output ('AUTHWIRE_CONNECTOR_BOOTSTRAP_FIXTURE_OK ' + (@{checks=$checks.Count;native_powershell=$PSVersionTable.PSVersion.ToString();genuine_ad_property_collection=$true;directory_kds_gpmc_calls_mocked=$true;actual_x509_eku_decoding=$true;native_certificate_variants=4;certificate_store_writes=0;real_ad_tested=$false;real_gmsa_installed=$false;customer_state_used=$false;network_calls=0}|ConvertTo-Json -Compress))
 } finally {
     foreach ($cert in $nativeCerts) { $cert.Dispose() }
     $nativeRsa.Dispose()
     Remove-TypeData -TypeName 'AuthWire.EkuShapeFixture' -ErrorAction SilentlyContinue
     Remove-Variable AwConnectorFixture -Scope Global -ErrorAction SilentlyContinue
 }
+

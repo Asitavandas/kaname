@@ -30,6 +30,18 @@ passwords or export private keys, PFX or keytab data.
 
 ## Account preparation
 
+Bootstrap 1.0.2 normalizes single-valued integer and Boolean AD attributes when
+the AD module returns ADPropertyValueCollection instead of a scalar. Exactly
+one value is required. Missing, multiple, nested, non-integral, overflowing or
+wrongly typed values block preparation. AES-only, ownership, delegation and
+primary-group checks retain their original required values. The Windows fixture
+loads genuine AD collection types using RSAT, with all directory calls mocked.
+
+If an earlier PrepareAccount attempt failed during post-create validation, its
+creation outcome is unknown. Run the corrected version in Inspect mode with the
+same installation GUID first; do not delete, recreate or change an existing
+account to work around a read-back error.
+
 After the live readiness inspection has been accepted and its wait has expired,
 `-Mode PrepareAccount` creates only the named gMSA if absent. It sets AES128/256,
 no trusted Kerberos delegation, and one exact computer principal allowed to
@@ -83,3 +95,4 @@ Primary references:
 - https://learn.microsoft.com/en-us/powershell/module/kds/test-kdsrootkey
 - https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/group-managed-service-accounts/group-managed-service-accounts/create-the-key-distribution-services-kds-root-key
 - https://learn.microsoft.com/en-us/powershell/module/activedirectory/install-adserviceaccount
+

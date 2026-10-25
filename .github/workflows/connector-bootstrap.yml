@@ -11,11 +11,24 @@ permissions:
 jobs:
   windows-bootstrap:
     runs-on: windows-2025
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
+      - name: Load genuine AD property collection types without an AD forest
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not (Get-Module -ListAvailable ActiveDirectory)) {
+            $result = Install-WindowsFeature RSAT-AD-PowerShell
+            if (-not $result.Success) { throw 'AD management tools installation failed.' }
+          }
+          Import-Module ActiveDirectory
+          $collection = New-Object Microsoft.ActiveDirectory.Management.ADPropertyValueCollection
+          $null = $collection.Add(515)
+          if ($collection.Count -ne 1) { throw 'Native AD collection unavailable.' }
       - name: Native PowerShell 5.1 bootstrap boundaries without customer AD
         shell: powershell
         run: tools/connector_bootstrap_windows_check.ps1
+
