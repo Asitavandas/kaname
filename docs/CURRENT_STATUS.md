@@ -17,6 +17,17 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 gerçek gMSA machine-key imzalama testi başarıyla tamamlandı — 25 Ekim 2026
+
+- Operatör **WINDOWS_CONNECTOR_SERVICE_SIGNING_PROBE1.0.0 / DC01 / VIZYONVERI\\aw-deploy$** gerçek sonucunu paylaştı. **ServiceLogonVerified/SignatureVerified/RuntimeSigningTested/ServiceKeyAccessVerified/ProbeVerified=true**. Runtime SID **S-1-5-21-34256453-3348971241-2809240126-1648**, gerçek PID **7412**.
+- 🔴✓ Owned machine signer **FFC134BC305757457163F99C7479B4168E397129** hizmet bağlamında identity-bound RSA3072/SHA256/PKCS1 challenge imzaladı; public doğrulama geçti. Sadece ACL veya Administrator imzasından çıkarılmış bir başarı değildir; önceki helper'ın actual SCM runtime SID/PID/service/host/nonce bağları da geçti.
+- 🔴✓ Temporary service **AuthWireLogonProbe-d88cb9eaccd748f29b53db7c03ece553**, binary ve writable result directory kaldırıldı. Error/NativeErrorCode=null, CleanupErrors boş. **KeyAclPreserved=true / KeyAclChanged=false / AD-GPO-logon rights değişikliği=false / SecretsExported=false**.
+- Protected evidence **C:\\ProgramData\\AuthWire-ServiceProbe-1683d449a22f40379d494af2747a2dd5\\summary.json**. Probe'ın kullandığı yeni verified key-access receipt SHA256 **44A7AAD8823C1034AFB32B01EB0F223E72D5D9F83210CCDC197BAFC7C0C6475E** (original failure receipt hash86E10... ile karıştırılmaz).
+- **AuthenticodePackageSigningVerified=false / CertificateChainValidationPerformed=false** beklenen açık kapılar; raw challenge signing bu sonuçlara dönüştürülmez. **GpoPersistenceVerified/ConnectorInstalled/CanApplyGpo=false**; merkezi otomasyon bütünü henüz tamam değil.
+- Sonraki readonly operatör adımı exact thumbprint public response üzerinde **certutil -verify -urlfetch**; chain/AIA/CDP/revocation detayları ve exitcode protected loga alınır. Bu komut CA cert dağıtımı/import/key ACL/GPO değişikliği yapmaz; Windows retrieval cache güncellenebilir. Sadece exitcode ile pinned issuer/chain/trust başarısı varsayılmaz; gerçek çıktı incelenecek. Kaynak: https://learn.microsoft.com/windows-server/administration/windows-commands/certutil .
+- Ardından gerçek hizmet bağlamında bir disposable dosyanın **Authenticode** imzalanması/doğrulanması, pinned CA-chain/new publisher trust ve scoped Windows deployment kapıları var. Endpoint paketleri henüz yeni publisher'a geçirilmedi.
+- Kanıt checkpoints/2026-10-25-windows-connector-service-signing-live-result.json; sonraki readonly komut checkpoints/2026-10-25-windows-connector-signer-chain-check.ps1. AuthWire app dev.34, **54/94 (%57),40 açık**, A03/A04 açık; formal rapor yenilenmedi.
+
 ## 🔴✓ Gerçek CNG/SCM imzalama test aracı Windows'ta doğrulandı; DC01 gMSA sonucu açık — 25 Ekim 2026
 
 - **Test-AuthWireServiceSigning1.0.0** PR81 merge **a7c775a0ceca64663058cc361aeeb5f044537aa0**. **23 native Windows PowerShell5.1 kontrolü başarılı**: signed SCM worker LocalService bağlamında machine/nonexport/RSA3072/signing-only CNG key ile Read yokken başarısız, exact Read verildiğinde başarılı; public RSA/SHA256/PKCS1 doğrulaması geçti. Her iki temporary service ve dosyalar temizlendi; fixture key/cert/trust materyali kaldırıldı.
