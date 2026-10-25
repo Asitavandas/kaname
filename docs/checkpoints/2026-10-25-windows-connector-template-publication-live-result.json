@@ -1,0 +1,21 @@
+{
+  "event": "WINDOWS_CONNECTOR_TEMPLATE_PUBLICATION_ACCEPTED",
+  "source": "operator-pasted live output",
+  "date": "2026-10-25",
+  "computer": "DC01",
+  "ca": "dc01.vizyonveri.local\\vizyonveri-DC01-CA",
+  "template_name": "AuthWireConnectorCodeSigning-4c23eebe",
+  "certutil_exit_success_observed": true,
+  "published_now": true,
+  "template_published": true,
+  "existing_templates_preserved": true,
+  "enrollment_requested": false,
+  "certificates_changed": false,
+  "next": "One guarded certreq machine/AdminForceMachine enrollment attempt; record and inspect result before key ACL, signer marker, trust or package use",
+  "enrollment_live_tested": false,
+  "service_key_access_verified": false,
+  "connector_installed": false,
+  "can_apply_gpo": false,
+  "completed": 54,
+  "total": 94
+}

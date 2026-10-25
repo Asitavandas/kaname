@@ -4,6 +4,15 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ Yeni imzalama şablonu CA'da yayımlandı — 25 Ekim 2026
+
+- Operatör certutil **Adding / command completed successfully** ve **WINDOWS_CONNECTOR_TEMPLATE_PUBLICATION** sonucunu paylaştı: **AuthWireConnectorCodeSigning-4c23eebe / PublishedNow=true / TemplatePublished=true / ExistingTemplatesPreserved=true**. Mevcut CA template listesi korunarak yalnız yeni template eklendi.
+- **EnrollmentRequested/CertificatesChanged=false**. Template oluşturma ve publication kabulü tamam; henüz makine sertifikası/key-scope/non-exportability/service signing/publisher trust/connector dağıtımı kabulü yok.
+- Sonraki adım: DC01'de yerleşik **certreq -enroll -machine -AdminForceMachine -q -config explicitCA exactTemplate** ile tek istek. Microsoft Learn AdminForceMachine'ın Local System bağlamından isteği gönderdiğini belgeliyor; mevcut kullanıcı kişisel imzalayıcısı taşınmaz veya kullanılmaz. Kaynak: https://learn.microsoft.com/windows-server/administration/windows-commands/certreq_1
+- Korunan mevcut template receipt klasöründe **machine-enrollment-attempt.json**, isteğin öncesinde FileMode.CreateNew ile kaydedilir; tekrar varsa yeni istek gönderilmez. BeforeThumbprints/UTC/context/exit code/candidate thumbprint saklanır; key/password export yok. Başarılı CLI sonucu ve tek yeni LocalMachine/My/HasPrivateKey certificate yalnız **aday kurulum** kabulüdür; template extension/issuer/key provider/machine scope/export policy ayrıca incelenecek.
+- Operatör komutu checkpoints/2026-10-25-windows-connector-machine-signing-enroll.ps1; bu yerleşik araçla kontrollü canlı işlem kapısıdır, henüz gerçek enrollment sonucu veya gerçek service signing testi olarak raporlanmaz. GPO/key ACL/TrustedPublisher/paket değişikliği ve servis yeniden başlatma içermez.
+- Kanıt checkpoints/2026-10-25-windows-connector-template-publication-live-result.json. AuthWire app dev.34, **54/94 (%57),40 açık**, A03/A04 açık; formal rapor yenilenmedi.
+
 ## 🔴✓ Yeni makine tipi imzalama şablonu oluşturuldu ve doğrulandı — 25 Ekim 2026
 
 - Operatör **SigningTemplatePreparation1.0.0 PrepareTemplate** gerçek sonucunu paylaştı. **TemplateCreated=true, AdChanged=true**, schema3/RSA3072/SHA256/CNG/machine/code-signing-only/no-export/no-supplied-subject planı için iki yeni OID/template objesinin readback kontrolü başarılı.
