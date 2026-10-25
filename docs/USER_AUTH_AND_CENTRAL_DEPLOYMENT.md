@@ -4,6 +4,16 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ GPO yenilemesi sonrası gerçek hizmet oturumu ve Authenticode imzalama kabulü tamamlandı — 25 Ekim 2026
+
+- Operatör yenileme sonrasında **WINDOWS_CONNECTOR_SERVICE_AUTHENTICODE_PROBE1.0.0** sonucunu paylaştı. Yeni SCM hizmeti **AuthWireLogonProbe-8d6389074d234875baf386c18ab25969**, gerçek PID **4892**, beklenen gMSA SID **...-1648**.
+- 🔴✓ **ServiceLogonVerified / SignatureVerified / RuntimeSigningTested / ServiceKeyAccessVerified / AuthenticodePackageSigningVerified / AuthenticodeSignatureVerified / ProbeVerified=true**. Geçici hizmet, binary ve yazılabilir sonuç dizini temizlendi; Error/NativeErrorCode null, CleanupErrors boş.
+- 🔴✓ **KeyAclPreserved=true / KeyAclChanged=false**; AD/GPO/logon-right değişikliği ve secret export yok. İmzalanan deneme dosyası çalıştırılmadı. Korunan kanıt **C:\\ProgramData\\AuthWire-ServiceProbe-a66ee6441fbf404994a5d846bc7d2335\\summary.json**, public imzalı örnek aynı klasörde **verified-authenticode-test.ps1**.
+- Önceki başarılı Computer GPUpdate ve hakların yeniden eklenmeden korunması çıktısıyla birlikte **mevcut policy yenilemesi sonrası gerçek çalışma alt kabulü kapandı**. Aracın genel **GpoPersistenceVerified=false** alanı bu ayrı sonuçları otomatik birleştirmez; ham değer değiştirilmeden saklandı. Reboot ve gelecekteki policy değişiklikleri doğrulanmış sayılmaz.
+- **CertificateChainValidationPerformed=false** bu araç içinde ayrı certutil zincir/CRL kontrolünün tekrarlanmadığını belirtir; önceki ayrı başarılı zincir/iptal kontrolü korunur. Bu dosya imzalama yeteneği kanıtıdır; gerçek uç paketlerinin dağıtımı değildir.
+- Sıradaki çalışma: kalıcı Windows connector ve kimliği doğrulanan AuthWire iş/durum iletişimi; ardından yalnız owned yönetim GPO'su için kapsamlı dağıtım ve yeni yayıncı güveni. Mevcut pilot trust GPO, paketler ve endpointler kendiliğinden değiştirilmez. **ConnectorInstalled / CanApplyGpo=false**; A03/A04 ve uç kabulü açık.
+- Kayıt: **checkpoints/2026-10-25-windows-connector-service-authenticode-after-gpupdate-live-result.json**. Canlı uygulama dev.34; toplam **54/94 (%57),40 açık** değişmedi. Resmi rapor yeniden üretilmedi.
+
 ## 🔴✓ DC01 bilgisayar GPO yenilemesinde hizmet oturumu hakkı ve mevcut atamalar korundu — 25 Ekim 2026
 
 - Operatör **Computer Policy update has completed successfully / GpupdateExitCode0** ve **WINDOWS_CONNECTOR_SERVICE_RIGHT_AFTER_GPUPDATE** çıktısını paylaştı.
