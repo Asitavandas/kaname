@@ -1,0 +1,32 @@
+{
+  "event": "WINDOWS_CONNECTOR_SERVICE_RIGHT_PREPARATION",
+  "reported_by": "operator",
+  "tool_version": "1.0.0",
+  "mode": "PrepareServiceRight",
+  "computer": "DC01",
+  "account": "aw-deploy$",
+  "account_sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+  "right": "SeServiceLogonRight",
+  "previously_assigned": false,
+  "added_now": true,
+  "direct_service_right_assigned": true,
+  "allow_assigned_sids": [
+    "S-1-5-21-34256453-3348971241-2809240126-1616",
+    "S-1-5-21-34256453-3348971241-2809240126-1648",
+    "S-1-5-80-0",
+    "S-1-5-82-3006700770-424185619-1745488364-794895919-4004696415"
+  ],
+  "deny_assigned_sids": [],
+  "existing_assignments_preserved": true,
+  "receipt_path": "C:\\ProgramData\\AuthWire-ServiceRight-802cad0a04f444aba5c8db948d5b7e92\\service-right.json",
+  "local_policy_changed": true,
+  "ad_changed": false,
+  "gpo_changed": false,
+  "service_logon_verified": false,
+  "gpo_persistence_verified": false,
+  "connector_installed": false,
+  "can_apply_gpo": false,
+  "services_created": false,
+  "secrets_exported": false,
+  "service_right_preparation_live_accepted": true
+}
