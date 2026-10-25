@@ -104,3 +104,26 @@ Primary references:
 - https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/group-managed-service-accounts/group-managed-service-accounts/create-the-key-distribution-services-kds-root-key
 - https://learn.microsoft.com/en-us/powershell/module/activedirectory/install-adserviceaccount
 
+
+## Read-only local service-logon assignments
+
+Get-AuthWireServiceRights.ps1 reads only the local LSA SeServiceLogonRight and
+SeDenyServiceLogonRight assignment lists. It opens the local policy with
+POLICY_VIEW_LOCAL_INFORMATION | POLICY_LOOKUP_NAMES, not write access. Every
+enumeration buffer, Unicode string allocation and policy handle is released.
+STATUS_NO_MORE_ENTRIES is a successful empty list; all other native errors fail
+the probe. It never grants a right, modifies a GPO, creates a service, logs on
+or retrieves managed passwords.
+
+Supply the expected local computer and a validated domain account SID. Direct
+SID matches do not establish effective rights through groups. ReadSucceeded
+does not imply ServiceLogonVerified, which remains false. Empty secedit exports
+must not be treated as proof of absent effective rights.
+
+The native Windows CI check reads the disposable runner's actual LSA database
+and verifies error propagation, host/SID guards and the absence of write APIs.
+It does not test a customer DC, group-derived access or a real gMSA logon.
+
+References:
+- https://learn.microsoft.com/en-us/windows/win32/api/ntsecapi/nf-ntsecapi-lsaenumerateaccountswithuserright
+- https://learn.microsoft.com/en-us/windows/win32/secauthz/account-rights-constants
