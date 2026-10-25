@@ -334,3 +334,41 @@ filters null discovery/shape records before counting. Mixed inventories and an
 empty code-signing template array are valid inspections, not signing approval.
 Malformed relevant signing metadata continues to fail. Native regression checks
 cover mixed, all-unrelated, empty and all-null discovery plus JSON array shape.
+
+
+## Separate unpublished machine code-signing template preparation
+
+Initialize-AuthWireSigningTemplate.ps1 defaults to Inspect. It reuses the signed
+readonly readiness1.0.1 and bootstrap, validates the instance/host/service SID,
+exact CA and published source template, and derives an instance-specific template
+and OID below the forest's registered OID prefix. It creates a new definition;
+no source attributes or source enrollment permissions are copied or changed.
+
+The plan is schema3, RSA3072/SHA256 with Microsoft Software Key Storage Provider,
+code-signing-only EKU/application policy, digital-signature-only key usage, a
+365-day validity/30-day renewal window, no export/archive/UI/auto-enrollment and
+an AD-machine-derived DNS CN. Only the exact connector computer receives the
+explicit Enroll extended right; the gMSA receives no template enrollment or
+administrative grant. Authenticated Users have read only; the domain admins and
+SYSTEM retain administrative control of these new objects.
+
+PrepareTemplate atomically creates the new OID and template LDAP objects with
+explicit binary protected security descriptors. Kerberos signing/sealing is
+required on the fixed DC; no credentials are read or exported. A protected
+ProgramData receipt records before-create and each GUID-bound stage. Source
+critical attributes/ACL and the selected CA publication/ACL fingerprint are
+checked before/after. Existing names/OIDs or partial setups require review;
+there is no automatic adoption, repair, deletion or repeat creation.
+
+This stage does not publish to any CA, submit a certificate request, create a
+key, change key ACLs, modify trust/GPO, install the connector or deploy endpoint
+packages. TemplatePublished, ServiceKeyAccessVerified and CanApplyGpo remain
+false. Native Windows tests exercise genuine AD security descriptors, AD value
+collections and LDAP AddRequest construction; all directory writes are simulated.
+Actual forest creation/readback and subsequent CA acceptance remain required.
+
+References:
+- https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-crtd/c55ec697-be3f-4117-8316-8895e4399237
+- https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/b083a3c4-f57e-4925-b3f8-3dba81dae946
+- https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-crtd/1192823c-d839-4bc3-9b6b-fa8c53507ae1
+- https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-adsc/db4b45f7-e57a-4ae1-9b8f-1b107b69d98c
