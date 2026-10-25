@@ -87,13 +87,13 @@ namespace AuthWire.Connector {
     public sealed class OwnedProbeServiceV1 : IDisposable {
         private IntPtr manager, service;
         public string Name { get; private set; }
-        [DllImport("advapi32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+        [DllImport("advapi32.dll", CharSet=CharSet.Unicode, ExactSpelling=true, SetLastError=true)]
         private static extern IntPtr OpenSCManagerW(string machine, string database, uint access);
-        [DllImport("advapi32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+        [DllImport("advapi32.dll", CharSet=CharSet.Unicode, ExactSpelling=true, SetLastError=true)]
         private static extern IntPtr CreateServiceW(IntPtr manager, string name, string display, uint access,
             uint type, uint start, uint errorControl, string binary, string group, IntPtr tag,
             string dependencies, string account, string password);
-        [DllImport("advapi32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+        [DllImport("advapi32.dll", CharSet=CharSet.Unicode, ExactSpelling=true, SetLastError=true)]
         private static extern IntPtr OpenServiceW(IntPtr manager, string name, uint access);
         [DllImport("advapi32.dll", SetLastError=true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -283,7 +283,14 @@ function Invoke-AuthWireServiceProbeCore {
         }
         if(-not $created -or $removed) {
             try {
-                if(Test-Path -LiteralPath $binary) { Remove-Item -LiteralPath $binary -Force }
+                # The SCM can report Stopped just before the process releases its image.
+                $fileDeadline=[datetime]::UtcNow.AddSeconds(5)
+                while(Test-Path -LiteralPath $binary) {
+                    try { Remove-Item -LiteralPath $binary -Force } catch {
+                        if([datetime]::UtcNow -ge $fileDeadline) { throw }
+                        Start-Sleep -Milliseconds 100
+                    }
+                }
                 $binaryRemoved=-not (Test-Path -LiteralPath $binary)
                 if(Test-Path -LiteralPath $resultDirectory) { Remove-Item -LiteralPath $resultDirectory -Recurse -Force }
                 $dataRemoved=-not (Test-Path -LiteralPath $resultDirectory)
