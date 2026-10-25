@@ -4,6 +4,15 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## Windows hesabı mevcut; ayar uyumsuzluğu için salt okunur inceleme açık — 25 Ekim 2026
+
+- Operatör DC01'de kurumsal imzalı bootstrap1.0.2 Inspect çalıştırdı. **aw-deploy$ Exists=true, Created=false**; hesap varlığı doğrulandı, önceki oluşturma sonucunun belirsizliği varlık açısından giderildi. Hesabın bu kurulumla tam eşleşmesi henüz doğrulanmadı.
+- KDS Count1/Ready=true/ConfigurationValid=true. ADPropertyValueCollection→Int32 hatası tekrarlanmadı; yeni engel **ACCOUNT_OWNERSHIP_OR_SETTINGS_MISMATCH**, ReadyForAccountPreparation=false. Uyumsuz alan henüz bilinmiyor; sahiplik veya ayar olduğu kanıtlanmadan hesap ya da koruma kontrolü değiştirilmez.
+- Inspect Sid=null çıktısı hesabın SID'si olmadığı anlamına gelmez: bootstrap bir engel varken SID'yi yayımlamaz. Genel hesap doğrulaması başarısız kaldı. GmsaReadinessVerified/ConnectorInstalled/CanApplyGpo/LocalInstallationVerified/ServiceLogonVerified=false.
+- GPO AllSettingsEnabled ve mevcut izinlerle, yayıncı CodeSigningEku/EkuReadState/HasPrivateKey/CurrentlyValid olumlu. AD/GPO/sertifika/yerel policy değişmedi; sır dışa aktarılmadı. Yeni hesap oluşturma/silme/onarım veya servis yeniden başlatma yapılmadı.
+- Sonraki işlem, açıkça seçilmiş hesap metadata alanlarının gerçek değer ve türlerini, ham msDS-SupportedEncryptionTypes dahil, DC01'den salt okunur almaktır. Yönetilen parola veya anahtar materyali istenmez. Hesap ayarları ve sahiplik kabul edilmeden PrepareAccount tekrar çalıştırılmaz.
+- Kanıt: checkpoints/2026-10-25-windows-connector-r3-live-mismatch.json; komut: checkpoints/2026-10-25-windows-connector-account-settings-readonly.ps1. A03/A04, dev.34 ve54/94 (%57) tamamlanma hesabı değişmedi.
+
 ## Windows hazırlığı 1.0.2: AD koleksiyonu okuma hatası düzeltildi — 25 Ekim 2026
 
 - Operatörün bootstrap1.0.1 PrepareAccount denemesi ADPropertyValueCollection → Int32 dönüşümünde kesildi. **Hesap oluşturma sonucu belirsizdir:** önceki Inspect'teki Exists=false artık güncel durum kanıtı değildir; aw-deploy$ oluşturulmuş, ardından readback doğrulaması hata vermiş olabilir. Hesap yok/başarıyla kuruldu varsayılmadı; silme/yeniden oluşturma veya mevcut hesabı değiştirme yapılmadı.
