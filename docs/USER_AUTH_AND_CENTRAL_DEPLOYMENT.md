@@ -4,6 +4,17 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ Gerçek imzalama envanteri kabul edildi; ayrı makine imzalayıcısı hazırlığı açık — 25 Ekim 2026
+
+- Operatör **Yapıştırılan metin(4).txt** ekinde **SigningReadiness1.0.1 Inspect**, DC01/vizyonveri.local/instance4c23eebe/SID1648 sonucunu paylaştı. **InspectionSucceeded=true**, null-template hatası çözüldü; **ShapeCompatibleTemplateCount=0** geçerli envanter sonucudur.
+- 🔴✓ Mevcut publisher **6E74B513F766E01730719684A41B2664380CA68A**, CurrentUser/My, subjectAdministrator, issuer vizyonveri-DC01-CA, currently valid/code-signing-only/HasPrivateKeyMetadata=true. Native metadata **MachineKeySet=false, Cng=false, CSP Microsoft Enhanced Cryptographic Provider v1.0 / ProviderType1 / KeySpec2**: anahtar kullanıcı bağlamındadır. ServiceKeyAccessVerified/PrivateKeyUseTested=false; kullanım/taşıma/ACL değişikliği yapılmadı.
+- **DC01'in** CurrentUser/TrustedPublisher ve LocalMachine/TrustedPublisher depolarında mevcut publisher görünmüyor; bu kontrol VV06 veya diğer uçların güven durumunu ölçmez. Marker'lı LocalMachine signer certificate listesi boş. Yeni hizmet publisher'ı için public güven dağıtımı halen açık.
+- 🔴✓ AD'de enterprise CA kaydı **dc01.vizyonveri.local\\vizyonveri-DC01-CA** ve yayında **AuthWireGPOCodeSigning** template'i görüldü. Bu template schema2, CodeSigningOnly=true, non-exportable/no-archive/no-interactive/no-supplied-subject/min2048; ancak **MachineType=false**, legacy CSP listesi ve raw Enroll ACE'de Administrator SID500 var. Grup bazlı etkin enrollment hakları değerlendirilmedi.
+- Yerleşik **CodeSigning** schema1 de user tipidir; bu CA'da yayımlanmamış. İki template de ShapeCompatible=false veAutomaticallyApproved=false. Mevcut template'ler makine tipi olarak değiştirilmez; mevcut paket/publisher korunur.
+- **Sıradaki somut hazırlık:** ayrı önerilen **AuthWireConnectorCodeSigning** makine tipi, code-signing-only, non-exportable/CNG signer yolu; isim/sahiplik/issuer/enrollment kapsam guard'larıyla hazırlanmalı. Sonra yalnız owned machine key için hizmet kullanım izni ve gerçek gMSA signing probe, ardından yeni public publisher trust kontrolü. Bu kayıtta template/sertifika/key-ACL/trust oluşturulmadı; CA issuance backend seçimi ve gerçek isteği sonraki kapıdır.
+- Tüm gerçek mutation bayrakları **AdChanged/GpoChanged/CertificatesChanged/KeyAclChanged/TrustStoreChanged/EnrollmentRequested=false**. ReadyForAutomatedSigning/ServiceKeyAccessVerified/ConnectorInstalled/CanApplyGpo=false beklenen açık kapılardır.
+- Kanıt: checkpoints/2026-10-25-windows-connector-signing-readonly-live-result.json (operator attachment normalized; kaynak ek değiştirilmedi). Ürün dev.34, **54/94 (%57),40 açık** sayımı korunur; formal rapor yeniden üretilmedi.
+
 ## 🔴✓ İmzalama readiness null-template hatası düzeltildi; gerçek tekrar bekleniyor — 25 Ekim 2026
 
 - Operatör **SigningReadiness1.0.0** sonunda Where-Object ShapeCompatible için **InputObjectIsNull** bildirdi. Sorgu readonly'dir; AD/GPO/cert/key-ACL/trust değişikliği yapılmadı. Çıktı tamamlanmadığından CA/template/key-scope envanteri kabul edilmez.
