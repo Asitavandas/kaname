@@ -127,3 +127,30 @@ It does not test a customer DC, group-derived access or a real gMSA logon.
 References:
 - https://learn.microsoft.com/en-us/windows/win32/api/ntsecapi/nf-ntsecapi-lsaenumerateaccountswithuserright
 - https://learn.microsoft.com/en-us/windows/win32/secauthz/account-rights-constants
+
+## Bounded local service-logon preparation
+
+Initialize-AuthWireServiceLogon.ps1 defaults to Inspect. PrepareServiceRight
+requires the same corporate-signed bootstrap 1.0.3 and a successful owned-account
+readback with the expected computer, domain, installation GUID and existing SID.
+It adds only SeServiceLogonRight to that SID via LsaAddAccountRights; there is no
+right-name option and no production removal API. LSA account creation here means
+a local policy entry, not an AD account. Existing account rights are additive and
+other accounts' allow/deny assignments are retained.
+
+Any deny-service assignment blocks PrepareServiceRight pending separate group
+review. The tool does not infer group-derived effective access. Before a change,
+it stores a small receipt with baseline SID lists under a uniquely named
+ProgramData directory accessible only to SYSTEM and Administrators. It rechecks
+for policy drift before the add, verifies the target and preserved assignments
+afterwards, and records the result. If interrupted or verification fails, use the
+receipt and Inspect to determine the result; never replace a whole DC rights
+list. A repeated prepare is a no-op if the direct assignment already exists.
+
+This grants no GPO/SYSVOL/signing-key access, creates no service and does not prove
+service logon or persistence across future policy refreshes. Those gates remain
+false. The native CI fixture writes only to a unique unused SID on a disposable
+runner, tests guards/idempotence/preservation and removes only its two fixture
+rights in finally. No customer account or AD forest is used.
+
+Reference: https://learn.microsoft.com/en-us/windows/win32/api/ntsecapi/nf-ntsecapi-lsaaddaccountrights

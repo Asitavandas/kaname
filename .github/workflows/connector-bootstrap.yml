@@ -1,10 +1,10 @@
 name: AuthWire Windows connector bootstrap checks
 on:
   pull_request:
-    paths: ['windows/connector/**', 'tools/connector_bootstrap_windows_check.ps1', 'tools/connector_service_rights_windows_check.ps1', '.github/workflows/connector-bootstrap.yml']
+    paths: ['windows/connector/**', 'tools/connector_bootstrap_windows_check.ps1', 'tools/connector_service_rights_windows_check.ps1', 'tools/connector_service_right_prepare_windows_check.ps1', '.github/workflows/connector-bootstrap.yml']
   push:
     branches: [main]
-    paths: ['windows/connector/**', 'tools/connector_bootstrap_windows_check.ps1', 'tools/connector_service_rights_windows_check.ps1', '.github/workflows/connector-bootstrap.yml']
+    paths: ['windows/connector/**', 'tools/connector_bootstrap_windows_check.ps1', 'tools/connector_service_rights_windows_check.ps1', 'tools/connector_service_right_prepare_windows_check.ps1', '.github/workflows/connector-bootstrap.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -35,3 +35,6 @@ jobs:
       - name: Native local LSA read without policy writes or AD
         shell: powershell
         run: tools/connector_service_rights_windows_check.ps1
+      - name: Native bounded service-right add on unused fixture SID with cleanup
+        shell: powershell
+        run: tools/connector_service_right_prepare_windows_check.ps1
