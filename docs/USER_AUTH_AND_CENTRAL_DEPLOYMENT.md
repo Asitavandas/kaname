@@ -4,6 +4,14 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ DC01 makine CSR oluşturma tamamlandı; aynı istek CA'ya gönderilecek — 25 Ekim 2026
+
+- Operatör **CertReq: Request Created / WINDOWS_CONNECTOR_MACHINE_CSR_PREPARED** çıktısını paylaştı. LDAP AD enrollment policy **EC3C46B2-ED74-4BF2-BB4C-5A8E7D9BB33C** görüldü. **SubmittedToCa=false**.
+- Public CSR **C:\\ProgramData\\AuthWire-SigningTemplate-b05c01482d03415897d290ccde085a37\\machine-signing-v2.req**, SHA256 **D07E3800345AFD62E8423B5E720047BDA3670CBDB1644153BDBD90BDEC689BDE**. CSR success kabulü; gerçek certificate template/issuer/key provider/machine scope/export policy/gMSA usage henüz doğrulanmadı.
+- Sonraki operatör adımı aynı hash-pinned CSR ile **certreq -submit -AdminForceMachine -q -config explicitCA req cer**; yerel Submit yardımında seçenekler doğrulandı. -machine Submit'e eklenmez; makine anahtar bağlamı önceki New/INF'te, gönderim kimliği AdminForceMachine ile sağlanır.
+- **machine-signing-v2-submit.json** FileMode.CreateNew ile gönderimden önce oluşturulur; önceki state/cer/log varsa yeni gönderim yapılmaz. Public stdout/RequestId **machine-signing-v2-submit.log** içinde; exit code/cer varlığı receipt'te. CLI başarı/cer varlığı ayrıca incelenecek; pending/error/connection kesintisinde yeni CSR/Submit yapılmaz, mevcut request ID ile sürdürülür. Bu adım otomatik Accept/key ACL/trust/package değişikliği yapmaz.
+- Kanıt checkpoints/2026-10-25-windows-connector-machine-csr-prepared-live-result.json; operatör komutu checkpoints/2026-10-25-windows-connector-machine-csr-submit.ps1. Eski hatalı enroll receipt korunur. AuthWire app dev.34, **54/94 (%57),40 açık**, A03/A04 açık; formal rapor yenilenmedi.
+
 ## 🔴✓ DC01 verb seçenekleri ve önceki denemenin sıfır yeni sertifika sonucu doğrulandı — 25 Ekim 2026
 
 - Operatör **Yapıştırılan metin(5).txt** ekinde yerel certreq yardımlarını ve store farkını gönderdi. Scratch kopyası okundu; kaynak ek değiştirilmedi.

@@ -1,0 +1,20 @@
+{
+  "event": "WINDOWS_CONNECTOR_MACHINE_CSR_PREPARATION_ACCEPTED",
+  "date": "2026-10-25",
+  "source": "operator-pasted live output",
+  "computer": "DC01",
+  "request_created": true,
+  "observed_message": "CertReq: Request Created",
+  "policy": "Active Directory Enrollment Policy / ldap:",
+  "domain_policy_guid": "EC3C46B2-ED74-4BF2-BB4C-5A8E7D9BB33C",
+  "request_file": "C:\\ProgramData\\AuthWire-SigningTemplate-b05c01482d03415897d290ccde085a37\\machine-signing-v2.req",
+  "request_sha256": "D07E3800345AFD62E8423B5E720047BDA3670CBDB1644153BDBD90BDEC689BDE",
+  "submitted_to_ca": false,
+  "existing_failed_enroll_receipt_preserved": true,
+  "actual_key_metadata_validation_pending": true,
+  "certificate_issuance_pending": true,
+  "service_signing_pending": true,
+  "next": "One recorded native Submit with AdminForceMachine; pin same CSR hash, retain log/state, no automatic resubmit or accept",
+  "completed": 54,
+  "total": 94
+}
