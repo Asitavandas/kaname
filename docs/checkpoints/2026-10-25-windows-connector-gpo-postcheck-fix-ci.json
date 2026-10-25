@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-25",
+  "timezone": "Europe/Istanbul",
+  "pr": 76,
+  "probe_version": "1.0.1",
+  "source_commit": "756c3d5ddeee3ec93d976b1d176f5168bc00dc06",
+  "merge_commit": "ef7a1c02b8af35deb0cc77958e9bd8eaab314a1c",
+  "sha256": "9f2b599b97b9a137905f45effb1223d76043c67380da32f1d6a735755e653d2d",
+  "windows_run": 40191047440,
+  "windows_scm_job": 121161940158,
+  "windows_bootstrap_job": 121161940252,
+  "checks": {
+    "write_probe": 66,
+    "bootstrap": 147,
+    "lsa_read": 16,
+    "additive_right": 39,
+    "gpo_preparation": 108,
+    "existing_scm": 35
+  },
+  "foundation_run": 40191047458,
+  "foundation_job": 121161940426,
+  "foundation_tests": 724,
+  "foundation_skipped": 28,
+  "retry_run": 40191047438,
+  "all_passed": true,
+  "real_directory_simulated": true,
+  "actual_local_file_io_tested": true,
+  "native_fixture_scm_runs": 2,
+  "original_customer_preservation_unverified": true,
+  "customer_repeat_pending": true
+}

@@ -17,6 +17,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ GPO write-probe tarih karşılaştırması düzeltildi; bileşen kanıtı hazır — 25 Ekim 2026
+
+- **Test-AuthWireGpoWrite1.0.1**: GPMC XML'de doğru root alanı **ModifiedTime** kullanıldı. Yalnız doğrudan root ReadTime/ModifiedTime karşılaştırma dışında tutulur; RawReport ve tarihler ayrıca kaydedilir. CreationTime ve nested ModifiedTime dahil ayar/version/link/delegation/owner farkları korunur.
+- Before/after bileşenler artık ayrı kanıttır: GPO GUID/comment, normalized rapor, sıralı izinler, SYSVOL root ACL, her dosya/dizin ACL ve dosya byte hash'i. **gpo-before.json hizmet oluşturulmadan önce** admin/SYSTEM-only yazılır; **gpo-comparison.json** raw before/after ve ChangedComponents/ChangedRootMetadata içerir. Kanıt yazılamazsa kabul başarısızdır.
+- 🔴✓ PR76 source **756c3d5ddeee3ec93d976b1d176f5168bc00dc06**, merge **ef7a1c02b8af35deb0cc77958e9bd8eaab314a1c**. Native Windows5.1 **66 write-probe kontrolü** geçti: gerçek XML timestamp adları, metadata-only eşitlik, nested/creation/enabled/version/link/comment/permission/file/file-ACL/root-ACL/yeni dosya farklarını reddetme, servis öncesi baseline kaydı ve iki gerçek fixture SCM helper çalışması. Önceki bootstrap147/LSA16/right39/GPO108/SCM35, foundation724/28skip ve bounded retry probe de başarılı.
+- İlk gerçek çalışmanın AD/SYSVOL yazma/okuma ve own-cleanup alt kanıtı korunur; **ilk hedefin bütün eski durumunun korunduğu geçmişe dönük ilan edilmez**, çünkü1.0.0 yalnız bellek içi hash tuttu. İlk farkın yalnız tarihten ibaret olduğu kesinlenmemiştir. **Düzeltilmiş sürümle yeni baseline üzerinden kontrollü tekrar beklenir.**
+- Teslim /home/segmentiq/authwire-gpo-write-probe-v1-r2-20261025.ps1, SHA256 **9f2b599b97b9a137905f45effb1223d76043c67380da32f1d6a735755e653d2d**; yerel/uzak hash eşleşti. Kaynak/araç Linux'ta hazırlandı; müşteri GPO'su bu düzeltme sırasında değiştirilmedi, test tekrar çalıştırılmadı, AuthWire servisi/CA/policy/Windows paketi değiştirilmedi. Yeni tam yedek yok.
+- Kanıt/komut: checkpoints/2026-10-25-windows-connector-gpo-postcheck-fix-ci.json, checkpoints/2026-10-25-windows-connector-gpo-write-probe-r2-run.ps1. **ServiceWriteAccessVerified/TargetStatePreserved/ProbeVerified canlı tekrar sonucu bekleniyor.** Ürün dev.34,54/94 (%57),40 açık korunur.
+- Kaynak: https://devblogs.microsoft.com/scripting/use-powershell-to-generate-and-parse-a-group-policy-object-report/ (Microsoft root ModifiedTime/ReadTime örneği).
+
 ## Gerçek yazma/okuma ve temizlik doğrulandı; hedef postcheck incelemede — 25 Ekim 2026
 
 - Operatör **GPO write probe1.0.0** sonucunu paylaştı: gerçek **VIZYONVERI\\aw-deploy$ / SID1648**, SCM PID1388, Stage=runtime_write_verified. **AdWriteReadVerified/AdProbeRemoved/SysvolWriteReadVerified/SysvolProbeRemoved=true**; OperationError=null, OperationCleanupErrors=[].
