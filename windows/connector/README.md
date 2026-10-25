@@ -386,3 +386,11 @@ Native Windows tests run actual low-privilege LocalService workers both without 
 `Test-AuthWireServiceAuthenticode.ps1` defaults to Inspect. RunProbe signs a comment-only disposable UTF16 PowerShell artifact through a NoLanguage Windows PowerShell SDK runspace containing fixed signing cmdlet invocations; no script evaluation, artifact execution, execution-policy override or existing package changes. The controller independently checks Authenticode Valid status, exact signer and full-file SHA256 and retains a protected public signed audit copy. The owned temporary service/binary/writable result directory are removed. Existing gMSA/readiness and exact key receipt/current ACL/cleanup guards are reused. It does not export keys or alter AD/GPO/key ACL/trust.
 
 33 native Windows checks exercise denied key access, untrusted signer, actual low-privilege CNG/Authenticode success, signed-body tampering and cleanup. Live customer proof and endpoint publisher/deployment acceptance remain separate. The inherited CertificateChainValidationPerformed field refers to a standalone chain/revocation probe; Windows Authenticode Valid is also independently checked. See checkpoints/2026-10-25-windows-connector-service-authenticode-prepared.json.
+
+
+## Single-account channel foundation (not live integration)
+
+The initial health proof primitive uses a dedicated non-exportable machine key,
+not another AD account or the code-signing key. See
+[the channel contract and outstanding integration gates](../../docs/CONNECTOR_SINGLE_ACCOUNT_CHANNEL.md).
+No route, permanent service, AD reader replacement or GPO job is activated here.
