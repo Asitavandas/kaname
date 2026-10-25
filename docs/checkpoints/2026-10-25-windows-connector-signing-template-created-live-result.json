@@ -1,0 +1,77 @@
+{
+  "event": "WINDOWS_CONNECTOR_SIGNING_TEMPLATE_CREATION_ACCEPTED",
+  "source": "operator-pasted live output",
+  "date": "2026-10-25",
+  "tool_event": "WINDOWS_CONNECTOR_SIGNING_TEMPLATE_PREPARATION",
+  "tool_version": "1.0.0",
+  "mode": "PrepareTemplate",
+  "computer": "DC01",
+  "domain": "vizyonveri.local",
+  "instance_id": "4c23eebe-0715-46d1-88ee-a2e96ad7ee46",
+  "service_sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+  "machine_enrollment_sid": "S-1-5-21-34256453-3348971241-2809240126-1000",
+  "template_name": "AuthWireConnectorCodeSigning-4c23eebe",
+  "template_dn": "CN=AuthWireConnectorCodeSigning-4c23eebe,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=vizyonveri,DC=local",
+  "oid": "1.3.6.1.4.1.311.21.8.3959278.2860114.5195160.9103069.14061966.47.142634815.777644557.3157432960.2289567679",
+  "ca": "dc01.vizyonveri.local\\vizyonveri-DC01-CA",
+  "schema_version": 3,
+  "provider": "Microsoft Software Key Storage Provider",
+  "algorithm": "RSA",
+  "minimum_key_size": 3072,
+  "hash_algorithm": "SHA256",
+  "code_signing_only": true,
+  "exportable_key_allowed": false,
+  "requester_supplies_subject": false,
+  "machine_type": true,
+  "proposed_acl": {
+    "owner": "S-1-5-21-34256453-3348971241-2809240126-512",
+    "group": "S-1-5-21-34256453-3348971241-2809240126-512",
+    "protected": true,
+    "rules": [
+      {
+        "sid": "S-1-5-11",
+        "rights": 131220,
+        "object_type": "00000000-0000-0000-0000-000000000000"
+      },
+      {
+        "sid": "S-1-5-18",
+        "rights": 983551,
+        "object_type": "00000000-0000-0000-0000-000000000000"
+      },
+      {
+        "sid": "S-1-5-21-34256453-3348971241-2809240126-1000",
+        "rights": 256,
+        "object_type": "0e10c968-78fb-11d2-90d4-00c04f79dc55"
+      },
+      {
+        "sid": "S-1-5-21-34256453-3348971241-2809240126-512",
+        "rights": 983551,
+        "object_type": "00000000-0000-0000-0000-000000000000"
+      }
+    ],
+    "all_allow": true,
+    "all_non_inherited": true,
+    "inheritance": "None",
+    "propagation": "None"
+  },
+  "ready_for_prepare": true,
+  "template_created": true,
+  "template_published": false,
+  "source_template_preserved": true,
+  "ca_configuration_preserved": true,
+  "receipt_path": "C:\\ProgramData\\AuthWire-SigningTemplate-b05c01482d03415897d290ccde085a37\\template-preparation.json",
+  "ad_changed": true,
+  "ca_changed": false,
+  "gpo_changed": false,
+  "certificates_changed": false,
+  "key_acl_changed": false,
+  "trust_store_changed": false,
+  "enrollment_requested": false,
+  "service_key_access_verified": false,
+  "connector_installed": false,
+  "can_apply_gpo": false,
+  "next": "Publish only new template on explicit CA; existing template preservation, then separate machine certificate enrollment/key-use gates",
+  "completed": 54,
+  "total": 94,
+  "oid_and_template_readback_verified_by_tool": true
+}

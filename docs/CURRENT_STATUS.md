@@ -17,6 +17,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Yeni makine tipi imzalama şablonu oluşturuldu ve doğrulandı — 25 Ekim 2026
+
+- Operatör **SigningTemplatePreparation1.0.0 PrepareTemplate** gerçek sonucunu paylaştı. **TemplateCreated=true, AdChanged=true**, schema3/RSA3072/SHA256/CNG/machine/code-signing-only/no-export/no-supplied-subject planı için iki yeni OID/template objesinin readback kontrolü başarılı.
+- Şablon **AuthWireConnectorCodeSigning-4c23eebe**, machine enrollment **DC01 SID1000**; gMSA1648'e template enrollment/admin yetkisi verilmedi. Protected ACL ve kritik attribute karşılaştırması araçta tamamlandı. Mevcut template ve CA publication yapılandırması **SourceTemplatePreserved/CaConfigurationPreserved=true**.
+- Protected receipt **C:\\ProgramData\\AuthWire-SigningTemplate-b05c01482d03415897d290ccde085a37\\template-preparation.json**; yeni objectGUID'ler bu receipt içindedir. Kullanıcı çıktısında GUID'ler olmadığından dokümana tahminle eklenmedi.
+- **TemplatePublished=false, CaChanged/GpoChanged/CertificatesChanged/KeyAclChanged/TrustStoreChanged/EnrollmentRequested=false**. **ServiceKeyAccessVerified/ConnectorInstalled/CanApplyGpo=false**; şablon hazırlığı uçtan uca otomasyon tamamlandı anlamına gelmez.
+- Sonraki adım açık: yalnız bu owned template'i explicit **dc01.vizyonveri.local\\vizyonveri-DC01-CA** üzerinde **certutil -SetCATemplates +<name>** ile yayımlama. Receipt phase/templateGUID/OID/CA GUID/host guard'ları, mevcut template listesi korunması kontrolü; sertifika talep edilmez. Microsoft Learn certutil belgesi ekleme işaretini doğruluyor: https://learn.microsoft.com/windows-server/administration/windows-commands/certutil#setcatemplates
+- Kanıt: checkpoints/2026-10-25-windows-connector-signing-template-created-live-result.json. Operatör komutu: checkpoints/2026-10-25-windows-connector-signing-template-publish.ps1. **Canlı publication sonucu henüz gelmedi.**
+- AuthWire app dev.34, **54/94 (%57),40 açık**; A03/A04 açık. Formal rapor yeniden üretilmedi.
+
 ## 🔴✓ Makine imzalama şablonu canlı önizlemesi kabul edildi — 25 Ekim 2026
 
 - Operatör **SigningTemplatePreparation1.0.0 Inspect** sonucunu paylaştı: DC01/vizyonveri.local/instance4c23eebe/serviceSID1648; **ReadyForPrepare=true**.
