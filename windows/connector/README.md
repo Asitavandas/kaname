@@ -154,3 +154,35 @@ runner, tests guards/idempotence/preservation and removes only its two fixture
 rights in finally. No customer account or AD forest is used.
 
 Reference: https://learn.microsoft.com/en-us/windows/win32/api/ntsecapi/nf-ntsecapi-lsaaddaccountrights
+
+## Actual service-logon probe
+
+Test-AuthWireServiceLogon.ps1 defaults to Inspect. RunProbe reuses the signed
+bootstrap and service-right preparation tool in Inspect mode, requires local
+Test-ADServiceAccount success, and resolves the validated SID to its account.
+It compiles a minimal .NET ServiceBase executable into a unique protected
+ProgramData directory and signs it with the existing corporate publisher.
+Only Administrators/SYSTEM can write the executable; the gMSA receives read/
+execute there and modify access only to the separate result directory.
+
+The native SCM controller creates a new demand-start own-process service with
+a GUID-bound AuthWireLogonProbe name and a NULL managed-account password. It
+never opens an existing service for control. The real service writes its SID,
+machine, authenticated/service-group status, process ID and nonce. Acceptance
+requires a running SCM service with the same process ID plus every proof binding.
+A 45-second watchdog stops the helper if the caller disappears.
+
+Finally the wrapper stops/deletes only the service created through its retained
+handle and checks actual removal. It removes the temporary executable/result
+directory after service removal, retaining admin-only manifest/proof/summary
+metadata. Cleanup failures are explicit and never reported as connector success.
+No account/GPO/right/signing-key ACL changes, product service restarts, password
+requests or exports are performed. ConnectorInstalled and CanApplyGpo stay false.
+
+Native CI starts the signed service twice under built-in LocalService and tests
+proof tampering, ACLs, collision refusal and cleanup. Its temporary self-signed
+code-signing certificate and public trust entries exist only in the disposable
+runner and are removed. This validates SCM/helper mechanics, not a customer's
+gMSA password retrieval or logon. Live gMSA acceptance remains required.
+
+Reference: https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-createservicea
