@@ -1,0 +1,18 @@
+{
+  "reported_by": "operator",
+  "result": {
+    "Event": "GPO_MARKER_READONLY",
+    "ReceiptPhase": "created_unlinked",
+    "GpoId": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+    "GpoName": "AuthWire-Managed-Deployment-4c23eebe",
+    "Owner": "VIZYONVERI\\Domain Admins",
+    "ObjectClass": "groupPolicyContainer",
+    "ExpectedMarker": "AuthWireDeployment:v1;instance=4c23eebe-0715-46d1-88ee-a2e96ad7ee46;host=0fa4143f-aae3-4bc3-9cd3-db8a1de24acd;service=S-1-5-21-34256453-3348971241-2809240126-1648;scope=S-1-5-21-34256453-3348971241-2809240126-1647",
+    "AdDescription": [],
+    "SysvolPath": [
+      "\\\\vizyonveri.local\\SysVol\\vizyonveri.local\\Policies\\{8C6808FD-A382-4BF2-9C9C-D9E1D46082A3}"
+    ],
+    "GpoChanged": false,
+    "GpoDescription": "AuthWireDeployment:v1;instance=4c23eebe-0715-46d1-88ee-a2e96ad7ee46;host=0fa4143f-aae3-4bc3-9cd3-db8a1de24acd;service=S-1-5-21-34256453-3348971241-2809240126-1648;scope=S-1-5-21-34256453-3348971241-2809240126-1647"
+  }
+}

@@ -17,6 +17,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ GPO sahiplik okuma hatası düzeltildi; aynı GPO için kontrollü devam hazır — 25 Ekim 2026
+
+- Gerçek salt okunur sonuç: GPO **8c6808fd-a382-4bf2-9c9c-d9e1d46082a3**, AuthWire-Managed-Deployment-4c23eebe, owner VIZYONVERI\\Domain Admins, ObjectClass=groupPolicyContainer; receipt evresi created_unlinked. **GPMC GpoDescription beklenen marker ile birebir aynı, LDAP AdDescription boş.** Önceki betiğin LDAP description ile GPO yorumunu eşitlemesi hatalıydı. Oluşmuş GPO silinmedi/yeniden oluşturulmadı; bu sorgu GPO değiştirmedi.
+- 🔴✓ Initialize-AuthWireDeploymentGpo **1.0.1**, fresh GUID-bound Get-GPO.Description kullanır. GPC türü, owner, SYSVOL yolu, boş/bağlantısız durum ve trust fingerprint kontrolleri korunur. Varsayılan Inspect/PrepareGpo yarım nesneyi otomatik sahiplenmez.
+- 🔴✓ Açık ResumeGpo modu, hem orijinal admin/SYSTEM korumalı receipt yolu hem bağımsız beklenen GUID ister. Kurulum/host/marker/scope/protected baseline eşleşmesi ve initial default delegation şarttır; reparse, başka yazabilen trustee, farklı marker/owner/link/settings veya ara izin evresi reddedilir. Aynı GUID üzerinde yalnız Authenticated Users read, pilot apply, gMSA GpoEdit tamamlanır. Yeni GPO oluşturma/silme/link/settings API'si recovery'de kullanılmaz. Verified matching repeat no-op.
+- 🔴✓ PR74 kaynak3122ddc849d331b7954247cbbf40b977a3e12df8, mergeecf91fd9534e66149fc8416c294baf200525d193. Windows PowerShell5.1: **GPO108**, bootstrap147, LSAread16, additive-right39, native SCM35 (iki LocalService probe) kontrolleri geçti. AD/GPMC çağrıları fixture'dır; gerçek müşteri GPO recovery kabulü değildir. Foundation724 test/28skip, bounded retry probe başarılı.
+- İndirme dosyası Linux /home/segmentiq/authwire-deployment-gpo-bootstrap-v1-r2-20261025.ps1; SHA256 **25794286c163f4fecf83ae8736b80cdbb25ba5c6d1bd5eefa236a7859c5b67d5**,26878byte; test edilmiş kaynak ile eşleşme yerel/uzak hash ile doğrulandı. DC01 komutu hash kontrolü, mevcut kurumsal publisher ile imza ve ResumeGpo içerir. Komut teslimi gerçek izin yazımı veya başarı değildir; operatör çıktısı beklenir.
+- Ürün dev.34, **54/94 (%57)** korunur. Gerçek GPO recovery/delegasyon, gMSA ile AD/SYSVOL yazma, servis imzalama anahtarı erişimi, connector kurulumu/protokolü, GPO link/kalıcılık ve uç testleri açık. Bu adımda AuthWire ürün servisi/Windows paketi değiştirilmedi, yeni tam yedek alınmadı.
+- Kanıt/teslim: checkpoints/2026-10-25-windows-connector-gpo-description-live-result.json, checkpoints/2026-10-25-windows-connector-gpo-recovery-ci.json, checkpoints/2026-10-25-windows-connector-gpo-resume.ps1.
+
 ## Ayrı dağıtım GPO hazırlığı sahiplik readback kontrolünde durdu — 25 Ekim 2026
 
 - Operatör PrepareGpo çalıştırmasında GPO_OWNERSHIP_MARKER_MISMATCH bildirdi. Receipt: C:\ProgramData\AuthWire-GpoPreparation-6394ceadf50a4dc29f13787be5822806\gpo-preparation.json. Yeni boş GPO oluşmuş olabilir; gerçek GUID/evre/delegasyon durumu henüz okunmadı. Bu deneme için AD/GPO değişmedi veya hazırlık tamamlandı denmez.

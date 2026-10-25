@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-25",
+  "pr": 74,
+  "source_commit": "3122ddc849d331b7954247cbbf40b977a3e12df8",
+  "merge_commit": "ecf91fd9534e66149fc8416c294baf200525d193",
+  "tool_version": "1.0.1",
+  "sha256": "25794286c163f4fecf83ae8736b80cdbb25ba5c6d1bd5eefa236a7859c5b67d5",
+  "windows_run": 40177872890,
+  "bootstrap_job": 121122387843,
+  "checks": {
+    "gpo_preparation_and_recovery": 108,
+    "bootstrap": 147,
+    "lsa_read": 16,
+    "additive_service_right": 39,
+    "scm": 35
+  },
+  "scm_job": 121122388017,
+  "scm_runtime": "LocalService",
+  "scm_real_runs": 2,
+  "foundation_run": 40177872964,
+  "foundation_job": 121122388049,
+  "foundation_tests": 724,
+  "foundation_skipped": 28,
+  "retry_run": 40177872886,
+  "all_passed": true,
+  "ad_gpmc_simulated": true,
+  "real_customer_recovery_verified": false,
+  "real_service_gpo_writes_verified": false,
+  "operator_command_delivered": true
+}
