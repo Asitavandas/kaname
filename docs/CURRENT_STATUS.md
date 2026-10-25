@@ -17,6 +17,18 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Tek hesaplı Connector için kanal mesajı doğrulama temeli — 25 Ekim 2026
+
+- **A04 alt parçası:** Python sunucu doğrulayıcısı ve Windows PowerShell5.1 istemci yardımcısı, ayrı dışa aktarılamayan makine kanal anahtarıyla sınırlı health kanıtı üretip doğrular. Kanal anahtarı yeni AD hesabı değildir; mevcut kod imzalama anahtarından ayrıdır.
+- Kurulum/connector/host GUID'leri, gerçek Windows süreç SID'si, binding sürümü, appliance FQDN/TLS pini, anahtar kimliği, işlem/yol ve süreli nonce imzaya bağlıdır. Sunucu yalnız yerelde önceden güvenilmiş public anahtarı kullanır; kendi anahtarını sunan peer eşleştirilemez. Eşzamanlı replay, değişmiş/yanlış anahtar, bozuk/duplicate/non-UTF8 JSON ve doğrulama sırasında dolan süre reddedilir.
+- **13 Python sınır testi + 33 gerçek Windows CNG/PowerShell5.1 kontrolü başarılı.** Windows imzası bağımsız Python doğrulamasından geçti; fixture anahtarı temizlendi, key ACL korundu, özel anahtar dışa aktarılmadı. Bu hosted fixture kanıtıdır, DC01 üzerinde canlı Connector kabulü değildir.
+- **Genel regresyon:** 737 test (28 ortam atlaması); yedi PR workflow başarılı. Mevcut Windows retry zamanlama fixture'ı ilk koşuda deadline_rearmed/sonraki çalışma eksikliğiyle hata verdi; yalnız başarısız işler tekrarlandığında geçti. Retry kodu/testi gevşetilmedi; aralıklı hata ve kök neden işi açık kaldı.
+- Kaynak **PR83 / 44d59280fe5b693f515571a4195068cf97a52fd4**, main merge **fd4de99fc090409f6019c60add4fc9ac79e47770**.
+- Bu kaynak parçası **HTTP route açmaz, servis kurmaz, AD/GPO işi çalıştırmaz**. Health kanıtı AD üyeliği/kullanıcı kimliği, Kerberos oturumu veya GPO uygulanma kanıtı sayılmaz; can_apply/directory_sync_ready/kerberos_ready false kalır.
+- Sonraki somut iş: yetkili yönetici eşleştirmesinin kalıcı, sürümlü ve audit'li kaydı; yalnız owned kanal anahtarının hazırlığı/ACL'si ve gerçek doğrulanmış HTTPS bağlantısı. Sonra sınırlı iş/sonuç akışı, canlı AD/katalog ve Kerberos geçişi. Mevcut bootstrap'ın boş SPN gereksinimi ancak gözden geçirilmiş sahipli SPN geçişiyle değiştirilebilir; HTTP SPN iki hesapta bulunmaz.
+- Mevcut LDAP/HTTP/gMSA hesapları, çalışan Linux/RADIUS/panel, GPO, sertifikalar, uç paketleri ve günlük yedekler değiştirilmedi. Yeni anahtar/GPO/hesap/customer komutu gerekmedi; canlı sürüm **dev.34** kaldı. A03/A04 ve tek hesap geçişi açık, üst checklist **54/94 (%57),40 açık** değişmedi; resmi rapor üretilmedi.
+- Ayrıntılı sözleşme: **CONNECTOR_SINGLE_ACCOUNT_CHANNEL.md**. Kaynak ve CI kanıtları **checkpoints/2026-10-25-connector-channel-health-foundation.json** içinde tutulur.
+
 ## Tek yönetilen hizmet hesabı hedefi — 25 Ekim 2026, plan kararı; uygulama bekliyor
 
 Operatör mevcut üç hesabın müşteri kurulumlarında yönetim yükünü kabul etmedi; standart tek-domain kurulumunda tek yönetilen hizmet hesabı hedefini onaylayıp zamanlamayı bize bıraktı. Karar: **mimari şimdi netleştirilecek, uygulama kalıcı Windows Connector geliştirmesine dahil edilecek; üç hesaba bağımlı kalıcı connector tamamlandıktan sonraya ertelenmeyecek.**

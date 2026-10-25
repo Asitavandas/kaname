@@ -1,0 +1,107 @@
+{
+  "event": "CONNECTOR_CHANNEL_HEALTH_FOUNDATION_PREPARED",
+  "date": "2026-10-25",
+  "repository": "Asitavandas/kaname",
+  "pr": 83,
+  "source_head": "44d59280fe5b693f515571a4195068cf97a52fd4",
+  "scope": "Health challenge/proof primitive for single-domain, single-gMSA connector architecture; no live transport or service installation",
+  "tests": {
+    "python_channel_tests": 13,
+    "windows_native_checks": 33,
+    "foundation_tests": 737,
+    "foundation_skipped": 28,
+    "windows_channel_run": 40217833526,
+    "windows_channel_job": 121242729117,
+    "foundation_run": 40217833543,
+    "foundation_job": 121242728984,
+    "accepted_workflows": [
+      {
+        "id": 40217833482,
+        "name": "KANAME Linux source preparation",
+        "conclusion": "success"
+      },
+      {
+        "id": 40217833589,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40217833543,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40217833553,
+        "name": "KANAME browser checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40217833526,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40217833555,
+        "name": "AuthWire device enrollment pilot checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40217833597,
+        "name": "KANAME real RADIUS protocol proof",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "boundaries": {
+    "dedicated_channel_key_not_ad_account": true,
+    "code_signing_key_reused": false,
+    "private_key_exported": false,
+    "ad_changed": false,
+    "gpo_changed": false,
+    "service_installed": false,
+    "live_channel_route_added": false,
+    "legacy_accounts_removed": false,
+    "endpoint_packages_changed": false,
+    "appliance_updated": false,
+    "full_backup_created": false
+  },
+  "implementation": {
+    "trusted_public_binding_required": true,
+    "peer_supplied_key_rejected": true,
+    "atomic_replay_rejection": true,
+    "monotonic_expiry_before_and_after_crypto": true,
+    "max_pending_challenges": 4,
+    "invalid_signature_budget": 3,
+    "health_online_seconds": 90,
+    "challenge_seconds": 60,
+    "can_apply": false,
+    "directory_sync_ready": false,
+    "kerberos_ready": false
+  },
+  "regression_note": {
+    "windows_retry_first_attempt_job": 121242729389,
+    "first_attempt_error": "Native automatic failure/rearm/recovery did not finish",
+    "observed": "deadline_rearmed; one child; retry task Ready/result0/next_run null; main result1; retry_pending/session persisted",
+    "only_failed_workflow_jobs_rerun": true,
+    "root_cause_fixed": false,
+    "retry_source_changed": false,
+    "rerun_success": true,
+    "rerun_job": 121243767170
+  },
+  "next": [
+    "Durable authorized pairing, protected generation/key binding, rotation/revocation/audit",
+    "Controlled dedicated channel machine-key provisioning and gMSA ACL checks",
+    "Validated HTTPS with normal chain/name checks plus trusted pin; no redirects/bypass",
+    "Bounded idempotent job/result channel, no arbitrary PowerShell",
+    "Directory sync and live AD authorization adapter migration",
+    "Windows Kerberos acceptor under same gMSA; owned SPN transition including ticket-cache/rollback acceptance",
+    "Scoped GPO/publisher trust deployment; real pilot then scale acceptance",
+    "Legacy LDAP/HTTP account retirement after dependencies and migration validated"
+  ],
+  "customer_operation_required_for_this_slice": false,
+  "live_version": "0.14.0-dev.34",
+  "completed": 54,
+  "total": 94,
+  "formal_report_regenerated": false,
+  "merge_commit": "fd4de99fc090409f6019c60add4fc9ac79e47770"
+}
