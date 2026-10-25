@@ -1,0 +1,21 @@
+{
+  "event": "WINDOWS_CONNECTOR_CERTREQ_CAPABILITIES_ACCEPTED",
+  "date": "2026-10-25",
+  "computer": "DC01",
+  "source_attachment": "Yapıştırılan metin(5).txt",
+  "library_file_id": "libfile_e02fc6841b0c8191b1b62a4efafa4288",
+  "attachment_read_from_scratch": true,
+  "submit_supports_admin_force_machine": true,
+  "new_supports_machine": true,
+  "accept_supports_machine": true,
+  "new_help_inf_has_cng_key_and_security_fields": true,
+  "old_attempt": {
+    "phase": "enroll_returned",
+    "exit_code": -2147024809,
+    "new_machine_certificate_count": 0
+  },
+  "next": "Generate one guarded machine PKCS10 CSR with explicit CNG/non-exportable/RSA3072/SHA256 settings, then separately Submit with AdminForceMachine",
+  "csr_generation_live_pending": true,
+  "certificate_issuance_pending": true,
+  "service_key_access_pending": true
+}

@@ -17,6 +17,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 verb seçenekleri ve önceki denemenin sıfır yeni sertifika sonucu doğrulandı — 25 Ekim 2026
+
+- Operatör **Yapıştırılan metin(5).txt** ekinde yerel certreq yardımlarını ve store farkını gönderdi. Scratch kopyası okundu; kaynak ek değiştirilmedi.
+- 🔴✓ **-New** machine/INF/CNG/key/security-descriptor seçeneklerini; **-Submit** explicit **-AdminForceMachine/-config/-q**; **-Accept** **-machine/-q** seçeneklerini destekliyor. AdminForceMachine yanlışlıkla -Enroll ile birleştirilmişti; doğru verb **Submit** olarak yerel sürümle doğrulandı.
+- 🔴✓ Korunan eski işlem kaydı **Phase=enroll_returned, ExitCode=-2147024809**, **NewMachineCertificateCount=0**. Bu yalnız LocalMachine/My installed certificate farkıdır; tüm makine key/request deposunun envanteri olduğu iddia edilmez. Eski receipt silinmez veya retry için temizlenmez.
+- Sonraki kontrollü adım ayrı **machine-signing-v2.inf/.req**: **certreq -new -machine -q**, RSA3072/SHA256/Microsoft Software Key Storage Provider/digitalSignature/code-signing-only/Exportable=false/ExportableEncrypted=false/PrivateKeyArchive=false/KeyProtection0/Admin+SYSTEM key DACL. Anahtar adı sistem tarafından üretilecek; mevcut key re-use veya özel anahtar export yok.
+- INF FileMode.CreateNew ile yazılır; daha önce hazırlık dosyası varsa işlem durur. Ayrı public before snapshot ve CSR hash saklanır. Bu aşama CA'ya istek göndermez; başarılı CSR çıktısından sonra **-Submit -AdminForceMachine -config exactCA** ve sonra **-Accept -machine** ayrı kapılardır. Henüz CSR/key metadata doğrulaması veya sertifika issuance başarısı yok.
+- Kanıt checkpoints/2026-10-25-windows-connector-certreq-capabilities-live-result.json; operatör komutu checkpoints/2026-10-25-windows-connector-machine-csr-prepare.ps1. Template/publication kabulü korunur; app dev.34, **54/94 (%57),40 açık**, A03/A04 açık. Formal rapor yenilenmedi.
+
 ## Makine sertifikası isteği CLI parametre kontrolünde durdu; yeni istek gönderilmeden sürüm kontrolü — 25 Ekim 2026
 
 - Operatör yerel **certreq -Enroll** yardımında yalnız **PolicyServer/user/machine/pin** seçeneklerini ve **Unexpected argument: -AdminForceMachine / 0x80070057 (WIN32 87)** bildirdi. Verilen enroll çağrısı bu sürümün kabul ettiği seçeneklerle uyumlu değildi; genel certreq dokümanındaki seçenekler verb bazında doğrulanmadan birlikte kullanılmıştı.
