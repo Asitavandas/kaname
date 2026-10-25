@@ -17,6 +17,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Gerçek DC01 gMSA hizmet oturumu ve temizlik kabulü tamamlandı — 25 Ekim 2026
+
+- Operatör WINDOWS_CONNECTOR_SERVICE_LOGON_PROBE1.0.0 sonucunu paylaştı: **ServiceLogonVerified=true, ProbeVerified=true**, hesap VIZYONVERI\\aw-deploy$, ExpectedSid/RuntimeSid aynı S-1-5-21-34256453-3348971241-2809240126-1648, runtime processID5708. İmzalı gerçek SCM hizmeti bu domain hesabıyla çalıştı; bu artık yalnız Test-ADServiceAccount veya CI LocalService kanıtı değildir.
+- 🔴✓ Geçici AuthWireLogonProbe-e214ab3a31c443dcac1f7394ce567041 hizmeti oluşturuldu ve **TemporaryServiceRemoved/TemporaryBinaryRemoved/TemporaryResultDirectoryRemoved=true**. Stage=runtime_verified, Error/NativeErrorCode=null, CleanupErrors=[]. İşlem kanıtı C:\\ProgramData\\AuthWire-ServiceProbe-055f7344ae51483ab65dad11b5d2da1a\\summary.json olarak bildirildi.
+- KDS/hesap sahipliği/readback, yerel kullanım, yalnız hedef SID'ye hizmet oturumu hakkı ve gerçek hizmet oturumu alt adımları tamamlandı. Test AD/GPO/hakları değiştirmedi, sır dışa aktarmadı. **GpoPersistenceVerified/ConnectorInstalled/CanApplyGpo=false**: bu başarı GPO edit/link/SYSVOL, hizmet kimliğiyle kod imzalama veya merkezi dağıtımın tamamlandığı anlamına gelmez.
+- Sonraki salt okunur komut, mevcut AuthWire-Pilot-Trust GPO'sunun GUID'sini ve adını sabitler; Get-GPOReport'tan yalnız bölüm adları/bağlı yollar, GPO delegasyonu ve seçili SYSVOL root/startup klasörlerinin SID tabanlı ACL'lerini okur. Tam GPO XML'i veya script/konfigürasyon içerikleri dışa verilmez; politika/yetki değiştirilmez. Mevcut trust GPO'suna otomatik edit hakkı verilmez veya mevcut müşteri GPO'su sahiplenilmez; yönetilecek dağıtım kapsamı/ayrı AuthWire GPO ihtiyacı bu envanterle netleştirilir.
+- Açık kapılar: GPO/SYSVOL için sınırlı sahiplik/delegasyon, kurumsal anahtarın hizmet erişimi, yönetim bağlantısı/connector kurulumu, GPO kalıcılığı/uygulaması, gerçek uç ve geri alma/ölçek kabulü. AuthWiredev.34 ve54/94 (%57) hesabı korunur; ana A04 tamamlanmış sayılmaz.
+- Kanıt: checkpoints/2026-10-25-windows-connector-service-logon-live-result.json. Sonraki komut: checkpoints/2026-10-25-windows-connector-gpo-scope-readonly.ps1. Bu kayıt sırasında yeni canlı servis, kaynak veya GPO değişikliği yapılmadı.
+
 ## 🔴✓ DC01 hedefli hizmet oturumu hakkı eklendi; gerçek hizmet testi teslim edildi — 25 Ekim 2026
 
 - Operatör PrepareServiceRight1.0.0 sonucunu paylaştı: aw-deploy$ / SID S-1-5-21-34256453-3348971241-2809240126-1648 için **AddedNow=true, DirectServiceRightAssigned=true, ExistingAssignmentsPreserved=true**. Üç eski allow kaydı korunarak yalnız hedef SID eklendi; deny listesi boş. LocalPolicyChanged=true, AD/GPO değişmedi. İşlem kaydı: C:\ProgramData\AuthWire-ServiceRight-802cad0a04f444aba5c8db948d5b7e92\service-right.json.
