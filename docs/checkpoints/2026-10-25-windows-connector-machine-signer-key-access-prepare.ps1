@@ -1,4 +1,4 @@
-# DC01 elevated operator command: bounded exact-file SID Read grant. Actual live result pending. No actual service key use verified by ACL alone.
+#Requires -Version 5.1
 $ErrorActionPreference = 'Stop'
 if ($env:COMPUTERNAME -ine 'DC01') { throw 'DC01 uzerinde calistirilmali' }
 Import-Module ActiveDirectory

@@ -1,0 +1,12 @@
+{
+  "event": "WINDOWS_CONNECTOR_KEY_ACCESS_COMMAND_STAGED",
+  "date": "2026-10-25",
+  "path": "/home/segmentiq/authwire-signer-key-access-prepare-v1-20261025.ps1",
+  "sha256": "c6bed8a5215a914f1562601587d8d45beeb99fccd358cd2c8141050c8a54d183",
+  "remote_digest_verified": true,
+  "operator_download_sign_with_existing_corporate_publisher": true,
+  "publisher": "6E74B513F766E01730719684A41B2664380CA68A",
+  "scope": "one exact CNG machine key file / service SID1648 / Read",
+  "live_applied": false,
+  "native_runtime_signing_test_pending": true
+}
