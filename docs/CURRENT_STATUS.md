@@ -17,6 +17,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Ayrı dağıtım GPO'sunun gerçek izin hazırlığı tamamlandı — 25 Ekim 2026
+
+- Operatör DC01/vizyonveri.local üzerinde **Initialize-AuthWireDeploymentGpo1.0.1 ResumeGpo** sonucunu paylaştı. **GpoResumed=true, GpoCreated=false, MetadataComplete=true, Blockers=[]**. Aynı **8c6808fd-a382-4bf2-9c9c-d9e1d46082a3** GPO'su kullanıldı; ikinci nesne oluşturulmadı.
+- 🔴✓ AuthWire-Pilot-Computers/SID1647=**GpoApply**, VIZYONVERI\\aw-deploy$/SID1648=**GpoEdit**, Authenticated Users=**GpoRead**. Domain Admins512/Enterprise Admins519/SYSTEM18 idari rolleri; Enterprise Domain Controllers9 read korundu. OwnerDomainAdmins512; hizmete GPO güvenliğini değiştirme/silme rolü verilmedi.
+- 🔴✓ SYSVOL metadata'sında hizmet yazma izni var (**SysvolServiceWriteMetadata=true**); hizmet ChangePermissions/TakeOwnership metadata'sı ve deny yok. **ProtectedTrustPreserved=true**: mevcut AuthWire-Pilot-Trust fingerprint'i korunmuş. Bu gerçek müşteri GPO delegasyon/readback kabulüdür.
+- **Linked=false, ContainsSettings=false, GpoLinked=false, SettingsApplied=false**: dağıtım GPO'su hâlâ boş/bağlantısızdır, uçlara ayar dağıtılmamıştır. AdChanged/GpoChanged=true yalnız bu yeni yönetilen GPO'da beklenen izin hazırlığını ifade eder.
+- **ServiceWriteAccessVerified/SigningKeyAccessVerified/ConnectorInstalled/CanApplyGpo=false** beklenen açık kapılardır; ACL metadata'sı gerçek hizmet hesabı AD/SYSVOL yazma testi yerine geçmez. Sonraki adım yalnız bu boş GPO'ya sınırlandırılmış, geçici test verisini temizleyen gerçek hizmet hesabı yazma/okuma kabulüdür; imzalama anahtarı erişimi ve connector kurulumu sonra gelir.
+- Receipt: C:\ProgramData\AuthWire-GpoPreparation-6394ceadf50a4dc29f13787be5822806\gpo-preparation.json. Kanıt: checkpoints/2026-10-25-windows-connector-deployment-gpo-live-prepared.json. Formal rapor yeniden üretilmedi; ürün dev.34 ve **54/94 (%57),40 açık** sayımı korunur; A03/A04 merkezi dağıtım üst maddeleri henüz bitmedi.
+
 ## 🔴✓ GPO sahiplik okuma hatası düzeltildi; aynı GPO için kontrollü devam hazır — 25 Ekim 2026
 
 - Gerçek salt okunur sonuç: GPO **8c6808fd-a382-4bf2-9c9c-d9e1d46082a3**, AuthWire-Managed-Deployment-4c23eebe, owner VIZYONVERI\\Domain Admins, ObjectClass=groupPolicyContainer; receipt evresi created_unlinked. **GPMC GpoDescription beklenen marker ile birebir aynı, LDAP AdDescription boş.** Önceki betiğin LDAP description ile GPO yorumunu eşitlemesi hatalıydı. Oluşmuş GPO silinmedi/yeniden oluşturulmadı; bu sorgu GPO değiştirmedi.

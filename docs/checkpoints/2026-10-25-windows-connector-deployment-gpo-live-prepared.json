@@ -1,0 +1,79 @@
+{
+  "reported_by": "operator",
+  "accepted_gate": "managed_deployment_gpo_delegation_and_metadata",
+  "result": {
+    "Event": "WINDOWS_CONNECTOR_DEPLOYMENT_GPO_PREPARATION",
+    "ToolVersion": "1.0.1",
+    "Mode": "ResumeGpo",
+    "Computer": "DC01",
+    "Domain": "vizyonveri.local",
+    "ProposedGpoName": "AuthWire-Managed-Deployment-4c23eebe",
+    "InstanceId": "4c23eebe-0715-46d1-88ee-a2e96ad7ee46",
+    "ServiceAccount": "VIZYONVERI\\aw-deploy$",
+    "ServiceSid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+    "ServiceTargetType": "User",
+    "ScopeGroup": "AuthWire-Pilot-Computers",
+    "ScopeGroupSid": "S-1-5-21-34256453-3348971241-2809240126-1647",
+    "ScopeGroupApplyOnly": true,
+    "ProtectedTrustGpoId": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
+    "ProtectedTrustPreserved": true,
+    "GpoExists": true,
+    "GpoCreated": false,
+    "GpoResumed": true,
+    "GpoState": {
+      "Id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+      "Name": "AuthWire-Managed-Deployment-4c23eebe",
+      "OwnerSid": "S-1-5-21-34256453-3348971241-2809240126-512",
+      "Linked": false,
+      "ContainsSettings": false,
+      "Permissions": [
+        {
+          "Sid": "S-1-5-21-34256453-3348971241-2809240126-1647",
+          "Permission": "GpoApply"
+        },
+        {
+          "Sid": "S-1-5-21-34256453-3348971241-2809240126-512",
+          "Permission": "GpoEditDeleteModifySecurity"
+        },
+        {
+          "Sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+          "Permission": "GpoEdit"
+        },
+        {
+          "Sid": "S-1-5-21-34256453-3348971241-2809240126-519",
+          "Permission": "GpoEditDeleteModifySecurity"
+        },
+        {
+          "Sid": "S-1-5-11",
+          "Permission": "GpoRead"
+        },
+        {
+          "Sid": "S-1-5-9",
+          "Permission": "GpoRead"
+        },
+        {
+          "Sid": "S-1-5-18",
+          "Permission": "GpoEditDeleteModifySecurity"
+        }
+      ],
+      "SysvolServiceWriteMetadata": true,
+      "SysvolServiceAdministrativeRights": false,
+      "SysvolServiceDeny": false,
+      "MetadataComplete": true
+    },
+    "OwnershipMarker": "AuthWireDeployment:v1;instance=4c23eebe-0715-46d1-88ee-a2e96ad7ee46;host=0fa4143f-aae3-4bc3-9cd3-db8a1de24acd;service=S-1-5-21-34256453-3348971241-2809240126-1648;scope=S-1-5-21-34256453-3348971241-2809240126-1647",
+    "Blockers": [],
+    "ReadyForPrepare": true,
+    "ReadyForResume": true,
+    "ReceiptPath": "C:\\ProgramData\\AuthWire-GpoPreparation-6394ceadf50a4dc29f13787be5822806\\gpo-preparation.json",
+    "AdChanged": true,
+    "GpoChanged": true,
+    "GpoLinked": false,
+    "SettingsApplied": false,
+    "ServiceWriteAccessVerified": false,
+    "SigningKeyAccessVerified": false,
+    "ConnectorInstalled": false,
+    "CanApplyGpo": false
+  },
+  "live_service_ad_sysvol_write_acceptance_pending": true
+}
