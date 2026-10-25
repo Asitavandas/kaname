@@ -4,6 +4,15 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ Ayrı dağıtım GPO'sunun gerçek önizlemesi kabul edildi — 25 Ekim 2026
+
+- Operatör DC01/vizyonveri.local üzerinde Initialize-AuthWireDeploymentGpo1.0.0 **Inspect** sonucunu paylaştı: **Blockers=[], ReadyForPrepare=true, ProtectedTrustPreserved=true, GpoExists/GpoCreated=false**. Yeni AuthWire-Managed-Deployment-4c23eebe adı için çakışma yok; AD/GPO değiştirilmedi.
+- 🔴✓ Gerçek Win32 SID çözümlemesinde VIZYONVERI\\aw-deploy$ / SID1648 **ServiceTargetType=User** olarak geldi; GPMC rolü native sonuçtan seçildi. Aynı-domain AuthWire-Pilot-Computers güvenlik grubu/SID1647 doğrulandı. Sahiplik marker'ı kurulum4c23eebe-0715-46d1-88ee-a2e96ad7ee46, host0fa4143f-aae3-4bc3-9cd3-db8a1de24acd ve iki SID'ye bağlıdır.
+- ScopeGroupApplyOnly=true bu önizlemede **planlanan kapsamı** gösterir; GPO henüz yoktur ve uygulama izni atanmış sayılmaz. GpoLinked/SettingsApplied/ServiceWriteAccessVerified/SigningKeyAccessVerified/ConnectorInstalled/CanApplyGpo=false.
+- Sonraki teslim aynı doğrulanmış imzalı dosyada **PrepareGpo**: tekrar preflight sonrası yalnız yeni boş/bağlantısız GPO oluşturulur; yeni nesnede Authenticated Users read, pilot grup apply, hizmet GpoEdit olarak sınırlanır. Trust GPO delegasyonu/ayarları ve mevcut GPO'lar korunur. Komut teslimi gerçek oluşturma sonucu değildir; New-GPO/Set-GPPermission çıktısı beklenir.
+- Kullanılacak kaynak önceki PR73/test edilmiş sürümle aynı; yeni ürün kodu, Windows paketi, servis veya müşteri GPO değişikliği yapılmadı. Yeni tam yedek alınmadı. Gerçek oluşturma/delegasyon/readback, hizmetle gerçek AD/SYSVOL yazması, imzalama, GPO bağlama/kalıcılık ve merkezi dağıtım/uç kabulü açık kalır. AuthWiredev.34 ve54/94 (%57) korunur.
+- Kanıt: checkpoints/2026-10-25-windows-connector-deployment-gpo-live-inspect.json; sonraki komut: checkpoints/2026-10-25-windows-connector-deployment-gpo-prepare.ps1.
+
 ## 🔴✓ Pilot GPO/SYSVOL kapsam incelemesi tamamlandı; ayrı dağıtım GPO hazırlığı hazır — 25 Ekim 2026
 
 - Operatörün Yapıştırılan metin(3).txt çıktısı okundu/kaydedildi. AuthWire-Pilot-Trust / e5a9ab39-3709-49cb-837a-0208d2eb3b12, owner VIZYONVERI\\Domain Admins, AllSettingsEnabled; ComputerSections=Scripts/Public Key/Registry, UserSections=[], domain köküne bağlı. Pilot grupta GpoApply, Authenticated Users/Enterprise DC'lerde GpoRead; mevcut admin/SYSTEM yetkileri korunur.
