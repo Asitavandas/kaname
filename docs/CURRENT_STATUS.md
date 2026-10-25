@@ -17,6 +17,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ İmzalama readiness null-template hatası düzeltildi; gerçek tekrar bekleniyor — 25 Ekim 2026
+
+- Operatör **SigningReadiness1.0.0** sonunda Where-Object ShapeCompatible için **InputObjectIsNull** bildirdi. Sorgu readonly'dir; AD/GPO/cert/key-ACL/trust değişikliği yapılmadı. Çıktı tamamlanmadığından CA/template/key-scope envanteri kabul edilmez.
+- Kaynak neden: kod imzalama dışındaki şablonların analiz fonksiyonu **return $null** ile null pipeline kaydı üretmiş; ilk fixture yalnız code-signing template içeriyordu. **1.0.1** ilgisiz şablonda hiç kayıt üretmez, null discovery/shape kayıtlarını açıkça filtreler ve compatible sayımını null-safe yapar.
+- **Boş CodeSigningTemplates=[] ve count0 geçerli envanterdir**, hazırlık/onay değildir. Malformed ilgili signing metadata guard'ı korunur; hiçbir sertifika isteği veya anahtar/CA/template/GPO/trust mutation eklenmedi.
+- 🔴✓ PR78 source **a7d3ef57bc5448eddb0ea3317952e7593b64b53e**, merge **f3122f6406d5c4a9989ce51f049d57f5102e6720**. Native Windows5.1 **50 signing-readiness kontrolü** geçti: mixed, all-unrelated, empty, all-null discovery, JSON'da gerçek/null'sız array, malformed ilgili şablonu reddetme; önceki native CNG/CSP metadata ve readonly entry korumaları. AD/CA fixture'dır; gerçek müşteri inventory sonucu değildir. Önceki147/16/39/108/35/66, foundation724/28skip ve bounded retry probe başarılı.
+- Teslim /home/segmentiq/authwire-signing-readiness-v1-r2-20261025.ps1; SHA256 **6558d8fd4f4280ea5932b4b5d6a8f86131054a19e2792a5dffe72c463bed5b5a**, yerel/uzak eşleşti. **ToolVersion1.0.1 Inspect gerçek çıktı bekleniyor.** Service signing key, template/issuer seçimi, actual gMSA signing, publisher public trust ve connector/dağıtım kapıları açık kalır.
+- Kanıt/komut: checkpoints/2026-10-25-windows-connector-signing-null-fix-ci.json, checkpoints/2026-10-25-windows-connector-signing-inspect-r2.ps1. Ürün dev.34;54/94 (%57),40 açık değişmedi. Tam yedek/ürün servis restart/Windows endpoint veya package değişikliği yok.
+
 ## 🔴✓ Hizmet imzalama altyapısı için salt okunur kontrol aracı hazır — 25 Ekim 2026
 
 - **Get-AuthWireSigningReadiness.ps1 1.0.0**, yalnız Inspect modu ile hazırlandı. Aynı imzalı bootstrap/host/domain/kurulum/SID doğrulanır. Mevcut kurumsal publisher ve marker'lı LocalMachine adayları, native **CertGetCertificateContextProperty** provider metadata'sı ile okunur: CNG/CSP, machine/user keyset, provider ve container identifier SHA256. Private key acquisition/use/export API'si yoktur; HasPrivateKey metadata'sı hizmet erişimi sayılmaz.

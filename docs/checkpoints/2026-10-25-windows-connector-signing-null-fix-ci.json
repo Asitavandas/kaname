@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-25",
+  "timezone": "Europe/Istanbul",
+  "pr": 78,
+  "source_commit": "a7d3ef57bc5448eddb0ea3317952e7593b64b53e",
+  "merge_commit": "f3122f6406d5c4a9989ce51f049d57f5102e6720",
+  "tool_version": "1.0.1",
+  "reported_error": "Where-Object InputObjectIsNull while counting ShapeCompatible templates",
+  "reported_readonly_inspection_completed": false,
+  "sha256": "6558d8fd4f4280ea5932b4b5d6a8f86131054a19e2792a5dffe72c463bed5b5a",
+  "windows_run": 40193659275,
+  "bootstrap_job": 121169784150,
+  "scm_job": 121169783969,
+  "checks": {
+    "signing_readiness": 50,
+    "bootstrap": 147,
+    "lsa_read": 16,
+    "additive_right": 39,
+    "gpo_preparation": 108,
+    "scm": 35,
+    "gpo_write": 66
+  },
+  "foundation_run": 40193659250,
+  "foundation_job": 121169783398,
+  "foundation_tests": 724,
+  "foundation_skipped": 28,
+  "retry_run": 40193659186,
+  "all_passed": true,
+  "directory_calls_simulated": true,
+  "production_mutation_mode": false,
+  "customer_inspection_repeat_pending": true
+}
