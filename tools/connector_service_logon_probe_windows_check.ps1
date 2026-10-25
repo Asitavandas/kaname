@@ -17,15 +17,20 @@ try {
     $cert=New-SelfSignedCertificate -Type CodeSigningCert -Subject 'CN=AuthWire isolated SCM fixture' `
         -CertStoreLocation 'Cert:\CurrentUser\My' -KeyAlgorithm RSA -KeyLength 2048 `
         -HashAlgorithm SHA256 -KeyExportPolicy NonExportable -NotAfter (Get-Date).AddDays(1)
+    Write-Host 'SCM_FIXTURE certificate_generated'
     $public=[System.Security.Cryptography.X509Certificates.X509Certificate2]::new($cert.RawData)
-    $roots=[System.Security.Cryptography.X509Certificates.X509Store]::new('Root','CurrentUser')
+    $roots=[System.Security.Cryptography.X509Certificates.X509Store]::new('Root','LocalMachine')
     $roots.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
     $roots.Add($public)
-    $publishers=[System.Security.Cryptography.X509Certificates.X509Store]::new('TrustedPublisher','CurrentUser')
+    Write-Host 'SCM_FIXTURE local_machine_root_trusted'
+    $publishers=[System.Security.Cryptography.X509Certificates.X509Store]::new('TrustedPublisher','LocalMachine')
     $publishers.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
     $publishers.Add($public)
+    Write-Host 'SCM_FIXTURE local_machine_publisher_trusted'
     for($attempt=0;$attempt -lt 2;$attempt++) {
+        Write-Host ('SCM_FIXTURE runtime_attempt_' + $attempt)
         $r=Invoke-AuthWireServiceProbeCore -RuntimeAccount 'NT AUTHORITY\LocalService' -ExpectedSid 'S-1-5-19' -PublisherThumbprint $cert.Thumbprint
+        Write-Host ('SCM_FIXTURE runtime_result ' + ($r | ConvertTo-Json -Depth 6 -Compress))
         if(Test-Path -LiteralPath (Split-Path -Parent $r.EvidencePath)) { $folders += Split-Path -Parent $r.EvidencePath }
         if(-not $r.ProbeVerified) { throw ('SCM fixture failed: ' + ($r | ConvertTo-Json -Depth 7 -Compress)) }
         Check ($r.ServiceCreated -and $r.ServiceLogonVerified -and $r.RuntimeSid -eq 'S-1-5-19' -and $r.RuntimeProcessId -gt 0) 'Real signed service started with expected low-privilege identity'
