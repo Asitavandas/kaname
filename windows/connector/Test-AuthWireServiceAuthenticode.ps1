@@ -264,7 +264,7 @@ function New-AuthWireSignedProbeExecutable {
         foreach($assembly in @('System.dll','System.Core.dll','System.ServiceProcess.dll','System.Runtime.Serialization.dll','System.Xml.dll')) {
             $null=$parameters.ReferencedAssemblies.Add($assembly)
         }
-        $null=$parameters.ReferencedAssemblies.Add((Join-Path $PSHOME 'System.Management.Automation.dll'))
+        $null=$parameters.ReferencedAssemblies.Add([Management.Automation.PSObject].Assembly.Location)
         $compiled=$compiler.CompileAssemblyFromSource($parameters,(Get-AuthWireProbeExecutableSource -SignerThumbprint $SignerThumbprint))
         if($compiled.Errors.HasErrors) { throw ('PROBE_COMPILE_FAILED:' + (($compiled.Errors | Where-Object {-not $_.IsWarning} | ForEach-Object {$_.ErrorNumber + ':' + $_.ErrorText}) -join ';')) }
     } finally { $compiler.Dispose() }

@@ -29,6 +29,7 @@ try{
     Set-Acl -LiteralPath $keyPath -AclObject $acl
     $r=Invoke-AuthWireServiceProbeCore -RuntimeAccount 'NT AUTHORITY\LocalService' -ExpectedSid 'S-1-5-19' -PublisherThumbprint $publisher.Thumbprint -SignerThumbprint $signer.Thumbprint
     $folders+=Split-Path -Parent $r.EvidencePath
+    Write-Host ('AUTHENTICODE_FIXTURE_RESULT '+($r|ConvertTo-Json -Depth 6 -Compress))
     Check (-not $r.ProbeVerified -and -not $r.ServiceKeyAccessVerified -and -not $r.SignatureVerified) 'Real service without key Read cannot prove signing'
     Check ($r.ServiceCreated -and $r.TemporaryServiceRemoved -and $r.TemporaryBinaryRemoved -and $r.TemporaryResultDirectoryRemoved) 'Denied-key service is also cleaned up'
     $acl=Get-Acl -LiteralPath $keyPath
@@ -36,6 +37,7 @@ try{
     $acl.AddAccessRule($rule);Set-Acl -LiteralPath $keyPath -AclObject $acl
     $r=Invoke-AuthWireServiceProbeCore -RuntimeAccount 'NT AUTHORITY\LocalService' -ExpectedSid 'S-1-5-19' -PublisherThumbprint $publisher.Thumbprint -SignerThumbprint $signer.Thumbprint
     $folders+=Split-Path -Parent $r.EvidencePath
+    Write-Host ('AUTHENTICODE_FIXTURE_RESULT '+($r|ConvertTo-Json -Depth 6 -Compress))
     Check (-not $r.ProbeVerified -and -not $r.AuthenticodePackageSigningVerified) 'Untrusted signer cannot pass Authenticode Valid check'
     Check ($r.TemporaryServiceRemoved -and $r.TemporaryBinaryRemoved -and $r.TemporaryResultDirectoryRemoved) 'Untrusted-signature worker cleaned up'
     $signerPublic=[Security.Cryptography.X509Certificates.X509Certificate2]::new($signer.RawData)
@@ -43,6 +45,7 @@ try{
     $before=(Get-Acl -LiteralPath $keyPath).Sddl
     $r=Invoke-AuthWireServiceProbeCore -RuntimeAccount 'NT AUTHORITY\LocalService' -ExpectedSid 'S-1-5-19' -PublisherThumbprint $publisher.Thumbprint -SignerThumbprint $signer.Thumbprint
     $folders+=Split-Path -Parent $r.EvidencePath
+    Write-Host ('AUTHENTICODE_FIXTURE_RESULT '+($r|ConvertTo-Json -Depth 6 -Compress))
     if(-not $r.ProbeVerified){throw ('Signing fixture failed: '+($r|ConvertTo-Json -Compress -Depth 6))}
     Check ($r.ServiceLogonVerified -and $r.SignatureVerified -and $r.ServiceKeyAccessVerified -and $r.RuntimeSid -eq 'S-1-5-19' -and $r.RuntimeProcessId -gt 0) 'Actual signed SCM worker uses machine key under low-privilege service identity'
     Check ($r.TemporaryServiceRemoved -and $r.TemporaryBinaryRemoved -and $r.TemporaryResultDirectoryRemoved -and $r.CleanupErrors.Count -eq 0) 'Successful worker service and transient artifacts removed'
