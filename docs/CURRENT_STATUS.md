@@ -17,6 +17,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Owned signer key Read grant sonrası SDDL postcheck eşleşmedi; gerçek izinler yeniden okunacak — 25 Ekim 2026
+
+- Operatör staged **authwire-signer-key-access-prepare-v1-20261025.ps1** aktarımından sonra **Izin sonrasi kontrol eslesmedi** hatası bildirdi. Hata, Set-Acl ve ActualAfterSddl receipt yazımından **sonraki** strict string karşılaştırmasında. İzin yazma komutu döndü; **başarı/koruma doğrulaması kabul edilmez**.
+- İlk baseline SYSTEM/Administrators FullControl ve protected DACL olarak kabul edilmişti. Beklenen değişiklik yalnız service SID1648 Allow Read+Synchronize. Gerçek fark henüz görülmediğinden sıra/SDDL gösterim farkı veya gerçek hak/owner/group değişikliği olarak teşhis konmadı.
+- **machine-signing-v2-key-access.json korunur**, mevcut receipt nedeniyle eski script zaten yeniden uygulamayı engeller. Otomatik tekrar/ACL reset/owner değiştirme/rollback yok. Gerçek gMSA signing probe başlatılmadı; **ServiceKeyAccessVerified=false**.
+- Sonraki salt okunur kontrol existing receipt **BeforeSddl/ExpectedAfterSddl/ActualAfterSddl/Phase** ve exact key dosyasının **CurrentSddl/OwnerSid/GroupSid/Protected + her ACE numeric rights/inheritance/propagation** değerlerini verecek. Yalnız diagnostic evidence machine-signing-v2-key-access-postcheck.json yazılır; key ACL değişmez. Çıktı gelmeden grant başarıya çevrilmez veya onarım komutu verilmez.
+- Kanıt checkpoints/2026-10-25-windows-connector-machine-signer-key-access-postcheck-failure.json; readonly komut checkpoints/2026-10-25-windows-connector-machine-signer-key-access-postcheck-readonly.ps1.
+- Önceki signer certificate/template/CNG metadata kabulü korunur. AuthWire app dev.34, **54/94 (%57),40 açık**, A03/A04 açık; formal rapor yenilenmedi.
+
 ## 🔴✓ Owned CNG key dosyasının izin başlangıcı kabul edildi; sınırlı service Read hazırlığı — 25 Ekim 2026
 
 - Operatör **WINDOWS_CONNECTOR_SIGNER_KEY_ACL_READONLY** sonucu: exact thumbFFC134... keyfile **C:\\ProgramData\\Microsoft\\Crypto\\Keys\\6d83645dd6648563b32f0fdecaf3d56e_1fed02ca-1f1d-4faf-839e-e8eb2f0eff4a**.

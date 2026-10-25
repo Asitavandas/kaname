@@ -1,0 +1,23 @@
+{
+  "event": "WINDOWS_CONNECTOR_KEY_ACCESS_POSTCHECK_FAILED",
+  "date": "2026-10-25",
+  "source": "operator-pasted live error",
+  "computer": "DC01",
+  "staged_script_sha256": "c6bed8a5215a914f1562601587d8d45beeb99fccd358cd2c8141050c8a54d183",
+  "stage": "after Set-Acl and ActualAfterSddl receipt persistence",
+  "error": "Izin sonrasi kontrol eslesmedi; tekrar calistirmadan ciktiyi paylasin",
+  "guard": "actual_after_sddl_not_exactly_equal_expected_after_sddl",
+  "cause_not_yet_diagnosed": true,
+  "acl_write_command_returned": true,
+  "actual_acl_success_not_accepted": true,
+  "current_rights_and_owner_group_pending": true,
+  "repeat_not_authorized_by_tool_guard": true,
+  "no_automatic_rollback_or_reset": true,
+  "next": "Readonly existing receipt + exact key current ACL owner/group/protection/per-rule numeric rights; inspect before any repair/acceptance",
+  "service_key_access_verified": false,
+  "real_service_signing_started": false,
+  "connector_installed": false,
+  "can_apply_gpo": false,
+  "completed": 54,
+  "total": 94
+}
