@@ -17,6 +17,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Windows hesabının gerçek readback kabulü tamamlandı — 25 Ekim 2026
+
+- Operatör imzalı bootstrap1.0.3 Inspect sonucunu paylaştı: **Blockers=[], ReadyForAccountPreparation=true, Kds.Ready=true/ConfigurationValid=true**. aw-deploy$ Exists=true/Created=false; SID S-1-5-21-34256453-3348971241-2809240126-1648. Sahiplik, AES, delegasyon, grup/SPN ve tek DC01 parola okuyucusu gereklilikleri gerçek AD'de birlikte doğrulandı. Hesap yeniden oluşturulmadı.
+- 🔴✓ Önceki ADPropertyValueCollection ve null-SPN kaynaklı yanlış engellerin gerçek DC01 kabulü kapandı. KDS ve hesap hazırlığı/readback alt adımları tamamlandı; **yerel gMSA kurulumu veya hizmet oturumu tamamlanmış sayılmaz**.
+- Pilot GPO AllSettingsEnabled/mevcut izinlerle; kurumsal yayıncı CodeSigningEku/HasPrivateKey/CurrentlyValid olumlu, hizmet anahtarı erişimi doğrulanmamış. Inspect AD/GPO/sertifika/yerel policy değiştirmedi, sır dışa aktarmadı. GmsaReadinessVerified/LocalInstallationVerified/ServiceLogonVerified/ConnectorInstalled/CanApplyGpo=false.
+- Sıradaki teslim yalnız **DC01 yerel gMSA kullanımı**: aynı imzalı bootstrap Inspect kapısı ve sabit SID doğrulanır; Test-ADServiceAccount zaten olumluysa yerel kurulum atlanır, olumsuzsa Install-ADServiceAccount ile yalnız yerel hazırlık yapılıp tekrar test edilir. Yerel kurulum komutu henüz operatör tarafından çalıştırılmış/kabul edilmiş değildir. Hesap/okuyucu/GPO/imzalama ACL'si veya oturum açma hakları değiştirilmez; connector hizmeti kurulmaz.
+- Gerçek hizmet kimliği/oturumu, en az yetkili GPO/SYSVOL erişimi, imzalama anahtarı erişimi, yönetim bağlantısı, gerçek GPO/uç dağıtımı ve geri alma kabulü açık kalır. Genel A03/A04 ve54/94 (%57) değişmedi; AuthWiredev.34 ve çalışan servisler için işlem yapılmadı.
+- Kanıt: checkpoints/2026-10-25-windows-connector-bootstrap-r4-live-accepted.json. Sonraki kapı teslimi: checkpoints/2026-10-25-windows-connector-local-account-check.ps1.
+
 ## 🔴✓ Boş SPN alanının yanlış sayılması düzeltildi — 25 Ekim 2026
 
 - Operatör gerçek DC01 metadata çıktısını paylaştı: aw-deploy$ / msDS-GroupManagedServiceAccount, SID S-1-5-21-34256453-3348971241-2809240126-1648. Description kurulum/host GUID'siyle tam eşleşir; DNS aw-deploy.vizyonveri.local, Enabled/AccountNotDelegated=true, TrustedForDelegation/TrustedToAuthForDelegation=false, AES128/AES256 ve ham msDS-SupportedEncryptionTypes24, primaryGroupID515, tek okuyucu DC01 DN'sidir.

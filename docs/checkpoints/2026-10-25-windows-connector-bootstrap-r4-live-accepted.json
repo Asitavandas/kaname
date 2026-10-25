@@ -1,0 +1,55 @@
+{
+  "event": "WINDOWS_CONNECTOR_BOOTSTRAP_R4_LIVE_ACCEPTED",
+  "reported_by": "operator",
+  "bootstrap_version": "1.0.3",
+  "mode": "Inspect",
+  "computer": "DC01",
+  "domain": "vizyonveri.local",
+  "connector_computer_guid": "0fa4143f-aae3-4bc3-9cd3-db8a1de24acd",
+  "instance_id": "4c23eebe-0715-46d1-88ee-a2e96ad7ee46",
+  "kds": {
+    "count": 1,
+    "ready": true,
+    "state": "configuration_valid",
+    "configuration_valid": true
+  },
+  "blockers": [],
+  "ready_for_account_preparation": true,
+  "account": {
+    "name": "aw-deploy$",
+    "exists": true,
+    "created": false,
+    "sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+    "allowed_password_host": "DC01",
+    "ownership_and_settings_verified": true,
+    "local_installation_verified": false,
+    "service_logon_verified": false
+  },
+  "gpo": {
+    "id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
+    "name": "AuthWire-Pilot-Trust",
+    "status": "AllSettingsEnabled",
+    "permissions_preserved": true,
+    "ownership_adopted": false,
+    "service_write_access_verified": false
+  },
+  "publisher": {
+    "thumbprint": "6E74B513F766E01730719684A41B2664380CA68A",
+    "store": "CurrentUser/My",
+    "code_signing_eku": true,
+    "eku_read_state": "valid",
+    "has_private_key": true,
+    "currently_valid": true,
+    "service_key_access_verified": false
+  },
+  "gmsa_readiness_verified": false,
+  "connector_installed": false,
+  "can_apply_gpo": false,
+  "ad_changed": false,
+  "gpo_changed": false,
+  "certificates_changed": false,
+  "local_policy_changed": false,
+  "secrets_exported": false,
+  "account_preparation_readback_complete": true,
+  "next_gate": "local gMSA install/cache and Test-ADServiceAccount on DC01; actual service logon is separate"
+}
