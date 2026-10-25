@@ -21,7 +21,7 @@ foreach($path in @($BootstrapPath,(Join-Path $PSScriptRoot 'ConnectorChannelType
  if($s.Status.ToString() -ne 'Valid' -or $s.SignerCertificate.Thumbprint -ine $PublisherThumbprint){throw 'PREPARATION_TOOL_SIGNATURE_INVALID'}
 }
 $gate=& $BootstrapPath -Mode Inspect -ExpectedDomain $ExpectedDomain -ConnectorComputer $ExpectedComputer -InstanceId $ConnectorId -AccountName $AccountName -PublisherThumbprint $PublisherThumbprint|ConvertFrom-Json
-if($gate.Event -ne 'WINDOWS_CONNECTOR_BOOTSTRAP' -or $gate.BootstrapVersion -ne '1.0.3' -or @($gate.Blockers).Count -ne 0 -or -not $gate.Kds.Ready -or -not $gate.Account.Exists -or $gate.Account.Sid -cne $AccountSid -or $gate.InstanceId -ine $ConnectorId.ToString('D') -or $gate.AdChanged -or $gate.GpoChanged){throw 'OWNED_ACCOUNT_REQUIRED'}
+if($gate.Event -ne 'WINDOWS_CONNECTOR_BOOTSTRAP' -or $gate.BootstrapVersion -ne '1.0.3' -or $gate.Mode -ne 'Inspect' -or $gate.Computer -ine $ExpectedComputer -or $gate.ConnectorComputer -ine $ExpectedComputer -or $gate.Domain -ine $ExpectedDomain -or @($gate.Blockers).Count -ne 0 -or -not $gate.ReadyForAccountPreparation -or -not $gate.Kds.Ready -or -not $gate.Account.Exists -or $gate.Account.Created -or $gate.Account.Name -ine ($AccountName+'$') -or $gate.Account.Sid -cne $AccountSid -or $gate.InstanceId -ine $ConnectorId.ToString('D') -or $gate.AdChanged -or $gate.GpoChanged -or $gate.CertificatesChanged -or $gate.LocalPolicyChanged -or $gate.SecretsExported){throw 'OWNED_ACCOUNT_REQUIRED'}
 Import-Module ActiveDirectory -ErrorAction Stop
 $ready=@(Test-ADServiceAccount -Identity $AccountSid -ErrorAction Stop)
 if($ready.Count -ne 1 -or $ready[0] -isnot [bool] -or -not $ready[0]){throw 'LOCAL_GMSA_READINESS_REQUIRED'}

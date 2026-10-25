@@ -106,7 +106,7 @@ function Initialize-AuthWireChannelKeyCore {
             $r=Get-Content -LiteralPath $receiptPath -Raw|ConvertFrom-Json
             $allowed=@('Format','Phase','KeyName','Binding','PublicKeyPem','KeySha256','ExpectedKeySddl')
             if(@($r.PSObject.Properties).Count -ne 7 -or @($r.PSObject.Properties.Name|Where-Object{$_ -notin $allowed}).Count){throw 'CONNECTOR_KEY_PREPARATION_REQUIRES_REVIEW'}
-            if($r.Format -ne 1 -or $r.Phase -cne 'verified' -or $r.KeyName -cnotmatch ('\AAuthWire-Channel-'+([guid]$BaseBinding.connector_id).ToString('N')+'-[0-9a-f]{32}\z')){throw 'CONNECTOR_KEY_PREPARATION_REQUIRES_REVIEW'}
+            if($r.Format -isnot [int] -or $r.Format -ne 1 -or $r.Phase -cne 'verified' -or $r.KeyName -cnotmatch ('\AAuthWire-Channel-'+([guid]$BaseBinding.connector_id).ToString('N')+'-[0-9a-f]{32}\z') -or @($r.Binding.PSObject.Properties).Count -ne 7){throw 'CONNECTOR_KEY_PREPARATION_REQUIRES_REVIEW'}
             foreach($n in $fields){if($r.Binding.$n -cne $BaseBinding[$n]){throw 'CONNECTOR_KEY_SCOPE_MISMATCH'}}
             $key=[Security.Cryptography.CngKey]::Open($r.KeyName,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::MachineKey)
         }else{

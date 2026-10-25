@@ -35,7 +35,7 @@ public static class ChannelTypesV1 {
    using(var c=new X509Certificate2(cert)){if(DateTime.UtcNow<c.NotBefore.ToUniversalTime()||DateTime.UtcNow>=c.NotAfter.ToUniversalTime())return false;
     using(var sha=SHA256.Create())return BitConverter.ToString(sha.ComputeHash(c.RawData)).Replace("-","").ToLowerInvariant()==pin;}
   };
-  using(var timer=new System.Threading.Timer(delegate(object _){r.Abort();},null,5000,System.Threading.Timeout.Infinite)){
+  using(var timer=new System.Threading.Timer(delegate(object _){try{r.Abort();}catch{}},null,5000,System.Threading.Timeout.Infinite)){
    try{using(var s=r.GetRequestStream())s.Write(body,0,body.Length);
     using(var response=(HttpWebResponse)r.GetResponse()){
      if(response.StatusCode!=HttpStatusCode.OK||response.ContentLength>4096||response.ContentEncoding!=""||response.ContentType.Split(';')[0].Trim().ToLowerInvariant()!="application/json")throw new InvalidOperationException();
