@@ -4,6 +4,16 @@ Tarih: 24 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ Owned CNG key dosyasının izin başlangıcı kabul edildi; sınırlı service Read hazırlığı — 25 Ekim 2026
+
+- Operatör **WINDOWS_CONNECTOR_SIGNER_KEY_ACL_READONLY** sonucu: exact thumbFFC134... keyfile **C:\\ProgramData\\Microsoft\\Crypto\\Keys\\6d83645dd6648563b32f0fdecaf3d56e_1fed02ca-1f1d-4faf-839e-e8eb2f0eff4a**.
+- 🔴✓ Owner **BUILTIN Administrators SID32-544**, group **DomainUsers SID513**, protected DACL; SDDL **O:BAG:DUD:P(A;;FA;;;SY)(A;;FA;;;BA)**. Yalnız SYSTEM/Administrators explicit FullControl2032127; inherited ACE yok. **DirectServiceEntryPresent=false / KeyAclChanged=false / ServiceKeyAccessVerified=false**.
+- Sonraki operatör komutu gMSA SID1648/class/instance-host description, exact cert-thumb→CNG.UniqueName mapping, KSP/machine/permanent/nonexport/signing3072 ve normal dosya guard'larından sonra **yalnız bu dosyaya service SID1648 Allow Read** ekler. Klasörlere veya başka anahtarlara izin verilmez; owner/group/protected flag ve mevcut SYSTEM/BA hakları korunur.
+- Windows FileSystemAccessRule Allow Read içine **Synchronize** bitini otomatik ekler; beklenen Read+Synchronize sayısal haklar1179785, FullControl değildir. Kaynak: https://learn.microsoft.com/dotnet/api/system.security.accesscontrol.filesystemrights ve https://learn.microsoft.com/dotnet/api/system.security.accesscontrol.filesystemsecurity.addaccessrule .
+- **machine-signing-v2-key-access.json** CreateNew ile Set-Acl'den önce BeforeSddl/ExpectedAfterSddl tutar. Taze baseline SDDL farklıysa write yapılmaz. Sonrasında ActualAfterSddl expected ile birebir karşılaştırılır; eski hakların korunması bu karşılaştırmaya dayanır. Mismatch/yarım receipt halinde kör tekrar/auto-reset yok.
+- Bu standart yerel admin ACL işlemi henüz canlı uygulanmadı; native runtime signing probe veya gMSA key-use acceptance olarak sunulmaz. Prepare sonucu gelse dahi **ServiceKeyAccessVerified=false**, gerçek SCM/gMSA imzalama testi sonraki kapı. Chain/pinned CA/public publisher trust/endpoint package ve connector kapıları açık kalır.
+- Kanıt checkpoints/2026-10-25-windows-connector-machine-signer-key-acl-before-live-result.json; operatör komutu checkpoints/2026-10-25-windows-connector-machine-signer-key-access-prepare.ps1. AuthWire app dev.34, **54/94 (%57),40 açık**, A03/A04 açık; formal rapor yenilenmedi.
+
 ## 🔴✓ Gerçek makine signer template/key özellikleri doğrulandı — 25 Ekim 2026
 
 - Operatör **WINDOWS_CONNECTOR_MACHINE_SIGNER_KEY_READONLY**, exact thumbprint **FFC134BC305757457163F99C7479B4168E397129**, **TemplateOidMatches=true** sonucunu paylaştı. Certificate extension doğru owned template OID'ye bağlı.

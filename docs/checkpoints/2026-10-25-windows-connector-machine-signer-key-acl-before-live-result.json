@@ -1,0 +1,38 @@
+{
+  "event": "WINDOWS_CONNECTOR_MACHINE_SIGNER_KEY_ACL_BASELINE_ACCEPTED",
+  "date": "2026-10-25",
+  "source": "operator-pasted live output",
+  "thumbprint": "FFC134BC305757457163F99C7479B4168E397129",
+  "service_sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+  "key_file": "C:\\ProgramData\\Microsoft\\Crypto\\Keys\\6d83645dd6648563b32f0fdecaf3d56e_1fed02ca-1f1d-4faf-839e-e8eb2f0eff4a",
+  "owner_sid": "S-1-5-32-544",
+  "group_sid": "S-1-5-21-34256453-3348971241-2809240126-513",
+  "dacl_protected": true,
+  "sddl": "O:BAG:DUD:P(A;;FA;;;SY)(A;;FA;;;BA)",
+  "rules": [
+    {
+      "sid": "S-1-5-18",
+      "type": "Allow",
+      "rights": "FullControl",
+      "rights_code": 2032127,
+      "inherited": false,
+      "inheritance": "None",
+      "propagation": "None"
+    },
+    {
+      "sid": "S-1-5-32-544",
+      "type": "Allow",
+      "rights": "FullControl",
+      "rights_code": 2032127,
+      "inherited": false,
+      "inheritance": "None",
+      "propagation": "None"
+    }
+  ],
+  "direct_service_entry_present": false,
+  "key_acl_changed": false,
+  "service_key_access_verified": false,
+  "next": "Add only service SID Read to exact key file, protected receipt, strict before/expected-after SDDL guard; then real SCM signing probe",
+  "completed": 54,
+  "total": 94
+}
