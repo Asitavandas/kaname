@@ -17,6 +17,21 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Tek yönetilen hizmet hesabı hedefi — 25 Ekim 2026, plan kararı; uygulama bekliyor
+
+Operatör mevcut üç hesabın müşteri kurulumlarında yönetim yükünü kabul etmedi; standart tek-domain kurulumunda tek yönetilen hizmet hesabı hedefini onaylayıp zamanlamayı bize bıraktı. Karar: **mimari şimdi netleştirilecek, uygulama kalıcı Windows Connector geliştirmesine dahil edilecek; üç hesaba bağımlı kalıcı connector tamamlandıktan sonraya ertelenmeyecek.**
+
+- [ ] **A04 öncelikli tasarım/uygulama alt işi:** tek kurulum sihirbazı ve bir gMSA ile AD katalog eşitlemesi, canlı hesap/üyelik kontrolleri, Kerberos kayıt kabulü, owned GPO dağıtımı ve Windows tarafında imzalama. Bu bir ürün hedefidir; mevcut sürüm bunu henüz sağlamaz. İlk destek sınırı tek AD domainidir; çoklu domain/forest için tek hesap garantisi verilmez.
+- [ ] Linux üzerinde saklanan LDAP bağlantı parolası ve ayrı HTTP keytab bağımlılığını kaldırabilecek Windows taraflı doğrulama/okuma yolu tasarlanır. gMSA parolası, keytab veya özel imzalama anahtarı Linux'a dışa aktarılıp hesap sayısı azaltılmış gibi gösterilmez. Mevcut LDAP hesabına GPO yazma yetkisi eklenmez; HTTP SPN aynı anda iki hesaba kaydedilmez.
+- [ ] Connector kanalında kurulum/host/işlem kimliğine bağlı karşılıklı kimlik doğrulama, replay ve süre denetimi; kullanıcı ve bilgisayar kayıtlarının ayrılığı, istek/CSR bağlama ve mevcut Kerberos güvenlik şartları korunur. Linux sertifika otoritesi ve RADIUS karar sınırları ayrıca değerlendirilir; sıradan bir connector beyanı kimlik doğrulama kanıtı kabul edilmez.
+- [ ] Dizin okuması ve GPO/imzalama işlemleri tek AD kimliği altında olsa da API/işlem yetkileri ayrı ve sınırlı tutulur. Domain Admin/orman geneli yazma yetkisi verilmez; owned GPO ve açıkça seçilmiş imzalama anahtarı sınırları korunur. Mevcut aw-deploy$ hazırlıkları yeniden kullanılır; gereksiz yeni hesap açılmaz.
+- [ ] Connector erişilemezliği ve AD erişilemezliğinde katalog güncelliği, canlı yetkilendirme, RADIUS zaman aşımı ve kayıt/yenileme davranışı açıkça tanımlanır; eski katalog canlı AD kontrolü yerine sessizce geçirilmez. Gecikme/yük ve toparlama testleri yapılır.
+- [ ] **Geçiş kabulü:** AD eşitlemesi + canlı AD retleri + kullanıcı/bilgisayar Kerberos kaydı + sertifika yenileme + wired/wireless RADIUS + owned GPO/paket imzalama + kesinti/geri alma birlikte doğrulanır. Pilot ardından ölçek kabulü yapılır. Uç kabulü gerçek test bilgisayarı erişimine bağlıdır.
+- [ ] Ancak yeni yol kabul edilip eski bağlantı bağımlılıkları tek tek envanterlendikten sonra eski LDAP/HTTP hesaplarının yetkileri ve SPN/keytab kullanımı kontrollü kaldırılır. Önce geri alınabilir geçiş ve devre dışı bırakma, sonra bağımlılık kalmadığı doğrulanarak silme planlanır. Mevcut çalışan hesaplar şimdi değiştirilmez/silinmez.
+- [ ] Müşteri deneyimi: yönetici bir kez bootstrap'ı yetkilendirir, günlük parola yönetimi gMSA ile otomatik olur, devamı AuthWire panelinden yürür. Yönetici hesabı kalıcı servis kimliği/credential olarak saklanmaz. Pilot grubunun ve GPO'nun hesap olmadığı kurulumda açıklanır.
+
+Bu karar yalnız yol haritasını günceller; yeni kod, AD/GPO/SPN, hesap, keytab, servis, sertifika veya canlı paket değişikliği yapılmadı. Önceki başarılı gMSA/GPO/imzalama kanıtları korunur. Canlı AuthWire dev.34; A03/A04 açık, üst checklist **54/94 (%57), 40 açık** değişmedi; yeni üst madde eklemek yerine A04 kabul şartı genişletildi.
+
 ## 🔴✓ GPO yenilemesi sonrası gerçek hizmet oturumu ve Authenticode imzalama kabulü tamamlandı — 25 Ekim 2026
 
 - Operatör yenileme sonrasında **WINDOWS_CONNECTOR_SERVICE_AUTHENTICODE_PROBE1.0.0** sonucunu paylaştı. Yeni SCM hizmeti **AuthWireLogonProbe-8d6389074d234875baf386c18ab25969**, gerçek PID **4892**, beklenen gMSA SID **...-1648**.
