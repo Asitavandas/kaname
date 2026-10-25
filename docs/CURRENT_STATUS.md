@@ -17,6 +17,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 yerel gMSA kullanım kontrolü tamamlandı — 25 Ekim 2026
+
+- Operatör WINDOWS_CONNECTOR_LOCAL_ACCOUNT_CHECK sonucunu paylaştı: DC01/aw-deploy$, SID S-1-5-21-34256453-3348971241-2809240126-1648, **LocalInstallationVerified=true, AccountReadyForUse=true**.
+- **InstalledNow=false:** ilk Test-ADServiceAccount zaten olumlu olduğu için Install-ADServiceAccount çağrısı atlandı. Yeni yerel kurulum/hesap oluşturma veya hesap yeniden oluşturma yapılmadı. Sabit SID ve imzalı bootstrap1.0.3 Inspect kapısı üzerinden gerçek Windows kullanım kontrolü tamamlandı.
+- 🔴✓ KDS, hesap/sahiplik/readback ve yerel kullanım alt adımları tamamlandı. **ServiceLogonVerified=false, ConnectorInstalled=false, CanApplyGpo=false** aynen kalır: Test-ADServiceAccount başarısı, gerçek Windows hizmetinin bu kimlikle çalıştığının kanıtı değildir.
+- Sıradaki salt okunur ön kontrol, DC01 birleşik yerel/domain güvenlik veritabanında yalnız SeServiceLogonRight ve SeDenyServiceLogonRight atamalarını okur. secedit /export /mergedpolicy /areas USER_RIGHTS kullanılır; /configure veya /import çağrısı yoktur. Benzersiz geçici INF/log dosyaları işlem sonunda kaldırılır. Atamalar tek başına grup üzerinden gelen etkin hakkı veya gerçek hizmet oturumunu kanıtlamaz.
+- Gerçek hizmet oturumu, gerekiyorsa yalnız hedef SID'ye sınırlı hak hazırlığı, GPO/SYSVOL izinleri, imzalama anahtarına hizmet erişimi, yönetim bağlantısı ve GPO/uç/geri alma kabulü açık kalır. Hiçbir oturum açma hakkı bu teslimde değiştirilmedi; mevcut müşteri GPO'su veya domain-controller hak listesi üzerine yazılmaz. A03/A04, AuthWiredev.34 ve54/94 (%57) korunur.
+- Kanıt: checkpoints/2026-10-25-windows-connector-local-account-live-result.json; sonraki salt okunur komut: checkpoints/2026-10-25-windows-connector-service-rights-readonly.ps1.
+
 ## 🔴✓ Windows hesabının gerçek readback kabulü tamamlandı — 25 Ekim 2026
 
 - Operatör imzalı bootstrap1.0.3 Inspect sonucunu paylaştı: **Blockers=[], ReadyForAccountPreparation=true, Kds.Ready=true/ConfigurationValid=true**. aw-deploy$ Exists=true/Created=false; SID S-1-5-21-34256453-3348971241-2809240126-1648. Sahiplik, AES, delegasyon, grup/SPN ve tek DC01 parola okuyucusu gereklilikleri gerçek AD'de birlikte doğrulandı. Hesap yeniden oluşturulmadı.

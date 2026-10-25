@@ -1,0 +1,15 @@
+{
+  "event": "WINDOWS_CONNECTOR_LOCAL_ACCOUNT_CHECK",
+  "reported_by": "operator",
+  "Computer": "DC01",
+  "Account": "aw-deploy$",
+  "Sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+  "InstalledNow": false,
+  "LocalInstallationVerified": true,
+  "AccountReadyForUse": true,
+  "ServiceLogonVerified": false,
+  "ConnectorInstalled": false,
+  "CanApplyGpo": false,
+  "local_readiness_gate_accepted": true,
+  "next": "Read merged service-logon and deny-service-logon assignments before a real service logon test. Do not infer effective rights solely from direct SID membership."
+}
