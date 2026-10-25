@@ -17,6 +17,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 signer key izin doğrulama kaydı tamamlandı; gerçek hizmet signing probe hazırlanıyor — 25 Ekim 2026
+
+- Operatör **WINDOWS_CONNECTOR_SIGNER_KEY_ACL_VERIFIED / ComparisonVersion1.0.1**, thumbFFC134... / serviceSID1648 için **ReadPermissionVerified=true / ExistingRightsPreserved=true / AutoInheritedMetadataOnly=true / ChangedControlFlagsCode1024** sonucunu paylaştı.
+- 🔴✓ Orijinal receipt **phasepostcheck** geçmiş hata kanıtı olarak korunmuş; SHA256 **86E10BC742147BD1A25B9E53907723DC75B34B106235B69BE4648A6F32F23851** yeni verified JSON'a bağlanmış. Current SDDL protected **D:PAI**, SYSTEM/BA FA ve yalnız serviceSID FR. **KeyAclChangedByThisCheck=false**; ACL yeniden uygulanmadı.
+- **ServiceKeyAccessVerified/RuntimeSigningTested=false** doğru: bu kapı yalnız izin doğrulaması. Gerçek hizmet anahtar kullanımı henüz kabul edilmez.
+- Sonraki araç **Test-AuthWireServiceSigning1.0.0** PR81'de hazırlanıyor: mevcut signed owned-SCM yaşam döngüsü, null gMSA password, runtime SID/PID/host/nonce bağları ve cleanup tekrar kullanılır. Worker yalnız exact LocalMachine/My signer üzerinde CNG/machine/nonexport/RSA3072/signing-only özellikleriyle identity-bound challenge imzalar; controller public RSA doğrular. Inspect varsayılanı korunur; RunProbe ayrı çağrıdır.
+- Bu raw challenge signing kapısıdır; **AuthenticodePackageSigningVerified/CertificateChainValidationPerformed=false** açıkça raporlanacak. Gerçek hizmet context Authenticode package signing, pinned CA-chain/trust ve Windows deployment halen sonraki kapılardır; paket/policy/GPO/logon right/key ACL değiştirme yok.
+- Native Windows fixture gerçek düşük yetkili LocalService ile önce Read olmadan başarısızlık, sonra exact file Read ile başarı/signature tamper reddi/cleanup deneyecek. **CI ve gerçek DC01 sonucu bu kayıtta henüz bekleniyor**; PR hazırlanması canlı başarı değildir.
+- Kanıt checkpoints/2026-10-25-windows-connector-machine-signer-key-acl-verified-live-result.json. AuthWire app dev.34, **54/94 (%57),40 açık**, A03/A04 açık; formal rapor yenilenmedi.
+
 ## 🔴✓ Key Read grant doğru; false-negative postcheck yalnız AI metadata farkından düzeltildi — 25 Ekim 2026
 
 - Operatör readonly postcheck sonucunda **Expected D:P → Actual/Current D:PAI** gösterdi. Tek control farkı **SE_DACL_AUTO_INHERITED bit1024**; **P/protection=true** korunuyor. Bütün ACE'ler explicit/inheritanceNone/propagationNone.
