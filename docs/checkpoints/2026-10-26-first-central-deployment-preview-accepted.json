@@ -1,0 +1,37 @@
+{
+  "event": "FIRST_CENTRAL_WINDOWS_DEPLOYMENT_PREVIEW_ACCEPTED",
+  "date": "2026-10-26",
+  "evidence_basis": "operator_screenshot_directly_viewed",
+  "image": "image(20261026-193519).png",
+  "image_sha256": "b718b9660e8738254dd87c1519bcbda4fe2bd1dd3980905bf89e6b8fa564faba",
+  "observed": {
+    "plan_name": "AuthWire Pilot - Merkezi Windows",
+    "plan_version": 1,
+    "computer_targets_enabled": 2,
+    "computer_targets_total": 2,
+    "catalog_synced_at": "2026-10-26T19:24:32.826510+00:00",
+    "auth_mode": "machine",
+    "wired": true,
+    "wireless": true,
+    "ssid": "VV_802.1X",
+    "server_name": "kaname.vizyonveri.local",
+    "machine_profile_name": "AuthWire-Pilot-Computers",
+    "machine_profile_version": 3,
+    "root_thumbprint": "C789A0595ADB95A6BE4534D01B1D205F6C37DE18",
+    "artifact_blockers_displayed": [],
+    "profile_zip_download_appears_enabled": true
+  },
+  "unobserved": [
+    "plan_id",
+    "machine_profile_id",
+    "preview_hash",
+    "computer_target_names"
+  ],
+  "zip_download_and_inspection_pending": true,
+  "live_assistant_api_sql_read_performed": false,
+  "gpo_applied": false,
+  "assistant_gpo_changed": false,
+  "assistant_endpoint_changed": false,
+  "next_step": "Operator downloads profile XML ZIP and shares it for manifest, identity, public certificate and EAP-TLS configuration inspection",
+  "legacy_static_connector_waiting_text_is_not_new_health_failure": true
+}

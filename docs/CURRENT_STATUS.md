@@ -20,6 +20,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ İlk merkezi Windows pilot planı önizlendi — 26 Ekim 2026
+
+Operatörün **image(20261026-193519).png** görüntüsü doğrudan incelendi: **AuthWire Pilot - Merkezi Windows · v1**, **2 etkin /2 toplam bilgisayar**, bilgisayar kimliği, **Ethernet + Wi-Fi / VV_802.1X**, **kaname.vizyonveri.local**, bilgisayar sertifika profili **AuthWire-Pilot-Computers · v3** ve kök **C789A0595ADB95A6BE4534D01B1D205F6C37DE18** görünüyor. AD okuma zamanı **2026-10-26T19:24:32.826510+00:00**. Görsel SHA256 **b718b9660e8738254dd87c1519bcbda4fe2bd1dd3980905bf89e6b8fa564faba**. Artifact blocker görünmüyor ve **Profil XML paketini indir** düğmesi kullanılabilir. Bu operatör önizleme kanıtıdır; bağımsız canlı API/SQL incelemesi değildir.
+
+Planın görünen ayarları kabul edildi. Görüntü plan/profile UUID'lerini, preview hash'ini veya hedef bilgisayar adlarını göstermiyor; bunlar varsayılmayacak. Sonraki somut adım bu ekrandan XML ZIP paketini indirip inceleme için paylaşmak: manifest/plan kimlikleri, dosya özetleri ve Ethernet/Wi-Fi EAP-TLS sunucu adı/kök doğrulaması kontrol edilecek. Paket yalnız açık sertifikalar ve ağ profilleri içerir; özel anahtar veya çalıştırılabilir dağıtım değildir. İndirme/inceleme henüz yapılmadı.
+
+Ekrandaki Windows bağlantısı bekleniyor metni önceki kaynak incelemesinde doğrulanan sabit placeholder'dır. Kabul edilen sağlıklı Connector/probe kanalı korunur; yeniden eşleme yapılmayacak. **GPO apply henüz uygulanmadı**, owned deployment GPO'nun fresh ownership/scope incelemesi ve imzalı dağıtım/publisher güveni sonraki ayrı kapıdır. Bu adımda asistan GPO/AD/endpoint değişikliği veya yeni Connector işi yapmadı. **54/94 (~%57),40 açık** değişmedi.
+
+
 ## Merkezi Windows dağıtımı: mevcut plan ekranıyla ilk pilot önizlemesi — 26 Ekim 2026
 
 Kaynak incelemesi **Deployment.save/preview/package** ve sürümlü plan editörünün zaten var olduğunu doğruladı. Yeni/ikinci plan altyapısı yazılmayacak. İlk operatör adımı **Sertifikalar → Merkezi dağıtım → Yeni dağıtım** üzerinden **AuthWire Pilot - Merkezi Windows** planını hazırlamak: bilgisayar kimliği; **AuthWire-Pilot-Computers / …1647**; aynı gruba bağlı mevcut bilgisayar sertifika profili; Ethernet+Wi-Fi; **VV_802.1X**; RADIUS adı **kaname.vizyonveri.local**. Kullanıcı sertifika profili bu ilk machine planında kullanılmaz. Plan kaydetmek ve önizlemek AD/GPO/endpoint değiştirmez; kaynak tarafından desteklenen, ayrı bilgisayar/kullanıcı cached üyelik sayımı ve trust/profile blocker'ları doğrulanacak.
