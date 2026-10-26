@@ -17,6 +17,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 Connector panel çevrimiçi kabulü doğrulandı — 26 Ekim 2026
+
+Operatörün yüklediği `image(20261026-140923).png` doğrudan görsel incelendi. Sistem → Windows bağlantısı sayfasında **“Connector bağlantı kanalı çevrimiçi.”**, Windows sunucusu **dc01.vizyonveri.local**, beklenen tam **cbe3b5afdc40e5a141f55499ade4e32dbaf4792b0772dfcd025448c7633a9041** key ID ve **eşleştirme sürümü 1** görünüyor. Panel çevrimiçi kabulü geçti. Bu ayrı bir asistan-authenticated API GET olarak sunulmaz.
+
+Sırada yalnız Connector hizmetini imzalı araçla Stop/Start yapmak ve yeniden başlatma zamanından daha yeni health kaydıyla bağlantı dönüşünü doğrulamak var. DC01/AD/RADIUS yeniden başlatılmayacak; paket/anahtar/policy değişmeyecek. Fresh-session System.ServiceProcess assembly kaynak düzeltmesi açık, yönetici oturumu preload geçici çözümü kullanılır. **54/94 (~%57),40 açık** değişmedi.
+
 ## 🔴✓ DC01 gerçek gMSA Connector ilk health kabulü başarılı — 26 Ekim 2026 17:06 +03
 
 Operatör **Start** sonucunda hizmetin Running olduğunu paylaştı; Win32_Service StartName=`VIZYONVERI\aw-deploy$`, ProcessId=9608. ReleaseId **7b7d7bbc-88c0-4d83-8274-0ab294db2236**. İlk taze health kaydı **2026-10-26T14:06:04.0627530Z**, RuntimeSid **S-1-5-21-34256453-3348971241-2809240126-1648**, **Healthy=true, SuccessCount=1, ConsecutiveFailures=0**. Mevcut runtime bu sonucu ayrı non-exportable kanal anahtarıyla imzalı poll/challenge-health ve normal doğrulamalı/pinli HTTPS üzerinden verir. Gerçek gMSA ayrı kanal key-use ve ilk HTTPS health kabulü geçti; bu operatör çıktısıdır, bağımsız sunucu GET kanıtı değildir.

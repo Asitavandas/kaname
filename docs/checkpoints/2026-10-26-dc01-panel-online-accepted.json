@@ -1,0 +1,14 @@
+{
+  "event": "DC01_CONNECTOR_PANEL_ONLINE_VISUALLY_ACCEPTED",
+  "date": "2026-10-26",
+  "evidence_source": "operator_uploaded_screenshot_directly_inspected",
+  "uploaded_name": "image(20261026-140923).png",
+  "panel_status": "Connector bağlantı kanalı çevrimiçi.",
+  "host_fqdn": "dc01.vizyonveri.local",
+  "channel_key_sha256": "cbe3b5afdc40e5a141f55499ade4e32dbaf4792b0772dfcd025448c7633a9041",
+  "generation": 1,
+  "independent_authenticated_api_get_performed": false,
+  "controlled_stop_start_acceptance_pending": true,
+  "completed": 54,
+  "total": 94
+}
