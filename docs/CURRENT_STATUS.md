@@ -17,6 +17,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 kalıcı Connector hizmeti kuruldu; başlatma ve health kabulü bekliyor — 26 Ekim 2026
+
+Operatör önce **Inspect** ile aynı ReleaseId **7b7d7bbc-88c0-4d83-8274-0ab294db2236** paketini doğruladı: ServiceInstalled=false / Absent. Ardından **Install** sonucu ServiceCreated=true, ServiceInstalled=true, ServiceState=Stopped döndü. Hizmet: `AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46`. AD/GPO, logon rights ve key ACL değişmedi; gizli veri dışarı aktarılmadı. Install'ın owned-key/bootstrap/publisher kontrolleri geçti; bu gerçek runtime gMSA health kabulü sayılmaz.
+
+Sırada imzalı kontrol aracının **Start** modu ve taze `state\status.json` içindeki RuntimeSid/Healthy/LastSuccessUtc/SuccessCount ile panel bağlantı kontrolü var. **CanApplyGpo=false** beklenir; bu sürüm health kanalıdır. GPO/dizin/Kerberos işi ve eski hesapları kaldırma hâlâ açık. **54/94 (~%57),40 açık** değişmedi.
+
 ## 🔴✓ DC01 kalıcı Connector hizmet paketi hazır — 26 Ekim 2026
 
 Operatör `WINDOWS_CONNECTOR_SERVICE_PACKAGE_PREPARED` sonucunu paylaştı: RootPath `C:\Program Files\AuthWire-Connector-4c23eebe071546d188eea2e96ad7ee46`, ServiceName `AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46`, ReleaseId **7b7d7bbc-88c0-4d83-8274-0ab294db2236**, PackagePrepared=true. **ServiceCreated=false, ServiceStarted=false**; AD/GPO değişmedi, gizli veri dışarı aktarılmadı. Bu operatör sonucu paket hazırlığı kabulüdür; kalıcı hizmet/gerçek gMSA HTTPS kabulü değildir.

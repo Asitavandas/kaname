@@ -1,0 +1,25 @@
+{
+  "event": "DC01_SERVICE_INSTALL_OPERATOR_RESULT_ACCEPTED",
+  "date": "2026-10-26",
+  "evidence_source": "operator_supplied_inspect_and_install_results",
+  "inspect_package_release_matched": true,
+  "result": {
+    "Event": "WINDOWS_CONNECTOR_SERVICE_CONTROL",
+    "Mode": "Install",
+    "ServiceName": "AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46",
+    "ServiceCreated": true,
+    "ServiceInstalled": true,
+    "ServiceState": "Stopped",
+    "ReleaseId": "7b7d7bbc-88c0-4d83-8274-0ab294db2236",
+    "CanApplyGpo": false,
+    "AdChanged": false,
+    "GpoChanged": false,
+    "LogonRightsChanged": false,
+    "KeyAclChanged": false,
+    "SecretsExported": false,
+    "PackageAndKeyRemoved": false
+  },
+  "actual_runtime_health_verified": false,
+  "completed": 54,
+  "total": 94
+}
