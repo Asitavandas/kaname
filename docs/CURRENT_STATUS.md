@@ -20,6 +20,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Merkezi dağıtım GPO'su güncel yalnız okuma ile doğrulandı — 26 Ekim 2026
+
+Operatörün **Yapıştırılan metin(6).txt** çıktısı JSON ve içindeki GPMC XML olarak incelendi. SHA256 **12be6e876a52d18d7e6d271e6e833a0b025fc2cae031b5d781f35b52f580f0c7**; rapor okuma zamanı **2026-10-26T20:00:13.2678615Z**. Owned deployment **8c6808fd-a382-4bf2-9c9c-d9e1d46082a3 / AuthWire-Managed-Deployment-4c23eebe** mevcut; description ownership marker'ı connector **4c23eebe…**, host **0fa4143f…**, service SID **…1648** ve scope SID **…1647** ile tam eşleşiyor. Owner **Domain Admins / …512**. Pilot grubunda **GpoApply**, aw-deploy$ hesabında **GpoEdit**, Authenticated Users'da **GpoRead** var; rapor SID eşleşmeleri doğrulandı.
+
+**0 link, 0 ExtensionData**, Computer/User Directory ve SYSVOL sürümleri **0/0**. Böylece rapor bazında GPO hâlâ boş ve bağlı değil. Bu operatörün DC01 çıktısıdır; asistan canlı AD veya SYSVOL ACL incelemesi yapmış sayılmaz. Korumalı trust GPO bu komutta okunmadı/değiştirilmedi. Bu snapshot gelecekteki yazım sırasında yeniden kontrol edilmelidir.
+
+İlk plan ve XML paketi kabulünden sonra hazırlık kontrolü tamamlandı. **GPO dağıtımı henüz uygulanmadı; CanApplyGpo=false.** Sonraki geliştirme, kaydedilmiş planı exact owned GPO'ya bağlayan sınırlı typed dağıtım hazırlama/uygulama akışı; doğrulanmış istemci/ağ asset imzaları, eski snapshot reddi, linksiz staging, endpoint publisher güveni ve sınırlı rollback kontrolleridir. Yeni GPO/hesap oluşturmak veya mevcut Connector'ı sıfırlamak gerekmiyor. **54/94 (~%57),40 açık** değişmedi.
+
+
 ## 🔴✓ İlk merkezi Windows ağ profili ZIP paketi doğrulandı — 26 Ekim 2026
 
 Operatörün yüklediği **AuthWire-Network-Profiles.zip** bağımsız yerel incelemeden geçti. ZIP SHA256 **528a793a637e2a8bdd30808acf7a624b83b125419d1ef1c8077249955a146e38**; tam **7 benzersiz dosya**, CRC doğru, manifestteki **6/6 SHA256** eşleşiyor. Plan **524653f5-1359-46f5-84a5-46355bb82aff /v1**, sertifika profili **e3597842-3499-4ace-aaf3-29890eabd908 /v3**, snapshot revision **84**, preview hash **ae98c8426953aced3f70bebfdc701cd85be52e3a08f9434a7d087a6bdb6ca9b7**. Cached AD üyeliğinde **2 etkin /2 toplam**, **0 unresolved**; örnekler **2GL13ZU$** ve **VV06**. Snapshot zamanı **2026-10-26T19:54:34.314927+00:00**.
