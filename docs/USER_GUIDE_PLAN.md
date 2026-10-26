@@ -30,3 +30,7 @@ Uçtan uca örnekler: yeni ortamı hazırlamak; pilot kullanıcı/bilgisayar se�
 ## Kabul ve kapanış
 
 Önce nihai UI/kontrol envanteri çıkarılır, sonra örnekler uygulanmış davranış ve kabul kanıtlarıyla karşılaştırılır. Gerçek GPO uygulaması, yalnız hazırlık, plan kaydı, görev gönderimi ve tamamlanma birbirinden doğru biçimde açıklanır. Kullanıcı panel/işlevsel hedef sürümün tamamlandığını kabul ettiğinde READY_FOR_FINAL_GUIDE=true yapılır. Word/PDF teslim edilip bağlantıları kaydedildikten sonra GUIDE_DELIVERED=true yapılır ve ilgili koşullu hatırlatma durdurulur.
+
+## Koşullu takip
+
+Otomasyon kimliği: 6adfa509447081919aee1bcf3095f0ae. Europe/Istanbul saat diliminde günlük durum kontrolü yapar; yalnız READY_FOR_FINAL_GUIDE=true ve GUIDE_DELIVERED=false ise hatırlatır. Kendiliğinden hazırlanmış kılavuz veya teslim edilmiş dosya iddiası oluşturmaz. Word/PDF teslimatından sonra GUIDE_DELIVERED=true kaydıyla birlikte bu otomasyon durdurulur.
