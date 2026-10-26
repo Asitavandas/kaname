@@ -1,0 +1,142 @@
+{
+  "event": "CONNECTOR_DEDICATED_KEY_HTTPS_SOURCE_ACCEPTED",
+  "date": "2026-10-26",
+  "repository": "Asitavandas/kaname",
+  "pr": 85,
+  "source_head": "8fc2859ccccbfb72a46b586cd4a8ec8507a44dfe",
+  "implementation": {
+    "dedicated_machine_key": "RSA3072 Software KSP, non-exportable, signing only",
+    "key_acl": "SYSTEM/Administrators full; exact existing gMSA SID read/use",
+    "atomic_owned_receipt": true,
+    "idempotent_verified_key_reuse": true,
+    "partial_receipt_requires_review": true,
+    "unattended_key_recreation_or_acl_repair": false,
+    "peer_api": [
+      "POST /api/connector/v1/challenge",
+      "POST /api/connector/v1/health"
+    ],
+    "signed_poll_and_fresh_server_challenge": true,
+    "per_request_tls12_chain_name_revocation_and_leaf_pin": true,
+    "no_redirect_http_proxy_cookie_default_credentials_or_global_tls_bypass": true,
+    "complete_http_timeout_seconds": 5,
+    "max_peer_body_bytes": 4096,
+    "max_response_body_bytes": 4096,
+    "max_response_headers_kib": 16,
+    "max_concurrent_peer_operations": 4,
+    "per_ip_attempts_per_60_seconds": 30,
+    "max_ip_buckets": 64,
+    "poll_replay_cache_entries": 128,
+    "poll_replay_retention_seconds": 65,
+    "health_freshness_seconds": 90,
+    "transport_active_means_recent_health_not_installed_service": true,
+    "can_apply": false,
+    "directory_sync_ready": false,
+    "kerberos_ready": false
+  },
+  "validation": {
+    "channel_python_tests": 19,
+    "prior_native_cng_checks": 33,
+    "native_key_preparation_checks": 8,
+    "native_actual_https_checks": 16,
+    "https_handler_tests": 5,
+    "native_windows_run": 40287598431,
+    "native_channel_job": 121454840612,
+    "native_transport_fixture_actual_customer_gmsa": false,
+    "previous_failures_fixed": [
+      "Framework HttpWebRequest public API mismatch replaced with actual Framework HttpClientHandler",
+      "PowerShell null-to-empty File.Replace backup parameter avoided using protected unique temporary backup"
+    ],
+    "prior_retry_intermittence": {
+      "previous_run": 40223039577,
+      "previous_job": 121258547585,
+      "observed": "deadline_rearmed with no later trigger execution",
+      "current_run": 40287598478,
+      "current_job": 121454841173,
+      "current_conclusion": "success",
+      "root_cause_closed": false
+    },
+    "foundation_tests": 774,
+    "foundation_skipped": 28,
+    "foundation_run": 40287598439,
+    "foundation_job": 121454840637,
+    "all_workflows": [
+      {
+        "id": 40287598518,
+        "name": "KANAME Linux source preparation",
+        "conclusion": "success"
+      },
+      {
+        "id": 40287598533,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40287598478,
+        "name": "AuthWire device enrollment pilot checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40287598427,
+        "name": "KANAME browser checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40287598439,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40287598431,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40287598434,
+        "name": "KANAME real RADIUS protocol proof",
+        "conclusion": "success"
+      }
+    ],
+    "windows_jobs": [
+      {
+        "id": 121454840612,
+        "name": "windows-channel",
+        "conclusion": "success"
+      },
+      {
+        "id": 121454840925,
+        "name": "windows-bootstrap",
+        "conclusion": "success"
+      },
+      {
+        "id": 121454841036,
+        "name": "windows-scm-probe",
+        "conclusion": "success"
+      }
+    ],
+    "native_radius_job": 121454840520
+  },
+  "customer": {
+    "live_version": "0.14.0-dev.34",
+    "appliance_deployed": false,
+    "services_installed_or_restarted": false,
+    "ad_accounts_created_changed_or_removed": false,
+    "gpo_changed": false,
+    "signing_key_reused_for_channel": false,
+    "private_keys_exported": false,
+    "certificates_or_trust_store_changed": false,
+    "windows_packages_changed": false,
+    "full_data_backup_created": false
+  },
+  "next": [
+    "Permanent signed Windows Connector service, trusted runtime binding/configuration, install/upgrade/recovery and channel-key lifecycle",
+    "Actual customer gMSA dedicated-key and HTTPS acceptance before deployment claims",
+    "Bounded idempotent job/result channel",
+    "Directory/live AD and Kerberos migration under the single existing gMSA, owned SPN and rollback guards",
+    "Pilot/scale acceptance and dependency-based legacy account retirement",
+    "Old-backup trust re-approval and full appliance restore gate"
+  ],
+  "completed": 54,
+  "total": 94,
+  "formal_report_regenerated": false,
+  "merge_commit": "6ac3a0f86395b7b13ad74e8cdfaf37e202fb9dff"
+}

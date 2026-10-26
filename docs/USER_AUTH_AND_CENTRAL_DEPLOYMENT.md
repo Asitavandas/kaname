@@ -1,8 +1,20 @@
 # AuthWire kullanıcı kimliği ve merkezi Windows dağıtımı
 
-Tarih: 24 Ekim 2026, Europe/Istanbul.
+Tarih: 26 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
+
+## 🔴✓ Ayrı Windows kanal anahtarı ve gerçek doğrulanmış HTTPS durum bağlantısı — 26 Ekim 2026
+
+- **PR85 / kaynak 8fc2859ccccbfb72a46b586cd4a8ec8507a44dfe / main merge 6ac3a0f86395b7b13ad74e8cdfaf37e202fb9dff**.
+- 🔴✓ Mevcut gMSA için ayrı **RSA3072, dışa aktarılamayan, yalnız imzalama amaçlı makine kanal anahtarı** hazırlama kaynağı eklendi. Kod imzalama anahtarı yeniden kullanılmaz; yeni AD hesabı açılmaz. Varsayılan Inspect, imzalı mevcut bootstrap/hesap kapsamını doğrular. Hazırlanan anahtar ve public kapsam korunan atomik kayıtla izlenir; doğrulanmış anahtar tekrar kullanılır. Yarım kayıt, farklı kapsam, reparse, sahiplik/izin farkı ikinci anahtar veya sessiz onarım yerine inceleme gerektirir.
+- 🔴✓ AuthWire ile sabit iki HTTPS uç noktasında imzalı poll ve bağımsız sunucu nonce'u üzerinden health doğrulaması hazır. Normal TLS zinciri/sunucu adı/iptal kontrolü + kayıtlı leaf SHA256 pini zorunlu. HTTP, yönlendirme, proxy, varsayılan Windows credential'ı, cookie ve global TLS bypass yok. Her istek için tam yanıt süresi5 saniye, gövde4096bayt, header16KiB ile sınırlı; yavaş gövde de süreye dahildir. İmza/kapsam/süre/replay, IP hız ve eşzamanlılık sınırları uygulanır.
+- 🔴✓ **19 Python kanal testi + 33 mevcut gerçek Windows CNG kontrolü + 8 yeni anahtar/kayıt/ACL kontrolü + 16 gerçek HTTPS istemci kontrolü** geçti. Beş gerçek HTTPS handler testi ve diğer regresyonlarla **774 test /28 ortam atlaması** başarılı; yedi PR workflow (native Windows, Kerberos/enrollment, browser ve gerçek RADIUS dahil) geçti. Hosted fixture anahtarı, geçici public trust ve hosts girdileri temizlenir; müşteri DC01 üzerinde çalıştırılmış sayılmaz. Hazırlama wrapper'ının gerçek signed-bootstrap/gMSA uç kabulü ayrıca açıktır.
+- Bu sadece kaynak hazırlığıdır: **kalıcı Connector hizmeti kurulmadı, canlı uygulama dev.34'te kaldı**. Gerçek müşteri gMSA'sı ile bu yeni anahtar/HTTPS çalışması henüz doğrulanmadı. transport_active yalnız son90s içindeki health kanıtını ifade eder; SCM kurulum/AD/Kerberos/GPO kanıtı değildir. **can_apply/directory_sync_ready/kerberos_ready=false**.
+- Mevcut hesaplar/SPN'ler, GPO, CA/sertifika ve imzalama anahtarları, uç paketleri, çalışan hizmetler ve günlük yedekleme değiştirilmedi; her değişiklik için tam veri yedeği alınmadı. Önceki aralıklı Windows retry zamanlama kök nedeni açık; bu son koşuda gerçek SYSTEM otomatik yeniden deneme başarılı, eski hata gizlenmedi.
+- Sıradaki iş: kalıcı imzalı Windows hizmeti, güvenilen yerel çalışma yapılandırması ve kurulum/güncelleme/toparlanma; gerçek gMSA kanal kabulü. Ardından sınırlı iş/sonuç, dizin/canlı AD ve Kerberos'un tek gMSA'ya geçişi, pilot/ölçek kabulü ve eski hesapların kontrollü kaldırılması. **A03/A04 açık;54/94 (%57),40 açık** değişmedi.
+- Kaynak/CI/koruma kanıtı: **checkpoints/2026-10-26-connector-dedicated-key-https.json**. Ayrıntılı sözleşme **CONNECTOR_SINGLE_ACCOUNT_CHANNEL.md** güncellendi; resmi durum raporu yeniden üretilmedi.
+
 
 ## 🔴✓ Kalıcı Connector eşleştirmesi ve HTTPS yönetim sınırı hazır — 25 Ekim 2026
 
