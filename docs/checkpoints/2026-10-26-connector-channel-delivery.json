@@ -1,0 +1,115 @@
+{
+  "event": "CONNECTOR_CHANNEL_DEV35_DELIVERY_PREPARED",
+  "date": "2026-10-26",
+  "timezone": "Europe/Istanbul",
+  "repository": "Asitavandas/kaname",
+  "pr": 87,
+  "source_head": "86b53429e7fb912466fed771da3520ec18d5e32a",
+  "runtime_release": "2023ac92faf3ee1b9d25d3d0e2c09cfe3ba96c34",
+  "merge_commit": "9913e827782aae9c3d5e83c84028a13fedd8c41e",
+  "candidate_version": "0.14.0-dev.35",
+  "live_version_last_observed": "0.14.0-dev.34",
+  "stage": "/home/segmentiq/authwire-stage-dev35-2023ac92faf3",
+  "manifest_sha256": "58e00a22ab4a7f68c52559cfc5faf520fd09a0b890e2e0564e510d5145c05717",
+  "stage_files_verified": 173,
+  "existing_baseline_files_verified": 167,
+  "candidate_import_verified_on_actual_host": true,
+  "launcher": "/home/segmentiq/authwire-connector-channel-dev35-20261026.py",
+  "launcher_sha256": "69567b84261c5f5bc723644ed3de381705fcb6ad28b68d2270900707c95b20e7",
+  "scope": {
+    "panel_stop_start_only": true,
+    "radius_and_broker_restart": false,
+    "protected_runtime_sources_identical": true,
+    "ui_assets_changed": false,
+    "database_writes_by_delivery": false,
+    "pairing_or_key_created": false,
+    "windows_or_ad_or_gpo_changes": false,
+    "full_data_backup_requested": false,
+    "small_source_rollback_evidence": true,
+    "business_files_pids_timers_projection_verified_by_apply": true,
+    "bytecode_quarantine_before_code_swap": true,
+    "active_backup_blocks_apply": true,
+    "public_metadata_is_readonly": true,
+    "public_metadata_tls_peer_matches_certificate": true,
+    "source_rollback_only_no_data_restore": true,
+    "rollback_deferred_on_concurrent_business_change": true
+  },
+  "tests": {
+    "targeted": 57,
+    "new_delivery_tests": 7,
+    "foundation_tests": 781,
+    "foundation_skipped": 28,
+    "foundation_job": 121506775157,
+    "workflows": [
+      {
+        "id": 40303485134,
+        "name": "KANAME Linux source preparation",
+        "conclusion": "success"
+      },
+      {
+        "id": 40303485077,
+        "name": "KANAME real RADIUS protocol proof",
+        "conclusion": "success"
+      },
+      {
+        "id": 40303485075,
+        "name": "AuthWire device enrollment pilot checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40303485046,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40303485045,
+        "name": "KANAME browser checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40303485047,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      }
+    ],
+    "expired_recovery_intermittence": {
+      "run": 40303485075,
+      "job": 121506775321,
+      "test": "Expired pending recovery with actual SYSTEM CNG and certificate installation",
+      "error": "Fresh authenticated fixture retry did not recover",
+      "runtime_source_unchanged_since_prior_pass": true,
+      "prior_same_version_pass_run": 40302419196,
+      "prior_same_version_pass_job": 121503250837,
+      "root_cause_closed": false,
+      "failed_jobs_only_rerun": true,
+      "rerun_conclusion": "success",
+      "rerun_job": 121509153636
+    },
+    "prior_system_retry_intermittence_root_cause_closed": false
+  },
+  "observed_units_before_preparation": {
+    "radius_pid": "1243360",
+    "broker_pid": "1069437",
+    "panel_pid": "1260748",
+    "backup_service": "inactive",
+    "backup_timer": "active/enabled"
+  },
+  "execution": {
+    "sudo_noninteractive_available": false,
+    "reason": "sudo required a password; no elevation or private state read was performed",
+    "operator_sudo_pending": true,
+    "live_source_changed": false,
+    "product_service_actions_executed": false,
+    "daily_timer_changed": false,
+    "customer_keys_or_secrets_exported": false
+  },
+  "next": [
+    "Operator executes the pinned sudo launcher on AuthWire Linux",
+    "Review CONNECTOR_CHANNEL_FINISHED output and actual public appliance metadata",
+    "Prepare verified Windows source delivery using the existing publisher and gMSA",
+    "Controlled key pairing through the authenticated panel boundary, then DC01 service acceptance"
+  ],
+  "completed": 54,
+  "total": 94,
+  "formal_report_regenerated": false
+}

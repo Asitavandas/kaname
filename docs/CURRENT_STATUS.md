@@ -17,6 +17,18 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Connector dev.35 güncelleme paketi hazır; sudo uygulaması bekliyor — 26 Ekim 2026
+
+- **PR87 / kaynak 86b53429e7fb912466fed771da3520ec18d5e32a / runtime release 2023ac92faf3ee1b9d25d3d0e2c09cfe3ba96c34 / merge 9913e827782aae9c3d5e83c84028a13fedd8c41e**. Önceden test edilen eşleştirme/health backend'i dev.35 olarak sürümlendi. İki tarayıcı testi artık ekranda görünen sürümü kaynak VERSION ile karşılaştırır; panel tasarımı değiştirilmedi.
+- 🔴✓ Canlı Linux makinesinde dev.34'e ait **167 kaynak dosyası** digest ile doğrulandı; ayrı dev.35 dizinindeki **173 dosya** manifest'e göre doğrulandı ve mevcut venv ile sunucu/registry import edildi. Canlı kaynak, veri ve hizmetlere yazma/servis komutu uygulanmadı. Root/TLS/DB gizli verilerine normal kullanıcıyla erişim denenince işletim sistemi engeli korundu; sudo parolası gerektirdi, izinler aşılmadı.
+- 🔴✓ Pinned güncelleme yalnız panel servisini durdurup başlatabilir; RADIUS/kontrol süreçleri ve kaynakları, politika/sertifika/istemci paketleri, UI varlıkları ve günlük timer korunur. Aktif yedek işi varsa uygulama reddedilir; bytecode kaynak değişiminden önce karantinaya alınır. Sorunda yalnız kod geri alınır; eşzamanlı iş verisi değişmişse otomatik rollback incelemeye bırakılır. Tam veri yedeği alınmaz; küçük kaynak rollback kanıtı tutulur.
+- 🔴✓ **57 hedefli test**, buna dahil7 yeni teslimat/public-metadata testi, **781 genel test /28 ortam atlaması** ve ilgili altı PR workflow başarılı. Gerçek RADIUS, browser ve Windows/Kerberos kontrolleri geçti. Değişmeyen Windows expired-pending fixture'ı bir kez fresh retry'da hata verdi; aynı runtime'ın önceki koşusu ve değişikliksiz tekrar koşusu başarılıydı. İlk hata saklandı, aralıklı kök neden kapatılmadı.
+- Script sonunda salt okunur DB sorgusu ve doğrulanmış gerçek TLS peer eşleşmesiyle appliance PKI UUID/domain/FQDN/leaf pini raporlanacak. **Bu işlem Connector eşleştirme/anahtar/AD/GPO oluşturmaz.** Appliance UUID henüz alınmış sayılmaz; Windows bootstrap UUID'siyle karıştırılmaz.
+- Operatör komutu: **/home/segmentiq/authwire-connector-channel-dev35-20261026.py**, SHA256 **69567b84261c5f5bc723644ed3de381705fcb6ad28b68d2270900707c95b20e7**. Aday dizin **/home/segmentiq/authwire-stage-dev35-2023ac92faf3**; manifest **58e00a22ab4a7f68c52559cfc5faf520fd09a0b890e2e0564e510d5145c05717**.
+- **Canlı sürüm hâlâ dev.34; sudo uygulaması ve CONNECTOR_CHANNEL_FINISHED kabulü bekleniyor.** Sonra gerçek public metadata ile imzalı Windows teslimatı, mevcut aw-deploy$ ve kontrollü panel eşleştirmesi/DC01 hizmet kabulü yapılacak. A03/A04 açık; **54/94 (%57),40 açık** değişmedi; resmi rapor yeniden üretilmedi.
+- Kanıt: **checkpoints/2026-10-26-connector-channel-delivery.json**. Uygulama kaynağı **checkpoints/2026-10-26-connector-channel-deploy.py**; yalnız kaynak hazırlığı kaydıdır, canlı uygulama sonucu değildir.
+
+
 ## 🔴✓ Kalıcı Windows Connector health hizmetinin kaynak hazırlığı tamamlandı — 26 Ekim 2026
 
 - **PR86 / kaynak e743a8bc66b15f4dca5213fd35de8b02957d097d / main merge 62e9be9d4e58bd06ad38f6aeffaf3dbb32dcdc5a**.
