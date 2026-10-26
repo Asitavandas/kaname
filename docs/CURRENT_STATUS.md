@@ -19,6 +19,20 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## 🔴✓ dev.37 panel kabulü; imzalı Windows servis yükseltme/geri alma hazır — 26 Ekim 2026
+
+Operatör **Test görevini önizle** düğmesinin göründüğünü ve **henüz görev göndermediğini** doğruladı. dev.37 panel görünüm kabulü tamam; gerçek Windows probe işi henüz tamamlanmadı.
+
+**PR93 / kaynak 9ed6f6b722eb9504eb83d78b2c25ba4cebe9eec3 / merge 9b735bd38d9ad6e807bc9a3c9a47f7859617fdd7**. Ayrı imzalı yönetici aracı Inspect/Prepare/Apply/Rollback sağlar. Prepare çalışan servise dokunmadan ayrı, imzalı aday oluşturur. Apply önce exact kaynak/ACL, mevcut hesap SID'si, binding, non-exportable kanal key ve SCM recovery kontrollerini yapar; yalnız owned Connector hizmetini durdurur, eski klasörü korur, adayı aynı kanonik yola geçirir ve yalnız release description marker'ını değiştirir. Yeni runtime kimliği, taze HTTPS health ve probe readiness geçmezse doğrulanmış eski pakete geri döner. Belirsiz/yarım hazırlık ve drift otomatik benimsenmez; bounded rollback/journal incelemesi gerekir. Genel resume/garbage collection, hesap/anahtar/publisher rotation ve GPO apply bu araçta yok.
+
+🔴✓ Son commit'te **üç workflow başarılı**, dört Windows job geçti. Foundation **828 test /28 ortam skip** (run40379938061/job121773122125). Gerçek signed SCM/verified HTTPS fixture'ı **53 kontrol** (run40379938416/job121773124654): bağımsız pinned eski kaynak checkout'undan gerçek health-only paket; prepare idempotence; aday/journal drift reddi; başarısız start'ta otomatik rollback; ayrı AllSigned süreçte Apply; bozuk arşivden rollback reddi; explicit rollback ve tekrar Apply; hesap, pairing, CNG key/ACL ve SCM security koruması. Exact müşteri wrapper'ı WinPS5.1'de parse edildi; içindeki 14 kaynaklık arşiv/signature/ACL ve overwrite/tamper reddi de geçti. Sabit DC01-only main, hosted ortamda çalıştırılmadı; müşteri gMSA kabulü açık. İki test-harness uyumsuzluğu (literal AST okuma ve extracted helper compression assembly yüklemesi) giderildi; ürün ve müşteri wrapper byte'ları değişmedi.
+
+**Müşteri teslimatı hazır; DC01'de henüz çalıştırılmadı.** Linux dosyası **/home/segmentiq/authwire-dc01-service-upgrade-20261026.ps1**, **60454 byte**, SHA256 **d79960d55239b0ac63e12309b10cd15252bfc20c9afc5c5feebcb643b0d46595**, readback doğrulandı. İçindeki 14 dosya component source **918bc02453a6f2d821f3f3272654e6e8dcacf6a0** ile eşleşir. Aynı mevcut **FFC134BC305757457163F99C7479B4168E397129** machine publisher kullanılır. Eski release **7b7d7bbc-88c0-4d83-8274-0ab294db2236**, yeni release **970d7039-3798-478b-a5f4-a57e245693a0**. Eşleştirme generation=1, ayrı kanal key cbe3… ve **aw-deploy$** değişmez. Eski imzalı kaynak klasörü ve paket üstüne yazılmaz.
+
+**Sıradaki operatör adımı: DC01 elevated WinPS'de pinned wrapper -Mode Prepare**. Bu yalnız kaynakları imzalayıp ayrı aday paketi hazırlar; mevcut servis PID/state değişirse reddeder. Başarılı **Stage/Phase=prepared** çıktısından sonra ayrı Apply ve taze gMSA/probe kabulü yapılacak. Şu ana kadar müşteri Windows servisine geçiş/AD/GPO/trust/key ACL/endpoint/policy değişikliği ve yeni probe işi yok; Linux dev.37 kalır. Tam veri yedeği alınmadı. **54/94 (~%57),40 açık** değişmedi.
+
+
 ## 🔴✓ dev.37 Linux kurulumu operatör çıktısıyla doğrulandı — 26 Ekim 2026
 
 Operatör **CONNECTOR_PROBE_JOBS_FINISHED**, verified=true, **0.14.0-dev.37 / 280390e081818685969fb3327ace2c074e94e433** sonucunu paylaştı. Yeni **GET /api/deployment/connector/jobs** dahil tüm önce/sonra okumalar 200. Protected-files, broker-process, radius-process, timers ve business-state kontrolleri başarılı. RADIUS **1243360** korunmuş ve yeniden başlatılmamış; broker süreci korunmuş. Policy/GPO/sertifika/Windows paketleri/uç noktaları değişmedi; pairing veya probe işi oluşturulmadı. Tam veri yedeği alınmadı, günlük timer korundu. Kanıt: **/var/lib/authwire-updates/connector-probe-jobs-dev37-20261026T180928Z-bc5961d6**. Bu operatör kurulum çıktısı kabulüdür; bağımsız asistan API okuması olarak sunulmaz.
