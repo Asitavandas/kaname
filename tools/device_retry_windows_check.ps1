@@ -128,6 +128,18 @@ try {
     $settings=New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
     $null=Register-ScheduledTask -TaskName $mainName -Action $action -Principal $principal -Settings $settings
 
+    # Actual scheduler serialization must not round a fractional backoff down.
+    $precise=[DateTimeOffset]::UtcNow.AddSeconds(15)
+    Set-AuthWireRetryTask $folder $retryName $precise
+    $boundary=[DateTimeOffset]::Parse((Get-ScheduledTask -TaskName $retryName).Triggers[0].StartBoundary)
+    if($boundary -lt $precise -or $boundary.UtcDateTime.Ticks % [TimeSpan]::TicksPerSecond -ne 0) {throw 'Fractional retry deadline was rounded down.'}
+    $checked=[DateTimeOffset]::UtcNow
+    Set-AuthWireRetryTask $folder $retryName $checked.AddSeconds(-1)
+    $boundary=[DateTimeOffset]::Parse((Get-ScheduledTask -TaskName $retryName).Triggers[0].StartBoundary)
+    if($boundary -lt $checked.AddSeconds(5)) {throw 'Elapsed retry registration was not moved safely into the future.'}
+    Unregister-ScheduledTask -TaskName $retryName -Confirm:$false
+    Write-Output 'RETRY_NATIVE_FRACTIONAL_DEADLINE_ROUNDUP_AND_FUTURE_GUARD_OK'
+
     $began=(Get-Date).AddSeconds(-1)
     Start-ScheduledTask -TaskName $mainName
     Wait-TaskResult $mainName $began 1
