@@ -235,6 +235,26 @@ try{
  $null=Invoke-AuthWireServiceControlCore -Mode Remove -RootPath $root -ExpectedPublisher $publisher.Thumbprint
  Wait-Until {-not (Get-Service -Name $name -ErrorAction SilentlyContinue)} 10 'Upgraded fixture service not removed'
 
+ # Parse the exact customer wrapper without invoking its DC01-only entry point.
+ # Exercise its immutable reviewed archive/signing functions with our own cert.
+ $deliveryScript=Join-Path $PSScriptRoot '..\docs\checkpoints\2026-10-26-dc01-service-upgrade.ps1'
+ $tokens=$null;$errors=$null;$deliveryAst=[Management.Automation.Language.Parser]::ParseFile($deliveryScript,[ref]$tokens,[ref]$errors)
+ Check ($errors.Count -eq 0) 'Exact customer delivery entry point parses in native WinPS5.1'
+ foreach($f in $deliveryAst.FindAll({param($node)$node -is [Management.Automation.Language.FunctionDefinitionAst]},$false)){. ([scriptblock]::Create($f.Extent.Text))}
+ $assignments=@{};foreach($a in $deliveryAst.FindAll({param($node)$node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left -is [Management.Automation.Language.VariableExpressionAst]},$false)){$assignments[$a.Left.VariablePath.UserPath]=$a.Right}
+ $reviewedSources=$assignments['reviewedSources'].SafeGetValue();$zipBytes=[Convert]::FromBase64String($assignments['embeddedSources'].SafeGetValue());$zipHash=$assignments['archiveSha256'].SafeGetValue()
+ $unpacked=Read-AuthWireReviewedSourceBytes $zipBytes $zipHash
+ Check ($unpacked.Count -eq 14) 'Pinned customer delivery admits exactly fourteen reviewed source files'
+ Reject {Read-AuthWireReviewedSourceBytes $zipBytes ('0'*64)} 'Customer delivery refuses a mismatched archive hash before signing'
+ $deliveryDirectory=Join-Path $Directory 'signed-customer-source-fixture';$upgradePaths+=$deliveryDirectory
+ New-AuthWireSignedDelivery $unpacked $deliveryDirectory $publisher
+ Assert-AuthWireSignedDelivery $deliveryDirectory $publisher.Thumbprint
+ Check $true 'All fourteen exact customer sources sign and verify with protected administrator ACLs'
+ Reject {New-AuthWireSignedDelivery $unpacked $deliveryDirectory $publisher} 'Customer source delivery refuses overwrite or adoption of an existing directory'
+ $testSource=Join-Path $deliveryDirectory 'ConnectorServiceUpgrade.ps1';[IO.File]::AppendAllText($testSource,"`r`n# changed")
+ Reject {Assert-AuthWireSignedDelivery $deliveryDirectory $publisher.Thumbprint} 'Existing signed customer source drift is rejected before package preparation'
+
+
  @{release_id=$config.ReleaseId;checks=$checks;real_signed_scm=$true;actual_https=$true;low_privilege_runtime=$true;automatic_outage_recovery=$true;crash_recovery=$true;orphan_cleanup=$true;fresh_public_control=$true;fresh_control_modes=$freshControlModes;legacy_staged_upgrade=$true;automatic_upgrade_rollback=$true;explicit_upgrade_rollback=$true;customer_gmsa_tested=$false;ad_changed=$false;gpo_changed=$false}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Directory 'service-result.json') -Encoding UTF8
 }finally{
  if($name){$service=Get-Service -Name $name -ErrorAction SilentlyContinue;if($service){if($service.Status -ne 'Stopped'){Stop-Service -Name $name -Force;$service.WaitForStatus([ServiceProcess.ServiceControllerStatus]::Stopped,[TimeSpan]::FromSeconds(35))};$service.Dispose();Initialize-AuthWirePermanentServiceControl;[AuthWire.Connector.PermanentServiceV1]::Remove($name)}}
