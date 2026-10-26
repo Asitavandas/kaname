@@ -1,10 +1,10 @@
 name: AuthWire signed deployment candidate checks
 on:
   pull_request:
-    paths: ['windows/connector/New-AuthWireDeploymentCandidate.ps1', 'tools/deployment_candidate_windows_*', 'kaname/deployment.py', '.github/workflows/deployment-candidate.yml']
+    paths: ['windows/connector/New-AuthWireDeploymentCandidate.ps1', 'tools/deployment_candidate_windows_*', 'docs/checkpoints/2026-10-26-dc01-deployment-candidate.ps1', 'kaname/deployment.py', '.github/workflows/deployment-candidate.yml']
   push:
     branches: [main]
-    paths: ['windows/connector/New-AuthWireDeploymentCandidate.ps1', 'tools/deployment_candidate_windows_*', 'kaname/deployment.py', '.github/workflows/deployment-candidate.yml']
+    paths: ['windows/connector/New-AuthWireDeploymentCandidate.ps1', 'tools/deployment_candidate_windows_*', 'docs/checkpoints/2026-10-26-dc01-deployment-candidate.ps1', 'kaname/deployment.py', '.github/workflows/deployment-candidate.yml']
   workflow_dispatch:
 permissions:
   contents: read

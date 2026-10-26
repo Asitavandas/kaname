@@ -89,6 +89,37 @@ try{
  try{Reject {Read-AuthWireCandidateBytes (Join-Path $link 'network-profiles.zip') 262144} 'Reparse-point input rejected'}finally{[IO.Directory]::Delete($link)}
  Check ((Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash -ceq $zipBefore -and (Get-Acl -LiteralPath $keyPath).Sddl -ceq $keyBefore) 'Input package and machine signing-key ACL preserved'
  $null=Invoke-AuthWireDeploymentCandidate Verify $zipPath $approvalPath $pin
+ # Parse the exact customer wrapper but never execute its DC01-only main.
+ $deliveryPath=Join-Path $PSScriptRoot '..\docs\checkpoints\2026-10-26-dc01-deployment-candidate.ps1'
+ $deliveryText=[IO.File]::ReadAllText($deliveryPath);$tokens=$null;$errors=$null
+ $deliveryAst=[Management.Automation.Language.Parser]::ParseFile($deliveryPath,[ref]$tokens,[ref]$errors)
+ Check ($errors.Count -eq 0) 'Exact DC01 wrapper parses in native Windows PowerShell 5.1'
+ foreach($f in $deliveryAst.FindAll({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst]},$false)){. ([scriptblock]::Create($f.Extent.Text))}
+ $reviewedSources=@{}
+ $map=[regex]::Match($deliveryText,'(?s)\$reviewedSources=@\{(.*?)\r?\n\}').Groups[1].Value
+ foreach($match in [regex]::Matches($map,"'([^']+)'='([a-f0-9]{64})'")){$reviewedSources[$match.Groups[1].Value]=$match.Groups[2].Value}
+ $encoded=[regex]::Match($deliveryText,"\`$embeddedSources='([^']+)'").Groups[1].Value
+ $archivePin=[regex]::Match($deliveryText,"\`$archiveSha256='([^']+)'").Groups[1].Value
+ $archiveBytes=[Convert]::FromBase64String($encoded)
+ $sourceBytes=Read-AuthWireReviewedSourceBytes $archiveBytes $archivePin
+ Check ($sourceBytes.Count -eq 1 -and $reviewedSources['New-AuthWireDeploymentCandidate.ps1'] -ceq (Get-AuthWireDeliveryBodyHash ([IO.File]::ReadAllText($source)))) 'Wrapper embeds the exact tested production helper and no other signer payload'
+ $approvalAssignment=@($deliveryAst.EndBlock.Statements|Where-Object{$_ -is [Management.Automation.Language.AssignmentStatementAst] -and $_.Left.Extent.Text -ceq '$approvalJson'})
+ $approvalLiterals=@($approvalAssignment[0].Right.FindAll({param($n)$n -is [Management.Automation.Language.StringConstantExpressionAst]},$true))
+ if($approvalLiterals.Count -ne 1){throw 'Expected exactly one approval string literal'}
+ $literal=$approvalLiterals[0].Value
+ $approvalPin=[regex]::Match($deliveryText,"\`$approvalSha256='([^']+)'").Groups[1].Value
+ Check ((Get-AuthWireDeliveryHash ([Text.UTF8Encoding]::new($false,$true).GetBytes($literal.Replace("`r`n","`n")+"`n"))) -ceq $approvalPin) 'Exact wrapper approval here-string has the intended canonical hash'
+ $deliveryApproval=ConvertFrom-AuthWireCandidateJson ([Text.Encoding]::UTF8.GetBytes($literal))
+ Check ($deliveryApproval.plan_id -ceq '524653f5-1359-46f5-84a5-46355bb82aff' -and $deliveryApproval.zip_sha256 -ceq '528a793a637e2a8bdd30808acf7a624b83b125419d1ef1c8077249955a146e38' -and $deliveryApproval.gpo_id -ceq '8c6808fd-a382-4bf2-9c9c-d9e1d46082a3' -and $deliveryApproval.gpo_id -cne $deliveryApproval.protected_gpo_id) 'Wrapper binds the accepted operator ZIP and owned GPO, never the protected trust GPO'
+ Reject {Read-AuthWireReviewedSourceBytes $archiveBytes ('0'*64)} 'Changed embedded source archive rejected'
+ $deliveryFolder=Join-Path $FixtureDirectory 'signed-delivery'
+ New-AuthWireSignedDelivery $sourceBytes $deliveryFolder $signer
+ Assert-AuthWireSignedDelivery $deliveryFolder $signer.Thumbprint
+ Check ((Get-AuthenticodeSignature -LiteralPath (Join-Path $deliveryFolder 'New-AuthWireDeploymentCandidate.ps1')).Status.ToString() -ceq 'Valid') 'Exact wrapper delivery helpers actually sign and verify the tested source'
+ Reject {New-AuthWireSignedDelivery $sourceBytes $deliveryFolder $signer} 'Existing reviewed source delivery is never overwritten'
+ Reject {Assert-AuthWireSignedDelivery $deliveryFolder ('0'*40)} 'Different source publisher rejected'
+ Reject {Assert-AuthWireCandidateDeliveryHost} 'DC01 wrapper refuses hosted machine before AD lookup or preparation'
+ Check ((Get-Acl -LiteralPath $keyPath).Sddl -ceq $keyBefore) 'Customer wrapper source signing preserves the fixture machine key ACL'
  $text=[IO.File]::ReadAllText($source)
  Check (-not $text.Contains('Set-GP') -and -not $text.Contains('New-GP') -and -not $text.Contains('Set-AD') -and -not $text.Contains('netsh') -and -not $text.Contains('Export-Pfx') -and -not $text.Contains('Start-Service')) 'No AD/GPO/profile import, service or private-key export capability'
  Write-Output ('AUTHWIRE_DEPLOYMENT_CANDIDATE_NATIVE_OK '+(@{checks=$checks;native_powershell=$PSVersionTable.PSVersion.ToString();actual_machine_cng_signing=$true;actual_authenticode_verification=$true;fresh_allsigned_inspection=$true;fixture_ca_trust_store_modified_only_for_test=$true;customer_ad_used=$false;customer_gmsa_used=$false;gpo_changed=$false;endpoint_profiles_imported=$false;artifact_executed=$false;can_apply_gpo=$false}|ConvertTo-Json -Compress))
