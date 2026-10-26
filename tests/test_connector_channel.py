@@ -39,6 +39,83 @@ class ConnectorChannelTests(unittest.TestCase):
         return json.dumps({'challenge_id': frame.decode().split('\n')[10],
             'signature': base64.b64encode(signature).decode()}).encode()
 
+    def poll_envelope(self, *, alter=None, private=None):
+        fields = ['AUTHWIRE-CONNECTOR-POLL-V1', *self.binding.fields(),
+                  '1'*64, '2'*64, str(int(self.wall)), str(int(self.wall)+60),
+                  'POST', '/api/connector/v1/challenge', '']
+        if alter: alter(fields)
+        frame = '\n'.join(fields).encode('ascii')
+        key = private or self.private
+        return json.dumps({'frame':base64.b64encode(frame).decode(),
+            'signature':base64.b64encode(key.sign(frame,padding.PKCS1v15(),hashes.SHA256())).decode()}).encode()
+
+    def test_poll_all_fields_are_bound_and_poll_is_not_health(self):
+        for n in range(16):
+            with self.subTest(field=n), self.assertRaises(ChannelError):
+                self.channel.poll(self.poll_envelope(alter=lambda f: f.__setitem__(n,f[n]+'x')))
+        challenge = self.channel.poll(self.poll_envelope())
+        self.assertFalse(self.channel.status()['online'])
+        self.channel.accept(self.proof(challenge))
+        self.assertTrue(self.channel.status()['online'])
+
+    def test_poll_expiry_future_skew_and_signature_completion_boundary(self):
+        raw = self.poll_envelope()
+        self.wall += 60
+        with self.assertRaises(ChannelError): self.channel.poll(raw)
+        self.wall -= 66
+        with self.assertRaises(ChannelError): self.channel.poll(raw)
+        self.wall += 1  # exactly five seconds future skew is permitted
+        self.assertTrue(self.channel.poll(raw)['frame'])
+        self.channel = self.new_channel()
+        raw = self.poll_envelope()
+        public = self.private.public_key(); test = self
+        class FinishesLate:
+            key_size = public.key_size
+            def verify(self, *args):
+                public.verify(*args); test.wall += 60
+        self.channel._public = FinishesLate()
+        with self.assertRaises(ChannelError): self.channel.poll(raw)
+        self.assertEqual({},self.channel._pending)
+
+    def test_poll_concurrent_replay_creates_only_one_challenge(self):
+        raw = self.poll_envelope()
+        def poll(_):
+            try: self.channel.poll(raw); return True
+            except ChannelError: return False
+        with concurrent.futures.ThreadPoolExecutor(max_workers=12) as pool:
+            self.assertEqual(1,sum(pool.map(poll,range(24))))
+        self.assertEqual(1,len(self.channel._pending))
+
+    def test_poll_bad_signature_does_not_consume_valid_frame(self):
+        with self.assertRaises(ChannelError):
+            self.channel.poll(self.poll_envelope(private=self.other))
+        self.assertEqual({},self.channel._polls)
+        self.assertTrue(self.channel.poll(self.poll_envelope())['frame'])
+
+    def test_poll_replay_cache_is_bounded_and_expired_slots_recovered(self):
+        self.channel._polls = {str(i):self.now+65 for i in range(128)}
+        raw = self.poll_envelope()
+        with self.assertRaisesRegex(ChannelError,'CONNECTOR_BUSY'): self.channel.poll(raw)
+        self.now += 65
+        self.assertTrue(self.channel.poll(raw)['frame'])
+        self.assertEqual(1,len(self.channel._polls))
+        self.channel.revoke()
+        self.assertEqual({},self.channel._polls)
+        with self.assertRaises(ChannelError): self.channel.poll(raw)
+
+    def test_poll_json_encoding_limits_and_canonical_base64(self):
+        value = json.loads(self.poll_envelope())
+        cases = [b'',b'[]',b'null',b'\\xff',b'x'*4097,
+                 json.dumps(value).encode('utf-16'),
+                 json.dumps(value|{'command':'whoami'}).encode(),
+                 json.dumps(value|{'frame':True}).encode(),
+                 json.dumps(value|{'signature':value['signature']+'\\n'}).encode(),
+                 json.dumps(value|{'frame':value['frame']+'='}).encode(),
+                 ('{"frame":"'+value['frame']+'","frame":"AAAA","signature":"'+value['signature']+'"}').encode()]
+        for raw in cases:
+            with self.subTest(raw=raw[:40]), self.assertRaises(ChannelError): self.channel.poll(raw)
+        self.assertTrue(self.channel.poll(json.dumps(value).encode())['frame'])
+
     def test_real_rsa_proof_and_no_ad_or_deployment_authority(self):
         self.assertFalse(self.channel.status()['online'])
         result = self.channel.accept(self.proof(self.channel.challenge()))

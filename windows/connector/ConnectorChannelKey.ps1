@@ -11,12 +11,15 @@ function Assert-AuthWireChannelPath {
 function Write-AuthWireChannelReceipt {
     param([string]$Path,[hashtable]$Value)
     $temporary=$Path+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
+    $backup=$temporary+'.previous'
     try{
         $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($Value|ConvertTo-Json -Depth 6))
         $stream=[IO.FileStream]::new($temporary,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
         try{$stream.Write($bytes,0,$bytes.Length);$stream.Flush($true)}finally{$stream.Dispose()}
-        if(Test-Path -LiteralPath $Path){[IO.File]::Replace($temporary,$Path,$null)}else{[IO.File]::Move($temporary,$Path)}
-    }finally{if(Test-Path -LiteralPath $temporary){Remove-Item -LiteralPath $temporary -Force}}
+        if(Test-Path -LiteralPath $Path){[IO.File]::Replace($temporary,$Path,$backup)}else{[IO.File]::Move($temporary,$Path)}
+    }finally{
+        foreach($file in @($temporary,$backup)){if(Test-Path -LiteralPath $file){Remove-Item -LiteralPath $file -Force}}
+    }
 }
 
 function Assert-AuthWireChannelOwner {
