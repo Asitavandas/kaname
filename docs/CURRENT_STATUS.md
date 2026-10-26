@@ -17,6 +17,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Connector dev.36 canlı uygulaması doğrulandı — 26 Ekim 2026
+
+Operatörün paylaştığı `CONNECTOR_PAIRING_UI_FINISHED` çıktısı **0.14.0-dev.36 / 7531ee65f56ec8d237cb67e8f5a2e24e39293192** kurulumunu doğruladı. Bildirilen tüm önce/sonra okumalar 200. RADIUS PID **1243360** ve broker **1069437** korunmuş; protected-files, timers ve business-state kontrolleri başarılı. Politika, sertifika, GPO, Windows paketleri/uç noktaları değişmedi. Tam veri yedeği oluşturulmadı; günlük yedek timer korundu. Kanıt: `/var/lib/authwire-updates/connector-pairing-ui-dev36-20261026T134425Z-18b52d74`.
+
+**Panel eşleştirmesi henüz yapılmadı**: connector_binding_written=false, pairing_actions_executed=false. Sonraki adım Sistem → Windows bağlantısı ekranında DC01 public adayını önizlemek, **cbe3b5afdc40e5a141f55499ade4e32dbaf4792b0772dfcd025448c7633a9041** key ID'sini tam karşılaştırıp onaylamak ve genel binding dosyasını indirmek. Gerçek gMSA kanal anahtarı kullanımı/HTTPS ve kalıcı hizmet kabulü bekliyor; GPO uygulama yeteneği tamamlandı sayılmaz. **54/94 (~%57), 40 açık** değişmedi. Aşağıdaki dev.36 “sudo bekliyor” kaydı tarihsel hazırlık kaydıdır; bu operatör sonucu onun yerine geçer.
+
 ## 🔴✓ Yetkili panel Connector eşleştirme ekranı hazır; dev.36 canlı uygulaması bekliyor — 26 Ekim 2026
 
 **PR90 / kaynak ve runtime release 7531ee65f56ec8d237cb67e8f5a2e24e39293192 / merge 978ad05a6efd3f90cb7faa8a5ac4be469a256bbc**. Sistem → **Windows bağlantısı** sayfası mevcut `system.connectors` yetkisini kullanır; sertifika yönetimi yetkisinden ayrıdır. Backend/server/admin/registry/channel/RADIUS kaynakları aynı kaldı. Yeni ekran yalnız sekiz flat string alanlı genel JSON adayını kabul eder; duplicate/unknown/nested alanı reddeder. Önizleme kayıt yazmaz. DC01 **KeySha256** değerinin tamamı açıkça karşılaştırılıp girilmeden apply açılamaz; aday değişince önizleme/onay temizlenir. Mevcut cookie/CSRF/Origin/revision/principal-lease sınırı kullanılır; maintenance bearer/root doğrudan registry/SQL ile trust yazılmaz. Kayıp yanıt yalnız GET ile uzlaştırılır; POST tekrarlanmaz. Oturum/yetki değişiminde geç yanıtlar temiz ekranı dolduramaz. Eşleştirilmiş metadata'nın yalnız genel dokuz alanlı binding'i indirilebilir.
