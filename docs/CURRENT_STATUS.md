@@ -20,6 +20,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 gerçek Connector yükseltmesi uygulandı — 26 Ekim 2026
+
+Operatör pinned **Apply** sonucunu paylaştı: **Stage/Phase=applied, SourceSignaturesValid=true, ServiceTransitioned=true, Error=null, ChangesMayBePartial=false**. Yeni runtime release **970d7039-3798-478b-a5f4-a57e245693a0**; önceki **7b7d7bbc-88c0-4d83-8274-0ab294db2236** paket release'e bağlı **.previous-7b7d7bbc88c04d8382740ab294db2236** arşivinde korunur. Kaynaklar yeniden imzalanmadı (**SourcesPreparedNow=false**). Mevcut hesap, pairing ve ayrı kanal key korundu; yeni servis veya anahtar oluşturulmadı. AD/GPO/trust/key ACL değişmedi, secret export yok; **CanApplyGpo=false** beklenen sınırdır.
+
+Kaynağın Apply akışı başarılı dönüşten önce eşleşen yeni runtime kimliği, taze health ve probe readiness gerektirir; operatör çıktısı bu guard'ların geçtiği kabulüdür. Ayrı asistan DC01 sorgusu ya da müşteri rollback tatbikatı yapılmış sayılmaz. **Uçtan uca gerçek test işi henüz gönderilmedi.** Sırada panelde **Salt okunur görev kanalı hazır** durumunu okuyup bir kez **Test görevini önizle → Test görevini gönder**, ardından listede **Tamamlandı** ve aynı yeni ReleaseId sonucunu doğrulamak var. GPO uygulama ve diğer AD/dizin/Kerberos işleri ayrı açık kapıdır. **54/94 (~%57),40 açık** değişmedi.
+
+
 ## 🔴✓ DC01 imzalı yükseltme aday paketi hazır — 26 Ekim 2026
 
 Operatör pinned wrapper **Prepare** sonucunu paylaştı: **SourceSignaturesValid=true, Stage/Phase=prepared, PackagePrepared=true, Error=null, ChangesMayBePartial=false**. Yeni release **970d7039-3798-478b-a5f4-a57e245693a0**, kaynak component **918bc02453a6f2d821f3f3272654e6e8dcacf6a0**. Aday aynı kanonik root'un **.candidate-970d70393798478ba5f4a57e245693a0** kardeş klasöründe; private journal **C:\ProgramData\AuthWire-ConnectorUpgrade-4c23eebe071546d188eea2e96ad7ee46-970d70393798478ba5f4a57e245693a0\upgrade.json**. Mevcut hesap, pairing ve ayrı kanal key korunmuş; orijinal imzalı kaynaklar korunmuş. AD/GPO/trust/key ACL değişmedi, secret export yok.
