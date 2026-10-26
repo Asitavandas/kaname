@@ -8,7 +8,7 @@
   "runtime_release": "2023ac92faf3ee1b9d25d3d0e2c09cfe3ba96c34",
   "merge_commit": "9913e827782aae9c3d5e83c84028a13fedd8c41e",
   "candidate_version": "0.14.0-dev.35",
-  "live_version_last_observed": "0.14.0-dev.34",
+  "live_version_last_observed": "0.14.0-dev.35",
   "stage": "/home/segmentiq/authwire-stage-dev35-2023ac92faf3",
   "manifest_sha256": "58e00a22ab4a7f68c52559cfc5faf520fd09a0b890e2e0564e510d5145c05717",
   "stage_files_verified": 173,
@@ -97,19 +97,60 @@
   "execution": {
     "sudo_noninteractive_available": false,
     "reason": "sudo required a password; no elevation or private state read was performed",
-    "operator_sudo_pending": true,
-    "live_source_changed": false,
-    "product_service_actions_executed": false,
+    "operator_sudo_pending": false,
+    "live_source_changed": true,
+    "product_service_actions_executed": true,
     "daily_timer_changed": false,
-    "customer_keys_or_secrets_exported": false
+    "customer_keys_or_secrets_exported": false,
+    "note": "Operator reported successful panel-only deployment; historical preparation evidence retained above."
   },
   "next": [
-    "Operator executes the pinned sudo launcher on AuthWire Linux",
-    "Review CONNECTOR_CHANNEL_FINISHED output and actual public appliance metadata",
-    "Prepare verified Windows source delivery using the existing publisher and gMSA",
-    "Controlled key pairing through the authenticated panel boundary, then DC01 service acceptance"
+    "DC01 readonly preflight: current gMSA, machine signer/publisher trust, normally validated TLS plus exact public leaf pin",
+    "Reviewed signed Windows source delivery and dedicated channel-key preparation",
+    "Authorized pairing through interactive panel boundary and actual gMSA health service acceptance"
   ],
   "completed": 54,
   "total": 94,
-  "formal_report_regenerated": false
+  "formal_report_regenerated": false,
+  "live_application": {
+    "evidence_source": "operator_supplied_CONNECTOR_CHANNEL_FINISHED",
+    "verified": true,
+    "version": "0.14.0-dev.35",
+    "release": "2023ac92faf3ee1b9d25d3d0e2c09cfe3ba96c34",
+    "evidence": "/var/lib/authwire-updates/connector-channel-dev35-20261026T101342Z-fc756ec9",
+    "radius_pid_before": "1243360",
+    "radius_pid_after": "1243360",
+    "broker_pid": "1069437",
+    "radius_restarted": false,
+    "broker_process_preserved": true,
+    "all_reported_read_checks_200": true,
+    "checks": {
+      "protected_files": true,
+      "broker_process": true,
+      "radius_process": true,
+      "timers": true,
+      "business_state": true
+    },
+    "connector_binding_written": false,
+    "connector_healthy_claimed": false,
+    "gpo_changed": false,
+    "certificates_changed": false,
+    "windows_endpoints_changed": false,
+    "full_data_backup_created": false,
+    "backup_timer_preserved": true,
+    "operator_browser_acceptance_pending": true,
+    "real_endpoint_acceptance_pending": true,
+    "public_appliance": {
+      "format": "AuthWireConnectorAppliancePublicV1",
+      "instance_id": "6796fa84-fcff-41c1-b9c5-d725b95ba139",
+      "domain": "vizyonveri.local",
+      "appliance_fqdn": "kaname.vizyonveri.local",
+      "appliance_tls_sha256": "a58838b95510f759943e5f1b7fefe29e227960a5c1171b5ebc6d5089df47a76d",
+      "base_url": "https://kaname.vizyonveri.local:8765/",
+      "source_release": "2023ac92faf3ee1b9d25d3d0e2c09cfe3ba96c34",
+      "version": "0.14.0-dev.35",
+      "secrets_exported": false,
+      "binding_created": false
+    }
+  }
 }

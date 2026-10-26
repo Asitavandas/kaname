@@ -4,7 +4,7 @@ Accepted source: PR86. Native acceptance:23 new checks; foundation774 tests,
 28 environment skips; three relevant workflows and four Windows jobs pass.
 
 This is source preparation for the single-gMSA architecture. It does not deploy
-to the customer's dev.34 appliance, retire any existing account, or enable AD,
+Windows customer services, retire any existing account, or enable AD,
 Kerberos, GPO, enrollment or RADIUS operations. Health is key-possession evidence,
 not evidence that SCM installed the service or an AD/GPO job ran.
 
@@ -117,7 +117,11 @@ restart, tampered payload/config ACL rejection and removal without key deletion.
 Fixture services/account/LSA right/keys/certificates/hosts entries are cleaned up.
 This is not customer gMSA or boot acceptance.
 
-Remaining gates: signed delivery and live appliance update; actual DC01 gMSA
+The appliance channel backend was applied as dev.35 on26October2026; operator
+reported protected state, RADIUS/broker PIDs and daily timer preserved. No pairing
+or customer Windows service was created by that deployment.
+
+Remaining gates: signed Windows delivery; actual DC01 gMSA
 bootstrap/key/service/HTTPS acceptance; real boot/policy refresh; staged signed
 upgrade/rollback, channel-key/pin and publisher rotation; authenticated bounded
 job/result operations; directory/live AD and Kerberos migration; pilot/scale and

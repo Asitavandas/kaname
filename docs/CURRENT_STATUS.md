@@ -17,6 +17,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Connector dev.35 canlı uygulaması doğrulandı — 26 Ekim 2026
+
+Operatörün paylaştığı `CONNECTOR_CHANNEL_FINISHED` çıktısında **0.14.0-dev.35 / 2023ac92faf3ee1b9d25d3d0e2c09cfe3ba96c34** başarıyla uygulanmış; bildirilen tüm önce/sonra API okumaları 200. RADIUS PID **1243360** ve kontrol süreci **1069437** korunmuş; politika, sertifika, GPO ve Windows uç noktaları değişmemiş; günlük yedek timer korunmuş. Kanıt: `/var/lib/authwire-updates/connector-channel-dev35-20261026T101342Z-fc756ec9`.
+
+Appliance UUID **6796fa84-fcff-41c1-b9c5-d725b95ba139**, Windows Connector UUID **4c23eebe-0715-46d1-88ee-a2e96ad7ee46** olarak ayrı tutulur. Public TLS SHA256 **a58838b95510f759943e5f1b7fefe29e227960a5c1171b5ebc6d5089df47a76d**. Henüz eşleştirme yazılmadı, sağlıklı Connector iddiası yok. DC01 için yalnız okuma yapan hesap/sertifika/yayıncı güveni ve normal zincir/ad/iptal kontrolü + TLS pin kontrol dosyası hazır; gerçek DC01 çalışması bekliyor. Dosya yönetici oturumunu sınar; gMSA HTTPS kabulü sayılmaz. Eksik güveni/izni otomatik eklemez, anahtar/hizmet oluşturmaz.
+
+Sırada imzalı Windows paket teslimi, ayrı kanal anahtarı, yetkili panel eşleştirmesi ve gerçek gMSA hizmet kabulü var. **54/94 (~%57) tamam, 40 açık; A03/A04 devam ediyor.** Bu altyapı adımı tamamlanmamış uçtan uca otomasyon olarak işaretlenmedi. Tek gMSA hedefi korunur; eski hesaplar henüz kaldırılmaz. Önceki hazırlık notları tarihsel kanıttır; aşağıdaki eski “sudo bekliyor” durumu bu canlı sonuçla aşılmıştır.
+
 ## 🔴✓ Connector dev.35 güncelleme paketi hazır; sudo uygulaması bekliyor — 26 Ekim 2026
 
 - **PR87 / kaynak 86b53429e7fb912466fed771da3520ec18d5e32a / runtime release 2023ac92faf3ee1b9d25d3d0e2c09cfe3ba96c34 / merge 9913e827782aae9c3d5e83c84028a13fedd8c41e**. Önceden test edilen eşleştirme/health backend'i dev.35 olarak sürümlendi. İki tarayıcı testi artık ekranda görünen sürümü kaynak VERSION ile karşılaştırır; panel tasarımı değiştirilmedi.
