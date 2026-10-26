@@ -83,11 +83,11 @@ try{
  $wrong=$b.Clone();$wrong.appliance_fqdn='other-'+$b.appliance_fqdn
  Reject {Invoke-AuthWireConnectorHealth -BaseUrl ($url.Replace($b.appliance_fqdn,$wrong.appliance_fqdn)) -Binding $wrong -ChannelKey $rsa} 'Hostname mismatch rejected despite matching pin'
  Reject {Invoke-AuthWireConnectorHealth -BaseUrl ($url.Replace('https:','http:')) -Binding $b -ChannelKey $rsa} 'Plain HTTP rejected before network'
- foreach($case in @('redirect','oversized','slow')){
+ foreach($case in @('redirect','oversized','slow','slow_body')){
   Set-Content -LiteralPath (Join-Path $Directory 'case.txt') -Value $case -Encoding ASCII
   $watch=[Diagnostics.Stopwatch]::StartNew()
   Reject {Invoke-AuthWireConnectorHealth -BaseUrl $url -Binding $b -ChannelKey $rsa} ('Reject server '+$case)
-  if($case -eq 'slow'){Check ($watch.Elapsed.TotalSeconds -lt 9) 'Absolute HTTP deadline is bounded'}
+  if($case -in @('slow','slow_body')){Check ($watch.Elapsed.TotalSeconds -lt 9) 'Absolute HTTP deadline is bounded'}
  }
  Set-Content -LiteralPath (Join-Path $Directory 'case.txt') -Value 'normal' -Encoding ASCII
  $r=Invoke-AuthWireConnectorHealth -BaseUrl $url -Binding $b -ChannelKey $rsa

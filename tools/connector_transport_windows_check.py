@@ -38,6 +38,12 @@ def main():
         def fixture_peer(handler):
             case=(root/'case.txt').read_text().strip() if (root/'case.txt').exists() else 'normal'
             if case=='slow':time.sleep(6)
+            if case=='slow_body':
+                handler.send_response(200);handler.send_header('Content-Type','application/json');handler.send_header('Content-Length','16');handler.end_headers()
+                try:
+                    handler.wfile.write(b'{');handler.wfile.flush();time.sleep(6);handler.wfile.write(b'"frame":"AAAA"}')
+                except OSError:pass
+                return
             if case=='redirect':
                 handler.send_response(302);handler.send_header('Location','/must-not-follow');handler.send_header('Content-Length','0');handler.end_headers();return
             if case=='oversized':handler.respond(200,{'frame':'A'*5000});return
@@ -57,7 +63,7 @@ def main():
             created=json.loads((root/'create-result.json').read_text(encoding='utf-8-sig'))
             assert result['verified'] and result['key_acl_preserved']
             assert server.connector_pairing.status()['online'] and not server.connector_pairing.status()['can_apply']
-            assert created['create_checks']>=8 and result['client_checks']>=14
+            assert created['create_checks']>=8 and result['client_checks']>=16
             print('AUTHWIRE_CONNECTOR_TRANSPORT_WINDOWS_OK '+json.dumps(created|result,sort_keys=True))
         finally:
             server.shutdown();server.server_close();thread.join();Handler.connector_peer=original

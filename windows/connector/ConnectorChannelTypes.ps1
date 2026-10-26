@@ -1,10 +1,14 @@
 # Fixed .NET Framework-compatible public-key encoding and per-request TLS client.
 function Initialize-AuthWireChannelTypes {
     if('AuthWire.Connector.ChannelTypesV1' -as [type]){return}
-    Add-Type -TypeDefinition @'
+    Add-Type -AssemblyName System.Net.Http
+    $httpAssembly=[Net.Http.HttpClientHandler].Assembly.Location
+    Add-Type -ReferencedAssemblies @('System.dll','System.Core.dll',$httpAssembly) -TypeDefinition @'
 using System;
 using System.IO;
 using System.Net;
+using System.Net.Http;
+using System.Threading;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography;
@@ -26,25 +30,32 @@ public static class ChannelTypesV1 {
   Uri root;if(!Uri.TryCreate(baseUrl,UriKind.Absolute,out root)||root.Scheme!="https"||root.Host!=fqdn||root.UserInfo!=""||root.Query!=""||root.Fragment!=""||root.AbsolutePath!="/"||!Regex.IsMatch(pin,"\\A[0-9a-f]{64}\\z")||
     (path!="/api/connector/v1/challenge"&&path!="/api/connector/v1/health"))throw new InvalidOperationException("CONNECTOR_HTTPS_CONFIGURATION_REJECTED");
   byte[] body=new UTF8Encoding(false,true).GetBytes(json);if(body.Length>4096)throw new InvalidOperationException("CONNECTOR_HTTPS_BODY_LIMIT");
-  var r=(HttpWebRequest)WebRequest.Create(new Uri(root,path));r.Method="POST";r.ContentType="application/json";r.Accept="application/json";
-  r.AllowAutoRedirect=false;r.KeepAlive=false;r.Proxy=null;r.UseDefaultCredentials=false;r.Credentials=null;r.PreAuthenticate=false;
-  r.Timeout=5000;r.ReadWriteTimeout=5000;r.MaximumResponseHeadersLength=16;r.ContentLength=body.Length;r.SslProtocols=SslProtocols.Tls12;
-  r.ConnectionGroupName=Guid.NewGuid().ToString("N");
-  r.ServerCertificateValidationCallback=delegate(object sender,X509Certificate cert,X509Chain chain,SslPolicyErrors errors){
-   if(errors!=SslPolicyErrors.None||cert==null)return false;
-   using(var c=new X509Certificate2(cert)){if(DateTime.UtcNow<c.NotBefore.ToUniversalTime()||DateTime.UtcNow>=c.NotAfter.ToUniversalTime())return false;
-    using(var sha=SHA256.Create())return BitConverter.ToString(sha.ComputeHash(c.RawData)).Replace("-","").ToLowerInvariant()==pin;}
-  };
-  using(var timer=new System.Threading.Timer(delegate(object _){try{r.Abort();}catch{}},null,5000,System.Threading.Timeout.Infinite)){
-   try{using(var s=r.GetRequestStream())s.Write(body,0,body.Length);
-    using(var response=(HttpWebResponse)r.GetResponse()){
-     if(response.StatusCode!=HttpStatusCode.OK||response.ContentLength>4096||response.ContentEncoding!=""||response.ContentType.Split(';')[0].Trim().ToLowerInvariant()!="application/json")throw new InvalidOperationException();
-     using(var input=response.GetResponseStream())using(var data=new MemoryStream()){
-      byte[] block=new byte[1024];int n;while((n=input.Read(block,0,block.Length))>0){if(data.Length+n>4096)throw new InvalidOperationException();data.Write(block,0,n);}
-      return new UTF8Encoding(false,true).GetString(data.ToArray());
-     }
+  using(var handler=new HttpClientHandler()){
+   handler.SslProtocols=SslProtocols.Tls12;handler.AllowAutoRedirect=false;handler.UseProxy=false;handler.Proxy=null;
+   handler.UseCookies=false;handler.UseDefaultCredentials=false;handler.Credentials=null;handler.PreAuthenticate=false;
+   handler.MaxResponseHeadersLength=16;handler.AutomaticDecompression=DecompressionMethods.None;
+   handler.CheckCertificateRevocationList=true;
+   handler.ServerCertificateCustomValidationCallback=delegate(HttpRequestMessage message,X509Certificate2 cert,X509Chain chain,SslPolicyErrors errors){
+    if(errors!=SslPolicyErrors.None||cert==null)return false;
+    if(DateTime.UtcNow<cert.NotBefore.ToUniversalTime()||DateTime.UtcNow>=cert.NotAfter.ToUniversalTime())return false;
+    using(var sha=SHA256.Create())return BitConverter.ToString(sha.ComputeHash(cert.RawData)).Replace("-","").ToLowerInvariant()==pin;
+   };
+   using(var client=new HttpClient(handler)){
+    client.Timeout=TimeSpan.FromSeconds(5);client.MaxResponseContentBufferSize=4096;
+    using(var timeout=new CancellationTokenSource(5000))
+    using(var request=new HttpRequestMessage(HttpMethod.Post,new Uri(root,path))){
+     request.Headers.ConnectionClose=true;request.Headers.Accept.ParseAdd("application/json");
+     request.Content=new ByteArrayContent(body);request.Content.Headers.ContentType=new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+     try{using(var response=client.SendAsync(request,HttpCompletionOption.ResponseContentRead,timeout.Token).GetAwaiter().GetResult()){
+      var content=response.Content;var type=content.Headers.ContentType;
+      if(response.StatusCode!=HttpStatusCode.OK||content.Headers.ContentLength>4096||content.Headers.ContentEncoding.Count!=0||type==null||
+       !String.Equals(type.MediaType,"application/json",StringComparison.OrdinalIgnoreCase)||
+       (type.CharSet!=null&&!String.Equals(type.CharSet,"utf-8",StringComparison.OrdinalIgnoreCase)))throw new InvalidOperationException();
+      byte[] bytes=content.ReadAsByteArrayAsync().GetAwaiter().GetResult();if(bytes.Length>4096)throw new InvalidOperationException();
+      return new UTF8Encoding(false,true).GetString(bytes);
+     }}catch{throw new InvalidOperationException("CONNECTOR_HTTPS_REJECTED");}
     }
-   }catch{throw new InvalidOperationException("CONNECTOR_HTTPS_REJECTED");}
+   }
   }
  }
  public static string Frame(string json){var m=Regex.Match(json,"\\A\\s*\\{\\s*\"frame\"\\s*:\\s*\"([A-Za-z0-9+/=]{1,2732})\"\\s*\\}\\s*\\z");if(!m.Success)throw new InvalidOperationException("CONNECTOR_REPLY_REJECTED");return m.Groups[1].Value;}

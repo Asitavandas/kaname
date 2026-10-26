@@ -323,10 +323,12 @@ class Handler(BaseHTTPRequestHandler):
             now = time.monotonic()
             rates = {k:v for k,v in self.server.connector_peer_rates.items() if now-v[0] < 60}
             source = self.client_address[0]
-            if (source not in rates and len(rates) >= 64) or rates.get(source,(now,0))[1] >= 30:
-                self.respond(429, {'error':'CONNECTOR_BUSY'}); return
-            start, count = rates.get(source,(now,0)); rates[source]=(start,count+1)
+            busy = (source not in rates and len(rates) >= 64) or rates.get(source,(now,0))[1] >= 30
+            if not busy:
+                start, count = rates.get(source,(now,0)); rates[source]=(start,count+1)
             self.server.connector_peer_rates = rates
+        if busy:
+            self.respond(429, {'error':'CONNECTOR_BUSY'}); return
         if not self.server.connector_peer_gate.acquire(blocking=False):
             self.respond(429, {'error':'CONNECTOR_BUSY'}); return
         try:
