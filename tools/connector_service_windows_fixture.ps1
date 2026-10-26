@@ -237,6 +237,8 @@ try{
 
  # Parse the exact customer wrapper without invoking its DC01-only entry point.
  # Exercise its immutable reviewed archive/signing functions with our own cert.
+ # Match the customer entry point's declared framework dependency.
+ Add-Type -AssemblyName System.IO.Compression
  $deliveryScript=Join-Path $PSScriptRoot '..\docs\checkpoints\2026-10-26-dc01-service-upgrade.ps1'
  $tokens=$null;$errors=$null;$deliveryAst=[Management.Automation.Language.Parser]::ParseFile($deliveryScript,[ref]$tokens,[ref]$errors)
  Check ($errors.Count -eq 0) 'Exact customer delivery entry point parses in native WinPS5.1'
