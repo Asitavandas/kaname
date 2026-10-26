@@ -25,7 +25,7 @@ try{
  $prepared=Initialize-AuthWireChannelKeyCore -Mode PrepareKey -Directory $keyRoot -BaseBinding $b
  $key=$prepared.KeyName;$b.generation=1;$b.channel_key_sha256=$prepared.KeySha256
  $receipt=Get-Content -LiteralPath $prepared.ReceiptPath -Raw|ConvertFrom-Json
- $publisher=New-SelfSignedCertificate -Type CodeSigningCert -Subject ('CN=AuthWire permanent service fixture '+$id) -CertStoreLocation 'Cert:\CurrentUser\My' -KeyExportPolicy NonExportable -HashAlgorithm SHA256 -NotAfter (Get-Date).AddDays(1)
+ $publisher=New-SelfSignedCertificate -Type CodeSigningCert -Subject ('CN=AuthWire permanent service fixture '+$id) -CertStoreLocation 'Cert:\LocalMachine\My' -KeyExportPolicy NonExportable -HashAlgorithm SHA256 -NotAfter (Get-Date).AddDays(1)
  $public=[Security.Cryptography.X509Certificates.X509Certificate2]::new($publisher.RawData)
  $web=[Security.Cryptography.X509Certificates.X509Certificate2]::new((Join-Path $Directory 'web.crt'))
  $roots=[Security.Cryptography.X509Certificates.X509Store]::new('Root','LocalMachine');$roots.Open([Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite);$roots.Add($public);$roots.Add($web)
@@ -44,7 +44,20 @@ try{
  $root=Join-Path $env:ProgramW6432 ('AuthWire-Connector-'+$id)
  if(Test-Path -LiteralPath $root){$root=$null;throw 'Fixture package directory collision'}
  $config=@{Version=1;ReleaseId=[guid]::NewGuid().ToString('D');ServiceName=$name;AccountName=$credential.UserName;PublisherThumbprint=$publisher.Thumbprint;BaseUrl=('https://'+$b.appliance_fqdn+':'+$base.port+'/');Binding=$b;KeyName=$key;ExpectedKeySddl=$receipt.ExpectedKeySddl;RootPath=$root}|ConvertTo-Json -Depth 6|ConvertFrom-Json
- $package=New-AuthWireServicePackageCore -Config $config -Publisher $publisher -SourceDirectory $source
+ $buildSource=Join-Path $Directory 'reviewed-source';$null=New-Item -ItemType Directory -Path $buildSource
+ foreach($file in @('ConnectorServiceHost.cs','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Install-AuthWireConnectorService.ps1','New-AuthWireConnectorServicePackage.ps1','Initialize-AuthWireConnectorChannelKey.ps1','ConnectorChannelKey.ps1','ConnectorChannelTypes.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1')){
+  $path=Join-Path $buildSource $file;Copy-Item -LiteralPath (Join-Path $source $file) -Destination $path
+  if($file.EndsWith('.ps1')){$signed=Set-AuthenticodeSignature -FilePath $path -Certificate $publisher -HashAlgorithm SHA256;if($signed.Status.ToString() -ne 'Valid'){throw 'Fixture source signing failed'}}
+ }
+ $configPath=Join-Path $Directory 'service-config.json';$config|ConvertTo-Json -Depth 6|Set-Content -LiteralPath $configPath -Encoding UTF8
+ $builder=Join-Path $buildSource 'New-AuthWireConnectorServicePackage.ps1'
+ $inputWorker=Join-Path $buildSource 'ConnectorServiceRuntime.ps1';$inputBytes=[IO.File]::ReadAllBytes($inputWorker)
+ try{
+  [IO.File]::WriteAllText($inputWorker,("# modified executable source`r`n"+[IO.File]::ReadAllText($inputWorker)))
+  Reject {& $builder -ConfigPath $configPath -PublisherThumbprint $publisher.Thumbprint} 'Public builder refuses an unreviewed input before signing or creating a package'
+  Check (-not (Test-Path -LiteralPath $root)) 'Rejected source produces no package'
+ }finally{[IO.File]::WriteAllBytes($inputWorker,$inputBytes)}
+ $package=& $builder -ConfigPath $configPath -PublisherThumbprint $publisher.Thumbprint|ConvertFrom-Json
  Check ($package.PackagePrepared -and -not $package.ServiceCreated -and -not $package.ServiceStarted) 'Build creates signed package, not an AD account or service'
  $inspect=Invoke-AuthWireServiceControlCore -Mode Inspect -RootPath $root -ExpectedPublisher $publisher.Thumbprint
  Check (-not $inspect.ServiceInstalled -and -not $inspect.ServiceCreated) 'Inspect creates no service'
@@ -120,6 +133,6 @@ try{
  if($hostBytes){[IO.File]::WriteAllBytes($hosts,$hostBytes)}
  if($publishers){if($public){$publishers.Remove($public)};$publishers.Dispose()}
  if($roots){if($public){$roots.Remove($public)};if($web){$roots.Remove($web)};$roots.Dispose()}
- if($publisher){Remove-Item -LiteralPath ('Cert:\CurrentUser\My\'+$publisher.Thumbprint) -DeleteKey -Force;$publisher.Dispose()}
+ if($publisher){Remove-Item -LiteralPath ('Cert:\LocalMachine\My\'+$publisher.Thumbprint) -DeleteKey -Force;$publisher.Dispose()}
  if($public){$public.Dispose()};if($web){$web.Dispose()};if($null -ne $secret){$secret.Dispose()}
 }

@@ -1,5 +1,27 @@
 # Fixed package preparation/control helpers. No AD writes, key creation or trust changes.
 Set-StrictMode -Version 2
+function Get-AuthWireReviewedPayloadHashes {
+ @{
+  'ConnectorServiceRuntime.ps1'='58BECDFB6F2E08659F9E4C5443DC89A6F265E7767A612E0FFEC67C39ABD0DD0B'
+  'Compare-AuthWireSigningKeyAcl.ps1'='EA8D67AC4F7673654C24BEE7B59AAF6D50F0427BDAC6D05C535CD5D2D47E8734'
+  'ConnectorChannelTypes.ps1'='FA198F9A1C0AD75DB2C577A9D109246C7811249E8124E6541CE8B5AE19FAB61C'
+  'ConnectorChannelKey.ps1'='D6F0D2CEBDE20B9016AC8BC1C1CDE566245A722AE447164FE55C946CFAD43BD6'
+  'New-AuthWireConnectorHealthProof.ps1'='E8E369DCD0B60375EA2ADB672F904DDA217D22DB3BAB5A9B4981607E24958940'
+  'Invoke-AuthWireConnectorHealth.ps1'='1A58B86580FF123D2CD253B774F015A9BBA747E5B072346786D6C133BED2122D'
+  'ConnectorServiceHost.cs'='F228C76BC2057CD051D421F38F6E9DA863877557FB19C13D446C857541511FFC'
+ }
+}
+function Get-AuthWireSourceBody {
+ param([string]$Text)
+ $body=($Text -split '(?m)^# SIG # Begin signature block\r?$',2)[0]
+ return ($body.Replace("`r`n","`n").TrimEnd([char[]]"`r`n")+"`n")
+}
+function Get-AuthWireSourceDigest {
+ param([string]$Text)
+ $sha=[Security.Cryptography.SHA256]::Create()
+ try{return ([BitConverter]::ToString($sha.ComputeHash([Text.UTF8Encoding]::new($false).GetBytes((Get-AuthWireSourceBody $Text))))).Replace('-','')}
+ finally{$sha.Dispose()}
+}
 function Get-AuthWireServicePayloadNames {
  @('ConnectorServiceRuntime.ps1','Compare-AuthWireSigningKeyAcl.ps1','ConnectorChannelTypes.ps1','ConnectorChannelKey.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1')
 }
@@ -60,16 +82,20 @@ function New-AuthWireServicePackageCore {
  [IO.File]::WriteAllText($json,($Config|ConvertTo-Json -Depth 6),[Text.UTF8Encoding]::new($false))
  Set-AuthWireServiceAcl $json $sid
  $hashes=@('service.json')
+ $reviewed=Get-AuthWireReviewedPayloadHashes
  foreach($file in (Get-AuthWireServicePayloadNames)){
   $inputPath=Join-Path $SourceDirectory $file;Assert-AuthWireChannelPath $inputPath
   $path=Join-Path $root $file;Copy-Item -LiteralPath $inputPath -Destination $path
+  if((Get-AuthWireSourceDigest ([IO.File]::ReadAllText($path))) -cne $reviewed[$file]){throw 'CONNECTOR_UNREVIEWED_SOURCE_REJECTED'}
   $sig=Set-AuthenticodeSignature -FilePath $path -Certificate $Publisher -HashAlgorithm SHA256
   if($sig.Status.ToString() -ne 'Valid' -or $sig.SignerCertificate.Thumbprint -cne $Publisher.Thumbprint){throw 'CONNECTOR_SIGNING_FAILED'}
   Set-AuthWireServiceAcl $path $sid;$hashes+=$file
  }
  $hashLines=@($hashes|ForEach-Object{'   {"'+$_+'","'+(Get-FileHash -LiteralPath (Join-Path $root $_) -Algorithm SHA256).Hash.ToLowerInvariant()+'"},'}) -join "`n"
  $sourcePath=Join-Path $SourceDirectory 'ConnectorServiceHost.cs';Assert-AuthWireChannelPath $sourcePath
- $code=[IO.File]::ReadAllText($sourcePath).Replace('@@NAME@@',$Config.ServiceName).Replace('@@SID@@',$sid).Replace('@@ROOT@@',$root).Replace('@@HASHES@@',$hashLines)
+ $raw=[IO.File]::ReadAllText($sourcePath)
+ if((Get-AuthWireSourceDigest $raw) -cne $reviewed['ConnectorServiceHost.cs']){throw 'CONNECTOR_UNREVIEWED_SOURCE_REJECTED'}
+ $code=$raw.Replace('@@NAME@@',$Config.ServiceName).Replace('@@SID@@',$sid).Replace('@@ROOT@@',$root).Replace('@@HASHES@@',$hashLines)
  $exe=Join-Path $root 'AuthWireConnector.exe'
  Add-Type -AssemblyName Microsoft.CSharp
  $compiler=[Microsoft.CSharp.CSharpCodeProvider]::new()
