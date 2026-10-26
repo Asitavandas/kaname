@@ -75,3 +75,91 @@ $('dep-group-search').addEventListener('click',()=>loadDeployment(0,true).catch(
 $('dep-group-prev').addEventListener('click',()=>loadDeployment(Math.max(0,depOffset-100),true).catch(()=>{}));$('dep-group-next').addEventListener('click',()=>loadDeployment(depOffset+100,true).catch(()=>{}));
 $('dep-download').addEventListener('click',downloadDeployment);$('dep-preview-close').addEventListener('click',()=>{$('dep-preview').hidden=true;});
 $('dep-reconcile').addEventListener('click',async()=>{if(depBusy)return;const generation=authGeneration;try{const value=await loadDeployment(depOffset,true);if(!value||generation!==authGeneration)return;const p=value.plans.find(p=>p.id===depEditing?.id);if(p&&depUncertainDraft&&p.version===depUncertainDraft.version+1&&Object.keys(depUncertainDraft).every(k=>k==='version'||p[k]===depUncertainDraft[k])){$('dep-editor').close();depUncertain=false;depUncertainDraft=null;depFeedback('Planın kaydedildiği doğrulandı. GPO veya cihaz ayarı uygulanmadı.');}else $('dep-form-error').textContent='Kayıt henüz bulunamadı. İstek tekrarlanmadı; pencereyi kapatıp Yenile ile kontrol edin.';deploymentControls();}catch(error){if(generation===authGeneration)$('dep-form-error').textContent=depError(error);}});
+
+// Interactive panel pairing only. The server owns authorization and the binding.
+let connectorState=null,connectorBusy=false,connectorPreview=null,connectorUncertain=null,connectorTicket=0,connectorReadable=false;
+const connectorURLs=new Set();
+const connectorFields=['instance_id','connector_id','host_guid','host_fqdn','service_sid','appliance_fqdn','appliance_tls_sha256','public_key_pem'];
+const connectorErrors={CONNECTOR_ALREADY_PAIRED:'Bir Windows bağlantısı zaten eşleştirilmiş. Durumu yenileyin.',CONNECTOR_CONTEXT_NOT_READY:'AuthWire adı, domain veya HTTPS sertifikası hazır değil.',CONNECTOR_SCOPE_MISMATCH:'Bu genel anahtar adayı bu AuthWire kurulumu veya domain ile eşleşmiyor.',CONNECTOR_BINDING_INVALID:'Bağlantı kimliklerini ve genel anahtarı kontrol edin.',CONNECTOR_KEY_INVALID:'Geçerli bir Connector RSA genel anahtarı gerekli.',CONNECTOR_KEY_CONFIRMATION_REQUIRED:'DC01 çıktısındaki KeySha256 değerini eksiksiz karşılaştırın.',CONNECTOR_PREVIEW_STALE:'Bilgiler değişmiş. Durumu yenileyip yeniden önizleyin.',REVISION_CONFLICT:'Başka bir işlem bilgileri değiştirdi. Durumu yenileyip yeniden önizleyin.',CONNECTOR_PANEL_SESSION_REQUIRED:'Bu işlem için panel kullanıcı oturumu gerekli.',CONNECTOR_HTTPS_REQUIRED:'Eşleştirme için HTTPS bağlantısı gerekli.',CONNECTOR_INPUT_INVALID:'Eşleştirme adayı okunamadı.'};
+function connectorFeedback(text,error=false){$('connector-feedback').textContent=text;$('connector-feedback').dataset.tone=error?'error':'info';}
+function connectorError(error){return connectorErrors[error.code]||error.message||'Eşleştirme tamamlanamadı.';}
+// Candidate JSON is a flat string-only object. Parse its grammar explicitly so
+// duplicate keys cannot silently replace a key/identity before server preview.
+function connectorParseCandidate(raw){
+ if(typeof raw!=='string'||raw.length>16384)throw Error('Genel anahtar adayı en fazla 16 KB olabilir.');
+ let p=0;const value=Object.create(null),seen=new Set();
+ const ws=()=>{while(p<raw.length&&/[\t\n\r ]/.test(raw[p]))p++;};
+ function string(){ws();if(raw[p]!=='"')throw Error('Aday, yalnız metin alanları içeren bir JSON nesnesi olmalı.');const start=p++;let escape=false;while(p<raw.length){const c=raw[p++];if(escape){escape=false;continue;}if(c==='\\'){escape=true;continue;}if(c==='"')return JSON.parse(raw.slice(start,p));}throw Error('JSON metni tamamlanmamış.');}
+ ws();if(raw[p++]!=='{')throw Error('PairingCandidate JSON nesnesini yapıştırın.');ws();
+ if(raw[p]!=='}')for(;;){const key=string();if(!connectorFields.includes(key)||seen.has(key))throw Error('Adayda eksik, yinelenen veya tanınmayan alan var.');seen.add(key);ws();if(raw[p++]!==':')throw Error('JSON alanı okunamadı.');value[key]=string();ws();if(raw[p]!==',')break;p++;}
+ if(raw[p++]!=='}')throw Error('JSON nesnesi tamamlanmamış.');ws();if(p!==raw.length||seen.size!==connectorFields.length)throw Error('PairingCandidate içindeki sekiz alanı eksiksiz yapıştırın.');
+ return value;
+}
+function connectorClearPreview(){connectorPreview=null;$('connector-preview').hidden=true;$('connector-preview-summary').replaceChildren();$('connector-key-confirm').value='';}
+function resetConnector(){connectorTicket++;connectorState=null;connectorBusy=false;connectorReadable=false;connectorUncertain=null;connectorClearPreview();$('connector-candidate').value='';$('connector-summary').replaceChildren();$('connector-status').textContent='';connectorFeedback('');for(const url of connectorURLs)URL.revokeObjectURL(url);connectorURLs.clear();$('connector-form').hidden=true;}
+function connectorPermissions(){
+ const read=!!can('system.connectors'),write=!!can('system.connectors',true);
+ if(!read){resetConnector();return;}
+ if(!write&&(connectorPreview||$('connector-candidate').value)){connectorTicket++;connectorBusy=false;connectorClearPreview();$('connector-candidate').value='';}
+ $('connector-refresh').disabled=connectorBusy||!read;
+ $('connector-form').hidden=!write||!!connectorState?.paired;
+ $('connector-candidate').disabled=connectorBusy||!write||!!connectorUncertain;
+ $('connector-preview-button').disabled=connectorBusy||!connectorReadable||!write||!!connectorUncertain||!$('connector-candidate').value.trim();
+ $('connector-key-confirm').disabled=connectorBusy||!write||!!connectorUncertain;
+ const key=$('connector-key-confirm').value.trim().toLowerCase();
+ $('connector-apply').disabled=connectorBusy||!write||!!connectorUncertain||!connectorPreview||key!==connectorPreview.after.channel_key_sha256;
+ $('connector-reconcile').hidden=!connectorUncertain;$('connector-reconcile').disabled=connectorBusy||!read;
+ $('connector-export').hidden=!connectorState?.paired||!connectorState?.scope_matches;
+ $('connector-export').disabled=connectorBusy||!read;
+}
+function connectorRow(parent,title,value){const line=depNode('p');line.append(depNode('strong',title+': '),depNode('span',value));parent.append(line);}
+function renderConnector(){
+ const s=connectorState,box=$('connector-summary');box.replaceChildren();if(!s)return;
+ $('connector-status').textContent=!s.paired?'Henüz eşleştirilmedi.':!s.scope_matches?'Eşleştirme kapsamı değişmiş; inceleme gerekli.':s.online?'Connector bağlantı kanalı çevrimiçi.':'Eşleştirildi. Connector bağlantısı bekleniyor.';
+ if(s.binding){connectorRow(box,'Windows sunucusu',s.binding.host_fqdn);connectorRow(box,'Anahtar kimliği (KeySha256)',s.binding.channel_key_sha256);connectorRow(box,'Eşleştirme sürümü',s.binding.generation);}
+ connectorPermissions();
+}
+function connectorSameBinding(binding,expected){return !!binding&&['instance_id','connector_id','host_guid','host_fqdn','service_sid','appliance_fqdn','appliance_tls_sha256','generation','channel_key_sha256'].every(k=>binding[k]===expected[k]);}
+function connectorReadMatches(s,expected){return !!s?.paired&&!!s.scope_matches&&connectorSameBinding(s.binding,expected);}
+function connectorFinished(){connectorUncertain=null;connectorClearPreview();$('connector-candidate').value='';connectorFeedback('Windows bağlantısı eşleştirildi. Servis bağlantısı ayrıca doğrulanacak.');}
+async function loadConnector(){
+ if(connectorBusy||!can('system.connectors'))return;
+ const generation=authGeneration,ticket=++connectorTicket;connectorBusy=true;connectorReadable=false;connectorClearPreview();connectorPermissions();
+ try{const s=await api('/api/deployment/connector');if(generation!==authGeneration||ticket!==connectorTicket||!can('system.connectors'))return;connectorState=s;connectorReadable=true;if(connectorUncertain){if(connectorReadMatches(s,connectorUncertain.after))connectorFinished();else connectorFeedback('Kayıt sonucu henüz doğrulanamadı. Eşleştirme isteği tekrarlanmadı; güncel durumu inceleyin.',true);}renderConnector();}
+ catch(error){if(generation===authGeneration&&ticket===connectorTicket)connectorFeedback(connectorError(error),true);}
+ finally{if(generation===authGeneration&&ticket===connectorTicket){connectorBusy=false;connectorPermissions();}}
+}
+function openConnector(view){if(view==='windows-connector')loadConnector();}
+async function previewConnector(event){
+ event.preventDefault();if(connectorBusy||connectorUncertain||!connectorReadable||connectorState?.paired||!can('system.connectors',true))return;
+ let candidate;const raw=$('connector-candidate').value;try{candidate=connectorParseCandidate(raw);}catch(error){connectorClearPreview();connectorFeedback(error.message,true);connectorPermissions();return;}
+ const generation=authGeneration,ticket=++connectorTicket,intent={expected_revision:connectorState.revision,operation:'pair',candidate};connectorClearPreview();connectorBusy=true;connectorPermissions();connectorFeedback('');
+ try{const p=await api('/api/deployment/connector/preview',intent);if(generation!==authGeneration||ticket!==connectorTicket||!can('system.connectors',true))return;
+  if(raw!==$('connector-candidate').value)throw Error('Aday değişmiş. Yeniden önizleyin.');
+  if(p.operation!=='pair'||p.revision!==intent.expected_revision||typeof p.preview_hash!=='string'||!/^[a-f0-9]{64}$/.test(p.preview_hash)||!p.after||!Number.isInteger(p.after.generation)||p.after.generation<1||!/^[a-f0-9]{64}$/.test(p.after.channel_key_sha256)||!connectorFields.filter(k=>k!=='public_key_pem').every(k=>p.after[k]===candidate[k])||p.can_apply_gpo!==false)throw Error('Sunucunun eşleştirme önizlemesi doğrulanamadı.');
+  connectorPreview={...p,intent,raw};const box=$('connector-preview-summary');box.replaceChildren();connectorRow(box,'Windows sunucusu',p.after.host_fqdn);connectorRow(box,'AuthWire sunucusu',p.after.appliance_fqdn);connectorRow(box,'Connector kimliği',p.after.connector_id);connectorRow(box,'Anahtar kimliği (KeySha256)',p.after.channel_key_sha256);$('connector-preview').hidden=false;$('connector-key-confirm').focus();
+ }catch(error){if(generation===authGeneration&&ticket===connectorTicket)connectorFeedback(connectorError(error),true);}
+ finally{if(generation===authGeneration&&ticket===connectorTicket){connectorBusy=false;connectorPermissions();}}
+}
+async function applyConnector(){
+ const p=connectorPreview,key=$('connector-key-confirm').value.trim().toLowerCase();
+ if(connectorBusy||connectorUncertain||!p||!can('system.connectors',true)||p.raw!==$('connector-candidate').value||key!==p.after.channel_key_sha256)return;
+ const generation=authGeneration,ticket=++connectorTicket;connectorBusy=true;connectorPermissions();connectorFeedback('');let committed=false;
+ try{const applied=await api('/api/deployment/connector/apply',{...p.intent,preview_hash:p.preview_hash,confirmed_key_sha256:key});committed=true;
+  if(generation!==authGeneration||ticket!==connectorTicket||!can('system.connectors',true))return;
+  if(!connectorSameBinding(applied.binding,p.after)||applied.runtime_applied!==false||applied.ad_changed!==false||applied.gpo_changed!==false)throw Error('Eşleştirme yanıtı okunamadı. Kayıt sonucunu kontrol edin.');
+  const s=await api('/api/deployment/connector');if(generation!==authGeneration||ticket!==connectorTicket||!can('system.connectors'))return;connectorState=s;connectorReadable=true;
+  if(!connectorReadMatches(s,p.after))throw Error('Güncel eşleştirme önizlemeyle aynı değil. Kayıt sonucunu kontrol edin.');
+  connectorFinished();renderConnector();
+ }catch(error){if(generation!==authGeneration||ticket!==connectorTicket)return;if(committed||!error.status||error.status>=500){connectorUncertain={after:p.after};connectorFeedback('Eşleştirme sonucu kesinleştirilemedi. İstek tekrarlanmadı; Kayıt sonucunu kontrol et düğmesini kullanın.',true);}else{connectorClearPreview();connectorReadable=false;connectorFeedback(connectorError(error),true);}}
+ finally{if(generation===authGeneration&&ticket===connectorTicket){connectorBusy=false;connectorPermissions();}}
+}
+function exportConnectorBinding(){
+ const b=connectorState?.binding;if(!can('system.connectors')||!connectorState?.paired||!connectorState?.scope_matches||connectorBusy)return;
+ const fields=['instance_id','connector_id','generation','host_guid','host_fqdn','service_sid','appliance_fqdn','appliance_tls_sha256','channel_key_sha256'];
+ const base=new URL(location.origin);base.hostname=b.appliance_fqdn;
+ const value={Format:'AuthWireConnectorBindingPublicV1',BaseUrl:base.href,Binding:Object.fromEntries(fields.map(k=>[k,b[k]])),Domain:b.domain};
+ const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)+'\n'],{type:'application/json'}));connectorURLs.add(url);const a=document.createElement('a');a.href=url;a.download='AuthWire-Connector-Binding.json';a.click();setTimeout(()=>{URL.revokeObjectURL(url);connectorURLs.delete(url);},1000);
+}
+$('connector-form').addEventListener('submit',previewConnector);$('connector-refresh').addEventListener('click',loadConnector);$('connector-reconcile').addEventListener('click',loadConnector);$('connector-apply').addEventListener('click',applyConnector);$('connector-export').addEventListener('click',exportConnectorBinding);
+$('connector-candidate').addEventListener('input',()=>{if(!connectorBusy){connectorClearPreview();connectorFeedback('');}connectorPermissions();});$('connector-key-confirm').addEventListener('input',connectorPermissions);
