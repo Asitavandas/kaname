@@ -68,11 +68,16 @@ function Assert-AuthWireServiceConfig {
  if(-not $descriptor.DiscretionaryAcl){throw 'CONNECTOR_CONFIG_REJECTED'}
 }
 function New-AuthWireServicePackageCore {
- param($Config,[Security.Cryptography.X509Certificates.X509Certificate2]$Publisher,[string]$SourceDirectory=$PSScriptRoot)
+ param($Config,[Security.Cryptography.X509Certificates.X509Certificate2]$Publisher,[string]$SourceDirectory=$PSScriptRoot,[string]$BuildPath)
  Assert-AuthWireServiceAdmin;Assert-AuthWireServiceConfig $Config
  Assert-AuthWireServiceChannelKey $Config
  if($Publisher.Thumbprint -cne $Config.PublisherThumbprint -or -not $Publisher.HasPrivateKey){throw 'CONNECTOR_PUBLISHER_REJECTED'}
  $root=$Config.RootPath;$sid=$Config.Binding.service_sid
+ if($BuildPath){
+  $expected=$Config.RootPath+'.candidate-'+([guid]$Config.ReleaseId).ToString('N')
+  if($BuildPath -cne $expected){throw 'CONNECTOR_STAGING_PATH_REJECTED'}
+  $root=$BuildPath
+ }
  Assert-AuthWireChannelPath $root
  if(Test-Path -LiteralPath $root){throw 'CONNECTOR_PACKAGE_EXISTS_REQUIRES_REVIEW'}
  $null=New-Item -ItemType Directory -Path $root
@@ -96,7 +101,7 @@ function New-AuthWireServicePackageCore {
  $sourcePath=Join-Path $SourceDirectory 'ConnectorServiceHost.cs';Assert-AuthWireChannelPath $sourcePath
  $raw=[IO.File]::ReadAllText($sourcePath)
  if((Get-AuthWireSourceDigest $raw) -cne $reviewed['ConnectorServiceHost.cs']){throw 'CONNECTOR_UNREVIEWED_SOURCE_REJECTED'}
- $code=$raw.Replace('@@NAME@@',$Config.ServiceName).Replace('@@SID@@',$sid).Replace('@@ROOT@@',$root).Replace('@@HASHES@@',$hashLines)
+ $code=$raw.Replace('@@NAME@@',$Config.ServiceName).Replace('@@SID@@',$sid).Replace('@@ROOT@@',$Config.RootPath).Replace('@@HASHES@@',$hashLines)
  $exe=Join-Path $root 'AuthWireConnector.exe'
  Add-Type -AssemblyName Microsoft.CSharp
  $compiler=[Microsoft.CSharp.CSharpCodeProvider]::new()
@@ -117,14 +122,16 @@ function New-AuthWireServicePackageCore {
  [pscustomobject]@{Event='WINDOWS_CONNECTOR_SERVICE_PACKAGE_PREPARED';RootPath=$root;ServiceName=$Config.ServiceName;ReleaseId=$Config.ReleaseId;PackagePrepared=$true;ServiceCreated=$false;ServiceStarted=$false;AdChanged=$false;GpoChanged=$false;SecretsExported=$false}
 }
 function Get-AuthWireServicePackage {
- param([string]$RootPath,[string]$ExpectedPublisher)
+ param([string]$RootPath,[string]$ExpectedPublisher,[switch]$Staged,[switch]$AllowLegacy)
  Assert-AuthWireChannelPath $RootPath
  $mp=Join-Path $RootPath 'package.json'
  if((Get-Item -LiteralPath $mp).Length -gt 16384){throw 'CONNECTOR_MANIFEST_REJECTED'}
  $m=Get-Content -LiteralPath $mp -Raw|ConvertFrom-Json
  $c=Get-Content -LiteralPath (Join-Path $RootPath 'service.json') -Raw|ConvertFrom-Json
  Assert-AuthWireServiceConfig $c
- if($c.RootPath -cne $RootPath -or $c.PublisherThumbprint -cne $ExpectedPublisher -or $m.Format -ne 1 -or $m.ReleaseId -cne $c.ReleaseId -or $m.ServiceName -cne $c.ServiceName -or $m.AccountName -cne $c.AccountName -or $m.ServiceSid -cne $c.Binding.service_sid -or $m.PublisherThumbprint -cne $ExpectedPublisher){throw 'CONNECTOR_MANIFEST_REJECTED'}
+ $pathMatches=($c.RootPath -ceq $RootPath)
+ if($Staged){$pathMatches=($RootPath -ceq ($c.RootPath+'.candidate-'+([guid]$c.ReleaseId).ToString('N')) -or $RootPath -ceq ($c.RootPath+'.previous-'+([guid]$c.ReleaseId).ToString('N')))}
+ if(-not $pathMatches -or $c.PublisherThumbprint -cne $ExpectedPublisher -or $m.Format -ne 1 -or $m.ReleaseId -cne $c.ReleaseId -or $m.ServiceName -cne $c.ServiceName -or $m.AccountName -cne $c.AccountName -or $m.ServiceSid -cne $c.Binding.service_sid -or $m.PublisherThumbprint -cne $ExpectedPublisher){throw 'CONNECTOR_MANIFEST_REJECTED'}
  $sid=$c.Binding.service_sid
  foreach($path in @($RootPath,$mp)){
   $acl=Get-Acl -LiteralPath $path
@@ -133,7 +140,10 @@ function Get-AuthWireServicePackage {
   $expected='O:BAG:BAD:P(A;'+$flags+';FA;;;SY)(A;'+$flags+';FA;;;BA)(A;'+$flags+';'+$read+';;;'+$sid+')'
   if(-not (Compare-AuthWireSigningKeyAcl $expected $acl.Sddl).AclEquivalent){throw 'CONNECTOR_PACKAGE_ACL_REJECTED'}
  }
- $names=@('service.json','AuthWireConnector.exe')+@(Get-AuthWireServicePayloadNames)
+ $legacy=$AllowLegacy -and -not $m.Files.PSObject.Properties['Invoke-AuthWireConnectorProbeJob.ps1']
+ $payload=@(Get-AuthWireServicePayloadNames)
+ if($legacy){$payload=@($payload|Where-Object{$_ -cne 'Invoke-AuthWireConnectorProbeJob.ps1'})}
+ $names=@('service.json','AuthWireConnector.exe')+$payload
  if(@($m.Files.PSObject.Properties).Count -ne $names.Count){throw 'CONNECTOR_MANIFEST_REJECTED'}
  foreach($file in $names){
   $path=Join-Path $RootPath $file;Assert-AuthWireChannelPath $path
@@ -145,7 +155,21 @@ function Get-AuthWireServicePackage {
    if($s.Status.ToString() -ne 'Valid' -or $s.SignerCertificate.Thumbprint -cne $ExpectedPublisher){throw 'CONNECTOR_SIGNATURE_REJECTED'}
   }
  }
+ if($legacy){
+  $legacyHashes=Get-AuthWireLegacyPayloadHashes
+  foreach($file in $payload){if((Get-AuthWireSourceDigest ([IO.File]::ReadAllText((Join-Path $RootPath $file)))) -cne $legacyHashes[$file]){throw 'CONNECTOR_LEGACY_SOURCE_REJECTED'}}
+ }
  return $c
+}
+function Get-AuthWireLegacyPayloadHashes {
+ @{
+ 'ConnectorServiceRuntime.ps1'='58BECDFB6F2E08659F9E4C5443DC89A6F265E7767A612E0FFEC67C39ABD0DD0B'
+ 'Compare-AuthWireSigningKeyAcl.ps1'='EA8D67AC4F7673654C24BEE7B59AAF6D50F0427BDAC6D05C535CD5D2D47E8734'
+ 'ConnectorChannelTypes.ps1'='FA198F9A1C0AD75DB2C577A9D109246C7811249E8124E6541CE8B5AE19FAB61C'
+ 'ConnectorChannelKey.ps1'='D6F0D2CEBDE20B9016AC8BC1C1CDE566245A722AE447164FE55C946CFAD43BD6'
+ 'New-AuthWireConnectorHealthProof.ps1'='E8E369DCD0B60375EA2ADB672F904DDA217D22DB3BAB5A9B4981607E24958940'
+ 'Invoke-AuthWireConnectorHealth.ps1'='1A58B86580FF123D2CD253B774F015A9BBA747E5B072346786D6C133BED2122D'
+ }
 }
 function Assert-AuthWireServiceChannelKey {
  param($Config)
