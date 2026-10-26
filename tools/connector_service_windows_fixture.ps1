@@ -242,7 +242,17 @@ try{
  Check ($errors.Count -eq 0) 'Exact customer delivery entry point parses in native WinPS5.1'
  foreach($f in $deliveryAst.FindAll({param($node)$node -is [Management.Automation.Language.FunctionDefinitionAst]},$false)){. ([scriptblock]::Create($f.Extent.Text))}
  $assignments=@{};foreach($a in $deliveryAst.FindAll({param($node)$node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left -is [Management.Automation.Language.VariableExpressionAst]},$false)){$assignments[$a.Left.VariablePath.UserPath]=$a.Right}
- $reviewedSources=$assignments['reviewedSources'].SafeGetValue();$zipBytes=[Convert]::FromBase64String($assignments['embeddedSources'].SafeGetValue());$zipHash=$assignments['archiveSha256'].SafeGetValue()
+ function Read-FixtureLiteral($node){
+  $values=@($node.FindAll({param($value)$value -is [Management.Automation.Language.StringConstantExpressionAst]},$true))
+  if($values.Count -ne 1){throw 'Expected one literal source value'}
+  return $values[0].Value
+ }
+ $table=$assignments['reviewedSources'].Find({param($node)$node -is [Management.Automation.Language.HashtableAst]},$true)
+ $reviewedSources=@{};foreach($pair in $table.KeyValuePairs){
+  if($pair.Item1 -isnot [Management.Automation.Language.StringConstantExpressionAst]){throw 'Expected literal source name'}
+  $reviewedSources[$pair.Item1.Value]=Read-FixtureLiteral $pair.Item2
+ }
+ $zipBytes=[Convert]::FromBase64String((Read-FixtureLiteral $assignments['embeddedSources']));$zipHash=Read-FixtureLiteral $assignments['archiveSha256']
  $unpacked=Read-AuthWireReviewedSourceBytes $zipBytes $zipHash
  Check ($unpacked.Count -eq 14) 'Pinned customer delivery admits exactly fourteen reviewed source files'
  Reject {Read-AuthWireReviewedSourceBytes $zipBytes ('0'*64)} 'Customer delivery refuses a mismatched archive hash before signing'
