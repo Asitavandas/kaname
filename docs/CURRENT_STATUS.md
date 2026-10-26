@@ -20,6 +20,17 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Merkezi Windows dağıtımı: mevcut plan ekranıyla ilk pilot önizlemesi — 26 Ekim 2026
+
+Kaynak incelemesi **Deployment.save/preview/package** ve sürümlü plan editörünün zaten var olduğunu doğruladı. Yeni/ikinci plan altyapısı yazılmayacak. İlk operatör adımı **Sertifikalar → Merkezi dağıtım → Yeni dağıtım** üzerinden **AuthWire Pilot - Merkezi Windows** planını hazırlamak: bilgisayar kimliği; **AuthWire-Pilot-Computers / …1647**; aynı gruba bağlı mevcut bilgisayar sertifika profili; Ethernet+Wi-Fi; **VV_802.1X**; RADIUS adı **kaname.vizyonveri.local**. Kullanıcı sertifika profili bu ilk machine planında kullanılmaz. Plan kaydetmek ve önizlemek AD/GPO/endpoint değiştirmez; kaynak tarafından desteklenen, ayrı bilgisayar/kullanıcı cached üyelik sayımı ve trust/profile blocker'ları doğrulanacak.
+
+**Henüz plan oluşturulmadı; operatör önizleme sonucu bekleniyor.** Asistan canlı API/SQL kaydı, yeni iş veya GPO değişikliği yapmadı. Plan/profile kimlik ve sürümleri, enabled bilgisayar hedefi, unresolved üyeler, trust hazır durumu ve blocker'lar çıktıyla kaydedilecek. Gerçek hedef sayısı varsayılmayacak.
+
+Önemli kaynak bulgusu: hazırlık ekranındaki **Windows yönetim bağlantısı henüz kurulmadı / kurulması bekleniyor** metinleri ve **WINDOWS_CONNECTOR_NOT_CONFIGURED** apply blocker'ı hâlâ eski sabit placeholder'dır. Kabul edilen dev.37 + DC01 probe roundtrip'ın başarısız olduğu anlamına gelmez; yalnız bu eski metne bakarak key/pairing/service sıfırlanmayacak. GPO apply endpoint gerçekten yoktur. Sonraki entegrasyonda bu durumlar gerçek Connector kapsamı ve kontrollü GPO executor hazırlığıyla doğru bağlanacak.
+
+GPO yazımından önce owned deployment **8c6808fd-a382-4bf2-9c9c-d9e1d46082a3** için fresh ownership/scope/unlinked incelemesi ve imzalı paket/publisher güven zinciri gerekli. Korumalı trust GPO **e5a9ab39-3709-49cb-837a-0208d2eb3b12** korunacak. Şu aşamada kullanıcı/AD grubu/sertifika/network policy/VLAN/Windows task değiştirilmedi. **54/94 (~%57),40 açık** değişmedi.
+
+
 ## Son teslimata eklendi: tüm panelin ayrıntılı kullanım kılavuzu — 26 Ekim 2026
 
 Operatör, çalışma tamamlanınca **paneldeki bütün sayfaların ve başlıkların nasıl çalıştığını, neyin nasıl yapılacağını anlatan detaylı kılavuz** istedi. Zorunlu kapanış teslimatı olarak **docs/USER_GUIDE_PLAN.md** kaydedildi. Kılavuz son kabul edilmiş panel sürümünün tüm menü, sekme, alan, buton ve durumlarını envanterle kapsayacak; sade Türkçe, gerçek ekran görüntüleri, adım adım işlemler, örnek senaryolar, başarı kontrolleri ve hata çözümleri içerecek. Word ve PDF teslim edilecek. Şu anda kılavuz üretilmedi; arayüz değişiklikleri yeniden açılmadı. İşlevsel **54/94** sayımı ayrı kaldı. Nihai işlevsel sürüm kabulünden sonra kılavuz hazır olmadan kapanış teslimatı tamamlandı sayılmayacak.

@@ -1,0 +1,38 @@
+{
+  "event": "FIRST_CENTRAL_WINDOWS_DEPLOYMENT_PLAN_OPERATOR_STEP",
+  "date": "2026-10-26",
+  "mode": "existing_plan_editor_and_preview",
+  "operator_execution_pending": true,
+  "plan_created_by_assistant": false,
+  "gpo_changed": false,
+  "endpoint_changed": false,
+  "connector_job_created": false,
+  "proposed_plan": {
+    "name": "AuthWire Pilot - Merkezi Windows",
+    "auth_mode": "machine",
+    "computer_group": "AuthWire-Pilot-Computers",
+    "computer_group_sid": "S-1-5-21-34256453-3348971241-2809240126-1647",
+    "machine_profile": "existing_enabled_machine_profile_for_the_same_pilot_group_id_to_be_observed",
+    "user_profile_id": "",
+    "wired": true,
+    "wireless": true,
+    "ssid": "VV_802.1X",
+    "server_name": "kaname.vizyonveri.local"
+  },
+  "required_observation": [
+    "plan_id_and_version",
+    "computer_target_enabled_count",
+    "unresolved_members_or_other_artifact_blockers",
+    "enrollment_profile_id_and_version",
+    "root_thumbprint_and_radius_server_trust_ready"
+  ],
+  "existing_code_findings": {
+    "plan_save_preview_profile_zip_already_implemented": true,
+    "gpo_apply_endpoint_not_implemented": true,
+    "connector_status_in_preparation_screen_is_legacy_static_placeholder": true,
+    "live_healthy_probe_channel_already_accepted": true
+  },
+  "next_implementation_gate": "Bind the approved plan and owned deployment GPO to controlled preparation/application; verify fresh ownership/unlinked scope and publisher trust before any GPO write",
+  "owned_target_gpo_id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+  "protected_trust_gpo_id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12"
+}
