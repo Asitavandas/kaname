@@ -20,6 +20,11 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Son teslimata eklendi: tüm panelin ayrıntılı kullanım kılavuzu — 26 Ekim 2026
+
+Operatör, çalışma tamamlanınca **paneldeki bütün sayfaların ve başlıkların nasıl çalıştığını, neyin nasıl yapılacağını anlatan detaylı kılavuz** istedi. Zorunlu kapanış teslimatı olarak **docs/USER_GUIDE_PLAN.md** kaydedildi. Kılavuz son kabul edilmiş panel sürümünün tüm menü, sekme, alan, buton ve durumlarını envanterle kapsayacak; sade Türkçe, gerçek ekran görüntüleri, adım adım işlemler, örnek senaryolar, başarı kontrolleri ve hata çözümleri içerecek. Word ve PDF teslim edilecek. Şu anda kılavuz üretilmedi; arayüz değişiklikleri yeniden açılmadı. İşlevsel **54/94** sayımı ayrı kaldı. Nihai işlevsel sürüm kabulünden sonra kılavuz hazır olmadan kapanış teslimatı tamamlandı sayılmayacak.
+
+
 ## 🔴✓ DC01 ilk gerçek salt okunur iş/sonuç döngüsü tamamlandı — 26 Ekim 2026
 
 Operatörün yüklediği **image(20261026-185844).png** doğrudan görsel incelendi. Windows bağlantısı → **Bağlantı görevleri** ekranında **Salt okunur görev kanalı hazır** ve tek **Bağlantı testi / Tamamlandı** satırı var. Görev kimliği **4511c351-86a5-49a3-9993-2f4609a415f8**; **Oluşturulma=26.10.2026 21:57:51 Europe/Istanbul** (tamamlanma saati olarak yorumlanmaz). Sonuçtaki Connector paket sürümü **970d7039-3798-478b-a5f4-a57e245693a0**, uygulanmış yeni DC01 sürümüyle tam eşleşiyor. Görsel SHA256 **01c2e7d2f1fb7487298cb4be0a430361fffe4a090e3656d5ae68ba7ac5691b6e**.
