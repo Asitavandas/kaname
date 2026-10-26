@@ -67,6 +67,8 @@ try{
  Write-AuthWireChannelReceipt -Path (Join-Path $Directory 'candidate.json') -Value $prepared.PairingCandidate
  Wait-Until {(Test-Path -LiteralPath (Join-Path $Directory 'paired')) -or (Test-Path -LiteralPath (Join-Path $Directory 'abort'))} 60 'Server pairing did not finish'
  if(Test-Path -LiteralPath (Join-Path $Directory 'abort')){throw 'Fixture parent aborted'}
+ $debug=Get-CimInstance Win32_Service -Filter ("Name='"+$name+"'")
+ Write-Host ('SERVICE_FIXTURE_PUBLIC_CONFIG '+(@{path=$debug.PathName;expected_path=$binary;account=$debug.StartName;expected_account=$config.AccountName;description=$debug.Description;expected_description=$marker}|ConvertTo-Json -Compress))
  $r=Invoke-AuthWireServiceControlCore -Mode Start -RootPath $root -ExpectedPublisher $publisher.Thumbprint
  Wait-Until {$s=Read-Status;return ($s -and $s.Healthy)} 35 'Real signed service did not prove HTTPS health'
  $s=Read-Status;$first=$s.WorkerPid

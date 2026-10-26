@@ -8,8 +8,8 @@ function Assert-AuthWireServiceAdmin {
  try{if(-not [Environment]::Is64BitProcess -or -not ([Security.Principal.WindowsPrincipal]::new($i)).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){throw 'CONNECTOR_ADMIN_REQUIRED'}}finally{$i.Dispose()}
 }
 function Set-AuthWireServiceAcl {
- param([string]$Path,[string]$Sid,[switch]$Directory,[switch]$Writable)
- $flags=if($Directory){'OICI'}else{''};$rights=if($Writable){'0x1301bf'}elseif($Directory){'FRFX'}else{'FR'}
+ param([string]$Path,[string]$Sid,[switch]$Directory,[switch]$Writable,[switch]$Executable)
+ $flags=if($Directory){'OICI'}else{''};$rights=if($Writable){'0x1301bf'}elseif($Directory -or $Executable){'FRFX'}else{'FR'}
  $acl=Get-Acl -LiteralPath $Path
  $acl.SetSecurityDescriptorSddlForm(('O:BAG:BAD:P(A;'+$flags+';FA;;;SY)(A;'+$flags+';FA;;;BA)(A;'+$flags+';'+$rights+';;;'+$Sid+')'))
  Set-Acl -LiteralPath $Path -AclObject $acl
@@ -83,7 +83,7 @@ function New-AuthWireServicePackageCore {
  }finally{$compiler.Dispose()}
  $sig=Set-AuthenticodeSignature -FilePath $exe -Certificate $Publisher -HashAlgorithm SHA256
  if($sig.Status.ToString() -ne 'Valid' -or $sig.SignerCertificate.Thumbprint -cne $Publisher.Thumbprint){throw 'CONNECTOR_SIGNING_FAILED'}
- Set-AuthWireServiceAcl $exe $sid
+ Set-AuthWireServiceAcl $exe $sid -Executable
  $manifest=@{Format=1;ReleaseId=$Config.ReleaseId;ServiceName=$Config.ServiceName;AccountName=$Config.AccountName;ServiceSid=$sid;PublisherThumbprint=$Publisher.Thumbprint;Files=@{}}
  foreach($f in ($hashes+@('AuthWireConnector.exe'))){$manifest.Files[$f]=(Get-FileHash -LiteralPath (Join-Path $root $f) -Algorithm SHA256).Hash}
  $mp=Join-Path $root 'package.json';[IO.File]::WriteAllText($mp,($manifest|ConvertTo-Json -Depth 6),[Text.UTF8Encoding]::new($false));Set-AuthWireServiceAcl $mp $sid
@@ -110,7 +110,8 @@ function Get-AuthWireServicePackage {
  if(@($m.Files.PSObject.Properties).Count -ne $names.Count){throw 'CONNECTOR_MANIFEST_REJECTED'}
  foreach($file in $names){
   $path=Join-Path $RootPath $file;Assert-AuthWireChannelPath $path
-  $expected='O:BAG:BAD:P(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;'+$sid+')'
+  $read=if($file -eq 'AuthWireConnector.exe'){'FRFX'}else{'FR'}
+  $expected='O:BAG:BAD:P(A;;FA;;;SY)(A;;FA;;;BA)(A;;'+$read+';;;'+$sid+')'
   if(-not (Compare-AuthWireSigningKeyAcl $expected (Get-Acl -LiteralPath $path).Sddl).AclEquivalent -or (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -cne $m.Files.$file){throw 'CONNECTOR_PACKAGE_REJECTED'}
   if($file -ne 'service.json'){
    $s=Get-AuthenticodeSignature -FilePath $path
