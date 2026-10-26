@@ -20,6 +20,17 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 ilk gerçek imzalı ağ profili adayı oluşturuldu — 26 Ekim 2026
+
+Operatör **WINDOWS_DEPLOYMENT_CANDIDATE_DELIVERY / Mode=Prepare / Stage=prepared** çıktısını paylaştı. **SourcesPreparedNow=true, SourceSignaturesValid=true**. Approval SHA256 **3b5587d5e6fcdc3cbdb753e097fe36d377e27e9e6bc549c289383baa345577ad**, kabul edilen pilot ZIP ve exact kaynak teslimatıyla eşleşiyor. Plan **524653f5-1359-46f5-84a5-46355bb82aff /v1**, owned deployment GPO **8c6808fd-a382-4bf2-9c9c-d9e1d46082a3** doğru. Aday **C:\ProgramData\AuthWire-DeploymentCandidates-4c23eebe071546d188eea2e96ad7ee46\524653f5135946f584a546355bb82aff-v1-ae98c8426953aced3f70bebfdc701cd85be52e3a08f9434a7d087a6bdb6ca9b7** altında; manifest SHA256 **4f7a463d3404428703bb95424d8c8a7f275e85f6a3a42d7a270f6eaae5ba9a6d**.
+
+🔴✓ **PreparedNow=true, SignatureVerified=true**: gerçek müşteri DC01'de mevcut machine signer ile lokal aday oluşturma ve son imza/hash/ACL guard'ları geçti. Bu operatör çıktısı kabulüdür; bağımsız asistan DC01 sorgusu değildir. Prepare zaten yayımlanan adayı tekrar doğrulayarak döner; yalnız bu kabul için aynı testi yeniden çalıştırma gerekmiyor. Kaynaklar **C:\ProgramData\AuthWire-DeploymentCandidateSources-3b5587d5e6fcdc3c** altında imzalı olarak hazırlanmış.
+
+**ArtifactExecuted=false, CanApplyGpo=false** beklenen kapsam. Operatör çıktısında **AD/GPO/endpoint/services/trust/key ACL değişikliği yok**, secret export yok; mevcut Connector değiştirilmedi. Bu yeni helper'ın installed gMSA worker üzerinden çalıştığı, tam istemci installer paketi bulunduğu, SYSVOL/GPO staging/link yapıldığı veya endpoint kabulü tamamlandığı iddia edilmez.
+
+Sıradaki geliştirme **panel → sınırlı typed dağıtım hazırlama görevi → Connector** akışıdır. Mevcut account/binding/key korunacak; güncel plan/profile/AD hedefi ve exact owned GPO marker/link/izinleri işlem anında kontrol edilecek. Önce linksiz hazırlama, ardından ayrı scoped uygulama kapısı gelecek. Mevcut imzalı adayı silmek veya tekrar kurulum yapmak gerekmiyor. **54/94 (~%57),40 açık** değişmedi; bu kabul merkezi otomasyonun bir alt adımıdır.
+
+
 ## 🔴✓ İmzalı ağ profili aday hazırlığı geliştirildi ve test edildi — 26 Ekim 2026
 
 **PR94**, final tested head **c41e853719f81cd32055f8dd0806b1c3c769225f**, merge **a097420d777c2c6d50bbfe78ffb7ffb55f6a0b68**. Yeni **New-AuthWireDeploymentCandidate.ps1** mevcut machine+Ethernet+Wi-Fi pilot ZIP'ini dışarıdan sabitlenen approval SHA256 ve ZIP özetiyle kontrol eder; exact plan/profile/grup/GPO/Connector kimliklerini comment-only, çalıştırılmayan bir manifestte Authenticode imzasıyla bağlar. Duplicate JSON/ZIP, fazla veya büyük dosya, farklı XML yapısı, kapalı sunucu doğrulama, yanlış ad/kök, farklı sürüm/kapsam, reparse point veya genişletilmiş ACL reddedilir. Aday yalnız original ZIP + approval.json + imzalı manifest içerir. Prepare atomik yayımlar; tekrar Prepare/Verify mevcut imzalı byte'ları korur, bozuk adayın üzerine yazmaz.
