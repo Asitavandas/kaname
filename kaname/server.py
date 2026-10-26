@@ -102,6 +102,9 @@ class DevelopmentServer(ThreadingHTTPServer):
         self.web_certificate = Path(tls_cert).read_bytes() if tls_cert else b''
         self.connector_pairing = None
         self.connector_init_lock = threading.Lock()
+        self.connector_peer_lock = threading.Lock()
+        self.connector_peer_gate = threading.BoundedSemaphore(4)
+        self.connector_peer_rates = {}
         self.users = None
         self.user_sessions = None
         self.user_init_lock = threading.Lock()
@@ -310,6 +313,45 @@ class Handler(BaseHTTPRequestHandler):
             self.store_error(error)
         except ImportError:
             self.respond(503, {'error': 'CONNECTOR_SERVICE_UNAVAILABLE'})
+
+    def connector_peer(self):
+        if (not self.server.tls or self.headers.get('Host') not in self.server.hosts or
+            any(self.headers.get(h) is not None for h in ('Origin','Cookie','Authorization'))):
+            self.respond(403, {'error':'CONNECTOR_REQUEST_REJECTED'}); return
+        import time
+        with self.server.connector_peer_lock:
+            now = time.monotonic()
+            rates = {k:v for k,v in self.server.connector_peer_rates.items() if now-v[0] < 60}
+            source = self.client_address[0]
+            busy = (source not in rates and len(rates) >= 64) or rates.get(source,(now,0))[1] >= 30
+            if not busy:
+                start, count = rates.get(source,(now,0)); rates[source]=(start,count+1)
+            self.server.connector_peer_rates = rates
+        if busy:
+            self.respond(429, {'error':'CONNECTOR_BUSY'}); return
+        if not self.server.connector_peer_gate.acquire(blocking=False):
+            self.respond(429, {'error':'CONNECTOR_BUSY'}); return
+        try:
+            from .connector_channel import ChannelError
+            from .connector_registry import RegistryError
+            if self.headers.get('Transfer-Encoding') or self.headers.get_content_type() != 'application/json':
+                raise ValueError()
+            size = int(self.headers.get('Content-Length','0'))
+            if not 1 <= size <= 4096: raise ValueError()
+            raw = self.rfile.read(size); self.body_read = True
+            if len(raw) != size: raise ValueError()
+            registry = self.connector_services()
+            result = registry.poll(raw) if self.path.endswith('/challenge') else registry.accept(raw)
+            self.respond(200,result)
+        except ImportError:
+            self.respond(503, {'error':'CONNECTOR_SERVICE_UNAVAILABLE'})
+        except (ValueError, TypeError, KeyError, OSError):
+            # Never disclose configured identity, key, phase, or trust state to a peer.
+            self.respond(403, {'error':'CONNECTOR_REQUEST_REJECTED'})
+        except sqlite3.Error as error:
+            self.store_error(error)
+        finally:
+            self.server.connector_peer_gate.release()
 
     def user_services(self):
         devices, _ = self.device_services()
@@ -725,6 +767,8 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
+        if self.path in {'/api/connector/v1/challenge','/api/connector/v1/health'}:
+            self.connector_peer(); return
         if self.path in {'/api/deployment/connector/preview', '/api/deployment/connector/apply'}:
             self.connector_admin(write=True); return
         if self.path == '/api/system/power/action':

@@ -144,7 +144,7 @@ class ConnectorRegistry:
             return {'revision': revision, 'paired': bool(record and record['state'] == 'paired'),
                     'generation': record['binding']['generation'] if record else 0,
                     'binding': self._projection(record), 'scope_matches': valid,
-                    'blocker': blocker, 'online': health['online'], 'transport_active': False,
+                    'blocker': blocker, 'online': health['online'], 'transport_active': health['online'],
                     'can_apply': False, 'directory_sync_ready': False, 'kerberos_ready': False}
 
     def _preview(self, db, value):
@@ -249,3 +249,9 @@ class ConnectorRegistry:
         with self._lock, self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             return self._active(db).accept(raw)
+
+    def poll(self, raw):
+        """Signed peer poll; durable rotation/revocation is rechecked first."""
+        with self._lock, self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            return self._active(db).poll(raw)

@@ -144,8 +144,9 @@ class ConnectorRegistryHTTPTests(unittest.TestCase):
         for change in ({'command':'powershell.exe'},{'candidate':self.candidate|{'password':'never-accepted'}},
                        {'candidate':self.candidate|{'generation':1}}):
             self.assertEqual(400,self.request('POST','/api/deployment/connector/preview',self.intent()|change,self.headers)[0])
-        for path in ('/api/connector/v1/health','/api/connector/v1/challenge','/api/deployment/connector/register'):
-            self.assertEqual(404,self.request('POST',path,{},self.headers)[0])
+        for path in ('/api/connector/v1/health','/api/connector/v1/challenge'):
+            self.assertEqual(403,self.request('POST',path,{},self.headers)[0])
+        self.assertEqual(404,self.request('POST','/api/deployment/connector/register',{},self.headers)[0])
         self.assertEqual(before,self.server.store.snapshot())
 
     def test_duplicate_json_and_private_key_are_not_echoed_or_saved(self):
