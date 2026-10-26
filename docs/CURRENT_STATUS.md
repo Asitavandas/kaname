@@ -20,6 +20,13 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 imzalı yükseltme aday paketi hazır — 26 Ekim 2026
+
+Operatör pinned wrapper **Prepare** sonucunu paylaştı: **SourceSignaturesValid=true, Stage/Phase=prepared, PackagePrepared=true, Error=null, ChangesMayBePartial=false**. Yeni release **970d7039-3798-478b-a5f4-a57e245693a0**, kaynak component **918bc02453a6f2d821f3f3272654e6e8dcacf6a0**. Aday aynı kanonik root'un **.candidate-970d70393798478ba5f4a57e245693a0** kardeş klasöründe; private journal **C:\ProgramData\AuthWire-ConnectorUpgrade-4c23eebe071546d188eea2e96ad7ee46-970d70393798478ba5f4a57e245693a0\upgrade.json**. Mevcut hesap, pairing ve ayrı kanal key korunmuş; orijinal imzalı kaynaklar korunmuş. AD/GPO/trust/key ACL değişmedi, secret export yok.
+
+**ServiceTransitioned=false**: çalışan paket hâlâ eski **7b7d7bbc-88c0-4d83-8274-0ab294db2236**; gerçek müşteri upgrade/fresh probe kabulü tamamlanmadı. Sırada aynı hash-pinned wrapper'ın ayrı **Apply** modu var. Yalnız owned Connector stop/swap/start yapılır; fresh matching runtime health ve probe readiness gerektirir, başarısız geçiş doğrulanmış eski pakete rollback dener. **GPO apply=false**, panelden test işi henüz oluşturulmadı. **54/94 (~%57),40 açık** değişmedi. Bu kayıt operatör çıktısı kabulüdür; bağımsız DC01 sorgusu olarak sunulmaz.
+
+
 ## 🔴✓ dev.37 panel kabulü; imzalı Windows servis yükseltme/geri alma hazır — 26 Ekim 2026
 
 Operatör **Test görevini önizle** düğmesinin göründüğünü ve **henüz görev göndermediğini** doğruladı. dev.37 panel görünüm kabulü tamam; gerçek Windows probe işi henüz tamamlanmadı.
