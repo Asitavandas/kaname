@@ -8,6 +8,18 @@ function Check([bool]$v,[string]$m){if(-not $v){throw $m};$script:checks++}
 function Reject([scriptblock]$s,[string]$m){$caught=$false;try{$null=& $s}catch{$caught=$true};Check $caught $m}
 function Wait-Until([scriptblock]$s,[int]$seconds,[string]$message){$end=[DateTime]::UtcNow.AddSeconds($seconds);do{if(& $s){return};Start-Sleep -Milliseconds 500}while([DateTime]::UtcNow -lt $end);throw $message}
 function Read-Status {if(Test-Path -LiteralPath $script:statusPath){try{return (Get-Content -LiteralPath $script:statusPath -Raw|ConvertFrom-Json)}catch{}};return $null}
+$freshControlModes=@()
+function Invoke-FreshPublicControl([string]$Mode){
+ # Do not preload System.ServiceProcess or run Get-Service in this child.
+ # The signed public entry point must load its own framework dependencies.
+ $powershell=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+ $output=@(& $powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File $script:adminTool -Mode $Mode -ConnectorId $script:base.connector_id -PublisherThumbprint $script:publisher.Thumbprint 2>&1)
+ if($LASTEXITCODE -ne 0){throw ('Fresh public '+$Mode+' failed: '+($output -join "`n"))}
+ $result=($output -join "`n")|ConvertFrom-Json
+ if($result.Event -cne 'WINDOWS_CONNECTOR_SERVICE_CONTROL' -or $result.Mode -cne $Mode -or $result.ServiceName -cne $script:name -or $result.ReleaseId -cne $script:config.ReleaseId){throw 'Fresh public control returned unexpected scope'}
+ $script:freshControlModes+=$Mode
+ return $result
+}
 $user=$null;$sid=$null;$key=$null;$root=$null;$keyRoot=$null;$name=$null;$publisher=$null;$public=$null;$web=$null;$roots=$null;$publishers=$null;$hostBytes=$null;$rightsAdded=$false;$secret=$null
 $hosts=Join-Path $env:SystemRoot 'System32\drivers\etc\hosts'
 try{
@@ -64,7 +76,7 @@ try{
  $adminTool=Join-Path $root 'admin\Install-AuthWireConnectorService.ps1'
  $adminAcl=Get-Acl -LiteralPath $adminTool;$adminRules=@($adminAcl.GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier]))
  Check ($adminAcl.AreAccessRulesProtected -and $adminRules.Count -eq 2 -and @($adminRules|Where-Object{$_.IdentityReference.Value -notin @('S-1-5-18','S-1-5-32-544')}).Count -eq 0) 'Administrative control code stays inaccessible to the service account'
- $inspect=& $adminTool -ConnectorId ([guid]$base.connector_id) -PublisherThumbprint $publisher.Thumbprint|ConvertFrom-Json
+ $inspect=Invoke-FreshPublicControl Inspect
  Check ($inspect.Mode -eq 'Inspect' -and -not $inspect.ServiceInstalled -and -not $inspect.ServiceCreated) 'Default signed public installer inspection performs no service or AD write'
  $rejected=$false
  try{$null=& $adminTool -Mode Install -ConnectorId ([guid]$base.connector_id) -PublisherThumbprint $publisher.Thumbprint}catch{$rejected=$_.Exception.Message -like '*CONNECTOR_EXISTING_GMSA_REQUIRED*'}
@@ -92,13 +104,13 @@ try{
  if(Test-Path -LiteralPath (Join-Path $Directory 'abort')){throw 'Fixture parent aborted'}
  $debug=Get-CimInstance Win32_Service -Filter ("Name='"+$name+"'")
  Write-Host ('SERVICE_FIXTURE_PUBLIC_CONFIG '+(@{path=$debug.PathName;expected_path=$binary;account=$debug.StartName;expected_account=$config.AccountName;description=$debug.Description;expected_description=$marker}|ConvertTo-Json -Compress))
- $r=Invoke-AuthWireServiceControlCore -Mode Start -RootPath $root -ExpectedPublisher $publisher.Thumbprint
+ $r=Invoke-FreshPublicControl Start
  Wait-Until {$s=Read-Status;return ($s -and $s.Healthy)} 35 'Real signed service did not prove HTTPS health'
  $s=Read-Status;$first=$s.WorkerPid
  Check ($r.ServiceInstalled -and $s.RuntimeSid -ceq $sid -and -not $s.CanApply -and -not $s.DirectorySyncReady -and -not $s.KerberosReady) 'Actual low-privilege SCM worker proves health without AD/GPO authority'
  $process=Get-CimInstance Win32_Process -Filter ("ProcessId="+$first)
  Check ((Invoke-CimMethod -InputObject $process -MethodName GetOwnerSid).Sid -ceq $sid) 'Native worker process token belongs to the exact temporary account'
- $null=Invoke-AuthWireServiceControlCore -Mode Start -RootPath $root -ExpectedPublisher $publisher.Thumbprint
+ $null=Invoke-FreshPublicControl Start
  Check ((Read-Status).WorkerPid -eq $first) 'Repeated start does not create a duplicate worker'
  Set-Content -LiteralPath (Join-Path $Directory 'case.txt') -Value offline -Encoding ASCII
  Wait-Until {$s=Read-Status;return ($s -and -not $s.Healthy -and $s.ConsecutiveFailures -ge 1)} 40 'Outage did not become unhealthy'
@@ -106,7 +118,7 @@ try{
  Set-Content -LiteralPath (Join-Path $Directory 'case.txt') -Value normal -Encoding ASCII
  Wait-Until {$s=Read-Status;return ($s -and $s.Healthy -and $s.SuccessCount -ge 2)} 45 'Service did not recover automatically after HTTPS outage'
  Check ((Read-Status).WorkerPid -eq $first) 'Transient network outage recovers in the same worker'
- $null=Invoke-AuthWireServiceControlCore -Mode Stop -RootPath $root -ExpectedPublisher $publisher.Thumbprint
+ $null=Invoke-FreshPublicControl Stop
  Wait-Until {-not (Get-Process -Id $first -ErrorAction SilentlyContinue)} 10 'Stop left an orphan worker'
  Check ((Get-Service $name).Status -eq 'Stopped') 'Bounded service stop also ends its child'
  $worker=Join-Path $root 'ConnectorServiceRuntime.ps1';$bytes=[IO.File]::ReadAllBytes($worker)
@@ -117,7 +129,7 @@ try{
   Reject {Invoke-AuthWireServiceControlCore -Mode Start -RootPath $root -ExpectedPublisher $publisher.Thumbprint} 'Service-writable trusted config is rejected'
  }finally{$acl.SetSecurityDescriptorSddlForm($before);Set-Acl -LiteralPath $cfg -AclObject $acl}
  $oldTicks=(Read-Status).CheckedUtc
- $null=Invoke-AuthWireServiceControlCore -Mode Start -RootPath $root -ExpectedPublisher $publisher.Thumbprint
+ $null=Invoke-FreshPublicControl Start
  Wait-Until {$s=Read-Status;return ($s -and $s.Healthy -and $s.WorkerPid -ne $first -and $s.CheckedUtc -ne $oldTicks)} 35 'Explicit restart did not produce a fresh worker'
  $old=(Read-Status).WorkerPid
  $hostProcess=(Get-CimInstance Win32_Service -Filter ("Name='"+$name+"'")).ProcessId
@@ -126,12 +138,13 @@ try{
  Check $true 'Worker detects parent crash and exits without waiting for the full retry interval'
  Wait-Until {$s=Read-Status;return ($s -and $s.Healthy -and $s.WorkerPid -ne $old)} 100 'SCM did not restart crashed host into a healthy fresh worker'
  Check $true 'Real SCM recovery restarts the signed host and health worker'
- $null=Invoke-AuthWireServiceControlCore -Mode Remove -RootPath $root -ExpectedPublisher $publisher.Thumbprint
+ $null=Invoke-FreshPublicControl Remove
  Wait-Until {-not (Get-Service -Name $name -ErrorAction SilentlyContinue)} 10 'Removed service is still present'
  Check ((Test-Path -LiteralPath $root) -and [Security.Cryptography.CngKey]::Exists($key,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::MachineKey)) 'Removal leaves owned package and channel key intact'
  $k=[Security.Cryptography.CngKey]::Open($key,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::MachineKey)
  try{$path=Join-Path (Join-Path $env:ProgramData 'Microsoft\Crypto\Keys') $k.UniqueName;Check ((Compare-AuthWireSigningKeyAcl $receipt.ExpectedKeySddl (Get-Acl -LiteralPath $path).Sddl).AclEquivalent -and [int]$k.ExportPolicy -eq 0) 'All service lifecycle tests preserve the non-exportable key and its ACL'}finally{$k.Dispose()}
- @{checks=$checks;real_signed_scm=$true;actual_https=$true;low_privilege_runtime=$true;automatic_outage_recovery=$true;crash_recovery=$true;orphan_cleanup=$true;customer_gmsa_tested=$false;ad_changed=$false;gpo_changed=$false}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Directory 'service-result.json') -Encoding UTF8
+ Check (($freshControlModes -join ',') -ceq 'Inspect,Start,Start,Stop,Start,Remove') 'Signed public lifecycle works across six independent clean WinPS processes'
+ @{checks=$checks;real_signed_scm=$true;actual_https=$true;low_privilege_runtime=$true;automatic_outage_recovery=$true;crash_recovery=$true;orphan_cleanup=$true;fresh_public_control=$true;fresh_control_modes=$freshControlModes;customer_gmsa_tested=$false;ad_changed=$false;gpo_changed=$false}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Directory 'service-result.json') -Encoding UTF8
 }finally{
  if($name){$service=Get-Service -Name $name -ErrorAction SilentlyContinue;if($service){if($service.Status -ne 'Stopped'){Stop-Service -Name $name -Force;$service.WaitForStatus([ServiceProcess.ServiceControllerStatus]::Stopped,[TimeSpan]::FromSeconds(35))};$service.Dispose();Initialize-AuthWirePermanentServiceControl;[AuthWire.Connector.PermanentServiceV1]::Remove($name)}}
  if($rightsAdded){[AuthWire.Connector.FixtureServiceRightCleanupV1]::RemoveFixtureRight($sid,'SeServiceLogonRight')}

@@ -13,6 +13,15 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
+      - name: Checkout the immutable delivery source release
+        # The immutable delivery targets this historical source release, not HEAD.
+        # Keep the independent Git source comparison as current code evolves.
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: 02c5cb2d04e1bb5f6d402623001e3c029ff96f90
+          path: reviewed-connector-baseline
+          sparse-checkout: windows/connector
+          persist-credentials: false
       - name: Native PowerShell 5.1 reviewed-only signing and protected source delivery with cleanup
         shell: powershell
         run: tools/connector_source_delivery_windows_check.ps1

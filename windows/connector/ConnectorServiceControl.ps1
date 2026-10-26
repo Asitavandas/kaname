@@ -1,4 +1,7 @@
 function Initialize-AuthWirePermanentServiceControl {
+ # A clean Windows PowerShell session need not have loaded this assembly.
+ # Load it before even the cached native helper can return.
+ Add-Type -AssemblyName System.ServiceProcess -ErrorAction Stop
  if('AuthWire.Connector.PermanentServiceV1' -as [type]){return}
  Add-Type -TypeDefinition @'
 using System;
@@ -102,12 +105,12 @@ function Invoke-AuthWireServiceControlCore {
  }
  if($Mode -in @('Start','Stop','Remove')){
   if(-not $current){throw 'CONNECTOR_SERVICE_NOT_INSTALLED'}
-  $service=[ServiceProcess.ServiceController]::new($name)
+  $service=[System.ServiceProcess.ServiceController]::new($name)
   try{
    if($Mode -eq 'Start'){
-    if($service.Status -ne [ServiceProcess.ServiceControllerStatus]::Running){$service.Start();$service.WaitForStatus([ServiceProcess.ServiceControllerStatus]::Running,[TimeSpan]::FromSeconds(30))}
+    if($service.Status -ne [System.ServiceProcess.ServiceControllerStatus]::Running){$service.Start();$service.WaitForStatus([System.ServiceProcess.ServiceControllerStatus]::Running,[TimeSpan]::FromSeconds(30))}
    }else{
-    if($service.Status -ne [ServiceProcess.ServiceControllerStatus]::Stopped){$service.Stop();$service.WaitForStatus([ServiceProcess.ServiceControllerStatus]::Stopped,[TimeSpan]::FromSeconds(30))}
+    if($service.Status -ne [System.ServiceProcess.ServiceControllerStatus]::Stopped){$service.Stop();$service.WaitForStatus([System.ServiceProcess.ServiceControllerStatus]::Stopped,[TimeSpan]::FromSeconds(30))}
     if($Mode -eq 'Remove'){Initialize-AuthWirePermanentServiceControl;[AuthWire.Connector.PermanentServiceV1]::Remove($name)}
    }
   }finally{$service.Dispose()}

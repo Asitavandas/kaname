@@ -37,7 +37,9 @@ Assert-Check ($reviewedSources.Count -eq 13) 'fixed thirteen-file allowlist pars
 $sources=Read-AuthWireReviewedSourceBytes $bytes $expected
 Assert-Check ($sources.Count -eq 13) 'real embedded archive accepted'
 foreach($name in $reviewedSources.Keys){
- $sourcePath=Join-Path (Join-Path $PSScriptRoot '..\windows\connector') $name
+ # CI independently checks out the delivery's fixed historical source release.
+ # New reviewed service-control code must not rewrite the original archive.
+ $sourcePath=Join-Path (Join-Path $PSScriptRoot '..\reviewed-connector-baseline\windows\connector') $name
  Assert-Check ((Get-AuthWireDeliveryBodyHash ([IO.File]::ReadAllText($sourcePath))) -ceq $reviewedSources[$name]) ('archive matches reviewed repo source '+$name)
 }
 Expect-Refusal {Read-AuthWireReviewedSourceBytes $bytes ('0'*64)} 'changed container digest refused'

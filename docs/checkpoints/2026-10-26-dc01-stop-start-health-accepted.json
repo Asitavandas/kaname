@@ -1,0 +1,23 @@
+{
+  "event": "DC01_CONTROLLED_STOP_START_HEALTH_OPERATOR_ACCEPTED",
+  "date": "2026-10-26",
+  "evidence_source": "operator_supplied_stop_start_and_readonly_fresh_health_output",
+  "service_name": "AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46",
+  "release_id": "7b7d7bbc-88c0-4d83-8274-0ab294db2236",
+  "stop_state": "Stopped",
+  "start_state": "Running",
+  "runtime_sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+  "checked_utc": "2026-10-26T14:17:24.2736685+00:00",
+  "last_success_utc": "2026-10-26T14:17:24.2736685+00:00",
+  "success_count": 4,
+  "consecutive_failures": 0,
+  "healthy": true,
+  "fresh_health_after_restart": true,
+  "boot_tested": false,
+  "customer_crash_recovery_tested": false,
+  "gpo_apply_ready": false,
+  "source_dependency_fix_ci_pending": true,
+  "customer_installed_package_modified": false,
+  "completed": 54,
+  "total": 94
+}
