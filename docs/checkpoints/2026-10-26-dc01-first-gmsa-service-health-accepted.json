@@ -1,0 +1,33 @@
+{
+  "event": "DC01_GMSA_FIRST_CONNECTOR_HEALTH_OPERATOR_ACCEPTED",
+  "date": "2026-10-26",
+  "timezone": "Europe/Istanbul",
+  "evidence_source": "operator_supplied_start_service_identity_and_health_results",
+  "service_name": "AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46",
+  "service_state": "Running",
+  "start_name": "VIZYONVERI\\aw-deploy$",
+  "process_id": 9608,
+  "release_id": "7b7d7bbc-88c0-4d83-8274-0ab294db2236",
+  "health": {
+    "Event": "WINDOWS_CONNECTOR_SERVICE_HEALTH",
+    "ReleaseId": "7b7d7bbc-88c0-4d83-8274-0ab294db2236",
+    "RuntimeSid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+    "CheckedUtc": "2026-10-26T14:06:04.0627530+00:00",
+    "LastSuccessUtc": "2026-10-26T14:06:04.0627530+00:00",
+    "SuccessCount": 1,
+    "ConsecutiveFailures": 0,
+    "Healthy": true,
+    "CanApply": false,
+    "DirectorySyncReady": false,
+    "KerberosReady": false
+  },
+  "actual_gmsa_channel_key_use_and_first_https_health_accepted": true,
+  "independent_server_status_check": false,
+  "panel_online_acceptance_pending": true,
+  "sustained_health_acceptance_pending": true,
+  "restart_recovery_boot_acceptance_pending": true,
+  "source_serviceprocess_assembly_dependency_fix_pending": true,
+  "installed_package_modified": false,
+  "completed": 54,
+  "total": 94
+}

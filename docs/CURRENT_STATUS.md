@@ -17,6 +17,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 gerçek gMSA Connector ilk health kabulü başarılı — 26 Ekim 2026 17:06 +03
+
+Operatör **Start** sonucunda hizmetin Running olduğunu paylaştı; Win32_Service StartName=`VIZYONVERI\aw-deploy$`, ProcessId=9608. ReleaseId **7b7d7bbc-88c0-4d83-8274-0ab294db2236**. İlk taze health kaydı **2026-10-26T14:06:04.0627530Z**, RuntimeSid **S-1-5-21-34256453-3348971241-2809240126-1648**, **Healthy=true, SuccessCount=1, ConsecutiveFailures=0**. Mevcut runtime bu sonucu ayrı non-exportable kanal anahtarıyla imzalı poll/challenge-health ve normal doğrulamalı/pinli HTTPS üzerinden verir. Gerçek gMSA ayrı kanal key-use ve ilk HTTPS health kabulü geçti; bu operatör çıktısıdır, bağımsız sunucu GET kanıtı değildir.
+
+**CanApply=false, DirectorySyncReady=false, KerberosReady=false** beklenen health-only sınırıdır. GPO uygulama/dizin/Kerberos işleri, sürekli bağlantı/toparlanma/boot, upgrade/rotation ve eski hesapları kaldırma hâlâ açık; A03/A04 tamamen kapanmadı. **54/94 (~%57),40 açık** değişmedi. Sonraki kontrol panelde **“Connector bağlantı kanalı çevrimiçi.”** ve daha yeni health/success sayacıdır.
+
+Start aracında fresh-session `System.ServiceProcess` assembly yükleme eksikliği görüldü. Yönetici oturumunda `Add-Type -AssemblyName System.ServiceProcess` sonrası aynı imzalı Start aracı başarılı oldu; kurulu paket/ACL değiştirilmedi. Kalıcı kaynak düzeltmesi ve preload içermeyen ayrı WinPS5.1 süreç regresyonu hâlâ bekler; bu başarı eksik kaynak düzeltmesini kapatmaz.
+
 ## 🔴✓ DC01 kalıcı Connector hizmeti kuruldu; başlatma ve health kabulü bekliyor — 26 Ekim 2026
 
 Operatör önce **Inspect** ile aynı ReleaseId **7b7d7bbc-88c0-4d83-8274-0ab294db2236** paketini doğruladı: ServiceInstalled=false / Absent. Ardından **Install** sonucu ServiceCreated=true, ServiceInstalled=true, ServiceState=Stopped döndü. Hizmet: `AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46`. AD/GPO, logon rights ve key ACL değişmedi; gizli veri dışarı aktarılmadı. Install'ın owned-key/bootstrap/publisher kontrolleri geçti; bu gerçek runtime gMSA health kabulü sayılmaz.
