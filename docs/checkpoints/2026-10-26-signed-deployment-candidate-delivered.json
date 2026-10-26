@@ -1,0 +1,82 @@
+{
+  "event": "SIGNED_MACHINE_NETWORK_CANDIDATE_READY_FOR_DC01",
+  "date": "2026-10-26",
+  "pr": 94,
+  "final_tested_head": "c41e853719f81cd32055f8dd0806b1c3c769225f",
+  "component_source": "3707cfbe0aa54caf33176ea3dbe2167f6afc8e8a",
+  "merge": "a097420d777c2c6d50bbfe78ffb7ffb55f6a0b68",
+  "feature": "Local pinned signed network preparation candidate; not installed Connector execution or full client distribution",
+  "ci": {
+    "all_four_workflows_passed": true,
+    "runs": [
+      {
+        "id": 40395613874,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40395613878,
+        "name": "AuthWire signed deployment candidate checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40395613883,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40395613885,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "conclusion": "success"
+      }
+    ],
+    "native_candidate_job": 121827711609,
+    "native_candidate_checks": 55,
+    "foundation_tests": 828,
+    "foundation_skips": 28,
+    "foundation_job": 121827710289,
+    "service_regression_checks": 53,
+    "service_regression_job": 121827710700
+  },
+  "delivery": {
+    "wrapper_path": "/home/segmentiq/authwire-dc01-deployment-candidate-20261026.ps1",
+    "wrapper_sha256": "9a6fd20aa72fb5a157d17344f6c531dfef608b17399f540e9708412e26745264",
+    "wrapper_bytes": 24062,
+    "network_zip_path": "/home/segmentiq/authwire-pilot-network-profiles-20261026.zip",
+    "network_zip_sha256": "528a793a637e2a8bdd30808acf7a624b83b125419d1ef1c8077249955a146e38",
+    "network_zip_bytes": 6110,
+    "remote_digest_verified": true,
+    "approval_sha256": "3b5587d5e6fcdc3cbdb753e097fe36d377e27e9e6bc549c289383baa345577ad",
+    "helper_sha256": "8043963d673488b6a07f91e9fe228675134e4d067270e7d30a8084d945316a01",
+    "source_archive_sha256": "89bf426c67776add8057bb49f994d61c10a695a292f0de3690ebf5c0824f6e07",
+    "operator_mode": "Prepare",
+    "operator_execution_pending": true
+  },
+  "plan_id": "524653f5-1359-46f5-84a5-46355bb82aff",
+  "plan_version": 1,
+  "machine_profile_id": "e3597842-3499-4ace-aaf3-29890eabd908",
+  "machine_profile_version": 3,
+  "owned_gpo_id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+  "protected_trust_gpo_id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
+  "publisher": "FFC134BC305757457163F99C7479B4168E397129",
+  "source_folder": "C:\\ProgramData\\AuthWire-DeploymentCandidateSources-3b5587d5e6fcdc3c",
+  "customer_candidate_created": false,
+  "customer_gmsa_execution_of_new_helper_tested": false,
+  "existing_connector_upgraded": false,
+  "linux_application_updated": false,
+  "live_linux_version_remains": "0.14.0-dev.37",
+  "can_apply_gpo": false,
+  "gpo_changed": false,
+  "endpoint_changed": false,
+  "trust_store_changed": false,
+  "key_acl_changed": false,
+  "full_data_backup_created": false,
+  "next_gate": "Operator prepares the first signed local candidate on DC01 using the existing approved ZIP, signer and service context; assess returned SignatureVerified/PreparedNow before typed worker and GPO staging integration",
+  "limitations": [
+    "Only machine plus both wired and wireless profiles are supported by this first candidate format",
+    "The candidate contains original ZIP, pinned approval and signed comment-only manifest; it has no client installer or GPO writer",
+    "Helper Inspect is read-only; wrapper source preparation can write/sign its reviewed helper using the existing key in every mode",
+    "Public CA path check is offline; no CRL or RADIUS leaf validation is claimed",
+    "Old panel connector-waiting placeholder is unchanged; CanApplyGpo=false is intentional"
+  ]
+}
