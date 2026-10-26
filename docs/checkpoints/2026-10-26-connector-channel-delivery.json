@@ -105,9 +105,9 @@
     "note": "Operator reported successful panel-only deployment; historical preparation evidence retained above."
   },
   "next": [
-    "DC01 readonly preflight: current gMSA, machine signer/publisher trust, normally validated TLS plus exact public leaf pin",
-    "Reviewed signed Windows source delivery and dedicated channel-key preparation",
-    "Authorized pairing through interactive panel boundary and actual gMSA health service acceptance"
+    "Run bounded TLS diagnostic on DC01 with normal Windows chain/name/revocation and exact leaf pin; no HTTP or auth payload, all errors rejected",
+    "Review actual validation errors and source-verifiable public certificates before scoped publisher/root trust preparation",
+    "Reviewed signed Windows delivery, dedicated channel key, interactive authorized pairing and real gMSA health-service acceptance"
   ],
   "completed": 54,
   "total": 94,
@@ -152,5 +152,44 @@
       "secrets_exported": false,
       "binding_created": false
     }
+  },
+  "dc01_readonly_preflight": {
+    "event": "DC01_CONNECTOR_PREFLIGHT_OPERATOR_RESULT",
+    "source": "operator_supplied_json",
+    "checked_at_utc": "2026-10-26T10:25:12.4859497Z",
+    "script_sha256": "ae17c3d3e4fb708eb08366ff9a514641166d59d25eee8fdc99325f8e8646da86",
+    "service_sid_matches": true,
+    "local_account_ready": true,
+    "machine_signer_present": true,
+    "machine_signer_current": true,
+    "machine_signer_has_private_key": true,
+    "machine_publisher_trusted": false,
+    "https_chain_name_revocation_check_passed": false,
+    "appliance_tls_sha256": null,
+    "appliance_tls_pin_matches": false,
+    "https_error_type": "System.Management.Automation.MethodInvocationException",
+    "channel_directory_exists": false,
+    "package_directory_exists": false,
+    "permanent_service_exists": false,
+    "blockers": [
+      "MACHINE_PUBLISHER_NOT_TRUSTED",
+      "HTTPS_CHAIN_NAME_OR_CONNECTIVITY_CHECK_FAILED"
+    ],
+    "ready_for_controlled_preparation": false,
+    "inspected_as": "VIZYONVERI\\administrator",
+    "gmsa_https_tested": false,
+    "ad_changed": false,
+    "gpo_changed": false,
+    "key_acl_changed": false,
+    "trust_store_changed": false,
+    "services_created": false,
+    "channel_key_created": false,
+    "secrets_exported": false,
+    "can_apply_gpo": false,
+    "notes": [
+      "VoidTaskResult was incidental output from ConnectAsync awaiter; it does not establish TLS success or failure.",
+      "Existing diagnostic suppressed inner TLS cause; no untrusted-root, name or revocation cause has yet been established.",
+      "Missing machine TrustedPublisher entry is confirmed; no trust import has been performed."
+    ]
   }
 }

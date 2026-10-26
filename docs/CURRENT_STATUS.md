@@ -17,6 +17,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## DC01 Connector ön kontrolü: iki engel açık — 26 Ekim 2026 13:25 +03
+
+Operatörün `WINDOWS_CONNECTOR_CHANNEL_READONLY_PREFLIGHT` çıktısında servis SID eşleşmesi, mevcut gMSA kullanılabilirliği ve LocalMachine imzalayıcı sertifikanın güncelliği/private-key varlığı doğrulandı. **MachinePublisherTrusted=false** ve normal HTTPS doğrulaması başarısız; ilk betik yalnız dış `MethodInvocationException` türünü bildirdiği için HTTPS kök nedeni henüz bilinmiyor. Root, ad veya revocation sorunu varsayılmadı. Kanal dizini, paket ve kalıcı hizmet yok; hiçbir AD/GPO/güven/anahtar ACL değişikliği yapılmadı. gMSA HTTPS ve eşleştirme hâlâ bekliyor. `VoidTaskResult` yardımcı çıktısı kabul sayılmaz.
+
+Ayrıntılı TLS tanılama dosyası normal Windows zincir/ad/iptal kontrolünü ve canlı dev.35'ten alınan tam SHA256 leaf pinini birlikte şart koşar; doğrulama hatasında bağlantıyı reddeder. Yalnız TLS ve public sertifika hata bilgisi toplar, HTTP/auth payload göndermez; otomatik güven ekleme yok. Gerçek DC01 sonucu bekleniyor. Sayım **54/94** değişmedi.
+
 ## 🔴✓ Connector dev.35 canlı uygulaması doğrulandı — 26 Ekim 2026
 
 Operatörün paylaştığı `CONNECTOR_CHANNEL_FINISHED` çıktısında **0.14.0-dev.35 / 2023ac92faf3ee1b9d25d3d0e2c09cfe3ba96c34** başarıyla uygulanmış; bildirilen tüm önce/sonra API okumaları 200. RADIUS PID **1243360** ve kontrol süreci **1069437** korunmuş; politika, sertifika, GPO ve Windows uç noktaları değişmemiş; günlük yedek timer korunmuş. Kanıt: `/var/lib/authwire-updates/connector-channel-dev35-20261026T101342Z-fc756ec9`.
