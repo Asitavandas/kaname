@@ -17,6 +17,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ İmzalı Windows kaynak teslimi ve ayrı kanal anahtarı aracı hazır — 26 Ekim 2026
+
+**PR89 / kaynak 520064fca02640e1bf5f96fcc617c9c7e2866ace / merge c115b0432c749423c8e029723db8f25a9ac7b3ba**. Tek dosyalık teslim, kabul edilmiş kaynak **02c5cb2d04e1bb5f6d402623001e3c029ff96f90** içindeki 13 dosyayı sabit ZIP ve tek tek dosya SHA256'larıyla taşır. Varsayılan Inspect'tir; açık PrepareKey modu mevcut **FFC134BC305757457163F99C7479B4168E397129** machine imzalayıcının/publisher'ın normal enterprise zincirini kontrol eder. Yalnız incelenmiş 12 PS kaynağı imzalar; 1 C# kaynağını aynı digest ile taşır. Çıktı klasörü ve dosyalar yalnız SYSTEM/Administrators'a aittir. Orijinal bootstrap yerine içeriği aynı ayrı imzalı kopya kullanılır; eski dosya ve sahiplik marker'ları değişmez.
+
+Kabul edilmiş kanal initializer'ı önce **owned-account Inspect** yapar, sonra mevcut gMSA **aw-deploy$ / SID ...1648** için ayrı, non-exportable RSA3072 machine Signing anahtarını hazırlar. Appliance UUID **6796fa84-fcff-41c1-b9c5-d725b95ba139** ile Windows Connector UUID **4c23eebe-0715-46d1-88ee-a2e96ad7ee46** ayrı kalır. Yeni anahtarın onaylı read/use ACL'i ayarlanır; kod imzalama anahtarının ACL'i, güven depoları, AD/GPO/hesaplar ve hizmetler değiştirilmez. Public pairing adayı döner; server pairing yazılmaz. Mevcut doğrulanmış kaynak/anahtar yeniden kullanılır; yabancı/kısmi/değişmiş çıktı otomatik ezilmez veya düzeltilmez.
+
+🔴✓ **35 native Windows kontrolü** başarılı (run40325614659/job121581409312): gerçek 13 kaynak/12 imza, sabit repo hash karşılaştırması, değiştirilmiş içerik/digest/path traversal/case/duplicate/size/extra-member reddi, output öncesi imza girdisi kontrolü, protected ACL ve foreign publisher/tamper reddi, code-signing key ACL koruması ve fixture temizliği. Customer entry point/AD/kanal anahtarı CI'da çalıştırılmadı. Foundation **781 test /28 ortam skip**, bounded retry ve native source workflow'larının üçü de geçti.
+
+Teslim `/home/segmentiq/authwire-dc01-channel-prepare-20261026.ps1` (**55033 byte**, SHA256 **1238a2006e81dd61ab820d84b9e304bdcd7a6639679b43ce56d1988532820566**) Linux kullanıcı dizininde tekrar okunup doğrulandı. **Gerçek DC01 PrepareKey henüz uygulanmadı.** Sonrasında interactive yetkili panel preview/key-confirm/apply ve gerçek gMSA key-use/HTTPS/kalıcı hizmet kabulü bekliyor. Linux runtime/UI güncellenmedi; kurulu sürüm dev.35. **54/94 (~%57), 40 açık** değişmedi.
+
 ## 🔴✓ DC01 yerel güven ve normal HTTPS kabulü tamam — 26 Ekim 2026 14:26 +03
 
 Operatör `WINDOWS_CONNECTOR_TRUST_PREPARATION / Stage=prepared` sonucunu paylaştı. Tam SHA256 pinli web sertifikası ile mevcut **FFC134BC305757457163F99C7479B4168E397129** kod yayıncısının iki genel güven kaydı eklendi; önceki kayıtlar korundu. TLS **PolicyErrors=None**, normal doğrulama ve tam pin eşleşmesi başarılı; exception yok. Receipt: `C:\ProgramData\AuthWire-ConnectorTrust-baf6a2c1ad8a4928ba8126eb18891699\trust-preparation.json`.

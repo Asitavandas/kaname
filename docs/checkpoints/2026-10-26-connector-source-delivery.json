@@ -1,0 +1,86 @@
+{
+  "event": "DC01_REVIEWED_SOURCE_AND_CHANNEL_KEY_DELIVERY_PREPARED",
+  "date": "2026-10-26",
+  "timezone": "Europe/Istanbul",
+  "repository": "Asitavandas/kaname",
+  "pr": 89,
+  "source_head": "520064fca02640e1bf5f96fcc617c9c7e2866ace",
+  "reviewed_payload_source": "02c5cb2d04e1bb5f6d402623001e3c029ff96f90",
+  "source_release_id": "606371a0-6ec1-4f95-be22-91d8b5220b77",
+  "tool_version": "1.0.0",
+  "path": "/home/segmentiq/authwire-dc01-channel-prepare-20261026.ps1",
+  "sha256": "1238a2006e81dd61ab820d84b9e304bdcd7a6639679b43ce56d1988532820566",
+  "bytes": 55033,
+  "archive_sha256": "f535aa0c80b4a531a2175b69d76a2c529f3c7af083c8898898a1aed09378d4f0",
+  "source_files": 13,
+  "powershell_sources": 12,
+  "csharp_sources": 1,
+  "embedded_archive_only": true,
+  "caller_source_hash_path_overrides": false,
+  "default_mode": "Inspect",
+  "write_mode": "PrepareKey",
+  "original_bootstrap_modified": false,
+  "bootstrap_unchanged_content_copy_signed_by_existing_machine_publisher": true,
+  "existing_publisher": "FFC134BC305757457163F99C7479B4168E397129",
+  "source_directory": "C:\\ProgramData\\AuthWire-ConnectorSources-606371a06ec14f95be2291d8b5220b77",
+  "new_channel_key_distinct_from_signer": true,
+  "key_policy": {
+    "provider": "Microsoft Software Key Storage Provider",
+    "algorithm": "RSA",
+    "bits": 3072,
+    "machine_key": true,
+    "exportable": false,
+    "usage": "Signing",
+    "new_key_acl_account": "S-1-5-21-34256453-3348971241-2809240126-1648"
+  },
+  "owned_bootstrap_account_inspect_before_channel_prepare": true,
+  "original_gmsa_gpo_markers_preserved": true,
+  "appliance_instance_id": "6796fa84-fcff-41c1-b9c5-d725b95ba139",
+  "windows_connector_id": "4c23eebe-0715-46d1-88ee-a2e96ad7ee46",
+  "no_ad_gpo_account_trust_service_or_existing_key_acl_changes": true,
+  "no_private_key_or_gmsa_password_or_keytab_export": true,
+  "no_server_pairing_write": true,
+  "customer_execution_pending": true,
+  "gmsa_channel_key_use_pending": true,
+  "actual_gmsa_https_pending": true,
+  "panel_pairing_pending": true,
+  "tests": {
+    "native_windows_checks": 35,
+    "run": 40325614659,
+    "job": 121581409312,
+    "actual_thirteen_file_source_signing": true,
+    "original_signing_key_acl_preserved": true,
+    "fixture_cleanup_verified": true,
+    "customer_entry_point_executed": false,
+    "foundation_tests": 781,
+    "foundation_skipped": 28,
+    "foundation_run": 40325614451,
+    "foundation_job": 121581409322,
+    "workflows": [
+      {
+        "id": 40325614401,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40325614659,
+        "name": "AuthWire reviewed Windows source delivery checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40325614451,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "completed": 54,
+  "total": 94,
+  "remaining": [
+    "Operator executes the pinned PrepareKey tool on DC01 and returns public-only pairing candidate",
+    "Authenticated interactive system.connectors preview/public-key confirmation/apply; no root or maintenance bearer trust-write bypass",
+    "Prepare package from owned key receipt plus approved binding, actual gMSA health service acceptance",
+    "Directory/Kerberos/GPO job transport, staged upgrades/rotations/reboot/scale and legacy identity migration remain open"
+  ],
+  "merge_commit": "c115b0432c749423c8e029723db8f25a9ac7b3ba"
+}
