@@ -17,6 +17,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 Connector kontrollü Stop/Start sonrası tekrar sağlıklı — 26 Ekim 2026 17:17 +03
+
+Operatör Stop=Stopped ve Start=Running sonuçlarını paylaştı. Ardından salt okunur kontrolde **2026-10-26T14:17:24.2736685Z**, doğru RuntimeSid **S-1-5-21-34256453-3348971241-2809240126-1648**, **SuccessCount=4, ConsecutiveFailures=0, Healthy=true, FreshHealthAfterRestart=true** görüldü. Mevcut gMSA/kanal anahtarı korunarak kontrollü yeniden başlatma sonrası bağlantı dönüşü kabul edildi. Bu boot/crash recovery veya GPO uygulama kabulü değildir.
+
+İlk fresh-session Start hatası için **System.ServiceProcess** assembly yüklemesi kontrol yardımcısına açıkça ekleniyor; cache dönüşünden önce çalışacak. İmzalı public kontrolün Inspect/Start/Start/Stop/Start/Remove işlemleri altı bağımsız WinPS5.1 -NoProfile/AllSigned sürecinde test edilecek. Builder'ın incelenmiş kaynak SHA256 pini güncellenir; imzalı geçmiş kaynak ZIP'i değiştirilmez ve testi kendi sabit tarihsel kaynak commit'ine karşı kalır. **Kaynak CI kabulü bekliyor; DC01 kurulu paketine yeni kod yazılmadı.** **54/94 (~%57),40 açık** değişmedi.
+
 ## 🔴✓ DC01 Connector panel çevrimiçi kabulü doğrulandı — 26 Ekim 2026
 
 Operatörün yüklediği `image(20261026-140923).png` doğrudan görsel incelendi. Sistem → Windows bağlantısı sayfasında **“Connector bağlantı kanalı çevrimiçi.”**, Windows sunucusu **dc01.vizyonveri.local**, beklenen tam **cbe3b5afdc40e5a141f55499ade4e32dbaf4792b0772dfcd025448c7633a9041** key ID ve **eşleştirme sürümü 1** görünüyor. Panel çevrimiçi kabulü geçti. Bu ayrı bir asistan-authenticated API GET olarak sunulmaz.
