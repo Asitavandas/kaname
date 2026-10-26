@@ -17,6 +17,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 kalıcı Connector hizmet paketi hazır — 26 Ekim 2026
+
+Operatör `WINDOWS_CONNECTOR_SERVICE_PACKAGE_PREPARED` sonucunu paylaştı: RootPath `C:\Program Files\AuthWire-Connector-4c23eebe071546d188eea2e96ad7ee46`, ServiceName `AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46`, ReleaseId **7b7d7bbc-88c0-4d83-8274-0ab294db2236**, PackagePrepared=true. **ServiceCreated=false, ServiceStarted=false**; AD/GPO değişmedi, gizli veri dışarı aktarılmadı. Bu operatör sonucu paket hazırlığı kabulüdür; kalıcı hizmet/gerçek gMSA HTTPS kabulü değildir.
+
+Sırada paket admin aracının varsayılan **Inspect** kontrolü, ardından mevcut aw-deploy$ ile Install ve ayrı Start kabulü var. Kanal anahtarı yeniden oluşturulmayacak, paket yeniden hazırlanmayacak. **54/94 (~%57),40 açık** değişmedi.
+
 ## 🔴✓ DC01 genel eşleştirme dosyası kabulü — 26 Ekim 2026
 
 Operatörün yüklediği `AuthWire-Connector-Binding.json` (`AuthWireConnectorBindingPublicV1`) incelendi: dokuz binding alanı, BaseUrl ve domain beklenen DC01/appliance kaydıyla tam eşleşiyor; **generation=1**. Kanal key ID **cbe3b5afdc40e5a141f55499ade4e32dbaf4792b0772dfcd025448c7633a9041**. Bu kayıt operatörün panelden indirdiği genel metadata kabulüdür; bağımsız canlı GET veya gMSA health testi olarak sunulmaz.

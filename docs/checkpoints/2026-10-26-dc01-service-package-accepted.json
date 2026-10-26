@@ -1,0 +1,20 @@
+{
+  "event": "DC01_SERVICE_PACKAGE_OPERATOR_RESULT_ACCEPTED",
+  "date": "2026-10-26",
+  "evidence_source": "operator_supplied_package_prepared_event",
+  "result": {
+    "Event": "WINDOWS_CONNECTOR_SERVICE_PACKAGE_PREPARED",
+    "RootPath": "C:\\Program Files\\AuthWire-Connector-4c23eebe071546d188eea2e96ad7ee46",
+    "ServiceName": "AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46",
+    "ReleaseId": "7b7d7bbc-88c0-4d83-8274-0ab294db2236",
+    "PackagePrepared": true,
+    "ServiceCreated": false,
+    "ServiceStarted": false,
+    "AdChanged": false,
+    "GpoChanged": false,
+    "SecretsExported": false
+  },
+  "actual_service_and_gmsa_health_acceptance_pending": true,
+  "completed": 54,
+  "total": 94
+}
