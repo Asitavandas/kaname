@@ -427,3 +427,13 @@ then tests prepare, tamper rejection, failed-start automatic rollback, successfu
 fresh-process signed Apply, explicit Rollback and reapplication with the same
 service account, pairing and channel key. Customer gMSA upgrade acceptance is a
 separate operator gate.
+
+## Signed deployment network candidate
+
+`New-AuthWireDeploymentCandidate.ps1` validates a reviewed machine Ethernet/Wi-Fi
+network-profile ZIP and signs a comment-only manifest binding it to the exact
+plan/profile/group, existing Connector and owned deployment GPO. Inspect is
+read-only; Prepare publishes an administrator-controlled local candidate; Verify
+checks it without re-signing. It does not modify GPOs, install clients or enable
+service execution of deployment jobs. See
+[the candidate format, limits and native tests](../../docs/WINDOWS_DEPLOYMENT_CANDIDATE.md).
