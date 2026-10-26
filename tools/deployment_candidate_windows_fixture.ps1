@@ -3,6 +3,7 @@ param([Parameter(Mandatory=$true)][string]$FixtureDirectory)
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version 2
 if($env:RUNNER_ENVIRONMENT -ne 'github-hosted'){throw 'Hosted fixture only'}
+Import-Module Microsoft.PowerShell.Security -ErrorAction Stop
 $source=Join-Path $PSScriptRoot '..\windows\connector\New-AuthWireDeploymentCandidate.ps1'
 $tokens=$null;$errors=$null;$ast=[Management.Automation.Language.Parser]::ParseFile($source,[ref]$tokens,[ref]$errors)
 if($errors.Count){throw ($errors.Message -join '; ')}
