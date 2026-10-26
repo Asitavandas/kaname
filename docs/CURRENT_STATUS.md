@@ -20,6 +20,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 ilk gerçek salt okunur iş/sonuç döngüsü tamamlandı — 26 Ekim 2026
+
+Operatörün yüklediği **image(20261026-185844).png** doğrudan görsel incelendi. Windows bağlantısı → **Bağlantı görevleri** ekranında **Salt okunur görev kanalı hazır** ve tek **Bağlantı testi / Tamamlandı** satırı var. Görev kimliği **4511c351-86a5-49a3-9993-2f4609a415f8**; **Oluşturulma=26.10.2026 21:57:51 Europe/Istanbul** (tamamlanma saati olarak yorumlanmaz). Sonuçtaki Connector paket sürümü **970d7039-3798-478b-a5f4-a57e245693a0**, uygulanmış yeni DC01 sürümüyle tam eşleşiyor. Görsel SHA256 **01c2e7d2f1fb7487298cb4be0a430361fffe4a090e3656d5ae68ba7ac5691b6e**.
+
+🔴✓ Panelden açık onayla gönderilen **connector.probe** işinin gerçek müşteri Connector'ında alınması ve sonucu AuthWire'a kaydetme döngüsü, operatör panel kanıtıyla kabul edildi. Bu ayrı asistan backend GET/SQL sorgusu olarak sunulmaz. Önceki “müşteri probe işi bekliyor” kayıtları bu kabulden önceki durumdur.
+
+Bu yalnız salt okunur ilk işin uçtan uca kabulüdür. **GPO uygulaması, genel komut yürütme, AD/dizin/Kerberos geçişi, müşteri rollback/boot/rotation/scale kabulü** tamamlandı sayılmaz; CanApplyGpo=false sınırı korunur. Sıradaki fonksiyonel adım merkezi Windows dağıtım planı/önizleme ve yalnız owned deployment GPO üzerinde kontrollü uygulama akışıdır; hedef kapsamı, imzalı paket/publisher güveni ve link/uygulama kapıları ayrı doğrulanacak. **54/94 (~%57),40 açık** ana madde sayımı değişmedi; alt kapı olan gerçek probe roundtrip tamamlandı.
+
+
 ## 🔴✓ DC01 gerçek Connector yükseltmesi uygulandı — 26 Ekim 2026
 
 Operatör pinned **Apply** sonucunu paylaştı: **Stage/Phase=applied, SourceSignaturesValid=true, ServiceTransitioned=true, Error=null, ChangesMayBePartial=false**. Yeni runtime release **970d7039-3798-478b-a5f4-a57e245693a0**; önceki **7b7d7bbc-88c0-4d83-8274-0ab294db2236** paket release'e bağlı **.previous-7b7d7bbc88c04d8382740ab294db2236** arşivinde korunur. Kaynaklar yeniden imzalanmadı (**SourcesPreparedNow=false**). Mevcut hesap, pairing ve ayrı kanal key korundu; yeni servis veya anahtar oluşturulmadı. AD/GPO/trust/key ACL değişmedi, secret export yok; **CanApplyGpo=false** beklenen sınırdır.
