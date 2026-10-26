@@ -75,4 +75,8 @@ if __name__ == '__main__':
     with tempfile.TemporaryDirectory(prefix='authwire-candidate-') as temp:
         directory = Path(temp)
         fixtures(directory)
-        subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-File', 'tools/deployment_candidate_windows_fixture.ps1', '-FixtureDirectory', str(directory)], check=True, timeout=180)
+        # A pwsh CI parent otherwise passes its incompatible module search path
+        # into Windows PowerShell 5.1. Match the existing native service fixture.
+        environment = {k: v for k, v in os.environ.items() if k.upper() != 'PSMODULEPATH'}
+        powershell = str(Path(os.environ['SystemRoot'])/'System32/WindowsPowerShell/v1.0/powershell.exe')
+        subprocess.run([powershell, '-NoProfile', '-NonInteractive', '-File', 'tools/deployment_candidate_windows_fixture.ps1', '-FixtureDirectory', str(directory)], env=environment, check=True, timeout=180)

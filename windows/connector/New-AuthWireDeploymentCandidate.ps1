@@ -176,7 +176,7 @@ function Read-AuthWireNetworkCandidate([string]$Path,$Approval){
  return [pscustomobject]@{Bytes=$bytes;PlanId=$m.plan_id;Version=$m.version;TargetCount=$p.computer_targets.enabled;ZipSha256=$Approval.zip_sha256}
 }
 function Get-AuthWireCandidateSigner($Approval,[switch]$OpenPrivateKey){
- Import-Module Microsoft.PowerShell.Security -ErrorAction Stop
+ Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Security\Microsoft.PowerShell.Security.psd1') -ErrorAction Stop
  $cert=Get-Item -LiteralPath ('Cert:\LocalMachine\My\'+$Approval.publisher_thumbprint)
  if($cert.NotBefore.ToUniversalTime() -gt [DateTime]::UtcNow -or $cert.NotAfter.ToUniversalTime() -le [DateTime]::UtcNow -or -not $cert.HasPrivateKey){throw 'DEPLOYMENT_SIGNER_REJECTED'}
  $eku=@($cert.Extensions|Where-Object{$_.Oid.Value -ceq '2.5.29.37'})
