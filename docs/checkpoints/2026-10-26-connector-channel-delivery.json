@@ -105,8 +105,8 @@
     "note": "Operator reported successful panel-only deployment; historical preparation evidence retained above."
   },
   "next": [
-    "Run bounded TLS diagnostic on DC01 with normal Windows chain/name/revocation and exact leaf pin; no HTTP or auth payload, all errors rejected",
-    "Review actual validation errors and source-verifiable public certificates before scoped publisher/root trust preparation",
+    "Operator runs the pinned DC01 PrepareTrust tool for only the exact public HTTPS endpoint and the existing machine code publisher",
+    "Review normally validated TLS postcheck and local-machine store receipt; actual gMSA HTTPS remains separate",
     "Reviewed signed Windows delivery, dedicated channel key, interactive authorized pairing and real gMSA health-service acceptance"
   ],
   "completed": 54,
@@ -191,5 +191,39 @@
       "Existing diagnostic suppressed inner TLS cause; no untrusted-root, name or revocation cause has yet been established.",
       "Missing machine TrustedPublisher entry is confirmed; no trust import has been performed."
     ]
+  },
+  "dc01_tls_diagnostic": {
+    "source": "operator_supplied_WINDOWS_CONNECTOR_TLS_DIAGNOSTIC_READONLY",
+    "checked_at_utc": "2026-10-26T10:56:59.0585747Z",
+    "resolved_addresses": [
+      "10.35.50.246"
+    ],
+    "dns_error": null,
+    "tcp_connected": true,
+    "validation_callback_reached": true,
+    "policy_errors": "RemoteCertificateChainErrors",
+    "chain_status": [
+      "UntrustedRoot"
+    ],
+    "chain_elements": [
+      "CN=kaname.vizyonveri.local | 06AC51AF9AB4F7EBAFD3EA89E55BDD191E289636 | UntrustedRoot"
+    ],
+    "subject": "CN=kaname.vizyonveri.local",
+    "issuer": "CN=kaname.vizyonveri.local",
+    "dns_name": "kaname.vizyonveri.local",
+    "not_before_utc": "2026-10-04T16:47:29.0000000Z",
+    "not_after_utc": "2027-10-04T16:52:29.0000000Z",
+    "leaf_sha256": "a58838b95510f759943e5f1b7fefe29e227960a5c1171b5ebc6d5089df47a76d",
+    "leaf_pin_matches": true,
+    "normal_validation_passed": false,
+    "tls_handshake_passed": false,
+    "gmsa_https_tested": false,
+    "ad_changed": false,
+    "gpo_changed": false,
+    "trust_store_changed": false,
+    "key_acl_changed": false,
+    "services_created": false,
+    "http_requests_sent": false,
+    "secrets_exported": false
   }
 }

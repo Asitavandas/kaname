@@ -1,0 +1,73 @@
+{
+  "event": "DC01_CONNECTOR_PUBLIC_TRUST_PREPARED",
+  "date": "2026-10-26",
+  "timezone": "Europe/Istanbul",
+  "pr": 88,
+  "source_head": "c19d04372924dbcbf1943c2f15c53402e87ce01b",
+  "tool_version": "1.0.0",
+  "tool_path": "docs/checkpoints/2026-10-26-dc01-connector-trust.ps1",
+  "delivery_path": "/home/segmentiq/authwire-dc01-connector-trust-20261026.ps1",
+  "delivery_sha256": "577b0b65839e85d5be0ef63e38288eb59364140c96cf79f296754105bf95b111",
+  "exact_trust_targets": [
+    {
+      "store": "LocalMachine\\Root",
+      "purpose": "Explicit trust of the one non-CA self-signed HTTPS endpoint, not a new issuing CA",
+      "sha256": "a58838b95510f759943e5f1b7fefe29e227960a5c1171b5ebc6d5089df47a76d",
+      "thumbprint": "06AC51AF9AB4F7EBAFD3EA89E55BDD191E289636"
+    },
+    {
+      "store": "LocalMachine\\TrustedPublisher",
+      "purpose": "Public copy of the existing LocalMachine code signer",
+      "thumbprint": "FFC134BC305757457163F99C7479B4168E397129",
+      "existing_issuer_root_required": "4D6D3C94B878B75AE02B436C0A19D3A3104C68BB"
+    }
+  ],
+  "public_web_certificate_digest_signature_and_extensions_verified_locally": true,
+  "public_cert_copy_read_from_actual_appliance_by_digest": true,
+  "default_mode": "Inspect",
+  "write_mode": "PrepareTrust",
+  "normal_tls_chain_name_revocation_and_exact_pin_required_after_apply": true,
+  "private_keys_exported": false,
+  "ad_or_gpo_or_account_or_key_acl_or_service_changes": false,
+  "before_and_result_receipt_restricted_to_system_administrators": true,
+  "preexisting_entries_preserved": true,
+  "changed_pin_or_purpose_or_store_refused": true,
+  "no_automatic_acl_or_ca_or_trust_repair": true,
+  "partial_result_requires_review": true,
+  "unrelated_live_authentication_services_not_touched": true,
+  "customer_preparetrust_executed": false,
+  "customer_trust_acceptance_pending": true,
+  "gmsa_https_acceptance_pending": true,
+  "completed": 54,
+  "total": 94,
+  "merge_commit": "ddd3e0285478c70c6441fdf495261c9360e277d8",
+  "tests": {
+    "native_windows_checks": 21,
+    "native_windows_run": 40312464000,
+    "native_windows_job": 121536763662,
+    "fixture_cleanup_verified": true,
+    "actual_csharp_tls_helper_compiled": true,
+    "foundation_tests": 781,
+    "foundation_skipped": 28,
+    "foundation_run": 40312463991,
+    "foundation_job": 121536763362,
+    "workflows": [
+      {
+        "id": 40312464006,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40312464000,
+        "name": "AuthWire bounded Windows public trust checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40312463991,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      }
+    ],
+    "actual_dc01_trust_preparation_tested": false
+  }
+}

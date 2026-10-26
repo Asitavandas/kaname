@@ -17,6 +17,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 HTTPS kök nedeni belirlendi; sınırlı güven hazırlığı hazır — 26 Ekim 2026
+
+DC01 operatör tanılaması (10:56:59 UTC / 13:56:59 +03) DNS **10.35.50.246**, TCP bağlantısı ve canlı dev.35 TLS SHA256 pin eşleşmesini doğruladı. Windows yalnız **UntrustedRoot** bildirdi: web sertifikası `CN=kaname.vizyonveri.local` kendinden imzalı, geçerli tarihli, **non-CA / serverAuth-only** bir uç sertifikası. SHA256 **a58838b95510f759943e5f1b7fefe29e227960a5c1171b5ebc6d5089df47a76d** ve SHA1 **06AC51AF9AB4F7EBAFD3EA89E55BDD191E289636**. Sorun için DNS/saat/policy veya TLS doğrulama kapatma uygulanmadı.
+
+**PR88 / kaynak c19d04372924dbcbf1943c2f15c53402e87ce01b / merge ddd3e0285478c70c6441fdf495261c9360e277d8**: varsayılan Inspect; açık PrepareTrust modu yalnız tam eşleşen genel web sertifikasını DC01 LocalMachine Root'a ve mevcut **FFC134BC305757457163F99C7479B4168E397129** kod imzalayıcı sertifikasının genel kopyasını TrustedPublisher'a ekler. İmzalayıcı normal online machine zinciri mevcut enterprise root **4D6D3C94B878B75AE02B436C0A19D3A3104C68BB** ile doğrulanmadan yazmaz. Yeni CA üretmez; başka güven kaydı silmez/değiştirmez; AD/GPO/hesap/anahtar ACL/servis işlemi yok. Önce/sonra küçük receipt yalnız SYSTEM/Administrators erişimindedir. Kısmi başarısızlık inceleme gerektirir; normal zincir/ad/iptal kontrolü + tam leaf pin ile TLS son kontrolü şarttır.
+
+🔴✓ **21 gerçek Windows kontrolü**: yanlış hash/amaç/depo reddi, non-CA kendinden imzalı uç sertifikasının açık güven sonrası machine zinciri, genel-kopya/özel-anahtar ayrımı, idempotence, mevcut kayıtları koruma, receipt ACL ve test temizliği geçti (run40312464000/job121536763662). C# TLS yardımcısı native WinPS5.1'de derlendi. Foundation **781 test /28 ortam skip** ve bounded-network workflow başarılı. Canlı public sertifikanın digest/imza/SAN/extensions kontrolü ayrıca yapıldı; CI müşteri sertifikasını güven deposuna eklemedi.
+
+**DC01 PrepareTrust henüz çalıştırılmadı.** Teslim: `/home/segmentiq/authwire-dc01-connector-trust-20261026.ps1`, SHA256 **577b0b65839e85d5be0ef63e38288eb59364140c96cf79f296754105bf95b111**. Genel güvenin gerçek DC01 son kontrolü, ardından ayrı kanal anahtarı/panel eşleştirmesi/gerçek gMSA HTTPS-hizmet kabulü bekliyor. Canlı AuthWire sürümü dev.35 olarak kalır; Linux hizmetlerine işlem yapılmadı. **54/94 (~%57), 40 açık** değişmedi.
+
 ## DC01 Connector ön kontrolü: iki engel açık — 26 Ekim 2026 13:25 +03
 
 Operatörün `WINDOWS_CONNECTOR_CHANNEL_READONLY_PREFLIGHT` çıktısında servis SID eşleşmesi, mevcut gMSA kullanılabilirliği ve LocalMachine imzalayıcı sertifikanın güncelliği/private-key varlığı doğrulandı. **MachinePublisherTrusted=false** ve normal HTTPS doğrulaması başarısız; ilk betik yalnız dış `MethodInvocationException` türünü bildirdiği için HTTPS kök nedeni henüz bilinmiyor. Root, ad veya revocation sorunu varsayılmadı. Kanal dizini, paket ve kalıcı hizmet yok; hiçbir AD/GPO/güven/anahtar ACL değişikliği yapılmadı. gMSA HTTPS ve eşleştirme hâlâ bekliyor. `VoidTaskResult` yardımcı çıktısı kabul sayılmaz.
