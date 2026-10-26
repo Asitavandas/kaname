@@ -21,7 +21,8 @@ class ExpiredRecoveryDeployTests(unittest.TestCase):
         self.ns['trusted'] = lambda p: p.read_bytes()
         old_client = (repo / 'docs/checkpoints/2026-10-19-authwire-client-dev11.ps1').read_bytes()
         new_client = (repo / 'kaname/device_client/AuthWire-Client.ps1').read_bytes()
-        installer = (repo / 'kaname/device_client/Install-AuthWire.ps1').read_bytes()
+        # Frozen source admitted by this historical deployment guard.
+        installer = (repo / 'docs/checkpoints/2026-10-19-authwire-installer-dev11.ps1').read_bytes()
         self.base = {'kaname/__init__.py': b'VERSION = "0.14.0-dev.11"\n',
                      'kaname/radius_adapter.py': b'protected authorizer\n',
                      'kaname/device_client/AuthWire-Client.ps1': old_client,
