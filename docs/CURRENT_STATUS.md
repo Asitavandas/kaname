@@ -17,6 +17,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 imzalı kaynaklar ve ayrı kanal anahtarı kabulü tamam — 26 Ekim 2026 15:57 +03
+
+Operatör `WINDOWS_CONNECTOR_CHANNEL_PREPARATION / Stage=key_prepared` sonucunu paylaştı. Kaynaklar hazırlandı ve tüm imzalar doğrulandı. Ayrı yeni kanal anahtarının policy ve read/use ACL kontrolleri geçti; mevcut code-signing anahtar ACL'i, orijinal bootstrap, AD/GPO/güven depoları korunmuş. Public PEM RSA3072 olarak okunup AuthWire'ın ortak **AuthWireConnectorKeyV1** modulus çerçevesiyle key ID yeniden hesaplandı: **cbe3b5afdc40e5a141f55499ade4e32dbaf4792b0772dfcd025448c7633a9041**, DC01 ile aynı. Bu ID standart DER SPKI digest'i değildir; eşleştirmede DC01 `KeySha256` alanı kullanılır.
+
+Kaynak dizini `C:\ProgramData\AuthWire-ConnectorSources-606371a06ec14f95be2291d8b5220b77`; kanal receipt'i `C:\ProgramData\AuthWire-Connector-4c23eebe071546d188eea2e96ad7ee46\channel-key.json`. Ayrıntılı genel kayıt `checkpoints/2026-10-26-dc01-channel-key-accepted.json` içindedir. **ServiceKeyAccessVerified=false** normaldir: gerçek gMSA key-use ve HTTPS-hizmet kabulü henüz yapılmadı. Server eşleştirmesi/hizmet kurulumu/GPO uygulaması yapılmış sayılmaz.
+
+Sırada mevcut `system.connectors` yetkisi, interactive oturum ve CSRF sınırı üzerinden preview + açık key-ID onayı + apply var. Bu işlemi ürünün kurulum akışına ekleyen işlevsel panel kontrolü hazırlanıyor; maintenance bearer/root direct write kullanılmayacak. **54/94 (~%57), 40 açık** değişmedi.
+
 ## 🔴✓ İmzalı Windows kaynak teslimi ve ayrı kanal anahtarı aracı hazır — 26 Ekim 2026
 
 **PR89 / kaynak 520064fca02640e1bf5f96fcc617c9c7e2866ace / merge c115b0432c749423c8e029723db8f25a9ac7b3ba**. Tek dosyalık teslim, kabul edilmiş kaynak **02c5cb2d04e1bb5f6d402623001e3c029ff96f90** içindeki 13 dosyayı sabit ZIP ve tek tek dosya SHA256'larıyla taşır. Varsayılan Inspect'tir; açık PrepareKey modu mevcut **FFC134BC305757457163F99C7479B4168E397129** machine imzalayıcının/publisher'ın normal enterprise zincirini kontrol eder. Yalnız incelenmiş 12 PS kaynağı imzalar; 1 C# kaynağını aynı digest ile taşır. Çıktı klasörü ve dosyalar yalnız SYSTEM/Administrators'a aittir. Orijinal bootstrap yerine içeriği aynı ayrı imzalı kopya kullanılır; eski dosya ve sahiplik marker'ları değişmez.
