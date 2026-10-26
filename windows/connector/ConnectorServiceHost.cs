@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Security.Principal;
@@ -17,6 +18,19 @@ namespace AuthWire.Connector {
 @@HASHES@@
   };
   Process worker; Thread watcher; EventWaitHandle stop; Mutex single;
+  IntPtr job=IntPtr.Zero;
+  [StructLayout(LayoutKind.Sequential)]struct BasicLimits {
+   public long ProcessTime,JobTime;public uint Flags;public UIntPtr MinWork,MaxWork;
+   public uint Active;public UIntPtr Affinity;public uint Priority,Scheduling;
+  }
+  [StructLayout(LayoutKind.Sequential)]struct IoCounters {public ulong ReadOps,WriteOps,OtherOps,ReadBytes,WriteBytes,OtherBytes;}
+  [StructLayout(LayoutKind.Sequential)]struct ExtendedLimits {
+   public BasicLimits Basic;public IoCounters Io;public UIntPtr ProcessMemory,JobMemory,PeakProcess,PeakJob;
+  }
+  [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern IntPtr CreateJobObjectW(IntPtr security,string name);
+  [DllImport("kernel32.dll",SetLastError=true)]static extern bool SetInformationJobObject(IntPtr handle,int kind,ref ExtendedLimits value,uint size);
+  [DllImport("kernel32.dll",SetLastError=true)]static extern bool AssignProcessToJobObject(IntPtr handle,IntPtr process);
+  [DllImport("kernel32.dll")]static extern bool CloseHandle(IntPtr handle);
   volatile bool stopping;
   HealthService() { ServiceName=Name; AutoLog=false; CanStop=true; CanShutdown=true; }
   static void PathGuard(string path) {
@@ -76,20 +90,35 @@ namespace AuthWire.Connector {
    info.Arguments="-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File \""+Path.Combine(Root,"ConnectorServiceRuntime.ps1")+"\" -StopEventName \""+eventName+"\" -HostPid "+self.Id+" -HostStartedTicks "+self.StartTime.ToUniversalTime().Ticks;
    info.WorkingDirectory=Root;info.UseShellExecute=false;info.CreateNoWindow=true;
    info.EnvironmentVariables["PSModulePath"]=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),@"System32\WindowsPowerShell\v1.0\Modules");
-   worker=Process.Start(info);
+   job=CreateJobObjectW(IntPtr.Zero,null);
+   if(job==IntPtr.Zero)throw new InvalidOperationException("CONNECTOR_JOB_CREATE_FAILED");
+   var limits=new ExtendedLimits();limits.Basic.Flags=0x2000; // KILL_ON_JOB_CLOSE, no breakaway.
+   if(!SetInformationJobObject(job,9,ref limits,(uint)Marshal.SizeOf(typeof(ExtendedLimits)))){
+    CloseHandle(job);job=IntPtr.Zero;throw new InvalidOperationException("CONNECTOR_JOB_LIMIT_FAILED");
+   }
+   try{
+    worker=Process.Start(info);
+    if(!AssignProcessToJobObject(job,worker.Handle))throw new InvalidOperationException("CONNECTOR_JOB_ASSIGN_FAILED");
+   }catch{
+    if(worker!=null&&!worker.HasExited)worker.Kill();CloseHandle(job);job=IntPtr.Zero;throw;
+   }
    watcher=new Thread(delegate(){
-    worker.WaitForExit();if(!stopping)Environment.Exit(20);
+    try{worker.WaitForExit();}catch{}finally{if(!stopping)Environment.Exit(20);}
    });watcher.IsBackground=true;watcher.Start();
   }
   protected override void OnStop() {
    stopping=true;RequestAdditionalTime(25000);
-   if(stop!=null)stop.Set();
-   if(worker!=null) {
-    if(!worker.WaitForExit(20000)){worker.Kill();worker.WaitForExit(3000);}
-    if(watcher!=null)watcher.Join(3000);worker.Dispose();worker=null;
+   try{
+    if(stop!=null)stop.Set();
+    if(worker!=null)worker.WaitForExit(20000);
+   }finally{
+    // Kernel-enforced cleanup also covers a blocked worker or its compiler child.
+    if(job!=IntPtr.Zero){CloseHandle(job);job=IntPtr.Zero;}
+    if(watcher!=null)watcher.Join(3000);
+    if(worker!=null){worker.Dispose();worker=null;}
+    if(stop!=null){stop.Dispose();stop=null;}
+    if(single!=null){single.Dispose();single=null;}
    }
-   if(stop!=null){stop.Dispose();stop=null;}
-   if(single!=null){single.Dispose();single=null;}
   }
   protected override void OnShutdown(){OnStop();}
   public static void Main(string[] args) {
