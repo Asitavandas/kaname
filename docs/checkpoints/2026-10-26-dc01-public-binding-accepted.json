@@ -1,0 +1,29 @@
+{
+  "event": "DC01_PUBLIC_BINDING_EXPORT_ACCEPTED",
+  "date": "2026-10-26",
+  "source": "operator_uploaded_panel_public_binding_export",
+  "all_expected_public_fields_match": true,
+  "independent_live_status_check_performed": false,
+  "export": {
+    "Format": "AuthWireConnectorBindingPublicV1",
+    "BaseUrl": "https://kaname.vizyonveri.local:8765/",
+    "Binding": {
+      "instance_id": "6796fa84-fcff-41c1-b9c5-d725b95ba139",
+      "connector_id": "4c23eebe-0715-46d1-88ee-a2e96ad7ee46",
+      "generation": 1,
+      "host_guid": "0fa4143f-aae3-4bc3-9cd3-db8a1de24acd",
+      "host_fqdn": "dc01.vizyonveri.local",
+      "service_sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+      "appliance_fqdn": "kaname.vizyonveri.local",
+      "appliance_tls_sha256": "a58838b95510f759943e5f1b7fefe29e227960a5c1171b5ebc6d5089df47a76d",
+      "channel_key_sha256": "cbe3b5afdc40e5a141f55499ade4e32dbaf4792b0772dfcd025448c7633a9041"
+    },
+    "Domain": "vizyonveri.local"
+  },
+  "gmsa_channel_key_use_verified": false,
+  "gmsa_https_verified": false,
+  "connector_installed": false,
+  "can_apply_gpo": false,
+  "completed": 54,
+  "total": 94
+}

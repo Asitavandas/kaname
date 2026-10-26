@@ -17,6 +17,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 genel eşleştirme dosyası kabulü — 26 Ekim 2026
+
+Operatörün yüklediği `AuthWire-Connector-Binding.json` (`AuthWireConnectorBindingPublicV1`) incelendi: dokuz binding alanı, BaseUrl ve domain beklenen DC01/appliance kaydıyla tam eşleşiyor; **generation=1**. Kanal key ID **cbe3b5afdc40e5a141f55499ade4e32dbaf4792b0772dfcd025448c7633a9041**. Bu kayıt operatörün panelden indirdiği genel metadata kabulüdür; bağımsız canlı GET veya gMSA health testi olarak sunulmaz.
+
+Sırada kabul edilmiş imzalı Windows kaynaklarından paketin hazırlanması var. Mevcut ayrı kanal anahtarı ve kod imzalayıcı yeniden kullanılacak; yeni hesap/anahtar/AD/GPO/policy değişikliği yapılmayacak. Paket hazırlama hizmet kurmaz/başlatmaz. Gerçek gMSA kanal imzası/HTTPS, kalıcı hizmet ve uçtan uca GPO işleri hâlâ açıktır. **54/94 (~%57),40 açık** değişmedi. Önceki “pairing henüz yapılmadı” notları bu genel export tesliminden önceki durumu anlatır.
+
 ## 🔴✓ Connector dev.36 canlı uygulaması doğrulandı — 26 Ekim 2026
 
 Operatörün paylaştığı `CONNECTOR_PAIRING_UI_FINISHED` çıktısı **0.14.0-dev.36 / 7531ee65f56ec8d237cb67e8f5a2e24e39293192** kurulumunu doğruladı. Bildirilen tüm önce/sonra okumalar 200. RADIUS PID **1243360** ve broker **1069437** korunmuş; protected-files, timers ve business-state kontrolleri başarılı. Politika, sertifika, GPO, Windows paketleri/uç noktaları değişmedi. Tam veri yedeği oluşturulmadı; günlük yedek timer korundu. Kanıt: `/var/lib/authwire-updates/connector-pairing-ui-dev36-20261026T134425Z-18b52d74`.
