@@ -50,7 +50,9 @@ try{
  foreach($file in @('Install-AuthWireConnectorService.ps1','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Initialize-AuthWireConnectorChannelKey.ps1','ConnectorChannelKey.ps1','ConnectorChannelTypes.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1')){
   $inputPath=Join-Path $PSScriptRoot $file;$s=Get-AuthenticodeSignature -FilePath $inputPath
   if($s.Status.ToString() -ne 'Valid' -or $s.SignerCertificate.Thumbprint -cne $PublisherThumbprint){throw 'CONNECTOR_ADMIN_TOOL_SIGNATURE_REJECTED'}
-  Copy-Item -LiteralPath $inputPath -Destination (Join-Path $admin $file)
+  $destination=Join-Path $admin $file;Copy-Item -LiteralPath $inputPath -Destination $destination
+  $fileSecurity=[Security.AccessControl.FileSecurity]::new();$fileSecurity.SetSecurityDescriptorSddlForm('O:BAG:BAD:P(A;;FA;;;SY)(A;;FA;;;BA)')
+  Set-Acl -LiteralPath $destination -AclObject $fileSecurity
  }
  $result|ConvertTo-Json -Depth 4
 }finally{foreach($handle in $locks){$handle.Dispose()}}

@@ -62,6 +62,8 @@ try{
  $inspect=Invoke-AuthWireServiceControlCore -Mode Inspect -RootPath $root -ExpectedPublisher $publisher.Thumbprint
  Check (-not $inspect.ServiceInstalled -and -not $inspect.ServiceCreated) 'Inspect creates no service'
  $adminTool=Join-Path $root 'admin\Install-AuthWireConnectorService.ps1'
+ $adminAcl=Get-Acl -LiteralPath $adminTool;$adminRules=@($adminAcl.GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier]))
+ Check ($adminAcl.AreAccessRulesProtected -and $adminRules.Count -eq 2 -and @($adminRules|Where-Object{$_.IdentityReference.Value -notin @('S-1-5-18','S-1-5-32-544')}).Count -eq 0) 'Administrative control code stays inaccessible to the service account'
  $inspect=& $adminTool -ConnectorId ([guid]$base.connector_id) -PublisherThumbprint $publisher.Thumbprint|ConvertFrom-Json
  Check ($inspect.Mode -eq 'Inspect' -and -not $inspect.ServiceInstalled -and -not $inspect.ServiceCreated) 'Default signed public installer inspection performs no service or AD write'
  $rejected=$false
