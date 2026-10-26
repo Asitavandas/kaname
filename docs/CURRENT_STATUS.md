@@ -17,6 +17,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Fresh WinPS hizmet kontrolü kaynak düzeltmesi ve CI kabulü tamam — 26 Ekim 2026
+
+**PR91 / kaynak b6b4c343375e8f426903904c0bdcfa1d464d7300 / merge 1bda18c04740d6b9eff5b9bcd8657b825ae16ee8**. Kontrol yardımcısı **System.ServiceProcess** assembly'sini native helper cache dönüşünden önce açıkça yükler; controller tipleri tam adla kullanılır. İmzalı builder'ın yalnız ilgili control kaynak pini güncellendi. Eski immutable imzalı kaynak ZIP'i değiştirilmedi; arşiv testi bağımsız checkout ile kendi sabit tarihsel kaynak commit'ini karşılaştırır.
+
+🔴✓ Dört PR workflow başarılı. Gerçek signed SCM/normal verified HTTPS fixture'ında **24 kontrol**, buna altı ayrı x64 **WinPS5.1 -NoProfile/AllSigned** public işlem (Inspect,Start,Start,Stop,Start,Remove), kesinti sonrası otomatik dönüş, crash toparlanması, orphan temizliği ve non-exportable key/ACL koruması geçti (run40339312268/job121629322389). Diğer üç Windows Connector job da başarılı. Foundation **789 test /28 ortam skip** (run40339312565/job121629323053). Historical source delivery (run40339312550) ve bounded-network (run40339312689) başarılı.
+
+**Mevcut DC01 imzalı paketine yeni kod uygulanmadı**; source-only düzeltme sonraki imzalı teslimata dahil edilecek. DC01 kabulü mevcut gMSA ile ilk health + panel online + kontrollü Stop/Start sonrası dört fresh başarıdır. Müşteri boot/crash kabulü, staged signed upgrade/rollback/rotation ve GPO/dizin/Kerberos işleri açık. Bir sonraki fonksiyonel iş sınırlı Connector iş/sonuç kanalı ve kontrollü GPO uygulamasıdır; health tek başına bu yetkileri açmaz. **54/94 (~%57),40 açık** değişmedi. Aşağıdaki CI-bekliyor notları tarihsel hazırlık durumudur.
+
 ## 🔴✓ DC01 Connector kontrollü Stop/Start sonrası tekrar sağlıklı — 26 Ekim 2026 17:17 +03
 
 Operatör Stop=Stopped ve Start=Running sonuçlarını paylaştı. Ardından salt okunur kontrolde **2026-10-26T14:17:24.2736685Z**, doğru RuntimeSid **S-1-5-21-34256453-3348971241-2809240126-1648**, **SuccessCount=4, ConsecutiveFailures=0, Healthy=true, FreshHealthAfterRestart=true** görüldü. Mevcut gMSA/kanal anahtarı korunarak kontrollü yeniden başlatma sonrası bağlantı dönüşü kabul edildi. Bu boot/crash recovery veya GPO uygulama kabulü değildir.

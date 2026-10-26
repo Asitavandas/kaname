@@ -1,0 +1,33 @@
+{
+  "event": "CONNECTOR_CLEAN_WINPS_SERVICE_CONTROL_SOURCE_FIX_VERIFIED",
+  "date": "2026-10-26",
+  "pr": 91,
+  "source_head": "b6b4c343375e8f426903904c0bdcfa1d464d7300",
+  "merge_commit": "1bda18c04740d6b9eff5b9bcd8657b825ae16ee8",
+  "all_four_pr_workflows_passed": true,
+  "native_service_checks": 24,
+  "native_service_job": 121629322389,
+  "native_connector_run": 40339312268,
+  "fresh_public_control_modes": [
+    "Inspect",
+    "Start",
+    "Start",
+    "Stop",
+    "Start",
+    "Remove"
+  ],
+  "foundation_tests": 789,
+  "foundation_environment_skips": 28,
+  "foundation_run": 40339312565,
+  "source_delivery_run": 40339312550,
+  "bounded_network_run": 40339312689,
+  "original_delivery_archive_modified": false,
+  "live_customer_signed_package_modified": false,
+  "source_fix_delivery_pending": true,
+  "customer_restart_health_accepted": true,
+  "customer_boot_or_crash_acceptance": false,
+  "can_apply_gpo": false,
+  "next": "Bounded Connector job/result protocol and controlled GPO apply; signed source fix delivery and lifecycle gates remain open",
+  "completed": 54,
+  "total": 94
+}
