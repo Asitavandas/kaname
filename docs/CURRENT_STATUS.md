@@ -17,6 +17,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 yerel güven ve normal HTTPS kabulü tamam — 26 Ekim 2026 14:26 +03
+
+Operatör `WINDOWS_CONNECTOR_TRUST_PREPARATION / Stage=prepared` sonucunu paylaştı. Tam SHA256 pinli web sertifikası ile mevcut **FFC134BC305757457163F99C7479B4168E397129** kod yayıncısının iki genel güven kaydı eklendi; önceki kayıtlar korundu. TLS **PolicyErrors=None**, normal doğrulama ve tam pin eşleşmesi başarılı; exception yok. Receipt: `C:\ProgramData\AuthWire-ConnectorTrust-baf6a2c1ad8a4928ba8126eb18891699\trust-preparation.json`.
+
+AD/GPO, mevcut anahtar ACL'leri, hesaplar ve hizmetler değişmedi; sertifika üretilmedi/özel anahtar dışarı aktarılmadı. Bu kabul yönetici oturumuna aittir; **gMSA HTTPS, ayrı kanal anahtarı, yetkili panel eşleştirmesi ve kalıcı hizmet hâlâ bekliyor**. İmzalı kaynak teslimi hazırlanıyor. **54/94 (~%57), 40 açık** sayımı değişmedi; A03/A04 kapanmadı.
+
 ## 🔴✓ DC01 HTTPS kök nedeni belirlendi; sınırlı güven hazırlığı hazır — 26 Ekim 2026
 
 DC01 operatör tanılaması (10:56:59 UTC / 13:56:59 +03) DNS **10.35.50.246**, TCP bağlantısı ve canlı dev.35 TLS SHA256 pin eşleşmesini doğruladı. Windows yalnız **UntrustedRoot** bildirdi: web sertifikası `CN=kaname.vizyonveri.local` kendinden imzalı, geçerli tarihli, **non-CA / serverAuth-only** bir uç sertifikası. SHA256 **a58838b95510f759943e5f1b7fefe29e227960a5c1171b5ebc6d5089df47a76d** ve SHA1 **06AC51AF9AB4F7EBAFD3EA89E55BDD191E289636**. Sorun için DNS/saat/policy veya TLS doğrulama kapatma uygulanmadı.
