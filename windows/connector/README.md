@@ -394,3 +394,36 @@ The initial health proof primitive uses a dedicated non-exportable machine key,
 not another AD account or the code-signing key. See
 [the channel contract and outstanding integration gates](../../docs/CONNECTOR_SINGLE_ACCOUNT_CHANNEL.md).
 No route, permanent service, AD reader replacement or GPO job is activated here.
+
+
+### Staged package-only service upgrade (read-only probe worker)
+
+`Update-AuthWireConnectorService.ps1` is a separate signed administrator tool.
+It requires the exact current package release and an explicit new release UUID.
+Inspect creates no package/journal and changes no service. Prepare builds and
+signs a candidate beside the canonical Program Files path while the existing
+worker remains running. The host is compiled for the canonical final path.
+Apply rechecks signatures, static tree/ACL fingerprints, account SID, recovery
+configuration, pairing and existing non-exportable channel key. It stops only
+the owned Connector service, retains the old directory under its exact release,
+activates the candidate and updates only the owned SCM description marker.
+Fresh matching runtime identity/health and probe readiness are required.
+
+Failure attempts a bounded rollback to the verified old static package; the old
+state directory moves with its original package and is not replayed as new
+health. Explicit Rollback uses the private transition journal and the same
+archive checks. An interrupted/partial prepare or unknown drift fails closed
+for review; no unrecognized directory is deleted or adopted. Candidate and old
+archive are retained. No general resume, garbage collection, account rotation,
+GPO apply, directory sync, Kerberos delegation, key creation/export, key ACL,
+trust-store change or other-service restart is provided by this tool.
+
+Legacy admission is restricted to the six exact reviewed health-only script
+bodies from source commit 02c5cb2d04e1bb5f6d402623001e3c029ff96f90, plus the
+installed signed manifest/executable and protected ACLs. Ordinary current
+package validation does not silently admit legacy manifests. Hosted native
+regression builds this original source through an independent pinned checkout,
+then tests prepare, tamper rejection, failed-start automatic rollback, successful
+fresh-process signed Apply, explicit Rollback and reapplication with the same
+service account, pairing and channel key. Customer gMSA upgrade acceptance is a
+separate operator gate.

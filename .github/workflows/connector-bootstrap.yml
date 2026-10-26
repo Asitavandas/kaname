@@ -96,10 +96,17 @@ jobs:
 
   windows-service:
     runs-on: windows-2025
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
+          persist-credentials: false
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          repository: Asitavandas/kaname
+          ref: 02c5cb2d04e1bb5f6d402623001e3c029ff96f90
+          path: reviewed-connector-baseline
+          sparse-checkout: windows/connector
           persist-credentials: false
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:

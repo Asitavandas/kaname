@@ -57,10 +57,11 @@ def main():
                 jobs.create(probe|{'preview_hash':prepared['preview_hash']},str(uuid.uuid4()))
                 snapshot=store.snapshot();audit=store.audit()
                 (root/'paired').write_text('paired',encoding='ascii')
-                process.wait(timeout=290)
+                process.wait(timeout=540)
                 if process.returncode:raise RuntimeError('Native service fixture failed')
             result=json.loads((root/'service-result.json').read_text(encoding='utf-8-sig'))
             assert result['checks']>=17 and result['actual_https'] and result['crash_recovery'] and not result['customer_gmsa_tested']
+            assert result['legacy_staged_upgrade'] and result['automatic_upgrade_rollback'] and result['explicit_upgrade_rollback']
             assert result['fresh_public_control'] and result['fresh_control_modes']==['Inspect','Start','Start','Stop','Start','Remove']
             assert server.connector_pairing.status()['online'] and not server.connector_pairing.status()['can_apply']
             after=store.snapshot()

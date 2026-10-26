@@ -40,6 +40,9 @@ def main():
                   'function Get-AuthWireReviewedPayloadHashes {\n @{',PAYLOAD,args.update,footer='\n }\n}')
     replace_block(ROOT/'New-AuthWireConnectorServicePackage.ps1',
                   r'\$reviewed=@\{.*?\n\}', '$reviewed=@{',ALL,args.update)
+    replace_block(ROOT/'Update-AuthWireConnectorService.ps1',
+                  r'\$reviewed=@\{.*?\n\}', '$reviewed=@{',
+                  ALL+['ConnectorServiceUpgrade.ps1'],args.update)
     print('AUTHWIRE_REVIEWED_SERVICE_SOURCE_HASHES_OK')
 
 if __name__=='__main__':main()
