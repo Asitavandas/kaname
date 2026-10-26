@@ -1,0 +1,16 @@
+{
+  "event": "DC01_CONNECTOR_START_ASSEMBLY_DEPENDENCY_FAILURE",
+  "date": "2026-10-26",
+  "evidence_source": "operator_supplied_error",
+  "service_name": "AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46",
+  "release_id": "7b7d7bbc-88c0-4d83-8274-0ab294db2236",
+  "last_accepted_state": "installed_stopped",
+  "error": "Unable to find type [ServiceProcess.ServiceController]",
+  "source_finding": "ConnectorServiceControl.ps1 constructs ServiceProcess.ServiceController without explicitly loading System.ServiceProcess in a fresh Windows PowerShell session; source review confirms type resolution occurs before service.Start().",
+  "next": "Load System.ServiceProcess using Add-Type in the operator administrative session, then retry existing signed Start tool and collect fresh service health status.",
+  "workaround_executed": false,
+  "healthy_verified": false,
+  "installed_signed_package_modified": false,
+  "permanent_source_dependency_fix_pending": true,
+  "required_regression": "Run public Start/Stop control in a fresh Windows PowerShell -NoProfile process without preloading System.ServiceProcess; preserve payload reviewed hashes/signatures when updating future delivery."
+}
