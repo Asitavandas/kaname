@@ -1,0 +1,120 @@
+{
+  "event": "CONNECTOR_PAIRING_PANEL_DEV36_DELIVERY_PREPARED",
+  "date": "2026-10-26",
+  "timezone": "Europe/Istanbul",
+  "repository": "Asitavandas/kaname",
+  "pr": 90,
+  "source_head": "7531ee65f56ec8d237cb67e8f5a2e24e39293192",
+  "runtime_release": "7531ee65f56ec8d237cb67e8f5a2e24e39293192",
+  "merge_commit": "978ad05a6efd3f90cb7faa8a5ac4be469a256bbc",
+  "candidate_version": "0.14.0-dev.36",
+  "live_version_last_accepted": "0.14.0-dev.35",
+  "stage": "/home/segmentiq/authwire-stage-dev36-7531ee65f56e",
+  "manifest_sha256": "7f7a6231c2c4f5bba869b0ddd02aab3337de811c6cc534e8111377b664e65ebc",
+  "stage_files_verified": 173,
+  "installed_baseline_files_verified": 173,
+  "candidate_import_verified_on_actual_venv": true,
+  "launcher": "/home/segmentiq/authwire-connector-pairing-ui-dev36-20261026.py",
+  "launcher_sha256": "5e594d12573daf7edef1e571482eb737622928b3853912837779fda4a39dcc92",
+  "changed_runtime_files": [
+    "kaname/__init__.py",
+    "pyproject.toml",
+    "kaname/static/app.js",
+    "kaname/static/deployment.js",
+    "kaname/static/index.html",
+    "kaname/static/styles.css"
+  ],
+  "scope": {
+    "ui_and_version_only": true,
+    "server_registry_channel_admin_and_radius_bytes_unchanged": true,
+    "panel_stop_start_only": true,
+    "radius_and_broker_restarts": false,
+    "maintenance_bearer_pairing": false,
+    "root_registry_or_sql_pairing_write": false,
+    "db_or_binding_writes_by_delivery": false,
+    "full_data_backup": false,
+    "small_source_rollback_evidence": true,
+    "business_file_pids_timers_guards": true,
+    "active_backup_blocks_delivery": true,
+    "source_rollback_only_no_data_restore": true,
+    "rollback_deferred_on_concurrent_business_change": true
+  },
+  "ui": {
+    "separate_permission": "system.connectors",
+    "entry": "Sistem → Windows bağlantısı",
+    "candidate": "flat eight string fields; duplicate/unknown/nested JSON refused",
+    "preview_writes_binding": false,
+    "explicit_full_dc01_key_id_required": true,
+    "candidate_edits_invalidate_preview": true,
+    "uncertain_apply_read_reconciled_without_post_replay": true,
+    "logout_permission_generation_guards": true,
+    "public_nine_field_binding_export": true,
+    "rotation_or_revocation_controls_added": false
+  },
+  "tests": {
+    "foundation_tests": 781,
+    "foundation_skipped": 28,
+    "foundation_run": 40330077140,
+    "foundation_job": 121596848668,
+    "local_registry_https_tests": 26,
+    "local_delivery_guard_tests": 8,
+    "local_combined_tests": 34,
+    "browser_run": 40330076956,
+    "browser_job": 121596848450,
+    "new_browser_scenario_passed": true,
+    "all_existing_browser_suites_passed": true,
+    "screenshot_visually_reviewed": true,
+    "screenshot_artifact": 12653158107,
+    "screenshot_artifact_sha256": "aeac596a2029cad1a197abfd9cc831e881a3de93220b19704139edfd181cb4e5",
+    "workflows": [
+      {
+        "id": 40330077106,
+        "name": "KANAME Linux source preparation",
+        "conclusion": "success"
+      },
+      {
+        "id": 40330076956,
+        "name": "KANAME browser checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40330076977,
+        "name": "AuthWire device enrollment pilot checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40330077360,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40330077140,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40330077169,
+        "name": "KANAME real RADIUS protocol proof",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "execution": {
+    "operator_sudo_pending": true,
+    "live_source_changed": false,
+    "live_service_actions_executed": false,
+    "live_pairing_executed": false,
+    "customer_keys_or_secrets_exported": false,
+    "operator_browser_acceptance_pending": true,
+    "gmsa_https_and_service_acceptance_pending": true
+  },
+  "next": [
+    "Operator runs the pinned Linux updater and returns CONNECTOR_PAIRING_UI_FINISHED",
+    "Copy the DC01 public receipt's eight-field candidate, preview under an authenticated interactive panel principal, compare full cbe3...9041 key ID and explicitly apply",
+    "Export approved public nine-field binding for the Windows signed package step",
+    "Verify real gMSA key use, pinned verified HTTPS and owned permanent service; AD/GPO/Kerberos jobs still remain open"
+  ],
+  "completed": 54,
+  "total": 94,
+  "formal_report_regenerated": false
+}

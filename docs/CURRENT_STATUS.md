@@ -17,6 +17,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Yetkili panel Connector eşleştirme ekranı hazır; dev.36 canlı uygulaması bekliyor — 26 Ekim 2026
+
+**PR90 / kaynak ve runtime release 7531ee65f56ec8d237cb67e8f5a2e24e39293192 / merge 978ad05a6efd3f90cb7faa8a5ac4be469a256bbc**. Sistem → **Windows bağlantısı** sayfası mevcut `system.connectors` yetkisini kullanır; sertifika yönetimi yetkisinden ayrıdır. Backend/server/admin/registry/channel/RADIUS kaynakları aynı kaldı. Yeni ekran yalnız sekiz flat string alanlı genel JSON adayını kabul eder; duplicate/unknown/nested alanı reddeder. Önizleme kayıt yazmaz. DC01 **KeySha256** değerinin tamamı açıkça karşılaştırılıp girilmeden apply açılamaz; aday değişince önizleme/onay temizlenir. Mevcut cookie/CSRF/Origin/revision/principal-lease sınırı kullanılır; maintenance bearer/root doğrudan registry/SQL ile trust yazılmaz. Kayıp yanıt yalnız GET ile uzlaştırılır; POST tekrarlanmaz. Oturum/yetki değişiminde geç yanıtlar temiz ekranı dolduramaz. Eşleştirilmiş metadata'nın yalnız genel dokuz alanlı binding'i indirilebilir.
+
+🔴✓ Altı workflow geçti: browser40330076956, foundation40330077140, RADIUS40330077169, device40330076977, Linux40330077106, bounded40330077360. Foundation **781 test /28 ortam skip**. Yeni gerçek HTTPS browser-fixture senaryosu + bütün mevcut UI testleri geçti; screenshot artifact12653158107 digest ile indirilip görsel incelendi. Yerel **26 registry/verified-HTTPS +8 delivery guard =34 test** başarılı. UI çiftleri fake/disposable sertifika ve DB kullanır; gerçek müşteri eşleştirmesi yapılmadı.
+
+🔴✓ Canlı dev.35'in **173** kaynak dosyası önceki kabul edilmiş manifest ile byte düzeyinde aynı. Ayrı dev.36 adayında **173** dosya ve gerçek Linux venv import'u doğrulandı. Yalnız **6 UI/sürüm dosyası** değişebilir; panel stop/start, RADIUS/kontrol PID/timer/protected-file/business-state koruması, aktif backup guard, bytecode karantinası ve küçük source rollback vardır. Tam veri yedeği/restore yapılmaz; eşzamanlı iş verisi değişmişse rollback incelemeye bırakılır.
+
+Teslim `/home/segmentiq/authwire-connector-pairing-ui-dev36-20261026.py`, SHA256 **5e594d12573daf7edef1e571482eb737622928b3853912837779fda4a39dcc92**. Stage `/home/segmentiq/authwire-stage-dev36-7531ee65f56e`, manifest **7f7a6231c2c4f5bba869b0ddd02aab3337de811c6cc534e8111377b664e65ebc**. **Operator sudo henüz bekliyor; kurulu kaynak/hizmetlere işlem yapılmadı.** Sonrasında normal interactive panel önizleme ve açık key-ID onayı, ardından gerçek gMSA key-use/HTTPS/servis kabulü vardır. UI Source delivery eşleştirme kaydı oluşturmaz. **54/94 (~%57), 40 açık** değişmedi.
+
 ## 🔴✓ DC01 imzalı kaynaklar ve ayrı kanal anahtarı kabulü tamam — 26 Ekim 2026 15:57 +03
 
 Operatör `WINDOWS_CONNECTOR_CHANNEL_PREPARATION / Stage=key_prepared` sonucunu paylaştı. Kaynaklar hazırlandı ve tüm imzalar doğrulandı. Ayrı yeni kanal anahtarının policy ve read/use ACL kontrolleri geçti; mevcut code-signing anahtar ACL'i, orijinal bootstrap, AD/GPO/güven depoları korunmuş. Public PEM RSA3072 olarak okunup AuthWire'ın ortak **AuthWireConnectorKeyV1** modulus çerçevesiyle key ID yeniden hesaplandı: **cbe3b5afdc40e5a141f55499ade4e32dbaf4792b0772dfcd025448c7633a9041**, DC01 ile aynı. Bu ID standart DER SPKI digest'i değildir; eşleştirmede DC01 `KeySha256` alanı kullanılır.
