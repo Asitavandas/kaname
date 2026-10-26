@@ -5,6 +5,7 @@ const {spawn}=require('node:child_process');
 const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.join(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES,'playwright'):'playwright');
 (async()=>{
  const root=path.resolve(__dirname,'..'),temp=fs.mkdtempSync(path.join(os.tmpdir(),'authwire-services-ui-'));
+ const expectedVersion=fs.readFileSync(path.join(root,'kaname','__init__.py'),'utf8').match(/^VERSION\s*=\s*"([^"]+)"/m)[1];
  const python=process.env.CODEX_PRIMARY_RUNTIME_PYTHON||process.env.KANAME_PYTHON||'python3';
  const setup='import sys;from kaname.server import DevelopmentServer;s=DevelopmentServer(sys.argv[1],0);print(s.server_port,flush=True);s.serve_forever()';
  const child=spawn(python,['-u','-c',setup,temp],{cwd:root,stdio:['ignore','pipe','pipe']});let browser;
@@ -31,7 +32,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.joi
   const header=await page.locator('main>header').boundingBox(),account=await page.locator('#account-toggle').boundingBox();
   assert.ok(account.x+account.width>header.x+header.width-12,'Username sits at the right edge of the top header');
   assert.equal(await page.locator('#account-name').textContent(),'admin');assert.equal(await page.locator('#account-menu').isHidden(),true);
-  await page.locator('#account-toggle').click();assert.match(await page.locator('#account-version').textContent(),/0\.14\.0-dev\.34/);
+  await page.locator('#account-toggle').click();assert.ok((await page.locator('#account-version').textContent()).includes(expectedVersion));
   await page.locator('#account-system').hover();await page.waitForFunction(()=>accountPowerState?.available&&!accountPowerLoading);
   const rootMenu=await page.locator('#account-menu').boundingBox(),sub=await page.locator('#account-system-menu').boundingBox();assert.ok(sub.x<rootMenu.x&&sub.x+sub.width<=rootMenu.x+2,'Desktop submenu opens to the left');
   assert.deepEqual(await page.locator('#account-system-menu button').allTextContents(),['↻Yeniden başlat','⏻Kapat']);
