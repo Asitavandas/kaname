@@ -128,6 +128,7 @@ $result = [ordered]@{
     MachineWebTrustPresent = $false
     MachinePublisherTrusted = $false
     ExistingTrustEntriesPreserved = $false
+    ChangesMayBePartial = $false
     HttpsVerifiedAfterPreparation = $false
     Tls = $null
     ReceiptPath = $null
@@ -260,6 +261,7 @@ namespace AuthWire.Diagnostics {
             Root=$rootBefore; TrustedPublisher=$publishersBefore; CheckedAtUtc=$result.CheckedAtUtc }
         [IO.File]::WriteAllText((Join-Path $receiptDirectory 'before.json'), ($before | ConvertTo-Json -Depth 4), [Text.UTF8Encoding]::new($false))
         $phase = 'public_trust_addition'
+        $result.ExistingTrustEntriesPreserved = $false
         $result.WebTrustAddedNow = Add-AuthWireExactPublicTrust $web 'Root' $webSha256
         $result.PublisherTrustAddedNow = Add-AuthWireExactPublicTrust $signer 'TrustedPublisher' $signerHash
         $rootAfter = @(Get-AuthWirePublicTrustSnapshot 'Root')
@@ -268,6 +270,7 @@ namespace AuthWire.Diagnostics {
         $result.MachinePublisherTrusted = ($publishersAfter -contains $signerHash)
         foreach ($prior in $rootBefore) { if ($rootAfter -notcontains $prior) { throw 'PREEXISTING_ROOT_MISSING' } }
         foreach ($prior in $publishersBefore) { if ($publishersAfter -notcontains $prior) { throw 'PREEXISTING_PUBLISHER_MISSING' } }
+        $result.ExistingTrustEntriesPreserved = $true
         $phase = 'https_postcheck'
         $result.Tls = [AuthWire.Diagnostics.TlsProbeV1]::Run()
         $result.HttpsVerifiedAfterPreparation = $result.Tls.TlsHandshakePassed -and
@@ -278,6 +281,7 @@ namespace AuthWire.Diagnostics {
 } catch {
     $result.Stage = $phase + '_requires_review'
     $result.Error = $_.Exception.GetBaseException().Message
+    $result.ChangesMayBePartial = ($phase -ne 'preflight')
 } finally {
     if ($null -ne $web) { $web.Dispose() }
     if ($null -ne $receiptDirectory) {
