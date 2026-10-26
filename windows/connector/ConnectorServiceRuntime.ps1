@@ -18,7 +18,7 @@ try{
  $created=$false
  $single=[Threading.Mutex]::new($false,('Global\'+$name+'-Worker'),[ref]$created,$mutexAcl)
  if(-not $created){throw 'CONNECTOR_DUPLICATE_WORKER'}
- foreach($file in @('Compare-AuthWireSigningKeyAcl.ps1','ConnectorChannelTypes.ps1','ConnectorChannelKey.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1')){. (Join-Path $PSScriptRoot $file)}
+ foreach($file in @('Compare-AuthWireSigningKeyAcl.ps1','ConnectorChannelTypes.ps1','ConnectorChannelKey.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1','Invoke-AuthWireConnectorProbeJob.ps1')){. (Join-Path $PSScriptRoot $file)}
  $binding=@{};foreach($p in $c.Binding.PSObject.Properties){$binding[$p.Name]=$p.Value}
  $key=[Security.Cryptography.CngKey]::Open($c.KeyName,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::MachineKey)
  $rsa=[Security.Cryptography.RSACng]::new($key)
@@ -30,7 +30,7 @@ try{
  $sid=$binding.service_sid;$acl=Get-Acl -LiteralPath $state
  $expected='O:BAG:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;0x1301bf;;;'+$sid+')'
  if(-not (Compare-AuthWireSigningKeyAcl $expected $acl.Sddl).AclEquivalent){throw 'CONNECTOR_STATUS_ACL_REJECTED'}
- $failures=0;$success=0;$lastSuccess=$null
+ $failures=0;$success=0;$lastSuccess=$null;$jobCount=0;$lastJob=''
  while(-not $stop.WaitOne(0) -and -not $parent.HasExited){
   $ok=$false
   try{
@@ -40,7 +40,13 @@ try{
   }catch{$ok=$false}
   if($ok){$failures=0;$success++;$lastSuccess=[DateTimeOffset]::UtcNow.ToString('o');$delay=30}
   else{$failures=[Math]::Min(1000,$failures+1);$delay=if($failures -eq 1){30}elseif($failures -eq 2){60}else{120}}
-  $status=@{Event='WINDOWS_CONNECTOR_SERVICE_HEALTH';Version=1;ReleaseId=$c.ReleaseId;ServiceName=$name;RuntimeSid=$sid;WorkerPid=$PID;CheckedUtc=[DateTimeOffset]::UtcNow.ToString('o');LastSuccessUtc=$lastSuccess;SuccessCount=$success;ConsecutiveFailures=$failures;Healthy=$ok;CanApply=$false;DirectorySyncReady=$false;KerberosReady=$false;NextAttemptSeconds=$delay}
+  $probeReady=$false
+  if($ok){try{
+   $probe=Invoke-AuthWireConnectorProbeJob -BaseUrl $c.BaseUrl -Binding $binding -ChannelKey $rsa -PackageReleaseId $c.ReleaseId
+   $probeReady=$probe.ProbeChannelVerified
+   if($probe.JobCompleted){$jobCount++;$lastJob=$probe.JobId}
+  }catch{$probeReady=$false}}
+  $status=@{Event='WINDOWS_CONNECTOR_SERVICE_HEALTH';Version=1;ReleaseId=$c.ReleaseId;ServiceName=$name;RuntimeSid=$sid;WorkerPid=$PID;CheckedUtc=[DateTimeOffset]::UtcNow.ToString('o');LastSuccessUtc=$lastSuccess;SuccessCount=$success;ConsecutiveFailures=$failures;Healthy=$ok;CanApply=$false;DirectorySyncReady=$false;KerberosReady=$false;NextAttemptSeconds=$delay;ProbeChannelVerified=$probeReady;ProbeJobsCompleted=$jobCount;LastProbeJobId=$lastJob}
   Write-AuthWireChannelReceipt -Path (Join-Path $state 'status.json') -Value $status
   for($i=0;$i -lt $delay;$i++){if($stop.WaitOne(1000) -or $parent.HasExited){break}}
  }

@@ -17,11 +17,13 @@ class PolicyToggleDeployTests(unittest.TestCase):
         self.ns = self.ns['source_check'].__globals__
         self.ns['ROOT'] = self.root
         self.ns['trusted'] = lambda p: p.read_bytes()
+        # Frozen source admitted by this historical deployment guard.
+        installer = (repo / 'docs/checkpoints/2026-10-19-authwire-installer-dev11.ps1').read_bytes()
         self.base = {'kaname/__init__.py': b'VERSION = "0.14.0-dev.12"\n',
                      'kaname/static/app.js': b'accepted UI\n',
                      'kaname/radius_adapter.py': b'protected authorizer\n',
-                     **{f'kaname/device_client/{name}': (repo / 'kaname/device_client' / name).read_bytes()
-                        for name in ('AuthWire-Client.ps1', 'Install-AuthWire.ps1')}}
+                     'kaname/device_client/AuthWire-Client.ps1': (repo / 'kaname/device_client/AuthWire-Client.ps1').read_bytes(),
+                     'kaname/device_client/Install-AuthWire.ps1': installer}
         self.files = {**self.base, 'kaname/__init__.py': b'VERSION = "0.14.0-dev.13"\n',
                       'kaname/static/app.js': b'reviewed toggle UI\n'}
         self.ns['BASELINE'] = {n: hashlib.sha256(b).hexdigest() for n, b in self.base.items()}

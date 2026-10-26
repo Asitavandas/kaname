@@ -38,12 +38,19 @@ function Read-AuthWireRetryDeadline([string]$Directory) {
 function Set-AuthWireRetryTask([string]$Directory, [string]$TaskName, [DateTimeOffset]$When) {
     $scriptFile = Join-Path $Directory 'Install-AuthWire.ps1'
     $retryAction = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -Argument ('-NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$scriptFile+'" -RetryCheck')
-    $retryTrigger = New-ScheduledTaskTrigger -Once -At $When.LocalDateTime
     $retrySettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 2)
     $retryPrincipal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
     $description = 'AuthWire managed enrollment retry deadline'
     $existingRetry = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     if($existingRetry -and ($existingRetry.Description -ne $description -or $existingRetry.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18'))) { throw 'Unexpected existing AuthWire retry task.' }
+    # StartBoundary uses whole-second precision. Do not truncate a fractional
+    # deadline into an early run or re-register an already elapsed trigger.
+    # https://learn.microsoft.com/en-us/windows/win32/taskschd/trigger-startboundary
+    $earliest = [DateTimeOffset]::UtcNow.AddSeconds(5)
+    $scheduled = if($When -gt $earliest) { $When.UtcDateTime } else { $earliest.UtcDateTime }
+    $fraction = $scheduled.Ticks % [TimeSpan]::TicksPerSecond
+    if($fraction -ne 0) { $scheduled = $scheduled.AddTicks([TimeSpan]::TicksPerSecond - $fraction) }
+    $retryTrigger = New-ScheduledTaskTrigger -Once -At $scheduled.ToLocalTime()
     $null = Register-ScheduledTask -TaskName $TaskName -Action $retryAction -Trigger $retryTrigger -Settings $retrySettings -Principal $retryPrincipal -Description $description -Force
     # Restrict the task definition itself, as well as the private signed files.
     $scheduler = New-Object -ComObject 'Schedule.Service'

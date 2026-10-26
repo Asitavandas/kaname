@@ -17,6 +17,7 @@ from kaname.store import Store
 from kaname.operations import Operations
 from kaname.pki import PKIService
 from kaname.connector_registry import ConnectorRegistry
+from kaname.connector_jobs import ConnectorJobs, OPERATION
 from tools.linux_initialize import create_web_certificate
 
 def main():
@@ -50,6 +51,10 @@ def main():
                 intent={'expected_revision':store.snapshot()['revision'],'operation':'pair','candidate':candidate}
                 preview=registry.preview(intent)
                 registry.apply(intent|{'preview_hash':preview['preview_hash'],'confirmed_key_sha256':preview['after']['channel_key_sha256']},str(uuid.uuid4()))
+                jobs=ConnectorJobs(registry)
+                probe={'expected_revision':store.snapshot()['revision'],'job_id':str(uuid.uuid4()),'operation':OPERATION}
+                prepared=jobs.preview(probe)
+                jobs.create(probe|{'preview_hash':prepared['preview_hash']},str(uuid.uuid4()))
                 snapshot=store.snapshot();audit=store.audit()
                 (root/'paired').write_text('paired',encoding='ascii')
                 process.wait(timeout=290)
@@ -58,7 +63,12 @@ def main():
             assert result['checks']>=17 and result['actual_https'] and result['crash_recovery'] and not result['customer_gmsa_tested']
             assert result['fresh_public_control'] and result['fresh_control_modes']==['Inspect','Start','Start','Stop','Start','Remove']
             assert server.connector_pairing.status()['online'] and not server.connector_pairing.status()['can_apply']
-            assert snapshot==store.snapshot() and audit==store.audit()
+            after=store.snapshot()
+            assert snapshot['config']==after['config'] and snapshot['policies']==after['policies']
+            assert after['revision']==snapshot['revision']+1 and len(store.audit())==len(audit)+1
+            status=jobs.status()
+            assert status['jobs'][0]['state']=='completed' and status['jobs'][0]['result']['release_id']==result['release_id']
+            assert status['worker_probe_ready'] and not status['can_apply']
             print('AUTHWIRE_PERMANENT_SERVICE_WINDOWS_OK '+json.dumps(result,sort_keys=True))
         finally:
             (root/'abort').write_text('abort',encoding='ascii')

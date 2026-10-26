@@ -28,7 +28,7 @@ public static class ChannelTypesV1 {
   return s.Append("-----END PUBLIC KEY-----\n").ToString(); }
  public static string Post(string baseUrl,string fqdn,string pin,string path,string json){
   Uri root;if(!Uri.TryCreate(baseUrl,UriKind.Absolute,out root)||root.Scheme!="https"||root.Host!=fqdn||root.UserInfo!=""||root.Query!=""||root.Fragment!=""||root.AbsolutePath!="/"||!Regex.IsMatch(pin,"\\A[0-9a-f]{64}\\z")||
-    (path!="/api/connector/v1/challenge"&&path!="/api/connector/v1/health"))throw new InvalidOperationException("CONNECTOR_HTTPS_CONFIGURATION_REJECTED");
+    (path!="/api/connector/v1/challenge"&&path!="/api/connector/v1/health"&&path!="/api/connector/v1/jobs/poll"&&path!="/api/connector/v1/jobs/result"))throw new InvalidOperationException("CONNECTOR_HTTPS_CONFIGURATION_REJECTED");
   byte[] body=new UTF8Encoding(false,true).GetBytes(json);if(body.Length>4096)throw new InvalidOperationException("CONNECTOR_HTTPS_BODY_LIMIT");
   using(var handler=new HttpClientHandler()){
    handler.SslProtocols=SslProtocols.Tls12;handler.AllowAutoRedirect=false;handler.UseProxy=false;handler.Proxy=null;
@@ -59,6 +59,16 @@ public static class ChannelTypesV1 {
   }
  }
  public static string Frame(string json){var m=Regex.Match(json,"\\A\\s*\\{\\s*\"frame\"\\s*:\\s*\"([A-Za-z0-9+/=]{1,2732})\"\\s*\\}\\s*\\z");if(!m.Success)throw new InvalidOperationException("CONNECTOR_REPLY_REJECTED");return m.Groups[1].Value;}
+ static bool FlatJob(string json,string[] names){
+  var head=Regex.Match(json,"\\A\\s*\\{(.*)\\}\\s*\\z",RegexOptions.Singleline);if(!head.Success)return false;
+  var parts=head.Groups[1].Value.Split(',');if(parts.Length!=names.Length)return false;
+  var allowed=new System.Collections.Generic.HashSet<string>(names);var seen=new System.Collections.Generic.HashSet<string>();
+  foreach(var part in parts){var m=Regex.Match(part,"\\A\\s*\"([a-z][a-z0-9_]*)\"\\s*:\\s*(?:true|false|0|[1-9][0-9]{0,10}|\"[A-Za-z0-9_.-]{0,80}\")\\s*\\z");
+   if(!m.Success||!allowed.Contains(m.Groups[1].Value)||!seen.Add(m.Groups[1].Value))return false;}
+  return true;
+ }
+ public static bool JobOffer(string json){return FlatJob(json,new[]{"format","request_id","scope_sha256","job_id","operation","lease_id","intent_sha256","expires_at","read_only","can_apply"});}
+ public static bool JobReceipt(string json){return FlatJob(json,new[]{"format","request_id","job_id","result_recorded","read_only","can_apply"});}
  public static bool Healthy(string json){
   var head=Regex.Match(json,"\\A\\s*\\{(.*)\\}\\s*\\z",RegexOptions.Singleline);if(!head.Success)return false;
   var parts=head.Groups[1].Value.Split(',');if(parts.Length!=4)return false;var seen=new System.Collections.Generic.HashSet<string>();

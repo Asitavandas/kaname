@@ -101,6 +101,7 @@ class DevelopmentServer(ThreadingHTTPServer):
         self.public_name = public_name
         self.web_certificate = Path(tls_cert).read_bytes() if tls_cert else b''
         self.connector_pairing = None
+        self.connector_jobs = None
         self.connector_init_lock = threading.Lock()
         self.connector_peer_lock = threading.Lock()
         self.connector_peer_gate = threading.BoundedSemaphore(4)
@@ -334,14 +335,21 @@ class Handler(BaseHTTPRequestHandler):
         try:
             from .connector_channel import ChannelError
             from .connector_registry import RegistryError
-            if self.headers.get('Transfer-Encoding') or self.headers.get_content_type() != 'application/json':
+            if (self.headers.get('Transfer-Encoding') is not None or
+                any(len(self.headers.get_all(h, [])) != 1 for h in ('Host', 'Content-Length', 'Content-Type')) or
+                self.headers.get_content_type() != 'application/json'):
                 raise ValueError()
             size = int(self.headers.get('Content-Length','0'))
             if not 1 <= size <= 4096: raise ValueError()
             raw = self.rfile.read(size); self.body_read = True
             if len(raw) != size: raise ValueError()
             registry = self.connector_services()
-            result = registry.poll(raw) if self.path.endswith('/challenge') else registry.accept(raw)
+            if self.path == '/api/connector/v1/jobs/poll':
+                result = self.connector_job_services().poll(raw)
+            elif self.path == '/api/connector/v1/jobs/result':
+                result = self.connector_job_services().complete(raw)
+            else:
+                result = registry.poll(raw) if self.path.endswith('/challenge') else registry.accept(raw)
             self.respond(200,result)
         except ImportError:
             self.respond(503, {'error':'CONNECTOR_SERVICE_UNAVAILABLE'})
@@ -352,6 +360,54 @@ class Handler(BaseHTTPRequestHandler):
             self.store_error(error)
         finally:
             self.server.connector_peer_gate.release()
+
+    def connector_job_services(self):
+        registry = self.connector_services()
+        with self.server.connector_init_lock:
+            if self.server.connector_jobs is None:
+                from .connector_jobs import ConnectorJobs
+                self.server.connector_jobs = ConnectorJobs(registry)
+        return self.server.connector_jobs
+
+    def connector_job_admin(self, *, write=False):
+        if not self.guard(write=write, resource='system.connectors'):
+            return
+        if not self.server.tls:
+            self.respond(403, {'error': 'CONNECTOR_HTTPS_REQUIRED'}); return
+        if write and self.actor['maintenance']:
+            self.respond(403, {'error': 'CONNECTOR_PANEL_SESSION_REQUIRED'}); return
+        try:
+            from .connector_jobs import JobError
+            from .connector_registry import RegistryError
+        except ImportError:
+            self.respond(503, {'error': 'CONNECTOR_SERVICE_UNAVAILABLE'}); return
+        try:
+            jobs = self.connector_job_services()
+            if not write:
+                if self.path != '/api/deployment/connector/jobs':
+                    raise ValidationError('Unsupported query')
+                result = jobs.status()
+            else:
+                value = self.read_body()
+                with self.server.admin.connect() as adb:
+                    adb.execute('BEGIN')
+                    actor = self.server.admin.current_actor(adb, self.actor, 'system.connectors')
+                    result = jobs.preview(value) if self.path.endswith('/preview') else jobs.create(value, actor['id'])
+            self.respond(200, result)
+        except (JobError, RegistryError) as error:
+            self.respond(503 if error.code.endswith('STORE_INVALID') else
+                         409 if error.code in {'CONNECTOR_JOB_PREVIEW_STALE', 'CONNECTOR_JOB_ID_CONFLICT', 'CONNECTOR_JOB_LIMIT', 'CONNECTOR_JOB_BUSY'} else 400,
+                         {'error': error.code})
+        except ConflictError:
+            self.respond(409, {'error': 'REVISION_CONFLICT'})
+        except AdminError as error:
+            self.respond({'UNAUTHORIZED': 401, 'FORBIDDEN': 403, 'BODY_LIMIT': 413, 'JSON_REQUIRED': 415}.get(error.code, 400), {'error': error.code})
+        except (ValueError, TypeError, KeyError):
+            self.respond(400, {'error': 'CONNECTOR_JOB_INPUT_INVALID'})
+        except sqlite3.Error as error:
+            self.store_error(error)
+        except ImportError:
+            self.respond(503, {'error': 'CONNECTOR_SERVICE_UNAVAILABLE'})
 
     def user_services(self):
         devices, _ = self.device_services()
@@ -550,6 +606,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get('Host') not in self.server.hosts:
             self.respond(403, {'error': 'INVALID_HOST'})
             return
+        if urlsplit(self.path).path == '/api/deployment/connector/jobs':
+            self.connector_job_admin(); return
         if urlsplit(self.path).path == '/api/deployment/connector':
             self.connector_admin(); return
         if urlsplit(self.path).path == '/api/deployment/status':
@@ -767,8 +825,10 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
-        if self.path in {'/api/connector/v1/challenge','/api/connector/v1/health'}:
+        if self.path in {'/api/connector/v1/challenge','/api/connector/v1/health','/api/connector/v1/jobs/poll','/api/connector/v1/jobs/result'}:
             self.connector_peer(); return
+        if self.path in {'/api/deployment/connector/jobs/preview', '/api/deployment/connector/jobs/create'}:
+            self.connector_job_admin(write=True); return
         if self.path in {'/api/deployment/connector/preview', '/api/deployment/connector/apply'}:
             self.connector_admin(write=True); return
         if self.path == '/api/system/power/action':
@@ -971,5 +1031,3 @@ class Handler(BaseHTTPRequestHandler):
             self.store_error(error)
         except OSError:
             self.respond(503, {'error': 'STORE_UNAVAILABLE'})
-
-
