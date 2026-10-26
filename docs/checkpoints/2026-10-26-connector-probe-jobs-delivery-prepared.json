@@ -1,0 +1,89 @@
+{
+  "event": "CONNECTOR_PROBE_JOBS_DELIVERY_PREPARED",
+  "source_commit": "280390e081818685969fb3327ace2c074e94e433",
+  "version": "0.14.0-dev.37",
+  "pr": 92,
+  "stage": "/home/segmentiq/authwire-stage-dev37-280390e08181",
+  "manifest_sha256": "d6e5ca725c390c2d83eee3f582a3f9ec69bbf790ead0457ea357fe0f83995e00",
+  "launcher": "/home/segmentiq/authwire-connector-probe-jobs-dev37-20261026.py",
+  "launcher_sha256": "563637ebf4f8c085265e54cd380ca9e896206b702cb2795567d468ae4390f3ef",
+  "files": 174,
+  "preexisting_files_preserved": 168,
+  "protected_server_functions": 21,
+  "allowed_changes": [
+    "kaname/__init__.py",
+    "pyproject.toml",
+    "kaname/server.py",
+    "kaname/connector_jobs.py",
+    "kaname/static/index.html",
+    "kaname/static/deployment.js"
+  ],
+  "local_delivery_tests": 8,
+  "actual_appliance_venv_import_verified": true,
+  "live_baseline_source_verified": true,
+  "windows_installer_delivery": "not_applied_source_only_retry_fix",
+  "installed_installer_sha256": "faec4a852f61528b8e8df9ab6240323ab4cedae497cadd921568ccf06dac3609",
+  "installed_client_sha256": "bf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60",
+  "customer_package_release": "7b7d7bbc-88c0-4d83-8274-0ab294db2236",
+  "linux_installation_pending": true,
+  "signed_windows_worker_upgrade_pending": true,
+  "customer_probe_job_acceptance_pending": true,
+  "gpo_apply_enabled": false,
+  "pairing_actions_executed": false,
+  "job_actions_executed": false,
+  "full_data_backup_created": false,
+  "live_services_restarted": false,
+  "project_complete": 54,
+  "project_total": 94,
+  "foundation_tests": 820,
+  "environment_skips": 28,
+  "windows_service_checks": 28,
+  "windows_ci_fixture_release": "d384e7cd-5255-42ac-8a17-34a89af4c3ad",
+  "windows_fixture_job": 121751532262,
+  "foundation_job": 121751530861,
+  "ci": [
+    {
+      "id": 40373872726,
+      "name": "KANAME browser checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40373872742,
+      "name": "KANAME foundation checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40373872757,
+      "name": "KANAME Linux source preparation",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40373872721,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40373872796,
+      "name": "KANAME real RADIUS protocol proof",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40373872605,
+      "name": "AuthWire bounded retry network probe checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40373872648,
+      "name": "AuthWire device enrollment pilot checks",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "source_merge": "826580728ffdaa54bb90c3f7d03c3f64c0e7872d"
+}

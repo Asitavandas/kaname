@@ -17,6 +17,20 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## 🔴✓ Sınırlı Connector test görevi ve sonuç kanalı hazır — 26 Ekim 2026
+
+**PR92 / kaynak 280390e081818685969fb3327ace2c074e94e433 / merge 826580728ffdaa54bb90c3f7d03c3f64c0e7872d / dev.37**. Yalnız **connector.probe** salt okunur işine izin verilir. Panelde mevcut system.connectors yetkisi, HTTPS, CSRF/Origin/Host, güncel principal ve revision/önizleme kontrolü kullanılır. Kimlikler kalıcı saklanır; süreli lease, replay/expiry, eşleştirme/anahtar/kapsam yeniden kontrolü ve idempotent sonuç kaydı vardır. Kayıp create yanıtı yalnız GET ile uzlaştırılır. Bu genel komut/PowerShell/AD/GPO yürütücüsü veya exactly-once GPO iddiası değildir; **CanApply=false**.
+
+🔴✓ Son kaynak commit'inde **yedi PR workflow başarılı**. Foundation **820 test /28 ortam skip** (run40373872742/job121751530861). İmzalı gerçek Windows SCM/normal doğrulanmış pinli HTTPS fixture'ında probe tamamlanması ve **28 kontrol**, altı bağımsız WinPS5.1/AllSigned public işlem, outage/crash/orphan toparlanması geçti (run40373872721/job121751532262). Browser, Linux-stage, gerçek RADIUS, native enrollment ve bounded-network başarılı. Bunlar disposable CI kabulüdür; müşteri gMSA görev kabulü değildir. Yeni sekiz yerel teslimat guard/rollback testi ayrıca geçti.
+
+Native retry testinde kesirli deadline'ın saniyeye aşağı yuvarlanıp geçmiş trigger'a dönüşmesi bulundu: installer kaynak düzeltmesi yukarı yuvarlar ve en az beş saniye ileri rearm yapar. Gerçek SYSTEM iki otomatik deneme/kurtarma ve kesirli/geçmiş deadline regresyonu geçti. Eski dev12/dev13 deploy testleri yalnız kabul ettikleri **donmuş dev11 installer** kaynağına sabitlendi; tarihsel guard'lar gevşetilmedi. **Windows retry düzeltmesi source-only; SYSVOL/uç noktalara uygulanmadı.** Daha önce bir kez görülüp değişmeden tekrar çalıştırmada geçen expired-pending fixture aralıklı hatasının kök nedeni çözülmüş sayılmaz.
+
+**Canlı kurulum bekliyor.** /home/segmentiq/authwire-stage-dev37-280390e08181 altında **174 dosya**, manifest **d6e5ca725c390c2d83eee3f582a3f9ec69bbf790ead0457ea357fe0f83995e00** doğrulandı. Appliance'ın gerçek venv import'u geçti. Yalnız altı runtime/version/UI dosyası değişecek; 168 eski dosya ve 21 korunan server fonksiyon AST'si aynı. Installer **faec4a…**, client **bf5008…**, RADIUS/broker/backup kaynakları korunur. Pinned launcher **/home/segmentiq/authwire-connector-probe-jobs-dev37-20261026.py**, SHA256 **563637ebf4f8c085265e54cd380ca9e896206b702cb2795567d468ae4390f3ef**. Yalnız panel restart; tam veri yedeği yok, günlük timer korunur; kod rollback'i veri restore etmez.
+
+Mevcut Linux hâlâ **dev.36**, RADIUS **1243360**, broker **1069437**, hepsi active. DC01 kurulu paket **7b7d7bbc-88c0-4d83-8274-0ab294db2236** değişmedi ve health-only. Sonraki kapılar: Linux sudo kurulumu ve panel okuma kabulü; ardından ayrı imzalı Windows worker güncellemesi/rollback hazırlığı ve gerçek müşteri probe işi. Henüz iş/pairing/GPO/policy/sertifika yazılmadı. GPO uygulama, dizin/Kerberos işleri, tek hesap geçişi ve endpoint kabulü açık. **54/94 (~%57),40 açık** değişmedi.
+
+
 ## 🔴✓ Fresh WinPS hizmet kontrolü kaynak düzeltmesi ve CI kabulü tamam — 26 Ekim 2026
 
 **PR91 / kaynak b6b4c343375e8f426903904c0bdcfa1d464d7300 / merge 1bda18c04740d6b9eff5b9bcd8657b825ae16ee8**. Kontrol yardımcısı **System.ServiceProcess** assembly'sini native helper cache dönüşünden önce açıkça yükler; controller tipleri tam adla kullanılır. İmzalı builder'ın yalnız ilgili control kaynak pini güncellendi. Eski immutable imzalı kaynak ZIP'i değiştirilmedi; arşiv testi bağımsız checkout ile kendi sabit tarihsel kaynak commit'ini karşılaştırır.
