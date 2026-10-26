@@ -15,6 +15,7 @@ namespace AuthWire.Connector {
   [DllImport("advapi32.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern IntPtr CreateServiceW(IntPtr manager,string name,string display,uint access,uint type,uint start,uint error,string binary,string group,IntPtr tag,string depends,string account,string password);
   [DllImport("advapi32.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern IntPtr OpenServiceW(IntPtr manager,string name,uint access);
   [DllImport("advapi32.dll",SetLastError=true)]static extern bool ChangeServiceConfig2W(IntPtr service,uint level,IntPtr data);
+  [DllImport("advapi32.dll",SetLastError=true)]static extern bool QueryServiceConfig2W(IntPtr service,uint level,IntPtr data,uint size,out uint needed);
   [DllImport("advapi32.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern bool ConvertStringSecurityDescriptorToSecurityDescriptorW(string text,uint revision,out IntPtr result,out uint size);
   [DllImport("advapi32.dll",SetLastError=true)]static extern bool SetServiceObjectSecurity(IntPtr service,uint info,IntPtr descriptor);
   [DllImport("advapi32.dll",SetLastError=true)]static extern bool DeleteService(IntPtr service);
@@ -53,6 +54,23 @@ namespace AuthWire.Connector {
    try{h=OpenServiceW(scm,name,0x10000);if(h==IntPtr.Zero)throw new Win32Exception(Marshal.GetLastWin32Error());Check(DeleteService(h));}
    finally{if(h!=IntPtr.Zero)CloseServiceHandle(h);CloseServiceHandle(scm);}
   }
+  public static bool RecoveryMatches(string name){
+   Name(name);IntPtr scm=OpenSCManagerW(null,null,1),h=IntPtr.Zero,p=IntPtr.Zero;
+   if(scm==IntPtr.Zero)throw new Win32Exception(Marshal.GetLastWin32Error());
+   try{
+    h=OpenServiceW(scm,name,1);if(h==IntPtr.Zero)throw new Win32Exception(Marshal.GetLastWin32Error());
+    uint size;QueryServiceConfig2W(h,2,IntPtr.Zero,0,out size);
+    if(size<Marshal.SizeOf(typeof(Failures))||size>8192)return false;
+    p=Marshal.AllocHGlobal((int)size);Check(QueryServiceConfig2W(h,2,p,size,out size));
+    var f=(Failures)Marshal.PtrToStructure(p,typeof(Failures));
+    if(f.Reset!=86400||!String.IsNullOrEmpty(f.Reboot)||!String.IsNullOrEmpty(f.Command)||f.Count!=3||f.Actions==IntPtr.Zero)return false;
+    for(int i=0;i<3;i++){
+     var a=(Action)Marshal.PtrToStructure(IntPtr.Add(f.Actions,i*8),typeof(Action));
+     if(a.Type!=(i<2?1u:0u)||a.Delay!=(i<2?60000u:0u))return false;
+    }
+    return true;
+   }finally{if(p!=IntPtr.Zero)Marshal.FreeHGlobal(p);if(h!=IntPtr.Zero)CloseServiceHandle(h);CloseServiceHandle(scm);}
+  }
  }
 }
 '@
@@ -68,7 +86,14 @@ function Invoke-AuthWireServiceControlCore {
  $c=Get-AuthWireServicePackage $RootPath $ExpectedPublisher
  $name=$c.ServiceName;$binary='"'+(Join-Path $RootPath 'AuthWireConnector.exe')+'"'
  $current=Get-CimInstance Win32_Service -Filter ("Name='"+$name+"'")
- if($current -and ($current.PathName -cne $binary -or $current.StartName -ine $c.AccountName -or $current.Description -cne (Get-AuthWireServiceMarker $c))){throw 'CONNECTOR_EXISTING_SERVICE_MISMATCH'}
+ $currentAccount=if($current){[string]$current.StartName}else{''}
+ if($currentAccount.StartsWith('.\')){$currentAccount=[Environment]::MachineName+$currentAccount.Substring(1)}
+ if($current -and ($current.PathName -cne $binary -or $currentAccount -ine $c.AccountName -or $current.Description -cne (Get-AuthWireServiceMarker $c))){throw 'CONNECTOR_EXISTING_SERVICE_MISMATCH'}
+ Initialize-AuthWirePermanentServiceControl
+ if($current -and $Mode -in @('Install','Start')){
+  $reg=Get-ItemProperty -LiteralPath ('HKLM:\SYSTEM\CurrentControlSet\Services\'+$name)
+  if($current.StartMode -ne 'Auto' -or -not $reg.PSObject.Properties['DelayedAutoStart'] -or $reg.DelayedAutoStart -ne 1 -or -not [AuthWire.Connector.PermanentServiceV1]::RecoveryMatches($name)){throw 'CONNECTOR_SERVICE_RECOVERY_POLICY_MISMATCH'}
+ }
  $created=$false
  if($Mode -eq 'Install' -and -not $current){
   Initialize-AuthWirePermanentServiceControl

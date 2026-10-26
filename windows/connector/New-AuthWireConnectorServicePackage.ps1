@@ -13,7 +13,7 @@ if((Get-Item -LiteralPath $ConfigPath).Length -gt 16384){throw 'CONNECTOR_CONFIG
 $c=Get-Content -LiteralPath $ConfigPath -Raw|ConvertFrom-Json
 if($c.PublisherThumbprint -cne $PublisherThumbprint){throw 'CONNECTOR_PUBLISHER_REJECTED'}
 $source=Join-Path $PSScriptRoot 'ConnectorServiceHost.cs';Assert-AuthWireChannelPath $source
-if((Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash -cne 'E8AB9F2D7B9D080A93D3741079D0556D66444FB6CF43A4B1015288751E821439'){throw 'CONNECTOR_HOST_SOURCE_REJECTED'}
+if((Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash -cne 'F228C76BC2057CD051D421F38F6E9DA863877557FB19C13D446C857541511FFC'){throw 'CONNECTOR_HOST_SOURCE_REJECTED'}
 $certificate=Get-Item -LiteralPath ('Cert:\LocalMachine\My\'+$PublisherThumbprint)
 if(-not $certificate.HasPrivateKey -or [DateTime]::UtcNow -lt $certificate.NotBefore.ToUniversalTime() -or [DateTime]::UtcNow -ge $certificate.NotAfter.ToUniversalTime()){throw 'CONNECTOR_SIGNER_UNAVAILABLE'}
 New-AuthWireServicePackageCore -Config $c -Publisher $certificate|ConvertTo-Json -Depth 4

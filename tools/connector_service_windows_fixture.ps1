@@ -61,6 +61,7 @@ try{
  Wait-Until {-not (Get-Service -Name $name -ErrorAction SilentlyContinue)} 10 'Unstarted service not removed'
  # Hosted AD is unavailable: use an explicitly isolated local account for real SCM health.
  $null=New-Service -Name $name -BinaryPathName $binary -Credential $credential -StartupType Automatic -Description $marker
+ Set-ItemProperty -LiteralPath ('HKLM:\SYSTEM\CurrentControlSet\Services\'+$name) -Name DelayedAutoStart -Value 1
  & sc.exe failure $name reset= 86400 actions= restart/60000/restart/60000/none/0|Out-Null
  if($LASTEXITCODE -ne 0){throw 'Fixture recovery configuration failed'}
  $statusPath=Join-Path $root 'state\status.json'

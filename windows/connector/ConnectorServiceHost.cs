@@ -75,7 +75,7 @@ namespace AuthWire.Connector {
    var self=Process.GetCurrentProcess();
    info.Arguments="-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File \""+Path.Combine(Root,"ConnectorServiceRuntime.ps1")+"\" -StopEventName \""+eventName+"\" -HostPid "+self.Id+" -HostStartedTicks "+self.StartTime.ToUniversalTime().Ticks;
    info.WorkingDirectory=Root;info.UseShellExecute=false;info.CreateNoWindow=true;
-   info.EnvironmentVariables.Remove("PSMODULEPATH");
+   info.EnvironmentVariables["PSModulePath"]=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),@"System32\WindowsPowerShell\v1.0\Modules");
    worker=Process.Start(info);
    watcher=new Thread(delegate(){
     worker.WaitForExit();if(!stopping)Environment.Exit(20);
