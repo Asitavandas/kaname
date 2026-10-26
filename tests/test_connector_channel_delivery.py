@@ -71,12 +71,18 @@ class ConnectorPublicMetadataTests(unittest.TestCase):
    n=runpy.run_path(str(SCRIPT))['public_metadata'].__globals__
    state=root/'state';certificate=(root/'web.crt').read_bytes()
    n.update(ROOT=SCRIPT.parents[2],STATE=state,trusted=lambda p:certificate)
+   from cryptography import x509
+   from cryptography.hazmat.primitives import hashes
+   n['peer_pin']=lambda _:x509.load_pem_x509_certificate(certificate).fingerprint(hashes.SHA256()).hex()
    from kaname.store import Store
    store=Store(state);snapshot=store.snapshot();audit=store.audit()
    value=n['public_metadata']()
    self.assertEqual(fixtures.ConnectorRegistryTests.authority['instance_id'],value['instance_id'])
    self.assertFalse(value['secrets_exported']);self.assertFalse(value['binding_created'])
    self.assertNotIn('PRIVATE KEY',json.dumps(value));self.assertNotIn('public_key_pem',value)
+   self.assertEqual(snapshot,store.snapshot());self.assertEqual(audit,store.audit())
+   n['peer_pin']=lambda _:'f'*64
+   with self.assertRaisesRegex(ValueError,'APPLIANCE_TLS_FILE_RUNTIME_DIFFERS'):n['public_metadata']()
    self.assertEqual(snapshot,store.snapshot());self.assertEqual(audit,store.audit())
   finally:fixtures.ConnectorRegistryTests.tearDownClass()
 

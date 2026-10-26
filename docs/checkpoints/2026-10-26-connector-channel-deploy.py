@@ -239,6 +239,14 @@ def backup_idle():
     value=subprocess.check_output(['/usr/bin/systemctl','show','authwire-backup.service','--property=ActiveState','--value'],text=True,timeout=10).strip()
     if value not in {'inactive','failed'}:raise GuardError('SCHEDULED_BACKUP_CURRENTLY_RUNNING')
 
+def peer_pin(certificate):
+    context=ssl.create_default_context(cafile='/etc/kaname-lab/web.crt')
+    connection=http.client.HTTPSConnection('10.35.50.246',8765,context=context,timeout=5,source_address=('127.0.0.1',0))
+    try:
+        connection.connect()
+        return hashlib.sha256(connection.sock.getpeercert(binary_form=True)).hexdigest()
+    finally:connection.close()
+
 def public_metadata():
     # Only public certificate/context fields; no TLS or database permission bypass.
     import sys
@@ -249,6 +257,7 @@ def public_metadata():
     with closing(sqlite3.connect((STATE/'kaname.sqlite3').as_uri()+'?mode=ro',uri=True,timeout=3)) as db:
         db.execute('BEGIN')
         context=probe._context(db)
+    if peer_pin(probe.web_certificate)!=context['appliance_tls_sha256']:raise GuardError('APPLIANCE_TLS_FILE_RUNTIME_DIFFERS')
     return {'format':'AuthWireConnectorAppliancePublicV1',**context,
             'base_url':'https://'+context['appliance_fqdn']+':8765/',
             'source_release':RELEASE,'version':'0.14.0-dev.35',
