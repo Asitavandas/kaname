@@ -1,0 +1,157 @@
+{
+  "event": "CONNECTOR_PERMANENT_HEALTH_SERVICE_SOURCE_ACCEPTED",
+  "date": "2026-10-26",
+  "timezone": "Europe/Istanbul",
+  "repository": "Asitavandas/kaname",
+  "pr": 86,
+  "source_head": "e743a8bc66b15f4dca5213fd35de8b02957d097d",
+  "merge_commit": "62e9be9d4e58bd06ad38f6aeffaf3dbb32dcdc5a",
+  "implementation": {
+    "component_scope": "Health-only persistent signed x64 Windows SCM service",
+    "new_ad_account_required": false,
+    "public_installer_default": "Inspect",
+    "install_creates_but_does_not_start": true,
+    "managed_account_password": "NULL to SCM; never retrieves/exports password",
+    "requires_existing_owned_gmsa_and_channel_key": true,
+    "bootstrap_and_package_publishers_independently_verified": true,
+    "reviewed_source_hashes_before_signing": true,
+    "source_bytes_locked_against_write_and_rename": true,
+    "source_body_canonicalization": "Anchored Authenticode suffix only, CRLF/LF normalized; embedded marker strings are not suffixes",
+    "hash_bound_immutable_runtime_configuration": true,
+    "admin_tools_system_administrators_only": true,
+    "service_runtime_files_readonly_and_host_executable_rx": true,
+    "service_state_directory_separate_modify": true,
+    "exact_runtime_sid_host_key_and_service_token_checks": true,
+    "system_x64_powershell51_allsigned_fixed_script_only": true,
+    "system_module_path_only": true,
+    "private_kill_on_close_job": true,
+    "parent_pid_and_start_ticks_fallback": true,
+    "duplicate_host_worker_guards": true,
+    "success_poll_seconds": 30,
+    "failure_backoff_seconds": [
+      30,
+      60,
+      120
+    ],
+    "scm_automatic_delayed_start": true,
+    "scm_restarts_seconds": [
+      60,
+      60
+    ],
+    "scm_final_recovery_action": "none",
+    "scm_failure_counter_reset_seconds": 86400,
+    "scm_external_command_or_reboot": false,
+    "stop_grace_seconds": 20,
+    "stop_scm_requested_seconds": 25,
+    "remove_retains_package_and_key": true,
+    "foreign_existing_state_refused": true,
+    "existing_package_overwrite_refused": true,
+    "http_timeout_configured_seconds": 5,
+    "timeout_not_universal_wall_clock_guarantee": "OS DNS/certificate validation may outlast SDK cancellation; service child cleanup is independently enforced",
+    "can_apply": false,
+    "directory_sync_ready": false,
+    "kerberos_ready": false
+  },
+  "validation": {
+    "new_native_service_checks": 23,
+    "public_signed_builder_exercised": true,
+    "default_public_inspection_no_mutation": true,
+    "public_non_gmsa_install_refusal_before_mutation": true,
+    "reviewed_source_tamper_refused_before_package": true,
+    "admin_code_acl_separation": true,
+    "actual_low_privilege_scm_process_sid": true,
+    "actual_pinned_https_to_python_handler": true,
+    "actual_outage_retry_recovery": true,
+    "actual_stop_and_crash_child_cleanup": true,
+    "actual_scm_crash_restart": true,
+    "tampered_payload_and_writable_config_rejected": true,
+    "key_acl_and_nonexport_policy_preserved": true,
+    "fixture_cleanup": "Own service/local account/LSA right/channel key/signing key/public trust entries/hosts aliases/owned directories cleaned",
+    "customer_gmsa_tested": false,
+    "actual_machine_boot_tested": false,
+    "foundation_tests": 774,
+    "foundation_skipped": 28,
+    "foundation_job": 121481542145,
+    "native_service_job": 121481542368,
+    "prior_channel_python_tests": 19,
+    "prior_native_cng_checks": 33,
+    "prior_key_checks": 8,
+    "prior_https_client_checks": 16,
+    "workflows": [
+      {
+        "id": 40295834725,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40295834859,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40295834855,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "conclusion": "success"
+      }
+    ],
+    "windows_jobs": [
+      {
+        "id": 121481542031,
+        "name": "windows-channel",
+        "conclusion": "success"
+      },
+      {
+        "id": 121481542237,
+        "name": "windows-bootstrap",
+        "conclusion": "success"
+      },
+      {
+        "id": 121481542313,
+        "name": "windows-scm-probe",
+        "conclusion": "success"
+      },
+      {
+        "id": 121481542368,
+        "name": "windows-service",
+        "conclusion": "success"
+      }
+    ],
+    "radius_rerun_in_this_pr": false,
+    "prior_system_retry_intermittence_root_cause_closed": false,
+    "development_fixes": [
+      "SCM dot-local account alias normalized; exact runtime SID validation retained",
+      "Native fixture status assertion uses the server's active volatile verifier, not a separate administrator registry instance",
+      "Canonical source pins anchor signature suffix to a complete marker line",
+      "Host executable gets RX separately from read-only script/config data"
+    ]
+  },
+  "customer": {
+    "live_version": "0.14.0-dev.34",
+    "appliance_deployed": false,
+    "dc01_service_installed": false,
+    "product_service_actions_executed": false,
+    "ad_accounts_created_changed_or_removed": false,
+    "existing_gmsa_modified": false,
+    "logon_rights_changed": false,
+    "spns_or_keytabs_changed": false,
+    "gpo_changed": false,
+    "certificates_or_trust_changed": false,
+    "private_keys_exported": false,
+    "endpoint_packages_changed": false,
+    "full_data_backup_created": false,
+    "daily_backup_timer_mutated": false
+  },
+  "open_gates": [
+    "Signed delivery and live appliance update with trusted metadata",
+    "Actual DC01 aw-deploy$ bootstrap/key/service/HTTPS acceptance",
+    "Real machine boot and policy-refresh acceptance",
+    "Staged signed upgrade/rollback and channel key/pin/publisher rotation",
+    "Bounded idempotent authenticated jobs/results",
+    "Directory catalog/live AD and Kerberos migration under existing single gMSA with owned SPN/rollback controls",
+    "Pilot/scale acceptance and dependency-based legacy account retirement",
+    "Old-backup trust re-approval and full appliance restore gate"
+  ],
+  "completed": 54,
+  "total": 94,
+  "formal_report_regenerated": false
+}

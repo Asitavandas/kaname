@@ -20,15 +20,16 @@ binding generation, AD computer GUID/FQDN, exact gMSA SID, appliance FQDN/TLS
 leaf SHA256 and a dedicated public channel key. A peer-supplied key cannot
 enroll or replace that binding. Durable administrative pairing/revocation is
 implemented by the companion registry described below. The actual Windows
-key provisioning and HTTPS health functions are implemented below; permanent
-service lifecycle and actual customer gMSA acceptance remain separate gates.
+key provisioning and HTTPS health functions are implemented below; health-only
+SCM host/runtime source is also prepared; actual customer gMSA acceptance and
+staged upgrade/rotation remain separate gates.
 
 The channel identity key is separate from the code-signing key and the Linux CA.
 It is not another AD account. Windows uses a persistent non-exportable
 machine RSA3072/4096 Software KSP signing-only key. The proof helper does not
 create a key or grant access. The companion preparation engine creates one
 dedicated key and grants only SYSTEM, Administrators and the exact gMSA SID;
-a permanent installer/lifecycle and actual gMSA health acceptance are still pending. Production
+health-only install/control sources are prepared; actual gMSA acceptance and staged upgrade/rotation are still pending. Production
 must not reuse the existing code-signing key as this channel key.
 
 ## Frame and proof
@@ -83,12 +84,13 @@ expires after90s independently of directory freshness or user authorization.
 
 ## Mandatory next integration gates
 
-- Actual customer acceptance of the dedicated key preparation, exact gMSA
-  access and HTTPS health roundtrip, followed by the permanent service lifecycle,
-  trusted runtime configuration, signing/install/upgrade/recovery and rotation.
-  Source helpers and hosted Windows transport fixtures do not establish an
-  installed customer Connector. Independent host/account/key confirmation remains
-  mandatory; pairing is an administrator trust decision, not host attestation.
+- Actual customer acceptance of the dedicated key preparation, exact gMSA,
+  health-only SCM service and HTTPS roundtrip. The signed host, protected runtime
+  configuration, install/control and recovery sources are prepared; signed
+  delivery, real boot/policy refresh and staged upgrade/rollback/rotation remain.
+  Hosted fixtures do not establish an installed customer Connector. Independent
+  host/account/key confirmation remains mandatory; pairing is a trust decision,
+  not host attestation.
 - Mutually authenticated, bounded job/result channel with exact operation and
   body binding, expiry, replay protection, idempotency and retry reconciliation.
   Health proof must never authorize arbitrary PowerShell or a GPO mutation.
@@ -187,8 +189,9 @@ available for a stale binding. Malformed stored records fail closed without repa
 `transport_active` follows recent verified health (90-second freshness); it is
 false after restart/expiry/revoke and is not SCM installation attestation.
 `can_apply/directory_sync_ready/kerberos_ready` remain false. Dedicated key
-preparation and outbound HTTPS health helpers are source-prepared; permanent
-service lifecycle, customer gMSA acceptance, jobs and legacy-account migration remain open.
+preparation, outbound HTTPS health and health-only SCM service sources are
+prepared. Customer gMSA acceptance, upgrade/rotation, jobs and legacy-account
+migration remain open.
 The new administrator API is source-prepared and tested; it has not been deployed
 to the customer's live dev.34 appliance.
 
@@ -254,11 +257,14 @@ An outbound denial cannot hold the rate-map lock during socket writes.
 The per-request .NET Framework HttpClientHandler uses TLS1.2, normal chain and
 FQDN validation, revocation checking and the exact enrolled SHA256 leaf pin.
 No redirect, HTTP, proxy, cookies, default credentials, global TLS callback or
-certificate-error bypass is allowed. A five-second complete-response deadline,
-16KiB response-header cap and4096-byte buffered-body cap apply, including slow
-response bodies. JSON replies are strict and reject duplicate/unknown fields,
+certificate-error bypass is allowed. Timeout/cancellation is configured to five
+seconds, with a16KiB response-header and4096-byte complete buffered-body cap.
+Slow response headers and bodies are tested. OS DNS/certificate operations can
+outlast that SDK timeout; it is not a universal wall-clock five-second guarantee.
+The service independently bounds child lifetime with a kill-on-close job. JSON replies are strict and reject duplicate/unknown fields,
 invalid encoding or authority overclaims. Caller-supplied binding/key parameters
-must come from the future trusted service configuration, not network input.
+come from the protected hash-bound service configuration described in
+WINDOWS_CONNECTOR_HEALTH_SERVICE.md, not network input.
 
 Hosted Windows tests create and remove a disposable machine CNG key and owned
 receipt directory, and exercise real HTTPS against the actual Python handler.
@@ -266,7 +272,29 @@ Only the disposable hosted runner temporarily trusts its public fixture
 certificate and adds loopback host aliases; both are restored in finally.
 These are not customer trust-store changes or proof of gMSA/SCM installation.
 Existing customer accounts, SPNs, signing keys, GPOs and endpoint packages remain
-unchanged. The next gate is the permanent service and actual gMSA acceptance.
+unchanged. The health-only permanent service is source-prepared below;
+actual gMSA, boot, delivery and upgrade/rotation acceptance remain pending.
+
+## Health-only permanent Windows service (source prepared)
+
+PR86 source e743a8bc66b15f4dca5213fd35de8b02957d097d; merge 62e9be9d4e58bd06ad38f6aeffaf3dbb32dcdc5a.
+The fixed signed x64 SCM host, reviewed-source-only package builder, protected
+runtime configuration, default read-only Inspector, owned gMSA installation and
+bounded network/crash/stop recovery are implemented. A private kill-on-close
+Windows job also covers blocked worker/descendant cleanup. The account password
+is neither read nor exported. No AD/GPO/Kerberos job or arbitrary command is added.
+
+Native Windows acceptance adds23 checks with an isolated temporary local account,
+actual SCM, machine CNG key and verified HTTPS against the Python handler.
+The public builder/Inspector, non-gMSA refusal and administrator-tool ACL
+separation are covered. Full foundation774 tests (28 environment skips), three
+relevant PR workflows and all four native Windows jobs pass. This is not actual
+DC01 gMSA/reboot acceptance. Existing packages are immutable in v1; staged
+upgrade/rollback and key/pin/publisher rotation remain open gates.
+
+See WINDOWS_CONNECTOR_HEALTH_SERVICE.md and
+checkpoints/2026-10-26-connector-permanent-service.json. The customer appliance
+remains dev.34; no customer service/account/key/trust/GPO mutation occurred.
 
 ## Installation identity namespaces
 

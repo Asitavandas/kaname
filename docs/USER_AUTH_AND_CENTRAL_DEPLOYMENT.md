@@ -4,6 +4,19 @@ Tarih: 26 Ekim 2026, Europe/Istanbul.
 Durum: A03/A04 kapsamı açık. Güncel ilerleme kaydı: CURRENT_STATUS.md.
 Bu belge mevcut kullanıcı kimliği ve merkezi dağıtım yol haritasını açıklar.
 
+## 🔴✓ Kalıcı Windows Connector health hizmetinin kaynak hazırlığı tamamlandı — 26 Ekim 2026
+
+- **PR86 / kaynak e743a8bc66b15f4dca5213fd35de8b02957d097d / main merge 62e9be9d4e58bd06ad38f6aeffaf3dbb32dcdc5a**.
+- 🔴✓ Sabit amaçlı, imzalı **x64 Windows hizmeti**, korunan ve hash'e bağlı yerel yapılandırma, mevcut gMSA SID'si ve ayrı kanal anahtarıyla çalışma kaynağı hazır. Varsayılan yönetim komutu yalnız Inspect yapar. Install mevcut gMSA'yı NULL parola ile kullanır, hizmeti oluşturur ama başlatmaz; yeni hesap/hak/GPO/SPN/trust değişikliği yapmaz. Remove yalnız hizmet kaydını kaldırır, paket ve anahtarı korur.
+- 🔴✓ Paket hazırlayıcı yalnız gözden geçirilmiş kaynak gövdelerini imzalar; kaynak dosyaları kontrol boyunca yazma/yeniden adlandırmaya karşı kilitlidir. Çalışma kodu/yapılandırma hizmete salt okunur, yönetim araçları yalnız SYSTEM/Administrators erişimindedir; ayrı durum dizini hizmete yazılabilir. Farklı mevcut hizmet, bozulmuş paket, değişmiş izinler veya başlangıç/toparlanma ayarı sessizce düzeltilmez.
+- 🔴✓ Otomatik gecikmeli açılış ve iki adet60 saniyelik SCM yeniden başlatma tanımlandı; dış komut/reboot yok. Başarılı bağlantı30 saniyede yenilenir, hatada30/60/120 saniye beklenir. Özel kill-on-close Windows job nesnesi, parent PID/başlangıç zamanı ve duplicate-worker kontrolleri alt işlemleri host ömrüne bağlar. Durdurmada20 saniye kontrollü bekleme ardından job her koşulda kapatılır.
+- 🔴✓ **23 yeni gerçek Windows kontrolü** geçti: public imzalı builder ve varsayılan Inspector, değiştirilmiş kaynak reddi, gMSA olmayan kurulumun yazmadan reddi, yönetim ACL ayrılığı, gerçek düşük yetkili SCM süreç SID'si ve HTTPS health, tekrarlı başlatma, kesinti/toparlanma, stop/crash alt işlem temizliği, SCM yeniden başlatması, bozuk kod/yazılabilir config reddi ve anahtarı koruyan kaldırma. Fixture hesabı/servisi/LSA hakkı/anahtar/sertifika/hosts değişiklikleri temizlenir; bu gerçek müşteri gMSA testi değildir.
+- 🔴✓ Son kaynakta **774 genel test /28 ortam atlaması**, ilgili üç PR workflow ve dört Windows job başarılı. Önceki kanal19 /native CNG33 /anahtar8 /HTTPS16 kontrolleri de geçti. Bu PR Linux/RADIUS/Windows uç istemcisi kodunu değiştirmedi; önceki gerçek RADIUS kanıtı korunur, yeniden çalıştırılmış sayılmaz.
+- **Canlı uygulama dev.34 kaldı; DC01'e hizmet kurulmadı.** Gerçek aw-deploy$ ile kurulum/bağlantı, gerçek reboot ve GPO yenilemesi kabulü, imzalı teslimat ve appliance güncellemesi açıktır. V1 mevcut paketin üstüne yazmayı reddeder; aşamalı upgrade/rollback, kanal/pin ve yayıncı rotasyonu ayrıca tamamlanacak. HTTPS timeout5 saniye yapılandırılır; DNS/OS sertifika işlemleri daha uzun sürebileceğinden mutlak beş saniye garantisi verilmez; hizmet kapatma bağımsız job temizliğiyle korunur.
+- Health AD/Kerberos/GPO yetkisi değildir: **can_apply/directory_sync_ready/kerberos_ready=false**. Sonra sınırlı iş/sonuç ve dizin/canlı AD/Kerberos tek gMSA geçişi, pilot/ölçek kabulü ve eski hesapların kontrollü kaldırılması gelir. **A03/A04 açık;54/94 (%57),40 açık** değişmedi. Tam yedek ve resmi rapor yeniden üretilmedi; canlı hizmet/hesap/sertifika/paket işlemi yapılmadı.
+- Ayrıntı: **WINDOWS_CONNECTOR_HEALTH_SERVICE.md**. Kanıt: **checkpoints/2026-10-26-connector-permanent-service.json**.
+
+
 ## 🔴✓ Ayrı Windows kanal anahtarı ve gerçek doğrulanmış HTTPS durum bağlantısı — 26 Ekim 2026
 
 - **PR85 / kaynak 8fc2859ccccbfb72a46b586cd4a8ec8507a44dfe / main merge 6ac3a0f86395b7b13ad74e8cdfaf37e202fb9dff**.
