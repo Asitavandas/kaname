@@ -2,7 +2,7 @@ param([Parameter(Mandatory=$true)][string]$Directory)
 $ErrorActionPreference='Stop';Set-StrictMode -Version 2
 if($env:RUNNER_ENVIRONMENT -ne 'github-hosted'){throw 'Hosted Windows fixture only'}
 $source=Join-Path $PSScriptRoot '..\windows\connector'
-foreach($f in @('Compare-AuthWireSigningKeyAcl.ps1','ConnectorChannelTypes.ps1','ConnectorChannelKey.ps1','New-AuthWireConnectorHealthProof.ps1','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1')){. (Join-Path $source $f)}
+foreach($f in @('Compare-AuthWireSigningKeyAcl.ps1','ConnectorChannelTypes.ps1','ConnectorChannelKey.ps1','New-AuthWireConnectorHealthProof.ps1','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Invoke-AuthWireConnectorProbeJob.ps1')){. (Join-Path $source $f)}
 $checks=0
 function Check([bool]$v,[string]$m){if(-not $v){throw $m};$script:checks++}
 function Reject([scriptblock]$s,[string]$m){$caught=$false;try{$null=& $s}catch{$caught=$true};Check $caught $m}
@@ -57,7 +57,7 @@ try{
  if(Test-Path -LiteralPath $root){$root=$null;throw 'Fixture package directory collision'}
  $config=@{Version=1;ReleaseId=[guid]::NewGuid().ToString('D');ServiceName=$name;AccountName=$credential.UserName;PublisherThumbprint=$publisher.Thumbprint;BaseUrl=('https://'+$b.appliance_fqdn+':'+$base.port+'/');Binding=$b;KeyName=$key;ExpectedKeySddl=$receipt.ExpectedKeySddl;RootPath=$root}|ConvertTo-Json -Depth 6|ConvertFrom-Json
  $buildSource=Join-Path $Directory 'reviewed-source';$null=New-Item -ItemType Directory -Path $buildSource
- foreach($file in @('ConnectorServiceHost.cs','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Install-AuthWireConnectorService.ps1','New-AuthWireConnectorServicePackage.ps1','Initialize-AuthWireConnectorChannelKey.ps1','ConnectorChannelKey.ps1','ConnectorChannelTypes.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1')){
+ foreach($file in @('ConnectorServiceHost.cs','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Install-AuthWireConnectorService.ps1','New-AuthWireConnectorServicePackage.ps1','Initialize-AuthWireConnectorChannelKey.ps1','ConnectorChannelKey.ps1','ConnectorChannelTypes.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1','Invoke-AuthWireConnectorProbeJob.ps1')){
   $path=Join-Path $buildSource $file;Copy-Item -LiteralPath (Join-Path $source $file) -Destination $path
   if($file.EndsWith('.ps1')){$signed=Set-AuthenticodeSignature -FilePath $path -Certificate $publisher -HashAlgorithm SHA256;if($signed.Status.ToString() -ne 'Valid'){throw 'Fixture source signing failed'}}
  }
@@ -70,6 +70,10 @@ try{
   Check (-not (Test-Path -LiteralPath $root)) 'Rejected source produces no package'
  }finally{[IO.File]::WriteAllBytes($inputWorker,$inputBytes)}
  $package=& $builder -ConfigPath $configPath -PublisherThumbprint $publisher.Thumbprint|ConvertFrom-Json
+ Initialize-AuthWireChannelTypes
+ Check (-not [AuthWire.Connector.ChannelTypesV1]::JobOffer('{"format":1,"format":1}')) 'Job reply parser refuses duplicate JSON fields'
+ Check (-not [AuthWire.Connector.ChannelTypesV1]::JobOffer('{"command":"powershell.exe","payload":{"x":1}}')) 'Job reply parser refuses arbitrary commands and nested payloads'
+ Check (-not (Test-AuthWireJobGuid '00000000-0000-0000-0000-000000000000')) 'Job identity refuses the empty GUID'
  Check ($package.PackagePrepared -and -not $package.ServiceCreated -and -not $package.ServiceStarted) 'Build creates signed package, not an AD account or service'
  $inspect=Invoke-AuthWireServiceControlCore -Mode Inspect -RootPath $root -ExpectedPublisher $publisher.Thumbprint
  Check (-not $inspect.ServiceInstalled -and -not $inspect.ServiceCreated) 'Inspect creates no service'
@@ -106,6 +110,8 @@ try{
  Write-Host ('SERVICE_FIXTURE_PUBLIC_CONFIG '+(@{path=$debug.PathName;expected_path=$binary;account=$debug.StartName;expected_account=$config.AccountName;description=$debug.Description;expected_description=$marker}|ConvertTo-Json -Compress))
  $r=Invoke-FreshPublicControl Start
  Wait-Until {$s=Read-Status;return ($s -and $s.Healthy)} 35 'Real signed service did not prove HTTPS health'
+ Wait-Until {$s=Read-Status;return ($s -and $s.ProbeChannelVerified -and $s.ProbeJobsCompleted -ge 1)} 35 'Real signed service did not complete the bounded probe job'
+ Check (Test-AuthWireJobGuid (Read-Status).LastProbeJobId) 'Real SCM worker completed a scoped read-only probe job over verified HTTPS'
  $s=Read-Status;$first=$s.WorkerPid
  Check ($r.ServiceInstalled -and $s.RuntimeSid -ceq $sid -and -not $s.CanApply -and -not $s.DirectorySyncReady -and -not $s.KerberosReady) 'Actual low-privilege SCM worker proves health without AD/GPO authority'
  $process=Get-CimInstance Win32_Process -Filter ("ProcessId="+$first)
@@ -144,7 +150,7 @@ try{
  $k=[Security.Cryptography.CngKey]::Open($key,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::MachineKey)
  try{$path=Join-Path (Join-Path $env:ProgramData 'Microsoft\Crypto\Keys') $k.UniqueName;Check ((Compare-AuthWireSigningKeyAcl $receipt.ExpectedKeySddl (Get-Acl -LiteralPath $path).Sddl).AclEquivalent -and [int]$k.ExportPolicy -eq 0) 'All service lifecycle tests preserve the non-exportable key and its ACL'}finally{$k.Dispose()}
  Check (($freshControlModes -join ',') -ceq 'Inspect,Start,Start,Stop,Start,Remove') 'Signed public lifecycle works across six independent clean WinPS processes'
- @{checks=$checks;real_signed_scm=$true;actual_https=$true;low_privilege_runtime=$true;automatic_outage_recovery=$true;crash_recovery=$true;orphan_cleanup=$true;fresh_public_control=$true;fresh_control_modes=$freshControlModes;customer_gmsa_tested=$false;ad_changed=$false;gpo_changed=$false}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Directory 'service-result.json') -Encoding UTF8
+ @{release_id=$config.ReleaseId;checks=$checks;real_signed_scm=$true;actual_https=$true;low_privilege_runtime=$true;automatic_outage_recovery=$true;crash_recovery=$true;orphan_cleanup=$true;fresh_public_control=$true;fresh_control_modes=$freshControlModes;customer_gmsa_tested=$false;ad_changed=$false;gpo_changed=$false}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Directory 'service-result.json') -Encoding UTF8
 }finally{
  if($name){$service=Get-Service -Name $name -ErrorAction SilentlyContinue;if($service){if($service.Status -ne 'Stopped'){Stop-Service -Name $name -Force;$service.WaitForStatus([ServiceProcess.ServiceControllerStatus]::Stopped,[TimeSpan]::FromSeconds(35))};$service.Dispose();Initialize-AuthWirePermanentServiceControl;[AuthWire.Connector.PermanentServiceV1]::Remove($name)}}
  if($rightsAdded){[AuthWire.Connector.FixtureServiceRightCleanupV1]::RemoveFixtureRight($sid,'SeServiceLogonRight')}

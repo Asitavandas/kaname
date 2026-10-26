@@ -96,7 +96,7 @@ function connectorParseCandidate(raw){
  return value;
 }
 function connectorClearPreview(){connectorPreview=null;$('connector-preview').hidden=true;$('connector-preview-summary').replaceChildren();$('connector-key-confirm').value='';}
-function resetConnector(){connectorTicket++;connectorState=null;connectorBusy=false;connectorReadable=false;connectorUncertain=null;connectorClearPreview();$('connector-candidate').value='';$('connector-summary').replaceChildren();$('connector-status').textContent='';connectorFeedback('');for(const url of connectorURLs)URL.revokeObjectURL(url);connectorURLs.clear();$('connector-form').hidden=true;}
+function resetConnector(){connectorTicket++;connectorState=null;connectorBusy=false;connectorReadable=false;connectorUncertain=null;connectorClearPreview();$('connector-candidate').value='';$('connector-summary').replaceChildren();$('connector-status').textContent='';connectorFeedback('');for(const url of connectorURLs)URL.revokeObjectURL(url);connectorURLs.clear();$('connector-form').hidden=true;resetConnectorJobs();}
 function connectorPermissions(){
  const read=!!can('system.connectors'),write=!!can('system.connectors',true);
  if(!read){resetConnector();return;}
@@ -111,6 +111,7 @@ function connectorPermissions(){
  $('connector-reconcile').hidden=!connectorUncertain;$('connector-reconcile').disabled=connectorBusy||!read;
  $('connector-export').hidden=!connectorState?.paired||!connectorState?.scope_matches;
  $('connector-export').disabled=connectorBusy||!read;
+ connectorJobPermissions();
 }
 function connectorRow(parent,title,value){const line=depNode('p');line.append(depNode('strong',title+': '),depNode('span',value));parent.append(line);}
 function renderConnector(){
@@ -125,7 +126,7 @@ function connectorFinished(){connectorUncertain=null;connectorClearPreview();$('
 async function loadConnector(){
  if(connectorBusy||!can('system.connectors'))return;
  const generation=authGeneration,ticket=++connectorTicket;connectorBusy=true;connectorReadable=false;connectorClearPreview();connectorPermissions();
- try{const s=await api('/api/deployment/connector');if(generation!==authGeneration||ticket!==connectorTicket||!can('system.connectors'))return;connectorState=s;connectorReadable=true;if(connectorUncertain){if(connectorReadMatches(s,connectorUncertain.after))connectorFinished();else connectorFeedback('Kayıt sonucu henüz doğrulanamadı. Eşleştirme isteği tekrarlanmadı; güncel durumu inceleyin.',true);}renderConnector();}
+ try{const s=await api('/api/deployment/connector');if(generation!==authGeneration||ticket!==connectorTicket||!can('system.connectors'))return;connectorState=s;connectorReadable=true;if(connectorUncertain){if(connectorReadMatches(s,connectorUncertain.after))connectorFinished();else connectorFeedback('Kayıt sonucu henüz doğrulanamadı. Eşleştirme isteği tekrarlanmadı; güncel durumu inceleyin.',true);}renderConnector();if(s.paired&&s.scope_matches)await loadConnectorJobs();}
  catch(error){if(generation===authGeneration&&ticket===connectorTicket)connectorFeedback(connectorError(error),true);}
  finally{if(generation===authGeneration&&ticket===connectorTicket){connectorBusy=false;connectorPermissions();}}
 }
@@ -163,3 +164,62 @@ function exportConnectorBinding(){
 }
 $('connector-form').addEventListener('submit',previewConnector);$('connector-refresh').addEventListener('click',loadConnector);$('connector-reconcile').addEventListener('click',loadConnector);$('connector-apply').addEventListener('click',applyConnector);$('connector-export').addEventListener('click',exportConnectorBinding);
 $('connector-candidate').addEventListener('input',()=>{if(!connectorBusy){connectorClearPreview();connectorFeedback('');}connectorPermissions();});$('connector-key-confirm').addEventListener('input',connectorPermissions);
+
+// Read-only probe tasks. An uncertain create is reconciled only by GET/id.
+let connectorJobsState=null,connectorJobBusy=false,connectorJobTicket=0,connectorJobPreview=null,connectorJobUncertain=null;
+function connectorJobFeedback(text){$('connector-job-feedback').textContent=text;}
+function resetConnectorJobs(){connectorJobTicket++;connectorJobsState=null;connectorJobBusy=false;connectorJobPreview=null;connectorJobUncertain=null;$('connector-jobs').hidden=true;$('connector-job-list').replaceChildren();$('connector-job-preview').hidden=true;$('connector-job-capability').textContent='';connectorJobFeedback('');}
+function connectorJobPermissions(){
+ const read=!!can('system.connectors'),write=!!can('system.connectors',true),paired=!!connectorState?.paired&&!!connectorState?.scope_matches;
+ $('connector-jobs').hidden=!read||!paired;
+ if(!write&&connectorJobPreview){connectorJobTicket++;connectorJobPreview=null;connectorJobBusy=false;}
+ $('connector-job-preview').hidden=!write||!connectorJobPreview;
+ $('connector-job-preview-button').hidden=!write;
+ $('connector-job-preview-button').disabled=connectorBusy||connectorJobBusy||!!connectorJobUncertain||!paired||!connectorJobsState;
+ $('connector-job-create').disabled=connectorBusy||connectorJobBusy||!write||!connectorJobPreview||!!connectorJobUncertain;
+ $('connector-job-cancel').disabled=connectorJobBusy;
+ $('connector-job-refresh').disabled=connectorJobBusy||!read;
+}
+function renderConnectorJobs(){
+ const s=connectorJobsState,box=$('connector-job-list');box.replaceChildren();if(!s)return;
+ $('connector-job-capability').textContent=s.worker_probe_ready?'Salt okunur görev kanalı hazır.':'Connector görev desteği henüz doğrulanmadı. Gönderilen test görevi bağlantı bekleyebilir.';
+ const names={queued:'Bağlantı bekliyor',leased:'Sonuç bekleniyor',completed:'Tamamlandı',expired:'Süresi doldu',obsolete:'Eşleştirme değişti'};
+ for(const j of s.jobs){const row=depNode('tr');row.append(depNode('td',new Date(j.created_at*1000).toLocaleString()),depNode('td',j.id),depNode('td','Bağlantı testi'),depNode('td',names[j.state]||'Bilinmiyor'),depNode('td',j.result?.release_id||'—'));box.append(row);}
+ if(!s.jobs.length){const row=depNode('tr'),cell=depNode('td','Henüz görev oluşturulmadı.');cell.colSpan=5;row.append(cell);box.append(row);}
+ connectorJobPermissions();
+}
+async function loadConnectorJobs(){
+ if(connectorJobBusy||!can('system.connectors')||!connectorState?.paired||!connectorState?.scope_matches)return;
+ const generation=authGeneration,ticket=++connectorJobTicket;connectorJobBusy=true;connectorJobPreview=null;connectorJobPermissions();
+ try{const s=await api('/api/deployment/connector/jobs');if(generation!==authGeneration||ticket!==connectorJobTicket||!can('system.connectors'))return;
+  if(s.probe_only!==true||s.can_apply!==false||!Array.isArray(s.jobs))throw Error('Görev durumu doğrulanamadı.');
+  connectorJobsState=s;
+  if(connectorJobUncertain){if(s.jobs.some(j=>j.id===connectorJobUncertain)){connectorJobUncertain=null;connectorJobFeedback('Test görevinin kaydedildiği doğrulandı.');}else connectorJobFeedback('Görev kaydı henüz doğrulanamadı. Gönderme isteği tekrarlanmadı; durumu yenileyin.');}
+  renderConnectorJobs();
+ }catch(error){if(generation===authGeneration&&ticket===connectorJobTicket)connectorJobFeedback(error.message||'Görevler okunamadı.');}
+ finally{if(generation===authGeneration&&ticket===connectorJobTicket){connectorJobBusy=false;connectorJobPermissions();}}
+}
+async function previewConnectorJob(){
+ if(connectorJobBusy||connectorBusy||connectorJobUncertain||!connectorJobsState||!can('system.connectors',true))return;
+ const generation=authGeneration,ticket=++connectorJobTicket,intent={expected_revision:connectorJobsState.revision,job_id:crypto.randomUUID(),operation:'connector.probe'};
+ connectorJobBusy=true;connectorJobPreview=null;connectorJobFeedback('');connectorJobPermissions();
+ try{const p=await api('/api/deployment/connector/jobs/preview',intent);if(generation!==authGeneration||ticket!==connectorJobTicket||!can('system.connectors',true))return;
+  if(p.job_id!==intent.job_id||p.operation!=='connector.probe'||p.read_only!==true||p.gpo_changed!==false||p.can_apply!==false||!/^[a-f0-9]{64}$/.test(p.preview_hash))throw Error('Görev önizlemesi doğrulanamadı.');
+  connectorJobPreview={intent,preview_hash:p.preview_hash};
+ }catch(error){if(generation===authGeneration&&ticket===connectorJobTicket)connectorJobFeedback(error.code==='REVISION_CONFLICT'?'Bilgiler değişmiş. Görev durumunu yenileyip yeniden önizleyin.':error.message||'Görev önizlenemedi.');}
+ finally{if(generation===authGeneration&&ticket===connectorJobTicket){connectorJobBusy=false;connectorJobPermissions();}}
+}
+async function createConnectorJob(){
+ const p=connectorJobPreview;if(!p||connectorJobBusy||connectorBusy||connectorJobUncertain||!can('system.connectors',true))return;
+ const generation=authGeneration,ticket=++connectorJobTicket;connectorJobBusy=true;connectorJobPermissions();
+ try{const r=await api('/api/deployment/connector/jobs/create',{...p.intent,preview_hash:p.preview_hash});if(generation!==authGeneration||ticket!==connectorJobTicket||!can('system.connectors',true))return;
+  if(r.job_id!==p.intent.job_id||r.recorded!==true||r.read_only!==true||r.gpo_changed!==false)throw Error('Görev kaydı doğrulanamadı.');
+  connectorJobFeedback('Test görevi kaydedildi. Sonucu görmek için görev durumunu yenileyin.');connectorJobPreview=null;
+ }catch(error){if(generation!==authGeneration||ticket!==connectorJobTicket)return;if(!error.status||error.status>=500){connectorJobUncertain=p.intent.job_id;connectorJobFeedback('Gönderim sonucu kesinleşmedi. İstek tekrarlanmadı; görev durumunu yenileyin.');}else connectorJobFeedback(error.message||'Görev oluşturulamadı.');connectorJobPreview=null;}
+ finally{if(generation===authGeneration&&ticket===connectorJobTicket){connectorJobBusy=false;connectorJobPermissions();}}
+ if(generation===authGeneration&&ticket===connectorJobTicket&&!connectorJobUncertain)await loadConnectorJobs();
+}
+$('connector-job-refresh').addEventListener('click',loadConnectorJobs);
+$('connector-job-preview-button').addEventListener('click',previewConnectorJob);
+$('connector-job-create').addEventListener('click',createConnectorJob);
+$('connector-job-cancel').addEventListener('click',()=>{if(!connectorJobBusy){connectorJobPreview=null;connectorJobPermissions();}});
