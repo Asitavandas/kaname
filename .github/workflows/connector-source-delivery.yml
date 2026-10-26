@@ -1,0 +1,18 @@
+name: AuthWire reviewed Windows source delivery checks
+on:
+  pull_request:
+    paths: ['docs/checkpoints/2026-10-26-dc01-channel-prepare.ps1', 'tools/connector_source_delivery_windows_check.ps1', '.github/workflows/connector-source-delivery.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reviewed-delivery:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Native PowerShell 5.1 reviewed-only signing and protected source delivery with cleanup
+        shell: powershell
+        run: tools/connector_source_delivery_windows_check.ps1
