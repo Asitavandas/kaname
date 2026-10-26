@@ -20,6 +20,15 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ İlk merkezi Windows ağ profili ZIP paketi doğrulandı — 26 Ekim 2026
+
+Operatörün yüklediği **AuthWire-Network-Profiles.zip** bağımsız yerel incelemeden geçti. ZIP SHA256 **528a793a637e2a8bdd30808acf7a624b83b125419d1ef1c8077249955a146e38**; tam **7 benzersiz dosya**, CRC doğru, manifestteki **6/6 SHA256** eşleşiyor. Plan **524653f5-1359-46f5-84a5-46355bb82aff /v1**, sertifika profili **e3597842-3499-4ace-aaf3-29890eabd908 /v3**, snapshot revision **84**, preview hash **ae98c8426953aced3f70bebfdc701cd85be52e3a08f9434a7d087a6bdb6ca9b7**. Cached AD üyeliğinde **2 etkin /2 toplam**, **0 unresolved**; örnekler **2GL13ZU$** ve **VV06**. Snapshot zamanı **2026-10-26T19:54:34.314927+00:00**.
+
+Her iki XML'de **machine / EAP-TLS (13)**, sunucu **kaname.vizyonveri.local**, kök **C789A0595ADB95A6BE4534D01B1D205F6C37DE18**, server/name validation açık ve kullanıcıdan sunucu kabulü isteme kapalı. Wi-Fi **VV_802.1X / WPA2-AES**. Açık kökün kendi imzası, issuer'ın kök imzası, iki CA'nın güncelliği ve root SHA1/SHA256 eşleşmesi doğrulandı. Özel anahtar/çalıştırılabilir içerik yok. Manifest eşleşmesi iç bütünlüktür; paket Authenticode imzalı dağıtım sayılmaz. RADIUS leaf pakette yoktur, planın trust.ready/leaf SHA256 değeri ZIP'ten bağımsız leaf zincir kabulü sayılmaz. Windows native import, GPO uygulaması ve endpoint kabulü bu paketle henüz yapılmadı.
+
+İndirme bu denemede başarılı; önceki donmanın kök nedeni belirlenmedi. İkinci operatör görüntüsündeki ek bağlantı testi **f4857612-8413-41c0-9ba2-4276ff6cd9e1** de Tamamlandı; yeni dağıtım planı/GPO uygulaması olarak yorumlanmaz. GPO/AD/endpoint değişmedi. Sonraki adım owned deployment GPO **8c6808fd-a382-4bf2-9c9c-d9e1d46082a3** üzerinde güncel yalnız okuma ile marker/izin/link/ayar durumunu yeniden toplamak; korumalı trust GPO'ya dokunulmayacak. **54/94 (~%57),40 açık** değişmedi.
+
+
 ## 🔴✓ İlk merkezi Windows pilot planı önizlendi — 26 Ekim 2026
 
 Operatörün **image(20261026-193519).png** görüntüsü doğrudan incelendi: **AuthWire Pilot - Merkezi Windows · v1**, **2 etkin /2 toplam bilgisayar**, bilgisayar kimliği, **Ethernet + Wi-Fi / VV_802.1X**, **kaname.vizyonveri.local**, bilgisayar sertifika profili **AuthWire-Pilot-Computers · v3** ve kök **C789A0595ADB95A6BE4534D01B1D205F6C37DE18** görünüyor. AD okuma zamanı **2026-10-26T19:24:32.826510+00:00**. Görsel SHA256 **b718b9660e8738254dd87c1519bcbda4fe2bd1dd3980905bf89e6b8fa564faba**. Artifact blocker görünmüyor ve **Profil XML paketini indir** düğmesi kullanılabilir. Bu operatör önizleme kanıtıdır; bağımsız canlı API/SQL incelemesi değildir.

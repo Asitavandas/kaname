@@ -1,0 +1,49 @@
+{
+  "event": "FIRST_CENTRAL_WINDOWS_NETWORK_PROFILE_ZIP_VERIFIED",
+  "date": "2026-10-26",
+  "basis": "operator_uploaded_archive_independently_inspected",
+  "archive": "AuthWire-Network-Profiles.zip",
+  "sha256": "528a793a637e2a8bdd30808acf7a624b83b125419d1ef1c8077249955a146e38",
+  "plan_id": "524653f5-1359-46f5-84a5-46355bb82aff",
+  "plan_version": 1,
+  "preview_hash": "ae98c8426953aced3f70bebfdc701cd85be52e3a08f9434a7d087a6bdb6ca9b7",
+  "revision": 84,
+  "catalog_synced_at": "2026-10-26T19:54:34.314927+00:00",
+  "machine_profile_id": "e3597842-3499-4ace-aaf3-29890eabd908",
+  "machine_profile_version": 3,
+  "computer_group_sid": "S-1-5-21-34256453-3348971241-2809240126-1647",
+  "target_sample_names": [
+    "2GL13ZU$",
+    "VV06"
+  ],
+  "target_count": 2,
+  "enabled": 2,
+  "unresolved": 0,
+  "checks": {
+    "zip_crc": true,
+    "unique_exact_seven_files": true,
+    "six_manifest_file_sha256_matches": true,
+    "manifest_plan_identity_consistent": true,
+    "root_self_signature_valid": true,
+    "issuer_signed_by_root": true,
+    "ca_certificates_current": true,
+    "root_fingerprints_match_plan": true,
+    "both_xml_machine_eap_tls_type_13": true,
+    "both_xml_server_name_and_root_pinned": true,
+    "both_xml_server_validation_enabled": true,
+    "user_prompt_disabled": true,
+    "no_private_key_or_executable_present": true
+  },
+  "root_thumbprint": "C789A0595ADB95A6BE4534D01B1D205F6C37DE18",
+  "server_name": "kaname.vizyonveri.local",
+  "ssid": "VV_802.1X",
+  "limitations": [
+    "Manifest hashes verify internal consistency, not an Authenticode package signature",
+    "RADIUS leaf is not included; trust.ready and leaf hash in plan are server-reported, not independently revalidated from this ZIP",
+    "Windows native import, GPO execution and endpoint authentication not tested with this package",
+    "Earlier freeze root cause remains unknown; this upload demonstrates a successful download only"
+  ],
+  "gpo_changed_by_inspection": false,
+  "endpoint_changed": false,
+  "next_gate": "Fresh read-only inspection of owned deployment GPO and current permissions, links and settings before implementing controlled deployment execution"
+}
