@@ -18,6 +18,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## 🔴✓ dev.37 Linux kurulumu operatör çıktısıyla doğrulandı — 26 Ekim 2026
+
+Operatör **CONNECTOR_PROBE_JOBS_FINISHED**, verified=true, **0.14.0-dev.37 / 280390e081818685969fb3327ace2c074e94e433** sonucunu paylaştı. Yeni **GET /api/deployment/connector/jobs** dahil tüm önce/sonra okumalar 200. Protected-files, broker-process, radius-process, timers ve business-state kontrolleri başarılı. RADIUS **1243360** korunmuş ve yeniden başlatılmamış; broker süreci korunmuş. Policy/GPO/sertifika/Windows paketleri/uç noktaları değişmedi; pairing veya probe işi oluşturulmadı. Tam veri yedeği alınmadı, günlük timer korundu. Kanıt: **/var/lib/authwire-updates/connector-probe-jobs-dev37-20261026T180928Z-bc5961d6**. Bu operatör kurulum çıktısı kabulüdür; bağımsız asistan API okuması olarak sunulmaz.
+
+**Sırada panel kabulü:** Sistem → Windows bağlantısı, test görevi önizleme/gönderme ve görev listesi görünümü. Henüz görev göndermeyin; mevcut DC01 servisi health-only olduğundan görev desteğinin doğrulanmadığı mesajı beklenir. Ayrı imzalı Windows worker upgrade/rollback ve gerçek müşteri probe işi kabulü hâlâ açık. **GPO apply kapalı**, dizin/Kerberos ve tek hesap geçişi açık. **54/94 (~%57),40 açık** değişmedi. Aşağıdaki dev.37 “canlı kurulum bekliyor” notu bu çıktı öncesindeki hazırlık durumudur.
+
+
 ## 🔴✓ Sınırlı Connector test görevi ve sonuç kanalı hazır — 26 Ekim 2026
 
 **PR92 / kaynak 280390e081818685969fb3327ace2c074e94e433 / merge 826580728ffdaa54bb90c3f7d03c3f64c0e7872d / dev.37**. Yalnız **connector.probe** salt okunur işine izin verilir. Panelde mevcut system.connectors yetkisi, HTTPS, CSRF/Origin/Host, güncel principal ve revision/önizleme kontrolü kullanılır. Kimlikler kalıcı saklanır; süreli lease, replay/expiry, eşleştirme/anahtar/kapsam yeniden kontrolü ve idempotent sonuç kaydı vardır. Kayıp create yanıtı yalnız GET ile uzlaştırılır. Bu genel komut/PowerShell/AD/GPO yürütücüsü veya exactly-once GPO iddiası değildir; **CanApply=false**.
