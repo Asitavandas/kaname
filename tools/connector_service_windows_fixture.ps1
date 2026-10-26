@@ -61,6 +61,13 @@ try{
  Check ($package.PackagePrepared -and -not $package.ServiceCreated -and -not $package.ServiceStarted) 'Build creates signed package, not an AD account or service'
  $inspect=Invoke-AuthWireServiceControlCore -Mode Inspect -RootPath $root -ExpectedPublisher $publisher.Thumbprint
  Check (-not $inspect.ServiceInstalled -and -not $inspect.ServiceCreated) 'Inspect creates no service'
+ $adminTool=Join-Path $root 'admin\Install-AuthWireConnectorService.ps1'
+ $inspect=& $adminTool -ConnectorId ([guid]$base.connector_id) -PublisherThumbprint $publisher.Thumbprint|ConvertFrom-Json
+ Check ($inspect.Mode -eq 'Inspect' -and -not $inspect.ServiceInstalled -and -not $inspect.ServiceCreated) 'Default signed public installer inspection performs no service or AD write'
+ $rejected=$false
+ try{$null=& $adminTool -Mode Install -ConnectorId ([guid]$base.connector_id) -PublisherThumbprint $publisher.Thumbprint}catch{$rejected=$_.Exception.Message -like '*CONNECTOR_EXISTING_GMSA_REQUIRED*'}
+ Check $rejected 'Public installation refuses the fixture local account before any AD or service mutation'
+ Check (-not (Get-Service -Name $name -ErrorAction SilentlyContinue)) 'Rejected public installation creates no service'
  Reject {New-AuthWireServicePackageCore -Config $config -Publisher $publisher -SourceDirectory $source} 'Existing package is not overwritten or silently upgraded'
  $exe=Join-Path $root 'AuthWireConnector.exe';$binary='"'+$exe+'"';$marker=Get-AuthWireServiceMarker $config
  Initialize-AuthWirePermanentServiceControl
