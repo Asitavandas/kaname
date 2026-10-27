@@ -83,7 +83,7 @@ try{
  $result=($fresh -join "`n")|ConvertFrom-Json
  Check ($result.Metadata.Native.PublicKeyMatchesCertificate -and -not $result.PrivateMaterialExported -and -not $result.KeyCreated -and -not $result.KeyPropertyWritten -and -not $result.CertificateAssociationWritten -and -not $result.SigningPerformed) 'Entry result reports read-only metadata with no signing or private export'
  # Exercise the exact future delivery guard and Windows Authenticode with CLR marker 01.
- $delivery=Join-Path $PSScriptRoot '..\docs\checkpoints\2026-10-27-dc01-candidate-worker-upgrade.ps1'
+ $delivery=Join-Path $PSScriptRoot '..\docs\checkpoints\2026-10-27-dc01-scope-worker-upgrade.ps1'
  $tokens=$null;$errors=$null;$deliveryAst=[Management.Automation.Language.Parser]::ParseFile($delivery,[ref]$tokens,[ref]$errors)
  Check ($errors.Count -eq 0) 'Exact candidate delivery parses with its native signer guard'
  foreach($f in $deliveryAst.EndBlock.Statements|Where-Object{$_ -is [Management.Automation.Language.FunctionDefinitionAst]}){. ([scriptblock]::Create($f.Extent.Text))}
