@@ -20,6 +20,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 scope worker etkinleştirmesi operatör çıktısıyla kabul edildi — 27 Ekim 2026
+
+Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY / ToolVersion1.2.0 / Mode=Apply / Stage=applied / Error=null / ChangesMayBePartial=false** sonucunu paylaştı. Kaynak **28578aa67244d0d8fdf24206dc0ce6f99cf8c73c**, yeni release **efc5ee91-e39e-4cc4-9cc1-60b648e18cf9**, önceki **b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f** beklenenle aynı. Bu operatör çıktısı kabulüdür; bağımsız DC01 servis sorgusu değildir ve yeni PID varsayılmaz.
+
+🔴✓ **ServiceTransitioned=true, SourceSignaturesValid=true, SignerSnapshotPreserved=true**. İncelenmiş upgrader sözleşmesine göre applied aşaması yeni sürümün güncel health/probe/candidate/scope kanal kapılarından geçmiştir; bir aday için gerçek AD/GPO snapshot başarısı henüz kanıtlanmış değildir. Hesap/binding/kanal anahtarı/orijinal kaynaklar korunmuş. Yeni servis veya anahtar oluşturulmamış; AD/GPO, trust ve key ACL değişikliği ya da sır dışa aktarımı yok. Evidence **C:\ProgramData\AuthWire-ConnectorUpgradeEvidence-efc5ee91e39e4cc49cc160b648e18cf9-aaa158735b124499bdb98d8c03fd3b26**. Önceki paket scoped .previous-b5469eaa0ccf4558bd84c2f6a10ecb2f arşivinde; müşteri rollback testi yapılmadı.
+
+**Sıradaki kabul:** Panelde mevcut **AuthWire Pilot - Merkezi Windows · v1** adayını Yenile; **AD/GPO kontrolünü önizle** üzerinden tek scope görevi gönder; worker döngüsü ardından Yenile ile sonucu incele. Yeni aday/plan/receipt oluşturulmayacak, başarılı Prepare/Apply tekrarlanmayacak. Gerçek gMSA hedef üyelik/GPO okuma ve panel sonucu hâlâ bekliyor. **CanApplyGpo=false**, Linux dev.40, **54/94,40 açık** korunur; nihai ürün/kılavuz kapanışı yok.
+
 ## 🔴✓ DC01 scope worker aday paket hazırlığı operatör çıktısıyla kabul edildi — 27 Ekim 2026
 
 Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY / ToolVersion1.2.0 / Mode=Prepare / Stage=prepared / Error=null / ChangesMayBePartial=false** çıktısını paylaştı. Kaynak **28578aa67244d0d8fdf24206dc0ce6f99cf8c73c**, önceki release **b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f**, yeni release **efc5ee91-e39e-4cc4-9cc1-60b648e18cf9** beklenenle aynı. Bu operatör JSON kabulüdür; bağımsız asistan DC01 sorgusu değildir.
