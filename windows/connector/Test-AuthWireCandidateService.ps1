@@ -375,4 +375,3 @@ function Invoke-AuthWireServiceProbeCore {
     if(Test-Path -LiteralPath $root) { Write-AuthWireProbeEvidence -Path $summaryPath -Value $result }
     return $result
 }
-
