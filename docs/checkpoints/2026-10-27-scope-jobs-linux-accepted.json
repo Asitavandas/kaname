@@ -1,0 +1,78 @@
+{
+  "event": "SCOPE_JOBS_LINUX_INSTALL_OPERATOR_ACCEPTED",
+  "date_local": "2026-10-27",
+  "timezone": "Europe/Istanbul",
+  "evidence_source": "operator_pasted_updater_json",
+  "independent_backend_or_root_evidence_read": false,
+  "observed": {
+    "event": "SCOPE_JOBS_FINISHED",
+    "verified": true,
+    "version": "0.14.0-dev.40",
+    "release": "4543e25b3675202a828047c4a0628570939d6fe0",
+    "changed": true,
+    "evidence": "/var/lib/authwire-updates/scope-jobs-dev40-20261027T195658Z-de05f1b5",
+    "checks": {
+      "protected_files": true,
+      "broker_process": true,
+      "radius_process": true,
+      "timers": true,
+      "business_state": true
+    },
+    "radius_active": true,
+    "radius_restarted": false,
+    "radius_process_preserved": true,
+    "radius_pid_before": "1243360",
+    "radius_pid_after": "1243360",
+    "broker_process_preserved": true,
+    "policy_changed": false,
+    "deployment_plans_created": false,
+    "gpo_changed": false,
+    "connector_binding_written": false,
+    "connector_healthy_claimed": false,
+    "certificates_changed": false,
+    "windows_endpoints_changed": false,
+    "windows_packages_changed": false,
+    "ad_gpo_changed": false,
+    "native_module_changed": false,
+    "backup_workers_changed": false,
+    "full_data_backup_created": false,
+    "backup_timer_preserved": true,
+    "pairing_actions_executed": false,
+    "probe_jobs_created": false,
+    "candidate_jobs_created": false,
+    "gpo_apply_enabled": false,
+    "windows_scope_worker_delivery_pending": true,
+    "candidate_records_created": false,
+    "scope_job_channel_added": true,
+    "scope_jobs_created": false,
+    "operator_browser_acceptance_pending": true,
+    "real_endpoint_acceptance_pending": true
+  },
+  "panel_reads": {
+    "before_all_reported_statuses_200": true,
+    "after_all_reported_statuses_200": true,
+    "candidate_status_after_median_ms": 17.4,
+    "candidate_status_after_max_ms": 36.9
+  },
+  "public_appliance": {
+    "instance_id": "6796fa84-fcff-41c1-b9c5-d725b95ba139",
+    "domain": "vizyonveri.local",
+    "appliance_fqdn": "kaname.vizyonveri.local",
+    "appliance_tls_sha256": "a58838b95510f759943e5f1b7fefe29e227960a5c1171b5ebc6d5089df47a76d",
+    "base_url": "https://kaname.vizyonveri.local:8765/",
+    "secrets_exported": false,
+    "binding_created": false
+  },
+  "limits": {
+    "new_gmsa_ad_gpo_scope_job_accepted": false,
+    "windows_worker_upgraded": false,
+    "gpo_staged_or_applied": false,
+    "endpoint_installation_accepted": false
+  },
+  "progress": {
+    "completed": 54,
+    "total": 94,
+    "open": 40
+  },
+  "next_step": "Implement and test bounded signed Windows scope worker; preserve existing gMSA/binding/channel key/signer/ACL/CLR marker and current service while preparing a staged upgrade."
+}

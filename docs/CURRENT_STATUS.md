@@ -20,6 +20,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Dev.40 Linux kurulumu ve koruma kontrolleri operatör çıktısıyla kabul edildi — 27 Ekim 2026
+
+Operatör **SCOPE_JOBS_FINISHED verified=true**, sürüm **0.14.0-dev.40**, release **4543e25b3675202a828047c4a0628570939d6fe0**, changed=true sonucunu paylaştı. Kanıt **/var/lib/authwire-updates/scope-jobs-dev40-20261027T195658Z-de05f1b5**. Bu operatör kurucu JSON kabulüdür; ayrı root DB/kanıt dizini incelemesi yapılmadı.
+
+🔴✓ Protected files, broker/RADIUS süreçleri, timer ve business state kontrolleri true. RADIUS aktif, yeniden başlamadı; PID **1243360** öncesi/sonrası aynı, broker süreci korundu. Gösterilen önce/sonra panel okumalarının tamamı200; candidate status sonrası median17.4ms/max36.9ms. Plan/policy/sertifika/eşleştirme/AD-GPO/Windows uç ve paket/native module/backup worker değişmedi. Tam yedek alınmadı, günlük timer korundu. Public appliance kimliği/domain/FQDN ve TLS pini öncekiyle aynı; sır dışa aktarılmadı.
+
+**Sınır:** Sunucu/panel scope kanalı artık kurulu. Scope/probe/candidate işi oluşturulmadı; **gpo_apply_enabled=false, windows_scope_worker_delivery_pending=true**. Gerçek gMSA canlı AD/GPO scope işi, yeni Windows worker ve tarayıcı/gerçek uç kabulü tamamlanmadı. Başarılı Linux kurucusu yeniden çalıştırılmayacak. Sıradaki çalışma mevcut **b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f** Windows paketinden süre/çıktı sınırları test edilmiş imzalı scope worker yükseltmesini hazırlamak; hesap, binding, kanal anahtarı, signer/ACL/CLR marker korunacak. Kanıt **checkpoints/2026-10-27-scope-jobs-linux-accepted.json**. Ana durum **54/94 (~%57),40 açık**, kılavuz kapanışı yok.
+
 ## 🔴✓ Ayrı AD/GPO okuma görev kanalı dev.40 hazır — Linux sudo ve Windows worker bekliyor — 27 Ekim 2026
 
 **PR101** main'e birleştirildi. Kaynak bileşeni **4543e25b3675202a828047c4a0628570939d6fe0**, son test head **2547db71169da01b9a79399445255a0a516da28f**, merge **96cebc77ab777ca617ae19fe525608c68cac0893**. Önceki yönetici AD/GPO snapshot kabulü korunur; bu ayrı sunucu/panel geliştirmesi gerçek gMSA scope görevi kabulü değildir.
