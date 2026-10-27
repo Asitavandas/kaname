@@ -20,6 +20,20 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Windows aday worker güncellemesi test edildi ve teslimata hazır — 27 Ekim 2026
+
+**PR100**, son test edilen head **a7622b8ba58e46b6f82e85ffd92487f1dc17d7c6**, kaynak component **6d19a86846948aa126aef222671f6f80be64e9de**, merge **5da1c27f20bd5fd615379d7c4b0ce6ad45701b95**. Mevcut **970d7039-3798-478b-a5f4-a57e245693a0** release'inden **b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f** release'ine aynı servis/hesap/eşleme/kanal anahtarıyla staged yükseltme hazırlandı. Linux **dev.39** zaten operatör çıktısıyla kabul edilmiş durumda; tekrar Linux kurulumu gerekmiyor.
+
+**Prepare** sabit 16 kaynak dosyasını doğrulayıp mevcut machine signer ile imzalar ve ayrı candidate klasöründe yeni paketi derler; mevcut servisi durdurmaz. Tekrar Prepare aynı paketi doğrular. Ayrı **Apply** health/probe yanında güncel **CandidateChannelVerified** ister; yeni görev kanalı başarısızsa eski paket otomatik geri yüklenir. Bu GPO veya endpoint uygulaması değildir.
+
+Signer kontrolü CLR marker'ını persistence hükmü olarak kullanmaz: native container/unique keyfile/public-key eşleşmesi, RSA3072/machine/export0/usage2 ve exact key ACL birlikte doğrulanır. Önce/sonra marker, key identity ve ACL karşılaştırılır; yeni işlem için küçük admin-only before/after/result kayıtları tutulur. Marker, key/association/ACL değiştirilmez; yeni sertifika üretilmez. Inspect kaynak/servis/evidence oluşturmaz. Eski başarısız wrapper geriye dönük kabul edilmez ve başarılı manuel probe tekrarlanmaz.
+
+🔴✓ Kaynak head'deki **7 farklı kontrol işinin tüm check-run kayıtları başarılı**; GitHub merge durumu clean olarak doğrulandı. Foundation **870 test /28 skip**, native SCM **76**, native signer **23** ve exact archive/current source **2** kontrolü geçti. Gerçek düşük yetkili SCM fixture'da candidate kanalı kapalıyken (health/probe çalışsa da) yükseltme geri alındı. Fixture'a ait nonexportable RSA3072 anahtar CLR marker **01** korunarak gerçek Authenticode imzası üretti; binding/export/marker/ACL aynı kaldı. Bunlar müşteri gMSA/DC01 kabulü değildir. Workflow roll-up ve tamamlanmış check-run ham durumları checkpoint'te ayrı saklandı.
+
+**DC01 teslimatı henüz çalıştırılmadı.** Linux home **/home/segmentiq/authwire-dc01-candidate-worker-upgrade-20261027.ps1**, **91939 byte**, SHA256 **3abcfea6d4ba2a6bdc8bf59731d300cebbce6f1aa166947cc948f74452671bff** uzak okumayla doğrulandı; repo merge byte'larıyla aynı. Asistan yalnız home'a teslimat dosyası yazdı. Operatöre yalnız **-Mode Prepare** komutu verilecek; Apply henüz istenmedi. Eski servis/eşleme/anahtar/aday korunacak; tam veri yedeği alınmayacak. GPO apply kapalıdır.
+
+Sırada DC01 yönetici Windows PowerShell **5.1** içinde bu hazırlama sonucu var; ardından Apply ve gerçek panel imza/içerik görevi ayrıca kabul edilecek. Canlı AD/GPO freshness/kapsam, SYSVOL staging ve endpoint kabulü bekliyor. **54/94 (~%57),40 açık** değişmedi.
+
 ## 🔴✓ Dev.39 Linux kurulumu operatör çıktısıyla kabul edildi — 27 Ekim 2026
 
 Operatör **CANDIDATE_JOBS_FINISHED / verified=true / changed=true / 0.14.0-dev.39** çıktısını paylaştı. Release **cf0be7fbdd3df8b3dac7d535d353af8bdb9f149a** beklenen kaynak component ile eşleşiyor. Evidence **/var/lib/authwire-updates/candidate-jobs-dev39-20261027T132300Z-271fcb5a**. Bu kabul operatörün updater çıktısına dayanır; bağımsız asistan backend sorgusu değildir.

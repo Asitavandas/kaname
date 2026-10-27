@@ -1,0 +1,135 @@
+{
+  "event": "WINDOWS_CANDIDATE_WORKER_UPGRADE_DELIVERY_PREPARED",
+  "date_local": "2026-10-27",
+  "timezone": "Europe/Istanbul",
+  "pr": 100,
+  "tested_head": "a7622b8ba58e46b6f82e85ffd92487f1dc17d7c6",
+  "source_component": "6d19a86846948aa126aef222671f6f80be64e9de",
+  "merge": "5da1c27f20bd5fd615379d7c4b0ce6ad45701b95",
+  "all_check_runs_succeeded": true,
+  "check_runs": [
+    {
+      "id": 122222289979,
+      "name": "isolated-kernel-timeout",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122222288345,
+      "name": "windows-channel",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122222288228,
+      "name": "windows-bootstrap",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122222288222,
+      "name": "windows-scm-probe",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122222287880,
+      "name": "unit-and-boundaries",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122222287605,
+      "name": "windows-service",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122222286750,
+      "name": "named-machine-key",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122222259913,
+      "name": "isolated-kernel-timeout",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122222259670,
+      "name": "unit-and-boundaries",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "workflow_rollups_last_seen": [
+    {
+      "id": 40513795062,
+      "name": "AuthWire persisted signer metadata checks",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 40513796020,
+      "name": "AuthWire bounded retry network probe checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40513795348,
+      "name": "KANAME foundation checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40513795383,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "validation": {
+    "foundation": 870,
+    "skipped": 28,
+    "scm_service_checks": 76,
+    "native_signer_checks": 23,
+    "archive_current_source_tests": 2,
+    "candidate_channel_required_for_apply": true,
+    "candidate_channel_failure_restores_old_release": true,
+    "actual_marked_key_authenticode_signing_tested": true,
+    "fixture_marker_key_owned_only": true,
+    "customer_gmsa_executed": false
+  },
+  "delivery": {
+    "linux_path": "/home/segmentiq/authwire-dc01-candidate-worker-upgrade-20261027.ps1",
+    "bytes": 91939,
+    "sha256": "3abcfea6d4ba2a6bdc8bf59731d300cebbce6f1aa166947cc948f74452671bff",
+    "source_files": 16,
+    "remote_digest_read_verified": true,
+    "old_release": "970d7039-3798-478b-a5f4-a57e245693a0",
+    "new_release": "b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f",
+    "operator_mode_sent": "Prepare"
+  },
+  "scope": {
+    "linux_dev39_already_operator_accepted": true,
+    "windows_executed_by_assistant": false,
+    "operator_prepare_pending": true,
+    "customer_apply_pending": true,
+    "service_transition_performed": false,
+    "ad_gpo_changed": false,
+    "endpoint_changed": false,
+    "signer_key_or_marker_or_acl_changed": false,
+    "pairing_or_account_recreated": false,
+    "old_runtime_probe_repeated": false,
+    "original_failed_wrapper_retroactively_accepted": false,
+    "gpo_apply_enabled": false,
+    "positive_customer_job_roundtrip_pending": true,
+    "guide_ready_claimed": false
+  },
+  "progress": {
+    "completed": 54,
+    "total": 94,
+    "open": 40
+  }
+}
