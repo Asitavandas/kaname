@@ -20,6 +20,18 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 kalıcı imza anahtarı native olarak doğrulandı; metadata incelemesi tamamlandı — 27 Ekim 2026
+
+Operatör **WINDOWS_SIGNER_PERSISTED_METADATA_READONLY / Version=2** sonucunu paylaştı. **NamedKeyOpened=true, OpenError=null, NativeKeyNameMatchesBinding=true, PublicKeyMatchesCertificate=true**. Sertifika **FFC134BC305757457163F99C7479B4168E397129**, named container ve native unique keyfile eşleşiyor. **Microsoft Software Key Storage Provider / RSA3072 / machine KeyType32 / ExportPolicy0 / KeyUsage2** doğrulandı. Unique dosya **6d83645dd6648563b32f0fdecaf3d56e_1fed02ca-1f1d-4faf-839e-e8eb2f0eff4a** ve tam SDDL **25 Ekim'de kabul edilen kayıtla aynı**: SYSTEM ve Administrators full control; aw-deploy$ SID **…1648** Read; korumalı DACL. Bu operatör çıktısı kabulüdür, bağımsız asistan DC01 sorgusu değildir.
+
+**CLR marker 01 olarak önce/sonra aynı kaldı.** Native named-key/public-key/file kanıtı bu işaretin anahtarın kaybolduğu veya yalnız bellekte bulunduğu şeklinde yorumlanamayacağını gösteriyor. Önceki wrapper bu managed işareti kalıcılık şartı saydığı için kontrolü geçemedi. İşareti hangi işlem veya bileşenin yazdığı ve sonraki GetRSAPrivateKey acquisition hatasının tüm mekanizması kanıtlanmış değil. Marker, association, anahtar, ACL ve servis değiştirilmedi; yeni sertifika, imza veya private export yapılmadı.
+
+**Metadata tanısı kapatıldı; ilave tekrar probe gerekmiyor.** Daha önce gerçek aw-deploy$ runtime'ında başarılı aday doğrulaması ve cleanup kabulü korunuyor. Buna karşılık orijinal outer wrapper **preservation_after başarısızlığı geriye dönük başarılı sayılmaz**: kaydedilmemiş original before snapshot mevcut değil; bütün dosya/ACL/PID'nin o işlem boyunca aynı kaldığı iddia edilmez. Bu son okuma mevcut signer kimliği/policy/ACL ve tarihsel kayıt eşleşmesini doğrular; yeni signing veya zincir/iptal denemesi değildir.
+
+Gelecek teslimat guard'ı yalnız IsEphemeral şartını silerek gevşetilmeyecek: reviewed native kalıcı ad/sertifika public eşleşmesi, machine provider, unique dosya/ACL ve RSA/boyut/export/usage şartlarıyla değiştirilecek. **Bu guard düzeltmesi henüz uygulanmadı.** Tarihsel teslimat dosyası/hash'i değiştirilmedi ve RunProbe yeniden çalıştırılmayacak. Sıradaki geliştirme **mevcut Connector üzerinden sınırlı typed aday doğrulama görevi ve authenticated sonuç dönüşü**; güncel plan/profile/dizin ve owned GPO kapsamı kontrolleri ayrıca kalır.
+
+Panel **dev.38**, kayıt hâlâ **Connector doğrulaması bekleniyor**; attestation elle ilerletilmedi, GPO apply kapalı. Linux/panel, kalıcı Windows Connector, AD/GPO veya endpoint ayarı değiştirilmedi. İşlevsel durum **54/94 (~%57),40 açık** değişmedi. Ayrıntılı operatör çıktısı ve kabul sınırları **docs/checkpoints/2026-10-27-signer-native-metadata-accepted.json** içinde.
+
 ## Signer named-key açılışı ile CLR ephemeral bayrağı çelişiyor; native r2 tanısı hazır — 27 Ekim 2026
 
 Operatör v1 salt okunur tanı sonucunda **NamedKeyOpened=true / Microsoft Software Key Storage Provider / IsMachineKey=true / export=0 / usage=2** paylaştı. Kayıtlı container **tq-AuthWireConnectorCodeSigning-4c23eebe-15cb8856-8d31-4e48-8c7b-ebe0c842cb2f**; provider flags **32**, type **0**, key spec **0**. Buna karşılık managed **IsEphemeral=true**, KeyName/UniqueName null ve tanı **NAMED_MACHINE_RSA_KEY_REQUIRED** ile public-key/file kontrollerinden önce durdu. Bu çıktı anahtarın kaybolduğunu veya doğru persisted key/file bağının doğrulandığını tek başına kanıtlamaz; bayrağın müşteri ortamındaki kök nedeni hâlâ bilinmiyor.

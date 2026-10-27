@@ -1,0 +1,81 @@
+{
+  "event": "SIGNER_NATIVE_METADATA_OPERATOR_ACCEPTED",
+  "date_local": "2026-10-27",
+  "timezone": "Europe/Istanbul",
+  "evidence_source": "operator_pasted_dc01_v2_output",
+  "independently_executed_on_dc01": false,
+  "operator_output": {
+    "Event": "WINDOWS_SIGNER_PERSISTED_METADATA_READONLY",
+    "Version": 2,
+    "Computer": "DC01",
+    "Thumbprint": "FFC134BC305757457163F99C7479B4168E397129",
+    "Subject": "CN=dc01.vizyonveri.local",
+    "Metadata": {
+      "ProviderInfo": {
+        "ContainerName": "tq-AuthWireConnectorCodeSigning-4c23eebe-15cb8856-8d31-4e48-8c7b-ebe0c842cb2f",
+        "ProviderName": "Microsoft Software Key Storage Provider",
+        "ProviderType": 0,
+        "Flags": 32,
+        "ParameterCount": 0,
+        "KeySpec": 0
+      },
+      "NamedKeyOpened": true,
+      "OpenError": null,
+      "Native": {
+        "KeyName": "tq-AuthWireConnectorCodeSigning-4c23eebe-15cb8856-8d31-4e48-8c7b-ebe0c842cb2f",
+        "UniqueName": "6d83645dd6648563b32f0fdecaf3d56e_1fed02ca-1f1d-4faf-839e-e8eb2f0eff4a",
+        "Algorithm": "RSA",
+        "AlgorithmGroup": "RSA",
+        "Provider": "Microsoft Software Key Storage Provider",
+        "ClrEphemeralMarkerHex": "01",
+        "ClrEphemeralMarkerAfterHex": "01",
+        "KeySize": 3072,
+        "KeyType": 32,
+        "ExportPolicyCode": 0,
+        "KeyUsageCode": 2,
+        "PublicKeyMatchesCertificate": true,
+        "NativeKeyNameMatchesBinding": true,
+        "MarkerUnchanged": true
+      },
+      "KeyFile": "C:\\ProgramData\\Microsoft\\Crypto\\Keys\\6d83645dd6648563b32f0fdecaf3d56e_1fed02ca-1f1d-4faf-839e-e8eb2f0eff4a",
+      "KeySddl": "O:BAG:DUD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+    },
+    "SigningPerformed": false,
+    "PrivateMaterialExported": false,
+    "KeyCreated": false,
+    "KeyPropertyWritten": false,
+    "KeyAclWritten": false,
+    "CertificateAssociationWritten": false,
+    "ServicesChanged": false
+  },
+  "acceptance": {
+    "named_machine_key_opened": true,
+    "native_public_key_matches_certificate": true,
+    "persisted_container_name_matches_certificate_binding": true,
+    "unique_key_file_matches_2026_10_25_record": true,
+    "key_acl_matches_2026_10_25_record": true,
+    "rsa_bits": 3072,
+    "export_policy_code": 0,
+    "key_usage_code": 2,
+    "clr_marker_observed": "01",
+    "clr_marker_unchanged": true,
+    "origin_of_clr_marker_known": false,
+    "original_getrsaprivatekey_exception_root_cause_proven": false,
+    "original_wrapper_full_preservation_accepted": false,
+    "original_before_snapshot_available": false,
+    "saved_gmsa_candidate_verification_and_cleanup_previously_accepted": true,
+    "repeat_runtime_probe_required": false,
+    "repair_or_reissue_required_by_this_evidence": false,
+    "future_guard_fix_implemented": false,
+    "authenticated_worker_candidate_result_pending": true,
+    "panel_attestation_updated": false,
+    "gpo_apply_enabled": false
+  },
+  "decision": "Close metadata investigation with current persisted-key identity/public-match/file/ACL acceptance. Do not clear CLR marker, repair association, reissue key/certificate, or rerun accepted runtime probe. Future reviewed guards must require native persisted identity, machine provider, public match, unique file and ACL, key size/export/usage rather than treating the CLR marker as physical persistence. Original failed wrapper remains failed; no retrospective exact before/after acceptance.",
+  "progress": {
+    "completed": 54,
+    "total": 94,
+    "open": 40
+  },
+  "live_software_changes_performed_by_assistant": false
+}
