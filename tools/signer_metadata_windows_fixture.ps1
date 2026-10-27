@@ -35,23 +35,23 @@ public static class IsolatedKeyBindingFixture {
 '@
 $script:checks=0
 function Check([bool]$Value,[string]$Name){if(-not $Value){throw $Name};$script:checks++}
-$cert=$null;$other=$null;$copy=$null;$ephemeral=$null;$rsa=$null
+$cert=$null;$other=$null;$copy=$null;$ephemeral=$null;$rsa=$null;$markerKey=$null
 try{
  $cert=New-SelfSignedCertificate -Type CodeSigningCert -Subject 'CN=Isolated named signer metadata fixture' -CertStoreLocation 'Cert:\LocalMachine\My' -Provider 'Microsoft Software Key Storage Provider' -KeyLength 3072 -HashAlgorithm SHA256 -KeyUsage DigitalSignature -KeyUsageProperty Sign -KeyExportPolicy NonExportable -NotAfter (Get-Date).AddDays(1)
  $metadata=Get-AuthWireNamedMachineKeyMetadata $cert
- Check ($metadata.NamedKeyOpened -and -not $metadata.OpenError -and $metadata.PublicKeyMatchesCertificate) 'Named persisted key opens and public RSA matches certificate'
- Check ($metadata.IsMachineKey -and -not $metadata.IsEphemeral -and $metadata.KeySize -eq 3072 -and $metadata.ExportPolicyCode -eq 0 -and $metadata.KeyUsageCode -eq 2) 'Machine, named, non-exportable, signing-only 3072-bit properties preserved'
+ Check ($metadata.NamedKeyOpened -and -not $metadata.OpenError -and $metadata.Native.PublicKeyMatchesCertificate) 'Named persisted key opens and public RSA matches certificate'
+ Check (($metadata.Native.KeyType -band 32) -and $metadata.Native.NativeKeyNameMatchesBinding -and $metadata.Native.KeySize -eq 3072 -and $metadata.Native.ExportPolicyCode -eq 0 -and $metadata.Native.KeyUsageCode -eq 2) 'Machine, named, non-exportable, signing-only 3072-bit properties preserved'
  Check ($metadata.ProviderInfo.ProviderType -eq 0 -and ($metadata.ProviderInfo.Flags -band 32) -and $metadata.ProviderInfo.ProviderName -ceq 'Microsoft Software Key Storage Provider') 'Real CERT_KEY_PROV_INFO parsed and machine binding enforced'
  Check (Test-Path -LiteralPath $metadata.KeyFile) 'Unique name resolves an existing persisted key file'
  $acl=$metadata.KeySddl;$raw=[Convert]::ToBase64String($cert.RawData)
  $again=Get-AuthWireNamedMachineKeyMetadata $cert
- Check ($again.KeyName -ceq $metadata.KeyName -and $again.KeySddl -ceq $acl -and [Convert]::ToBase64String($cert.RawData) -ceq $raw) 'Repeated reads preserve certificate, named key and ACL'
+ Check ($again.Native.KeyName -ceq $metadata.Native.KeyName -and $again.KeySddl -ceq $acl -and [Convert]::ToBase64String($cert.RawData) -ceq $raw) 'Repeated reads preserve certificate, named key and ACL'
  $copy=[Security.Cryptography.X509Certificates.X509Certificate2]::new($cert.RawData)
  $missing=$false;try{$null=Get-AuthWireNamedMachineKeyMetadata $copy}catch{$missing=$true}
  Check $missing 'Public certificate without persisted provider binding is not guessed or repaired'
  [IsolatedKeyBindingFixture]::CopyBinding($cert,$copy)
  $bound=Get-AuthWireNamedMachineKeyMetadata $copy
- Check ($bound.NamedKeyOpened -and $bound.PublicKeyMatchesCertificate -and $bound.UniqueName -ceq $metadata.UniqueName) 'Explicit persisted binding reopens the same key from a public cert context'
+ Check ($bound.NamedKeyOpened -and $bound.Native.PublicKeyMatchesCertificate -and $bound.Native.UniqueName -ceq $metadata.Native.UniqueName) 'Explicit persisted binding reopens the same key from a public cert context'
  $ephemeral=[Security.Cryptography.RSACng]::new(3072)
  $handle=$ephemeral.Key.Handle;$added=$false;$handle.DangerousAddRef([ref]$added)
  try{
@@ -59,21 +59,31 @@ try{
   $cachedError=$null;$cached=$null
   try{$cached=[Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($copy)}catch{$cachedError=$_.Exception.Message}finally{if($cached){$cached.Dispose()}}
   $conflicted=Get-AuthWireNamedMachineKeyMetadata $copy
-  Check ($conflicted.NamedKeyOpened -and -not $conflicted.OpenError -and $conflicted.PublicKeyMatchesCertificate -and $conflicted.UniqueName -ceq $metadata.UniqueName -and -not $conflicted.IsEphemeral) 'Cached ephemeral handle cannot replace named persisted-key metadata'
+  Check ($conflicted.NamedKeyOpened -and -not $conflicted.OpenError -and $conflicted.Native.PublicKeyMatchesCertificate -and $conflicted.Native.UniqueName -ceq $metadata.Native.UniqueName -and $conflicted.Native.MarkerUnchanged) 'Cached ephemeral handle cannot replace named persisted-key metadata'
   Write-Host ('Cached private-key acquisition diagnostic: '+$cachedError)
  }finally{[IsolatedKeyBindingFixture]::ClearCachedHandle($copy);if($added){$handle.DangerousRelease()}}
  $other=New-SelfSignedCertificate -Type CodeSigningCert -Subject 'CN=Isolated mismatched signer fixture' -CertStoreLocation 'Cert:\LocalMachine\My' -Provider 'Microsoft Software Key Storage Provider' -KeyLength 3072 -HashAlgorithm SHA256 -KeyUsage DigitalSignature -KeyUsageProperty Sign -KeyExportPolicy NonExportable -NotAfter (Get-Date).AddDays(1)
  [IsolatedKeyBindingFixture]::CopyBinding($other,$copy)
  $wrong=Get-AuthWireNamedMachineKeyMetadata $copy
- Check ($wrong.NamedKeyOpened -and -not $wrong.PublicKeyMatchesCertificate) 'Different persisted key is reported as public-key mismatch'
+ Check ($wrong.NamedKeyOpened -and -not $wrong.Native.PublicKeyMatchesCertificate) 'Different persisted key is reported as public-key mismatch'
  $after=Get-AuthWireNamedMachineKeyMetadata $cert
- Check ($after.KeySddl -ceq $acl -and $after.UniqueName -ceq $metadata.UniqueName -and $after.ExportPolicyCode -eq 0 -and $after.KeyUsageCode -eq 2) 'Negative fixtures do not change the original key or ACL'
+ Check ($after.KeySddl -ceq $acl -and $after.Native.UniqueName -ceq $metadata.Native.UniqueName -and $after.Native.ExportPolicyCode -eq 0 -and $after.Native.KeyUsageCode -eq 2) 'Negative fixtures do not change the original key or ACL'
+ # Reproduce the customer's named-open/CLR-ephemeral contradiction on a key
+ # owned solely by this disposable fixture. The product never writes this marker.
+ $markerKey=[Security.Cryptography.CngKey]::Open($metadata.Native.KeyName,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::MachineKey)
+ $markerOptions=[Security.Cryptography.CngPropertyOptions]::CustomProperty -bor [Security.Cryptography.CngPropertyOptions]::Persist
+ $markerKey.SetProperty([Security.Cryptography.CngProperty]::new('CLR IsEphemeral',[byte[]]@(1),$markerOptions))
+ Check ($markerKey.IsEphemeral -and $null -eq $markerKey.KeyName -and $null -eq $markerKey.UniqueName) 'Real named key reproduces CLR marker true and managed names null'
+ $marked=Get-AuthWireNamedMachineKeyMetadata $cert
+ Check ($marked.NamedKeyOpened -and -not $marked.OpenError -and $marked.Native.ClrEphemeralMarkerHex -ceq '01' -and $marked.Native.MarkerUnchanged) 'Native read reports and preserves the contradictory marker'
+ Check ($marked.Native.KeyName -ceq $metadata.Native.KeyName -and $marked.Native.UniqueName -ceq $metadata.Native.UniqueName -and $marked.Native.NativeKeyNameMatchesBinding -and $marked.Native.PublicKeyMatchesCertificate) 'Native names and public RSA binding remain independently verifiable'
+ Check ($marked.Native.ExportPolicyCode -eq 0 -and $marked.Native.KeyUsageCode -eq 2 -and $marked.Native.KeySize -eq 3072 -and $marked.KeySddl -ceq $acl) 'No weakening of export, usage, size or ACL with CLR marker true'
  $fresh=& "$PSHOME\powershell.exe" -NoProfile -NonInteractive -File $path -Thumbprint $cert.Thumbprint
  Check ($LASTEXITCODE -eq 0) 'Exact diagnostic entry runs in a fresh native PowerShell 5.1 process'
  $result=($fresh -join "`n")|ConvertFrom-Json
- Check ($result.Metadata.PublicKeyMatchesCertificate -and -not $result.PrivateMaterialExported -and -not $result.KeyCreated -and -not $result.KeyPropertyWritten -and -not $result.CertificateAssociationWritten -and -not $result.SigningPerformed) 'Entry result reports read-only metadata with no signing or private export'
+ Check ($result.Metadata.Native.PublicKeyMatchesCertificate -and -not $result.PrivateMaterialExported -and -not $result.KeyCreated -and -not $result.KeyPropertyWritten -and -not $result.CertificateAssociationWritten -and -not $result.SigningPerformed) 'Entry result reports read-only metadata with no signing or private export'
  [pscustomobject]@{Event='SIGNER_METADATA_NATIVE_FIXTURE';Checks=$checks;ActualWindowsPowerShell=$PSVersionTable.PSVersion.ToString();CustomerKeyInspected=$false}|ConvertTo-Json
 }finally{
- if($ephemeral){$ephemeral.Dispose()};if($copy){$copy.Dispose()}
+ if($ephemeral){$ephemeral.Dispose()};if($copy){$copy.Dispose()};if($markerKey){$markerKey.Delete();$markerKey.Dispose()}
  foreach($c in @($cert,$other)){if($c){Remove-Item -LiteralPath ('Cert:\LocalMachine\My\'+$c.Thumbprint) -DeleteKey -Force -ErrorAction SilentlyContinue;$c.Dispose()}}
 }
