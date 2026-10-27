@@ -84,6 +84,12 @@ try{
  Check ($result.Metadata.Native.PublicKeyMatchesCertificate -and -not $result.PrivateMaterialExported -and -not $result.KeyCreated -and -not $result.KeyPropertyWritten -and -not $result.CertificateAssociationWritten -and -not $result.SigningPerformed) 'Entry result reports read-only metadata with no signing or private export'
  [pscustomobject]@{Event='SIGNER_METADATA_NATIVE_FIXTURE';Checks=$checks;ActualWindowsPowerShell=$PSVersionTable.PSVersion.ToString();CustomerKeyInspected=$false}|ConvertTo-Json
 }finally{
- if($ephemeral){$ephemeral.Dispose()};if($copy){$copy.Dispose()};if($markerKey){$markerKey.Delete();$markerKey.Dispose()}
+ if($ephemeral){$ephemeral.Dispose()};if($copy){$copy.Dispose()}
+ if($markerKey){
+  # This owned key was deliberately marked in the fixture. Delete it by its
+  # already-open handle, then remove only the now-keyless certificate entry.
+  $markerKey.Delete();$markerKey.Dispose()
+  if($cert){Remove-Item -LiteralPath ('Cert:\LocalMachine\My\'+$cert.Thumbprint) -Force;$cert.Dispose();$cert=$null}
+ }
  foreach($c in @($cert,$other)){if($c){Remove-Item -LiteralPath ('Cert:\LocalMachine\My\'+$c.Thumbprint) -DeleteKey -Force -ErrorAction SilentlyContinue;$c.Dispose()}}
 }
