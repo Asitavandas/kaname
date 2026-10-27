@@ -1,0 +1,65 @@
+{
+  "event": "SIGNER_NAMED_OPEN_CLR_MARKER_CONFLICT_NATIVE_READ_PENDING",
+  "date": "2026-10-27",
+  "evidence_type": "operator_pasted_readonly_metadata_v1",
+  "computer": "DC01",
+  "thumbprint": "FFC134BC305757457163F99C7479B4168E397129",
+  "container_name": "tq-AuthWireConnectorCodeSigning-4c23eebe-15cb8856-8d31-4e48-8c7b-ebe0c842cb2f",
+  "provider": "Microsoft Software Key Storage Provider",
+  "provider_type": 0,
+  "provider_flags": 32,
+  "parameter_count": 0,
+  "key_spec": 0,
+  "named_key_opened": true,
+  "managed_is_machine_key": true,
+  "managed_is_ephemeral": true,
+  "managed_key_name": null,
+  "managed_unique_name": null,
+  "export_policy_code": 0,
+  "key_usage_code": 2,
+  "diagnostic_v1_error": "NAMED_MACHINE_RSA_KEY_REQUIRED",
+  "native_public_key_match_pending": true,
+  "native_unique_name_and_file_acl_pending": true,
+  "root_cause_of_marker_unconfirmed": true,
+  "probe_runtime_verification_already_accepted": true,
+  "probe_rerun_requested": false,
+  "original_wrapper_preservation_verified": false,
+  "panel_attestation_updated": false,
+  "key_property_written": false,
+  "services_changed": false,
+  "diagnostic_r2_pr": 98,
+  "diagnostic_r2_head": "db983de090cc1296ddc12f34f7b1411d54be8241",
+  "diagnostic_r2_merge": "5cee48148883991fb17de87ba456880dba27df53",
+  "diagnostic_native_checks": 16,
+  "diagnostic_r2_workflows": [
+    {
+      "id": 40485043785,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40485043765,
+      "name": "AuthWire persisted signer metadata checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40485043722,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40485043776,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "conclusion": "success"
+    }
+  ],
+  "r2_remote_file": "/home/segmentiq/authwire-signer-native-metadata-r2-20261027.ps1",
+  "r2_sha256": "2332082ac59f9adec7ac47d2bd9e80e3ca6733f34ba75e256ac1abb33769d908",
+  "r2_bytes": 12426,
+  "r2_customer_execution_pending": true,
+  "functional_progress": {
+    "complete": 54,
+    "total": 94,
+    "open": 40
+  }
+}

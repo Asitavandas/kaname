@@ -20,6 +20,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Signer named-key açılışı ile CLR ephemeral bayrağı çelişiyor; native r2 tanısı hazır — 27 Ekim 2026
+
+Operatör v1 salt okunur tanı sonucunda **NamedKeyOpened=true / Microsoft Software Key Storage Provider / IsMachineKey=true / export=0 / usage=2** paylaştı. Kayıtlı container **tq-AuthWireConnectorCodeSigning-4c23eebe-15cb8856-8d31-4e48-8c7b-ebe0c842cb2f**; provider flags **32**, type **0**, key spec **0**. Buna karşılık managed **IsEphemeral=true**, KeyName/UniqueName null ve tanı **NAMED_MACHINE_RSA_KEY_REQUIRED** ile public-key/file kontrollerinden önce durdu. Bu çıktı anahtarın kaybolduğunu veya doğru persisted key/file bağının doğrulandığını tek başına kanıtlamaz; bayrağın müşteri ortamındaki kök nedeni hâlâ bilinmiyor.
+
+**PR98**, son test edilen head **db983de090cc1296ddc12f34f7b1411d54be8241**, merge **5cee48148883991fb17de87ba456880dba27df53**. V2 tanısı **NCryptOpenKey/GetProperty** üzerinden native Name/Unique Name/Key Type/Length/Export Policy/Key Usage ve ayrı CLR marker değerini okur; yalnız sabit **RSAPUBLICBLOB** ile sertifikanın public RSA DER değerini karşılaştırır, mevcut key ACL'yi okur. CLR marker değiştirilmez; key/association/ACL yazımı, private export, signing, yeni key veya guard gevşetme yok.
+
+🔴✓ **4 workflow /16 native kontrol** geçti. Fixture kendine ait named key üzerinde CLR marker 1 durumunu oluşturup **managed IsEphemeral=true ve null isimleri** tekrarladı; native isim/public eşleşmesi, aynı unique keyfile, değişmeyen marker ve export/usage/boyut/ACL ayrı doğrulandı. Bu müşteri anahtarının native sonucunun kabulü değildir. Gerçek gMSA aday doğrulaması ve temizlik önceki summary ile zaten kabul edildi; RunProbe tekrar edilmeyecek. Orijinal outer wrapper preservation guard henüz kabul edilmedi veya değiştirilmedi.
+
+Linux home **/home/segmentiq/authwire-signer-native-metadata-r2-20261027.ps1**, **12426 byte**, SHA256 **2332082ac59f9adec7ac47d2bd9e80e3ca6733f34ba75e256ac1abb33769d908** uzak okumayla doğrulandı; yeni müşteri çıktısı bekleniyor. Sırada yalnız bu native metadata/public-key/file ACL çıktısının incelenmesi var. Linux/panel **dev.38** ve kalıcı Connector değişmedi; panel attestation/GPO apply açılmadı. **54/94 (~%57),40 açık** değişmedi.
+
 ## 🔴✓ Gerçek aw-deploy$ aday doğrulaması ve temizlik kabul edildi; signer postcheck ayrı bekliyor — 27 Ekim 2026
 
 Operatör kaydedilmiş **C:\ProgramData\AuthWire-CandidateProbe-33776769e3a64abbafcbe3cf926be79f\summary.json** içeriğini paylaştı. **ProbeVerified=true, CandidateVerified=true, ServiceLogonVerified=true, RuntimeSid=…1648**; doğru Connector/plan/GPO, approval ve manifest **4f7a463d…ba9a6d** eşleşiyor. **SignatureVerified=true, NetworkContentVerified=true**. Geçici servis **AuthWireLogonProbe-6c9b71e462be4906b23b364c25246ee7**, PID **8536**; servis/exe/verifier/output kaldırılmış ve cleanupErrors boş. Bu operatör çıktısıdır; bağımsız asistan DC01 sorgusu değildir.
