@@ -1,10 +1,10 @@
 name: AuthWire persisted signer metadata checks
 on:
   pull_request:
-    paths: ['windows/connector/Get-AuthWireMachineSignerMetadata.ps1', 'tools/signer_metadata_windows_fixture.ps1', '.github/workflows/signer-metadata.yml']
+    paths: ['windows/connector/Get-AuthWireMachineSignerMetadata.ps1', 'tools/signer_metadata_windows_fixture.ps1', 'docs/checkpoints/2026-10-27-dc01-candidate-worker-upgrade.ps1', '.github/workflows/signer-metadata.yml']
   push:
     branches: [main]
-    paths: ['windows/connector/Get-AuthWireMachineSignerMetadata.ps1', 'tools/signer_metadata_windows_fixture.ps1', '.github/workflows/signer-metadata.yml']
+    paths: ['windows/connector/Get-AuthWireMachineSignerMetadata.ps1', 'tools/signer_metadata_windows_fixture.ps1', 'docs/checkpoints/2026-10-27-dc01-candidate-worker-upgrade.ps1', '.github/workflows/signer-metadata.yml']
   workflow_dispatch:
 permissions:
   contents: read

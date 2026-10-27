@@ -35,7 +35,7 @@ public static class IsolatedKeyBindingFixture {
 '@
 $script:checks=0
 function Check([bool]$Value,[string]$Name){if(-not $Value){throw $Name};$script:checks++}
-$cert=$null;$other=$null;$copy=$null;$ephemeral=$null;$rsa=$null;$markerKey=$null
+$cert=$null;$other=$null;$copy=$null;$ephemeral=$null;$rsa=$null;$markerKey=$null;$fixtureRoot=$null;$fixturePublisher=$null;$signingPublic=$null;$signedArtifact=$null
 try{
  $cert=New-SelfSignedCertificate -Type CodeSigningCert -Subject 'CN=Isolated named signer metadata fixture' -CertStoreLocation 'Cert:\LocalMachine\My' -Provider 'Microsoft Software Key Storage Provider' -KeyLength 3072 -HashAlgorithm SHA256 -KeyUsage DigitalSignature -KeyUsageProperty Sign -KeyExportPolicy NonExportable -NotAfter (Get-Date).AddDays(1)
  $metadata=Get-AuthWireNamedMachineKeyMetadata $cert
@@ -82,8 +82,31 @@ try{
  Check ($LASTEXITCODE -eq 0) 'Exact diagnostic entry runs in a fresh native PowerShell 5.1 process'
  $result=($fresh -join "`n")|ConvertFrom-Json
  Check ($result.Metadata.Native.PublicKeyMatchesCertificate -and -not $result.PrivateMaterialExported -and -not $result.KeyCreated -and -not $result.KeyPropertyWritten -and -not $result.CertificateAssociationWritten -and -not $result.SigningPerformed) 'Entry result reports read-only metadata with no signing or private export'
+ # Exercise the exact future delivery guard and Windows Authenticode with CLR marker 01.
+ $delivery=Join-Path $PSScriptRoot '..\docs\checkpoints\2026-10-27-dc01-candidate-worker-upgrade.ps1'
+ $tokens=$null;$errors=$null;$deliveryAst=[Management.Automation.Language.Parser]::ParseFile($delivery,[ref]$tokens,[ref]$errors)
+ Check ($errors.Count -eq 0) 'Exact candidate delivery parses with its native signer guard'
+ foreach($f in $deliveryAst.EndBlock.Statements|Where-Object{$_ -is [Management.Automation.Language.FunctionDefinitionAst]}){. ([scriptblock]::Create($f.Extent.Text))}
+ $snapshot=Get-AuthWireDeliverySignerSnapshot $cert $metadata.Native.KeyName $metadata.Native.UniqueName $acl
+ Check ($snapshot.ClrMarkerHex -ceq '01' -and $snapshot.PublicKeyMatchesCertificate) 'Exact delivery guard accepts independent persisted binding despite CLR marker 01'
+ $caught=$false;try{$null=Get-AuthWireDeliverySignerSnapshot $cert 'wrong-container' $metadata.Native.UniqueName $acl}catch{$caught=$true};Check $caught 'Delivery guard rejects another container'
+ $caught=$false;try{$null=Get-AuthWireDeliverySignerSnapshot $cert $metadata.Native.KeyName 'wrong-file' $acl}catch{$caught=$true};Check $caught 'Delivery guard rejects another key file'
+ $caught=$false;try{$null=Get-AuthWireDeliverySignerSnapshot $cert $metadata.Native.KeyName $metadata.Native.UniqueName 'O:SYG:SYD:P(A;;FA;;;SY)'}catch{$caught=$true};Check $caught 'Delivery guard rejects different key rights'
+ $signingPublic=[Security.Cryptography.X509Certificates.X509Certificate2]::new($cert.RawData)
+ $fixtureRoot=[Security.Cryptography.X509Certificates.X509Store]::new('Root','LocalMachine');$fixtureRoot.Open('ReadWrite');$fixtureRoot.Add($signingPublic)
+ $fixturePublisher=[Security.Cryptography.X509Certificates.X509Store]::new('TrustedPublisher','LocalMachine');$fixturePublisher.Open('ReadWrite');$fixturePublisher.Add($signingPublic)
+ $signedArtifact=Join-Path $env:TEMP ('AuthWire-MarkedSigner-'+[guid]::NewGuid().ToString('N')+'.ps1')
+ [IO.File]::WriteAllText($signedArtifact,"# comment-only fixture; never executed`r`n",[Text.UTF8Encoding]::new($false))
+ $signature=Set-AuthenticodeSignature -LiteralPath $signedArtifact -Certificate $cert -HashAlgorithm SHA256
+ Check ($signature.Status.ToString() -ceq 'Valid' -and $signature.SignerCertificate.Thumbprint -ceq $cert.Thumbprint) 'Native Authenticode can sign with the named non-exportable key while CLR marker is 01'
+ $afterSigning=Get-AuthWireDeliverySignerSnapshot $cert $metadata.Native.KeyName $metadata.Native.UniqueName $acl
+ Check (($afterSigning|ConvertTo-Json -Compress) -ceq ($snapshot|ConvertTo-Json -Compress)) 'Actual signing preserves native binding, export policy, CLR marker and ACL'
  [pscustomobject]@{Event='SIGNER_METADATA_NATIVE_FIXTURE';Checks=$checks;ActualWindowsPowerShell=$PSVersionTable.PSVersion.ToString();CustomerKeyInspected=$false}|ConvertTo-Json
 }finally{
+ if($signedArtifact -and (Test-Path -LiteralPath $signedArtifact)){Remove-Item -LiteralPath $signedArtifact -Force}
+ if($fixturePublisher){if($signingPublic){$fixturePublisher.Remove($signingPublic)};$fixturePublisher.Dispose()}
+ if($fixtureRoot){if($signingPublic){$fixtureRoot.Remove($signingPublic)};$fixtureRoot.Dispose()}
+ if($signingPublic){$signingPublic.Dispose()}
  if($ephemeral){$ephemeral.Dispose()};if($copy){$copy.Dispose()}
  if($markerKey){
   # This owned key was deliberately marked in the fixture. Delete it by its
