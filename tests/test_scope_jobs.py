@@ -196,3 +196,17 @@ class ScopeJobTests(unittest.TestCase):
         self.create_job();v=self.request_job();p=self.jobs.preview(v)
         with self.assertRaisesRegex(JobError,'BUSY'):self.jobs.create(v|{'preview_hash':p['preview_hash']},self.actor)
 
+    def test_expired_capability_cannot_create_a_job(self):
+        self.jobs.poll(self.proof());v=self.request_job();p=self.jobs.preview(v)
+        self.now+=90
+        with self.assertRaisesRegex(JobError,'WORKER_NOT_READY'):
+            self.jobs.create(v|{'preview_hash':p['preview_hash']},self.actor)
+        self.assertEqual([],self.jobs.status()['jobs'])
+
+    def test_revocation_invalidates_completed_snapshot_and_fresh_capability(self):
+        self.finish();self.assertTrue(self.engine.status()['candidates'][0]['scope_snapshot_verified'])
+        self.registry.apply(self.prepare(self.intent('revoke')),self.actor)
+        status=self.engine.status()
+        self.assertFalse(status['scope_worker_ready']);self.assertFalse(status['candidates'][0]['scope_snapshot_verified'])
+        self.assertEqual('obsolete',status['scope_verification_jobs'][0]['state'])
+
