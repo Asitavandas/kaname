@@ -20,6 +20,18 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Canlı AD hedefleri ve yönetilen GPO operatör okuması kabul edildi — 27 Ekim 2026 18:23 İstanbul
+
+Operatör **Yapıştırılan metin(7).txt** içinde **WINDOWS_DEPLOYMENT_SCOPE_OPERATOR_READONLY v1.0.0** sonucunu paylaştı. DC01’de **VIZYONVERI\\administrator** ile 15:23:50–15:23:54Z arasında çalıştı; **OperationError=null, Blockers=[], ReadyForNextReview=true**. Ek dosya SHA256 **7678a18926c92e062d6a3ca1eb310da2c6a4458a6c4eba3b89d7a0404a703791**.
+
+🔴✓ Sabit SHA256’li onaylı ağ adayındaki pilot hedef SID’leri canlı recursive AD grubuyla eşleşti. **2GL13ZU / SID …-1105 / GUID 8c150ec9-59ac-41fe-9f12-5a7023e1a999** ve **VV06 / SID …-1644 / GUID 69b0d5cd-db61-4627-9db7-fcc5230152a3** etkin; disabled ve diğer üye sayısı0. Bu okuma anına ait doğrulama; gelecekteki üyelik/güncellik garantisi değildir.
+
+🔴✓ Ayrı **AuthWire-Managed-Deployment-4c23eebe / 8c6808fd-a382-4bf2-9c9c-d9e1d46082a3** GPO adı, sahiplik işareti ve Domain Admins sahibi beklenenle eşleşti. GPMC izinleri kayıtlı dar kapsamla aynı: gMSA **GpoEdit**, pilot **GpoApply**, Authenticated Users **GpoRead**. Rapor link listesi boş, ayar uzantısı0, bilgisayar/kullanıcı AD ve SYSVOL sürümleri0. SYSVOL yolu eşleşti; kökte Machine/User, GPO.cmt426 bayt ve GPT.INI59 bayt görüldü. Root ACL’de gMSA write/read/delete-child izni var, doğrudan ChangePermissions/TakeOwnership kaydı yok; bu etkili gMSA runtime erişim testi değildir. Protected trust GPO kimliği/adı eşleşti; geçmiş tam durum karşılaştırması yapılmadı.
+
+**Kabul sınırı:** Başarılı gerçek operatör salt okunur snapshot ve native script çalışmasıdır. SYSVOL alt ağacı sayılmadı, hizmet hesabının bu işi yürüttüğü veya bütün GPO durumunun sabit kaldığı iddia edilmez. **GmsaRuntimeTested/PanelAttestationUpdated/CanApplyGpo=false**. AD/GPO, servis, uç, trust ve key ACL değişikliği yok; tam yedek alınmadı. Aynı başarılı kontrol tekrarlanmayacak. Kanıt **checkpoints/2026-10-27-deployment-scope-readonly-accepted.json**.
+
+**Sıradaki geliştirme:** Aynı kapsamın ayrı sınırlı typed Connector göreviyle güncel AD ve owned-GPO doğrulamasına taşınması; panelde eski/değişmiş hedef/izin/link/sürüm reddi. Ardından tam SYSVOL/paket hazırlığı ve ayrı pilot uygulama kapısı. İçerik doğrulaması bu yeni kapsamın yerine geçmez. Üst sayım **54/94 (~%57),40 açık** korunur; rapor dosyaları bu dar kabul için yeniden üretilmedi; nihai ürün/kılavuz kapanışı yok.
+
 ## 🔴✓ 27 Ekim durum raporu teslimatı ve sonraki salt okunur kontrol hazır
 
 Operatörün isteğiyle güncel **9 sayfalık Word/PDF durum raporu** hazırlandı. Önceki raporun 25 Ekim revizyonu ve güncel main kabul kayıtları okundu. B01–B12 **44/59**, G01–G07 **10/35**, toplam **54/94 (~%57),40 açık (~%43)** sayımı korundu. 25–27 Ekim KDS/gMSA, gerçek imzalama, kalıcı Connector, aşamalı worker güncellemesi ve ilk müşteri içerik roundtrip kabulleri kırmızı tikle ayrıldı. Bunlar açık A03/A04 ana işine ikinci puan eklemez. Yarım işler, gerçek uç/AD/kurtarma/ölçek testleri, tek hesap geçişi ve nihai kılavuz ayrı açık. İptal edilmiş özellik güncel kapsam sayılmadı. Kaynak metin **reports/2026-10-27-status-report.md**, teslimat kaydı **checkpoints/2026-10-27-status-report.json**. Word ve iki biçimi birlikte taşıyan arşiv kaydedildi; PDF bağımsız transferi başarısız oldu, aynı doğrulanmış PDF arşiv içinde korunur.

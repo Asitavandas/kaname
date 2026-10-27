@@ -1,0 +1,259 @@
+{
+  "event": "DEPLOYMENT_SCOPE_OPERATOR_READONLY_ACCEPTED",
+  "date_local": "2026-10-27",
+  "timezone": "Europe/Istanbul",
+  "evidence": {
+    "kind": "operator_uploaded_dc01_result",
+    "file_name": "Yapıştırılan metin(7).txt",
+    "library_file_id": "libfile_58762c03c2088191b8ea1e75ec4f35f4",
+    "sha256": "7678a18926c92e062d6a3ca1eb310da2c6a4458a6c4eba3b89d7a0404a703791",
+    "assistant_independent_live_ad_query": false
+  },
+  "observed": {
+    "Event": "WINDOWS_DEPLOYMENT_SCOPE_OPERATOR_READONLY",
+    "ToolVersion": "1.0.0",
+    "Computer": "DC01",
+    "Caller": "VIZYONVERI\\administrator",
+    "StartedUtc": "2026-10-27T15:23:50.8705492Z",
+    "CompletedUtc": "2026-10-27T15:23:54.1663709Z",
+    "PlanId": "524653f5-1359-46f5-84a5-46355bb82aff",
+    "PlanVersion": 1,
+    "PinnedCandidateRead": true,
+    "Directory": {
+      "Domain": "vizyonveri.local",
+      "ServerQueried": "dc01.vizyonveri.local",
+      "Group": "AuthWire-Pilot-Computers",
+      "GroupSid": "S-1-5-21-34256453-3348971241-2809240126-1647",
+      "Recursive": true,
+      "ExpectedComputerSids": [
+        "S-1-5-21-34256453-3348971241-2809240126-1105",
+        "S-1-5-21-34256453-3348971241-2809240126-1644"
+      ],
+      "Computers": [
+        {
+          "Name": "2GL13ZU",
+          "Guid": "8c150ec9-59ac-41fe-9f12-5a7023e1a999",
+          "Sid": "S-1-5-21-34256453-3348971241-2809240126-1105",
+          "Enabled": true,
+          "DnsName": "2GL13ZU.vizyonveri.local"
+        },
+        {
+          "Name": "VV06",
+          "Guid": "69b0d5cd-db61-4627-9db7-fcc5230152a3",
+          "Sid": "S-1-5-21-34256453-3348971241-2809240126-1644",
+          "Enabled": true,
+          "DnsName": "VV06.vizyonveri.local"
+        }
+      ],
+      "TargetSidsMatchPinnedPlan": true,
+      "DisabledComputerCount": 0,
+      "OtherMemberCount": 0
+    },
+    "Gpo": {
+      "Id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+      "Name": "AuthWire-Managed-Deployment-4c23eebe",
+      "OwnershipMarkerMatches": true,
+      "OwnerSid": "S-1-5-21-34256453-3348971241-2809240126-512",
+      "Status": "AllSettingsEnabled",
+      "LinkedPaths": [],
+      "SettingsExtensionCount": 0,
+      "Versions": [
+        {
+          "Section": "Computer",
+          "Field": "VersionDirectory",
+          "Value": "0"
+        },
+        {
+          "Section": "Computer",
+          "Field": "VersionSysvol",
+          "Value": "0"
+        },
+        {
+          "Section": "User",
+          "Field": "VersionDirectory",
+          "Value": "0"
+        },
+        {
+          "Section": "User",
+          "Field": "VersionSysvol",
+          "Value": "0"
+        }
+      ],
+      "Permissions": [
+        {
+          "Sid": "S-1-5-11",
+          "Permission": "GpoRead"
+        },
+        {
+          "Sid": "S-1-5-18",
+          "Permission": "GpoEditDeleteModifySecurity"
+        },
+        {
+          "Sid": "S-1-5-21-34256453-3348971241-2809240126-1647",
+          "Permission": "GpoApply"
+        },
+        {
+          "Sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+          "Permission": "GpoEdit"
+        },
+        {
+          "Sid": "S-1-5-21-34256453-3348971241-2809240126-512",
+          "Permission": "GpoEditDeleteModifySecurity"
+        },
+        {
+          "Sid": "S-1-5-21-34256453-3348971241-2809240126-519",
+          "Permission": "GpoEditDeleteModifySecurity"
+        },
+        {
+          "Sid": "S-1-5-9",
+          "Permission": "GpoRead"
+        }
+      ],
+      "PermissionMetadataMatchesPreviousScope": true,
+      "SysvolPathMatches": true,
+      "SysvolRootEntries": [
+        {
+          "Name": "Machine",
+          "PSIsContainer": true,
+          "Length": null
+        },
+        {
+          "Name": "User",
+          "PSIsContainer": true,
+          "Length": null
+        },
+        {
+          "Name": "GPO.cmt",
+          "PSIsContainer": false,
+          "Length": 426
+        },
+        {
+          "Name": "GPT.INI",
+          "PSIsContainer": false,
+          "Length": 59
+        }
+      ],
+      "SysvolRootOwnerSid": "S-1-5-21-34256453-3348971241-2809240126-512",
+      "SysvolRootDaclProtected": true,
+      "SysvolRootRules": [
+        {
+          "Sid": "S-1-3-0",
+          "Type": "Allow",
+          "Rights": "FullControl",
+          "Inherited": false,
+          "Inheritance": "ContainerInherit, ObjectInherit",
+          "Propagation": "InheritOnly"
+        },
+        {
+          "Sid": "S-1-5-9",
+          "Type": "Allow",
+          "Rights": "ReadAndExecute, Synchronize",
+          "Inherited": false,
+          "Inheritance": "ContainerInherit, ObjectInherit",
+          "Propagation": "None"
+        },
+        {
+          "Sid": "S-1-5-11",
+          "Type": "Allow",
+          "Rights": "ReadAndExecute, Synchronize",
+          "Inherited": false,
+          "Inheritance": "ContainerInherit, ObjectInherit",
+          "Propagation": "None"
+        },
+        {
+          "Sid": "S-1-5-18",
+          "Type": "Allow",
+          "Rights": "FullControl",
+          "Inherited": false,
+          "Inheritance": "ContainerInherit, ObjectInherit",
+          "Propagation": "None"
+        },
+        {
+          "Sid": "S-1-5-21-34256453-3348971241-2809240126-512",
+          "Type": "Allow",
+          "Rights": "FullControl",
+          "Inherited": false,
+          "Inheritance": "ContainerInherit, ObjectInherit",
+          "Propagation": "None"
+        },
+        {
+          "Sid": "S-1-5-21-34256453-3348971241-2809240126-519",
+          "Type": "Allow",
+          "Rights": "FullControl",
+          "Inherited": false,
+          "Inheritance": "ContainerInherit, ObjectInherit",
+          "Propagation": "None"
+        },
+        {
+          "Sid": "S-1-5-21-34256453-3348971241-2809240126-1647",
+          "Type": "Allow",
+          "Rights": "ReadAndExecute, Synchronize",
+          "Inherited": false,
+          "Inheritance": "ContainerInherit, ObjectInherit",
+          "Propagation": "None"
+        },
+        {
+          "Sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+          "Type": "Allow",
+          "Rights": "DeleteSubdirectoriesAndFiles, Write, ReadAndExecute, Synchronize",
+          "Inherited": false,
+          "Inheritance": "ContainerInherit, ObjectInherit",
+          "Propagation": "None"
+        }
+      ],
+      "SysvolDescendantsEnumerated": false,
+      "EffectiveGmsaWriteAccessTested": false
+    },
+    "ProtectedTrustGpo": {
+      "Id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
+      "Name": "AuthWire-Pilot-Trust",
+      "Status": "AllSettingsEnabled",
+      "DefinitionsChangedByTool": false,
+      "HistoricalEqualityCompared": false
+    },
+    "Blockers": [],
+    "OperationError": null,
+    "ReadyForNextReview": true,
+    "OperatorReadOnlySnapshot": true,
+    "GmsaRuntimeTested": false,
+    "PanelAttestationUpdated": false,
+    "CanApplyGpo": false,
+    "AdChanged": false,
+    "GpoChanged": false,
+    "ServicesChanged": false,
+    "EndpointChanged": false,
+    "KeyAclChanged": false,
+    "TrustStoreChanged": false,
+    "SecretsExported": false
+  },
+  "acceptance": {
+    "pinned_candidate_read": true,
+    "live_pilot_computer_sids_match_pinned_plan": true,
+    "computer_count": 2,
+    "all_targets_enabled": true,
+    "owned_gpo_identity_and_permission_metadata_match": true,
+    "owned_gpo_report_unlinked_and_no_settings_extensions": true,
+    "all_reported_versions_zero": true,
+    "sysvol_root_metadata_recorded": true,
+    "protected_trust_gpo_identity_matches": true,
+    "operator_readonly_snapshot_accepted": true,
+    "full_connector_scope_attestation": false,
+    "gmsa_effective_write_access_tested": false,
+    "sysvol_descendants_enumerated": false,
+    "can_apply_gpo": false,
+    "full_deployment_complete": false
+  },
+  "limits": [
+    "Snapshot was taken by VIZYONVERI\\administrator, not the gMSA service worker.",
+    "SYSVOL root ACL/entries only, not a complete descendant inventory or effective group/token access evaluation.",
+    "Protected trust GPO identity was read; historical full business-state equality was not compared.",
+    "Readiness is for next review only, not authorization or proof of later GPO application.",
+    "Native script has now executed successfully on DC01; no panel attestation was updated."
+  ],
+  "next_step": "Implement separate bounded typed Connector read-only live-directory and owned-GPO scope verification; keep content verification and GPO application gates separate.",
+  "counts": {
+    "completed": 54,
+    "total": 94,
+    "remaining": 40
+  }
+}
