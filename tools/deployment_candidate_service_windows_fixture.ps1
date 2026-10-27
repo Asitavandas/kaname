@@ -72,6 +72,31 @@ try{
  Check (-not $r.ProbeVerified -and -not $r.CandidateVerified -and $r.TemporaryServiceRemoved) 'Unexpected candidate content fails closed'
  Remove-Item -LiteralPath $extra -Force
  Check ((TreeState $parent) -ceq $before -and (Get-Acl -LiteralPath $kp).Sddl -ceq $keyAcl) 'Negative probes preserve candidate and private-key ACL'
+ # The delivered DC01 wrapper is parsed and its exact embedded helper bytes
+ # are exercised here. Its DC01-only main is never run on the hosted runner.
+ $delivery=Join-Path $PSScriptRoot '..\docs\checkpoints\2026-10-27-dc01-candidate-readonly-service.ps1'
+ $dt=[IO.File]::ReadAllText($delivery);$tt=$null;$ee=$null
+ $da=[Management.Automation.Language.Parser]::ParseFile($delivery,[ref]$tt,[ref]$ee)
+ Check ($ee.Count -eq 0) 'Exact DC01 delivery parses in native Windows PowerShell 5.1'
+ . ([scriptblock]::Create((LoadFunctions $delivery)))
+ $reviewedSources=@{}
+ $map=[regex]::Match($dt,'(?s)\$reviewedSources=@\{(.*?)\r?\n\}').Groups[1].Value
+ foreach($m in [regex]::Matches($map,"'([^']+)'='([a-f0-9]{64})'")){$reviewedSources[$m.Groups[1].Value]=$m.Groups[2].Value}
+ $encoded=[regex]::Match($dt,"\`$embeddedSources='([^']+)'").Groups[1].Value
+ $archiveHash=[regex]::Match($dt,"\`$archiveSha256='([a-f0-9]{64})'").Groups[1].Value
+ $sources=Read-AuthWireReviewedSourceBytes ([Convert]::FromBase64String($encoded)) $archiveHash
+ Check ($sources.Count -eq 2 -and $reviewedSources.Count -eq 2) 'Delivery contains exactly the two reviewed helpers'
+ foreach($n in $sources.Keys){Check ((Get-AuthWireDeliveryBodyHash ([IO.File]::ReadAllText((Join-Path (Split-Path -Parent $helper) $n)))) -ceq $reviewedSources[$n]) 'Embedded delivery bytes match the production helper bodies'}
+ Reject {Read-AuthWireReviewedSourceBytes ([Convert]::FromBase64String($encoded)) ('0'*64)} 'Changed delivery archive rejected'
+ $signedDelivery=Join-Path $FixtureDirectory 'source-delivery'
+ New-AuthWireSignedDelivery $sources $signedDelivery $signer
+ Assert-AuthWireSignedDelivery $signedDelivery $signer.Thumbprint
+ Check $true 'Exact two-helper source delivery signs and checks actual bytes and ACL'
+ Reject {Assert-AuthWireCandidateDeliveryHost} 'Customer delivery refuses fixture host before AD lookup or source changes'
+ $same=@{ServicePid=1;ServiceAccount='fixed';KeyAcl='fixed';Files=@{item=@{hash='a';sddl='b'}}}
+ Check (Test-AuthWireCandidateSnapshotSame $same $same) 'Preservation comparison accepts unchanged context'
+ $different=@{ServicePid=2;ServiceAccount='fixed';KeyAcl='fixed';Files=$same.Files}
+ Check (-not (Test-AuthWireCandidateSnapshotSame $same $different)) 'Preservation comparison rejects a permanent service restart'
  [pscustomobject]@{Event='WINDOWS_CANDIDATE_READONLY_NATIVE_FIXTURE';Checks=$checks;RealNonAdminScm=$true;CandidateExecuted=$false;CustomerAdTested=$false;GmsaTested=$false}|ConvertTo-Json
 }finally{
  if($parent -and (Test-Path -LiteralPath $parent)){Remove-Item -LiteralPath $parent -Recurse -Force}
