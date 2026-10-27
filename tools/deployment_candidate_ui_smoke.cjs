@@ -13,13 +13,18 @@ const assert = require('node:assert/strict');
   await page.evaluate(()=>{
    for(const e of document.querySelectorAll('[hidden]'))e.hidden=false;
    window.$=id=>document.getElementById(id);window.authGeneration=1;window.allowWrite=true;
-   window.can=(resource,write)=>!write||window.allowWrite;window.rows=[];window.recordCalls=0;
+   window.can=(resource,write)=>!write||window.allowWrite;window.rows=[];window.recordCalls=0;window.verifyCalls=0;window.workerReady=false;window.verifyJobs=[];
    window.api=async(path,value)=>{
-    if(path==='/api/deployment/candidates')return {revision:10,candidates:window.rows,can_apply:false};
+    if(path==='/api/deployment/candidates')return {revision:10,candidates:window.rows,can_apply:false,verification_worker_ready:window.workerReady,verification_jobs:window.verifyJobs};
     if(path==='/api/deployment/candidates/preview')return {id:value.registration_id,plan_id:'<img src=x onerror=alert(1)>',plan_version:1,gpo_id:'gpo',manifest_sha256:'abc',preview_hash:'a'.repeat(64)};
     if(path==='/api/deployment/candidates/record'){
      window.recordCalls++;window.rows=[{id:value.registration_id,plan_id:'plan',plan_version:1,state:'operator_reported',manifest_sha256:'abc'}];
      throw Object.assign(new Error('lost response'),{status:0});
+    }
+    if(path==='/api/deployment/candidates/verify/preview')return {...value,target:{candidate_id:value.candidate_id,manifest_sha256:'abc'},read_only:true,can_apply:false,preview_hash:'a'.repeat(64)};
+    if(path==='/api/deployment/candidates/verify/create'){
+     window.verifyCalls++;window.verifyJobs=[{id:value.job_id,candidate_id:value.candidate_id,state:'queued',outcome:null}];
+     throw Object.assign(new Error('lost verify response'),{status:0});
     }
     throw new Error('Unexpected route '+path);
    };
@@ -37,6 +42,20 @@ const assert = require('node:assert/strict');
   assert.equal(await page.evaluate(()=>window.recordCalls),1);
   assert.match(await page.locator('#dep-candidate-feedback').textContent(),/tamamlandığı doğrulandı/);
   assert.match(await page.locator('#dep-candidate-list').textContent(),/Connector doğrulaması bekleniyor/);
+  assert.equal(await page.getByRole('button',{name:'Doğrulamayı önizle',exact:true}).isDisabled(),true);
+  await page.evaluate(()=>{window.workerReady=true;return loadCandidateStatus();});
+  await page.getByRole('button',{name:'Doğrulamayı önizle',exact:true}).click();
+  await page.getByRole('button',{name:'Doğrulamayı gönder',exact:true}).waitFor();
+  await page.evaluate(()=>loadCandidateStatus());
+  assert.equal(await page.getByRole('button',{name:'Doğrulamayı önizle',exact:true}).isDisabled(),false);
+  assert.equal(await page.getByRole('button',{name:'Doğrulamayı gönder',exact:true}).count(),0);
+  await page.getByRole('button',{name:'Doğrulamayı önizle',exact:true}).click();
+  await page.getByRole('button',{name:'Doğrulamayı gönder',exact:true}).click();
+  await page.waitForFunction(()=>window.verifyCalls===1&&document.getElementById('dep-candidate-list').textContent.includes('bağlantı bekliyor'));
+  assert.equal(await page.evaluate(()=>window.verifyCalls),1);
+  assert.equal(await page.getByRole('button',{name:'Doğrulamayı önizle',exact:true}).isDisabled(),true);
+  await page.evaluate(()=>{window.rows[0].state='content_verified';window.rows[0].content_verified=true;window.verifyJobs[0].state='completed';window.verifyJobs[0].outcome='content_verified';return loadCandidateStatus();});
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/GPO ve dağıtım kontrolü bekleniyor/);
   await page.locator('#dep-candidate-open').click();
   await page.locator('#dep-candidate-json').fill('private draft');
   await page.evaluate(()=>{authGeneration++;resetCandidateRegistration();});

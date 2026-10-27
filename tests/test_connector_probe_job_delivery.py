@@ -75,6 +75,9 @@ class ConnectorProbeDeliveryTests(unittest.TestCase):
   # The dev37 updater remains frozen. Current source additionally contains the
   # explicitly reviewed dev38 receipt handler; protected dev37 bodies stay pinned.
   self.n['SERVER_FUNCTIONS']=[*self.n['SERVER_FUNCTIONS'],'Handler.deployment_candidate_admin']
+  # The next reviewed release extends only peer dispatch; this historical updater
+  # keeps its old pin and is not used to install the current source.
+  self.n['SERVER_PROTECTED']={k:v for k,v in self.n['SERVER_PROTECTED'].items() if k!='Handler.connector_peer'}
   self.real_server_guard(raw)
   changed=raw.replace(b'def guard(self',b'def altered_guard(self',1)
   self.assertNotEqual(raw,changed)

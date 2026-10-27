@@ -157,12 +157,23 @@ class DeploymentCandidates:
             except (CandidateError,RegistryError) as e:
                 if e.code not in {'CONNECTOR_NOT_PAIRED','CONNECTOR_CONTEXT_CHANGED','CONNECTOR_CONTEXT_NOT_READY'}: raise
                 binding=None
+            from .candidate_jobs import CandidateJobs
+            jobs=CandidateJobs(self,wall_clock=self.clock)
             for row in reversed(rows):
                 current=row['binding_scope']==binding
                 if current:
                     try: current=self._dependencies(db,row['plan_id'],row['plan_version'])==row['dependency_sha256']
                     except CandidateError: current=False
+                verified=bool(current and jobs.content_verified(db,row))
                 result.append({k:row[k] for k in ('id','plan_id','plan_version','gpo_id','manifest_sha256','approval_sha256','created_at')} |
-                              {'state':'operator_reported' if current else 'outdated','connector_verified':False,'can_apply':False})
+                              {'state':('content_verified' if verified else 'operator_reported') if current else 'outdated',
+                               'content_verified':verified,'connector_verified':False,'can_apply':False})
+            ledger=jobs._read(db);last=ledger['last_poll'];now=int(self.clock())
+            ready=bool(binding and last and last['scope']==binding and 0<=now-last['at']<90)
+            verification=[{'id':j['id'],'candidate_id':j['target']['candidate_id'],
+                           'state':jobs._state(j,binding,now) if jobs._current(db,j) else 'obsolete',
+                           'outcome':j['result']['outcome'] if j['result'] else None}
+                          for j in reversed(ledger['jobs'])]
             return {'revision':db.execute('SELECT revision FROM state WHERE id=1').fetchone()[0],
-                    'candidates':result,'worker_delivery_pending':True,'can_apply':False}
+                    'candidates':result,'worker_delivery_pending':not ready,'verification_worker_ready':ready,
+                    'verification_jobs':verification,'can_apply':False}

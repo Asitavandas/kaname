@@ -73,6 +73,30 @@ try{
  Check (-not $r.ProbeVerified -and -not $r.CandidateVerified -and $r.TemporaryServiceRemoved) 'Unexpected candidate content fails closed'
  Remove-Item -LiteralPath $extra -Force
  Check ((TreeState $parent) -ceq $before -and (Get-Acl -LiteralPath $kp).Sddl -ceq $keyAcl) 'Negative probes preserve candidate and private-key ACL'
+ # Fixed worker selector uses only the protected local root and approved hash.
+ # Stub only the already separately SCM-tested final verifier to inspect pin wiring.
+ . $helper -LibraryOnly
+ . (Join-Path (Split-Path -Parent $helper) 'Invoke-AuthWireConnectorProbeJob.ps1')
+ . (Join-Path (Split-Path -Parent $helper) 'Invoke-AuthWireCandidateJob.ps1')
+ $targetPin=[pscustomobject]@{candidate_id=[guid]::NewGuid().ToString('D');plan_id=$a.plan_id;plan_version=$a.plan_version;gpo_id=$a.gpo_id;approval_sha256=$approvalHash;manifest_sha256=$pins.ManifestSha256;dependency_sha256=('a'*64)}
+ $binding=@{connector_id=$a.connector_id;service_sid=$sid}
+ $actualVerifier=${function:Test-AuthWireServiceCandidate}
+ try{
+  function Test-AuthWireServiceCandidate {
+   param($ConnectorId,$PlanId,$PlanVersion,$PreviewHash,$GpoId,$ProtectedGpoId,$ServiceSid,$PublisherThumbprint,$ApprovalSha256,$ManifestSha256)
+   if($ConnectorId -cne $script:a.connector_id -or $PreviewHash -cne $script:a.preview_hash -or $ProtectedGpoId -cne $script:a.protected_gpo_id -or $GpoId -cne $script:a.gpo_id){throw 'Fixture pin wiring mismatch'}
+   return [pscustomobject]@{CandidateVerified=$true;SignatureVerified=$true;NetworkContentVerified=$true;RuntimeSid=$ServiceSid;ManifestSha256=$ManifestSha256}
+  }
+  Check (Test-AuthWireJobCandidateContent $targetPin $binding $signer.Thumbprint) 'Worker selector discovers exact approved candidate without a request path'
+  $badTarget=$targetPin|ConvertTo-Json|ConvertFrom-Json;$badTarget.approval_sha256='0'*64
+  Reject {Test-AuthWireJobCandidateContent $badTarget $binding $signer.Thumbprint} 'Wrong approval pin cannot select a local candidate'
+  Reject {Test-AuthWireJobCandidateContent $targetPin $binding ('0'*40)} 'Worker package publisher cannot be replaced by approval input'
+  $badTarget=$targetPin|ConvertTo-Json|ConvertFrom-Json;$badTarget|Add-Member NoteProperty command 'whoami'
+  Reject {Test-AuthWireJobCandidateContent $badTarget $binding $signer.Thumbprint} 'Worker target rejects arbitrary command fields'
+  $hash=Get-AuthWireCandidateTargetHash $targetPin
+  Check ($hash -cmatch '\A[0-9a-f]{64}\z' -and $hash -ceq (Get-AuthWireCandidateTargetHash $targetPin)) 'Typed target has a deterministic intent digest'
+ }finally{Set-Item -LiteralPath function:Test-AuthWireServiceCandidate -Value $actualVerifier}
+ Check ((TreeState $parent) -ceq $before -and (Get-Acl -LiteralPath $kp).Sddl -ceq $keyAcl) 'Worker selector preserves candidate and signer ACL'
  # The delivered DC01 wrapper is parsed and its exact embedded helper bytes
  # are exercised here. Its DC01-only main is never run on the hosted runner.
  $delivery=Join-Path $PSScriptRoot '..\docs\checkpoints\2026-10-27-dc01-candidate-readonly-service.ps1'
@@ -87,7 +111,7 @@ try{
  $archiveHash=[regex]::Match($dt,"\`$archiveSha256='([a-f0-9]{64})'").Groups[1].Value
  $sources=Read-AuthWireReviewedSourceBytes ([Convert]::FromBase64String($encoded)) $archiveHash
  Check ($sources.Count -eq 2 -and $reviewedSources.Count -eq 2) 'Delivery contains exactly the two reviewed helpers'
- foreach($n in $sources.Keys){Check ((Get-AuthWireDeliveryBodyHash ([IO.File]::ReadAllText((Join-Path (Split-Path -Parent $helper) $n)))) -ceq $reviewedSources[$n]) 'Embedded delivery bytes match the production helper bodies'}
+ foreach($n in $sources.Keys){Check ((Get-AuthWireDeliveryBodyHash ([Text.Encoding]::UTF8.GetString($sources[$n]))) -ceq $reviewedSources[$n]) 'Historical delivery bytes retain their original reviewed pins'}
  Reject {Read-AuthWireReviewedSourceBytes ([Convert]::FromBase64String($encoded)) ('0'*64)} 'Changed delivery archive rejected'
  $signedDelivery=Join-Path $FixtureDirectory 'source-delivery'
  New-AuthWireSignedDelivery $sources $signedDelivery $signer

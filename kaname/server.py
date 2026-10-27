@@ -326,6 +326,7 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(403, {'error':'CONNECTOR_PANEL_SESSION_REQUIRED'}); return
         try:
             from .deployment_candidates import DeploymentCandidates, CandidateError
+            from .connector_jobs import JobError
             from .connector_registry import RegistryError
         except ImportError:
             self.respond(503, {'error':'CONNECTOR_SERVICE_UNAVAILABLE'}); return
@@ -340,9 +341,14 @@ class Handler(BaseHTTPRequestHandler):
                     adb.execute('BEGIN')
                     actor=self.server.admin.current_actor(adb,self.actor,'certificates.authority')
                     self.server.admin.current_actor(adb,self.actor,'system.connectors')
-                    result=candidates.preview(value) if self.path.endswith('/preview') else candidates.record(value,actor['id'])
+                    if '/verify/' in self.path:
+                        from .candidate_jobs import CandidateJobs
+                        jobs=CandidateJobs(candidates)
+                        result=jobs.preview(value) if self.path.endswith('/preview') else jobs.create(value,actor['id'])
+                    else:
+                        result=candidates.preview(value) if self.path.endswith('/preview') else candidates.record(value,actor['id'])
             self.respond(200,result)
-        except (CandidateError,RegistryError) as error:
+        except (CandidateError,RegistryError,JobError) as error:
             self.respond(503 if error.code.endswith('STORE_INVALID') else 409 if error.code.endswith(('CHANGED','STALE','CONFLICT','RECORDED','LIMIT')) else 400, {'error':error.code})
         except ConflictError:
             self.respond(409,{'error':'REVISION_CONFLICT'})
@@ -384,7 +390,12 @@ class Handler(BaseHTTPRequestHandler):
             raw = self.rfile.read(size); self.body_read = True
             if len(raw) != size: raise ValueError()
             registry = self.connector_services()
-            if self.path == '/api/connector/v1/jobs/poll':
+            if self.path in {'/api/connector/v1/candidates/poll','/api/connector/v1/candidates/result'}:
+                from .deployment_candidates import DeploymentCandidates
+                from .candidate_jobs import CandidateJobs
+                jobs=CandidateJobs(DeploymentCandidates(registry,self.server.deployment))
+                result=jobs.poll(raw) if self.path.endswith('/poll') else jobs.complete(raw)
+            elif self.path == '/api/connector/v1/jobs/poll':
                 result = self.connector_job_services().poll(raw)
             elif self.path == '/api/connector/v1/jobs/result':
                 result = self.connector_job_services().complete(raw)
@@ -867,9 +878,9 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
-        if self.path in {'/api/deployment/candidates/preview','/api/deployment/candidates/record'}:
+        if self.path in {'/api/deployment/candidates/preview','/api/deployment/candidates/record','/api/deployment/candidates/verify/preview','/api/deployment/candidates/verify/create'}:
             self.deployment_candidate_admin(write=True); return
-        if self.path in {'/api/connector/v1/challenge','/api/connector/v1/health','/api/connector/v1/jobs/poll','/api/connector/v1/jobs/result'}:
+        if self.path in {'/api/connector/v1/challenge','/api/connector/v1/health','/api/connector/v1/jobs/poll','/api/connector/v1/jobs/result','/api/connector/v1/candidates/poll','/api/connector/v1/candidates/result'}:
             self.connector_peer(); return
         if self.path in {'/api/deployment/connector/jobs/preview', '/api/deployment/connector/jobs/create'}:
             self.connector_job_admin(write=True); return
