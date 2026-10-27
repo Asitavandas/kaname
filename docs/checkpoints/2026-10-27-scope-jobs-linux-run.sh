@@ -1,0 +1,1 @@
+sudo /opt/kaname-lab/venv/bin/python -I -B -c 'import hashlib,pathlib; p=pathlib.Path("/home/segmentiq/authwire-scope-jobs-20261027.py"); b=p.read_bytes(); assert hashlib.sha256(b).hexdigest()=="b0bdd9dbc573f04d9cc69c671b82bbaa5549b661342cc1bc9e2122b77788e8c3", "Kurulum dosyasi degismis"; exec(compile(b,str(p),"exec"))'

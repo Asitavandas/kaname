@@ -1,0 +1,101 @@
+{
+  "event": "DEPLOYMENT_SCOPE_JOB_CHANNEL_DELIVERY_PREPARED",
+  "date_local": "2026-10-27",
+  "timezone": "Europe/Istanbul",
+  "version": "0.14.0-dev.40",
+  "pr": 101,
+  "source_component": "4543e25b3675202a828047c4a0628570939d6fe0",
+  "tested_head": "2547db71169da01b9a79399445255a0a516da28f",
+  "merge": "96cebc77ab777ca617ae19fe525608c68cac0893",
+  "workflows": [
+    {
+      "id": 40561711173,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40561711168,
+      "name": "KANAME Linux source preparation",
+      "conclusion": "success"
+    },
+    {
+      "id": 40561711196,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40561711164,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40561711149,
+      "name": "AuthWire device enrollment pilot checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40561711151,
+      "name": "KANAME browser checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40561711185,
+      "name": "KANAME real RADIUS protocol proof",
+      "conclusion": "success"
+    }
+  ],
+  "validation": {
+    "foundation_tests": 903,
+    "foundation_skipped": 28,
+    "targeted_local_tests": 64,
+    "new_scope_http_delivery_tests": 33,
+    "authoritative_full_source_ci_passed": true,
+    "browser_content_scope_capability_lost_response_expiry_rejection_roles_passed": true,
+    "local_partial_source_full_run_accepted": false,
+    "local_missing_checkpoint_and_logo_errors": 54,
+    "existing_native_windows_kerberos_radius_workflows_passed": true,
+    "new_windows_scope_worker_tested": false,
+    "customer_gmsa_scope_job_tested": false
+  },
+  "linux_delivery": {
+    "path": "/home/segmentiq/authwire-scope-jobs-20261027.py",
+    "sha256": "b0bdd9dbc573f04d9cc69c671b82bbaa5549b661342cc1bc9e2122b77788e8c3",
+    "stage": "/home/segmentiq/authwire-stage-dev40-4543e25b3675",
+    "manifest_sha256": "cbe06e8d9d93b5c6c967da4f7c62f00197eec96a1f42bbc916c7ea3c1d436aa4",
+    "files": 180,
+    "readonly_source_check_passed": true,
+    "stage_import_in_existing_venv_passed": true,
+    "installed_version_last_read": "0.14.0-dev.39",
+    "operator_sudo_execution_pending": true,
+    "panel_restart_planned": true,
+    "radius_restart_planned": false,
+    "broker_restart_planned": false,
+    "full_data_backup_planned": false,
+    "radius_pid_last_read": "1243360",
+    "broker_pid_last_read": "1069437",
+    "services_last_read_active": true,
+    "final_sha_reread_outcome_unobserved": true,
+    "final_sha_reread_note": "A repeated read-only sha256sum request was delayed and its waiting cell terminated. Earlier stage/updater digest and source guard success remain recorded; operator command checks updater digest again."
+  },
+  "limits": {
+    "scope_job_channel_added": true,
+    "scope_jobs_created": false,
+    "windows_scope_worker_delivery_pending": true,
+    "windows_service_changed": false,
+    "ad_gpo_changed": false,
+    "endpoint_changed": false,
+    "signer_key_marker_acl_changed": false,
+    "scope_snapshot_not_gpo_application": true,
+    "connector_verified": false,
+    "can_apply": false,
+    "sysvol_staging_pending": true,
+    "real_gmsa_scope_job_acceptance_pending": true,
+    "user_eap_tls_acceptance_pending": true
+  },
+  "progress": {
+    "completed": 54,
+    "total": 94,
+    "open": 40
+  },
+  "guide_ready_claimed": false
+}
