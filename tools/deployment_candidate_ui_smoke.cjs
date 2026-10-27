@@ -14,8 +14,9 @@ const assert = require('node:assert/strict');
    for(const e of document.querySelectorAll('[hidden]'))e.hidden=false;
    window.$=id=>document.getElementById(id);window.authGeneration=1;window.allowWrite=true;
    window.can=(resource,write)=>!write||window.allowWrite;window.rows=[];window.recordCalls=0;window.verifyCalls=0;window.workerReady=false;window.verifyJobs=[];
+   window.scopeReady=false;window.scopeJobs=[];window.scopeCalls=0;
    window.api=async(path,value)=>{
-    if(path==='/api/deployment/candidates')return {revision:10,candidates:window.rows,can_apply:false,verification_worker_ready:window.workerReady,verification_jobs:window.verifyJobs};
+    if(path==='/api/deployment/candidates')return {revision:10,candidates:window.rows,can_apply:false,verification_worker_ready:window.workerReady,verification_jobs:window.verifyJobs,scope_worker_ready:window.scopeReady,scope_verification_jobs:window.scopeJobs};
     if(path==='/api/deployment/candidates/preview')return {id:value.registration_id,plan_id:'<img src=x onerror=alert(1)>',plan_version:1,gpo_id:'gpo',manifest_sha256:'abc',preview_hash:'a'.repeat(64)};
     if(path==='/api/deployment/candidates/record'){
      window.recordCalls++;window.rows=[{id:value.registration_id,plan_id:'plan',plan_version:1,state:'operator_reported',manifest_sha256:'abc'}];
@@ -25,6 +26,11 @@ const assert = require('node:assert/strict');
     if(path==='/api/deployment/candidates/verify/create'){
      window.verifyCalls++;window.verifyJobs=[{id:value.job_id,candidate_id:value.candidate_id,state:'queued',outcome:null}];
      throw Object.assign(new Error('lost verify response'),{status:0});
+    }
+    if(path==='/api/deployment/candidates/scope/preview')return {...value,target:{candidate_id:value.candidate_id,manifest_sha256:'abc',target_count:2,target_sids_sha256:'b'.repeat(64)},read_only:true,can_apply:false,preview_hash:'a'.repeat(64)};
+    if(path==='/api/deployment/candidates/scope/create'){
+     window.scopeCalls++;window.scopeJobs=[{id:value.job_id,candidate_id:value.candidate_id,state:'queued',outcome:null}];
+     throw Object.assign(new Error('lost scope response'),{status:0});
     }
     throw new Error('Unexpected route '+path);
    };
@@ -56,6 +62,23 @@ const assert = require('node:assert/strict');
   assert.equal(await page.getByRole('button',{name:'Doğrulamayı önizle',exact:true}).isDisabled(),true);
   await page.evaluate(()=>{window.rows[0].state='content_verified';window.rows[0].content_verified=true;window.verifyJobs[0].state='completed';window.verifyJobs[0].outcome='content_verified';return loadCandidateStatus();});
   assert.match(await page.locator('#dep-candidate-list').textContent(),/GPO ve dağıtım kontrolü bekleniyor/);
+  assert.equal(await page.getByRole('button',{name:'AD/GPO kontrolünü önizle',exact:true}).isDisabled(),true);
+  await page.evaluate(()=>{window.scopeReady=true;return loadCandidateStatus();});
+  await page.getByRole('button',{name:'AD/GPO kontrolünü önizle',exact:true}).click();
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/Hedef bilgisayar sayısı: 2/);
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/GPO veya cihaz ayarı uygulanmaz/);
+  await page.getByRole('button',{name:'AD/GPO kontrolünü gönder',exact:true}).click();
+  await page.waitForFunction(()=>window.scopeCalls===1&&document.getElementById('dep-candidate-list').textContent.includes('AD/GPO kontrol görevi bekleniyor'));
+  assert.equal(await page.evaluate(()=>window.scopeCalls),1);
+  assert.equal(await page.getByRole('button',{name:'AD/GPO kontrolünü önizle',exact:true}).isDisabled(),true);
+  await page.evaluate(()=>{window.scopeJobs[0].state='completed';window.scopeJobs[0].outcome='scope_snapshot_verified';Object.assign(window.rows[0],{scope_snapshot_verified:true,scope_snapshot_fresh:true,scope_checked_at:Math.floor(Date.now()/1000)});return loadCandidateStatus();});
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/AD hedefleri ve GPO okuma kontrolü başarılı/);
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/Dağıtım henüz uygulanmadı/);
+  await page.evaluate(()=>{window.rows[0].scope_snapshot_fresh=false;return loadCandidateStatus();});
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/güncel kontrol gerekiyor/);
+  await page.evaluate(()=>{Object.assign(window.rows[0],{scope_snapshot_verified:false,scope_snapshot_fresh:false,scope_reason:'DIRECTORY_SCOPE_CHANGED'});return loadCandidateStatus();});
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/DIRECTORY_SCOPE_CHANGED/);
+  assert.doesNotMatch(await page.locator('#dep-candidate-list').textContent(),/AD hedefleri ve GPO okuma kontrolü başarılı/);
   await page.locator('#dep-candidate-open').click();
   await page.locator('#dep-candidate-json').fill('private draft');
   await page.evaluate(()=>{authGeneration++;resetCandidateRegistration();});
@@ -64,6 +87,6 @@ const assert = require('node:assert/strict');
   await page.evaluate(()=>{window.allowWrite=false;candidateControls();});
   assert.equal(await page.locator('#dep-candidate-open').isVisible(),false);
   assert.equal(errors.length,0,errors.join('\n'));
-  console.log('AUTHWIRE_CANDIDATE_RECEIPT_UI_OK: preview, safe text, one write, lost-response GET reconciliation, reset and roles');
+  console.log('AUTHWIRE_CANDIDATE_RECEIPT_UI_OK: content and scope separation, capability gating, lost-response reconciliation, snapshot expiry/rejection, reset and roles');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1);});
