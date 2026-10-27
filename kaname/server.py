@@ -315,6 +315,46 @@ class Handler(BaseHTTPRequestHandler):
         except ImportError:
             self.respond(503, {'error': 'CONNECTOR_SERVICE_UNAVAILABLE'})
 
+    def deployment_candidate_admin(self, *, write=False):
+        if not self.guard(write=write, resource='certificates.authority'):
+            return
+        if not permits(self.actor,'system.connectors',write):
+            self.respond(403, {'error':'FORBIDDEN'}); return
+        if not self.server.tls:
+            self.respond(403, {'error':'CONNECTOR_HTTPS_REQUIRED'}); return
+        if write and self.actor['maintenance']:
+            self.respond(403, {'error':'CONNECTOR_PANEL_SESSION_REQUIRED'}); return
+        try:
+            from .deployment_candidates import DeploymentCandidates, CandidateError
+            from .connector_registry import RegistryError
+        except ImportError:
+            self.respond(503, {'error':'CONNECTOR_SERVICE_UNAVAILABLE'}); return
+        try:
+            candidates=DeploymentCandidates(self.connector_services(),self.server.deployment)
+            if not write:
+                if self.path != '/api/deployment/candidates': raise ValueError()
+                result=candidates.status()
+            else:
+                value=self.read_body()
+                with self.server.admin.connect() as adb:
+                    adb.execute('BEGIN')
+                    actor=self.server.admin.current_actor(adb,self.actor,'certificates.authority')
+                    self.server.admin.current_actor(adb,self.actor,'system.connectors')
+                    result=candidates.preview(value) if self.path.endswith('/preview') else candidates.record(value,actor['id'])
+            self.respond(200,result)
+        except (CandidateError,RegistryError) as error:
+            self.respond(503 if error.code.endswith('STORE_INVALID') else 409 if error.code.endswith(('CHANGED','STALE','CONFLICT','RECORDED','LIMIT')) else 400, {'error':error.code})
+        except ConflictError:
+            self.respond(409,{'error':'REVISION_CONFLICT'})
+        except AdminError as error:
+            self.respond({'UNAUTHORIZED':401,'FORBIDDEN':403,'BODY_LIMIT':413,'JSON_REQUIRED':415}.get(error.code,400),{'error':error.code})
+        except (ValueError,TypeError,KeyError):
+            self.respond(400,{'error':'DEPLOYMENT_CANDIDATE_INPUT_INVALID'})
+        except sqlite3.Error as error:
+            self.store_error(error)
+        except ImportError:
+            self.respond(503,{'error':'CONNECTOR_SERVICE_UNAVAILABLE'})
+
     def connector_peer(self):
         if (not self.server.tls or self.headers.get('Host') not in self.server.hosts or
             any(self.headers.get(h) is not None for h in ('Origin','Cookie','Authorization'))):
@@ -606,6 +646,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get('Host') not in self.server.hosts:
             self.respond(403, {'error': 'INVALID_HOST'})
             return
+        if urlsplit(self.path).path == '/api/deployment/candidates':
+            self.deployment_candidate_admin(); return
         if urlsplit(self.path).path == '/api/deployment/connector/jobs':
             self.connector_job_admin(); return
         if urlsplit(self.path).path == '/api/deployment/connector':
@@ -825,6 +867,8 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
+        if self.path in {'/api/deployment/candidates/preview','/api/deployment/candidates/record'}:
+            self.deployment_candidate_admin(write=True); return
         if self.path in {'/api/connector/v1/challenge','/api/connector/v1/health','/api/connector/v1/jobs/poll','/api/connector/v1/jobs/result'}:
             self.connector_peer(); return
         if self.path in {'/api/deployment/connector/jobs/preview', '/api/deployment/connector/jobs/create'}:

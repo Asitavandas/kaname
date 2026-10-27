@@ -8,6 +8,7 @@ function depError(error){return depErrors[error.code]||error.message;}
 function depNode(tag,text){const n=document.createElement(tag);if(text!==undefined)n.textContent=String(text??'—');return n;}
 function depFeedback(text,error=false){$('dep-feedback').textContent=text;$('dep-feedback').dataset.tone=error?'error':'info';}
 function deploymentControls(){
+ candidateControls();
  const read=!!can('certificates.authority'),write=!!can('certificates.authority',true);
  $('dep-new').hidden=!write;$('dep-new').disabled=depBusy||!write;$('dep-refresh').disabled=depBusy||!read;
  $('dep-form').querySelectorAll('input,select,button').forEach(x=>x.disabled=depBusy||!write||depUncertain);
@@ -23,7 +24,7 @@ async function loadDeployment(offset=depOffset,force=false){
  if(!can('certificates.authority'))return null;
  if(depFlight&&!force)return depFlight;
  const generation=authGeneration,request=++depRequest,q=$('dep-group-query').value;
- const promise=(async()=>{try{const value=await api('/api/deployment/status?offset='+offset+'&q='+encodeURIComponent(q));if(generation!==authGeneration||request!==depRequest||!can('certificates.authority'))return null;depState=value;depOffset=offset;value.groups.forEach(g=>depGroups.set(g.sid,g.name));renderDeployment();return value;}catch(error){if(generation===authGeneration&&request===depRequest)depFeedback(depError(error),true);throw error;}finally{if(request===depRequest)depFlight=null;}})();depFlight=promise;return promise;
+ const promise=(async()=>{try{const value=await api('/api/deployment/status?offset='+offset+'&q='+encodeURIComponent(q));if(generation!==authGeneration||request!==depRequest||!can('certificates.authority'))return null;depState=value;depOffset=offset;value.groups.forEach(g=>depGroups.set(g.sid,g.name));renderDeployment();loadCandidateStatus();return value;}catch(error){if(generation===authGeneration&&request===depRequest)depFeedback(depError(error),true);throw error;}finally{if(request===depRequest)depFlight=null;}})();depFlight=promise;return promise;
 }
 function renderDeployment(){
  const list=$('dep-list');list.replaceChildren();
@@ -58,7 +59,7 @@ async function previewDeployment(plan){
   for(const profile of p.enrollment_profiles)box.append(depNode('p',(profile.id===p.plan.machine_profile_id?'Bilgisayar':'Kullanıcı')+' sertifikası: '+profile.name+' · v'+profile.version));
   if(p.trust.ready)box.append(depNode('p','Güvenilen kök: '+p.trust.root_thumbprint.toUpperCase()));
   p.artifact_blockers.forEach(code=>box.append(depNode('p',depBlockers[code]||code)));
-  box.append(depNode('p','GPO uygulaması: Windows yönetim bağlantısının kurulması bekleniyor. Hedef sayıları kurulum teyidi değildir.'));$('dep-preview').hidden=false;$('dep-preview').scrollIntoView({block:'nearest',behavior:'smooth'});
+  box.append(depNode('p','GPO uygulaması henüz etkin değil. Hedef sayıları kurulum teyidi değildir.'));$('dep-preview').hidden=false;$('dep-preview').scrollIntoView({block:'nearest',behavior:'smooth'});
  }catch(error){if(generation===authGeneration)depFeedback(depError(error),true);}finally{if(generation===authGeneration){depBusy=false;deploymentControls();}}
 }
 async function downloadDeployment(){
@@ -66,7 +67,7 @@ async function downloadDeployment(){
  try{const value=await api('/api/deployment/package',{expected_revision:p.revision,id:p.id,version:p.version,preview_hash:p.preview_hash});if(generation!==authGeneration)return;const bytes=Uint8Array.from(atob(value.content_base64),c=>c.charCodeAt(0));const url=URL.createObjectURL(new Blob([bytes],{type:'application/zip'}));depURLs.add(url);const a=document.createElement('a');a.href=url;a.download=value.name;a.click();setTimeout(()=>{URL.revokeObjectURL(url);depURLs.delete(url);},1000);}
  catch(error){if(generation===authGeneration){depPreview=null;depFeedback(depError(error),true);}}finally{if(generation===authGeneration){depBusy=false;deploymentControls();}}
 }
-function resetDeployment(){depRequest++;depFlight=null;depState=null;depBusy=false;depUncertain=false;depUncertainDraft=null;depEditing=null;depPreview=null;depOffset=0;depGroups.clear();for(const url of depURLs)URL.revokeObjectURL(url);depURLs.clear();$('dep-editor').close();$('dep-form').reset();$('dep-list').replaceChildren();$('dep-preview-summary').replaceChildren();$('dep-preview').hidden=true;depFeedback('');}
+function resetDeployment(){resetCandidateRegistration();depRequest++;depFlight=null;depState=null;depBusy=false;depUncertain=false;depUncertainDraft=null;depEditing=null;depPreview=null;depOffset=0;depGroups.clear();for(const url of depURLs)URL.revokeObjectURL(url);depURLs.clear();$('dep-editor').close();$('dep-form').reset();$('dep-list').replaceChildren();$('dep-preview-summary').replaceChildren();$('dep-preview').hidden=true;depFeedback('');}
 $('dep-new').addEventListener('click',()=>editDeployment());$('dep-form').addEventListener('submit',saveDeployment);$('dep-refresh').addEventListener('click',()=>loadDeployment(depOffset,true).catch(()=>{}));
 for(const id of ['dep-close','dep-cancel'])$(id).addEventListener('click',()=>{if(!depBusy)$('dep-editor').close();});$('dep-editor').addEventListener('cancel',event=>{if(depBusy)event.preventDefault();});
 $('dep-mode').addEventListener('change',deploymentControls);$('dep-wireless').addEventListener('change',deploymentControls);
@@ -75,6 +76,58 @@ $('dep-group-search').addEventListener('click',()=>loadDeployment(0,true).catch(
 $('dep-group-prev').addEventListener('click',()=>loadDeployment(Math.max(0,depOffset-100),true).catch(()=>{}));$('dep-group-next').addEventListener('click',()=>loadDeployment(depOffset+100,true).catch(()=>{}));
 $('dep-download').addEventListener('click',downloadDeployment);$('dep-preview-close').addEventListener('click',()=>{$('dep-preview').hidden=true;});
 $('dep-reconcile').addEventListener('click',async()=>{if(depBusy)return;const generation=authGeneration;try{const value=await loadDeployment(depOffset,true);if(!value||generation!==authGeneration)return;const p=value.plans.find(p=>p.id===depEditing?.id);if(p&&depUncertainDraft&&p.version===depUncertainDraft.version+1&&Object.keys(depUncertainDraft).every(k=>k==='version'||p[k]===depUncertainDraft[k])){$('dep-editor').close();depUncertain=false;depUncertainDraft=null;depFeedback('Planın kaydedildiği doğrulandı. GPO veya cihaz ayarı uygulanmadı.');}else $('dep-form-error').textContent='Kayıt henüz bulunamadı. İstek tekrarlanmadı; pencereyi kapatıp Yenile ile kontrol edin.';deploymentControls();}catch(error){if(generation===authGeneration)$('dep-form-error').textContent=depError(error);}});
+
+// Operator receipts remain separate from authenticated worker attestation.
+let candidateRows=[],candidateBusy=false,candidateTicket=0,candidatePreview=null,candidateRequest=null,candidateUncertain=false;
+function candidateAccess(write=false){return can('certificates.authority',write)&&can('system.connectors',write);}
+function candidateControls(){
+ const read=candidateAccess(),write=candidateAccess(true);
+ $('dep-candidates').hidden=!read;$('dep-candidate-open').hidden=!write;
+ $('dep-candidate-open').disabled=candidateBusy||!write;$('dep-candidate-refresh').disabled=candidateBusy||!read;
+ $('dep-candidate-json').disabled=candidateBusy||candidateUncertain||!write;
+ $('dep-candidate-save').disabled=candidateBusy||candidateUncertain||!write;
+ for(const id of ['dep-candidate-close','dep-candidate-cancel'])$(id).disabled=candidateBusy;
+}
+function resetCandidateRegistration(){
+ candidateTicket++;candidateRows=[];candidateBusy=false;candidatePreview=null;candidateRequest=null;candidateUncertain=false;
+ $('dep-candidate-dialog').close();$('dep-candidate-json').value='';$('dep-candidate-list').replaceChildren();
+ $('dep-candidate-preview').replaceChildren();$('dep-candidate-error').textContent='';$('dep-candidate-feedback').textContent='';candidateControls();
+}
+async function loadCandidateStatus(){
+ if(!candidateAccess())return null;const generation=authGeneration,ticket=++candidateTicket;
+ try{const value=await api('/api/deployment/candidates');if(generation!==authGeneration||ticket!==candidateTicket||!candidateAccess())return null;
+  candidateRows=value.candidates;const box=$('dep-candidate-list');box.replaceChildren();
+  for(const row of candidateRows){const item=depNode('article');const plan=depState?.plans.find(p=>p.id===row.plan_id);
+   item.append(depNode('strong',(plan?.name||row.plan_id)+' · v'+row.plan_version),depNode('p',row.state==='outdated'?'Plan veya bağlantı bilgisi değişmiş; yeniden hazırlık gerekiyor.':'Operatör sonucu kaydedildi. Connector doğrulaması bekleniyor.'),depNode('p','Manifest SHA256: '+row.manifest_sha256));box.append(item);}
+  if(!candidateRows.length)box.append(depNode('p','Henüz hazırlık sonucu kaydedilmedi.'));candidateControls();return value;
+ }catch(error){if(generation===authGeneration&&ticket===candidateTicket)$('dep-candidate-feedback').textContent=error.code||error.message;return null;}
+}
+$('dep-candidate-refresh').addEventListener('click',()=>loadCandidateStatus());
+$('dep-candidate-open').addEventListener('click',async()=>{
+ if(candidateBusy||!candidateAccess(true))return;const value=await loadCandidateStatus();if(!value||!candidateAccess(true))return;
+ candidateRequest={expected_revision:value.revision,registration_id:crypto.randomUUID(),receipt_json:''};candidatePreview=null;candidateUncertain=false;
+ $('dep-candidate-json').value='';$('dep-candidate-preview').replaceChildren();$('dep-candidate-error').textContent='';$('dep-candidate-save').textContent='Önizle';$('dep-candidate-dialog').showModal();candidateControls();
+});
+for(const id of ['dep-candidate-close','dep-candidate-cancel'])$(id).addEventListener('click',()=>{if(!candidateBusy)$('dep-candidate-dialog').close();});
+$('dep-candidate-dialog').addEventListener('cancel',event=>{if(candidateBusy)event.preventDefault();});
+$('dep-candidate-json').addEventListener('input',()=>{candidatePreview=null;$('dep-candidate-preview').replaceChildren();$('dep-candidate-save').textContent='Önizle';});
+$('dep-candidate-form').addEventListener('submit',async event=>{
+ event.preventDefault();if(candidateBusy||candidateUncertain||!candidateRequest||!candidateAccess(true))return;
+ const generation=authGeneration,recording=!!candidatePreview;candidateBusy=true;candidateControls();$('dep-candidate-error').textContent='';
+ try{
+  if(!recording){candidateRequest.receipt_json=$('dep-candidate-json').value;const preview=await api('/api/deployment/candidates/preview',candidateRequest);
+   if(generation!==authGeneration||!candidateAccess(true))return;candidatePreview=preview;
+   const box=$('dep-candidate-preview');box.replaceChildren(depNode('p','Plan: '+preview.plan_id+' · v'+preview.plan_version),depNode('p','GPO: '+preview.gpo_id),depNode('p','Manifest: '+preview.manifest_sha256),depNode('p','Yalnız operatör bildirimi kaydedilecek. Connector doğrulaması veya GPO uygulaması yapılmaz.'));$('dep-candidate-save').textContent='Kaydet';
+  }else{const result=await api('/api/deployment/candidates/record',{...candidateRequest,preview_hash:candidatePreview.preview_hash});
+   if(generation!==authGeneration)return;$('dep-candidate-dialog').close();await loadCandidateStatus();if(generation===authGeneration)$('dep-candidate-feedback').textContent='Hazırlık sonucu kaydedildi. Connector doğrulaması bekleniyor.';
+  }
+ }catch(error){if(generation!==authGeneration)return;
+  if(recording&&(!error.status||error.status>=500)){candidateUncertain=true;const status=await loadCandidateStatus();if(generation!==authGeneration)return;
+   if(status?.candidates.some(r=>r.id===candidateRequest.registration_id)){$('dep-candidate-dialog').close();$('dep-candidate-feedback').textContent='Kaydın tamamlandığı doğrulandı. GPO uygulanmadı.';}
+   else $('dep-candidate-error').textContent='Kayıt yanıtı alınamadı. İşlem tekrarlanmadı; pencereyi kapatıp Yenile ile sonucu kontrol edin.';
+  }else{candidatePreview=null;$('dep-candidate-save').textContent='Önizle';$('dep-candidate-error').textContent=error.code||error.message;}
+ }finally{if(generation===authGeneration){candidateBusy=false;candidateControls();}}
+});
 
 // Interactive panel pairing only. The server owns authorization and the binding.
 let connectorState=null,connectorBusy=false,connectorPreview=null,connectorUncertain=null,connectorTicket=0,connectorReadable=false;

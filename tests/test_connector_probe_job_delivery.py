@@ -72,6 +72,9 @@ class ConnectorProbeDeliveryTests(unittest.TestCase):
 
  def test_actual_protected_server_functions_and_function_set_are_checked(self):
   raw=(SCRIPT.parents[2]/'kaname/server.py').read_bytes()
+  # The dev37 updater remains frozen. Current source additionally contains the
+  # explicitly reviewed dev38 receipt handler; protected dev37 bodies stay pinned.
+  self.n['SERVER_FUNCTIONS']=[*self.n['SERVER_FUNCTIONS'],'Handler.deployment_candidate_admin']
   self.real_server_guard(raw)
   changed=raw.replace(b'def guard(self',b'def altered_guard(self',1)
   self.assertNotEqual(raw,changed)
