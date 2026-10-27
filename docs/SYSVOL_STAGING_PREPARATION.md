@@ -25,3 +25,7 @@ ayarları veya sürüm sayaçları bu envanter bileşeni tarafından değiştiri
 
 Native Windows testi yalnız kendi geçici NTFS ağacında çalışır; müşteri AD/SYSVOL
 kabulü değildir. Üretim worker'a yükleme ve müşteri tam envanter okuması henüz yoktur.
+
+Envanter dosyaların ana veri akışı ve standart owner/group/DACL verileriyle sınırlıdır;
+alternatif NTFS veri akışları, SACL/audit veya hardlink topolojisi taranmaz. Bu
+sonuç tek başına staging/uygulama yetkisi oluşturmaz.

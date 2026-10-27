@@ -20,6 +20,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ SYSVOL alt ağaç envanteri ve DC01 salt okunur kontrol dosyası hazır — müşteri okuması bekleniyor — 27 Ekim 2026
+
+**PR103** birleştirildi. Test head **592a7aa8b4d59cfd354b0727ed0c6440c222904c**, merge **b45d9cb2332382a4723ce6553f472ea4be62e89e**. Önceki başarılı scope görevi yalnız kökü kontrol ediyordu. Yeni **SysvolInventory.ps1**, alt dizin yollarını, dosya ana veri akışı boyut/SHA256 ve standart owner/group/DACL SDDL verilerini de kaydeder. Kök dahil1024 girdi,16 derinlik, dosya16MiB/toplam32MiB sınırı; reparse takibi yok. Bilinmeyen alt dosya varsa boş dağıtım sınıflandırması false olur; hiçbir dosya silinmez veya sahiplenilmez. Bu transaction/SMB snapshot, alternatif NTFS stream/SACL/hardlink topolojisi taraması veya etkili yazma yetkisi kabulü değildir. Ayrıntı **SYSVOL_STAGING_PREPARATION.md**.
+
+🔴✓ Son head üzerinde dört workflow başarılı. Native Windows **15 kontrol**: gerçek NTFS kararlı liste, alt dosya/içerik değişimi, junction reddi, dosya boyutu/derinlik sınırları, exact embedded source, GPO adı/marker/durum ve namespaced XML link/ayar/sürüm guard'ları. Mevcut genel kaynak, Connector/SCM/rollback/scope ve network probe kontrolleri geçti. CI verileri müşteri AD/SYSVOL kabulü sayılmaz.
+
+🔴✓ Sabit DC01 operator wrapper **/home/segmentiq/authwire-dc01-sysvol-inventory-20261027.ps1**, SHA256 **fdd7adc70aa401740dd1595b644a688053b165054cd993883335da5377e912d8**, Linux kopya özeti doğrulandı. Owned GPO **8c6808fd-a382-4bf2-9c9c-d9e1d46082a3** için unlinked/empty/version0 guard, iki tam envanter özeti ve GPO modification-time karşılaştırması yapar. Çıktı **WINDOWS_SYSVOL_FULL_INVENTORY_READONLY**. **Müşteri çalıştırması ve gerçek alt ağaç sonucu henüz yok.** Operator okumasıdır, gMSA runtime veya panel attestation değildir. Kesin I/O süre sınırı gelecekte bounded child entegrasyonunda korunmalıdır; bu standalone operatör aracına30 saniyelik süre garantisi verilmez.
+
+**Devam:** DC01 readonly sonucu al; sonra eksiksiz enrollment/installer paketini ve ayrı kontrollü staging yazıcısını geliştir. Mevcut aday yalnız ağ XML paketidir. Bu çalışma paket kopyalamaz, GPO link/startup/sürüm/ayarlarını, hesap/sertifika/anahtarları veya mevcut Connector paketini değiştirmez. Windows worker **efc5ee91-e39e-4cc4-9cc1-60b648e18cf9**, Linux dev.40 korunur. Tam yedek yok; **can_apply=false**, genel **54/94,40 açık** ve nihai kılavuz beklemesi sürer. Kanıt **checkpoints/2026-10-27-sysvol-inventory-prepared.json**.
+
 ## 🔴✓ İlk gerçek panel → Connector → AD/GPO okuma sonucu operatör görseliyle kabul edildi — 27 Ekim 2026
 
 Operatör **image(20261027-204325).png** görselini paylaştı; SHA256 **ec16ac6412298ec77b5c8ef2904c17eb5e14c6f205bbdd2152f1dab8818bf8dc**. Mevcut **AuthWire Pilot - Merkezi Windows · v1** kaydı ve manifest **4f7a463d3404428703bb95424d8c8a7f275e85f6a3a42d7a270f6eaae5ba9a6d** altında **AD hedefleri ve GPO okuma kontrolü başarılı. Dağıtım henüz uygulanmadı.** mesajı görünüyor. Panel kontrol zamanı **27.10.2026 23:42:47**. Bu operatör UI kanıtıdır; ayrı asistan backend/SQL/raw signed result incelemesi değildir. Görsel job UUID, kayıt UUID veya runtime PID içermiyor; bunlar varsayılmaz. Görsel Library ID **libfile_c2c2f0bcb23c81918d5cd0db8114ed82**.

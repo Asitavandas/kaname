@@ -1,0 +1,47 @@
+{
+  "event": "SYSVOL_FULL_INVENTORY_DELIVERY_PREPARED",
+  "format": 1,
+  "pr": 103,
+  "tested_head": "592a7aa8b4d59cfd354b0727ed0c6440c222904c",
+  "merge": "b45d9cb2332382a4723ce6553f472ea4be62e89e",
+  "delivery": "docs/checkpoints/2026-10-27-dc01-sysvol-inventory.ps1",
+  "linux_path": "/home/segmentiq/authwire-dc01-sysvol-inventory-20261027.ps1",
+  "sha256": "fdd7adc70aa401740dd1595b644a688053b165054cd993883335da5377e912d8",
+  "linux_digest_verified": true,
+  "workflows": [
+    {
+      "id": 40581312064,
+      "name": "AuthWire readonly SYSVOL inventory checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40581312037,
+      "name": "AuthWire bounded retry network probe checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40581312388,
+      "name": "KANAME foundation checks",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40581312046,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "native_checks": 15,
+  "customer_run": false,
+  "gmsa_run": false,
+  "worker_installed": false,
+  "package_staged": false,
+  "gpo_changed": false,
+  "endpoint_changed": false,
+  "key_acl_changed": false,
+  "full_backup_created": false,
+  "can_apply": false
+}
