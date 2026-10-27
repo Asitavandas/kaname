@@ -1,0 +1,24 @@
+{
+  "event": "CANDIDATE_REGISTRY_OPERATOR_BROWSER_ACCEPTED",
+  "date": "2026-10-27",
+  "evidence_type": "operator_panel_screenshot",
+  "image": "image(20261027-084309).png",
+  "image_sha256": "c8b425e2488248d4dfba4c9b0cfc1a1f4768c344dcdf222c304f14afceba59ad",
+  "independent_backend_read": false,
+  "panel_version_from_prior_accepted_installation": "0.14.0-dev.38",
+  "visible_plan_name": "AuthWire Pilot - Merkezi Windows",
+  "visible_plan_version": 1,
+  "visible_manifest_sha256": "4f7a463d3404428703bb95424d8c8a7f275e85f6a3a42d7a270f6eaae5ba9a6d",
+  "visible_state": "Operatör sonucu kaydedildi. Connector doğrulaması bekleniyor.",
+  "registration_browser_acceptance": true,
+  "connector_verification_pending": true,
+  "gpo_application_not_accepted": true,
+  "worker_candidate_delivery_pending": true,
+  "record_id_not_visible": true,
+  "functional_progress": {
+    "complete": 54,
+    "total": 94,
+    "open": 40
+  },
+  "next": "Implement a bounded typed Connector candidate verification/preparation task; recheck exact current plan, signatures and owned GPO scope. Keep separate links-free staging and GPO application gates. Preserve the current Connector, pairing and signed candidate."
+}

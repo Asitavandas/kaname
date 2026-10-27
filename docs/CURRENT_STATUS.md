@@ -20,6 +20,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ İmzalı aday kaydı panelde kabul edildi — 27 Ekim 2026
+
+Operatörün **image(20261027-084309).png** görüntüsü doğrudan incelendi. **İmzalı dağıtım adayları** altında **AuthWire Pilot - Merkezi Windows · v1**, manifest SHA256 **4f7a463d3404428703bb95424d8c8a7f275e85f6a3a42d7a270f6eaae5ba9a6d** ve **Operatör sonucu kaydedildi. Connector doğrulaması bekleniyor.** görünür. Bildirim de hazırlık sonucunun kaydedildiğini doğruluyor. Manifest, daha önce kabul edilen DC01 Prepare çıktısıyla eşleşiyor. Görsel SHA256 **c8b425e2488248d4dfba4c9b0cfc1a1f4768c344dcdf222c304f14afceba59ad**.
+
+🔴✓ Dev.38'in ilk gerçek müşteri tarayıcı kayıt akışı operatör ekran kanıtıyla kabul edildi. Bu ayrı asistan backend GET/SQL kontrolü değildir; kayıt UUID'si görüntüde yoktur ve varsayılmaz. Önceki “gerçek aday kaydı/tarayıcı kabulü bekleniyor” kayıtları bu kabulden önceki durumdur.
+
+**Connector doğrulaması, typed worker teslimatı ve GPO dağıtımı henüz tamamlanmadı.** Sıradaki geliştirme mevcut kayıt üzerinden sınırlı typed Connector doğrulama/hazırlama görevidir: işlem anında güncel plan/profile/AD hedefleri, native imza/içerik ve exact owned GPO marker/izin/link kapsamı doğrulanacak; linksiz staging ve GPO uygulama kapıları ayrı kalacak. Operatör aynı sonucu yeniden kaydetmeyecek; mevcut servis/eşleme/anahtar/imzalı aday sıfırlanmayacak. İşlevsel durum **54/94 (~%57),40 açık** değişmedi.
+
 ## 🔴✓ Dev.38 Linux kurulumu operatör çıktısıyla kabul edildi — 27 Ekim 2026
 
 Operatör **CANDIDATE_REGISTRY_FINISHED / verified=true / changed=true / 0.14.0-dev.38** çıktısını paylaştı. Release **957e590d879b65579e650519c65afed9571847d2** beklenen kaynakla eşleşiyor. Evidence **/var/lib/authwire-updates/candidate-registry-dev38-20261027T083529Z-ed24d2d0**. Bu kabul operatörün updater çıktısına dayanır; bağımsız canlı asistan sorgusu değildir.
