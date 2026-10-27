@@ -226,7 +226,7 @@ function New-AuthWireSignedProbeExecutable {
         $parameters.OutputAssembly=$Path
         $parameters.IncludeDebugInformation=$false
         $parameters.CompilerOptions='/target:winexe'
-        foreach($assembly in @('System.dll','System.Core.dll','System.ServiceProcess.dll','System.Runtime.Serialization.dll','System.Xml.dll','System.Web.Extensions.dll',(Join-Path $PSHOME 'System.Management.Automation.dll'))) {
+        foreach($assembly in @('System.dll','System.Core.dll','System.ServiceProcess.dll','System.Runtime.Serialization.dll','System.Xml.dll','System.Web.Extensions.dll',[Management.Automation.PowerShell].Assembly.Location)) {
             $null=$parameters.ReferencedAssemblies.Add($assembly)
         }
         $compiled=$compiler.CompileAssemblyFromSource($parameters,(Get-AuthWireProbeExecutableSource))
