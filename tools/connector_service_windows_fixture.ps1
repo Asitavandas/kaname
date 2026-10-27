@@ -112,7 +112,7 @@ try{
  $r=Invoke-FreshPublicControl Start
  Wait-Until {$s=Read-Status;return ($s -and $s.Healthy)} 35 'Real signed service did not prove HTTPS health'
  Wait-Until {$s=Read-Status;return ($s -and $s.ProbeChannelVerified -and $s.ProbeJobsCompleted -ge 1)} 35 'Real signed service did not complete the bounded probe job'
- Wait-Until {(Test-Path -LiteralPath (Join-Path $Directory 'scope-rejected')) -or (Test-Path -LiteralPath (Join-Path $Directory 'abort'))} 170 'Actual signed child scope rejection not returned'
+ Wait-Until {$s=Read-Status;return ((Test-Path -LiteralPath (Join-Path $Directory 'scope-rejected')) -and $s -and $s.ScopeJobsCompleted -ge 1 -and $s.LastScopeReason -ceq 'CONTENT_REJECTED')} 170 'Actual signed child scope rejection and local status not both committed'
  Check ((Read-Status).ScopeJobsCompleted -ge 1 -and (Read-Status).LastScopeReason -ceq 'CONTENT_REJECTED') 'Actual low-privilege AllSigned child returns a scoped negative result'
  Check (Test-AuthWireJobGuid (Read-Status).LastProbeJobId) 'Real SCM worker completed a scoped read-only probe job over verified HTTPS'
  $s=Read-Status;$first=$s.WorkerPid
