@@ -20,6 +20,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 aday worker paketi hazırlığı kabul edildi; Apply bekleniyor — 27 Ekim 2026
+
+Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY / ToolVersion=1.1.0 / Mode=Prepare / Stage=prepared / Error=null / ChangesMayBePartial=false** çıktısını paylaştı. Kaynak component **6d19a86846948aa126aef222671f6f80be64e9de**, yeni release **b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f** beklenen teslimatla eşleşiyor. Bu operatör çıktısı kabulüdür; asistan DC01'de bağımsız sorgu veya çalıştırma yapmadı.
+
+🔴✓ **SourcesPreparedNow=true, SourceSignaturesValid=true, PackagePrepared=true**. Exact signed kaynaklar ve ayrı candidate paket hazırlanmış; upgrade journal **C:\ProgramData\AuthWire-ConnectorUpgrade-4c23eebe071546d188eea2e96ad7ee46-b5469eaa0ccf4558bd84c2f6a10ecb2f\upgrade.json**. **SignerSnapshotPreserved=true** yeni hazırlama işlemindeki native binding/policy/marker/key ACL önce/sonra kontrolünü kabul eder. Evidence **C:\ProgramData\AuthWire-ConnectorUpgradeEvidence-b5469eaa0ccf4558bd84c2f6a10ecb2f-72ab8d07a428476f95271b51cbff6aba**. Bu, geçmişteki başarısız probe wrapper'ın eksik before snapshot'ını geriye dönük tamamlamaz.
+
+**ServiceTransitioned=false, ServicesCreated=false**; mevcut release **970d7039-3798-478b-a5f4-a57e245693a0** üzerinde etkinleştirme henüz yapılmadı. Hesap, pairing, kanal anahtarı ve eski kaynaklar korunmuş. Signer key ACL, trust, AD/GPO değişikliği veya secrets export yok; GPO apply kapalı.
+
+Sıradaki operatör adımı aynı hash-sabitli dosyada **-Mode Apply**. Yalnız Windows Connector kısa süreli durup yeni paketle başlayacak; health/probe/candidate kanalı güncel kabul edilmezse core eski paketi geri yükleyecek. Henüz Apply sonucu, yeni müşteri worker health'i veya panelden olumlu aday görevi kabulü yok. Linux dev.39 kurulumu tekrarlanmayacak; eski manuel probe tekrar edilmeyecek. **54/94 (~%57),40 açık** korunur.
+
 ## 🔴✓ Windows aday worker güncellemesi test edildi ve teslimata hazır — 27 Ekim 2026
 
 **PR100**, son test edilen head **a7622b8ba58e46b6f82e85ffd92487f1dc17d7c6**, kaynak component **6d19a86846948aa126aef222671f6f80be64e9de**, merge **5da1c27f20bd5fd615379d7c4b0ce6ad45701b95**. Mevcut **970d7039-3798-478b-a5f4-a57e245693a0** release'inden **b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f** release'ine aynı servis/hesap/eşleme/kanal anahtarıyla staged yükseltme hazırlandı. Linux **dev.39** zaten operatör çıktısıyla kabul edilmiş durumda; tekrar Linux kurulumu gerekmiyor.
