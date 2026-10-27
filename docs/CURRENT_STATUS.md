@@ -20,6 +20,18 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Gerçek aw-deploy$ aday doğrulaması ve temizlik kabul edildi; signer postcheck ayrı bekliyor — 27 Ekim 2026
+
+Operatör kaydedilmiş **C:\ProgramData\AuthWire-CandidateProbe-33776769e3a64abbafcbe3cf926be79f\summary.json** içeriğini paylaştı. **ProbeVerified=true, CandidateVerified=true, ServiceLogonVerified=true, RuntimeSid=…1648**; doğru Connector/plan/GPO, approval ve manifest **4f7a463d…ba9a6d** eşleşiyor. **SignatureVerified=true, NetworkContentVerified=true**. Geçici servis **AuthWireLogonProbe-6c9b71e462be4906b23b364c25246ee7**, PID **8536**; servis/exe/verifier/output kaldırılmış ve cleanupErrors boş. Bu operatör çıktısıdır; bağımsız asistan DC01 sorgusu değildir.
+
+🔴✓ Gerçek müşteri **VIZYONVERI\aw-deploy$** hesabıyla salt okunur aday doğrulaması tamamlandı. Kalıcı Connector listelemede **Running / aw-deploy$ / PID6444**. Verifier özel anahtar açmadı, adayı çalıştırmadı. Bu native fixture'dan ayrı gerçek gMSA kabulüdür. Önceki “runtime/cleanup sonucu bilinmiyor” notları bu summary kabulünden önceki durumdur.
+
+**Tam wrapper koruma kontrolü hâlâ kabul edilmedi.** Doğrudan **GetRSAPrivateKey** tanısı CNG ephemeral-handle seçenek hatasıyla döndü; bu hata tek başına diskteki anahtarın ephemeral olduğunu, silindiğini veya değiştiğini kanıtlamaz. Yeni PowerShell sürecinin kullanıldığı ayrıca doğrulanmış değil. Anahtar, ACL, association veya servis değiştirilmeyecek; RunProbe tekrarına gerek yok. **GPO/dizin güncelliği, authenticated typed job ve panel attestation hâlâ bekliyor.**
+
+**PR97** salt okunur named-key metadata tanısı ekledi; son kaynak **36896f7d3aa135c453745c062f82a6699cf690c0**, merge **4d86aa70735f365b7c295d6176414bc0e6c48c74**. Sertifikanın **CERT_KEY_PROV_INFO** kaydını okuyup mevcut named machine KSP anahtarını açar; public RSA eşleşmesini, machine/ephemeral/boyut/export/usage ve mevcut ACL'yi raporlar. Oluşturma, imzalama, private export veya özellik/association/ACL yazımı yok; ephemeral flag'i zorlayan fallback yok. **4 workflow /12 native kontrol** geçti. Cached-handle fixture farklı invalid-handle hatası üretti; müşteri hatasının birebir tekrarlandığı iddia edilmez. Named-key yöntemi bağımsızlık/yanlış-key/no-binding/ACL kontrollerinden geçti.
+
+DC01 tanı dosyası Linux home **/home/segmentiq/authwire-signer-persisted-metadata-20261027.ps1**, **6779 byte /SHA256 a337c3e2cd0db356c30995527992a99288ff92e11069d45329c3a57dad6c4c2d** olarak uzak okumayla doğrulandı. Henüz müşteri tarafından çalıştırılmadı. Linux/panel **dev.38**, mevcut Windows Connector korunuyor; panel **Connector doğrulaması bekleniyor** durumunda kalır. **54/94 (~%57),40 açık** değişmedi.
+
 ## DC01 salt okunur aday probe sonrası koruma kontrolünde durdu — 27 Ekim 2026
 
 Operatör **WINDOWS_CANDIDATE_READONLY_SERVICE_DELIVERY_FAILED / Mode=RunProbe / Stage=preservation_after / EXISTING_NONEXPORTABLE_SIGNER_REQUIRED** çıktısını paylaştı. **SourcesPreparedNow=true, ProbeStarted=true**; kaynaklar **C:\ProgramData\AuthWire-CandidateVerifySources-048dce54c72d0984** altında. Son snapshot anahtar türü/machine/ephemeral/boyut/export/usage koşullarından birini sağlayamadı; tek hata kodu hangi özelliğin uyuşmadığını göstermiyor.

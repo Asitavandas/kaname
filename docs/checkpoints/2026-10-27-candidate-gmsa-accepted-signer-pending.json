@@ -1,0 +1,69 @@
+{
+  "event": "CANDIDATE_GMSA_RUNTIME_ACCEPTED_SIGNER_POSTCHECK_PENDING",
+  "date": "2026-10-27",
+  "evidence_type": "operator_pasted_saved_summary_and_service_listing",
+  "independent_live_inspection": false,
+  "summary": "C:\\ProgramData\\AuthWire-CandidateProbe-33776769e3a64abbafcbe3cf926be79f\\summary.json",
+  "service_name": "AuthWireLogonProbe-6c9b71e462be4906b23b364c25246ee7",
+  "account": "VIZYONVERI\\aw-deploy$",
+  "runtime_sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+  "runtime_pid": 8536,
+  "probe_verified": true,
+  "candidate_verified": true,
+  "signature_verified": true,
+  "network_content_verified": true,
+  "manifest_sha256": "4f7a463d3404428703bb95424d8c8a7f275e85f6a3a42d7a270f6eaae5ba9a6d",
+  "temporary_service_removed": true,
+  "temporary_binary_removed": true,
+  "temporary_verifier_removed": true,
+  "temporary_result_directory_removed": true,
+  "cleanup_errors": [],
+  "private_key_opened_by_verifier": false,
+  "artifact_executed": false,
+  "gpo_state_checked": false,
+  "directory_freshness_checked": false,
+  "current_permanent_service_state": "Running",
+  "current_permanent_service_pid": 6444,
+  "full_wrapper_preservation_verified": false,
+  "signer_persisted_properties_pending": true,
+  "private_key_acquisition_error": "CNG key handle detected to be ephemeral without EphemeralKey open option",
+  "fresh_powershell_process_confirmed": false,
+  "probe_rerun_requested": false,
+  "panel_attestation_updated": false,
+  "gpo_apply_enabled": false,
+  "diagnostic_pr": 97,
+  "diagnostic_tested_head": "36896f7d3aa135c453745c062f82a6699cf690c0",
+  "diagnostic_merge": "4d86aa70735f365b7c295d6176414bc0e6c48c74",
+  "diagnostic_native_checks": 12,
+  "diagnostic_all_workflows": [
+    {
+      "id": 40482912410,
+      "name": "AuthWire persisted signer metadata checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40482912239,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40482912214,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40482912267,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    }
+  ],
+  "diagnostic_remote_file": "/home/segmentiq/authwire-signer-persisted-metadata-20261027.ps1",
+  "diagnostic_sha256": "a337c3e2cd0db356c30995527992a99288ff92e11069d45329c3a57dad6c4c2d",
+  "diagnostic_bytes": 6779,
+  "diagnostic_customer_execution_pending": true,
+  "functional_progress": {
+    "complete": 54,
+    "total": 94,
+    "open": 40
+  }
+}
