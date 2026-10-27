@@ -83,19 +83,21 @@ function candidateAccess(write=false){return can('certificates.authority',write)
 function candidateControls(){
  const read=candidateAccess(),write=candidateAccess(true);
  $('dep-candidates').hidden=!read;$('dep-candidate-open').hidden=!write;
- $('dep-candidate-open').disabled=candidateBusy||!write;$('dep-candidate-refresh').disabled=candidateBusy||candidateVerifyBusy||!read;
+ $('dep-candidate-open').disabled=candidateBusy||candidateVerifyBusy||!write;$('dep-candidate-refresh').disabled=candidateBusy||candidateVerifyBusy||!read;
  $('dep-candidate-json').disabled=candidateBusy||candidateUncertain||!write;
  $('dep-candidate-save').disabled=candidateBusy||candidateUncertain||!write;
  for(const id of ['dep-candidate-close','dep-candidate-cancel'])$(id).disabled=candidateBusy;
 }
 function resetCandidateRegistration(){
- candidateVerifyTicket++;candidateVerifyBusy=false;candidateVerifyUncertain=null;
+ candidateVerifyTicket++;candidateVerifyBusy=false;candidateVerifySending=false;candidateVerifyUncertain=null;
  candidateTicket++;candidateRows=[];candidateBusy=false;candidatePreview=null;candidateRequest=null;candidateUncertain=false;
  $('dep-candidate-dialog').close();$('dep-candidate-json').value='';$('dep-candidate-list').replaceChildren();
  $('dep-candidate-preview').replaceChildren();$('dep-candidate-error').textContent='';$('dep-candidate-feedback').textContent='';candidateControls();
 }
 async function loadCandidateStatus(){
- if(!candidateAccess())return null;const generation=authGeneration,ticket=++candidateTicket;
+ if(!candidateAccess()||candidateVerifySending)return null;
+ if(candidateVerifyBusy){candidateVerifyTicket++;candidateVerifyBusy=false;}
+ const generation=authGeneration,ticket=++candidateTicket;
  try{const value=await api('/api/deployment/candidates');if(generation!==authGeneration||ticket!==candidateTicket||!candidateAccess())return null;
   candidateRows=value.candidates;const box=$('dep-candidate-list');box.replaceChildren();
   if(candidateVerifyUncertain&&value.verification_jobs?.some(j=>j.id===candidateVerifyUncertain))candidateVerifyUncertain=null;
@@ -113,7 +115,7 @@ async function loadCandidateStatus(){
   if(!candidateRows.length)box.append(depNode('p','Henüz hazırlık sonucu kaydedilmedi.'));candidateControls();return value;
  }catch(error){if(generation===authGeneration&&ticket===candidateTicket)$('dep-candidate-feedback').textContent=error.code||error.message;return null;}
 }
-let candidateVerifyBusy=false,candidateVerifyUncertain=null,candidateVerifyTicket=0;
+let candidateVerifyBusy=false,candidateVerifySending=false,candidateVerifyUncertain=null,candidateVerifyTicket=0;
 async function previewCandidateVerify(row,revision,item){
  if(candidateVerifyBusy||candidateVerifyUncertain||!candidateAccess(true))return;
  const generation=authGeneration,ticket=++candidateVerifyTicket;
@@ -128,7 +130,7 @@ async function previewCandidateVerify(row,revision,item){
   cancel.addEventListener('click',()=>{if(candidateVerifyBusy){candidateVerifyBusy=false;candidateVerifyTicket++;loadCandidateStatus();}});
   send.addEventListener('click',async()=>{
    if(generation!==authGeneration||ticket!==candidateVerifyTicket||!candidateAccess(true))return;
-   send.disabled=cancel.disabled=true;candidateVerifyTicket++;
+   send.disabled=cancel.disabled=true;candidateVerifySending=true;candidateVerifyTicket++;
    try{
     const r=await api('/api/deployment/candidates/verify/create',{...intent,preview_hash:p.preview_hash});
     if(generation!==authGeneration)return;
@@ -137,7 +139,7 @@ async function previewCandidateVerify(row,revision,item){
    }catch(error){if(generation!==authGeneration)return;
     if(!error.status||error.status>=500){candidateVerifyUncertain=intent.job_id;$('dep-candidate-feedback').textContent='Gönderim sonucu alınamadı. İstek tekrarlanmadı; Yenile ile kontrol edin.';}
     else $('dep-candidate-feedback').textContent=error.code||error.message;
-   }finally{if(generation===authGeneration){candidateVerifyBusy=false;await loadCandidateStatus();}}
+   }finally{if(generation===authGeneration){candidateVerifyBusy=false;candidateVerifySending=false;await loadCandidateStatus();}}
   },{once:true});
  }catch(error){if(generation===authGeneration){candidateVerifyBusy=false;$('dep-candidate-feedback').textContent=error.code||error.message;await loadCandidateStatus();}}
 }
