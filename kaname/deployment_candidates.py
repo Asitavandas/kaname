@@ -158,22 +158,32 @@ class DeploymentCandidates:
                 if e.code not in {'CONNECTOR_NOT_PAIRED','CONNECTOR_CONTEXT_CHANGED','CONNECTOR_CONTEXT_NOT_READY'}: raise
                 binding=None
             from .candidate_jobs import CandidateJobs
+            from .scope_jobs import ScopeJobs
             jobs=CandidateJobs(self,wall_clock=self.clock)
+            scopes=ScopeJobs(self,wall_clock=self.clock)
             for row in reversed(rows):
                 current=row['binding_scope']==binding
                 if current:
                     try: current=self._dependencies(db,row['plan_id'],row['plan_version'])==row['dependency_sha256']
                     except CandidateError: current=False
                 verified=bool(current and jobs.content_verified(db,row))
+                scope=scopes.snapshot(db,row)
                 result.append({k:row[k] for k in ('id','plan_id','plan_version','gpo_id','manifest_sha256','approval_sha256','created_at')} |
                               {'state':('content_verified' if verified else 'operator_reported') if current else 'outdated',
-                               'content_verified':verified,'connector_verified':False,'can_apply':False})
+                               'content_verified':verified,'connector_verified':False,'can_apply':False} | scope)
             ledger=jobs._read(db);last=ledger['last_poll'];now=int(self.clock())
             ready=bool(binding and last and last['scope']==binding and 0<=now-last['at']<90)
             verification=[{'id':j['id'],'candidate_id':j['target']['candidate_id'],
                            'state':jobs._state(j,binding,now) if jobs._current(db,j) else 'obsolete',
                            'outcome':j['result']['outcome'] if j['result'] else None}
                           for j in reversed(ledger['jobs'])]
+            scope_ledger=scopes._read(db);scope_last=scope_ledger['last_poll']
+            scope_ready=bool(binding and scope_last and scope_last['scope']==binding and 0<=now-scope_last['at']<90)
+            scope_verification=[{'id':j['id'],'candidate_id':j['target']['candidate_id'],
+                                 'state':scopes._state(j,binding,now) if scopes._current(db,j) else 'obsolete',
+                                 'outcome':j['result']['outcome'] if j['result'] else None}
+                                for j in reversed(scope_ledger['jobs'])]
             return {'revision':db.execute('SELECT revision FROM state WHERE id=1').fetchone()[0],
                     'candidates':result,'worker_delivery_pending':not ready,'verification_worker_ready':ready,
-                    'verification_jobs':verification,'can_apply':False}
+                    'verification_jobs':verification,'scope_worker_ready':scope_ready,
+                    'scope_worker_delivery_pending':not scope_ready,'scope_verification_jobs':scope_verification,'can_apply':False}
