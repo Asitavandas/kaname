@@ -1,0 +1,101 @@
+{
+  "event": "CANDIDATE_REGISTRY_DELIVERY_READY",
+  "date": "2026-10-27",
+  "version": "0.14.0-dev.38",
+  "pr": 95,
+  "tested_head": "957e590d879b65579e650519c65afed9571847d2",
+  "live_linux_version": "0.14.0-dev.37",
+  "live_update_executed": false,
+  "operator_browser_acceptance_pending": true,
+  "candidate_records_created": false,
+  "operator_receipt_registration_only": true,
+  "connector_verified": false,
+  "can_apply_gpo": false,
+  "worker_candidate_delivery_pending": true,
+  "full_data_backup_created": false,
+  "remote_stage": "/home/segmentiq/authwire-stage-dev38-20c6caa9d037",
+  "stage_manifest_sha256": "480dc0621d1da1933535ecd9ffe908618d9a7d4bb2ba8f43e3c9f6edba78886f",
+  "remote_updater": "/home/segmentiq/authwire-candidate-registry-20261027.py",
+  "updater_sha256": "20216103bd6ba7f5f4c057716ff65212a7a1a11895cb0a62587c6eb6d8d3ca29",
+  "source_guard_verified_files": 178,
+  "projection_fixture": {
+    "heartbeat_only_ignored": true,
+    "jobs_protected": true
+  },
+  "preserved": {
+    "radius": true,
+    "broker": true,
+    "windows_connector": true,
+    "ad_gpo": true,
+    "certificates": true,
+    "trust": true,
+    "accounts": true,
+    "endpoints": true
+  },
+  "functional_progress": {
+    "complete": 54,
+    "total": 94,
+    "open": 40
+  },
+  "next": "Operator Linux update; register accepted DC01 Prepare receipt; then implement bounded typed worker candidate verification/preparation.",
+  "validation": {
+    "local_candidate_and_https_and_existing_jobs": 42,
+    "local_historical_delivery": 8,
+    "foundation": {
+      "run_id": 40471994449,
+      "tests": 839,
+      "skipped": 28,
+      "conclusion": "success"
+    },
+    "browser": {
+      "run_id": 40471994662,
+      "conclusion": "success"
+    },
+    "windows_bootstrap": {
+      "run_id": 40471994759,
+      "conclusion": "success"
+    },
+    "radius": {
+      "run_id": 40471994687,
+      "conclusion": "success"
+    },
+    "all_workflows": [
+      {
+        "id": 40471994759,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40471994687,
+        "name": "KANAME real RADIUS protocol proof",
+        "conclusion": "success"
+      },
+      {
+        "id": 40471994622,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40471994624,
+        "name": "KANAME Linux source preparation",
+        "conclusion": "success"
+      },
+      {
+        "id": 40471994541,
+        "name": "AuthWire device enrollment pilot checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40471994662,
+        "name": "KANAME browser checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40471994449,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "merge_commit": "65782a6e9367da671caed15833f46385a7d77378"
+}

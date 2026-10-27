@@ -1,6 +1,6 @@
 # AuthWire current work record
 
-Updated: 26 October 2026, Europe/Istanbul. This record supplements the 9 October
+Updated: 27 October 2026, Europe/Istanbul. This record supplements the 9 October
 `AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-09.docx` / `.pdf`; those reports are a
 dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
@@ -19,6 +19,18 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## İmzalı aday sonucunun panelde kaydı hazır — 27 Ekim 2026
+
+**PR95**, merge **65782a6e9367da671caed15833f46385a7d77378**, test edilen kaynak **957e590d879b65579e650519c65afed9571847d2**, sürüm **0.14.0-dev.38**. Sertifikalar → Merkezi dağıtım altında **İmzalı dağıtım adayları / Hazırlık sonucunu kaydet** eklendi. İlk DC01 Prepare JSON çıktısı önizlenip kaydedilebilir. Kaydın açık durumu **operator_reported / Connector doğrulaması bekleniyor**; **connector_verified=false, can_apply=false**. Bu, geçici bootstrap kayıt köprüsüdür; nihai otomatik dağıtımda rutin çıktı yapıştırma hedeflenmiyor.
+
+Kayıt güncel plan, profil, gerçek dizin içeriği, trust ve Connector binding kapsamına bağlanır; değişiklikte **outdated** olur. Salt timestamp yenilenmesi tek başına eskime sayılmaz. HTTPS, interaktif oturum, CSRF ve iki güncel yönetici yetkisi gerekir. Duplicate/bozuk JSON, çakışan kayıt, eski önizleme ve cevap kaybında tekrar yazmama kontrolleri vardır. Receipt içindeki yollar kullanılmaz; dosya açılmaz/çalıştırılmaz. GPO uygulama veya genel komut endpoint'i eklenmedi.
+
+**Linux canlı sürüm hâlâ dev.37; dev.38 kurulumu operatör sudo komutu bekliyor.** Sunucuda yalnız home altında stage ve hash-sabitli updater hazırlandı. Updater **/home/segmentiq/authwire-candidate-registry-20261027.py**, SHA256 **20216103bd6ba7f5f4c057716ff65212a7a1a11895cb0a62587c6eb6d8d3ca29**; stage manifest **480dc0621d1da1933535ecd9ffe908618d9a7d4bb2ba8f43e3c9f6edba78886f**, **178 dosya** yalnız okuma source guard kontrolünden geçti. Kaynak swap/rollback/backup-idle işlevleri önceki incelenmiş updater ile aynı; projection fixture olağan poll heartbeat/cache hariç tüm görev/lease/sonuçların korunduğunu doğruladı. Tam veri yedeği alınmadı; günlük timer korunacak. RADIUS/broker yeniden başlatma, Windows/AD/GPO/sertifika/trust/hesap değişikliği planlanmıyor.
+
+🔴✓ Son kaynakta **7 workflow başarılı**: genel testler **839 test /28 skip**, tarayıcı kayıt/cevap-kaybı akışı, Windows bootstrap/servis, gerçek RADIUS, bounded retry, Linux source ve enrollment kontrolleri. Yerel 42 aday/HTTPS/mevcut iş testi ve 8 tarihsel delivery testi geçti. Bu fixture/CI kabulüdür; müşteri endpoint kabulü değildir.
+
+Henüz gerçek aday kaydı yapılmadı ve müşteri tarayıcı kabulü yok. **Panelden typed worker aday doğrulama/hazırlama, tam istemci installer paketi, SYSVOL staging, GPO link/uygulama ve endpoint kabulü bekliyor.** Önce Linux güncellemesi ve mevcut DC01 Prepare sonucunun panel kaydı kabul edilecek. Mevcut servis/aday/eşleme sıfırlanmayacak. İşlevsel durum **54/94 (~%57),40 açık** değişmedi; ürün tamamlandı veya kılavuz hazır sayılmaz.
 
 ## 🔴✓ DC01 ilk gerçek imzalı ağ profili adayı oluşturuldu — 26 Ekim 2026
 
