@@ -37,7 +37,8 @@ def main():
         original=Handler.connector_peer
         def fixture_peer(handler):
             if (root/'case.txt').exists() and ((root/'case.txt').read_text().strip()=='offline' or
-                    ((root/'case.txt').read_text().strip()=='candidate-offline' and handler.path.startswith('/api/connector/v1/candidates/'))):
+                    ((root/'case.txt').read_text().strip()=='candidate-offline' and handler.path.startswith('/api/connector/v1/candidates/')) or
+                    ((root/'case.txt').read_text().strip()=='scope-offline' and handler.path.startswith('/api/connector/v1/scope/'))):
                 handler.respond(503,{'error':'FIXTURE_OFFLINE'});return
             original(handler)
         Handler.connector_peer=fixture_peer
@@ -90,6 +91,7 @@ def main():
             assert result['checks']>=17 and result['actual_https'] and result['crash_recovery'] and not result['customer_gmsa_tested']
             assert result['legacy_staged_upgrade'] and result['automatic_upgrade_rollback'] and result['explicit_upgrade_rollback']
             assert result['candidate_channel_required'] and result['candidate_channel_failed_upgrade_rollback']
+            assert result['scope_channel_required'] and result['scope_channel_failed_upgrade_rollback']
             assert result['fresh_public_control'] and result['fresh_control_modes']==['Inspect','Start','Start','Stop','Start','Remove']
             assert server.connector_pairing.status()['online'] and not server.connector_pairing.status()['can_apply']
             after=store.snapshot()
