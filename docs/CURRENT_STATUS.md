@@ -20,6 +20,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ İlk gerçek panel → Connector → imza/içerik doğrulama sonucu kabul edildi — 27 Ekim 2026
+
+Operatör **image(20261027-140716).png** ekran görüntüsünü paylaştı. **AuthWire Pilot - Merkezi Windows · v1** kaydında **İmza ve içerik Connector tarafından doğrulandı. GPO ve dağıtım kontrolü bekleniyor.** mesajı görünüyor. Manifest **4f7a463d3404428703bb95424d8c8a7f275e85f6a3a42d7a270f6eaae5ba9a6d**, daha önce kabul edilen DC01 adayıyla aynı. Görsel SHA256 **030fd471ee8ceca3cb1c8c3efbd896764b36e5623d3213d4d5e4dcf8ea88f68c**.
+
+🔴✓ Mevcut panelden gönderilen ilk olumlu müşteri aday içerik görevi, operatörün UI kanıtıyla kabul edildi. İncelenmiş dev.39 UI'si bu mesajı yalnız güncel kayıt için authenticated worker sonucu **content_verified** olduğunda gösterir. Bu ayrı asistan backend GET/SQL veya raw signed result incelemesi değildir; job UUID, kayıt UUID veya runtime PID görüntüde yoktur ve varsayılmaz. Alt taraftaki “Doğrulama görevi kaydedildi...” bildirimi gönderim geri bildirimidir; üstteki başarı satırı sonuç durumudur. Statik operatör-bildirimi açıklaması orijinal receipt'in kaynağını anlatır, yeni sonucu iptal etmez.
+
+Bu aşamanın kabulü **imza ve içerikle sınırlı**. Canlı AD hedef üyelikleri/güncelliği, owned GPO marker/izin/link kapsamı, SYSVOL staging, GPO uygulama ve endpoint kurulumu tamamlandı sayılmaz. **connector_verified=false / can_apply=false** kapıları tasarım gereği korunur; görüntüdeki “GPO ve dağıtım kontrolü bekleniyor” mesajı beklenen durumdur. Yeni source, servis, AD/GPO/endpoint veya key/ACL işlemi yapılmadı; başarılı görev/manuel probe tekrarlanmayacak.
+
+Linux **dev.39** ve Windows release **b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f** önceki operatör kabul kayıtlarıyla geçerli. Sıradaki geliştirme canlı AD hedef kapsamı ve yönetilen GPO'nun güncel kimlik/izin/link kontrolünü salt okunur, sınırlı typed görev olarak eklemek; uygulama kapısı ayrıca kalacak. **54/94 (~%57),40 açık** işlevsel ana durum değişmedi; merkezi otomasyonun bir alt kabulü tamamlandı. Nihai ürün/kılavuz kapanışı iddia edilmez.
+
 ## 🔴✓ DC01 yeni aday worker etkinleştirmesi kabul edildi; panel görevi bekleniyor — 27 Ekim 2026
 
 Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY / Mode=Apply / Stage=applied / Error=null / ChangesMayBePartial=false** çıktısını paylaştı. Kaynak component **6d19a86846948aa126aef222671f6f80be64e9de** ve yeni release **b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f** beklenen paketle eşleşiyor. Önceki release **970d7039-3798-478b-a5f4-a57e245693a0**. Bu operatör çıktısı kabulüdür; bağımsız asistan DC01 servis sorgusu değildir, yeni PID varsayılmaz.

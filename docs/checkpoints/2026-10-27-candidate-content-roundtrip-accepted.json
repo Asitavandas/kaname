@@ -1,0 +1,40 @@
+{
+  "event": "CANDIDATE_CONTENT_ROUNDTRIP_OPERATOR_UI_ACCEPTED",
+  "date_local": "2026-10-27",
+  "timezone": "Europe/Istanbul",
+  "evidence_source": "operator_uploaded_screenshot",
+  "independent_backend_read_performed": false,
+  "image": {
+    "uploaded_name": "image(20261027-140716).png",
+    "library_file_id": "libfile_f41e2472bc98819193ab86440116a262",
+    "sha256": "030fd471ee8ceca3cb1c8c3efbd896764b36e5623d3213d4d5e4dcf8ea88f68c"
+  },
+  "observed": {
+    "candidate_title": "AuthWire Pilot - Merkezi Windows · v1",
+    "message": "İmza ve içerik Connector tarafından doğrulandı. GPO ve dağıtım kontrolü bekleniyor.",
+    "manifest_sha256": "4f7a463d3404428703bb95424d8c8a7f275e85f6a3a42d7a270f6eaae5ba9a6d",
+    "footer": "Doğrulama görevi kaydedildi. Sonucu görmek için Yenile düğmesini kullanın.",
+    "preview_button_visible": true,
+    "job_id_visible": false,
+    "candidate_registration_uuid_visible": false,
+    "runtime_pid_visible": false
+  },
+  "acceptance": {
+    "first_positive_customer_panel_connector_content_roundtrip": true,
+    "content_verified_displayed": true,
+    "manifest_matches_accepted_candidate": true,
+    "acceptance_basis": "Observed content_verified rendering of the reviewed dev39 UI following the operator-triggered task; not an independent raw result or database inspection.",
+    "full_connector_scope_attestation_accepted": false,
+    "live_ad_gpo_freshness_checked": false,
+    "gpo_staged": false,
+    "gpo_applied": false,
+    "endpoint_installation_accepted": false
+  },
+  "further_actions_executed_by_assistant": false,
+  "original_failed_wrapper_retroactively_accepted": false,
+  "progress": {
+    "completed": 54,
+    "total": 94,
+    "open": 40
+  }
+}
