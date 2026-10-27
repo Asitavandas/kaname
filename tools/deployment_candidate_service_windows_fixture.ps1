@@ -3,6 +3,7 @@ param([Parameter(Mandatory=$true)][string]$FixtureDirectory)
 $ErrorActionPreference='Stop';Set-StrictMode -Version 2
 if($env:RUNNER_ENVIRONMENT -ne 'github-hosted'){throw 'Hosted fixture only'}
 Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Security\Microsoft.PowerShell.Security.psd1') -ErrorAction Stop
+Add-Type -AssemblyName System.IO.Compression
 function LoadFunctions([string]$Path){
  $t=$null;$e=$null;$a=[Management.Automation.Language.Parser]::ParseFile($Path,[ref]$t,[ref]$e)
  if($e.Count){throw ($e.Message -join '; ')}
