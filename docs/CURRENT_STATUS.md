@@ -20,6 +20,16 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Dev.39 Linux kurulumu operatör çıktısıyla kabul edildi — 27 Ekim 2026
+
+Operatör **CANDIDATE_JOBS_FINISHED / verified=true / changed=true / 0.14.0-dev.39** çıktısını paylaştı. Release **cf0be7fbdd3df8b3dac7d535d353af8bdb9f149a** beklenen kaynak component ile eşleşiyor. Evidence **/var/lib/authwire-updates/candidate-jobs-dev39-20261027T132300Z-271fcb5a**. Bu kabul operatörün updater çıktısına dayanır; bağımsız asistan backend sorgusu değildir.
+
+🔴✓ Korumalı dosyalar, broker/RADIUS süreçleri, timer'lar ve iş verisi kontrolleri başarılı. RADIUS PID **1243360** önce/sonra aynı; broker süreci korunmuş, RADIUS yeniden başlatılmamış. Önce/sonra gösterilen panel okuma sonuçları **200**, aday ve görev API'leri dahil. Tam veri yedeği alınmamış; günlük backup timer korunmuş. Policy, plan, pairing, sertifika, AD/GPO, Windows paket/endpoint, native modül ve backup worker değişikliği yok.
+
+**candidate_jobs_created=false, gpo_apply_enabled=false, windows_candidate_worker_delivery_pending=true** beklenen durum. Yeni görev kanalı Linux tarafında kurulmuş; eski Windows worker yeni capability bildirmediği için imza/içerik görevi henüz gönderilmeyecek. Operatör browser kabulü ve müşteri worker roundtrip hâlâ bekliyor. Sırada mevcut release **970d7039-3798-478b-a5f4-a57e245693a0** korunarak yeni signed/staged Windows Connector paketinin hazırlanması var; yeni hesap, eşleme veya kanal anahtarı oluşturulmayacak.
+
+Mevcut imzalı aday ve operatör receipt korunuyor; eski başarılı manuel probe tekrarlanmayacak. Signer CLR marker/anahtar/ACL onarımı veya sertifika yenilemesi gerekmiyor. Canlı AD/GPO kapsam/freshness, SYSVOL staging ve endpoint kabulü hâlâ bekliyor. **54/94 (~%57),40 açık** değişmedi.
+
 ## 🔴✓ Connector aday içerik görevi geliştirildi; dev.39 kurulumu bekleniyor — 27 Ekim 2026
 
 **PR99**, test edilen head **406d3d5b46971874d450ff1a83ee311b1c302191**, merge **e93365d1e160f7a18780a98c09a550a2eee69fde**, uygulama kaynak component **cf0be7fbdd3df8b3dac7d535d353af8bdb9f149a**. Mevcut aday kaydından **Doğrulamayı önizle → Doğrulamayı gönder** akışı eklendi. Görev yalnız imza ve içerik kontrol eder; ayrı signed capability bildirmeyen eski Connector'a gönderilmez. Sonuç **content_verified / İmza ve içerik doğrulandı** olur; **connector_verified=false, can_apply=false** korunur. Canlı AD/GPO kontrolü ve dağıtım kabulü yerine geçmez.
