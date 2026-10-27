@@ -20,6 +20,18 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 yeni aday worker etkinleştirmesi kabul edildi; panel görevi bekleniyor — 27 Ekim 2026
+
+Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY / Mode=Apply / Stage=applied / Error=null / ChangesMayBePartial=false** çıktısını paylaştı. Kaynak component **6d19a86846948aa126aef222671f6f80be64e9de** ve yeni release **b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f** beklenen paketle eşleşiyor. Önceki release **970d7039-3798-478b-a5f4-a57e245693a0**. Bu operatör çıktısı kabulüdür; bağımsız asistan DC01 servis sorgusu değildir, yeni PID varsayılmaz.
+
+🔴✓ **ServiceTransitioned=true, SourceSignaturesValid=true, SignerSnapshotPreserved=true**. İncelenmiş upgrader sözleşmesine göre yeni paket için güncel health/probe/candidate kanalı guard'ları geçerek applied kaydına ulaşılmıştır; henüz bir adayın imza/içeriği bu kanaldan doğrulanmış sayılmaz. **ExistingAccountPreserved, PairingPreserved, ChannelKeyPreserved, OriginalSourcesPreserved=true**. Scoped eski kod arşivi **.previous-970d70393798478ba5f4a57e245693a0** olarak tutuluyor; müşteri rollback testi yapılmadı. Yeni işlem evidence **C:\ProgramData\AuthWire-ConnectorUpgradeEvidence-b5469eaa0ccf4558bd84c2f6a10ecb2f-047e8264d0d64e1a8d1f2c859aaf111f**.
+
+Yeni servis oluşturma, kanal key oluşturma, signer key ACL/trust değişikliği, AD/GPO yazımı veya secrets export yok. Native signer before/after kabulü yalnız bu Apply işlemi içindir; eski başarısız wrapper geriye dönük kabul edilmez. Linux **dev.39** korunuyor; Linux kurulumu/Apply/manual probe tekrar edilmeyecek. **CanApplyGpo=false**.
+
+Sıradaki kabul **Sertifikalar → Merkezi dağıtım → İmzalı dağıtım adayları** altındaki mevcut **AuthWire Pilot - Merkezi Windows · v1** kaydında **Yenile → Doğrulamayı önizle → Doğrulamayı gönder**. Bu yalnız mevcut adayı okur. Worker döngüsü sonrasında Yenile ile beklenen mesaj **İmza ve içerik Connector tarafından doğrulandı. GPO ve dağıtım kontrolü bekleniyor.** Henüz bu gerçek panel görevi oluşturuldu veya tamamlandı iddia edilmez. Receipt yeniden yapıştırılmayacak; aday yeniden hazırlanmayacak.
+
+Olumlu müşteri job roundtrip, canlı AD/GPO freshness/kapsam, SYSVOL staging ve endpoint kabulü hâlâ bekliyor. **54/94 (~%57),40 açık** değişmedi.
+
 ## 🔴✓ DC01 aday worker paketi hazırlığı kabul edildi; Apply bekleniyor — 27 Ekim 2026
 
 Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY / ToolVersion=1.1.0 / Mode=Prepare / Stage=prepared / Error=null / ChangesMayBePartial=false** çıktısını paylaştı. Kaynak component **6d19a86846948aa126aef222671f6f80be64e9de**, yeni release **b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f** beklenen teslimatla eşleşiyor. Bu operatör çıktısı kabulüdür; asistan DC01'de bağımsız sorgu veya çalıştırma yapmadı.
