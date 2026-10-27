@@ -73,7 +73,7 @@ function Invoke-AuthWireScopeJob {
  Assert-AuthWireScopeTarget $offer.target
  $hash=Get-AuthWireScopeTargetHash $offer.target;$now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
  if(-not (Test-AuthWireJobGuid $offer.job_id) -or $offer.operation -cne 'deployment.scope.verify.v1' -or $offer.lease_id -isnot [string] -or $offer.lease_id -cnotmatch '\A[0-9a-f]{64}\z' -or $offer.intent_sha256 -cne (Get-AuthWireScopeIntent $scope $offer.job_id $hash) -or ($offer.expires_at -isnot [int] -and $offer.expires_at -isnot [long]) -or $offer.expires_at -le $now+5 -or $offer.expires_at -gt $now+95){throw 'SCOPE_REPLY_REJECTED'}
- $reason='READ_FAILED';$checks=@();$observations=Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes('AuthWireScopeReadFailureV1:READ_FAILED'))
+ $checkedAt=$now;$reason='READ_FAILED';$checks=@();$observations=Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes('AuthWireScopeReadFailureV1:READ_FAILED'))
  try{
   $r=Invoke-AuthWireScopeReader $offer.target ([int][Math]::Min(30000,($offer.expires_at-$now-5)*1000))
   if($r.TimedOut){$reason='READ_TIMEOUT'}
@@ -84,13 +84,13 @@ function Invoke-AuthWireScopeJob {
    if($v.checked_at -lt $now -or $v.checked_at -gt [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -or $v.reason -cnotin @('OK','CONTENT_REJECTED','DIRECTORY_SCOPE_CHANGED','GPO_SCOPE_CHANGED','READ_FAILED') -or $v.observations_sha256 -isnot [string] -or $v.observations_sha256 -cnotmatch '\A[0-9a-f]{64}\z' -or $v.checks -isnot [array]){throw 'SCOPE_READ_RESULT_REJECTED'}
    $expected=@('content','directory','gpo_identity','gpo_permissions','gpo_unlinked','gpo_empty','sysvol_root_acl')
    if(($v.reason -ceq 'OK' -and ($v.checks -join ';') -cne ($expected -join ';')) -or ($v.reason -cne 'OK' -and $v.checks.Count -ne 0)){throw 'SCOPE_READ_RESULT_REJECTED'}
-   $reason=$v.reason;$checks=$v.checks;$observations=$v.observations_sha256
+   $checkedAt=$v.checked_at;$reason=$v.reason;$checks=$v.checks;$observations=$v.observations_sha256
   }
  }catch{$reason='READ_FAILED';$checks=@()}
  $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();if($now -ge $offer.expires_at){throw 'SCOPE_LEASE_EXPIRED'}
- if($reason -cne 'OK'){$checks=@();$observations=Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes('AuthWireScopeReadFailureV1:'+$reason))}
+ if($reason -cne 'OK'){$checkedAt=$now;$checks=@();$observations=Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes('AuthWireScopeReadFailureV1:'+$reason))}
  $outcome=if($reason -ceq 'OK'){'scope_snapshot_verified'}else{'scope_snapshot_rejected'}
- $p=New-AuthWireScopeProof $Binding $ChannelKey RESULT @{job_id=$offer.job_id;lease_id=$offer.lease_id;intent_sha256=$offer.intent_sha256;outcome=$outcome;release_id=$PackageReleaseId;target_sha256=$hash;checked_at=$now;checks=@($checks);reason=$reason;observations_sha256=$observations}
+ $p=New-AuthWireScopeProof $Binding $ChannelKey RESULT @{job_id=$offer.job_id;lease_id=$offer.lease_id;intent_sha256=$offer.intent_sha256;outcome=$outcome;release_id=$PackageReleaseId;target_sha256=$hash;checked_at=$checkedAt;checks=@($checks);reason=$reason;observations_sha256=$observations}
  $request=[Text.Encoding]::ASCII.GetString([Convert]::FromBase64String($p.frame)).Split([char]10)[10]
  $raw=[AuthWire.Connector.ChannelTypesV1]::Post($BaseUrl,$Binding.appliance_fqdn,$Binding.appliance_tls_sha256,'/api/connector/v1/scope/result',($p|ConvertTo-Json -Compress))
  if(-not [AuthWire.Connector.ChannelTypesV1]::JobReceipt($raw)){throw 'SCOPE_RECEIPT_REJECTED'}

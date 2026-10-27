@@ -47,10 +47,6 @@ jobs:
       - name: Bounded unpublished machine signing template plan and LDAP requests with directory simulated
         shell: powershell
         run: tools/connector_signing_template_windows_check.ps1
-      - name: Native read-only deployment scope boundaries and bounded child lifecycle
-        shell: powershell
-        run: tools/connector_scope_windows_check.ps1
-
   windows-scm-probe:
     runs-on: windows-2025
     timeout-minutes: 5
@@ -121,3 +117,14 @@ jobs:
         run: python tools/connector_service_source_hashes.py
       - name: Real signed persistent SCM lifecycle and authenticated HTTPS health
         run: python tools/connector_service_windows_check.py
+
+  windows-scope:
+    runs-on: windows-2025
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Native WinPS5 scope boundaries and bounded process lifecycle
+        shell: powershell
+        run: tools/connector_scope_windows_check.ps1

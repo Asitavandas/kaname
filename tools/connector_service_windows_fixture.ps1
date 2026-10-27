@@ -58,7 +58,7 @@ try{
  if(Test-Path -LiteralPath $root){$root=$null;throw 'Fixture package directory collision'}
  $config=@{Version=1;ReleaseId=[guid]::NewGuid().ToString('D');ServiceName=$name;AccountName=$credential.UserName;PublisherThumbprint=$publisher.Thumbprint;BaseUrl=('https://'+$b.appliance_fqdn+':'+$base.port+'/');Binding=$b;KeyName=$key;ExpectedKeySddl=$receipt.ExpectedKeySddl;RootPath=$root}|ConvertTo-Json -Depth 6|ConvertFrom-Json
  $buildSource=Join-Path $Directory 'reviewed-source';$null=New-Item -ItemType Directory -Path $buildSource
- foreach($file in @('ConnectorServiceHost.cs','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Install-AuthWireConnectorService.ps1','New-AuthWireConnectorServicePackage.ps1','Initialize-AuthWireConnectorChannelKey.ps1','ConnectorChannelKey.ps1','ConnectorChannelTypes.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','Test-AuthWireDeploymentCandidate.ps1','ConnectorServiceUpgrade.ps1','Update-AuthWireConnectorService.ps1')){
+ foreach($file in @('ConnectorServiceHost.cs','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Install-AuthWireConnectorService.ps1','New-AuthWireConnectorServicePackage.ps1','Initialize-AuthWireConnectorChannelKey.ps1','ConnectorChannelKey.ps1','ConnectorChannelTypes.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','Test-AuthWireDeploymentCandidate.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','Read-AuthWireDeploymentScope.ps1','ConnectorServiceUpgrade.ps1','Update-AuthWireConnectorService.ps1')){
   $path=Join-Path $buildSource $file;Copy-Item -LiteralPath (Join-Path $source $file) -Destination $path
   if($file.EndsWith('.ps1')){$signed=Set-AuthenticodeSignature -FilePath $path -Certificate $publisher -HashAlgorithm SHA256;if($signed.Status.ToString() -ne 'Valid'){throw 'Fixture source signing failed'}}
  }
@@ -112,6 +112,8 @@ try{
  $r=Invoke-FreshPublicControl Start
  Wait-Until {$s=Read-Status;return ($s -and $s.Healthy)} 35 'Real signed service did not prove HTTPS health'
  Wait-Until {$s=Read-Status;return ($s -and $s.ProbeChannelVerified -and $s.ProbeJobsCompleted -ge 1)} 35 'Real signed service did not complete the bounded probe job'
+ Wait-Until {(Test-Path -LiteralPath (Join-Path $Directory 'scope-rejected')) -or (Test-Path -LiteralPath (Join-Path $Directory 'abort'))} 170 'Actual signed child scope rejection not returned'
+ Check ((Read-Status).ScopeJobsCompleted -ge 1 -and (Read-Status).LastScopeReason -ceq 'CONTENT_REJECTED') 'Actual low-privilege AllSigned child returns a scoped negative result'
  Check (Test-AuthWireJobGuid (Read-Status).LastProbeJobId) 'Real SCM worker completed a scoped read-only probe job over verified HTTPS'
  $s=Read-Status;$first=$s.WorkerPid
  Check ($r.ServiceInstalled -and $s.RuntimeSid -ceq $sid -and -not $s.CanApply -and -not $s.DirectorySyncReady -and -not $s.KerberosReady) 'Actual low-privilege SCM worker proves health without AD/GPO authority'

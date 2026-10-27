@@ -19,6 +19,7 @@ from kaname.pki import PKIService
 from kaname.connector_registry import ConnectorRegistry
 from kaname.connector_jobs import ConnectorJobs, OPERATION
 from kaname.candidate_jobs import CandidateJobs
+from kaname.scope_jobs import ScopeJobs,target_sids_hash
 from kaname.deployment_candidates import DeploymentCandidates
 from tests.test_deployment_candidates import fixture_snapshot,make_receipt
 import copy
@@ -34,6 +35,7 @@ def main():
         server=DevelopmentServer(store.root,0,tls_cert=root/'web.crt',tls_key=root/'web.key',public_name=fqdn)
         base={'instance_id':pki['instance_id'],'connector_id':str(uuid.uuid4()),'host_guid':str(uuid.uuid4()),'appliance_fqdn':fqdn,'appliance_tls_sha256':x509.load_pem_x509_certificate(server.web_certificate).fingerprint(hashes.SHA256()).hex(),'port':server.server_port}
         (root/'base.json').write_text(json.dumps(base),encoding='ascii')
+        original_scope_target=ScopeJobs._target
         original=Handler.connector_peer
         def fixture_peer(handler):
             if (root/'case.txt').exists() and ((root/'case.txt').read_text().strip()=='offline' or
@@ -85,6 +87,31 @@ def main():
                     time.sleep(.25)
                 assert cj.status()['jobs'][0]['result']['outcome']=='content_rejected' # No candidate exists in this fixture.
                 assert not candidates.status()['candidates'][0]['connector_verified']
+                # Isolated composition fixture: bypass ONLY the preceding accepted
+                # content dependency to dispatch a real negative scope read. No
+                # customer-positive directory/GPO evidence is synthesized here.
+                with store.connect() as db:
+                    fixed_target=cj._target(db,cr['registration_id'])
+                domain_sid=candidate['service_sid'].rsplit('-',1)[0]
+                fixed_target.update(target_count=1,target_sids_sha256=target_sids_hash([domain_sid+'-2201']))
+                def fixture_scope_target(self,db,identity):
+                    if identity==cr['registration_id']:return dict(fixed_target)
+                    return original_scope_target(self,db,identity)
+                ScopeJobs._target=fixture_scope_target
+                sj=ScopeJobs(candidates)
+                end=time.monotonic()+90
+                while not sj.status()['worker_ready']:
+                    if process.poll() is not None or time.monotonic()>end:raise RuntimeError('Scope capability missing')
+                    time.sleep(.25)
+                si={'expected_revision':store.snapshot()['revision'],'job_id':str(uuid.uuid4()),'candidate_id':cr['registration_id'],'operation':'deployment.scope.verify.v1'}
+                sp=sj.preview(si);sj.create(si|{'preview_hash':sp['preview_hash']},str(uuid.uuid4()))
+                end=time.monotonic()+90
+                while sj.status()['jobs'][0]['state']!='completed':
+                    if process.poll() is not None or time.monotonic()>end:raise RuntimeError('Scope result missing')
+                    time.sleep(.25)
+                sr=sj.status()['jobs'][0]['result']
+                assert sr['outcome']=='scope_snapshot_rejected' and sr['reason']=='CONTENT_REJECTED' and sr['checks']==[]
+                (root/'scope-rejected').write_text('verified signed child rejection',encoding='ascii')
                 process.wait(timeout=540)
                 if process.returncode:raise RuntimeError('Native service fixture failed')
             result=json.loads((root/'service-result.json').read_text(encoding='utf-8-sig'))
@@ -96,7 +123,7 @@ def main():
             assert server.connector_pairing.status()['online'] and not server.connector_pairing.status()['can_apply']
             after=store.snapshot()
             assert snapshot['config']==after['config'] and snapshot['policies']==after['policies']
-            assert after['revision']==snapshot['revision']+4 and len(store.audit())==len(audit)+4
+            assert after['revision']==snapshot['revision']+5 and len(store.audit())==len(audit)+5
             status=jobs.status()
             assert status['jobs'][0]['state']=='completed' and status['jobs'][0]['result']['release_id']==result['release_id']
             assert status['worker_probe_ready'] and not status['can_apply']
@@ -106,6 +133,7 @@ def main():
             if process is not None and process.poll() is None:process.wait(timeout=90)
             log=(root/'fixture.log').read_text(encoding='utf-8',errors='replace') if (root/'fixture.log').exists() else ''
             if process is not None and process.returncode:print(log[-12000:])
+            ScopeJobs._target=original_scope_target
             server.shutdown();server.server_close();thread.join();Handler.connector_peer=original
 
 if __name__=='__main__':main()
