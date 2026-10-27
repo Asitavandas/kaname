@@ -45,7 +45,7 @@ function Test-AuthWireJobCandidateContent($Target,[hashtable]$Binding,[string]$P
  Assert-AuthWireCandidateAcl $root $Binding.service_sid -Directory
  $items=@(Get-ChildItem -LiteralPath $root -Force);if($items.Count -gt 32){throw 'CANDIDATE_JOB_DIRECTORY_LIMIT'}
  $prefix=([guid]$Target.plan_id).ToString('N')+'-v'+$Target.plan_version+'-'
- $matches=@()
+ $selectedApprovals=@()
  foreach($item in $items){
   if($item.Name -cnotmatch ('\A'+[regex]::Escape($prefix)+'[0-9a-f]{64}\z')){continue}
   if(-not $item.PSIsContainer){throw 'CANDIDATE_JOB_DIRECTORY_REJECTED'}
@@ -55,10 +55,10 @@ function Test-AuthWireJobCandidateContent($Target,[hashtable]$Binding,[string]$P
   if((Get-AuthWireCandidateHash $bytes) -cne $Target.approval_sha256){continue}
   $approval=Read-AuthWireCandidateApproval $path $Target.approval_sha256
   if($item.Name -cne ($prefix+$approval.Value.preview_hash)){throw 'CANDIDATE_JOB_PATH_BINDING_REJECTED'}
-  $matches+=,$approval.Value
+  $selectedApprovals+=,$approval.Value
  }
- if($matches.Count -ne 1){throw 'CANDIDATE_JOB_EXACT_CANDIDATE_REQUIRED'}
- $a=$matches[0]
+ if($selectedApprovals.Count -ne 1){throw 'CANDIDATE_JOB_EXACT_CANDIDATE_REQUIRED'}
+ $a=$selectedApprovals[0]
  if($a.publisher_thumbprint -cne $PublisherThumbprint){throw 'CANDIDATE_JOB_PUBLISHER_MISMATCH'}
  # Approval bytes are pinned; publisher is additionally pinned by service config.
  $pins=@{ConnectorId=$Binding.connector_id;PlanId=$Target.plan_id;PlanVersion=$Target.plan_version;
