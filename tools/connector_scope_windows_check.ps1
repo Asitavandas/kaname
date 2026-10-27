@@ -44,6 +44,28 @@ function Get-ADGroupMember{param($Identity,$Server,$ErrorAction)
 }
 Reject {Get-AuthWireScopeData $a $t $b} 'controlled directory search stop'
 Check ($script:groupCalls -eq 2 -and $script:filter.Contains('(primaryGroupID=1647)') -and $script:filter.Contains('(primaryGroupID=1700)') -and $script:filter.Contains('(objectGUID=\')) 'nested primary group filter'
+# Exercise the complete snapshot assembler with typed AD/GPO and NTFS fixtures.
+# This is deliberately not a real forest or customer gMSA acceptance.
+function Get-ADComputer{param($Identity,$Server,$Properties,$ErrorAction,$LDAPFilter,$SearchBase,$SearchScope,$ResultSetSize,$ResultPageSize)
+ if($LDAPFilter){return $rows|ForEach-Object {[pscustomobject]@{SID=[pscustomobject]@{Value=$_.Sid};ObjectGUID=[guid]$_.Guid;Enabled=$_.Enabled}}}
+ [pscustomobject]@{ObjectGUID=[guid]$b.host_guid;DNSHostName=$b.host_fqdn}
+}
+function Get-GPO{param($Guid,$Domain,$Server,$ErrorAction)[pscustomobject]@{Id=[guid]$t.gpo_id;DisplayName=$v.GpoName;Description=$v.Marker;GpoStatus='AllSettingsEnabled';Owner=([Security.Principal.SecurityIdentifier]::new('S-1-5-32-544').Translate([Security.Principal.NTAccount]).Value)}}
+function Get-GPOReport{param($Guid,$Domain,$Server,$ReportType,$ErrorAction)'<GPO xmlns="http://www.microsoft.com/GroupPolicy/Settings"><Computer><VersionDirectory>0</VersionDirectory><VersionSysvol>0</VersionSysvol></Computer><User><VersionDirectory>0</VersionDirectory><VersionSysvol>0</VersionSysvol></User></GPO>'}
+function Get-GPPermission{param($Guid,$Domain,$Server,[switch]$All,$ErrorAction)foreach($row in $v.Permissions){$parts=$row.Split('|');[pscustomobject]@{Trustee=[pscustomobject]@{Sid=[pscustomobject]@{Value=$parts[0]}};Permission=$parts[1]}}}
+function Get-ADObject{param($Identity,$Server,$Properties,$ErrorAction)[pscustomobject]@{ObjectClass='groupPolicyContainer';gPCFileSysPath=('\\lab.example\SYSVOL\lab.example\Policies\{'+$t.gpo_id+'}')}}
+function Get-Item{param($LiteralPath,[switch]$Force,$ErrorAction)[pscustomobject]@{PSIsContainer=$true;Attributes=[IO.FileAttributes]::Directory}}
+$script:fixtureAcl=[Security.AccessControl.DirectorySecurity]::new()
+$script:fixtureAcl.SetSecurityDescriptorSddlForm(('O:'+$d+'-512G:'+$d+'-513D:P(A;OICIIO;FA;;;CO)(A;OICI;FA;;;SY)(A;OICI;FA;;;'+$d+'-512)(A;OICI;FA;;;'+$d+'-519)(A;OICI;0x1200a9;;;S-1-5-9)(A;OICI;0x1200a9;;;S-1-5-11)(A;OICI;0x1200a9;;;'+$a.group_sid+')(A;OICI;0x1201ff;;;'+$b.service_sid+')'))
+function Get-Acl{param($LiteralPath,$ErrorAction)return $script:fixtureAcl}
+function Get-ChildItem{param($LiteralPath,[switch]$Force,$ErrorAction)foreach($n in @('Machine','User','GPO.cmt','GPT.INI')){[pscustomobject]@{Name=$n;PSIsContainer=($n -in @('Machine','User'));Attributes=[IO.FileAttributes]::Normal;Length=1}}}
+$assembled=Get-AuthWireScopeData $a $t $b
+Check ($assembled.Computers.Count -eq 200 -and $assembled.OwnerSid -ceq 'S-1-5-32-544' -and $assembled.RootOwnerSid -ceq ($d+'-512')) 'complete typed snapshot assembly'
+Check (($assembled.Versions -join ';') -ceq '0;0;0;0' -and $assembled.SettingsCount -eq 0 -and $assembled.LinkCount -eq 0) 'namespaced GPO XML extraction'
+Check (($assembled.RootEntries -join ';') -ceq ($v.RootEntries -join ';') -and $assembled.RootRules.Count -eq 8 -and $assembled.Permissions.Count -eq 7) 'root entry and ACL extraction'
+$assembled.OwnerSid=$v.OwnerSid
+Check (Test-AuthWireScopeData $assembled $a $t $b) 'assembled real NTFS rule objects match exact pure policy'
+foreach($n in @('Get-Item','Get-Acl','Get-ChildItem')){Remove-Item ('Function:\'+$n)}
 # Native .NET process drains: finite normal output, timeout, long unbroken stdout,
 # stderr, exit code and AllSigned refusal all exercise the production helper.
 Initialize-AuthWireScopeProcess
