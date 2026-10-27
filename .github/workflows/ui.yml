@@ -2,9 +2,9 @@ name: KANAME browser checks
 on:
   push:
     branches: [main]
-    paths: ['kaname/**', 'tools/connector_pairing_ui_smoke.cjs', 'tools/ui_smoke.cjs', 'tools/dashboard_ui_smoke.cjs', 'tools/central_ui_smoke.cjs', 'tools/motion_ui_smoke.cjs', 'tools/ui_navigation.cjs', 'tools/policy_ui_smoke.cjs', 'tools/setup_ui_smoke.cjs', 'tools/audit_ui_smoke.cjs', 'tools/access_events_ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/services_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/user_enrollment_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', 'tests/test_directory.py', '.github/workflows/ui.yml']
+    paths: ['kaname/**', 'tools/connector_pairing_ui_smoke.cjs', 'tools/deployment_candidate_ui_smoke.cjs', 'tools/ui_smoke.cjs', 'tools/dashboard_ui_smoke.cjs', 'tools/central_ui_smoke.cjs', 'tools/motion_ui_smoke.cjs', 'tools/ui_navigation.cjs', 'tools/policy_ui_smoke.cjs', 'tools/setup_ui_smoke.cjs', 'tools/audit_ui_smoke.cjs', 'tools/access_events_ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/services_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/user_enrollment_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', 'tests/test_directory.py', '.github/workflows/ui.yml']
   pull_request:
-    paths: ['kaname/**', 'tools/connector_pairing_ui_smoke.cjs', 'tools/ui_smoke.cjs', 'tools/dashboard_ui_smoke.cjs', 'tools/central_ui_smoke.cjs', 'tools/motion_ui_smoke.cjs', 'tools/ui_navigation.cjs', 'tools/policy_ui_smoke.cjs', 'tools/setup_ui_smoke.cjs', 'tools/audit_ui_smoke.cjs', 'tools/access_events_ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/services_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/user_enrollment_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', '.github/workflows/ui.yml']
+    paths: ['kaname/**', 'tools/connector_pairing_ui_smoke.cjs', 'tools/deployment_candidate_ui_smoke.cjs', 'tools/ui_smoke.cjs', 'tools/dashboard_ui_smoke.cjs', 'tools/central_ui_smoke.cjs', 'tools/motion_ui_smoke.cjs', 'tools/ui_navigation.cjs', 'tools/policy_ui_smoke.cjs', 'tools/setup_ui_smoke.cjs', 'tools/audit_ui_smoke.cjs', 'tools/access_events_ui_smoke.cjs', 'tools/session_ui_smoke.cjs', 'tools/services_ui_smoke.cjs', 'tools/device_ui_smoke.cjs', 'tools/user_enrollment_ui_smoke.cjs', 'tools/planning_ui_smoke.cjs', '.github/workflows/ui.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -36,6 +36,8 @@ jobs:
         env:
           KANAME_PYTHON: python
           KANAME_UI_ARTIFACTS: ui-artifacts
+      - name: Candidate receipt UI remains operator-only and reconciles lost writes
+        run: node tools/deployment_candidate_ui_smoke.cjs
       - name: User enrollment profile management with disposable HTTPS issuer
         run: node tools/user_enrollment_ui_smoke.cjs
         env:
@@ -64,5 +66,3 @@ jobs:
           path: ui-artifacts
           if-no-files-found: ignore
           retention-days: 7
-
-
