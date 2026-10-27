@@ -1,0 +1,60 @@
+{
+  "event": "CANDIDATE_READONLY_RUNTIME_DELIVERY_READY",
+  "date": "2026-10-27",
+  "pr": 96,
+  "tested_head": "de5d9ad859f7a0be40f7a87d9304e07f76fb801e",
+  "source_component": "be785a13350ffc916a02b4e509953a8c1635433b",
+  "linux_application_version": "0.14.0-dev.38",
+  "linux_application_changed": false,
+  "remote_file": "/home/segmentiq/authwire-dc01-candidate-readonly-service-20261027.ps1",
+  "delivery_sha256": "63e647f0ef017709fe59c3f330f4ce9b0cd431e3dab14699d033463bd0c56518",
+  "delivery_bytes": 35628,
+  "embedded_reviewed_sources": 2,
+  "read_only_verifier": true,
+  "native_nonadmin_virtual_service_tested": true,
+  "native_runtime_checks": 24,
+  "existing_native_candidate_checks": 55,
+  "foundation_tests": 839,
+  "foundation_skipped": 28,
+  "customer_gmsa_execution_pending": true,
+  "customer_ad_tested": false,
+  "permanent_connector_upgraded": false,
+  "typed_worker_job_delivery_pending": true,
+  "panel_attestation_updated": false,
+  "gpo_apply_enabled": false,
+  "candidate_recreated": false,
+  "certificates_issued": false,
+  "trust_store_changed": false,
+  "key_acl_changed": false,
+  "ad_gpo_changed": false,
+  "full_data_backup_created": false,
+  "functional_progress": {
+    "complete": 54,
+    "total": 94,
+    "open": 40
+  },
+  "next": "Operator runs exact DC01 RunProbe delivery; accept real gMSA runtime verification and cleanup. Then integrate typed worker job and authenticated result, fresh owned GPO/plan scope, links-free staging.",
+  "merge_commit": "c1035780711b2b640b56fca0bd5963e54702dc45",
+  "accepted_workflows": [
+    {
+      "id": 40478239125,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40478239103,
+      "name": "AuthWire signed deployment candidate checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40478239129,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40478239198,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "conclusion": "success"
+    }
+  ]
+}
