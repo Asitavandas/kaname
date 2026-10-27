@@ -1,0 +1,21 @@
+name: AuthWire persisted signer metadata checks
+on:
+  pull_request:
+    paths: ['windows/connector/Get-AuthWireMachineSignerMetadata.ps1', 'tools/signer_metadata_windows_fixture.ps1', '.github/workflows/signer-metadata.yml']
+  push:
+    branches: [main]
+    paths: ['windows/connector/Get-AuthWireMachineSignerMetadata.ps1', 'tools/signer_metadata_windows_fixture.ps1', '.github/workflows/signer-metadata.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  named-machine-key:
+    runs-on: windows-2025
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Native persisted binding, cached ephemeral handle and no-write checks
+        shell: powershell
+        run: tools/signer_metadata_windows_fixture.ps1
