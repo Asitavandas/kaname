@@ -20,6 +20,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ 27 Ekim durum raporu teslimatı ve sonraki salt okunur kontrol hazır
+
+Operatörün isteğiyle güncel **9 sayfalık Word/PDF durum raporu** hazırlandı. Önceki raporun 25 Ekim revizyonu ve güncel main kabul kayıtları okundu. B01–B12 **44/59**, G01–G07 **10/35**, toplam **54/94 (~%57),40 açık (~%43)** sayımı korundu. 25–27 Ekim KDS/gMSA, gerçek imzalama, kalıcı Connector, aşamalı worker güncellemesi ve ilk müşteri içerik roundtrip kabulleri kırmızı tikle ayrıldı. Bunlar açık A03/A04 ana işine ikinci puan eklemez. Yarım işler, gerçek uç/AD/kurtarma/ölçek testleri, tek hesap geçişi ve nihai kılavuz ayrı açık. İptal edilmiş özellik güncel kapsam sayılmadı. Kaynak metin **reports/2026-10-27-status-report.md**, teslimat kaydı **checkpoints/2026-10-27-status-report.json**. Word ve iki biçimi birlikte taşıyan arşiv kaydedildi; PDF bağımsız transferi başarısız oldu, aynı doğrulanmış PDF arşiv içinde korunur.
+
+**Devam çalışması:** Mevcut onaylı ağ ZIP SHA256'sine bağlı **operatör salt okunur AD/GPO anlık okuma** scripti hazırlandı ve Linux home'a kopyası özetle doğrulandı. Kaynak **checkpoints/2026-10-27-dc01-deployment-scope-readonly.ps1**, SHA256 **f2a149bef2726bfe0e2b2708388b3d29d2fbd5b3bc362ea17b529363bf02711c**. Pinned planın tam SID örnek listesiyle canlı recursive bilgisayar üyeliğini karşılaştırır; enabled/GUID, owned GPO marker/name/owner/permissions/link/settings/versions/SYSVOL root ve protected trust GPO kimliği raporlanır. Yetki veya GPO tanımı yazmaz, servis çalıştırmaz, özel anahtar açmaz, gpupdate yapmaz. Root ACL/dizin üst düzeyi okunur; bütün SYSVOL alt ağacını veya etkili gMSA yazma yetkisini doğruladığı iddia edilmez. Alan değerleri değişmiş veya okuma eksikse blocker üretir. **Native DC01 çalıştırması/sonucu henüz yok; canlı AD/GPO kontrolü kapanmadı.** Kayıt **checkpoints/2026-10-27-deployment-scope-readonly-prepared.json**. Bu operatör okuması, sonraki ayrı sınırlı Connector scope görevinin yerine geçmez; panel attestation ve can_apply=false korunur.
+
+Rapor/teslimat ve yalnız home dosyası hazırlığı yapıldı. Canlı panel/RADIUS/Connector kodu, service state, business policy, AD/GPO, uç, PKI/key ACL ve yedek timer değiştirilmedi; tam yedek alınmadı.
+
 ## 🔴✓ İlk gerçek panel → Connector → imza/içerik doğrulama sonucu kabul edildi — 27 Ekim 2026
 
 Operatör **image(20261027-140716).png** ekran görüntüsünü paylaştı. **AuthWire Pilot - Merkezi Windows · v1** kaydında **İmza ve içerik Connector tarafından doğrulandı. GPO ve dağıtım kontrolü bekleniyor.** mesajı görünüyor. Manifest **4f7a463d3404428703bb95424d8c8a7f275e85f6a3a42d7a270f6eaae5ba9a6d**, daha önce kabul edilen DC01 adayıyla aynı. Görsel SHA256 **030fd471ee8ceca3cb1c8c3efbd896764b36e5623d3213d4d5e4dcf8ea88f68c**.

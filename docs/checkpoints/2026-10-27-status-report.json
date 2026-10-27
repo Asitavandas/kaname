@@ -1,0 +1,49 @@
+{
+  "event": "STATUS_REPORT_CREATED",
+  "date": "2026-10-27",
+  "timezone": "Europe/Istanbul",
+  "source_status_commit": "17503f88438d04820788c71760e7f6db63ee8b53",
+  "pages": 9,
+  "counts": {
+    "method": "same94_baseline_items; completed1_partial0; A03_A04_tracked_separately_without_double_counting",
+    "base_completed": 44,
+    "base_total": 59,
+    "enhancements_completed": 10,
+    "enhancements_total": 35,
+    "total_completed": 54,
+    "total": 94,
+    "remaining": 40,
+    "completed_percent_rounded": 57,
+    "remaining_percent_rounded": 43
+  },
+  "installed_linux_version": "0.14.0-dev.39",
+  "accepted_windows_release": "b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f",
+  "files": [
+    {
+      "name": "AuthWire_Durum_ve_Kalan_Isler_2026-10-27.docx",
+      "sha256": "427efece28c8fbc34ad68d83e707054df1ccb7ad9a051cbfb006505439379d34",
+      "library_file_id": "libfile_2625391fd4d48191a57daafa63f57ac5"
+    },
+    {
+      "name": "AuthWire_Durum_ve_Kalan_Isler_2026-10-27.pdf",
+      "sha256": "48e7672fcc36eff6cf2dcfa7b5644aeac55bed2ae4cbf151d5d407b9d566bf5a",
+      "saved_inside_archive_library_file_id": "libfile_c942265836dc8191bfedc91065f88539",
+      "standalone_library_upload_succeeded": false
+    },
+    {
+      "name": "AuthWire_Durum_Raporu_2026-10-27_Word_PDF.zip",
+      "sha256": "6499a334579d4d46c3c9c13b1a7a051b968ff6f59476a0fec54f0db996a7bece",
+      "library_file_id": "libfile_c942265836dc8191bfedc91065f88539"
+    }
+  ],
+  "visual_review": {
+    "all_pages_inspected": true,
+    "page_count": 9,
+    "final_border_fix_reviewed": true,
+    "unchanged_pages_2_to_9_pixel_identical": true
+  },
+  "real_user_eap_tls_acceptance_pending": true,
+  "full_windows_gpo_automation_pending": true,
+  "scope_readonly_preparation_separately_recorded": true,
+  "final_guide_created": false
+}
