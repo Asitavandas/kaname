@@ -1,0 +1,76 @@
+{
+  "event": "WINDOWS_SCOPE_WORKER_DELIVERY_PREPARED",
+  "format": 1,
+  "checked_at_utc": "2026-10-27T20:35:35.421Z",
+  "pr": 102,
+  "source_component": "28578aa67244d0d8fdf24206dc0ce6f99cf8c73c",
+  "tested_head": "06a753949f06840f5b989a979f3f3371bf81f84e",
+  "merge_commit": "f90cfb1e131acaef63c6372d2654dfeaf6c0b27d",
+  "previous_windows_release": "b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f",
+  "new_windows_release": "efc5ee91-e39e-4cc4-9cc1-60b648e18cf9",
+  "delivery": "docs/checkpoints/2026-10-27-dc01-scope-worker-upgrade.ps1",
+  "linux_copy": "/home/segmentiq/authwire-dc01-scope-worker-upgrade-20261027.ps1",
+  "sha256": "a8c3ef1692553f5ec65156d748372c6a9b84196b8da7a4e9e8ec70474209743e",
+  "reviewed_files": 19,
+  "linux_copy_digest_verified": true,
+  "validation": {
+    "workflow_runs": [
+      {
+        "id": 40578160075,
+        "name": "AuthWire bounded retry network probe checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 40578160051,
+        "name": "AuthWire persisted signer metadata checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 40578160170,
+        "name": "KANAME foundation checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 40578160112,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "foundation_tests": 905,
+    "foundation_skipped": 28,
+    "native_scope_checks": 33,
+    "native_service_checks": 82,
+    "actual_signed_low_privilege_scm": true,
+    "scope_channel_outage_rollback": true,
+    "signed_child_negative_result": true,
+    "full_scope_snapshot_assembly_simulated": true,
+    "customer_ad_or_gmsa_acceptance": false
+  },
+  "linux_observed": {
+    "radius_pid": 1243360,
+    "broker_pid": 1069437,
+    "radius_active": true,
+    "broker_active": true,
+    "inspection_privilege": "uid1000_readonly_systemctl"
+  },
+  "operator_prepare_executed": false,
+  "operator_apply_executed": false,
+  "windows_scope_worker_installed": false,
+  "customer_scope_verified": false,
+  "gpo_apply_enabled": false,
+  "ad_changed": false,
+  "gpo_changed": false,
+  "windows_endpoints_changed": false,
+  "existing_customer_keys_touched": false,
+  "full_data_backup_created": false,
+  "progress": {
+    "completed": 54,
+    "total": 94,
+    "open": 40
+  },
+  "final_guide_ready": false
+}

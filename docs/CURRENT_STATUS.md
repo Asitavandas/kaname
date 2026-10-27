@@ -20,6 +20,18 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Windows salt okunur AD/GPO scope worker ve yükseltme teslimatı hazır — DC01 Prepare/Apply bekliyor — 27 Ekim 2026
+
+**PR102** birleştirildi. Kaynak bileşeni **28578aa67244d0d8fdf24206dc0ce6f99cf8c73c**, son test head **06a753949f06840f5b989a979f3f3371bf81f84e**, merge **f90cfb1e131acaef63c6372d2654dfeaf6c0b27d**. Windows yeni release **efc5ee91-e39e-4cc4-9cc1-60b648e18cf9**, son kabul edilen önceki release **b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f**. Linux dev.40 kurulumu önceki operatör kabulüyle geçerli; yeniden kurulmayacak.
+
+🔴✓ Yeni imzalı sabit okuyucu mevcut aday içeriğini, tam recursive/primaryGroupID bilgisayar SID kümesini ve enabled durumlarını, owned GPO kimlik/marker/owner/izin/link/ayar/sürüm alanlarını ve SYSVOL kök ACL/girdilerini iki kez okur. Ayrı scope kuyruğuna imzalı typed sonuç gönderir. Okuma en fazla30 saniye, stdout8192/stderr2048 karakter,128 grup/4096 üyelik kenarı/512 bilgisayarla sınırlıdır. İstekle komut/yol/LDAP filtre/URL alınmaz; AllSigned sabit alt süreç kullanılır. Yeni hizmet sürümünün kabulü health/probe/candidate/scope kanallarının hepsini gerektirir. Mevcut hesap/binding/kanal anahtarı korunur; eski üç paket ailesi dondurulmuş kaynak özetleriyle tanınır. Etkili yazma yetkisi, tam SYSVOL alt ağaç envanteri, staging, GPO uygulama veya gerçek uç kabulü değildir. Ayrıntı **WINDOWS_SCOPE_WORKER.md**.
+
+🔴✓ Son head üzerinde dört workflow başarılı: tam kaynak **905 test /28 ortam atlaması**, native WinPS5 scope **33 kontrol**, gerçek düşük yetkili imzalı SCM/TLS hizmeti **82 kontrol**. Nested/primary-group sorgu şekli,200 bilgisayarlık sentetik kapsam, namespaced GPO XML/gerçek NTFS ACL nesnelerinden snapshot oluşturma, timeout/çıktı sınırı/AllSigned reddi, ayrı scope negatif sonuç roundtrip'i ve kanal hatasında otomatik/elle rollback geçti. AD/GPO verileri CI'da simüledir; müşteri gMSA scope kabulü sayılmaz. Eski immutable teslimat korunur. Native signer metadata/CLR marker ve ACL koruma kontrolü geçti. İlk fixture koşularındaki dosya listesi, asenkron yerel durum bekleme ve audit sayım hataları düzeltildi; yalnız son yeşil head kabul edildi.
+
+🔴✓ **19 kaynaklı** DC01 wrapper Linux home'a kondu ve özeti doğrulandı: **/home/segmentiq/authwire-dc01-scope-worker-upgrade-20261027.ps1**, SHA256 **a8c3ef1692553f5ec65156d748372c6a9b84196b8da7a4e9e8ec70474209743e**. Bu yalnız teslimat dosyası hazırlığıdır. **DC01 Prepare/Apply çalıştırılmadı; Windows scope worker kurulmadı ve müşteri scope görevi oluşturulmadı.** Prepare ayrı imzalı aday oluşturur; çalışan hizmeti değiştirmez. Sonrasında ayrı Apply ve mevcut pilot kaydından AD/GPO kontrolü gerekir. Gerçek aw-deploy$ AD/GPO okuması ve panel sonucu bekleniyor; **can_apply=false** kalır.
+
+Linux'ta uid1000 ile salt okunur systemctl kontrolünde RADIUS **1243360**, broker **1069437**, ikisi de active ve önceki PID'lerle aynı görüldü. Windows/AD/GPO/istemci/key/trust ayarı değiştirilmedi; tam yedek alınmadı. Durum **54/94 (~%57),40 açık**; nihai ürün/kılavuz kapanışı yok. Kanıt **checkpoints/2026-10-27-scope-worker-delivery-prepared.json**.
+
 ## 🔴✓ Dev.40 Linux kurulumu ve koruma kontrolleri operatör çıktısıyla kabul edildi — 27 Ekim 2026
 
 Operatör **SCOPE_JOBS_FINISHED verified=true**, sürüm **0.14.0-dev.40**, release **4543e25b3675202a828047c4a0628570939d6fe0**, changed=true sonucunu paylaştı. Kanıt **/var/lib/authwire-updates/scope-jobs-dev40-20261027T195658Z-de05f1b5**. Bu operatör kurucu JSON kabulüdür; ayrı root DB/kanıt dizini incelemesi yapılmadı.
