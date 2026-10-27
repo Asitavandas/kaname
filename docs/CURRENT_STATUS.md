@@ -20,6 +20,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ İlk gerçek panel → Connector → AD/GPO okuma sonucu operatör görseliyle kabul edildi — 27 Ekim 2026
+
+Operatör **image(20261027-204325).png** görselini paylaştı; SHA256 **ec16ac6412298ec77b5c8ef2904c17eb5e14c6f205bbdd2152f1dab8818bf8dc**. Mevcut **AuthWire Pilot - Merkezi Windows · v1** kaydı ve manifest **4f7a463d3404428703bb95424d8c8a7f275e85f6a3a42d7a270f6eaae5ba9a6d** altında **AD hedefleri ve GPO okuma kontrolü başarılı. Dağıtım henüz uygulanmadı.** mesajı görünüyor. Panel kontrol zamanı **27.10.2026 23:42:47**. Bu operatör UI kanıtıdır; ayrı asistan backend/SQL/raw signed result incelemesi değildir. Görsel job UUID, kayıt UUID veya runtime PID içermiyor; bunlar varsayılmaz. Görsel Library ID **libfile_c2c2f0bcb23c81918d5cd0db8114ed82**.
+
+🔴✓ İncelenmiş dev.40 panel sözleşmesinde bu mesaj, güncel kapsam için authenticated Connector scope sonucu **scope_snapshot_verified** ve90 saniyelik tazelik koşulu sağlandığında gösterilir. Böylece önceki aday imza/içerik kabulüne ek olarak, yeni Windows scope worker'ın gerçek panel görevi üzerinden AD hedef kümesi ve owned GPO/root ACL okuma roundtrip'i dar kapsamda kabul edildi. Tazelik anlıktır; daha sonra yeniden kontrol gerektirebilir. Üstteki genel “GPO ve dağıtım kontrolü bekleniyor” satırı daha geniş dağıtım kapısını anlatır; alttaki ayrı okuma başarısını geçersiz kılmaz.
+
+**Kabul sınırı:** Etkili yazma yetkisi, tam SYSVOL alt ağaç envanteri, paket staging, GPO bağlama/uygulama,200 cihaz saha/performans kabulü ve gerçek endpoint kurulumu tamamlandı sayılmaz. **can_apply=false** korunur. Başarılı Prepare/Apply veya aynı kontrol gereksiz tekrarlanmayacak. Yeni kaynak/servis/AD-GPO/uç/key-ACL işlemi yapılmadı. Sonraki çalışma tam SYSVOL/paket staging tasarımı ve ayrı kontrollü pilot uygulama kapısıdır; canlı GPO uygulaması bu görselden yetkilendirilmiş veya yapılmış sayılmaz. Ana durum **54/94,40 açık**, nihai kılavuz kapanışı yok.
+
 ## 🔴✓ DC01 scope worker etkinleştirmesi operatör çıktısıyla kabul edildi — 27 Ekim 2026
 
 Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY / ToolVersion1.2.0 / Mode=Apply / Stage=applied / Error=null / ChangesMayBePartial=false** sonucunu paylaştı. Kaynak **28578aa67244d0d8fdf24206dc0ce6f99cf8c73c**, yeni release **efc5ee91-e39e-4cc4-9cc1-60b648e18cf9**, önceki **b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f** beklenenle aynı. Bu operatör çıktısı kabulüdür; bağımsız DC01 servis sorgusu değildir ve yeni PID varsayılmaz.

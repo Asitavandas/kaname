@@ -1,0 +1,17 @@
+{
+  "event": "CUSTOMER_SCOPE_UI_ACCEPTED",
+  "format": 1,
+  "source": "operator_screenshot",
+  "filename": "image(20261027-204325).png",
+  "sha256": "ec16ac6412298ec77b5c8ef2904c17eb5e14c6f205bbdd2152f1dab8818bf8dc",
+  "library_file_id": "libfile_c2c2f0bcb23c81918d5cd0db8114ed82",
+  "plan_label": "AuthWire Pilot - Merkezi Windows · v1",
+  "manifest_sha256": "4f7a463d3404428703bb95424d8c8a7f275e85f6a3a42d7a270f6eaae5ba9a6d",
+  "displayed_check_time": "27.10.2026 23:42:47",
+  "message": "AD hedefleri ve GPO okuma kontrolü başarılı. Dağıtım henüz uygulanmadı.",
+  "independent_backend_inspection": false,
+  "gpo_applied": false,
+  "endpoint_acceptance": false,
+  "full_sysvol_tree_verified": false,
+  "final_product_accepted": false
+}
