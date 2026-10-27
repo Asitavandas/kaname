@@ -83,12 +83,13 @@ function candidateAccess(write=false){return can('certificates.authority',write)
 function candidateControls(){
  const read=candidateAccess(),write=candidateAccess(true);
  $('dep-candidates').hidden=!read;$('dep-candidate-open').hidden=!write;
- $('dep-candidate-open').disabled=candidateBusy||!write;$('dep-candidate-refresh').disabled=candidateBusy||!read;
+ $('dep-candidate-open').disabled=candidateBusy||!write;$('dep-candidate-refresh').disabled=candidateBusy||candidateVerifyBusy||!read;
  $('dep-candidate-json').disabled=candidateBusy||candidateUncertain||!write;
  $('dep-candidate-save').disabled=candidateBusy||candidateUncertain||!write;
  for(const id of ['dep-candidate-close','dep-candidate-cancel'])$(id).disabled=candidateBusy;
 }
 function resetCandidateRegistration(){
+ candidateVerifyTicket++;candidateVerifyBusy=false;candidateVerifyUncertain=null;
  candidateTicket++;candidateRows=[];candidateBusy=false;candidatePreview=null;candidateRequest=null;candidateUncertain=false;
  $('dep-candidate-dialog').close();$('dep-candidate-json').value='';$('dep-candidate-list').replaceChildren();
  $('dep-candidate-preview').replaceChildren();$('dep-candidate-error').textContent='';$('dep-candidate-feedback').textContent='';candidateControls();
@@ -97,10 +98,48 @@ async function loadCandidateStatus(){
  if(!candidateAccess())return null;const generation=authGeneration,ticket=++candidateTicket;
  try{const value=await api('/api/deployment/candidates');if(generation!==authGeneration||ticket!==candidateTicket||!candidateAccess())return null;
   candidateRows=value.candidates;const box=$('dep-candidate-list');box.replaceChildren();
+  if(candidateVerifyUncertain&&value.verification_jobs?.some(j=>j.id===candidateVerifyUncertain))candidateVerifyUncertain=null;
   for(const row of candidateRows){const item=depNode('article');const plan=depState?.plans.find(p=>p.id===row.plan_id);
-   item.append(depNode('strong',(plan?.name||row.plan_id)+' · v'+row.plan_version),depNode('p',row.state==='outdated'?'Plan veya bağlantı bilgisi değişmiş; yeniden hazırlık gerekiyor.':'Operatör sonucu kaydedildi. Connector doğrulaması bekleniyor.'),depNode('p','Manifest SHA256: '+row.manifest_sha256));box.append(item);}
+   const job=value.verification_jobs?.find(j=>j.candidate_id===row.id);
+   const text=row.state==='outdated'?'Plan veya bağlantı bilgisi değişmiş; yeniden hazırlık gerekiyor.':row.content_verified?'İmza ve içerik Connector tarafından doğrulandı. GPO ve dağıtım kontrolü bekleniyor.':job?.outcome==='content_rejected'?'Connector imza veya içerik doğrulamasını reddetti.':job?.state==='queued'?'Doğrulama görevi bağlantı bekliyor.':job?.state==='leased'?'Connector doğruluyor; sonuç bekleniyor.':'Operatör sonucu kaydedildi. Connector doğrulaması bekleniyor.';
+   item.append(depNode('strong',(plan?.name||row.plan_id)+' · v'+row.plan_version),depNode('p',text),depNode('p','Manifest SHA256: '+row.manifest_sha256));
+   if(candidateAccess(true)){
+    const button=depNode('button','Doğrulamayı önizle');button.type='button';
+    button.disabled=candidateVerifyBusy||!!candidateVerifyUncertain||!value.verification_worker_ready||row.state==='outdated'||['queued','leased'].includes(job?.state);
+    button.addEventListener('click',()=>previewCandidateVerify(row,value.revision,item));item.append(button);
+    if(!value.verification_worker_ready)item.append(depNode('p','Bu görev için Connector güncellemesi ve güncel bağlantı gerekli.'));
+   }
+   box.append(item);}
   if(!candidateRows.length)box.append(depNode('p','Henüz hazırlık sonucu kaydedilmedi.'));candidateControls();return value;
  }catch(error){if(generation===authGeneration&&ticket===candidateTicket)$('dep-candidate-feedback').textContent=error.code||error.message;return null;}
+}
+let candidateVerifyBusy=false,candidateVerifyUncertain=null,candidateVerifyTicket=0;
+async function previewCandidateVerify(row,revision,item){
+ if(candidateVerifyBusy||candidateVerifyUncertain||!candidateAccess(true))return;
+ const generation=authGeneration,ticket=++candidateVerifyTicket;
+ const intent={expected_revision:revision,candidate_id:row.id,job_id:crypto.randomUUID(),operation:'candidate.verify.v1'};
+ candidateVerifyBusy=true;candidateControls();item.querySelectorAll('button').forEach(b=>b.disabled=true);
+ try{
+  const p=await api('/api/deployment/candidates/verify/preview',intent);
+  if(generation!==authGeneration||ticket!==candidateVerifyTicket||!candidateAccess(true))return;
+  if(p.job_id!==intent.job_id||p.operation!==intent.operation||p.target?.candidate_id!==row.id||p.target?.manifest_sha256!==row.manifest_sha256||p.read_only!==true||p.can_apply!==false||!/^[a-f0-9]{64}$/.test(p.preview_hash))throw Error('Doğrulama önizlemesi doğrulanamadı.');
+  const box=depNode('div');box.append(depNode('p','Yalnız mevcut adayın imzası ve içeriği okunacak. GPO veya cihaz ayarı uygulanmaz.'));
+  const send=depNode('button','Doğrulamayı gönder'),cancel=depNode('button','Vazgeç');send.type=cancel.type='button';box.append(send,cancel);item.append(box);
+  cancel.addEventListener('click',()=>{if(candidateVerifyBusy){candidateVerifyBusy=false;candidateVerifyTicket++;loadCandidateStatus();}});
+  send.addEventListener('click',async()=>{
+   if(generation!==authGeneration||ticket!==candidateVerifyTicket||!candidateAccess(true))return;
+   send.disabled=cancel.disabled=true;candidateVerifyTicket++;
+   try{
+    const r=await api('/api/deployment/candidates/verify/create',{...intent,preview_hash:p.preview_hash});
+    if(generation!==authGeneration)return;
+    if(r.job_id!==intent.job_id||r.recorded!==true||r.can_apply!==false)throw Error('Görev yanıtı doğrulanamadı.');
+    $('dep-candidate-feedback').textContent='Doğrulama görevi kaydedildi. Sonucu görmek için Yenile düğmesini kullanın.';
+   }catch(error){if(generation!==authGeneration)return;
+    if(!error.status||error.status>=500){candidateVerifyUncertain=intent.job_id;$('dep-candidate-feedback').textContent='Gönderim sonucu alınamadı. İstek tekrarlanmadı; Yenile ile kontrol edin.';}
+    else $('dep-candidate-feedback').textContent=error.code||error.message;
+   }finally{if(generation===authGeneration){candidateVerifyBusy=false;await loadCandidateStatus();}}
+  },{once:true});
+ }catch(error){if(generation===authGeneration){candidateVerifyBusy=false;$('dep-candidate-feedback').textContent=error.code||error.message;await loadCandidateStatus();}}
 }
 $('dep-candidate-refresh').addEventListener('click',()=>loadCandidateStatus());
 $('dep-candidate-open').addEventListener('click',async()=>{

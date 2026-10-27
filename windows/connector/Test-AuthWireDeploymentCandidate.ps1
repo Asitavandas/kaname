@@ -1,18 +1,19 @@
 #Requires -Version 5.1
 # Read-only candidate validation for an exact non-administrator service identity.
 # No AD/GPO/endpoint write, private-key open, signing or candidate execution.
-[CmdletBinding()]
+[CmdletBinding(DefaultParameterSetName='Verify')]
 param(
- [Parameter(Mandatory=$true)][string]$ConnectorId,
- [Parameter(Mandatory=$true)][string]$PlanId,
- [Parameter(Mandatory=$true)][int]$PlanVersion,
- [Parameter(Mandatory=$true)][string]$PreviewHash,
- [Parameter(Mandatory=$true)][string]$GpoId,
- [Parameter(Mandatory=$true)][string]$ProtectedGpoId,
- [Parameter(Mandatory=$true)][string]$ServiceSid,
- [Parameter(Mandatory=$true)][string]$PublisherThumbprint,
- [Parameter(Mandatory=$true)][string]$ApprovalSha256,
- [Parameter(Mandatory=$true)][string]$ManifestSha256
+ [Parameter(Mandatory=$true,ParameterSetName='Verify')][string]$ConnectorId,
+ [Parameter(Mandatory=$true,ParameterSetName='Verify')][string]$PlanId,
+ [Parameter(Mandatory=$true,ParameterSetName='Verify')][int]$PlanVersion,
+ [Parameter(Mandatory=$true,ParameterSetName='Verify')][string]$PreviewHash,
+ [Parameter(Mandatory=$true,ParameterSetName='Verify')][string]$GpoId,
+ [Parameter(Mandatory=$true,ParameterSetName='Verify')][string]$ProtectedGpoId,
+ [Parameter(Mandatory=$true,ParameterSetName='Verify')][string]$ServiceSid,
+ [Parameter(Mandatory=$true,ParameterSetName='Verify')][string]$PublisherThumbprint,
+ [Parameter(Mandatory=$true,ParameterSetName='Verify')][string]$ApprovalSha256,
+ [Parameter(Mandatory=$true,ParameterSetName='Verify')][string]$ManifestSha256,
+ [Parameter(Mandatory=$true,ParameterSetName='Library')][switch]$LibraryOnly
 )
 $ErrorActionPreference='Stop';Set-StrictMode -Version 2
 function Initialize-AuthWireCandidateTypes {
@@ -280,4 +281,4 @@ function Test-AuthWireServiceCandidate {
  }finally{$cert.Dispose()}
 }
 
-Test-AuthWireServiceCandidate @PSBoundParameters | ConvertTo-Json -Depth 5
+if(-not $LibraryOnly){Test-AuthWireServiceCandidate @PSBoundParameters | ConvertTo-Json -Depth 5}

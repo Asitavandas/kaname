@@ -190,35 +190,9 @@ class ConnectorJobs:
             return {'job_id': value['job_id'], 'state': 'queued', 'recorded': True, 'read_only': True, 'gpo_changed': False}
 
     def _proof(self, raw, binding, kind):
-        try:
-            require(type(raw) is bytes and 1 <= len(raw) <= 4096)
-            value = strict_json(raw.decode('utf-8')); keys(value, {'frame', 'signature', 'payload'}, {'frame', 'signature', 'payload'})
-            decoded = []
-            for name, limit in (('frame', 2048), ('signature', 512), ('payload', 1024)):
-                text = value[name]; require(type(text) is str and len(text) <= (limit + 2) // 3 * 4)
-                data = base64.b64decode(text, validate=True)
-                require(len(data) <= limit and base64.b64encode(data).decode('ascii') == text)
-                decoded.append(data)
-            frame, signature, payload = decoded
-            fields = frame.decode('ascii').split('\n')
-            path = POLL_PATH if kind == 'POLL' else RESULT_PATH
-            require(len(fields) == 18 and fields[-1] == '' and fields[0] == 'AUTHWIRE-CONNECTOR-JOB-' + kind + '-V1')
-            require(fields[1:10] == binding.fields() and fields[14:17] == [sha(payload), 'POST', path])
-            require(all(HEX.fullmatch(s) for s in fields[10:12]))
-            require(all(re.fullmatch('[1-9][0-9]{0,10}', s) for s in fields[12:14]))
-            now = int(self.clock()); issued, until = int(fields[12]), int(fields[13])
-            require(until - issued == 60 and issued - 5 <= now < until)
-            public = serialization.load_pem_public_key(binding.public_key_pem)
-            require(len(signature) == public.key_size // 8)
-            public.verify(signature, frame, padding.PKCS1v15(), hashes.SHA256())
-            require(issued - 5 <= int(self.clock()) < until)
-            body = strict_json(payload.decode('utf-8'))
-            require(type(body) is dict)
-            if kind == 'POLL':
-                require(body == {})
-            return fields[10], sha(frame), until, body
-        except (ValueError, TypeError, UnicodeError, InvalidSignature, KeyError):
-            raise JobError('CONNECTOR_JOB_REJECTED') from None
+        result = verify_job_proof(raw,binding,kind,self.clock)
+        if kind == 'POLL': require(result[3] == {})
+        return result
 
     def poll(self, raw):
         with self.store.connect() as db:
@@ -262,3 +236,35 @@ class ConnectorJobs:
                 self.ops._audit(db, 'connector_probe_completed:' + job['id'], revision)
             return {'format': 1, 'request_id': request, 'job_id': job['id'],
                     'result_recorded': True, 'read_only': True, 'can_apply': False}
+
+
+def verify_job_proof(raw,binding,kind,clock,*,prefix='AUTHWIRE-CONNECTOR-JOB-',
+                     poll_path=POLL_PATH,result_path=RESULT_PATH):
+    try:
+        require(type(raw) is bytes and 1 <= len(raw) <= 4096)
+        value = strict_json(raw.decode('utf-8')); keys(value, {'frame', 'signature', 'payload'}, {'frame', 'signature', 'payload'})
+        decoded = []
+        for name, limit in (('frame', 2048), ('signature', 512), ('payload', 1024)):
+            text = value[name]; require(type(text) is str and len(text) <= (limit + 2) // 3 * 4)
+            data = base64.b64decode(text, validate=True)
+            require(len(data) <= limit and base64.b64encode(data).decode('ascii') == text)
+            decoded.append(data)
+        frame, signature, payload = decoded
+        fields = frame.decode('ascii').split('\n')
+        path = poll_path if kind == 'POLL' else result_path
+        require(len(fields) == 18 and fields[-1] == '' and fields[0] == prefix + kind + '-V1')
+        require(fields[1:10] == binding.fields() and fields[14:17] == [sha(payload), 'POST', path])
+        require(all(HEX.fullmatch(s) for s in fields[10:12]))
+        require(all(re.fullmatch('[1-9][0-9]{0,10}', s) for s in fields[12:14]))
+        now = int(clock()); issued, until = int(fields[12]), int(fields[13])
+        require(until - issued == 60 and issued - 5 <= now < until)
+        public = serialization.load_pem_public_key(binding.public_key_pem)
+        require(len(signature) == public.key_size // 8)
+        public.verify(signature, frame, padding.PKCS1v15(), hashes.SHA256())
+        require(issued - 5 <= int(clock()) < until)
+        body = strict_json(payload.decode('utf-8'))
+        require(type(body) is dict)
+        return fields[10], sha(frame), until, body
+    except (ValueError, TypeError, UnicodeError, InvalidSignature, KeyError):
+        raise JobError('CONNECTOR_JOB_REJECTED') from None
+

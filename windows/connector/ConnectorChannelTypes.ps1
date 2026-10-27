@@ -28,7 +28,7 @@ public static class ChannelTypesV1 {
   return s.Append("-----END PUBLIC KEY-----\n").ToString(); }
  public static string Post(string baseUrl,string fqdn,string pin,string path,string json){
   Uri root;if(!Uri.TryCreate(baseUrl,UriKind.Absolute,out root)||root.Scheme!="https"||root.Host!=fqdn||root.UserInfo!=""||root.Query!=""||root.Fragment!=""||root.AbsolutePath!="/"||!Regex.IsMatch(pin,"\\A[0-9a-f]{64}\\z")||
-    (path!="/api/connector/v1/challenge"&&path!="/api/connector/v1/health"&&path!="/api/connector/v1/jobs/poll"&&path!="/api/connector/v1/jobs/result"))throw new InvalidOperationException("CONNECTOR_HTTPS_CONFIGURATION_REJECTED");
+    (path!="/api/connector/v1/challenge"&&path!="/api/connector/v1/health"&&path!="/api/connector/v1/jobs/poll"&&path!="/api/connector/v1/jobs/result"&&path!="/api/connector/v1/candidates/poll"&&path!="/api/connector/v1/candidates/result"))throw new InvalidOperationException("CONNECTOR_HTTPS_CONFIGURATION_REJECTED");
   byte[] body=new UTF8Encoding(false,true).GetBytes(json);if(body.Length>4096)throw new InvalidOperationException("CONNECTOR_HTTPS_BODY_LIMIT");
   using(var handler=new HttpClientHandler()){
    handler.SslProtocols=SslProtocols.Tls12;handler.AllowAutoRedirect=false;handler.UseProxy=false;handler.Proxy=null;
