@@ -20,6 +20,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 scope worker aday paket hazırlığı operatör çıktısıyla kabul edildi — 27 Ekim 2026
+
+Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY / ToolVersion1.2.0 / Mode=Prepare / Stage=prepared / Error=null / ChangesMayBePartial=false** çıktısını paylaştı. Kaynak **28578aa67244d0d8fdf24206dc0ce6f99cf8c73c**, önceki release **b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f**, yeni release **efc5ee91-e39e-4cc4-9cc1-60b648e18cf9** beklenenle aynı. Bu operatör JSON kabulüdür; bağımsız asistan DC01 sorgusu değildir.
+
+🔴✓ SourceSignaturesValid, PackagePrepared, ExistingAccountPreserved, PairingPreserved, ChannelKeyPreserved, OriginalSourcesPreserved ve SignerSnapshotPreserved=true. **ServiceTransitioned=false**; eski hizmet henüz değiştirilmedi. AD/GPO, trust/key ACL, kanal anahtarı oluşturma ve sır dışa aktarma yok. Evidence **C:\ProgramData\AuthWire-ConnectorUpgradeEvidence-efc5ee91e39e4cc49cc160b648e18cf9-b23b9b7e259847f8956135e37b84f4b3**.
+
+**Sıradaki adım:** Aynı SHA256 kontrollü teslimatı **Mode=Apply** ile etkinleştirmek; sonra mevcut pilot kaydından gerçek gMSA AD/GPO okuma görevi. Apply henüz çalıştırılmadı, müşteri scope sonucu kabul edilmedi. **CanApplyGpo=false**, Linux dev.40 ve genel **54/94,40 açık** durumu korunur; nihai ürün/kılavuz kapanışı yok.
+
 ## 🔴✓ Windows salt okunur AD/GPO scope worker ve yükseltme teslimatı hazır — DC01 Prepare/Apply bekliyor — 27 Ekim 2026
 
 **PR102** birleştirildi. Kaynak bileşeni **28578aa67244d0d8fdf24206dc0ce6f99cf8c73c**, son test head **06a753949f06840f5b989a979f3f3371bf81f84e**, merge **f90cfb1e131acaef63c6372d2654dfeaf6c0b27d**. Windows yeni release **efc5ee91-e39e-4cc4-9cc1-60b648e18cf9**, son kabul edilen önceki release **b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f**. Linux dev.40 kurulumu önceki operatör kabulüyle geçerli; yeniden kurulmayacak.
