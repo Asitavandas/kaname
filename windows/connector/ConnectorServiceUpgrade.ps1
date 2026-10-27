@@ -91,7 +91,7 @@ function Start-AuthWireUpgradeService {
  try{$s.Start();$s.WaitForStatus([System.ServiceProcess.ServiceControllerStatus]::Running,[TimeSpan]::FromSeconds(35))}finally{$s.Dispose()}
 }
 function Wait-AuthWireUpgradeHealth {
- param($Config,[DateTimeOffset]$Since,[switch]$RequireProbe)
+ param($Config,[DateTimeOffset]$Since,[switch]$RequireProbe,[switch]$RequireCandidate)
  $end=[DateTimeOffset]::UtcNow.AddSeconds(50)
  do{
   try{
@@ -104,7 +104,8 @@ function Wait-AuthWireUpgradeHealth {
      $v.Healthy -ceq $true -and $v.CanApply -ceq $false -and $v.DirectorySyncReady -ceq $false -and $v.KerberosReady -ceq $false -and
      [DateTimeOffset]::Parse($v.CheckedUtc) -ge $Since -and [DateTimeOffset]::Parse($v.LastSuccessUtc) -ge $Since -and $worker -and
      (Invoke-CimMethod -InputObject $worker -MethodName GetOwnerSid).Sid -ceq $Config.Binding.service_sid -and
-     (-not $RequireProbe -or ($v.PSObject.Properties['ProbeChannelVerified'] -and $v.ProbeChannelVerified -ceq $true))){return}
+     (-not $RequireProbe -or ($v.PSObject.Properties['ProbeChannelVerified'] -and $v.ProbeChannelVerified -ceq $true)) -and
+     (-not $RequireCandidate -or ($v.PSObject.Properties['CandidateChannelVerified'] -and $v.CandidateChannelVerified -is [bool] -and $v.CandidateChannelVerified))){return}
    }
   }catch{}
   Start-Sleep -Milliseconds 500
@@ -214,7 +215,7 @@ function Invoke-AuthWireServiceUpgradeCore {
      Write-AuthWireUpgradeJournal $journal $record 'activating';[IO.Directory]::Move($stage,$root);Write-AuthWireUpgradeJournal $journal $record 'activated'
      Write-AuthWireUpgradeJournal $journal $record 'marker';[AuthWire.Connector.UpgradeMarkerV1]::Replace($old.ServiceName,(Get-AuthWireServiceMarker $old),(Get-AuthWireServiceMarker $new))
      $since=[DateTimeOffset]::UtcNow;Write-AuthWireUpgradeJournal $journal $record 'starting';Start-AuthWireUpgradeService $new.ServiceName
-     Wait-AuthWireUpgradeHealth $new $since -RequireProbe
+     Wait-AuthWireUpgradeHealth $new $since -RequireProbe -RequireCandidate
      $null=Get-AuthWireServicePackage $root $PublisherThumbprint;Assert-AuthWireServiceChannelKey $new
      Write-AuthWireUpgradeJournal $journal $record 'applied'
     }catch{
