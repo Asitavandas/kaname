@@ -20,6 +20,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 SYSVOL alt ağaç operatör envanteri kabul edildi — 27 Ekim 2026 23:57 İstanbul
+
+Operatör **WINDOWS_SYSVOL_FULL_INVENTORY_READONLY v1** sonucunu paylaştı. DC01, GPO **8c6808fd-a382-4bf2-9c9c-d9e1d46082a3**, hesap **VIZYONVERI\\administrator**, UTC **2026-10-27T20:57:49.6855695+00:00**. **InventoryStable=true, EmptyDeploymentTree=true, Blockers=[]**. Bu operatör JSON kabulüdür; ayrı asistan DC01 okuması veya gMSA runtime testi değildir.
+
+🔴✓ Kök dahil **5 girdi /485 dosya baytı**: kök, boş Machine/User dizinleri, **GPO.cmt426 bayt / SHA256 91f1febf0b6a72ce00facb4952363b3efb1f915cdfe8834686dd137c1ecc07ca**, **GPT.INI59 bayt / SHA256 112721708676acace5886ff541684d5ff98607774380d53b07bf20546ac84349**. İki okumanın envanter özeti **b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6** aynı. Çıktı kök ve alt girdilerin standart owner/group/DACL SDDL verilerini içeriyor. Kök Domain Admins sahipliğinde, alt dosya/dizinler BUILTIN Administrators sahipliğinde; bunlar farklı girdilerin sahipleridir, tek kök owner varsayımı bütün alt ağaca uygulanmayacak. Ayrı etkili yazma yetkisi veya tüm ACL'lerin hedef yazıcı sözleşmesine uygunluğu kabul edilmedi.
+
+**Sınır ve devam:** Envanter ana veri akışı/yollar ve standart ACL kapsamındadır; alternatif stream/SACL/hardlink taraması değildir. **GmsaRuntimeTested=false, EffectiveWriteAccessTested=false, PackageStaged=false, CanApplyGpo=false**. AD/GPO/servis/key ACL/trust değişmedi, artifact çalıştırılmadı. Başarılı aynı okuma gereksiz tekrarlanmayacak; gelecekte gerçek yazıcı uygulama anında güncel durumu yeniden kontrol etmeli. Sıradaki geliştirme eksiksiz enrollment/installer + ağ profili paketini SYSVOL dışında hazırlayıp doğrulamak, ardından ayrı controlled staging yazıcısıdır. Ağ XML adayı tek başına tam kurulum sayılmaz. Linux dev.40, Windows efc5ee91 ve **54/94,40 açık** korunur; nihai ürün/kılavuz kapanışı yok. Kanıt **checkpoints/2026-10-27-customer-sysvol-inventory-accepted.json**.
+
 ## 🔴✓ SYSVOL alt ağaç envanteri ve DC01 salt okunur kontrol dosyası hazır — müşteri okuması bekleniyor — 27 Ekim 2026
 
 **PR103** birleştirildi. Test head **592a7aa8b4d59cfd354b0727ed0c6440c222904c**, merge **b45d9cb2332382a4723ce6553f472ea4be62e89e**. Önceki başarılı scope görevi yalnız kökü kontrol ediyordu. Yeni **SysvolInventory.ps1**, alt dizin yollarını, dosya ana veri akışı boyut/SHA256 ve standart owner/group/DACL SDDL verilerini de kaydeder. Kök dahil1024 girdi,16 derinlik, dosya16MiB/toplam32MiB sınırı; reparse takibi yok. Bilinmeyen alt dosya varsa boş dağıtım sınıflandırması false olur; hiçbir dosya silinmez veya sahiplenilmez. Bu transaction/SMB snapshot, alternatif NTFS stream/SACL/hardlink topolojisi taraması veya etkili yazma yetkisi kabulü değildir. Ayrıntı **SYSVOL_STAGING_PREPARATION.md**.

@@ -1,0 +1,42 @@
+{
+  "event": "CUSTOMER_SYSVOL_INVENTORY_OPERATOR_ACCEPTED",
+  "format": 1,
+  "source": "operator_json",
+  "computer": "DC01",
+  "gpo_id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+  "checked_utc": "2026-10-27T20:57:49.6855695+00:00",
+  "inspected_as": "VIZYONVERI\\administrator",
+  "inventory_stable": true,
+  "empty_deployment_tree": true,
+  "entry_count": 5,
+  "file_bytes": 485,
+  "inventory_sha256": "b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6",
+  "files": [
+    {
+      "path": "GPO.cmt",
+      "size": 426,
+      "sha256": "91f1febf0b6a72ce00facb4952363b3efb1f915cdfe8834686dd137c1ecc07ca"
+    },
+    {
+      "path": "GPT.INI",
+      "size": 59,
+      "sha256": "112721708676acace5886ff541684d5ff98607774380d53b07bf20546ac84349"
+    }
+  ],
+  "directories": [
+    "",
+    "Machine",
+    "User"
+  ],
+  "blockers": [],
+  "gmsa_runtime_tested": false,
+  "effective_write_access_tested": false,
+  "package_staged": false,
+  "gpo_changed": false,
+  "services_changed": false,
+  "key_acl_changed": false,
+  "trust_store_changed": false,
+  "artifact_executed": false,
+  "can_apply": false,
+  "independent_assistant_inspection": false
+}
