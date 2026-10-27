@@ -20,6 +20,12 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## DC01 salt okunur aday probe sonrası koruma kontrolünde durdu — 27 Ekim 2026
+
+Operatör **WINDOWS_CANDIDATE_READONLY_SERVICE_DELIVERY_FAILED / Mode=RunProbe / Stage=preservation_after / EXISTING_NONEXPORTABLE_SIGNER_REQUIRED** çıktısını paylaştı. **SourcesPreparedNow=true, ProbeStarted=true**; kaynaklar **C:\ProgramData\AuthWire-CandidateVerifySources-048dce54c72d0984** altında. Son snapshot anahtar türü/machine/ephemeral/boyut/export/usage koşullarından birini sağlayamadı; tek hata kodu hangi özelliğin uyuşmadığını göstermiyor.
+
+**Müşteri probe başarı/temizlik/koruma kabulü yapılmadı.** İç probe sonucu dış hata çıktısında görünmüyor; kaydedilmiş owned-probe summary salt okunur alınacak. Önce/sonra tüm kapsamın korunduğu veya anahtarın değiştiği iddia edilmez; kök neden henüz bilinmiyor. İnceleme sırasında RunProbe yeniden çalıştırılmayacak, anahtar/ACL/trust/hesap/servis ayarları değiştirilmeyecek. Yeni Windows PowerShell sürecinden persisted signer metadata, mevcut Connector ve ilgili summary okunacak. **PanelAttestationUpdated=false, GpoApplyEnabled=false**; ana durum **54/94 (~%57),40 açık** korunur.
+
 ## 🔴✓ Servis hesabı için salt okunur imzalı aday doğrulayıcısı hazır — 27 Ekim 2026
 
 **PR96**, son test edilen kaynak **de5d9ad859f7a0be40f7a87d9304e07f76fb801e**, merge **c1035780711b2b640b56fca0bd5963e54702dc45**. Mevcut aday Prepare/Verify aracı yönetici gerektirdiğinden, kalıcı non-admin worker'a doğrudan bağlanamaz. Ayrı **Test-AuthWireDeploymentCandidate.ps1**, exact non-admin runtime SID ve on sabit kapsam/hash piniyle aday yolunu türetir; korumalı ACL, original approval, sınırlı ZIP/JSON/XML, açık CA verisi, public TrustedPublisher zinciri, native Authenticode ve yalnız yorum içeren manifesti doğrular. Verifier özel anahtar açmaz, imzalamaz, adayı çalıştırmaz veya AD/GPO/endpoint değiştirmez.

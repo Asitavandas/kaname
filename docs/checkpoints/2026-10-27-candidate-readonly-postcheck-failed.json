@@ -1,0 +1,19 @@
+{
+  "event": "CANDIDATE_READONLY_RUNTIME_POSTCHECK_FAILED",
+  "date": "2026-10-27",
+  "evidence_type": "operator_supplied_delivery_error",
+  "mode": "RunProbe",
+  "stage": "preservation_after",
+  "error": "EXISTING_NONEXPORTABLE_SIGNER_REQUIRED",
+  "sources_directory": "C:\\ProgramData\\AuthWire-CandidateVerifySources-048dce54c72d0984",
+  "sources_prepared_now": true,
+  "probe_started": true,
+  "runtime_probe_result_unknown": true,
+  "cleanup_result_unknown": true,
+  "preservation_verified": false,
+  "root_cause_unconfirmed": true,
+  "customer_runtime_acceptance": false,
+  "panel_attestation_updated": false,
+  "gpo_apply_enabled": false,
+  "next": "Read saved owned-probe summary, existing Connector state and signer metadata in a fresh read-only process. Do not repeat RunProbe or change key, ACL, trust, account or services before diagnosis."
+}
