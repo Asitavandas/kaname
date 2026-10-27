@@ -1,0 +1,47 @@
+{
+  "event": "CANDIDATE_REGISTRY_OPERATOR_INSTALL_ACCEPTED",
+  "date": "2026-10-27",
+  "evidence_type": "operator_supplied_updater_output",
+  "independent_live_inspection": false,
+  "version": "0.14.0-dev.38",
+  "release": "957e590d879b65579e650519c65afed9571847d2",
+  "verified": true,
+  "changed": true,
+  "evidence": "/var/lib/authwire-updates/candidate-registry-dev38-20261027T083529Z-ed24d2d0",
+  "checks": {
+    "protected_files": true,
+    "broker_process": true,
+    "radius_process": true,
+    "timers": true,
+    "business_state": true
+  },
+  "service_pids": {
+    "authwire-radius.service": "1243360",
+    "authwire-service-control.service": "1069437"
+  },
+  "radius_active": true,
+  "radius_restarted": false,
+  "radius_process_preserved": true,
+  "broker_process_preserved": true,
+  "panel_reads_all_200": true,
+  "candidate_records_created": false,
+  "gpo_apply_enabled": false,
+  "operator_receipt_registration_only": true,
+  "windows_candidate_worker_delivery_pending": true,
+  "operator_browser_acceptance_pending": true,
+  "real_endpoint_acceptance_pending": true,
+  "policy_changed": false,
+  "certificates_changed": false,
+  "ad_gpo_changed": false,
+  "windows_endpoints_changed": false,
+  "windows_packages_changed": false,
+  "connector_binding_written": false,
+  "full_data_backup_created": false,
+  "backup_timer_preserved": true,
+  "functional_progress": {
+    "complete": 54,
+    "total": 94,
+    "open": 40
+  },
+  "next": "Refresh the panel; record the existing DC01 WINDOWS_DEPLOYMENT_CANDIDATE_DELIVERY Prepare JSON using preview then save; verify pending Connector state. Do not rerun DC01 Prepare."
+}

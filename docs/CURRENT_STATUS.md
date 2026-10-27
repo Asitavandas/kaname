@@ -20,6 +20,14 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Dev.38 Linux kurulumu operatör çıktısıyla kabul edildi — 27 Ekim 2026
+
+Operatör **CANDIDATE_REGISTRY_FINISHED / verified=true / changed=true / 0.14.0-dev.38** çıktısını paylaştı. Release **957e590d879b65579e650519c65afed9571847d2** beklenen kaynakla eşleşiyor. Evidence **/var/lib/authwire-updates/candidate-registry-dev38-20261027T083529Z-ed24d2d0**. Bu kabul operatörün updater çıktısına dayanır; bağımsız canlı asistan sorgusu değildir.
+
+🔴✓ Korumalı dosyalar, broker/RADIUS süreçleri, timer'lar ve iş verisi kontrolleri başarılı. RADIUS **1243360** ve broker **1069437** korunmuş; RADIUS yeniden başlatılmamış. Önce/sonra panel okuma kontrolleri **200**, yeni **/api/deployment/candidates** dahil. Policy, plan, AD/GPO, sertifika, Windows paket/endpoint, pairing ve backup worker değişikliği yok. Tam veri yedeği alınmadı; günlük backup timer korunmuş.
+
+**candidate_records_created=false, gpo_apply_enabled=false, windows_candidate_worker_delivery_pending=true** beklenen kapsam. Sıradaki operatör adımı paneli yenileyerek **Sertifikalar → Merkezi dağıtım → Hazırlık sonucunu kaydet** altında daha önce kabul edilen DC01 **WINDOWS_DEPLOYMENT_CANDIDATE_DELIVERY / Prepare** JSON'unun tamamını önizleyip kaydetmektir. Beklenen durum **Connector doğrulaması bekleniyor**; bu kayıt gerçek worker doğrulaması veya dağıtım kabulü sayılmaz. DC01 Prepare yeniden çalıştırılmayacak; mevcut servis/eşleme/aday korunacak. Müşteri tarayıcı kabulü ve gerçek aday kaydı henüz bekliyor. **54/94 (~%57),40 açık** değişmedi.
+
 ## İmzalı aday sonucunun panelde kaydı hazır — 27 Ekim 2026
 
 **PR95**, merge **65782a6e9367da671caed15833f46385a7d77378**, test edilen kaynak **957e590d879b65579e650519c65afed9571847d2**, sürüm **0.14.0-dev.38**. Sertifikalar → Merkezi dağıtım altında **İmzalı dağıtım adayları / Hazırlık sonucunu kaydet** eklendi. İlk DC01 Prepare JSON çıktısı önizlenip kaydedilebilir. Kaydın açık durumu **operator_reported / Connector doğrulaması bekleniyor**; **connector_verified=false, can_apply=false**. Bu, geçici bootstrap kayıt köprüsüdür; nihai otomatik dağıtımda rutin çıktı yapıştırma hedeflenmiyor.
