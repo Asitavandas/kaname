@@ -7,7 +7,9 @@ const assert = require('node:assert/strict');
  try{
   const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(String(e)));
   const html=fs.readFileSync('kaname/static/index.html','utf8').replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'').replace(/<link\b[^>]*>/g,'');
-  await page.setContent(html);
+  // The production panel is HTTPS; randomUUID is a secure-context API.
+  await page.route('https://candidate.fixture.test/**',route=>route.fulfill({contentType:'text/html',body:html}));
+  await page.goto('https://candidate.fixture.test/');
   await page.evaluate(()=>{
    for(const e of document.querySelectorAll('[hidden]'))e.hidden=false;
    window.$=id=>document.getElementById(id);window.authGeneration=1;window.allowWrite=true;
