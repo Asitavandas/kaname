@@ -1,0 +1,103 @@
+{
+  "event": "CANDIDATE_JOB_CHANNEL_DELIVERY_PREPARED",
+  "date_local": "2026-10-27",
+  "timezone": "Europe/Istanbul",
+  "version": "0.14.0-dev.39",
+  "pr": 99,
+  "tested_head": "406d3d5b46971874d450ff1a83ee311b1c302191",
+  "source_component": "cf0be7fbdd3df8b3dac7d535d353af8bdb9f149a",
+  "merge": "e93365d1e160f7a18780a98c09a550a2eee69fde",
+  "workflows": [
+    {
+      "id": 40510006409,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40510006132,
+      "name": "AuthWire signed deployment candidate checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40510006529,
+      "name": "AuthWire device enrollment pilot checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40510006140,
+      "name": "KANAME Linux source preparation",
+      "conclusion": "success"
+    },
+    {
+      "id": 40510006028,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40510006159,
+      "name": "KANAME browser checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40510006222,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40510006081,
+      "name": "KANAME real RADIUS protocol proof",
+      "conclusion": "success"
+    }
+  ],
+  "validation": {
+    "foundation_tests": 868,
+    "foundation_skipped": 28,
+    "new_local_job_http_delivery_tests": 29,
+    "native_candidate_checks": 55,
+    "native_nonadmin_verifier_and_worker_selector_checks": 30,
+    "native_service_checks": 53,
+    "browser_preview_create_lost_reply_reconcile_and_stale_preview_passed": true,
+    "actual_scm_candidate_negative_authenticated_roundtrip_passed": true,
+    "actual_scm_positive_candidate_verifier_separately_passed": true,
+    "complete_positive_customer_worker_roundtrip_verified": false,
+    "customer_gmsa_tested_in_ci": false
+  },
+  "linux_delivery": {
+    "path": "/home/segmentiq/authwire-candidate-jobs-20261027.py",
+    "sha256": "9ce550af4267e27f3d29d776b2a5590afc376a7b08a3bb2607834858afdb9f1d",
+    "stage": "/home/segmentiq/authwire-stage-dev39-2295fc804bb6",
+    "manifest_sha256": "9045a1b093fa28b00869c5a5ecfe1d831daac9c6682cad668f0f884a5a004d0b",
+    "files": 179,
+    "readonly_source_check_passed": true,
+    "installed_version": "0.14.0-dev.38",
+    "operator_sudo_execution_pending": true,
+    "full_data_backup_planned": false,
+    "panel_restart_planned": true,
+    "radius_restart_planned": false,
+    "broker_restart_planned": false,
+    "radius_pid_last_read": "1243360",
+    "broker_pid_last_read": "1069437"
+  },
+  "limits": {
+    "candidate_jobs_created": false,
+    "operator_receipt_preserved": true,
+    "connector_verified": false,
+    "can_apply": false,
+    "new_windows_worker_customer_delivery_pending": true,
+    "windows_service_upgraded": false,
+    "ad_gpo_changed": false,
+    "endpoint_changed": false,
+    "signer_key_or_marker_or_acl_changed": false,
+    "old_runtime_probe_repeated": false,
+    "original_failed_wrapper_preservation_retroactively_accepted": false,
+    "fresh_live_ad_gpo_verification_pending": true,
+    "sysvol_staging_pending": true,
+    "endpoint_acceptance_pending": true
+  },
+  "progress": {
+    "completed": 54,
+    "total": 94,
+    "open": 40
+  },
+  "guide_ready_claimed": false
+}
