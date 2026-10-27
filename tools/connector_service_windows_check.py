@@ -123,7 +123,8 @@ def main():
             assert server.connector_pairing.status()['online'] and not server.connector_pairing.status()['can_apply']
             after=store.snapshot()
             assert snapshot['config']==after['config'] and snapshot['policies']==after['policies']
-            assert after['revision']==snapshot['revision']+5 and len(store.audit())==len(audit)+5
+            # Scope queue creation and signed completion each add an audit revision.
+            assert after['revision']==snapshot['revision']+6 and len(store.audit())==len(audit)+6, (after['revision']-snapshot['revision'],len(store.audit())-len(audit))
             status=jobs.status()
             assert status['jobs'][0]['state']=='completed' and status['jobs'][0]['result']['release_id']==result['release_id']
             assert status['worker_probe_ready'] and not status['can_apply']
