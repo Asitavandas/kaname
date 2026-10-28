@@ -6,6 +6,18 @@ Bu kayıt güç işlemi, tam sistem/veri yedeği veya kurtarma testi gerçekleş
 Kaynak taban commit: e7b1e2c4fc0161667f7dce60c9f6872fe043f247.
 Yeni geliştirme bu devam noktasında duraklatıldı.
 
+## Yeniden başlatma öncesi Linux yedeği — tamamlandı
+
+28 Ekim 2026 10:28:35 İstanbul tarihinde yeni BACKUP_SUCCESS kabul edildi.
+Arşiv: /var/backups/authwire/scheduled/authwire-scheduled-20261028T072835Z-004fe2d609b1.tar.gz
+SHA256: 3c4b00b745063980c962f712a426a4ce2e845d62abb096ec2346941a5062c002
+1687 dosya /4 DB; arşiv, byte/metadata, SQLite bütünlüğü, kararlı iş durumu ve ürün süreçleri doğrulandı.
+Operatör helper bağımsız arşiv hash kontrolünü tamamladı; asistan journal/systemd/worker hash'lerini ayrıca okudu.
+r2 worker SHA256: c18bfafecbefb136d0d5bca0b0994c373629708d19c100040b383e673edc697c.
+Timer etkin; ürün servisleri durdurulmadı/yeniden başlatılmadı.
+Bu arşivde veri restore veya tam OS boot restore provası yapılmadı; off-host kopya ve Windows/DC01 yedeği ayrı.
+Henüz reboot yapılmış veya açılış sonrası sağlık doğrulanmış sayılmaz.
+
 ## Son kabul edilen durum
 - Linux AuthWire: son operatör kabulü 0.14.0-dev.40.
 - Windows kalıcı Connector: son kabul edilen release efc5ee91-e39e-4cc4-9cc1-60b648e18cf9.

@@ -20,6 +20,32 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Linux yeni yedek ve poll düzeltmesi kabul edildi — 28 Ekim 2026 10:28 İstanbul
+
+Operatör r2 helper sonucu **BACKUP_POLL_FIX_FINISHED**: worker iki konumda
+**c18bfafecbefb136d0d5bca0b0994c373629708d19c100040b383e673edc697c**, üç görev kuyruğunda recognized=true.
+Kaynak uygulaması ürün süreçlerini korudu; DB/unit/restore checker değişmedi, ürün servisleri yeniden başlatılmadı.
+Kanıt dizini **/var/lib/authwire-updates/backup-poll-fix-r2-20261028-0ed27bd5aef54db4b6b20750da2a6b02**.
+
+Yeni **BACKUP_SUCCESS**: **28 Ekim 2026 10:28:35 İstanbul** (07:28:35.438167 UTC),
+**1687 dosya /4 DB**, arşiv okuma, dosya byte/metadata, SQLite bütünlük ve iş durumu kararlılığı doğrulandı.
+Arşiv: **/var/backups/authwire/scheduled/authwire-scheduled-20261028T072835Z-004fe2d609b1.tar.gz**
+SHA256: **3c4b00b745063980c962f712a426a4ce2e845d62abb096ec2346941a5062c002**
+Helper arşivi yeniden hash ederek archive_sha256_verified=true bildirdi. Başarılı saklama politikası kapsamında
+bir eski yönetilen yedek temizlendi; keep_successful=14. Servis süreçleri korundu, durdurulmadı.
+
+Asistan ayrı salt okunur journal/systemd/kaynak kontrolüyle aynı başarı kaydını,
+iki worker hash'ini, backup.service Result=success/inactive ve backup.timer active durumunu doğruladı.
+Arşivin root-only içeriği asistan tarafından ayrıca açılmadı; byte/hash doğrulaması operatör helper sonucuna dayanır.
+Bu yeni yedekte **data_restore_exercised=false /full_appliance_boot_restore_tested=false**;
+CI fixture restore kabulü bu arşivde canlı restore yapılmış anlamına gelmez.
+Off-host kopya ve Windows/DC01 CNG anahtar/servis durum yedeği ayrıca ele alınır.
+
+**Yeniden başlatma öncesi Linux yedek adımı tamamlandı**; güç işlemi çalıştırılmadı, reboot sonrası sağlık kabulü bekler.
+A04 birleşik kalıcı job/registry entegrasyonu ve staging/rollback işleri duraklatılan yerden devam edecek.
+Genel durum **54/94 /40 açık**; CanStage/CanApplyGpo=false ve nihai kılavuz beklemesi değişmedi.
+Önceki başarısızlık notları tarihseldir; güncel sonuç bu başarılı kayıttır.
+
 ## Yedek ilk hotfix sonrası hâlâ başarısız — probe biçimi düzeltmesi — 28 Ekim 2026
 
 Operatör ilk hotfix'i uyguladı: iki worker SHA256 **fab31d283971b3d36d3cf4c4f480f36e32e16f7f5a627ebbd422ec9741d31288**,
