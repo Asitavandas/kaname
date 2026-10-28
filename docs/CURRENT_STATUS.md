@@ -1,5 +1,16 @@
 # AuthWire current work record
 
+## Güncel rapor yenilendi; yeni yedek/kapatma iptal edildi — 28 Ekim 2026
+
+Operatör yeni yedek alma ve Linux'u kapatma niyetinden vazgeçti. **Yeni yedek veya kapatma komutu yürütülmedi.**
+Güncel tamamlanan, yarım kalan ve saha testi bekleyen işler **docs/STATUS_2026-10-28.md** içinde toplandı.
+Linux **dev.43**, Windows Connector **cf74295c**, gerçek birleşik AD/GPO–SYSVOL okuma kabulü **17:04:16**.
+Yeni aşama: aynı birleşik aday için typed **SYSVOL staging önizlemesi ve geri alma sınırı**.
+Henüz SYSVOL yazıcı/aktivasyon/endpoint dağıtımı yok. Mevcut yedek **10:28:35** tarihlidir;
+sonraki değişiklikleri içeriyor veya dış disk yedeği var sayılmaz.
+Genel **54 tamamlanan/40 açık**, kılavuz kapısı false kalır.
+
+
 ## Müşteri birleşik AD/GPO/SYSVOL okuma kontrolü başarılı — READ_FAILED bu kontrolde kapandı — 28 Ekim 2026
 
 Operatör panel ekranını paylaştı: **AuthWire Pilot - Merkezi Windows · v1 · Birleşik paket**.
