@@ -1,0 +1,32 @@
+name: AuthWire combined staging preview checks
+on:
+  pull_request:
+    paths:
+      - 'windows/connector/CombinedStagingPreview.ps1'
+      - 'windows/connector/SysvolInventory.ps1'
+      - 'windows/connector/CombinedDeploymentScope.ps1'
+      - 'windows/connector/Test-AuthWireDeploymentCandidate.ps1'
+      - 'tools/combined_staging_preview_windows_check.ps1'
+      - '.github/workflows/combined-staging-preview.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'windows/connector/CombinedStagingPreview.ps1'
+      - 'windows/connector/SysvolInventory.ps1'
+      - 'windows/connector/CombinedDeploymentScope.ps1'
+      - 'windows/connector/Test-AuthWireDeploymentCandidate.ps1'
+      - 'tools/combined_staging_preview_windows_check.ps1'
+      - '.github/workflows/combined-staging-preview.yml'
+permissions:
+  contents: read
+jobs:
+  native-staging-preview:
+    runs-on: windows-2025
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Fixed staging proposal, exact rollback boundary and real SMB reads
+        shell: powershell
+        run: tools/combined_staging_preview_windows_check.ps1
