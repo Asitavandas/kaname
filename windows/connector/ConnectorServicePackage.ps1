@@ -2,9 +2,9 @@
 Set-StrictMode -Version 2
 function Get-AuthWireReviewedPayloadHashes {
  @{
- 'ConnectorServiceRuntime.ps1'='A9DDCF9B823893E9CEB3F8BE9B837A10FDA9F6C0FC90729B69BBEF361AB56EB0'
+ 'ConnectorServiceRuntime.ps1'='4177CC3A24DEEED8104BFE7E40CC772B0EF2367EE902722960519A6589C9C78A'
  'Compare-AuthWireSigningKeyAcl.ps1'='EA8D67AC4F7673654C24BEE7B59AAF6D50F0427BDAC6D05C535CD5D2D47E8734'
- 'ConnectorChannelTypes.ps1'='6D374E58F4D9DED209825E6D43C2DCB3D12A22A32DA2B4079BD4FAE5DE60CC0E'
+ 'ConnectorChannelTypes.ps1'='9B97A227189DF1A375574184E7085AB5DCF2E2ABBF7A30E6E73823EF553EF37B'
  'ConnectorChannelKey.ps1'='D6F0D2CEBDE20B9016AC8BC1C1CDE566245A722AE447164FE55C946CFAD43BD6'
  'New-AuthWireConnectorHealthProof.ps1'='E8E369DCD0B60375EA2ADB672F904DDA217D22DB3BAB5A9B4981607E24958940'
  'Invoke-AuthWireConnectorHealth.ps1'='1A58B86580FF123D2CD253B774F015A9BBA747E5B072346786D6C133BED2122D'
@@ -17,6 +17,9 @@ function Get-AuthWireReviewedPayloadHashes {
  'Read-AuthWireDeploymentScope.ps1'='AAB6A44FE9A727C1A13528B1291DEC6BF3B5232B95312882415E6E5925BDF370'
  'CombinedCandidateContent.ps1'='1E8436F3204AA4AD1A0B0BE83D0C1BCC5B1A6DB5B90B7B9B2887DBDCF2478029'
  'Invoke-AuthWireCombinedJob.ps1'='3A5488AD6C8766FB1C5A69294AEB8997204C70B6DAF1FC4F43D2F07434664BB3'
+ 'CombinedDeploymentScope.ps1'='EECD6B97A3454D8B8AC9C769DC2A496419CC3EF7EC7ED0EE853F0D13EBB9F902'
+ 'Invoke-AuthWireCombinedScopeJob.ps1'='918DC2A74A2FA78E07B4D24660304A4628714B2A46F98AC90DA973C0D8F6A3B5'
+ 'Read-AuthWireCombinedDeploymentScope.ps1'='4D9301DC6CC0924E1381CE30C97F6F27C9E1E76034A7192424278E0F3926790B'
  }
 }
 function Get-AuthWireSourceBody {
@@ -31,7 +34,7 @@ function Get-AuthWireSourceDigest {
  finally{$sha.Dispose()}
 }
 function Get-AuthWireServicePayloadNames {
- @('ConnectorServiceRuntime.ps1','Compare-AuthWireSigningKeyAcl.ps1','ConnectorChannelTypes.ps1','ConnectorChannelKey.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','Test-AuthWireDeploymentCandidate.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','Read-AuthWireDeploymentScope.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1')
+ @('ConnectorServiceRuntime.ps1','Compare-AuthWireSigningKeyAcl.ps1','ConnectorChannelTypes.ps1','ConnectorChannelKey.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','Test-AuthWireDeploymentCandidate.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','Read-AuthWireDeploymentScope.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','Read-AuthWireCombinedDeploymentScope.ps1')
 }
 function Assert-AuthWireServiceAdmin {
  $i=[Security.Principal.WindowsIdentity]::GetCurrent()
@@ -147,11 +150,13 @@ function Get-AuthWireServicePackage {
   $expected='O:BAG:BAD:P(A;'+$flags+';FA;;;SY)(A;'+$flags+';FA;;;BA)(A;'+$flags+';'+$read+';;;'+$sid+')'
   if(-not (Compare-AuthWireSigningKeyAcl $expected $acl.Sddl).AclEquivalent){throw 'CONNECTOR_PACKAGE_ACL_REJECTED'}
  }
- $combinedLegacy=$AllowLegacy -and -not $m.Files.PSObject.Properties['Invoke-AuthWireCombinedJob.ps1']
+ $combinedScopeLegacy=$AllowLegacy -and -not $m.Files.PSObject.Properties['Invoke-AuthWireCombinedScopeJob.ps1']
+ $combinedLegacy=$combinedScopeLegacy -and -not $m.Files.PSObject.Properties['Invoke-AuthWireCombinedJob.ps1']
  $scopeLegacy=$combinedLegacy -and -not $m.Files.PSObject.Properties['Invoke-AuthWireScopeJob.ps1']
  $probeLegacy=$scopeLegacy -and -not $m.Files.PSObject.Properties['Invoke-AuthWireCandidateJob.ps1']
  $legacy=$probeLegacy -and -not $m.Files.PSObject.Properties['Invoke-AuthWireConnectorProbeJob.ps1']
  $payload=@(Get-AuthWireServicePayloadNames)
+ if($combinedScopeLegacy){$payload=@($payload|Where-Object{$_ -cnotin @('CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','Read-AuthWireCombinedDeploymentScope.ps1')})}
  if($combinedLegacy){$payload=@($payload|Where-Object{$_ -cnotin @('CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1')})}
  if($scopeLegacy){$payload=@($payload|Where-Object{$_ -cnotin @('DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','Read-AuthWireDeploymentScope.ps1')})}
  if($probeLegacy){$payload=@($payload|Where-Object{$_ -cnotin @('Invoke-AuthWireCandidateJob.ps1','Test-AuthWireDeploymentCandidate.ps1')})}
@@ -168,8 +173,8 @@ function Get-AuthWireServicePackage {
    if($s.Status.ToString() -ne 'Valid' -or $s.SignerCertificate.Thumbprint -cne $ExpectedPublisher){throw 'CONNECTOR_SIGNATURE_REJECTED'}
   }
  }
- if($combinedLegacy){
-  $legacyHashes=if($legacy){Get-AuthWireLegacyPayloadHashes}elseif($probeLegacy){Get-AuthWireProbeOnlyPayloadHashes}elseif($scopeLegacy){Get-AuthWireCandidateOnlyPayloadHashes}else{Get-AuthWireScopeOnlyPayloadHashes}
+ if($combinedScopeLegacy){
+  $legacyHashes=if($legacy){Get-AuthWireLegacyPayloadHashes}elseif($probeLegacy){Get-AuthWireProbeOnlyPayloadHashes}elseif($scopeLegacy){Get-AuthWireCandidateOnlyPayloadHashes}elseif($combinedLegacy){Get-AuthWireScopeOnlyPayloadHashes}else{Get-AuthWireCombinedOnlyPayloadHashes}
   foreach($file in $payload){if((Get-AuthWireSourceDigest ([IO.File]::ReadAllText((Join-Path $RootPath $file)))) -cne $legacyHashes[$file]){throw 'CONNECTOR_LEGACY_SOURCE_REJECTED'}}
  }
  return $c
@@ -241,5 +246,25 @@ function Get-AuthWireScopeOnlyPayloadHashes {
  'DeploymentScope.ps1'='EA53CA58E5B1911C306808DCB42B973CA402E4F1A7C9ADA677B0ACEB0E727D7F'
  'Invoke-AuthWireScopeJob.ps1'='A3DA082AF17D6F17948D03A867144F6435175DE615E5C7BD7369EF6F3B34B9C7'
  'Read-AuthWireDeploymentScope.ps1'='AAB6A44FE9A727C1A13528B1291DEC6BF3B5232B95312882415E6E5925BDF370'
+ }
+}
+
+function Get-AuthWireCombinedOnlyPayloadHashes {
+ @{
+ 'ConnectorServiceRuntime.ps1'='A9DDCF9B823893E9CEB3F8BE9B837A10FDA9F6C0FC90729B69BBEF361AB56EB0'
+ 'Compare-AuthWireSigningKeyAcl.ps1'='EA8D67AC4F7673654C24BEE7B59AAF6D50F0427BDAC6D05C535CD5D2D47E8734'
+ 'ConnectorChannelTypes.ps1'='6D374E58F4D9DED209825E6D43C2DCB3D12A22A32DA2B4079BD4FAE5DE60CC0E'
+ 'ConnectorChannelKey.ps1'='D6F0D2CEBDE20B9016AC8BC1C1CDE566245A722AE447164FE55C946CFAD43BD6'
+ 'New-AuthWireConnectorHealthProof.ps1'='E8E369DCD0B60375EA2ADB672F904DDA217D22DB3BAB5A9B4981607E24958940'
+ 'Invoke-AuthWireConnectorHealth.ps1'='1A58B86580FF123D2CD253B774F015A9BBA747E5B072346786D6C133BED2122D'
+ 'ConnectorServiceHost.cs'='14E2246637793391937D16E8FB73218E237E9A57F26B7210B560F9A1C9F8082F'
+ 'Invoke-AuthWireConnectorProbeJob.ps1'='D032EB81410B2914EB72D9D70AD7A742773AFCBFE8D536B820D81D1C8B9D85B6'
+ 'Invoke-AuthWireCandidateJob.ps1'='8252BC3048D823DF34183B49C87BEC7667908A06176CCE4F5EF65140190F3CDD'
+ 'Test-AuthWireDeploymentCandidate.ps1'='24D3868C7D9D1B9747535092B2F3234FE8A18BF9D6EB5DEB1A36780E894C8829'
+ 'DeploymentScope.ps1'='EA53CA58E5B1911C306808DCB42B973CA402E4F1A7C9ADA677B0ACEB0E727D7F'
+ 'Invoke-AuthWireScopeJob.ps1'='A3DA082AF17D6F17948D03A867144F6435175DE615E5C7BD7369EF6F3B34B9C7'
+ 'Read-AuthWireDeploymentScope.ps1'='AAB6A44FE9A727C1A13528B1291DEC6BF3B5232B95312882415E6E5925BDF370'
+ 'CombinedCandidateContent.ps1'='1E8436F3204AA4AD1A0B0BE83D0C1BCC5B1A6DB5B90B7B9B2887DBDCF2478029'
+ 'Invoke-AuthWireCombinedJob.ps1'='3A5488AD6C8766FB1C5A69294AEB8997204C70B6DAF1FC4F43D2F07434664BB3'
  }
 }

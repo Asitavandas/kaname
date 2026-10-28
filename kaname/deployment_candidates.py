@@ -217,9 +217,11 @@ class DeploymentCandidates:
             from .candidate_jobs import CandidateJobs
             from .scope_jobs import ScopeJobs
             from .combined_jobs import CombinedJobs
+            from .combined_scope_jobs import CombinedScopeJobs
             jobs=CandidateJobs(self,wall_clock=self.clock)
             scopes=ScopeJobs(self,wall_clock=self.clock)
             combined_jobs=CombinedJobs(self,wall_clock=self.clock)
+            combined_scopes=CombinedScopeJobs(self,wall_clock=self.clock)
             for row in reversed(rows):
                 current=row['binding_scope']==binding
                 if current:
@@ -227,8 +229,7 @@ class DeploymentCandidates:
                     except CandidateError: current=False
                 combined=row.get('artifact_kind')==COMBINED
                 verified=bool(current and (combined_jobs.content_verified(db,row) if combined else jobs.content_verified(db,row)))
-                scope=({'scope_snapshot_verified':False,'scope_snapshot_fresh':False,
-                        'scope_checked_at':None,'scope_reason':None} if combined else scopes.snapshot(db,row))
+                scope=(combined_scopes if combined else scopes).snapshot(db,row)
                 result.append({k:row[k] for k in ('id','plan_id','plan_version','gpo_id','manifest_sha256','approval_sha256','created_at')} |
                               {'state':('content_verified' if verified else 'operator_reported') if current else 'outdated',
                                'artifact_kind':COMBINED if combined else 'network_v1',
@@ -254,10 +255,18 @@ class DeploymentCandidates:
                                     'state':combined_jobs._state(j,binding,now) if combined_jobs._current(db,j) else 'obsolete',
                                     'outcome':j['result']['outcome'] if j['result'] else None}
                                    for j in reversed(combined_ledger['jobs'])]
+            combined_scope_ledger=combined_scopes._read(db);combined_scope_last=combined_scope_ledger['last_poll']
+            combined_scope_ready=bool(binding and combined_scope_last and combined_scope_last['scope']==binding and 0<=now-combined_scope_last['at']<90)
+            combined_scope_verification=[{'id':j['id'],'candidate_id':j['target']['candidate_id'],
+                'state':combined_scopes._state(j,binding,now) if combined_scopes._current(db,j) else 'obsolete',
+                'outcome':j['result']['outcome'] if j['result'] else None}
+                for j in reversed(combined_scope_ledger['jobs'])]
             return {'revision':db.execute('SELECT revision FROM state WHERE id=1').fetchone()[0],
                     'candidates':result,'worker_delivery_pending':not ready,'verification_worker_ready':ready,
                     'verification_jobs':verification,'scope_worker_ready':scope_ready,
                     'scope_worker_delivery_pending':not scope_ready,'scope_verification_jobs':scope_verification,
                     'combined_worker_ready':combined_ready,'combined_worker_delivery_pending':not combined_ready,
-                    'combined_verification_jobs':combined_verification,'can_apply':False}
+                    'combined_verification_jobs':combined_verification,'combined_scope_worker_ready':combined_scope_ready,
+                    'combined_scope_worker_delivery_pending':not combined_scope_ready,
+                    'combined_scope_verification_jobs':combined_scope_verification,'can_apply':False}
 

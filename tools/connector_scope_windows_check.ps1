@@ -86,4 +86,35 @@ try{
  $r=[AuthWire.Connector.ScopeProcessV1]::Run($exe,('-NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$temp+'"'),10000)
  Check ($r.ExitCode -ne 0 -and -not $r.Output.Contains('UNSIGNED_MUST_NOT_RUN')) 'unsigned child refused'
 }finally{Remove-Item -LiteralPath $temp -Force}
+
+# Combined purpose, canonical target and real disposable SYSVOL tree reads.
+. (Join-Path $root 'Invoke-AuthWireCombinedJob.ps1')
+. (Join-Path $root 'CombinedDeploymentScope.ps1')
+. (Join-Path $root 'Invoke-AuthWireCombinedScopeJob.ps1')
+$cst=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('eyJhcHByb3ZhbF9zaGEyNTYiOiJhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhIiwiY2FuZGlkYXRlX2lkIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiY29udGVudF9yZXN1bHRfc2hhMjU2IjoiMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMSIsImRlcGVuZGVuY3lfc2hhMjU2IjoiZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZSIsImRvbWFpbiI6ImxhYi5leGFtcGxlIiwiZHJhZnRfc2hhMjU2IjoiZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZCIsImdwb19pZCI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwNCIsImdyb3VwX3NpZCI6IlMtMS01LTIxLTExMS0yMjItMzMzLTE2NDciLCJtYWNoaW5lX3Byb2ZpbGVfaWQiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDUiLCJtYWNoaW5lX3Byb2ZpbGVfdmVyc2lvbiI6MywibWFuaWZlc3Rfc2hhMjU2IjoiY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjYyIsIm5ldHdvcmtfY2FuZGlkYXRlX2lkIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAyIiwibmV0d29ya19tYW5pZmVzdF9zaGEyNTYiOiJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiIiwicGxhbl9pZCI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMyIsInBsYW5fdmVyc2lvbiI6MSwicHVibGlzaGVyX3RodW1icHJpbnQiOiJBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBIiwicm9vdF90aHVtYnByaW50IjoiZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZiIsInRhcmdldF9jb3VudCI6MjAwLCJ0YXJnZXRfc2lkc19zaGEyNTYiOiIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyIn0='))|ConvertFrom-Json
+Assert-AuthWireCombinedScopeTarget $cst
+Check ((Get-AuthWireCombinedScopeTargetHash $cst) -ceq 'e7472047b100fe7179d2b7b85faf9b4ffeb7ec068ff326ba8d24a20d4055cfa9') 'combined canonical Python target hash'
+$oldCount=$cst.target_count
+try{$cst.target_count=513;Reject {Assert-AuthWireCombinedScopeTarget $cst} 'combined target upper bound'}finally{$cst.target_count=$oldCount}
+$bad=$cst|ConvertTo-Json|ConvertFrom-Json;$bad|Add-Member NoteProperty command 'whoami'
+Reject {Assert-AuthWireCombinedScopeTarget $bad} 'combined target no arbitrary command'
+$tree=Join-Path $env:TEMP ('aw-combined-sysvol-'+[guid]::NewGuid().ToString('N'))
+try{
+ $null=New-Item -ItemType Directory -Path $tree
+ foreach($n in @('Machine','User')){$null=New-Item -ItemType Directory -Path (Join-Path $tree $n)}
+ [IO.File]::WriteAllText((Join-Path $tree 'GPO.cmt'),'fixture ownership comment')
+ [IO.File]::WriteAllText((Join-Path $tree 'GPT.INI'),"[General]`r`nVersion=0`r`n")
+ $first=@(Read-AuthWireCombinedSysvolTree $tree);$second=@(Read-AuthWireCombinedSysvolTree $tree)
+ Check ($first.Count -eq 4 -and (Get-AuthWireScopeDataHash $first) -ceq (Get-AuthWireScopeDataHash $second)) 'combined full tree stable native read'
+ [IO.File]::WriteAllText((Join-Path $tree 'Machine\hidden.ps1'),'Write-Output 1')
+ Reject {Read-AuthWireCombinedSysvolTree $tree} 'combined rejects hidden deployment content'
+ Remove-Item -LiteralPath (Join-Path $tree 'Machine\hidden.ps1')
+ [IO.File]::WriteAllText((Join-Path $tree 'GPT.INI'),"[General]`r`nVersion=1`r`n")
+ Reject {Read-AuthWireCombinedSysvolTree $tree} 'combined GPT version must be zero'
+ [IO.File]::WriteAllText((Join-Path $tree 'GPT.INI'),"[General]`r`nVersion=0`r`nVersion=0`r`n")
+ Reject {Read-AuthWireCombinedSysvolTree $tree} 'combined duplicate GPT version refused'
+ [IO.File]::WriteAllText((Join-Path $tree 'GPT.INI'),"[General]`r`nVersion=0`r`n")
+ [IO.File]::WriteAllText((Join-Path $tree 'GPO.cmt'),'different comment')
+ Check ((Get-AuthWireScopeDataHash $first) -cne (Get-AuthWireScopeDataHash @(Read-AuthWireCombinedSysvolTree $tree))) 'combined comment byte drift observed'
+}finally{if(Test-Path -LiteralPath $tree){Remove-Item -LiteralPath $tree -Recurse -Force}}
 Write-Output ('AUTHWIRE_SCOPE_WINDOWS_OK checks='+$script:checks+' customer_ad_tested=false')

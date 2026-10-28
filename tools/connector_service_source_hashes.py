@@ -16,7 +16,8 @@ PAYLOAD=['ConnectorServiceRuntime.ps1','Compare-AuthWireSigningKeyAcl.ps1',
          'ConnectorServiceHost.cs','Invoke-AuthWireConnectorProbeJob.ps1',
          'Invoke-AuthWireCandidateJob.ps1','Test-AuthWireDeploymentCandidate.ps1',
          'DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','Read-AuthWireDeploymentScope.ps1',
-         'CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1']
+         'CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1',
+         'CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','Read-AuthWireCombinedDeploymentScope.ps1']
 ALL=PAYLOAD+['ConnectorServicePackage.ps1','ConnectorServiceControl.ps1',
              'Install-AuthWireConnectorService.ps1','Initialize-AuthWireConnectorChannelKey.ps1']
 
