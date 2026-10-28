@@ -20,6 +20,25 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 birleşik yerel imzalı kopya kabul edildi — 28 Ekim 2026
+
+Operatör **WINDOWS_COMBINED_SIGNING_DELIVERY /Prepare /Stage=verified** sonucunu paylaştı.
+Plan **524653f5-1359-46f5-84a5-46355bb82aff v1**, özgün taslak SHA256 **5dd35e4d28f6b6495223224f89d339c4cdd595099df5ac726b812238feca0ce5**.
+İmzalı JSON manifest SHA256 **124360dc02e641fe6532f5058fa4915610f74d5c2de7028c5913d7cb9d431c5b**,
+publisher **FFC134BC305757457163F99C7479B4168E397129**. **SignaturesVerified=3, PreparedNow=true,
+InstallerTemplateUpdated=true, SignerSnapshotPreserved=true, OriginalDraftPreserved=true**.
+Bu operatör sonucunun dar kabulüdür; ayrı asistan DC01 dosya/sertifika okuması değildir.
+Retry-trigger düzeltmesi yalnız yeni yerel installer kopyasında kabul edildi; Linux template'i ve uç cihazlar değiştirilmedi.
+
+**Kabul sınırı/devam:** **CanStage=false, CanApplyGpo=false, ArtifactExecuted=false**.
+AD/GPO/endpoint/servis/key ACL/trust değişikliği ve secret export yok; kalıcı Connector değiştirilmedi.
+Birleşik formatın Connector doğrulama/kayıt yolu henüz kabul edilmedi; eski ağ-only panel adayı bu sonuçla yükseltilmez.
+Sonraki geliştirme birleşik imzalı paketin servis kimliğiyle doğrulanması/kaydı ve controlled SYSVOL staging yoludur.
+Gerçek staging öncesi güncel AD/GPO/tam envanter guard'ları yeniden kontrol edilmeli; henüz paket SYSVOL'a kopyalanmadı.
+GPO/ağ uygulaması ve gerçek cihaz sertifika/Ethernet/Wi-Fi EAP-TLS/VLAN kabulü açık.
+Linux dev.40, Windows efc5ee91, **54/94 /40 açık** ve nihai ürün/kılavuz beklemesi korunur.
+Kanıt **checkpoints/2026-10-28-customer-combined-signed-preparation-accepted.json**.
+
 ## Birleşik taslağın DC01 aktarımı kabul edildi; yerel imzalama aracı hazır — 28 Ekim 2026
 
 Operatör **COMBINED_DRAFT_TRANSFER_VERIFIED** sonucunda Windows geçici dizinindeki ZIP özetini

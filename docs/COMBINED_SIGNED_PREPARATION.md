@@ -15,7 +15,10 @@ Linux /home/segmentiq/authwire-dc01-combined-candidate-20261028.ps1
 SHA256 25667b231cffdfeec7cd73aadb85dd3054569efe61a677dadb0443824a92033f; 36.657 bayt; Linux kopyası özeti doğrulandı.
 Kaynak bileşeni 5069c9f5682e064391c601c6dd1d3d648bdb5a86.
 Sabit wrapper kaynakları ve müşteri ZIP özetini pinler; DC01/vizyonveri.local/64-bit WinPS5.1/elevated operator koşulu vardır.
-Inspect, Prepare ve Verify desteklenir. Müşteri Prepare sonucu henüz alınmadı.
+Inspect, Prepare ve Verify desteklenir. Müşteri Prepare sonucu 28 Ekim 2026'da kabul edildi: Stage=verified, SignaturesVerified=3,
+InstallerTemplateUpdated=true, SignerSnapshotPreserved=true, OriginalDraftPreserved=true.
+Manifest SHA256 124360dc02e641fe6532f5058fa4915610f74d5c2de7028c5913d7cb9d431c5b.
+Bu operatör çıktısıdır; bağımsız asistan DC01 okuması değildir.
 
 ## Yerel kopya
 ProgramData/AuthWire-CombinedCandidates-4c23eebe071546d188eea2e96ad7ee46 altında ayrı
@@ -37,5 +40,5 @@ Harici timestamp servisi kullanılmaz; mevcut sertifika zinciri/iptal/geçerlili
 can_stage=false, can_apply=false. SYSVOL staging, GPO link/ayar/sürüm uygulaması, mevcut
 Connector değişimi, enrollment çalıştırma, Ethernet/Wi-Fi import/aktivasyon veya endpoint değişikliği yok.
 Mevcut panel adayı ağ formatındadır; birleşik paketi kabul etmiş gibi güncellenmez.
-İmzalı yerel müşteri çıktısı, yeni birleşik worker/registry/staging yolu ve gerçek endpoint
+Yeni birleşik worker/registry/staging yolu ve gerçek endpoint
 sertifika/EAP-TLS/VLAN kabulü açıktır. Genel 54/94 (40 açık) değişmez.
