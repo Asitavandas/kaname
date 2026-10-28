@@ -1,5 +1,41 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## SYSVOL UNC okuyucu düzeltmesi test edildi — Windows hazırlığı bekliyor — 28 Ekim 2026
+
+**PR113** merge **836d0a6b5601114ea6ed949f02bf54aba6082732**, test head **043c83391965d476cb65e54ccb2da5a60541aecc**,
+kaynak bileşeni **a5030a3a8f6c47e5009800a65b7209a348adb2f7**.
+Tetiklenen dört workflow başarılı: **1048 Python testi /28 skipped**, native Windows connector,
+imzalı birleşik paket ve bounded retry kontrolleri.
+Native scope fixture'ında47 kontrol, gerçek geçici **SMB/UNC paylaşımı** üzerinde pozitif okuma
+ve mevcut yerel aday guard'ının aynı dosyayı **DEPLOYMENT_PATH_REJECTED** ile reddetmesi dahil geçti.
+Altı yerel delivery/archive testi ve gerçek imzalı kalıcı SCM yaşam döngüsü/rollback için90 kontrol başarılı.
+Hosted test müşteri AD/gMSA pozitif kapsam kabulü değildir.
+
+Önceki full-tree fixture yalnız yerel temp dizinini kullandığından UNC uyumsuzluğunu kaçırmıştı.
+**Read-AuthWireCombinedSysvolFile** yalnız **gpo.cmt /gpt.ini** dosyalarını, doğrulanmış domain/PDC/GPO root'undan
+salt okunur stream ile ve4096-byte sınırıyla okur. Reparse/device yolları, boş/oversized/değişen
+dosyalar reddedilir; stream kapatılır. Yerel aday okuyucusunun UNC yasağı gevşetilmedi.
+Linux/API/RADIUS, AD/GPO, trust, key/credential veya dağıtım yetkisi değişmedi.
+Müşteride ham exception görülmediği için başka bir okuma sorununun da bulunmadığı iddia edilmez;
+gerçek pozitif kapsam sonucu düzeltme uygulamasından sonra tekrar sınanacak.
+
+**Windows-only teslimat sunucuya aktarıldı ve hash'i salt okunur doğrulandı; henüz uygulanmadı.**
+Helper **/home/segmentiq/authwire-dc01-sysvol-unc-fix-20261028.ps1**,
+SHA256 **7f84588eeda9301d541a25d3e89bc2aeacc7e0e2ffa1fc36a5e57e563bc56498**,135205 byte,24 source.
+Archive **96e6b14015e7cb94b3adb4ff5becd70748eb001fb0fab1a86e343fce1474728c**.
+Beklenen current **e6d734b1-59c8-48e5-8a6e-c40b43be3114**, yeni release **cf74295c-ec97-4edf-a15a-877b155d1740**,
+ToolVersion **1.4.1**. Mevcut hesap/eşleştirme/channel key/signer ve eski paket korunur.
+**Linux dev.43'te kalır; yeni Linux kurulumu gerekmiyor.**
+
+Devam: DC01 yönetici64-bit PowerShell'de hash doğrulamalı **Prepare** → çıktı kabulünden sonra **Apply** →
+birleşik satırda tek yeni AD/GPO kontrol görevi → Yenile ve gerçek sonuç.
+Komut **docs/checkpoints/2026-10-28-sysvol-unc-fix-handoff.md** içinde kayıtlı.
+Eski READ_FAILED kaydı bir başarıya çevrilmedi veya silinmedi; hiçbir görev yeniden kuyruğa konmadı.
+Canlı Windows hâlâ e6d734b1; müşteri kapsam kabulü açık. Yeni tam yedek alınmadı.
+Genel **54/94 tamam,40 açık** ve nihai kılavuz kapısı değişmedi.
+Kaynak, hata kanıtı, testler, teslimat ve sonraki işlem kaydedildi.
+
+
 ## Birleşik kapsam canlı kontrolü READ_FAILED — inceleme/düzeltme açık — 28 Ekim 2026
 
 Operatör **image(20261028-125714).png** ekranında birleşik paketin content doğrulaması başarılı,

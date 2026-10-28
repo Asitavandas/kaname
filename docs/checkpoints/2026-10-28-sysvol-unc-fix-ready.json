@@ -1,0 +1,66 @@
+{
+  "event": "SYSVOL_UNC_FIX_READY_FOR_CONTROLLED_DEPLOYMENT",
+  "date": "2026-10-28",
+  "timezone": "Europe/Istanbul",
+  "pr": 113,
+  "merge": "836d0a6b5601114ea6ed949f02bf54aba6082732",
+  "tested_head": "043c83391965d476cb65e54ccb2da5a60541aecc",
+  "source_component": "a5030a3a8f6c47e5009800a65b7209a348adb2f7",
+  "triggered_workflows_passed": 4,
+  "workflows": [
+    {
+      "id": 40693597899,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40693598174,
+      "name": "AuthWire combined signed package checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40693597978,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40693598051,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "conclusion": "success"
+    }
+  ],
+  "python_tests": 1048,
+  "skipped": 28,
+  "native_scope_checks": 47,
+  "native_scm_checks": 90,
+  "local_delivery_tests": 6,
+  "real_disposable_smb_unc_test_passed": true,
+  "original_local_candidate_unc_guard_preserved": true,
+  "delivery": {
+    "source_component": "a5030a3a8f6c47e5009800a65b7209a348adb2f7",
+    "release": "cf74295c-ec97-4edf-a15a-877b155d1740",
+    "expected_current_release": "e6d734b1-59c8-48e5-8a6e-c40b43be3114",
+    "script_sha256": "7f84588eeda9301d541a25d3e89bc2aeacc7e0e2ffa1fc36a5e57e563bc56498",
+    "archive_sha256": "96e6b14015e7cb94b3adb4ff5becd70748eb001fb0fab1a86e343fce1474728c",
+    "source_files": 24,
+    "bytes": 135205,
+    "windows_applied": false,
+    "linux_update_required": false
+  },
+  "remote_transfer_sha256_verified": true,
+  "linux_version": "0.14.0-dev.43",
+  "linux_update_required": false,
+  "production_windows_release": "e6d734b1-59c8-48e5-8a6e-c40b43be3114",
+  "prepare_executed": false,
+  "apply_executed": false,
+  "customer_scope_read_failed_record_preserved": true,
+  "customer_raw_exception_observed": false,
+  "customer_positive_scope_retest_pending": true,
+  "full_data_backup_created": false,
+  "production_task_requeued": false,
+  "gpo_apply_enabled": false,
+  "overall_completed": 54,
+  "overall_open": 40,
+  "ready_for_final_guide": false,
+  "guide_delivered": false
+}
