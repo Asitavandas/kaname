@@ -1,0 +1,17 @@
+{
+  "event": "COMBINED_WINDOWS_WORKER_DELIVERY_PREPARED",
+  "release": "689649c0-61df-40aa-bbfb-b84fa1cc2ac0",
+  "component": "375677c9bd733cae0f25fd6fc59c0ea826b25f78",
+  "archive_sha256": "28f3fbca5af1eadd44d60a4a7812e45d2a8c7e07bb97934ed039a53b20de9144",
+  "script_sha256": "6b597e0cf256bc4892daffdda4d69464f6a4f048d1763fd17cf5a67a277bb2a4",
+  "source_files": 21,
+  "bytes": 125714,
+  "requires_linux_combined_channel_first": true,
+  "prior_live_release": "efc5ee91-e39e-4cc4-9cc1-60b648e18cf9",
+  "windows_live_applied": false,
+  "linux_live_applied": false,
+  "native_ci_pending": true,
+  "controlled_operator_prepare_apply_pending": true,
+  "real_positive_combined_roundtrip_pending": true,
+  "full_backup_created": false
+}
