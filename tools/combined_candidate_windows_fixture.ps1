@@ -23,7 +23,9 @@ try{
  Reject {Read-AuthWireCombinedDraft $draft ('0'*64)} 'Wrong outer hash'
  $d=Read-AuthWireCombinedDraft $draft $pins.draft
  Check ($d.Files.Count -eq 18) 'Complete public draft accepted'
- $template=Join-Path $PSScriptRoot '../kaname/device_client/Install-AuthWire.ps1'
+ $template=Join-Path $FixtureDirectory 'reviewed-installer.ps1'
+ $templateSource=Join-Path $PSScriptRoot '../kaname/device_client/Install-AuthWire.ps1'
+ [IO.File]::WriteAllText($template,[IO.File]::ReadAllText($templateSource).Replace("`r`n","`n"),[Text.UTF8Encoding]::new($false))
  $templateHash=(Get-FileHash -LiteralPath $template -Algorithm SHA256).Hash.ToLowerInvariant()
  Reject {New-AuthWireCombinedInstaller ([IO.File]::ReadAllBytes($template)) ('0'*64) $d.Files} 'Unreviewed template rejected'
  $cert=New-SelfSignedCertificate -Type CodeSigningCert -Subject 'CN=AuthWire combined isolated fixture' -CertStoreLocation 'Cert:\LocalMachine\My' -Provider 'Microsoft Software Key Storage Provider' -KeyLength 3072 -HashAlgorithm SHA256 -KeyUsage DigitalSignature -KeyUsageProperty Sign -KeyExportPolicy NonExportable -NotAfter (Get-Date).AddDays(1)
