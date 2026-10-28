@@ -42,3 +42,24 @@ Stage=prepared, Error=null, SourceSignaturesValid/SignerSnapshotPreserved=true,
 Upgrade.PreviousReleaseId=689649c0-61df-40aa-bbfb-b84fa1cc2ac0,
 NewReleaseId=e6d734b1-59c8-48e5-8a6e-c40b43be3114, ServiceTransitioned=false.
 Çıktı kabul edilmeden Apply çalıştırılmaz. Henüz GPO/endpoint uygulaması yapılmaz.
+
+## Windows Prepare kabul edildi — Apply devam komutu
+
+28 Ekim2026 operatör sonucu Stage=prepared, Error=null, SourceSignaturesValid=true,
+SignerSnapshotPreserved=true, ServiceTransitioned=false. Current689649c0 korunuyor.
+Tam çıktı: 2026-10-28-customer-combined-scope-worker-prepared.json.
+
+DC01 yönetici64-bit Windows PowerShell'de:
+
+```powershell
+$awFile = Join-Path $env:TEMP 'AuthWire-Combined-Scope-Worker-Upgrade-20261028.ps1'
+if ((Get-FileHash -LiteralPath $awFile -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant() -cne '44d7be4e9c3ff2b473e6beed69e498d5976fc49f4341ff48310c6826b5bb54f2') {
+    throw 'Kurulum dosyasi degismis'
+}
+& ([scriptblock]::Create([IO.File]::ReadAllText($awFile))) -Mode Apply
+```
+
+Beklenen Stage=applied, Error=null, Upgrade.ServiceTransitioned=true,
+NewReleaseId=e6d734b1-59c8-48e5-8a6e-c40b43be3114,
+SourceSignaturesValid/SignerSnapshotPreserved=true, CanApplyGpo=false.
+Çıktı kabul edilmeden görev gönderilmez; bu update GPO/endpoint dağıtımı açmaz.

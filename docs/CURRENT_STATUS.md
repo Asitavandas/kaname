@@ -20,6 +20,34 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Windows birleşik kapsam worker Prepare kabul edildi — Apply sırada — 28 Ekim 2026
+
+Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY /ToolVersion1.4.0 /Mode Prepare /Stage prepared**
+sonucunu paylaştı. **SourceSignaturesValid=true /Error=null /ChangesMayBePartial=false**.
+Mevcut sürüm **689649c0-61df-40aa-bbfb-b84fa1cc2ac0**, hazırlanan yeni aday
+**e6d734b1-59c8-48e5-8a6e-c40b43be3114**, source bileşeni **c67adc15b731dbb7876cef1ed848ee1ce483b8bb**.
+**PackagePrepared=true; ServiceTransitioned=false**.
+Mevcut hesap, eşleştirme, channel key, eski kaynaklar ve signer snapshot korunmuş.
+AD/GPO, signer key ACL ve trust store değişmemiş; yeni anahtar veya servis oluşturulmamış.
+**CanApplyGpo=false**; hazırlık canlı GPO/cihaz dağıtımı değildir.
+
+Kanıt: **C:\ProgramData\AuthWire-ConnectorUpgradeEvidence-e6d734b159c848e58a6ec40b43be3114-ab20f0a5e5a64fe5bcabc0c86552745c**.
+Tam operatör sonucu: **docs/checkpoints/2026-10-28-customer-combined-scope-worker-prepared.json**.
+Kabul operatör çıktısına dayanır; asistanın bağımsız Windows/servis okuması değildir.
+ArchivePath planlanan önceki-paket konumudur; bu çıktı arşiv oluşturma veya müşteride rollback provası sayılmaz.
+
+**Son canlı kabul:** Linux **dev.43**; Windows hâlâ **689649c0** (Prepare servis geçişi yapmadı).
+**Sıradaki işlem:** aynı hash doğrulanmış launcher ile **-Mode Apply**.
+Bu işlem Windows Connector'ı kontrollü stop/start ile yeni kapsam worker'ına geçirir;
+mevcut kimlik/eşleştirme/anahtar/signer korunur, eski paket geri alma için saklanır.
+Başarı yeni release/runtime kimliği, taze HTTPS health ve **CombinedScopeChannelVerified** dahil beş kanal gerektirir.
+Linux RADIUS veya GPO/endpoint ayarı değiştirilmez.
+Apply sonucu kabulünden sonra birleşik paket satırında AD/GPO kontrolünü önizle/gönder/Yenile ile gerçek kapsam işi yürütülecek.
+
+Henüz Apply veya müşteri pozitif birleşik kapsam sonucu yok; staging/rollback ve gerçek endpoint kabulü açık.
+**54/94 tamam,40 açık**; nihai kılavuz kapısı değişmedi. Yeni tam yedek alınmadı.
+Her tamamlanan işlemden sonra sonuç, kanıt ve sonraki adım kaydedildi.
+
 ## 🔴✓ Dev.43 canlı Linux kurulumu kabul edildi — Windows kapsam worker Prepare sırada — 28 Ekim 2026
 
 Operatör **COMBINED_SCOPE_JOBS_FINISHED /verified=true**, sürüm **0.14.0-dev.43**,
