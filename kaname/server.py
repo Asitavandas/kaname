@@ -341,7 +341,11 @@ class Handler(BaseHTTPRequestHandler):
                     adb.execute('BEGIN')
                     actor=self.server.admin.current_actor(adb,self.actor,'certificates.authority')
                     self.server.admin.current_actor(adb,self.actor,'system.connectors')
-                    if '/combined-scope/' in self.path:
+                    if '/staging-preview/' in self.path:
+                        from .staging_preview_jobs import StagingPreviewJobs
+                        jobs=StagingPreviewJobs(candidates)
+                        result=jobs.preview(value) if self.path.endswith('/preview') else jobs.create(value,actor['id'])
+                    elif '/combined-scope/' in self.path:
                         from .combined_scope_jobs import CombinedScopeJobs
                         jobs=CombinedScopeJobs(candidates)
                         result=jobs.preview(value) if self.path.endswith('/preview') else jobs.create(value,actor['id'])
@@ -398,11 +402,16 @@ class Handler(BaseHTTPRequestHandler):
                 self.headers.get_content_type() != 'application/json'):
                 raise ValueError()
             size = int(self.headers.get('Content-Length','0'))
-            if not 1 <= size <= 4096: raise ValueError()
+            if not 1 <= size <= (32768 if self.path == '/api/connector/v1/staging-preview/result' else 4096): raise ValueError()
             raw = self.rfile.read(size); self.body_read = True
             if len(raw) != size: raise ValueError()
             registry = self.connector_services()
-            if self.path in {'/api/connector/v1/combined-scope/poll','/api/connector/v1/combined-scope/result'}:
+            if self.path in {'/api/connector/v1/staging-preview/poll','/api/connector/v1/staging-preview/result'}:
+                from .deployment_candidates import DeploymentCandidates
+                from .staging_preview_jobs import StagingPreviewJobs
+                jobs=StagingPreviewJobs(DeploymentCandidates(registry,self.server.deployment))
+                result=jobs.poll(raw) if self.path.endswith('/poll') else jobs.complete(raw)
+            elif self.path in {'/api/connector/v1/combined-scope/poll','/api/connector/v1/combined-scope/result'}:
                 from .deployment_candidates import DeploymentCandidates
                 from .combined_scope_jobs import CombinedScopeJobs
                 jobs=CombinedScopeJobs(DeploymentCandidates(registry,self.server.deployment))
@@ -905,9 +914,9 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
-        if self.path in {'/api/deployment/candidates/preview','/api/deployment/candidates/record','/api/deployment/candidates/verify/preview','/api/deployment/candidates/verify/create','/api/deployment/candidates/scope/preview','/api/deployment/candidates/scope/create','/api/deployment/candidates/combined/preview','/api/deployment/candidates/combined/create','/api/deployment/candidates/combined-scope/preview','/api/deployment/candidates/combined-scope/create'}:
+        if self.path in {'/api/deployment/candidates/preview','/api/deployment/candidates/record','/api/deployment/candidates/verify/preview','/api/deployment/candidates/verify/create','/api/deployment/candidates/scope/preview','/api/deployment/candidates/scope/create','/api/deployment/candidates/combined/preview','/api/deployment/candidates/combined/create','/api/deployment/candidates/combined-scope/preview','/api/deployment/candidates/combined-scope/create','/api/deployment/candidates/staging-preview/preview','/api/deployment/candidates/staging-preview/create'}:
             self.deployment_candidate_admin(write=True); return
-        if self.path in {'/api/connector/v1/challenge','/api/connector/v1/health','/api/connector/v1/jobs/poll','/api/connector/v1/jobs/result','/api/connector/v1/candidates/poll','/api/connector/v1/candidates/result','/api/connector/v1/scope/poll','/api/connector/v1/scope/result','/api/connector/v1/combined/poll','/api/connector/v1/combined/result','/api/connector/v1/combined-scope/poll','/api/connector/v1/combined-scope/result'}:
+        if self.path in {'/api/connector/v1/challenge','/api/connector/v1/health','/api/connector/v1/jobs/poll','/api/connector/v1/jobs/result','/api/connector/v1/candidates/poll','/api/connector/v1/candidates/result','/api/connector/v1/scope/poll','/api/connector/v1/scope/result','/api/connector/v1/combined/poll','/api/connector/v1/combined/result','/api/connector/v1/combined-scope/poll','/api/connector/v1/combined-scope/result','/api/connector/v1/staging-preview/poll','/api/connector/v1/staging-preview/result'}:
             self.connector_peer(); return
         if self.path in {'/api/deployment/connector/jobs/preview', '/api/deployment/connector/jobs/create'}:
             self.connector_job_admin(write=True); return

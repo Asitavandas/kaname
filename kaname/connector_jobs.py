@@ -239,12 +239,12 @@ class ConnectorJobs:
 
 
 def verify_job_proof(raw,binding,kind,clock,*,prefix='AUTHWIRE-CONNECTOR-JOB-',
-                     poll_path=POLL_PATH,result_path=RESULT_PATH):
+                     poll_path=POLL_PATH,result_path=RESULT_PATH,payload_limit=1024,envelope_limit=4096):
     try:
-        require(type(raw) is bytes and 1 <= len(raw) <= 4096)
+        require(type(raw) is bytes and 1 <= len(raw) <= envelope_limit)
         value = strict_json(raw.decode('utf-8')); keys(value, {'frame', 'signature', 'payload'}, {'frame', 'signature', 'payload'})
         decoded = []
-        for name, limit in (('frame', 2048), ('signature', 512), ('payload', 1024)):
+        for name, limit in (('frame', 2048), ('signature', 512), ('payload', payload_limit)):
             text = value[name]; require(type(text) is str and len(text) <= (limit + 2) // 3 * 4)
             data = base64.b64decode(text, validate=True)
             require(len(data) <= limit and base64.b64encode(data).decode('ascii') == text)
@@ -267,4 +267,3 @@ def verify_job_proof(raw,binding,kind,clock,*,prefix='AUTHWIRE-CONNECTOR-JOB-',
         return fields[10], sha(frame), until, body
     except (ValueError, TypeError, UnicodeError, InvalidSignature, KeyError):
         raise JobError('CONNECTOR_JOB_REJECTED') from None
-

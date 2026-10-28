@@ -27,6 +27,7 @@ try{
  . (Join-Path $PSScriptRoot 'Invoke-AuthWireScopeJob.ps1')
  . (Join-Path $PSScriptRoot 'CombinedDeploymentScope.ps1')
  . (Join-Path $PSScriptRoot 'Invoke-AuthWireCombinedScopeJob.ps1')
+ . (Join-Path $PSScriptRoot 'Invoke-AuthWireStagingPreviewJob.ps1')
  $binding=@{};foreach($p in $c.Binding.PSObject.Properties){$binding[$p.Name]=$p.Value}
  $key=[Security.Cryptography.CngKey]::Open($c.KeyName,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::MachineKey)
  $rsa=[Security.Cryptography.RSACng]::new($key)
@@ -77,7 +78,12 @@ try{
    $combinedScopeReady=$combinedScope.ChannelVerified
    if($combinedScope.JobCompleted){$combinedScopeCount++;$lastCombinedScope=$combinedScope.JobId;$combinedScopeReason=$combinedScope.Reason}
   }catch{$combinedScopeReady=$false}}
-  $status=@{Event='WINDOWS_CONNECTOR_SERVICE_HEALTH';Version=1;ReleaseId=$c.ReleaseId;ServiceName=$name;RuntimeSid=$sid;WorkerPid=$PID;CheckedUtc=[DateTimeOffset]::UtcNow.ToString('o');LastSuccessUtc=$lastSuccess;SuccessCount=$success;ConsecutiveFailures=$failures;Healthy=$ok;CanApply=$false;DirectorySyncReady=$false;KerberosReady=$false;NextAttemptSeconds=$delay;ProbeChannelVerified=$probeReady;ProbeJobsCompleted=$jobCount;LastProbeJobId=$lastJob;CandidateChannelVerified=$candidateReady;CombinedChannelVerified=$combinedReady;CombinedJobsCompleted=$combinedCount;LastCombinedJobId=$lastCombined;CombinedScopeChannelVerified=$combinedScopeReady;CombinedScopeJobsCompleted=$combinedScopeCount;LastCombinedScopeJobId=$lastCombinedScope;LastCombinedScopeReason=$combinedScopeReason;ScopeChannelVerified=$scopeReady;ScopeJobsCompleted=$scopeCount;LastScopeJobId=$lastScope;LastScopeReason=$scopeReason}
+  $stagingReady=$false
+  if($ok){try{
+   $staging=Invoke-AuthWireStagingPreviewJob -BaseUrl $c.BaseUrl -Binding $binding -ChannelKey $rsa -PackageReleaseId $c.ReleaseId
+   $stagingReady=$staging.ChannelVerified
+  }catch{$stagingReady=$false}}
+  $status=@{StagingPreviewChannelVerified=$stagingReady;Event='WINDOWS_CONNECTOR_SERVICE_HEALTH';Version=1;ReleaseId=$c.ReleaseId;ServiceName=$name;RuntimeSid=$sid;WorkerPid=$PID;CheckedUtc=[DateTimeOffset]::UtcNow.ToString('o');LastSuccessUtc=$lastSuccess;SuccessCount=$success;ConsecutiveFailures=$failures;Healthy=$ok;CanApply=$false;DirectorySyncReady=$false;KerberosReady=$false;NextAttemptSeconds=$delay;ProbeChannelVerified=$probeReady;ProbeJobsCompleted=$jobCount;LastProbeJobId=$lastJob;CandidateChannelVerified=$candidateReady;CombinedChannelVerified=$combinedReady;CombinedJobsCompleted=$combinedCount;LastCombinedJobId=$lastCombined;CombinedScopeChannelVerified=$combinedScopeReady;CombinedScopeJobsCompleted=$combinedScopeCount;LastCombinedScopeJobId=$lastCombinedScope;LastCombinedScopeReason=$combinedScopeReason;ScopeChannelVerified=$scopeReady;ScopeJobsCompleted=$scopeCount;LastScopeJobId=$lastScope;LastScopeReason=$scopeReason}
   Write-AuthWireChannelReceipt -Path (Join-Path $state 'status.json') -Value $status
   for($i=0;$i -lt $delay;$i++){if($stop.WaitOne(1000) -or $parent.HasExited){break}}
  }

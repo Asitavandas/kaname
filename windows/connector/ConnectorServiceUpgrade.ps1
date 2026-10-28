@@ -91,7 +91,7 @@ function Start-AuthWireUpgradeService {
  try{$s.Start();$s.WaitForStatus([System.ServiceProcess.ServiceControllerStatus]::Running,[TimeSpan]::FromSeconds(35))}finally{$s.Dispose()}
 }
 function Wait-AuthWireUpgradeHealth {
- param($Config,[DateTimeOffset]$Since,[switch]$RequireProbe,[switch]$RequireCandidate,[switch]$RequireScope,[switch]$RequireCombined,[switch]$RequireCombinedScope)
+ param($Config,[DateTimeOffset]$Since,[switch]$RequireProbe,[switch]$RequireCandidate,[switch]$RequireScope,[switch]$RequireCombined,[switch]$RequireCombinedScope,[switch]$RequireStagingPreview)
  $end=[DateTimeOffset]::UtcNow.AddSeconds(50)
  do{
   try{
@@ -108,7 +108,8 @@ function Wait-AuthWireUpgradeHealth {
      (-not $RequireCandidate -or ($v.PSObject.Properties['CandidateChannelVerified'] -and $v.CandidateChannelVerified -is [bool] -and $v.CandidateChannelVerified)) -and
      (-not $RequireScope -or ($v.PSObject.Properties['ScopeChannelVerified'] -and $v.ScopeChannelVerified -is [bool] -and $v.ScopeChannelVerified)) -and
      (-not $RequireCombined -or ($v.PSObject.Properties['CombinedChannelVerified'] -and $v.CombinedChannelVerified -is [bool] -and $v.CombinedChannelVerified)) -and
-     (-not $RequireCombinedScope -or ($v.PSObject.Properties['CombinedScopeChannelVerified'] -and $v.CombinedScopeChannelVerified -is [bool] -and $v.CombinedScopeChannelVerified))){return}
+     (-not $RequireCombinedScope -or ($v.PSObject.Properties['CombinedScopeChannelVerified'] -and $v.CombinedScopeChannelVerified -is [bool] -and $v.CombinedScopeChannelVerified)) -and
+     (-not $RequireStagingPreview -or ($v.PSObject.Properties['StagingPreviewChannelVerified'] -and $v.StagingPreviewChannelVerified -is [bool] -and $v.StagingPreviewChannelVerified))){return}
    }
   }catch{}
   Start-Sleep -Milliseconds 500
@@ -218,7 +219,7 @@ function Invoke-AuthWireServiceUpgradeCore {
      Write-AuthWireUpgradeJournal $journal $record 'activating';[IO.Directory]::Move($stage,$root);Write-AuthWireUpgradeJournal $journal $record 'activated'
      Write-AuthWireUpgradeJournal $journal $record 'marker';[AuthWire.Connector.UpgradeMarkerV1]::Replace($old.ServiceName,(Get-AuthWireServiceMarker $old),(Get-AuthWireServiceMarker $new))
      $since=[DateTimeOffset]::UtcNow;Write-AuthWireUpgradeJournal $journal $record 'starting';Start-AuthWireUpgradeService $new.ServiceName
-     Wait-AuthWireUpgradeHealth $new $since -RequireProbe -RequireCandidate -RequireScope -RequireCombined -RequireCombinedScope
+     Wait-AuthWireUpgradeHealth $new $since -RequireProbe -RequireCandidate -RequireScope -RequireCombined -RequireCombinedScope -RequireStagingPreview
      $null=Get-AuthWireServicePackage $root $PublisherThumbprint;Assert-AuthWireServiceChannelKey $new
      Write-AuthWireUpgradeJournal $journal $record 'applied'
     }catch{

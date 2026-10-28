@@ -222,6 +222,8 @@ class DeploymentCandidates:
             scopes=ScopeJobs(self,wall_clock=self.clock)
             combined_jobs=CombinedJobs(self,wall_clock=self.clock)
             combined_scopes=CombinedScopeJobs(self,wall_clock=self.clock)
+            from .staging_preview_jobs import StagingPreviewJobs
+            staging=StagingPreviewJobs(self,wall_clock=self.clock)
             for row in reversed(rows):
                 current=row['binding_scope']==binding
                 if current:
@@ -236,7 +238,7 @@ class DeploymentCandidates:
                                'content_verification_available':True,
                                'draft_sha256':row['draft_sha256'] if combined else None,
                                'network_candidate_id':row['network_candidate_id'] if combined else None,
-                               'content_verified':verified,'connector_verified':False,'can_apply':False} | scope)
+                               'content_verified':verified,'connector_verified':False,'can_apply':False} | scope | (staging.snapshot(db,row) if combined else {}))
             ledger=jobs._read(db);last=ledger['last_poll'];now=int(self.clock())
             ready=bool(binding and last and last['scope']==binding and 0<=now-last['at']<90)
             verification=[{'id':j['id'],'candidate_id':j['target']['candidate_id'],
@@ -261,7 +263,15 @@ class DeploymentCandidates:
                 'state':combined_scopes._state(j,binding,now) if combined_scopes._current(db,j) else 'obsolete',
                 'outcome':j['result']['outcome'] if j['result'] else None}
                 for j in reversed(combined_scope_ledger['jobs'])]
+            staging_ledger=staging._read(db);staging_last=staging_ledger['last_poll']
+            staging_ready=bool(binding and staging_last and staging_last['scope']==binding and 0<=now-staging_last['at']<90)
+            staging_jobs=[{'id':j['id'],'candidate_id':j['target']['candidate_id'],
+                'state':staging._state(j,binding,now) if staging._current(db,j) else 'obsolete',
+                'outcome':j['result']['outcome'] if j['result'] else None}
+                for j in reversed(staging_ledger['jobs'])]
             return {'revision':db.execute('SELECT revision FROM state WHERE id=1').fetchone()[0],
+                    'staging_preview_worker_ready':staging_ready,'staging_preview_jobs':staging_jobs,
+                    'staging_preview_worker_delivery_pending':not staging_ready,
                     'candidates':result,'worker_delivery_pending':not ready,'verification_worker_ready':ready,
                     'verification_jobs':verification,'scope_worker_ready':scope_ready,
                     'scope_worker_delivery_pending':not scope_ready,'scope_verification_jobs':scope_verification,
@@ -269,4 +279,3 @@ class DeploymentCandidates:
                     'combined_verification_jobs':combined_verification,'combined_scope_worker_ready':combined_scope_ready,
                     'combined_scope_worker_delivery_pending':not combined_scope_ready,
                     'combined_scope_verification_jobs':combined_scope_verification,'can_apply':False}
-

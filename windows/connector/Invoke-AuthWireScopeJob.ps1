@@ -10,13 +10,15 @@ using System.Threading;
 namespace AuthWire.Connector {
  public sealed class ScopeReadResultV1 {public bool TimedOut,Truncated;public int ExitCode;public string Output;}
  public static class ScopeProcessV1 {
-  public static ScopeReadResultV1 Run(string executable,string arguments,int milliseconds){
+  public static ScopeReadResultV1 Run(string executable,string arguments,int milliseconds){return RunCore(executable,arguments,milliseconds,8192);}
+  public static ScopeReadResultV1 RunPreview(string executable,string arguments,int milliseconds){return RunCore(executable,arguments,milliseconds,16384);}
+  static ScopeReadResultV1 RunCore(string executable,string arguments,int milliseconds,int outputLimit){
    if(milliseconds<100||milliseconds>35000)throw new ArgumentException("READ_BUDGET_REJECTED");
    var result=new ScopeReadResultV1();var output=new StringBuilder();var error=new StringBuilder();object gate=new object();
    using(var p=new Process()){
     p.StartInfo=new ProcessStartInfo(executable,arguments){UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true};
     p.Start();
-    var stdout=System.Threading.Tasks.Task.Factory.StartNew(()=>Drain(p.StandardOutput,output,8192,gate,result));
+    var stdout=System.Threading.Tasks.Task.Factory.StartNew(()=>Drain(p.StandardOutput,output,outputLimit,gate,result));
     var stderr=System.Threading.Tasks.Task.Factory.StartNew(()=>Drain(p.StandardError,error,2048,gate,result));
     if(!p.WaitForExit(milliseconds)){result.TimedOut=true;try{p.Kill();}catch(InvalidOperationException){}if(!p.WaitForExit(3000))throw new InvalidOperationException("READ_CHILD_NOT_TERMINATED");}
     if(!System.Threading.Tasks.Task.WaitAll(new[]{stdout,stderr},3000))throw new InvalidOperationException("READ_DRAIN_TIMEOUT");

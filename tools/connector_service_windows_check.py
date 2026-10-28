@@ -46,7 +46,8 @@ def main():
                     ((root/'case.txt').read_text().strip()=='candidate-offline' and handler.path.startswith('/api/connector/v1/candidates/')) or
                     ((root/'case.txt').read_text().strip()=='scope-offline' and handler.path.startswith('/api/connector/v1/scope/')) or
                     ((root/'case.txt').read_text().strip()=='combined-offline' and handler.path.startswith('/api/connector/v1/combined/')) or
-                    ((root/'case.txt').read_text().strip()=='combined-scope-offline' and handler.path.startswith('/api/connector/v1/combined-scope/'))):
+                    ((root/'case.txt').read_text().strip()=='combined-scope-offline' and handler.path.startswith('/api/connector/v1/combined-scope/')) or
+                    ((root/'case.txt').read_text().strip()=='staging-preview-offline' and handler.path.startswith('/api/connector/v1/staging-preview/'))):
                 handler.respond(503,{'error':'FIXTURE_OFFLINE'});return
             original(handler)
         Handler.connector_peer=fixture_peer
@@ -168,6 +169,7 @@ def main():
             assert result['scope_channel_required'] and result['scope_channel_failed_upgrade_rollback']
             assert result['combined_channel_required'] and result['combined_channel_failed_upgrade_rollback']
             assert result['combined_scope_channel_required'] and result['combined_scope_channel_failed_upgrade_rollback']
+            assert result['staging_preview_channel_required'] and result['staging_preview_channel_failed_upgrade_rollback']
             assert result['fresh_public_control'] and result['fresh_control_modes']==['Inspect','Start','Start','Stop','Start','Remove']
             assert server.connector_pairing.status()['online'] and not server.connector_pairing.status()['can_apply']
             after=store.snapshot()
