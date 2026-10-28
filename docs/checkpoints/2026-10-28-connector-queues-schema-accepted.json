@@ -1,0 +1,97 @@
+{
+  "event": "CONNECTOR_JOB_QUEUES_SCHEMA_READONLY_ACCEPTED",
+  "source": "operator_supplied_output",
+  "checked_utc_epoch": 1793195507,
+  "database_writes": false,
+  "jobs_created": false,
+  "key_material_read": false,
+  "poll_requests_sent": false,
+  "secret_values_exported": false,
+  "services_changed": false,
+  "queues": [
+    {
+      "name": "windows_connector_probe_jobs",
+      "characters": 2068,
+      "jobs_count": 2,
+      "polls_count": 2,
+      "last_poll_age_seconds": 31,
+      "present": true,
+      "schema_valid": true,
+      "within_100000_character_limit": true,
+      "job_states": {
+        "completed": 2,
+        "leased": 0,
+        "queued": 0
+      }
+    },
+    {
+      "name": "windows_candidate_verify_jobs",
+      "characters": 1798,
+      "jobs_count": 1,
+      "polls_count": 2,
+      "last_poll_age_seconds": 29,
+      "present": true,
+      "schema_valid": true,
+      "within_100000_character_limit": true,
+      "job_states": {
+        "completed": 1,
+        "leased": 0,
+        "queued": 0
+      }
+    },
+    {
+      "name": "windows_combined_verify_jobs",
+      "characters": 2363,
+      "jobs_count": 1,
+      "polls_count": 2,
+      "last_poll_age_seconds": 28,
+      "present": true,
+      "schema_valid": true,
+      "within_100000_character_limit": true,
+      "job_states": {
+        "completed": 1,
+        "leased": 0,
+        "queued": 0
+      }
+    },
+    {
+      "name": "windows_deployment_scope_jobs",
+      "characters": 2173,
+      "jobs_count": 1,
+      "polls_count": 2,
+      "last_poll_age_seconds": 28,
+      "present": true,
+      "schema_valid": true,
+      "within_100000_character_limit": true,
+      "job_states": {
+        "completed": 1,
+        "leased": 0,
+        "queued": 0
+      }
+    },
+    {
+      "name": "windows_combined_scope_jobs",
+      "characters": 2734,
+      "jobs_count": 1,
+      "polls_count": 2,
+      "last_poll_age_seconds": 28,
+      "present": true,
+      "schema_valid": true,
+      "within_100000_character_limit": true,
+      "job_states": {
+        "completed": 1,
+        "leased": 0,
+        "queued": 0
+      }
+    }
+  ],
+  "interpretation": "All current queue schemas valid and all five have recent server-accepted polls. No queued/leased work. This does not prove client reply validation/transport success or historical health gate cause. Existing runtime swallows exceptions; inner upgrade failure discarded. Need fresh time series of active Windows status before deciding intermittent channel readiness vs persistent client-side failure. No guard relaxation or Apply retry.",
+  "apply_retried": false,
+  "customer_scope_success_pending": true,
+  "signer_post_comparison_pending": true,
+  "full_data_backup_created": false,
+  "overall_completed": 54,
+  "overall_open": 40,
+  "ready_for_final_guide": false,
+  "guide_delivered": false
+}

@@ -1,5 +1,24 @@
 # AuthWire current work record
 
+## Linux beş görev kuyruğu salt okunur doğrulandı — 28 Ekim 2026
+
+Operatör pinned diagnostic çıktısı **checked_utc_epoch=1793195507**:
+beş queue **schema_valid=true**, tümü 100000-character sınırının altında (1798–2734 karakter).
+Probe 2 tamamlanan, diğer dört queue 1'er tamamlanan iş içeriyor; hiçbirinde queued/leased iş yok.
+Her queue'da 2 replay poll kaydı; last_poll yaşları **31/29/28/28/28 saniye**.
+Bu sonuç mevcut queue şeması bozukluğunu ve boyut aşımını elemektedir;
+sunucunun yakın zamanda beş kanalda sorgu kabul ettiğini gösterir.
+İstemcinin HTTP yanıtını aldığı veya tüm alanları kabul ettiği bundan çıkarılamaz.
+Runtime hataları yuttuğundan gerçek istisna hâlâ gözlenmedi; ilk upgrade hatası catch'te örtülmüştü.
+
+Tanı **database_writes=false**, jobs_created/poll_requests_sent/services_changed/key_material_read/
+secret_values_exported false. Üretim ayarı değiştirilmedi.
+Sıradaki adım canlı eski Windows sürümünün sağlık kaydını 20 saniye arayla 3 defa salt okunur izlemek;
+aynı kaydın tekrarını CheckedUtc ile ayırmak ve hatanın geçici mi kalıcı mı olduğunu belirlemek.
+Upgrade gate gevşetilmedi; Apply tekrarlanmadı. READ_FAILED ve signer postcomparison kapanmadı.
+Genel durum **54/94 tamamlanan,40 açık**; kılavuz bayrakları false; yeni tam yedek yok.
+
+
 ## Eski sürüm sağlığı doğrulandı; yeni paket beş kanal eşiğini geçememiş — 28 Ekim 2026
 
 Operatör doğru paket yollarından kayıtları paylaştı. Canlı **e6d734b1-59c8-48e5-8a6e-c40b43be3114**,
