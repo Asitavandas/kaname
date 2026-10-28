@@ -36,7 +36,41 @@
     "services_changed": false,
     "database_writes": false,
     "root_used": false,
-    "backup_started": false
+    "backup_started": false,
+    "workflows": [
+      {
+        "id": 40742953787,
+        "name": "KANAME browser checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40742953856,
+        "name": "AuthWire device enrollment pilot checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40742954039,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40742953928,
+        "name": "KANAME Linux source preparation",
+        "conclusion": "success"
+      },
+      {
+        "id": 40742953966,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40742953931,
+        "name": "KANAME real RADIUS protocol proof",
+        "conclusion": "success"
+      }
+    ],
+    "python_tests": 1070,
+    "skipped": 28
   },
   "execution": {
     "operator_sudo_required": true,
@@ -54,5 +88,10 @@
   "overall_completed": 54,
   "overall_open": 40,
   "ready_for_final_guide": false,
-  "guide_delivered": false
+  "guide_delivered": false,
+  "delivery_pr": 116,
+  "tested_head": "efe6f74eff0449a561baf0c5ec4b7600be0a0761",
+  "merge": "3bf268b296bce3fa31b578af1a299ae613477705",
+  "operator_command": "sudo /opt/kaname-lab/venv/bin/python -I -B -c 'import hashlib,pathlib; p=pathlib.Path(\"/home/segmentiq/authwire-staging-preview-jobs-20261028.py\"); b=p.read_bytes(); assert hashlib.sha256(b).hexdigest()==\"2c76cf30db43e4b1fb4da9f4ba9b637d9c2f2ab61af0a342091218778cc3098c\", \"Dosya degismis\"; exec(compile(b,str(p),\"exec\"))'",
+  "status": "prepared_verified_awaiting_operator_sudo"
 }

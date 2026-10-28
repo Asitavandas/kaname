@@ -1,5 +1,43 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## Linux dev.44 önizleme kanalı teslimatı hazır — sudo sonucu bekleniyor — 28 Ekim 2026
+
+**PR116** merge **3bf268b296bce3fa31b578af1a299ae613477705**, test edilen head **efe6f74eff0449a561baf0c5ec4b7600be0a0761**.
+Altı ilgili workflow başarılı; **1070 genel test (28 ortam atlaması)** ve sekiz yeni teslimat koruma testi geçti.
+Ürün entegrasyonu PR115'in dokuz başarılı workflow/native Windows kanıtı önceki kayıtta korunur.
+
+**Hedef sürüm 0.14.0-dev.44 kaynakta hazırdır; canlı Linux hâlâ dev.43, Windows cf74295c'dir.**
+Sunucuda yönetici yetkisi kullanılmadan 183 aday dosya/182 kurulu baseline kontrol edildi;
+korunan RADIUS kaynağı, fazladan kaynak ve yanlış sürüm girdileri reddedildi.
+Eski/yeni backup worker ve değişmeyen restore-checker pinleri doğrulandı.
+RADIUS PID **1243360**, broker PID **1069437** bu hazırlıkta korundu.
+**Kurulum helper'ı root olarak çalıştırılmadı; panel/servis/veritabanı/AD/GPO/endpoint değişmedi.**
+
+Hazır dosya **/home/segmentiq/authwire-staging-preview-jobs-20261028.py**.
+SHA256 **2c76cf30db43e4b1fb4da9f4ba9b637d9c2f2ab61af0a342091218778cc3098c**.
+Aday **/home/segmentiq/authwire-stage-dev44-staging-preview-92b2af9b7834**, manifest **65a5ef1c7a9f8dfc86b657f7abe610b4ed618bca4de0014750f55911aad29afb**.
+Bileşen **21003f27bdedd0cb61c3dcfc9fffaaaf943552c7**; yalnız sekiz sabit version/runtime/UI/backup dosyası değişebilir.
+Komut paneli kontrollü stop/start ile günceller ve backup worker'ı yeni readonly kuyruğa uyumlar.
+RADIUS/broker PID, timer, korunan kaynak, iş verisi ve HTTPS kontrolleri vardır.
+Yeni tam yedek, GPO uygulaması veya Windows paket değişikliği başlatmaz.
+
+**Beklenen sonraki kullanıcı adımı — Linux terminalinde:**
+
+```bash
+sudo /opt/kaname-lab/venv/bin/python -I -B -c 'import hashlib,pathlib; p=pathlib.Path("/home/segmentiq/authwire-staging-preview-jobs-20261028.py"); b=p.read_bytes(); assert hashlib.sha256(b).hexdigest()=="2c76cf30db43e4b1fb4da9f4ba9b637d9c2f2ab61af0a342091218778cc3098c", "Dosya degismis"; exec(compile(b,str(p),"exec"))'
+```
+
+Çıktının tamamı alınmadan Linux kurulumu başarılı sayılmayacak.
+Beklenen başarı olayı **STAGING_PREVIEW_JOBS_FINISHED /verified=true /version=0.14.0-dev.44**;
+tam koruma kontrolleri ve kanıt dizini ayrıca değerlendirilir. Hata sonucu yeniden çalıştırılmış sayılmaz.
+Sonra mevcut cf74295c'den Windows preview worker teslimatı hazırlanacak; yeni Linux kanalı
+ve Windows altıncı kanal sağlığı sonrası gerçek DC01 gMSA önizlemesi/panel kabulü alınacak.
+SYSVOL yazma/staging/rollback, GPO aktivasyonu ve gerçek endpoint kabulü halen açık.
+
+Operatörün yeni backup/kapatma iptali geçerlidir. Son veri yedeği 10:28:35'tir ve sonraki değişiklikleri
+içeriyor sayılmaz. Genel **54/94 tamamlanan,40 açık**; kılavuz bayrakları false kalır.
+Ayrıntı: **docs/checkpoints/2026-10-28-staging-preview-jobs-dev44-prepared.json**.
+
 ## Paket hazırlığı önizlemesi Connector/panel kaynağına bağlandı — müşteri teslimatı bekliyor — 28 Ekim 2026
 
 **PR115**: ayrı **combined.staging.preview.v1** görevi, sabit bounded AllSigned WinPS child,
