@@ -17,6 +17,9 @@ try{
  $delivery=Join-Path $PSScriptRoot '../docs/checkpoints/2026-10-28-dc01-combined-candidate.ps1'
  $dt=$null;$de=$null;$null=[Management.Automation.Language.Parser]::ParseFile($delivery,[ref]$dt,[ref]$de)
  Check ($de.Count -eq 0) 'Fixed operator delivery parses in Windows PowerShell 5.1'
+ $rd=Join-Path $PSScriptRoot '../docs/checkpoints/2026-10-28-dc01-combined-runtime.ps1'
+ $rt=$null;$re=$null;$null=[Management.Automation.Language.Parser]::ParseFile($rd,[ref]$rt,[ref]$re)
+ Check ($re.Count -eq 0) 'Fixed combined runtime delivery parses in Windows PowerShell 5.1'
  $pins=Get-Content -LiteralPath (Join-Path $FixtureDirectory 'pins.json') -Raw|ConvertFrom-Json
  $draft=Join-Path $FixtureDirectory 'draft.zip'
  foreach($name in @('traversal','large','content','apply')){Reject {Read-AuthWireCombinedDraft (Join-Path $FixtureDirectory ($name+'.zip')) $pins.$name} ('Reject '+$name)}
