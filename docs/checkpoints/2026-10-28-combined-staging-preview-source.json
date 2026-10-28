@@ -1,0 +1,105 @@
+{
+  "event": "COMBINED_STAGING_PREVIEW_SOURCE_VERIFIED",
+  "date": "2026-10-28",
+  "timezone": "Europe/Istanbul",
+  "pr": 114,
+  "merge": "fdc26414245e3412d3f293733098bebcc50feeb2",
+  "tested_head": "1f32a94e56c59456662fa29d7065c95ba57cf638",
+  "initial_source_component": "0708cfead07d8405fdd55956d9eac1861b7ffc00",
+  "files": [
+    "windows/connector/CombinedStagingPreview.ps1",
+    "tools/combined_staging_preview_windows_check.ps1",
+    ".github/workflows/combined-staging-preview.yml",
+    "docs/COMBINED_STAGING_PREVIEW.md"
+  ],
+  "validation": {
+    "workflows": [
+      {
+        "id": 40730799495,
+        "name": "AuthWire combined staging preview checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40730799725,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40730799540,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40730799485,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "conclusion": "success"
+      }
+    ],
+    "python_tests": 1048,
+    "skipped": 28,
+    "native_staging_preview_checks": 40,
+    "native_scope_checks": 47,
+    "native_signed_permanent_scm_checks": 90,
+    "native_staging_job": 122966249153,
+    "native_scope_job": 122966249412,
+    "native_service_job": 122966249338,
+    "foundation_job": 122966249052,
+    "real_disposable_smb_share": true,
+    "protected_root_fixture": true,
+    "original_local_candidate_unc_guard_preserved": true,
+    "no_staging_directory_created_by_preview": true,
+    "customer_ad_tested": false,
+    "customer_gmsa_preview_tested": false
+  },
+  "fixture_corrections": [
+    {
+      "job": 122880828661,
+      "reason": "AST test classified Set-StrictMode as mutation; corrected explicit readonly declaration exception."
+    },
+    {
+      "job": 122881565805,
+      "reason": "Inherited TEMP root did not model protected managed-GPO root; exact inventory comparison failed."
+    },
+    {
+      "job": 122965326515,
+      "reason": "Diagnostics showed only share-root inherited ACE flags differ (ID removed over SMB), not bytes/other entries. Protect fixture root to match actual production precondition; retain exact ACL equality."
+    }
+  ],
+  "scope": {
+    "fixed_files": 20,
+    "per_file_limit_bytes": 1048576,
+    "total_limit_bytes": 4194304,
+    "source_acl_and_hash_bound": true,
+    "two_source_ledgers_and_live_scope_and_full_inventories_required": true,
+    "preview_lifetime_seconds": 90,
+    "destination": "Machine/AuthWire-<plan GUID N>-v<plan version>-<manifest SHA256>",
+    "rollback": "Requirements only: exact newly owned directory, journal and staged tree match, drift requires review; no delete implementation."
+  },
+  "production": {
+    "linux_version": "0.14.0-dev.43",
+    "windows_release": "cf74295c-ec97-4edf-a15a-877b155d1740",
+    "linux_changed": false,
+    "windows_package_changed": false,
+    "ad_changed": false,
+    "gpo_changed": false,
+    "keys_changed": false,
+    "preview_worker_delivery_pending": true,
+    "typed_job_panel_integration_pending": true,
+    "bounded_child_integration_pending": true,
+    "can_stage": false,
+    "can_apply_gpo": false,
+    "writer_available": false,
+    "staging_exercised": false,
+    "rollback_exercised": false,
+    "endpoint_changed": false
+  },
+  "shutdown_backup_cancelled": true,
+  "new_backup_run_started": false,
+  "shutdown_executed": false,
+  "original_apply_exception_followup_still_open": true,
+  "next_step": "Integrate tested readonly preview into bounded AllSigned child and typed Connector/panel job, then customer delivery; write approval, real staging/rollback and activation remain separate pending gates.",
+  "overall_completed": 54,
+  "overall_open": 40,
+  "ready_for_final_guide": false,
+  "guide_delivered": false
+}

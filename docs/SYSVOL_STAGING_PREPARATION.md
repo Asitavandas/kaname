@@ -1,5 +1,7 @@
 # SYSVOL paket hazırlığı: tam envanter ön koşulu
 
+28 Ekim 2026 güncellemesi: müşteri tam envanteri 27 Ekimde, birleşik AD/GPO–SYSVOL okuması 28 Ekim 17:04:16'da kabul edildi. Dev.40 ve aşağıdaki teslimat-yok notları tarihsel aşamayı anlatır. Güncel kaynak adımı [COMBINED_STAGING_PREVIEW.md](COMBINED_STAGING_PREVIEW.md), canlı durum [STATUS_2026-10-28.md](STATUS_2026-10-28.md) içindedir. Salt okunur staging önizleme kaynağı test edildi; writer/rollback uygulaması ve müşteri preview teslimatı hâlâ bekler.
+
 Dev.40 scope kontrolü kök ACL ve dört kök girdisini doğrular. Alt dizinlerde
 önceden bırakılmış dosyaları doğrulamaz. SYSVOL'a yazmadan önce bu boşluk kapanır.
 

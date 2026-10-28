@@ -1,5 +1,36 @@
 # AuthWire current work record
 
+## Staging önizleme kaynağı tamamlandı ve test edildi — canlı entegrasyon bekliyor — 28 Ekim 2026
+
+**PR114** merge **fdc26414245e3412d3f293733098bebcc50feeb2**, test edilen head
+**1f32a94e56c59456662fa29d7065c95ba57cf638**. Dört ilgili workflow başarılı.
+**1048 genel test /28 skipped**, yeni native WinPS5.1 staging önizlemesinde **40 kontrol**,
+mevcut scope için **47**, gerçek imzalı kalıcı SCM yaşam döngüsünde **90 kontrol** geçti.
+Bu hosted fixture'lar müşteri AD/gMSA veya gerçek staging kabulü değildir.
+
+**CombinedStagingPreview.ps1** sabit **20 dosyanın** byte/hash/ACL listesini,
+güncel scope hedefini/gözlem özetini ve boş SYSVOL tam envanterini tek 90 saniyelik önizlemeye bağlar.
+Önerilen tek sürüm klasörü **Machine/AuthWire-<plan GUID N>-v<sürüm>-<manifest SHA256>**.
+Kaynak/hedef yolu veya komut istekten alınmaz. Mevcut imza/içerik, service SID, GPO marker/link/sürüm/izin,
+iki tam envanter ve iki kaynak ledger'ı yeniden doğrulanır. Geri alma yalnız yeni sahipli klasör için
+journal/tam hash/ACL/drift şartı olarak tanımlandı; **gerçek yazma veya silme kodu yoktur**.
+**read_only=true /can_stage=false /can_apply_gpo=false /writer_available=false** korunur.
+
+İlk fixture StrictMode bildirimini writer sandı. Sonraki fixture varsayılan TEMP kökünün inherited ACE
+işaretinin SMB'de farklı raporlanması nedeniyle durdu; teşhis yalnız kök ID işaretini farklı buldu.
+Fixture gerçek managed-GPO ön koşulundaki korumalı DACL ile kuruldu; ham ACL karşılaştırması gevşetilmedi.
+Gerçek geçici SMB paylaşımı, kaynağa müdahale/yol/boyut reddi ve hedef ağaca yazılmaması doğrulandı.
+Bu fixture nedeni müşteri ilk Apply hatasının nedeni olarak yorumlanmadı.
+
+**Canlı Linux dev.43 ve Windows cf74295c değişmedi.** Yeni source modülü mevcut worker/panele yüklenmedi.
+Sıradaki iş **bounded AllSigned child + typed Connector/panel preview görevi ve müşteri teslimatı**;
+ardından ayrı write approval, staging/rollback ve gerçek endpoint kabulü. Henüz SYSVOL'a paket yazılmadı.
+Operatörün yeni backup/kapatma talebi iptal kaldı; yeni yedek/kapama çalıştırılmadı.
+Güncel özet rapor **docs/STATUS_2026-10-28.md**, kaynak açıklaması **docs/COMBINED_STAGING_PREVIEW.md**,
+kanıt **docs/checkpoints/2026-10-28-combined-staging-preview-source.json**.
+Genel **54/94 tamamlanan,40 açık**, nihai kılavuz bayrakları false kalır.
+
+
 ## Güncel rapor yenilendi; yeni yedek/kapatma iptal edildi — 28 Ekim 2026
 
 Operatör yeni yedek alma ve Linux'u kapatma niyetinden vazgeçti. **Yeni yedek veya kapatma komutu yürütülmedi.**
