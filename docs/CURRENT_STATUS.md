@@ -1,5 +1,47 @@
 # AuthWire current work record
 
+## Paket hazırlığı önizlemesi Connector/panel kaynağına bağlandı — müşteri teslimatı bekliyor — 28 Ekim 2026
+
+**PR115**: ayrı **combined.staging.preview.v1** görevi, sabit bounded AllSigned WinPS child,
+panelde **Paket hazırlığını önizle → Hazırlık önizlemesini gönder** akışı eklendi.
+Görev aynı birleşik içerik kabulüne, güncel dizin hedefine ve mevcut pairing nesline bağlıdır.
+Mevcut iki yönetici yetkisi, oturum/Origin/CSRF, revizyon, idempotency/replay ve TLS/isim/iptal/pin kontrolleri korundu.
+
+Sonuç **20 dosyanın** boyut/hash/ACL bağını, sabit göreli sürüm klasörünü, 90 saniyelik güncelliği ve
+sahiplik/tam dosya ağacı/drift gerektiren geri alma sınırını gösterir. **SYSVOL yazıcısı, silme,
+GPO aktivasyonu veya endpoint dağıtımı yoktur**; can_stage/can_apply_gpo/writer_available=false.
+Yeni sonuç yoluna ayrı 32768 bayt zarf/16384 bayt payload sınırı verildi; eski yolların sınırları korunur.
+Yeni kuyruğun yalnız doğrulanmış poll metadata'sı backup kararlılık karşılaştırmasından çıkarılır;
+tam görev/sonuç yedekte ve business karşılaştırmasında korunur. Büyük kuyruk senaryosu test edildi.
+
+Yeni paket dört sabit preview bağımlılığı içerir. Yeni Apply altıncı preview kanalını da doğrular;
+eski sürüme rollback eski sağlık koşullarını kullanır. Tarihsel teslimat arşivleri değiştirilmedi.
+Başlangıçtaki tarayıcı rol geçişi, fixture kaynak kopya listesi ve tarihsel-current kaynak eşitliği
+hataları düzeltildi; hash/ACL/yetki veya sağlık kapıları gevşetilmedi.
+Ek gerçek servis ret sonucu kontrolünün özet listesinde result araması da fixture'a özgüydü;
+kontrol asıl ledger'dan yapılır, parent abort halinde fixture beklemesi cleanup'a geçer.
+
+Doğrulama: test edilen head **92b2af9b78347058802f4bb135b5fbb243abc813**, merge **a6a1aeeb80a530474baaba06351c1467b0affb56**.
+Dokuz ilgili workflow başarılı. **1062 genel test (28 ortam atlaması)**, **14 yeni Python testi**,
+**40 native staging/gerçek geçici SMB kontrolü**, WinPS→Python canonical SHA ve
+**49 scope/child-bound kontrolü** geçti. Düzeltilen gerçek imzalı SCM fixture'ında **85 kontrol**;
+typed preview ret sonucunun HTTPS üzerinden kaydı, yeni kanal yokken yükseltme reddi ve
+otomatik/explicit geri dönüş doğrulandı. Tarihsel arşivin tüm bağımsız/per-file hash pinleri korunur;
+yalnız daha sonra değişmiş kaynakların eski arşivle güncel-kaynak eşitliği kıyası yapılmaz.
+
+**Canlı müşteri ortamı değişmedi:** Linux **0.14.0-dev.43**, Windows **cf74295c-ec97-4edf-a15a-877b155d1740**.
+Bu oturumda salt okunur Linux kontrolünde RADIUS PID **1243360**, broker PID **1069437** korundu;
+kurulu backup worker **e0623c6998db9c8fa45df2f9e5ff6d514e451567d711fece5ef5417330ada8b6**.
+Yeni kaynak testleri canlıya yükleme veya gerçek DC01 gMSA preview kabulü değildir.
+Yeni backup/kapatma iptal kaldı; hiçbiri başlatılmadı.
+
+Sıradaki kapı **kontrollü Linux + Windows teslimatı, gerçek gMSA önizlemesi ve panel kabulü**.
+Sonrasında ayrı typed write approval, sahipli staging/journal/kısmi hata temizliği/rollback,
+GPO link/startup/sürüm/çoğaltma ve gerçek pilot endpoint kabulü açık kalır.
+İlk müşteri Apply iç exception görünürlüğü, tek hesap standardı ve dış backup/restore takibi sürer.
+Genel **54/94 tamamlanan,40 açık**; **READY_FOR_FINAL_GUIDE=false, GUIDE_DELIVERED=false**.
+Ayrıntı: **docs/checkpoints/2026-10-28-staging-preview-jobs-source.json**.
+
 ## Staging önizleme kaynağı tamamlandı ve test edildi — canlı entegrasyon bekliyor — 28 Ekim 2026
 
 **PR114** merge **fdc26414245e3412d3f293733098bebcc50feeb2**, test edilen head

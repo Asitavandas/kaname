@@ -1,0 +1,153 @@
+{
+  "event": "STAGING_PREVIEW_JOBS_SOURCE_VERIFIED",
+  "date": "2026-10-28",
+  "timezone": "Europe/Istanbul",
+  "pr": 115,
+  "tested_head": "92b2af9b78347058802f4bb135b5fbb243abc813",
+  "scope": {
+    "operation": "combined.staging.preview.v1",
+    "new_queue": "windows_staging_preview_jobs",
+    "readonly": true,
+    "files": 20,
+    "preview_lifetime_seconds": 90,
+    "job_lifetime_seconds": 300,
+    "lease_seconds": 90,
+    "child_budget_ms": 30000,
+    "child_stdout_limit": 16384,
+    "new_result_envelope_limit": 32768,
+    "new_result_payload_limit": 16384,
+    "old_peer_limits_preserved": true,
+    "current_permissions_and_csrf_preserved": true,
+    "proof_purpose_and_routes_separate": true,
+    "latest_content_and_current_directory_target_required": true,
+    "source_paths_not_request_input": true,
+    "writer_available": false,
+    "can_stage": false,
+    "can_apply_gpo": false
+  },
+  "validation": {
+    "python_tests": 1062,
+    "skipped": 28,
+    "new_python_tests": 14,
+    "native_staging_checks": 40,
+    "canonical_winps_python_wire_verified": true,
+    "native_scope_existing_checks": 47,
+    "native_scope_total_checks": 49,
+    "browser_lost_response_single_send": true,
+    "browser_read_role_and_safe_text_rendering": true,
+    "large_queue_backup_projection_verified": true,
+    "complete_job_results_retained_in_backups": true,
+    "hosted_windows_version": "Windows Server 2025 / Windows PowerShell 5.1",
+    "customer_ad_tested": false,
+    "customer_gmsa_preview_tested": false,
+    "workflows": [
+      {
+        "id": 40740098778,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40740098844,
+        "name": "KANAME real RADIUS protocol proof",
+        "conclusion": "success"
+      },
+      {
+        "id": 40740099000,
+        "name": "AuthWire device enrollment pilot checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40740098935,
+        "name": "KANAME browser checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40740098812,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40740098774,
+        "name": "AuthWire combined staging preview checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40740098851,
+        "name": "AuthWire private backup acceptance",
+        "conclusion": "success"
+      },
+      {
+        "id": 40740099006,
+        "name": "KANAME Linux source preparation",
+        "conclusion": "success"
+      },
+      {
+        "id": 40740098776,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "conclusion": "success"
+      }
+    ],
+    "native_signed_scm_checks": 85,
+    "native_service_job": 122999053861,
+    "native_genuine_negative_preview_result_verified": true,
+    "native_preview_channel_required_for_new_release": true,
+    "native_failed_upgrade_and_explicit_rollback_verified": true
+  },
+  "initial_fixture_failures": [
+    {
+      "head": "25ab4d317ffc5a91ad922c47f2c428dc7a8fb45b",
+      "browser_job": 122990283953,
+      "reason": "Test stayed in readonly role before clicking registration; restored test write role before final dialog-reset check."
+    },
+    {
+      "head": "25ab4d317ffc5a91ad922c47f2c428dc7a8fb45b",
+      "service_job": 122990285824,
+      "reason": "Fixture copied previous source list and omitted four new required files; copied complete reviewed source set."
+    },
+    {
+      "head": "25ab4d317ffc5a91ad922c47f2c428dc7a8fb45b",
+      "foundation_job": 122990286602,
+      "reason": "Four immutable historical delivery tests compared later evolved source bodies; retained exact archive and individual hash pins, excluded only changed generation sources from current-source equality. UNC archive independent SHA pinned."
+    },
+    {
+      "head": "2cebea620190e9bae55d5cb930a7a409560dbe6f",
+      "service_job": 122995208175,
+      "reason": "The new negative job completed, but fixture queried result from the public summary. Read authoritative private fixture ledger and abort parent-failed disposable waits before cleanup."
+    }
+  ],
+  "production": {
+    "linux_version": "0.14.0-dev.43",
+    "linux_source": "c67adc15b731dbb7876cef1ed848ee1ce483b8bb",
+    "windows_release": "cf74295c-ec97-4edf-a15a-877b155d1740",
+    "linux_changed": false,
+    "windows_package_changed": false,
+    "installed_backup_worker_changed": false,
+    "radius_pid": "1243360",
+    "broker_pid": "1069437",
+    "radius_restarted": false,
+    "ad_changed": false,
+    "gpo_changed": false,
+    "key_changed": false,
+    "trust_changed": false,
+    "endpoint_changed": false,
+    "preview_worker_delivery_pending": true,
+    "operator_browser_acceptance_pending": true,
+    "customer_gmsa_preview_pending": true,
+    "actual_staging_and_rollback_exercised": false,
+    "new_backup_started": false,
+    "shutdown_executed": false
+  },
+  "next_step": "Prepare reviewed Linux and Windows delivery for the new readonly preview channel, then obtain a genuine customer gMSA preview and operator panel acceptance. Typed write approval, owned staging/journal/rollback, GPO activation and endpoint acceptance remain open.",
+  "original_apply_exception_followup_still_open": true,
+  "overall_completed": 54,
+  "overall_open": 40,
+  "ready_for_final_guide": false,
+  "guide_delivered": false,
+  "merge": "a6a1aeeb80a530474baaba06351c1467b0affb56",
+  "initial_source_commit": "25ab4d317ffc5a91ad922c47f2c428dc7a8fb45b",
+  "delivery_source_preparation": {
+    "stage_path": "/home/segmentiq/authwire-stage-dev44-staging-preview-92b2af9b7834",
+    "installed": false,
+    "helper_preparation_pending": true
+  }
+}
