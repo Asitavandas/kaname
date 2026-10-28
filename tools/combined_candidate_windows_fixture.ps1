@@ -46,6 +46,19 @@ try{
  Check (-not $prepared.CanStage -and -not $prepared.CanApplyGpo -and -not $prepared.ArtifactExecuted -and -not $prepared.AdChanged -and -not $prepared.ServicesChanged) 'No apply, execution or infrastructure change claim'
  Check ((Get-AuthWireCombinedSignerSnapshot $cert $metadata.Native.KeyName $metadata.Native.UniqueName $metadata.KeySddl) -ceq $before) 'Native key, marker, certificate and ACL preserved'
  Check ((Get-FileHash -LiteralPath $draft -Algorithm SHA256).Hash.ToLowerInvariant() -ceq $pins.draft) 'Original input ZIP unchanged'
+ # Read-only verifier uses only public inputs; no signer access or signing API.
+ Import-Functions (Join-Path $PSScriptRoot '../windows/connector/Test-AuthWireCombinedContent.ps1')
+ $verifyParameters=@{ConnectorId=([guid]::ParseExact($parent.Substring($parent.Length-32),'N')).ToString('D');PlanId=$prepared.PlanId;PlanVersion=$prepared.PlanVersion;DraftSha256=$prepared.DraftSha256;ManifestSha256=$prepared.ManifestSha256;PublisherThumbprint=$cert.Thumbprint;ServiceSid=$callParameters.ServiceSid}
+ $savedSnapshotFunction=(Get-Item Function:Get-AuthWireCombinedSignerSnapshot).ScriptBlock
+ try{
+  function global:Get-AuthWireCombinedSignerSnapshot {throw 'PRIVATE_SIGNER_ACCESS_FORBIDDEN'}
+  function global:Set-AuthenticodeSignature {throw 'SIGNING_FORBIDDEN'}
+  $readonly=Test-AuthWireCombinedContent @verifyParameters
+  Check ($readonly.ContentVerified -and $readonly.SignaturesVerified -eq 3 -and -not $readonly.PrivateKeyOpened -and -not $readonly.CanStage) 'Public-only verifier succeeds while private/signing functions are denied'
+  $badPin=$verifyParameters.Clone();$badPin.ManifestSha256='0'*64
+  Reject {Test-AuthWireCombinedContent @badPin} 'Readonly wrong manifest pin rejected'
+  Reject {Test-AuthWireServiceCombinedContent @verifyParameters} 'Administrator cannot claim service SID proof'
+ }finally{Set-Item Function:global:Get-AuthWireCombinedSignerSnapshot $savedSnapshotFunction;Remove-Item Function:global:Set-AuthenticodeSignature}
  $result=Invoke-AuthWireCombinedCandidate @callParameters -Mode Verify
  Check ($result.ManifestSha256 -ceq $prepared.ManifestSha256) 'Independent Verify accepts prepared directory'
  $again=Invoke-AuthWireCombinedCandidate @callParameters -Mode Prepare
