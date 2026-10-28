@@ -1,0 +1,23 @@
+{
+  "event": "BACKUP_PROBE_POLL_SHAPE_FIX_READY",
+  "pr": 108,
+  "merge": "6e330534857ce668c1bbefaf3456034e671bb217",
+  "tested_head": "2f3647e44bc7005198bbaf94d53a4d145983aa7e",
+  "ci_runs": [
+    40649414764,
+    40649414937,
+    40649414747
+  ],
+  "foundation_tests": 941,
+  "skipped": 28,
+  "all_workflows_passed": true,
+  "real_three_queue_authenticated_poll_regression_passed": true,
+  "old_worker_regression_reproduced": true,
+  "remote_delivery_path": "/home/segmentiq/authwire-backup-poll-fix-r2-20261028.py",
+  "remote_delivery_sha256": "70f8490113a4a8b7c1197253d5e14ab473fe9b8eca19ce7055783e89dd93837f",
+  "remote_delivery_hash_verified": true,
+  "required_installed_worker_sha256": "fab31d283971b3d36d3cf4c4f480f36e32e16f7f5a627ebbd422ec9741d31288",
+  "new_worker_sha256": "c18bfafecbefb136d0d5bca0b0994c373629708d19c100040b383e673edc697c",
+  "live_r2_applied": false,
+  "new_live_backup_accepted": false
+}

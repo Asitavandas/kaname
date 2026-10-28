@@ -34,6 +34,11 @@ Bu nedenle probe satırı ham korumada kalmış ve sürekli poll değişimi capt
 korunur; tam poll/replay verisi SQLite arşivinde kalır. Testler gerçek RSA/SQLite poll yazıcılarıyla genişletildi.
 Sabit r2 helper yalnız kurulmuş ilk hotfix hash'inden geçiş yapar; yeni yedekten önce canlı üç kuyruğun
 biçiminin tanındığını salt okunur kontrol eder. RADIUS/panel/broker restart veya DB/AD/GPO değişikliği yapmaz.
+**PR108** merge **6e330534857ce668c1bbefaf3456034e671bb217**, test head **2f3647e44bc7005198bbaf94d53a4d145983aa7e**: üç workflow başarılı;
+**941 test /28 skipped**, gerçek üç poll yazıcısı regresyonu ve yedek/restore/systemd fixture kontrolleri geçti.
+Linux sabit r2 dosyası **/home/segmentiq/authwire-backup-poll-fix-r2-20261028.py**, SHA256
+**70f8490113a4a8b7c1197253d5e14ab473fe9b8eca19ce7055783e89dd93837f**; uzak dosya özeti doğrulandı.
+Yeni worker SHA256 **c18bfafecbefb136d0d5bca0b0994c373629708d19c100040b383e673edc697c**.
 **İkinci hotfix uygulaması ve yeni BACKUP_SUCCESS bekleniyor.** Ürün 54/94 /40 açık; reboot ve A04 ilerlemesi beklemede.
 
 ## Yedek kararlılık hatası için dar düzeltme hazır — uygulama/yeni yedek bekleniyor — 28 Ekim 2026
