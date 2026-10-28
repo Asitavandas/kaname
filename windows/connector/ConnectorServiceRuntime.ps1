@@ -21,6 +21,8 @@ try{
  foreach($file in @('Compare-AuthWireSigningKeyAcl.ps1','ConnectorChannelTypes.ps1','ConnectorChannelKey.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1','Invoke-AuthWireConnectorProbeJob.ps1')){. (Join-Path $PSScriptRoot $file)}
  . (Join-Path $PSScriptRoot 'Test-AuthWireDeploymentCandidate.ps1') -LibraryOnly
  . (Join-Path $PSScriptRoot 'Invoke-AuthWireCandidateJob.ps1')
+ . (Join-Path $PSScriptRoot 'CombinedCandidateContent.ps1')
+ . (Join-Path $PSScriptRoot 'Invoke-AuthWireCombinedJob.ps1')
  . (Join-Path $PSScriptRoot 'DeploymentScope.ps1')
  . (Join-Path $PSScriptRoot 'Invoke-AuthWireScopeJob.ps1')
  $binding=@{};foreach($p in $c.Binding.PSObject.Properties){$binding[$p.Name]=$p.Value}
@@ -34,7 +36,7 @@ try{
  $sid=$binding.service_sid;$acl=Get-Acl -LiteralPath $state
  $expected='O:BAG:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;0x1301bf;;;'+$sid+')'
  if(-not (Compare-AuthWireSigningKeyAcl $expected $acl.Sddl).AclEquivalent){throw 'CONNECTOR_STATUS_ACL_REJECTED'}
- $failures=0;$success=0;$lastSuccess=$null;$jobCount=0;$lastJob='';$scopeCount=0;$lastScope='';$scopeReason=''
+ $failures=0;$success=0;$lastSuccess=$null;$jobCount=0;$lastJob='';$scopeCount=0;$lastScope='';$scopeReason='';$combinedCount=0;$lastCombined=''
  while(-not $stop.WaitOne(0) -and -not $parent.HasExited){
   $ok=$false
   try{
@@ -55,13 +57,19 @@ try{
    $candidate=Invoke-AuthWireCandidateJob -BaseUrl $c.BaseUrl -Binding $binding -ChannelKey $rsa -PackageReleaseId $c.ReleaseId -PublisherThumbprint $c.PublisherThumbprint
    $candidateReady=$candidate.ChannelVerified
   }catch{$candidateReady=$false}}
+  $combinedReady=$false
+  if($ok){try{
+   $combined=Invoke-AuthWireCombinedJob -BaseUrl $c.BaseUrl -Binding $binding -ChannelKey $rsa -PackageReleaseId $c.ReleaseId -PublisherThumbprint $c.PublisherThumbprint
+   $combinedReady=$combined.ChannelVerified
+   if($combined.JobCompleted){$combinedCount++;$lastCombined=$combined.JobId}
+  }catch{$combinedReady=$false}}
   $scopeReady=$false
   if($ok){try{
    $scopeResult=Invoke-AuthWireScopeJob -BaseUrl $c.BaseUrl -Binding $binding -ChannelKey $rsa -PackageReleaseId $c.ReleaseId
    $scopeReady=$scopeResult.ChannelVerified
    if($scopeResult.JobCompleted){$scopeCount++;$lastScope=$scopeResult.JobId;$scopeReason=$scopeResult.Reason}
   }catch{$scopeReady=$false}}
-  $status=@{Event='WINDOWS_CONNECTOR_SERVICE_HEALTH';Version=1;ReleaseId=$c.ReleaseId;ServiceName=$name;RuntimeSid=$sid;WorkerPid=$PID;CheckedUtc=[DateTimeOffset]::UtcNow.ToString('o');LastSuccessUtc=$lastSuccess;SuccessCount=$success;ConsecutiveFailures=$failures;Healthy=$ok;CanApply=$false;DirectorySyncReady=$false;KerberosReady=$false;NextAttemptSeconds=$delay;ProbeChannelVerified=$probeReady;ProbeJobsCompleted=$jobCount;LastProbeJobId=$lastJob;CandidateChannelVerified=$candidateReady;ScopeChannelVerified=$scopeReady;ScopeJobsCompleted=$scopeCount;LastScopeJobId=$lastScope;LastScopeReason=$scopeReason}
+  $status=@{Event='WINDOWS_CONNECTOR_SERVICE_HEALTH';Version=1;ReleaseId=$c.ReleaseId;ServiceName=$name;RuntimeSid=$sid;WorkerPid=$PID;CheckedUtc=[DateTimeOffset]::UtcNow.ToString('o');LastSuccessUtc=$lastSuccess;SuccessCount=$success;ConsecutiveFailures=$failures;Healthy=$ok;CanApply=$false;DirectorySyncReady=$false;KerberosReady=$false;NextAttemptSeconds=$delay;ProbeChannelVerified=$probeReady;ProbeJobsCompleted=$jobCount;LastProbeJobId=$lastJob;CandidateChannelVerified=$candidateReady;CombinedChannelVerified=$combinedReady;CombinedJobsCompleted=$combinedCount;LastCombinedJobId=$lastCombined;ScopeChannelVerified=$scopeReady;ScopeJobsCompleted=$scopeCount;LastScopeJobId=$lastScope;LastScopeReason=$scopeReason}
   Write-AuthWireChannelReceipt -Path (Join-Path $state 'status.json') -Value $status
   for($i=0;$i -lt $delay;$i++){if($stop.WaitOne(1000) -or $parent.HasExited){break}}
  }

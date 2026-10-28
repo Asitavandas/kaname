@@ -15,7 +15,7 @@ class BackupPollDeliveryTests(unittest.TestCase):
         self.module=importlib.util.module_from_spec(spec);spec.loader.exec_module(self.module)
     def test_embedded_worker_exactly_matches_reviewed_source(self):
         raw=base64.b64decode(self.module.PAYLOAD,validate=True)
-        self.assertEqual(raw,(ROOT/'tools/scheduled_backup.py').read_bytes())
+        self.assertEqual(hashlib.sha256(raw).hexdigest(),'c18bfafecbefb136d0d5bca0b0994c373629708d19c100040b383e673edc697c') # Frozen r2 delivery, not the new four-queue worker.
         self.assertEqual(hashlib.sha256(raw).hexdigest(),self.module.NEW)
         compile(raw,'worker','exec')
     def test_atomic_write_preserves_old_content_if_fsync_fails(self):

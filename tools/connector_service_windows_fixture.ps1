@@ -58,7 +58,7 @@ try{
  if(Test-Path -LiteralPath $root){$root=$null;throw 'Fixture package directory collision'}
  $config=@{Version=1;ReleaseId=[guid]::NewGuid().ToString('D');ServiceName=$name;AccountName=$credential.UserName;PublisherThumbprint=$publisher.Thumbprint;BaseUrl=('https://'+$b.appliance_fqdn+':'+$base.port+'/');Binding=$b;KeyName=$key;ExpectedKeySddl=$receipt.ExpectedKeySddl;RootPath=$root}|ConvertTo-Json -Depth 6|ConvertFrom-Json
  $buildSource=Join-Path $Directory 'reviewed-source';$null=New-Item -ItemType Directory -Path $buildSource
- foreach($file in @('ConnectorServiceHost.cs','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Install-AuthWireConnectorService.ps1','New-AuthWireConnectorServicePackage.ps1','Initialize-AuthWireConnectorChannelKey.ps1','ConnectorChannelKey.ps1','ConnectorChannelTypes.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','Test-AuthWireDeploymentCandidate.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','Read-AuthWireDeploymentScope.ps1','ConnectorServiceUpgrade.ps1','Update-AuthWireConnectorService.ps1')){
+ foreach($file in @('ConnectorServiceHost.cs','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Install-AuthWireConnectorService.ps1','New-AuthWireConnectorServicePackage.ps1','Initialize-AuthWireConnectorChannelKey.ps1','ConnectorChannelKey.ps1','ConnectorChannelTypes.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','Test-AuthWireDeploymentCandidate.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','Read-AuthWireDeploymentScope.ps1','ConnectorServiceUpgrade.ps1','Update-AuthWireConnectorService.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1')){
   $path=Join-Path $buildSource $file;Copy-Item -LiteralPath (Join-Path $source $file) -Destination $path
   if($file.EndsWith('.ps1')){$signed=Set-AuthenticodeSignature -FilePath $path -Certificate $publisher -HashAlgorithm SHA256;if($signed.Status.ToString() -ne 'Valid'){throw 'Fixture source signing failed'}}
  }
@@ -113,6 +113,8 @@ try{
  Wait-Until {$s=Read-Status;return ($s -and $s.Healthy)} 35 'Real signed service did not prove HTTPS health'
  Wait-Until {$s=Read-Status;return ($s -and $s.ProbeChannelVerified -and $s.ProbeJobsCompleted -ge 1)} 35 'Real signed service did not complete the bounded probe job'
  Wait-Until {$s=Read-Status;return ((Test-Path -LiteralPath (Join-Path $Directory 'scope-rejected')) -and $s -and $s.ScopeJobsCompleted -ge 1 -and $s.LastScopeReason -ceq 'CONTENT_REJECTED')} 170 'Actual signed child scope rejection and local status not both committed'
+ Wait-Until {$s=Read-Status;return ((Test-Path -LiteralPath (Join-Path $Directory 'combined-rejected')) -and $s -and $s.CombinedJobsCompleted -ge 1)} 170 'Actual combined rejection and local status missing'
+ Check ((Read-Status).CombinedJobsCompleted -ge 1) 'Actual AllSigned child completed typed combined job over HTTPS'
  Check ((Read-Status).ScopeJobsCompleted -ge 1 -and (Read-Status).LastScopeReason -ceq 'CONTENT_REJECTED') 'Actual low-privilege AllSigned child returns a scoped negative result'
  Check (Test-AuthWireJobGuid (Read-Status).LastProbeJobId) 'Real SCM worker completed a scoped read-only probe job over verified HTTPS'
  $s=Read-Status;$first=$s.WorkerPid
@@ -235,8 +237,14 @@ try{
   Check $caught 'Scope channel must work even when all older channels work'
   Check ((Read-Status).ReleaseId -ceq $legacyConfig.ReleaseId -and (Read-Status).Healthy) 'Scope channel rejection restores legacy health'
  }finally{[IO.File]::WriteAllText((Join-Path $Directory 'case.txt'),'normal')}
+ [IO.File]::WriteAllText((Join-Path $Directory 'case.txt'),'combined-offline')
+ try{
+  $caught=$false
+  try{Invoke-AuthWireServiceUpgradeCore -Mode Apply @upgradeArgs -SourceDirectory $buildSource|Out-Null}catch{$caught=$_.Exception.Message -like 'CONNECTOR_UPGRADE_FAILED_OLD_RELEASE_RESTORED:*'}
+  Check $caught 'Failed combined channel rolls back even when other channels work'
+ }finally{[IO.File]::WriteAllText((Join-Path $Directory 'case.txt'),'normal')}
  $u=Fresh-Upgrade Apply
- Check ($u.Phase -ceq 'applied' -and (Read-Status).ReleaseId -ceq $newRelease.ToString('D') -and (Read-Status).ProbeChannelVerified -and (Read-Status).CandidateChannelVerified -and (Read-Status).ScopeChannelVerified) 'Fresh signed Apply requires health, probe and candidate capability'
+ Check ($u.Phase -ceq 'applied' -and (Read-Status).ReleaseId -ceq $newRelease.ToString('D') -and (Read-Status).ProbeChannelVerified -and (Read-Status).CandidateChannelVerified -and (Read-Status).ScopeChannelVerified -and (Read-Status).CombinedChannelVerified) 'Fresh signed Apply requires health, probe and candidate capability'
  Check ((Test-Path -LiteralPath $archive) -and (Get-AuthWireUpgradeTreeHash $archive) -ceq (Get-Content -LiteralPath (Join-Path $journalRoot 'upgrade.json') -Raw|ConvertFrom-Json).OldTree) 'Original static package/admin bytes and ACLs survive in the scoped rollback archive'
  $archiveWorker=Join-Path $archive 'ConnectorServiceRuntime.ps1';$archiveBytes=[IO.File]::ReadAllBytes($archiveWorker);$activePid=(Read-Status).WorkerPid
  try{
@@ -284,7 +292,7 @@ try{
  Reject {Assert-AuthWireSignedDelivery $deliveryDirectory $publisher.Thumbprint} 'Existing signed customer source drift is rejected before package preparation'
 
  # The new fixed nineteen-file delivery is tested without running its DC01-only main.
- $deliveryScript=Join-Path $PSScriptRoot '..\docs\checkpoints\2026-10-27-dc01-scope-worker-upgrade.ps1'
+ $deliveryScript=Join-Path $PSScriptRoot '..\docs\checkpoints\2026-10-28-dc01-combined-worker-upgrade.ps1'
  $tokens=$null;$errors=$null;$deliveryAst=[Management.Automation.Language.Parser]::ParseFile($deliveryScript,[ref]$tokens,[ref]$errors)
  Check ($errors.Count -eq 0) 'Candidate worker delivery parses in native Windows PowerShell 5.1'
  foreach($f in $deliveryAst.FindAll({param($node)$node -is [Management.Automation.Language.FunctionDefinitionAst]},$false)){. ([scriptblock]::Create($f.Extent.Text))}
@@ -293,7 +301,7 @@ try{
  $reviewedSources=@{};foreach($pair in $table.KeyValuePairs){$reviewedSources[$pair.Item1.Value]=Read-FixtureLiteral $pair.Item2}
  $bytes=[Convert]::FromBase64String((Read-FixtureLiteral $assignments['embeddedSources']));$pin=Read-FixtureLiteral $assignments['archiveSha256']
  $unpacked=Read-AuthWireReviewedSourceBytes $bytes $pin
- Check ($unpacked.Count -eq 19) 'New delivery contains nineteen fixed reviewed sources'
+ Check ($unpacked.Count -eq 21) 'New delivery contains nineteen fixed reviewed sources'
  foreach($f in $unpacked.Keys){Check ((Get-AuthWireDeliveryBodyHash ([IO.File]::ReadAllText((Join-Path $source $f)))) -ceq $reviewedSources[$f]) 'Customer archive matches current reviewed source bodies'}
  $nextDirectory=Join-Path $Directory 'candidate-worker-delivery';$upgradePaths+=$nextDirectory
  New-AuthWireSignedDelivery $unpacked $nextDirectory $publisher
@@ -305,7 +313,7 @@ try{
  Check ($LASTEXITCODE -eq 0 -and $outcome.Error -ceq 'EXPECTED_ELEVATED_DC01_X64_REQUIRED' -and -not $outcome.ChangesMayBePartial) 'New delivery refuses other hosts before signer, sources or service changes'
 
 
- @{release_id=$config.ReleaseId;checks=$checks;real_signed_scm=$true;actual_https=$true;low_privilege_runtime=$true;automatic_outage_recovery=$true;crash_recovery=$true;orphan_cleanup=$true;fresh_public_control=$true;fresh_control_modes=$freshControlModes;legacy_staged_upgrade=$true;automatic_upgrade_rollback=$true;explicit_upgrade_rollback=$true;candidate_channel_required=$true;candidate_channel_failed_upgrade_rollback=$true;scope_channel_required=$true;scope_channel_failed_upgrade_rollback=$true;customer_gmsa_tested=$false;ad_changed=$false;gpo_changed=$false}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Directory 'service-result.json') -Encoding UTF8
+ @{release_id=$config.ReleaseId;checks=$checks;real_signed_scm=$true;actual_https=$true;low_privilege_runtime=$true;automatic_outage_recovery=$true;crash_recovery=$true;orphan_cleanup=$true;fresh_public_control=$true;fresh_control_modes=$freshControlModes;legacy_staged_upgrade=$true;automatic_upgrade_rollback=$true;explicit_upgrade_rollback=$true;candidate_channel_required=$true;candidate_channel_failed_upgrade_rollback=$true;scope_channel_required=$true;scope_channel_failed_upgrade_rollback=$true;combined_channel_required=$true;combined_channel_failed_upgrade_rollback=$true;customer_gmsa_tested=$false;ad_changed=$false;gpo_changed=$false}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Directory 'service-result.json') -Encoding UTF8
 }finally{
  if($name){$service=Get-Service -Name $name -ErrorAction SilentlyContinue;if($service){if($service.Status -ne 'Stopped'){Stop-Service -Name $name -Force;$service.WaitForStatus([ServiceProcess.ServiceControllerStatus]::Stopped,[TimeSpan]::FromSeconds(35))};$service.Dispose();Initialize-AuthWirePermanentServiceControl;[AuthWire.Connector.PermanentServiceV1]::Remove($name)}}
  if($rightsAdded){[AuthWire.Connector.FixtureServiceRightCleanupV1]::RemoveFixtureRight($sid,'SeServiceLogonRight')}

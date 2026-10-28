@@ -126,7 +126,7 @@ def inventory(items):
 
 
 POLL_SECTIONS = frozenset(('windows_connector_probe_jobs', 'windows_candidate_verify_jobs',
-                           'windows_deployment_scope_jobs'))
+                           'windows_deployment_scope_jobs', 'windows_combined_verify_jobs'))
 
 
 def stable_runtime_payload(name, payload):

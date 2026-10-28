@@ -83,6 +83,29 @@ try{
   Check ($runtime.ProbeVerified -and $runtime.CandidateVerified -and $runtime.ServiceLogonVerified -and $runtime.RuntimeSid -ceq $virtualSid) 'Actual non-admin SCM verifies combined content and runtime SID'
   Check ($runtime.TemporaryServiceRemoved -and $runtime.TemporaryBinaryRemoved -and $runtime.TemporaryVerifierRemoved -and $runtime.TemporaryResultDirectoryRemoved -and $runtime.CleanupErrors.Count -eq 0) 'Temporary combined SCM artifacts cleaned up'
  }finally{foreach($item in $ownedPaths){if($item.PSIsContainer){Set-AuthWireCandidateAcl $item.FullName $callParameters.ServiceSid -Directory}else{Set-AuthWireCandidateAcl $item.FullName $callParameters.ServiceSid}}}
+ # Typed worker readers reuse exact public verifier bodies and bind semantic assets.
+ . (Join-Path $PSScriptRoot '../windows/connector/CombinedCandidateContent.ps1')
+ . (Join-Path $PSScriptRoot '../windows/connector/Invoke-AuthWireConnectorProbeJob.ps1')
+ . (Join-Path $PSScriptRoot '../windows/connector/Invoke-AuthWireCombinedJob.ps1')
+ $targetProof=Get-Content -LiteralPath (Join-Path $FixtureDirectory 'combined-target.json') -Raw|ConvertFrom-Json
+ $jobTarget=$targetProof.target
+ Assert-AuthWireCombinedJobTarget $jobTarget
+ Check ((Get-AuthWireCombinedTargetHash $jobTarget) -ceq $targetProof.sha256) 'Typed target canonical hash matches Python'
+ $originalApproval=Get-Content -LiteralPath (Join-Path $FixtureDirectory 'approval.json') -Raw|ConvertFrom-Json
+ $cfg=ConvertFrom-AuthWireCandidateJson $d.Files['enrollment/config.json']
+ $assetBinding=@{appliance_fqdn='kaname.fixture.example';appliance_tls_sha256=$cfg.tls_sha256}
+ Assert-AuthWireCombinedJobAssets $jobTarget $assetBinding $cfg.url $originalApproval $d
+ Check $true 'Profile domain group CA public HTTPS trust and existing network hash match target'
+ foreach($change in @('machine_profile_id','machine_profile_version','domain','group_sid','root_thumbprint','publisher_thumbprint')){
+  $bad=$jobTarget.PSObject.Copy()
+  if($change -ceq 'machine_profile_version'){$bad.$change=4}elseif($change -ceq 'machine_profile_id'){$bad.$change=[guid]::NewGuid().ToString('D')}else{$bad.$change='wrong'}
+  Reject {Assert-AuthWireCombinedJobAssets $bad $assetBinding $cfg.url $originalApproval $d} ('Changed '+$change+' cannot inherit old network proof')
+ }
+ Reject {Assert-AuthWireCombinedJobAssets $jobTarget $assetBinding 'https://wrong.fixture.example:8765' $originalApproval $d} 'Enrollment URL is bound to actual appliance'
+ $wrongBinding=$assetBinding.Clone();$wrongBinding.appliance_tls_sha256='0'*64
+ Reject {Assert-AuthWireCombinedJobAssets $jobTarget $wrongBinding $cfg.url $originalApproval $d} 'Enrollment and public trust are bound to current TLS pin'
+ $badTarget=$jobTarget.PSObject.Copy();$badTarget|Add-Member NoteProperty command 'powershell.exe'
+ Reject {Assert-AuthWireCombinedJobTarget $badTarget} 'Extra command field is not a typed verification target'
  $result=Invoke-AuthWireCombinedCandidate @callParameters -Mode Verify
  Check ($result.ManifestSha256 -ceq $prepared.ManifestSha256) 'Independent Verify accepts prepared directory'
  $again=Invoke-AuthWireCombinedCandidate @callParameters -Mode Prepare

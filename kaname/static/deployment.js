@@ -80,7 +80,7 @@ $('dep-reconcile').addEventListener('click',async()=>{if(depBusy)return;const ge
 // Operator receipts remain separate from authenticated worker attestation.
 let candidateRows=[],candidateBusy=false,candidateTicket=0,candidatePreview=null,candidateRequest=null,candidateUncertain=false;
 function candidateAccess(write=false){return can('certificates.authority',write)&&can('system.connectors',write);}
-function candidateError(error){return ({COMBINED_NETWORK_RECORD_REQUIRED:'Bu planın güncel ağ profili hazırlık kaydı bulunamadı. Önce ağ profili hazırlık sonucunu kaydedin.',CANDIDATE_JOB_FORMAT_UNSUPPORTED:'Bu paket için doğrulama henüz kullanılabilir değil.'})[error.code]||error.code||error.message;}
+function candidateError(error){return ({COMBINED_NETWORK_RECORD_REQUIRED:'Bu planın güncel ağ profili hazırlık kaydı bulunamadı. Önce ağ profili hazırlık sonucunu kaydedin.',CANDIDATE_JOB_FORMAT_UNSUPPORTED:'Bu paket için farklı doğrulama yolu gerekiyor.',COMBINED_WORKER_NOT_READY:'Birleşik paket doğrulaması için güncel Windows Connector bağlantısı bekleniyor.'})[error.code]||error.code||error.message;}
 function candidateControls(){
  const read=candidateAccess(),write=candidateAccess(true);
  $('dep-candidates').hidden=!read;$('dep-candidate-open').hidden=!write;
@@ -101,28 +101,31 @@ async function loadCandidateStatus(){
  const generation=authGeneration,ticket=++candidateTicket;
  try{const value=await api('/api/deployment/candidates');if(generation!==authGeneration||ticket!==candidateTicket||!candidateAccess())return null;
   candidateRows=value.candidates;const box=$('dep-candidate-list');box.replaceChildren();
-  if(candidateVerifyUncertain&&[...(value.verification_jobs||[]),...(value.scope_verification_jobs||[])].some(j=>j.id===candidateVerifyUncertain))candidateVerifyUncertain=null;
+  if(candidateVerifyUncertain&&[...(value.verification_jobs||[]),...(value.scope_verification_jobs||[]),...(value.combined_verification_jobs||[])].some(j=>j.id===candidateVerifyUncertain))candidateVerifyUncertain=null;
   for(const row of candidateRows){const item=depNode('article');const plan=depState?.plans.find(p=>p.id===row.plan_id);
-   const job=value.verification_jobs?.find(j=>j.candidate_id===row.id);
-   const text=row.state==='outdated'?'Plan veya bağlantı bilgisi değişmiş; yeniden hazırlık gerekiyor.':row.content_verified?'İmza ve içerik Connector tarafından doğrulandı. GPO ve dağıtım kontrolü bekleniyor.':job?.outcome==='content_rejected'?'Connector imza veya içerik doğrulamasını reddetti.':job?.state==='queued'?'Doğrulama görevi bağlantı bekliyor.':job?.state==='leased'?'Connector doğruluyor; sonuç bekleniyor.':'Operatör sonucu kaydedildi. Connector doğrulaması bekleniyor.';
    const combined=row.artifact_kind==='combined_machine_v1';
+   const ready=combined?value.combined_worker_ready:value.verification_worker_ready;
+   const job=(combined?value.combined_verification_jobs:value.verification_jobs)?.find(j=>j.candidate_id===row.id);
+   const text=row.state==='outdated'?'Plan veya bağlantı bilgisi değişmiş; yeniden hazırlık gerekiyor.':row.content_verified?'İmza ve içerik Connector tarafından doğrulandı. GPO ve dağıtım kontrolü bekleniyor.':['content_rejected','combined_content_rejected'].includes(job?.outcome)?'Connector imza veya içerik doğrulamasını reddetti.':job?.state==='queued'?'Doğrulama görevi bağlantı bekliyor.':job?.state==='leased'?'Connector doğruluyor; sonuç bekleniyor.':'Operatör sonucu kaydedildi. Connector doğrulaması bekleniyor.';
    item.append(depNode('strong',(plan?.name||row.plan_id)+' · v'+row.plan_version+' · '+(combined?'Birleşik paket':'Ağ profilleri')),depNode('p',text),depNode('p','Manifest SHA256: '+row.manifest_sha256));
-   if(combined)item.append(depNode('p','Sertifika kurulumu ve ağ profilleri birlikte kaydedildi. Bu paket için kalıcı Connector doğrulaması henüz kullanılabilir değil.'),depNode('p','Taslak SHA256: '+row.draft_sha256));
+   if(combined)item.append(depNode('p','Sertifika kurulumu ve ağ profilleri birlikte doğrulanır. Bu kontrol cihazlara dağıtım başlatmaz.'),depNode('p','Taslak SHA256: '+row.draft_sha256));
    const scopeJob=value.scope_verification_jobs?.find(j=>j.candidate_id===row.id);
    if(row.scope_snapshot_verified){
     item.append(depNode('p',row.scope_snapshot_fresh?'AD hedefleri ve GPO okuma kontrolü başarılı. Dağıtım henüz uygulanmadı.':'Önceki AD/GPO okuması başarılıydı; güncel kontrol gerekiyor.'));
     if(Number.isInteger(row.scope_checked_at))item.append(depNode('p','AD/GPO kontrol zamanı: '+new Date(row.scope_checked_at*1000).toLocaleString('tr-TR')));
    }else if(row.scope_reason)item.append(depNode('p','AD/GPO kontrolü tamamlanamadı: '+row.scope_reason));
    else if(['queued','leased'].includes(scopeJob?.state))item.append(depNode('p','AD/GPO kontrol görevi bekleniyor.'));
-   if(candidateAccess(true)&&!combined){
+   if(candidateAccess(true)){
     const button=depNode('button','Doğrulamayı önizle');button.type='button';
-    button.disabled=candidateVerifyBusy||!!candidateVerifyUncertain||!value.verification_worker_ready||row.state==='outdated'||['queued','leased'].includes(job?.state);
+    button.disabled=candidateVerifyBusy||!!candidateVerifyUncertain||!ready||row.state==='outdated'||['queued','leased'].includes(job?.state);
     button.addEventListener('click',()=>previewCandidateVerify(row,value.revision,item));item.append(button);
-    if(!value.verification_worker_ready)item.append(depNode('p','Bu görev için Connector güncellemesi ve güncel bağlantı gerekli.'));
+    if(!ready)item.append(depNode('p','Bu görev için Connector güncellemesi ve güncel bağlantı gerekli.'));
+    if(!combined){
     const scopeButton=depNode('button','AD/GPO kontrolünü önizle');scopeButton.type='button';
     scopeButton.disabled=candidateVerifyBusy||!!candidateVerifyUncertain||!value.scope_worker_ready||!row.content_verified||row.state==='outdated'||['queued','leased'].includes(scopeJob?.state);
     scopeButton.addEventListener('click',()=>previewCandidateVerify(row,value.revision,item,'scope'));item.append(scopeButton);
     if(!value.scope_worker_ready)item.append(depNode('p','AD/GPO kontrolü için Windows Connector güncellemesi ve güncel bağlantı gerekli.'));
+    }
    }
    box.append(item);}
   if(!candidateRows.length)box.append(depNode('p','Henüz hazırlık sonucu kaydedilmedi.'));candidateControls();return value;
@@ -130,17 +133,20 @@ async function loadCandidateStatus(){
 }
 let candidateVerifyBusy=false,candidateVerifySending=false,candidateVerifyUncertain=null,candidateVerifyTicket=0;
 async function previewCandidateVerify(row,revision,item,kind='verify'){
- if(row.artifact_kind==='combined_machine_v1'||!['verify','scope'].includes(kind)||candidateVerifyBusy||candidateVerifyUncertain||!candidateAccess(true))return;
- const isScope=kind==='scope',route=isScope?'/api/deployment/candidates/scope/':'/api/deployment/candidates/verify/';
+ const combined=row.artifact_kind==='combined_machine_v1';
+ if((combined&&kind==='scope')||!['verify','scope'].includes(kind)||candidateVerifyBusy||candidateVerifyUncertain||!candidateAccess(true))return;
+ const isScope=kind==='scope',route=combined?'/api/deployment/candidates/combined/':isScope?'/api/deployment/candidates/scope/':'/api/deployment/candidates/verify/';
  const generation=authGeneration,ticket=++candidateVerifyTicket;
- const intent={expected_revision:revision,candidate_id:row.id,job_id:crypto.randomUUID(),operation:isScope?'deployment.scope.verify.v1':'candidate.verify.v1'};
+ const intent={expected_revision:revision,candidate_id:row.id,job_id:crypto.randomUUID(),operation:combined?'combined.verify.v1':isScope?'deployment.scope.verify.v1':'candidate.verify.v1'};
  candidateVerifyBusy=true;candidateControls();item.querySelectorAll('button').forEach(b=>b.disabled=true);
  try{
   const p=await api(route+'preview',intent);
   if(generation!==authGeneration||ticket!==candidateVerifyTicket||!candidateAccess(true))return;
   if(p.job_id!==intent.job_id||p.operation!==intent.operation||p.target?.candidate_id!==row.id||p.target?.manifest_sha256!==row.manifest_sha256||p.read_only!==true||p.can_apply!==false||!/^[a-f0-9]{64}$/.test(p.preview_hash))throw Error('Doğrulama önizlemesi doğrulanamadı.');
+  if(combined&&(p.target.draft_sha256!==row.draft_sha256||p.target.network_candidate_id!==row.network_candidate_id||!Number.isInteger(p.target.machine_profile_version)))throw Error('Birleşik paket bilgileri doğrulanamadı.');
   if(isScope&&(!Number.isInteger(p.target.target_count)||p.target.target_count<1||p.target.target_count>512||!/^[a-f0-9]{64}$/.test(p.target.target_sids_sha256)))throw Error('AD/GPO hedefleri doğrulanamadı.');
   const box=depNode('div');box.append(depNode('p',isScope?'Connector yalnız canlı AD hedeflerini ve yönetilen GPO kimliğini, izinlerini ve bağlantı durumunu okuyacak. GPO veya cihaz ayarı uygulanmaz.':'Yalnız mevcut adayın imzası ve içeriği okunacak. GPO veya cihaz ayarı uygulanmaz.'));
+  if(combined)box.append(depNode('p','Bilgisayar sertifika profili sürümü: '+p.target.machine_profile_version),depNode('p','Birleşik taslak: '+p.target.draft_sha256));
   if(isScope)box.append(depNode('p','Hedef bilgisayar sayısı: '+p.target.target_count));
   const send=depNode('button',isScope?'AD/GPO kontrolünü gönder':'Doğrulamayı gönder'),cancel=depNode('button','Vazgeç');send.type=cancel.type='button';box.append(send,cancel);item.append(box);
   cancel.addEventListener('click',()=>{if(candidateVerifyBusy){candidateVerifyBusy=false;candidateVerifyTicket++;loadCandidateStatus();}});
@@ -154,10 +160,10 @@ async function previewCandidateVerify(row,revision,item,kind='verify'){
     $('dep-candidate-feedback').textContent=isScope?'AD/GPO kontrol görevi kaydedildi. Sonucu görmek için Yenile düğmesini kullanın.':'Doğrulama görevi kaydedildi. Sonucu görmek için Yenile düğmesini kullanın.';
    }catch(error){if(generation!==authGeneration)return;
     if(!error.status||error.status>=500){candidateVerifyUncertain=intent.job_id;$('dep-candidate-feedback').textContent='Gönderim sonucu alınamadı. İstek tekrarlanmadı; Yenile ile kontrol edin.';}
-    else $('dep-candidate-feedback').textContent=error.code||error.message;
+    else $('dep-candidate-feedback').textContent=candidateError(error);
    }finally{if(generation===authGeneration){candidateVerifyBusy=false;candidateVerifySending=false;await loadCandidateStatus();}}
   },{once:true});
- }catch(error){if(generation===authGeneration){candidateVerifyBusy=false;$('dep-candidate-feedback').textContent=error.code||error.message;await loadCandidateStatus();}}
+ }catch(error){if(generation===authGeneration){candidateVerifyBusy=false;$('dep-candidate-feedback').textContent=candidateError(error);await loadCandidateStatus();}}
 }
 $('dep-candidate-refresh').addEventListener('click',()=>loadCandidateStatus());
 $('dep-candidate-open').addEventListener('click',async()=>{

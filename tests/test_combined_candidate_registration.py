@@ -60,9 +60,9 @@ class CombinedRegistrationTests(unittest.TestCase):
         for text in ('ignored','CandidatePath','SourcesDirectory','SignaturesVerified'):
             self.assertNotIn(text,raw)
         status=self.engine.status();row=next(r for r in status['candidates'] if r['id']==result['id'])
-        for flag in ('content_verified','connector_verified','can_apply','scope_snapshot_verified','content_verification_available'):
+        for flag in ('content_verified','connector_verified','can_apply','scope_snapshot_verified'):
             self.assertIs(row[flag],False)
-        self.assertEqual('operator_reported',row['state'])
+        self.assertEqual('operator_reported',row['state']);self.assertTrue(row['content_verification_available'])
 
     def test_old_content_and_scope_workers_cannot_verify_combined_record(self):
         _,result=self.save();identity=result['id']

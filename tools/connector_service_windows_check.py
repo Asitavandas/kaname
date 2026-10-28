@@ -19,6 +19,8 @@ from kaname.pki import PKIService
 from kaname.connector_registry import ConnectorRegistry
 from kaname.connector_jobs import ConnectorJobs, OPERATION
 from kaname.candidate_jobs import CandidateJobs
+from kaname.combined_jobs import CombinedJobs
+from tests.test_combined_candidate_registration import combined_receipt
 from kaname.scope_jobs import ScopeJobs,target_sids_hash
 from kaname.deployment_candidates import DeploymentCandidates
 from tests.test_deployment_candidates import fixture_snapshot,make_receipt
@@ -40,7 +42,8 @@ def main():
         def fixture_peer(handler):
             if (root/'case.txt').exists() and ((root/'case.txt').read_text().strip()=='offline' or
                     ((root/'case.txt').read_text().strip()=='candidate-offline' and handler.path.startswith('/api/connector/v1/candidates/')) or
-                    ((root/'case.txt').read_text().strip()=='scope-offline' and handler.path.startswith('/api/connector/v1/scope/'))):
+                    ((root/'case.txt').read_text().strip()=='scope-offline' and handler.path.startswith('/api/connector/v1/scope/')) or
+                    ((root/'case.txt').read_text().strip()=='combined-offline' and handler.path.startswith('/api/connector/v1/combined/'))):
                 handler.respond(503,{'error':'FIXTURE_OFFLINE'});return
             original(handler)
         Handler.connector_peer=fixture_peer
@@ -87,6 +90,25 @@ def main():
                     time.sleep(.25)
                 assert cj.status()['jobs'][0]['result']['outcome']=='content_rejected' # No candidate exists in this fixture.
                 assert not candidates.status()['candidates'][0]['connector_verified']
+                combined=CombinedJobs(candidates)
+                end=time.monotonic()+90
+                while not combined.status()['worker_ready']:
+                    if process.poll() is not None or time.monotonic()>end:raise RuntimeError('Combined capability missing')
+                    time.sleep(.25)
+                combined_request={'expected_revision':store.snapshot()['revision'],'registration_id':str(uuid.uuid4()),
+                                  'receipt_json':json.dumps(combined_receipt(data['plans'][0]))}
+                combined_preview=candidates.preview(combined_request)
+                candidates.record(combined_request|{'preview_hash':combined_preview['preview_hash']},str(uuid.uuid4()))
+                combined_intent={'expected_revision':store.snapshot()['revision'],'job_id':str(uuid.uuid4()),
+                                 'candidate_id':combined_request['registration_id'],'operation':'combined.verify.v1'}
+                combined_preview=combined.preview(combined_intent)
+                combined.create(combined_intent|{'preview_hash':combined_preview['preview_hash']},str(uuid.uuid4()))
+                end=time.monotonic()+90
+                while combined.status()['jobs'][0]['state']!='completed':
+                    if process.poll() is not None or time.monotonic()>end:raise RuntimeError('Combined result missing')
+                    time.sleep(.25)
+                assert combined.status()['jobs'][0]['result']['outcome']=='combined_content_rejected'
+                (root/'combined-rejected').write_text('verified signed child combined rejection',encoding='ascii')
                 # Isolated composition fixture: bypass ONLY the preceding accepted
                 # content dependency to dispatch a real negative scope read. No
                 # customer-positive directory/GPO evidence is synthesized here.
@@ -112,19 +134,20 @@ def main():
                 sr=sj.status()['jobs'][0]['result']
                 assert sr['outcome']=='scope_snapshot_rejected' and sr['reason']=='CONTENT_REJECTED' and sr['checks']==[]
                 (root/'scope-rejected').write_text('verified signed child rejection',encoding='ascii')
-                process.wait(timeout=540)
+                process.wait(timeout=660)
                 if process.returncode:raise RuntimeError('Native service fixture failed')
             result=json.loads((root/'service-result.json').read_text(encoding='utf-8-sig'))
             assert result['checks']>=17 and result['actual_https'] and result['crash_recovery'] and not result['customer_gmsa_tested']
             assert result['legacy_staged_upgrade'] and result['automatic_upgrade_rollback'] and result['explicit_upgrade_rollback']
             assert result['candidate_channel_required'] and result['candidate_channel_failed_upgrade_rollback']
             assert result['scope_channel_required'] and result['scope_channel_failed_upgrade_rollback']
+            assert result['combined_channel_required'] and result['combined_channel_failed_upgrade_rollback']
             assert result['fresh_public_control'] and result['fresh_control_modes']==['Inspect','Start','Start','Stop','Start','Remove']
             assert server.connector_pairing.status()['online'] and not server.connector_pairing.status()['can_apply']
             after=store.snapshot()
             assert snapshot['config']==after['config'] and snapshot['policies']==after['policies']
             # Scope queue creation and signed completion each add an audit revision.
-            assert after['revision']==snapshot['revision']+6 and len(store.audit())==len(audit)+6, (after['revision']-snapshot['revision'],len(store.audit())-len(audit))
+            assert after['revision']==snapshot['revision']+9 and len(store.audit())==len(audit)+9, (after['revision']-snapshot['revision'],len(store.audit())-len(audit))
             status=jobs.status()
             assert status['jobs'][0]['state']=='completed' and status['jobs'][0]['result']['release_id']==result['release_id']
             assert status['worker_probe_ready'] and not status['can_apply']
