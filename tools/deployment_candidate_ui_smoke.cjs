@@ -79,6 +79,15 @@ const assert = require('node:assert/strict');
   await page.evaluate(()=>{Object.assign(window.rows[0],{scope_snapshot_verified:false,scope_snapshot_fresh:false,scope_reason:'DIRECTORY_SCOPE_CHANGED'});return loadCandidateStatus();});
   assert.match(await page.locator('#dep-candidate-list').textContent(),/DIRECTORY_SCOPE_CHANGED/);
   assert.doesNotMatch(await page.locator('#dep-candidate-list').textContent(),/AD hedefleri ve GPO okuma kontrolü başarılı/);
+  await page.evaluate(()=>{window.rows.push({...window.rows[0],id:'combined-fixture',artifact_kind:'combined_machine_v1',state:'operator_reported',content_verified:false,scope_snapshot_verified:false,scope_snapshot_fresh:false,scope_reason:null,draft_sha256:'d'.repeat(64),content_verification_available:false});return loadCandidateStatus();});
+  const combined=page.locator('#dep-candidate-list article').last();
+  assert.match(await combined.textContent(),/Birleşik paket/);
+  assert.match(await combined.textContent(),/kalıcı Connector doğrulaması henüz kullanılabilir değil/);
+  assert.equal(await combined.getByRole('button').count(),0);
+  const calls=await page.evaluate(()=>window.verifyCalls);
+  await page.evaluate(()=>previewCandidateVerify(window.rows[1],1,document.querySelector('#dep-candidate-list article:last-child')));
+  assert.equal(await page.evaluate(()=>window.verifyCalls),calls);
+
   await page.locator('#dep-candidate-open').click();
   await page.locator('#dep-candidate-json').fill('private draft');
   await page.evaluate(()=>{authGeneration++;resetCandidateRegistration();});

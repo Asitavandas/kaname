@@ -1,0 +1,27 @@
+{
+  "event": "COMBINED_REGISTRATION_DEV41_DELIVERY_PREPARED",
+  "source_component": "ae21bb729cf57215b13546fa3e4cb8d2202ca68f",
+  "stage": "/home/segmentiq/authwire-stage-dev41-ae21bb729cf5",
+  "manifest_sha256": "93cbe46e5af959a0778500e3d5020691164692182463077ceaef78ffa5546bb7",
+  "operator_helper": "/home/segmentiq/authwire-combined-registration-20261028.py",
+  "operator_helper_sha256": "408a2dcd5de9f5542bec00f7bcd86be9c3b3c415cb9adc90c108a9a075be151c",
+  "source_allowed": [
+    "kaname/__init__.py",
+    "kaname/candidate_jobs.py",
+    "kaname/deployment_candidates.py",
+    "kaname/static/deployment.js",
+    "kaname/static/index.html",
+    "pyproject.toml"
+  ],
+  "linux_live_applied": false,
+  "panel_restart_planned": true,
+  "radius_restart_planned": false,
+  "broker_restart_planned": false,
+  "full_backup_planned": false,
+  "current_backup_sha256": "3c4b00b745063980c962f712a426a4ce2e845d62abb096ec2346941a5062c002",
+  "windows_package_changed": false,
+  "gpo_apply_enabled": false,
+  "combined_worker_delivery_pending": true,
+  "ci_historical_fixture_fix": "Pin the original pre-poll backup fixture for the legacy two-step RADIUS access-history migration test. Production RADIUS/backup guards unchanged.",
+  "final_ci_pending": true
+}
