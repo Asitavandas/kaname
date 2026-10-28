@@ -11,9 +11,12 @@ function Import-Functions([string]$Path){
 foreach($n in @('New-AuthWireDeploymentCandidate.ps1','Get-AuthWireMachineSignerMetadata.ps1','New-AuthWireCombinedCandidate.ps1')){Import-Functions (Join-Path $PSScriptRoot ('../windows/connector/'+$n))}
 $script:checks=0
 function Check([bool]$Value,[string]$Name){if(-not $Value){throw $Name};$script:checks++;Write-Host ('PASS '+$Name)}
-function Reject([scriptblock]$Action,[string]$Name){$caught=$false;try{& $Action}catch{$caught=$true;Write-Host ('EXPECTED '+$Name+': '+$_.Exception.Message)};Check $caught $Name}
+function Reject([scriptblock]$Action,[string]$CheckName){$caught=$false;try{& $Action}catch{$caught=$true;Write-Host ('EXPECTED '+$CheckName+': '+$_.Exception.Message)};Check $caught $CheckName}
 $cert=$null;$public=$null;$roots=$null;$publishers=$null;$markerKey=$null;$parent=$null
 try{
+ $delivery=Join-Path $PSScriptRoot '../docs/checkpoints/2026-10-28-dc01-combined-candidate.ps1'
+ $dt=$null;$de=$null;$null=[Management.Automation.Language.Parser]::ParseFile($delivery,[ref]$dt,[ref]$de)
+ Check ($de.Count -eq 0) 'Fixed operator delivery parses in Windows PowerShell 5.1'
  $pins=Get-Content -LiteralPath (Join-Path $FixtureDirectory 'pins.json') -Raw|ConvertFrom-Json
  $draft=Join-Path $FixtureDirectory 'draft.zip'
  foreach($name in @('traversal','large','content','apply')){Reject {Read-AuthWireCombinedDraft (Join-Path $FixtureDirectory ($name+'.zip')) $pins.$name} ('Reject '+$name)}

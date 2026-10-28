@@ -5,6 +5,7 @@
 Set-StrictMode -Version 2
 
 function Read-AuthWireCombinedDraft([string]$Path,[string]$ExpectedHash) {
+ Initialize-AuthWireCandidateTypes
  if($ExpectedHash -cnotmatch '\A[0-9a-f]{64}\z'){throw 'COMBINED_DRAFT_PIN_REQUIRED'}
  $raw=Read-AuthWireCandidateBytes $Path 1048576
  if((Get-AuthWireCandidateHash $raw) -cne $ExpectedHash){throw 'COMBINED_DRAFT_CHANGED'}
