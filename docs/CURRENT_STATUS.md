@@ -20,6 +20,59 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Birleşik kalıcı doğrulama hazır — dev.42 ve Windows uygulaması bekliyor — 28 Ekim 2026
+
+**PR110** merge **bbeeb482099302dea45ed1f03cdd6cca6165cff0**, test head **f924535281b63c48e1facfe24964e73f50c5a9fd**.
+Dokuz workflow başarılı: **1000 Python testi /28 skipped**, tarayıcı, native birleşik paket,
+gerçek RADIUS, Linux kaynak hazırlama, yedek ve Windows kontrolleri.
+Gerçek imzalı kalıcı SCM fixture'ında86 kontrol geçti: ayrı birleşik capability, typed negatif
+görev sonucu, kanal kesintisinde upgrade reddi/rollback ve eski sürümden kontrollü yükseltme.
+Linux delivery/rollback için14, geçici Linux lifecycle/registry ortamında19 test geçti.
+İlk native denemede C# HTTPS allowlist'ine iki yeni exact yolun eklenmediği bulundu; düzeltildi.
+Ayrı ve değişmeyen expired endpoint fixture'ı ilk çalıştırmada takıldı; retry ve son test head geçti.
+Bu kayıt gerçek müşteri pozitif uçtan uca sonucu veya ürünün bütünü için kabul değildir.
+
+**Yeni davranış:** combined.verify.v1 ayrı sıra/purpose/route ile birleşik operatör kaydına,
+taslak/manifest/profile sürümüne, orijinal ağ kaydına ve geçerli Connector bağımlılıklarına bağlanır.
+Kalıcı worker eski ağ adayını ve birleşik üç imzayı, profile/domain/group/CA/config/TLS ilişkilerini
+yalnız genel anahtarlarla doğrular; signer private key açmaz, deployment artifact çalıştırmaz.
+Eski ağ-only kanalı birleşik kaydı kabul etmez. Başarılı sonuç content_verified alanını ilerletir;
+AD/GPO tazeliği, connector_verified ve can_apply ayrı ve henüz false kalır.
+Panelde kendi worker yeteneği görüldükten sonra birleşik satırın “Doğrulamayı önizle” akışı kullanılabilir.
+
+**Linux teslimatı salt okunur doğrulandı; HENÜZ UYGULANMADI.**
+Son kabul edilen canlı Linux **0.14.0-dev.41**, Windows **efc5ee91-e39e-4cc4-9cc1-60b648e18cf9**.
+Sudo helper: **/home/segmentiq/authwire-combined-jobs-20261028.py**
+SHA256 **d0e64bfa44824de69e89f187949383a9201951ac77e47f0e403e1d2cd5d8d9e9**.
+Stage: **/home/segmentiq/authwire-stage-dev42-375677c9bd73**,181 dosya,
+manifest **361af5e19eeabcc1fc526d4f444d23b25966d8df4dced19f9715dec00ffbbdf2**,
+Linux kaynak bileşeni **375677c9bd733cae0f25fd6fc59c0ea826b25f78**.
+Yalnız yedi source dosyası değişir; yeni combined_jobs.py dahil. Server'ın25 değişmeyen fonksiyon gövdesi pinlidir;
+yalnız üç incelenmiş dispatch gövdesi genişler, mevcut HTTPS/session/CSRF/çift güncel yetki ve peer korumaları korunur.
+Panel restart planlı; RADIUS/broker PID, politikalar, sertifikalar, Windows, AD/GPO ve timer korunur.
+
+**Yedek uyumluluğu:** dördüncü sıranın yalnız doğrulanmış polls/last_poll alanları mevcut karşılaştırma
+projeksiyonuna eklenir; tüm gerçek DB içeriği ve durable jobs/results yedekte kalır.
+Hem source hem kurulu backup worker yeni SHA **4f489caa2113c86bda5d0d294878920e218769751e0edbb9385aa40135a924b6**
+olacak; kurulu release.json aynı hash'e atomik güncellenir, restore checker değişmez.
+Eski/new pair pinleri, metadata, idle+exclusive update lock ve exact source/worker rollback kontrolü test edildi.
+Her değişiklikte tam yedek alınmaması tercihi korunur;28 Ekim10:28 başarılı yedek hâlâ son kabul edilen arşivdir.
+
+**Windows teslimatı Linux home'a aktarıldı, HENÜZ WINDOWS'TA ÇALIŞTIRILMADI.**
+/home/segmentiq/authwire-dc01-combined-worker-upgrade-20261028.ps1
+SHA256 **d8251cd89870519a7fa520c568713bd88949c6a3bd72924470dd47ec5a5ffba9**.
+21 kaynak dosyası; bileşen **157b2d4bc705539f78f982a860331e537010cab1**,
+yeni release **689649c0-61df-40aa-bbfb-b84fa1cc2ac0**,
+arşiv **dffba96918da2e4295bf018f126de4297335ee4100cd5912370e97fb3b8b7509**.
+Mevcut gMSA, eşleştirme, channel key ve signer/ACL korunur. Eski birleşik paket yeniden üretilmez/imzalanmaz.
+
+**Devam sırası:** operatör Linux pinned sudo helper sonucunu paylaşır → Windows Prepare → Apply →
+taze health/capability → panel birleşik satırında önizle/gönder/yenile ile gerçek pozitif content sonucu.
+Ardından birleşik paket için taze AD/GPO/SYSVOL kapsamı, staging/rollback ve gerçek cihaz testleri açık kalır.
+Bu hazırlık sırasında source/service/DB/GPO/endpoint canlı değişmedi; görev/yeni kayıt/tam yedek oluşturulmadı.
+Genel **54/94 tamam,40 açık**; nihai kılavuz **READY_FOR_FINAL_GUIDE=false, GUIDE_DELIVERED=false**.
+Her tamamlanan işlemi kaydetme tercihi bu test/teslimat/devam kaydıyla yerine getirildi.
+
 ## 🔴✓ Birleşik paket panel kaydı ve tarayıcı görünümü kabul edildi — 28 Ekim 2026
 
 Operatör ekran görüntüsünde **AuthWire Pilot - Merkezi Windows · v1 · Birleşik paket** satırı ve
