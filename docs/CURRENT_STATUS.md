@@ -1,5 +1,31 @@
 # AuthWire current work record
 
+## Müşteri birleşik AD/GPO/SYSVOL okuma kontrolü başarılı — READ_FAILED bu kontrolde kapandı — 28 Ekim 2026
+
+Operatör panel ekranını paylaştı: **AuthWire Pilot - Merkezi Windows · v1 · Birleşik paket**.
+**“AD hedefleri ve GPO okuma kontrolü başarılı. Dağıtım henüz uygulanmadı.”**
+Kontrol zamanı **28.10.2026 17:04:16 Europe/Istanbul** (**14:04:16Z** olarak yorumlandı).
+Manifest **124360dc02e641fe6532f5058fa4915610f74d5c2de7028c5913d7cb9d431c5b**,
+taslak **5dd35e4d28f6b6495223224f89d339c4cdd595099df5ac726b812238feca0ce5** beklenen birleşik adayla eşleşiyor.
+İmza/içerik Connector tarafından doğrulanmış görünümü korunuyor.
+Ekran SHA256 **fbb76a21487778cbba71381614b6ebf4bf5faeeefb2af657a285935d29f18078**.
+Kanıt operatör ekranıdır; raw job-result/check list ayrıca alınmadı.
+
+Önceki kabul edilen **cf74295c-ec97-4edf-a15a-877b155d1740** Windows Apply /native signer preservation
+sonrası müşteri pozitif kapsam kontrolü artık doğrulandı. Önceki **READ_FAILED bu yeni kontrolde giderildi**.
+Bu snapshot zamana bağlıdır; sonraki değişiklikten önce bağımlılık ve kapsam tazeliği yeniden değerlendirilmeli.
+Üst satırdaki **GPO ve dağıtım kontrolü bekleniyor** ifadesi ürünün gerçek uygulamasının tamamlandığı anlamına gelmez.
+**Henüz SYSVOL staging, GPO link/ayar uygulaması veya endpoint dağıtımı yapılmadı.**
+
+Sonraki aşama aynı birleşik aday için kontrollü **SYSVOL staging /rollback** akışını hazırlamak ve incelemektir;
+gerçek pilot endpoint sertifika/ağ kabulü ve ürünün bütünü açık kalır.
+Linux **0.14.0-dev.43**, Windows **cf74295c**, mevcut yedek korunur; yeni tam yedek başlatılmadı.
+İlk Apply'ın örtülen iç exception'ı ve kanal hata görünürlüğü takip işi açık kalır; başarılı retry bunu açıklamaz.
+Bu alt adımın kapanışı genel matrix sayımını otomatik değiştirmez: **54/94 tamamlanan,40 açık**.
+**READY_FOR_FINAL_GUIDE=false /GUIDE_DELIVERED=false**; nihai kılavuz/ürün tamamlandı bildirimi yapılmadı.
+Ayrıntı: `docs/checkpoints/2026-10-28-combined-scope-customer-panel-accepted.json`.
+
+
 ## SYSVOL UNC düzeltmesi DC01'e başarıyla uygulandı — pozitif AD/GPO kapsam tekrarı bekliyor — 28 Ekim 2026
 
 Operatörün kontrollü ikinci **Apply** çıktısı kabul edildi: **ToolVersion 1.4.1**, kaynak
