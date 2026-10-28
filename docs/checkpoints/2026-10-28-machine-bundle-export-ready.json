@@ -1,0 +1,44 @@
+{
+  "event": "MACHINE_DEPLOYMENT_BUNDLE_EXPORT_READY",
+  "date_local": "2026-10-28",
+  "timezone": "Europe/Istanbul",
+  "pr": 104,
+  "merge": "05b23412545fd7df0bf7c657cd49f13d1bff0c1e",
+  "tested_head": "648529d31ee073d33a0c3cb1c720d0ba19ae6d8d",
+  "all_six_workflows_success": true,
+  "foundation_tests": 927,
+  "foundation_skipped": 28,
+  "helper_path": "/home/segmentiq/authwire-machine-bundle-export-20261028.py",
+  "helper_sha256": "c68f70763ee3bc7de1951501611f61f4fef6df8abdef2dc976cb25043624d8f0",
+  "public_preflight_passed_as_uid": 1000,
+  "private_database_opened_by_assistant": false,
+  "customer_draft_exported": false,
+  "operator_sudo_export_pending": true,
+  "live_radius": {
+    "active": true,
+    "pid": 1243360
+  },
+  "live_broker": {
+    "active": true,
+    "pid": 1069437
+  },
+  "services_restarted": false,
+  "gpo_changed": false,
+  "endpoint_changed": false,
+  "can_stage": false,
+  "can_apply": false,
+  "full_backup_created": false,
+  "progress": {
+    "accepted": 54,
+    "total": 94,
+    "open": 40
+  },
+  "pending": [
+    "operator combined draft export",
+    "adopt and verify main retry timing correction before deployment",
+    "Windows signing and final package approval",
+    "controlled SYSVOL staging and network application implementation",
+    "pilot endpoint enrollment and wired/wireless EAP-TLS/VLAN acceptance"
+  ],
+  "guide_ready": false
+}

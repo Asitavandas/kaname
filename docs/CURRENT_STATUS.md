@@ -23,7 +23,7 @@ pause checkpoint and an updated report with red check marks against 9 October.
 ## Birleşik makine paketi taslağı hazırlanıyor — operatör export'u bekleniyor — 28 Ekim 2026
 
 A04 içindeki enrollment/installer + ağ profili birleştirme alt adımı PR104'tedir.
-Kaynak bileşeni **e0edcd463a4da5f5f77695052bba580bd3829f28** üzerindeki altı workflow başarılıdır; teslimat helper'ı ve altı ek testi son CI kontrolüne sunulmuştur.
+PR104 birleştirildi: **05b23412545fd7df0bf7c657cd49f13d1bff0c1e**. Son test head **648529d31ee073d33a0c3cb1c720d0ba19ae6d8d** üzerinde altı workflow başarılı; genel paket **927 test /28 skipped**. Kaynak bileşeni **e0edcd463a4da5f5f77695052bba580bd3829f28**. Teslimat helper'ı ve altı ek testi bu son head'de doğrulandı.
 Sabit Linux helper'ının **--inspect-public** kontrolü uid1000 ile geçti; kaynak pinleri/özgün ağ ZIP'i doğrulandı, özel DB/TLS dosyası veya çıktı açılmadı.
 **Gerçek müşteri birleşik ZIP'i henüz oluşturulmadı.** Operatör sudo export'u bekleniyor; yalnız yeni public varlık ZIP'i yazılır, DB salt okunur transaction ile okunur.
 **requires_windows_signing=true, can_stage=false, can_apply=false**; SYSVOL/GPO/servis/endpoint/özel anahtar değişikliği yok.
