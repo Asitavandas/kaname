@@ -34,7 +34,12 @@ yapılır; tutarlı arşiv yayınlanmadan eski yedek temizlenmez. Disk alanı ö
 iki kat tahmini veri boyutu +512MiB'dir; hiçbir canlı DB'ye yazılmaz.
 
 Normal oturum/audit/rate-limit/challenge/directory-cache tabloları ve
-directory_health satırı kararlılık karşılaştırmasının dışında kalır. Ayrıca tam adı bilinen\nwindows_connector_probe_jobs, windows_candidate_verify_jobs ve windows_deployment_scope_jobs\nv1 runtime kayıtlarında yalnız geçerli polls/last_poll transport metadata'sı karşılaştırmada\nnormalize edilir; jobs/target/lease/result ve diğer bütün kayıtlar korunur. Bilinmeyen format,\nek alan, bozuk/duplicate-key JSON veya hatalı metadata ham haliyle guard içinde kalır; **yine
+directory_health satırı kararlılık karşılaştırmasının dışında kalır. Ayrıca tam adı bilinen
+windows_connector_probe_jobs, windows_candidate_verify_jobs ve windows_deployment_scope_jobs
+v1 runtime kayıtlarında yalnız geçerli polls/last_poll transport metadata'sı karşılaştırmada
+normalize edilir. Probe kuyruğunda last_poll yalnız scope/at, diğer iki kuyrukta
+scope/at/release_id içerir; her biri kendi kesin şemasıyla tanınır. jobs/target/lease/result ve diğer bütün kayıtlar korunur. Bilinmeyen format,
+ek alan, bozuk/duplicate-key JSON veya hatalı metadata ham haliyle guard içinde kalır; **yine
 de snapshot içine kopyalanırlar**. Policy, yönetici/profil, CA/sertifika/iptal,
 enrollment ve diğer kalıcı iş tabloları karşılaştırılır. Bu model servisleri
 durdurmadan iş durumunun kararlılığını denetler; bütün DB'lerin tek global

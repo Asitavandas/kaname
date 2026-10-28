@@ -1,0 +1,15 @@
+{
+  "event": "BACKUP_POLL_FIRST_FIX_APPLIED_BUT_CAPTURE_FAILED",
+  "operator_evidence": {
+    "worker_sha256": "fab31d283971b3d36d3cf4c4f480f36e32e16f7f5a627ebbd422ec9741d31288",
+    "evidence": "/var/lib/authwire-updates/backup-poll-fix-20261028-674a1ff89965474387c4a36fd09c10fe",
+    "product_processes_preserved": true,
+    "checked_utc": "2026-10-28T07:11:56.582422+00:00",
+    "phase": "capture",
+    "category": "ValueError",
+    "previous_backups_pruned": false
+  },
+  "second_fix_applied": false,
+  "new_successful_backup_accepted": false,
+  "root_cause": "Probe last_poll has exact scope/at shape; initial projection required release_id from other queue schemas."
+}

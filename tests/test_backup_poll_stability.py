@@ -1,6 +1,7 @@
 """Poll churn must not mask durable job/result changes or omit archive data."""
 import copy
 import json
+from pathlib import Path
 import sqlite3
 import tarfile
 import unittest
@@ -20,25 +21,26 @@ class BackupPollStabilityTests(unittest.TestCase):
         payload=json.dumps(value) if not isinstance(value,str) else value
         with sqlite3.connect(self.db()) as db:
             db.execute('INSERT OR REPLACE INTO runtime_settings VALUES (?,?)',(name,payload))
-    def activity(self,number):
+    def activity(self,number,name=None):
         value=copy.deepcopy(self.value)
         value['polls']=[{'id':format(number,'064x'),'until':2000000000+number}]
         value['last_poll']={'scope':'a'*64,'at':1800000000+number,'release_id':'00000000-0000-4000-8000-000000000001'}
+        if name=='windows_connector_probe_jobs':del value['last_poll']['release_id']
         return value
     def test_only_poll_metadata_is_ignored_for_all_three_queues(self):
         before=worker.db_fingerprint(self.db())
-        for name in worker.POLL_SECTIONS:self.save(name,self.activity(1))
+        for name in worker.POLL_SECTIONS:self.save(name,self.activity(1,name))
         self.assertEqual(before,worker.db_fingerprint(self.db()))
         for name in worker.POLL_SECTIONS:
             for change in ('new_job','lease','result','target'):
-                value=self.activity(2)
+                value=self.activity(2,name)
                 if change=='new_job':value['jobs'].append({'id':'another'})
                 elif change=='lease':value['jobs'][0].update(state='leased',lease_id='b'*64)
                 elif change=='result':value['jobs'][0].update(state='completed',result={'outcome':'verified'})
                 else:value['jobs'][0]['target']['vlan']=100
                 self.save(name,value)
                 self.assertNotEqual(before,worker.db_fingerprint(self.db()),(name,change))
-                self.save(name,self.activity(3))
+                self.save(name,self.activity(3,name))
         with sqlite3.connect(self.db()) as db:db.execute('DELETE FROM runtime_settings WHERE name=?',(name,))
         self.assertNotEqual(before,worker.db_fingerprint(self.db()))
     def test_real_archive_keeps_complete_poll_and_replay_metadata_during_churn(self):
@@ -46,7 +48,7 @@ class BackupPollStabilityTests(unittest.TestCase):
         def changing(items):
             nonlocal calls
             result=original(items);calls+=1
-            for name in worker.POLL_SECTIONS:self.save(name,self.activity(calls))
+            for name in worker.POLL_SECTIONS:self.save(name,self.activity(calls,name))
             return result
         with patch.object(worker,'inventory',side_effect=changing):result=worker.run()
         self.assertTrue(result['archive_read_verified'])
@@ -58,6 +60,7 @@ class BackupPollStabilityTests(unittest.TestCase):
                 value=json.loads(db.execute('SELECT payload FROM runtime_settings WHERE name=?',(name,)).fetchone()[0])
                 self.assertEqual(self.value['jobs'],value['jobs'])
                 self.assertTrue(value['polls']);self.assertIsNotNone(value['last_poll'])
+                self.assertEqual(name!='windows_connector_probe_jobs','release_id' in value['last_poll'])
             self.assertEqual([('ok',)],db.execute('PRAGMA integrity_check').fetchall())
     def test_unknown_and_malformed_payloads_keep_raw_guard(self):
         name=next(iter(worker.POLL_SECTIONS))
@@ -78,3 +81,44 @@ class BackupPollStabilityTests(unittest.TestCase):
         with patch.object(worker,'inventory',side_effect=changing),self.assertRaisesRegex(ValueError,'Business state'):
             worker.run()
         self.assertEqual([],self.archives())
+
+    def test_last_poll_shape_is_queue_specific_and_unknown_fields_stay_protected(self):
+        for name in worker.POLL_SECTIONS:
+            good=self.activity(1,name)
+            raw=json.dumps(good)
+            self.assertNotEqual(raw,worker.stable_runtime_payload(name,raw),name)
+            wrong=copy.deepcopy(good)
+            if name=='windows_connector_probe_jobs':wrong['last_poll']['release_id']='00000000-0000-4000-8000-000000000001'
+            else:del wrong['last_poll']['release_id']
+            for bad in (wrong,good|{'last_poll':good['last_poll']|{'unknown':'protected'}}):
+                raw=json.dumps(bad)
+                self.assertEqual(raw,worker.stable_runtime_payload(name,raw),name)
+
+
+class BackupProductionPollContractTests(unittest.TestCase):
+    def test_real_authenticated_poll_writers_stay_stable_for_each_queue(self):
+        # Use real engines/RSA frames/SQLite rather than hand-authored JSON shapes.
+        from tests import test_connector_jobs, test_candidate_jobs, test_scope_jobs
+        fixtures_by_queue=(test_connector_jobs.ConnectorJobTests,
+                           test_candidate_jobs.CandidateJobTests,
+                           test_scope_jobs.ScopeJobTests)
+        for fixture_class in fixtures_by_queue:
+            with self.subTest(queue=fixture_class.__name__):
+                fixture_class.setUpClass()
+                fixture=fixture_class(methodName='runTest')
+                try:
+                    fixture.setUp()
+                    fixture.jobs.poll(fixture.proof())
+                    with fixture.store.connect() as db:
+                        path=Path(db.execute('PRAGMA database_list').fetchone()[2])
+                    before=worker.db_fingerprint(path)
+                    fixture.now+=1
+                    fixture.jobs.poll(fixture.proof())
+                    self.assertEqual(before,worker.db_fingerprint(path))
+                    # Durable work creation must still change the fingerprint.
+                    if fixture_class is test_connector_jobs.ConnectorJobTests:fixture.create()
+                    else:fixture.create_job()
+                    self.assertNotEqual(before,worker.db_fingerprint(path))
+                finally:
+                    fixture.doCleanups()
+                    fixture_class.tearDownClass()
