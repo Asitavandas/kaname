@@ -1,0 +1,15 @@
+{
+  "event": "COMBINED_SCOPE_IMPLEMENTATION_STARTED",
+  "date": "2026-10-28",
+  "base": "33a3819a823313914d5ddb056c9a2e5b00718983",
+  "accepted_linux": "0.14.0-dev.42",
+  "accepted_windows": "689649c0-61df-40aa-bbfb-b84fa1cc2ac0",
+  "combined_content_browser_accepted": true,
+  "scope": "Separate read-only combined AD/GPO/SYSVOL snapshot bound to current combined target and accepted content proof",
+  "protected_network_scope_channel_preserved": true,
+  "gpo_write_authority": false,
+  "full_backup_requested": false,
+  "planned_linux_version": "0.14.0-dev.43",
+  "new_development_complete": false,
+  "live_changes_performed": false
+}
