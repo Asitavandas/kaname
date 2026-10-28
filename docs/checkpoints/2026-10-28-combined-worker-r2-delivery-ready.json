@@ -1,0 +1,23 @@
+{
+  "event": "WINDOWS_COMBINED_WORKER_R2_READY_FOR_PREPARE",
+  "merge": "01d323fab033bcc8e56d59cae0cec0328cb7f4e3",
+  "tested_head": "1fdeba003642f34e1bf13a1722b782722ba09d93",
+  "workflows_passed": 2,
+  "python_tests": 1001,
+  "skipped": 28,
+  "local_delivery_tests": 3,
+  "only_expected_current_release_corrected": true,
+  "expected_current_release": "efc5ee91-e39e-4cc4-9cc1-60b648e18cf9",
+  "release": "689649c0-61df-40aa-bbfb-b84fa1cc2ac0",
+  "script_sha256": "65bf7b7a1963c9c103764c6e1b6677cecb2b5a06d2cffc1bcb56372c9fc86cc3",
+  "helper": "/home/segmentiq/authwire-dc01-combined-worker-upgrade-r2-20261028.ps1",
+  "bytes": 125642,
+  "embedded_archive_sha256": "dffba96918da2e4295bf018f126de4297335ee4100cd5912370e97fb3b8b7509",
+  "source_files": 21,
+  "archive_unchanged": true,
+  "source_component": "157b2d4bc705539f78f982a860331e537010cab1",
+  "prepare_executed": false,
+  "apply_executed": false,
+  "gpo_apply_enabled": false,
+  "full_backup_created": false
+}

@@ -20,6 +20,23 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Windows Prepare teslimatı doğrulandı — 28 Ekim 2026
+
+PR111 merge **01d323fab033bcc8e56d59cae0cec0328cb7f4e3**; test head **1fdeba003642f34e1bf13a1722b782722ba09d93**.
+Genel ve bounded retry workflow'ları başarılı;1001 test/28 skipped, üç yerel delivery regresyon testi geçti.
+Yalnız wrapper'ın kabul edilen efc5ee91 başlangıç sürümü girdisi düzeltildi;
+21 dosyalık embedded archive ve bütün imza/ACL/channel/rollback korumaları değişmedi.
+Linux'taki eski dosyayla byte karşılaştırması, tek farkın bu sürüm girdisi olduğunu doğruladı.
+
+**Kullanılacak r2 dosyası:** /home/segmentiq/authwire-dc01-combined-worker-upgrade-r2-20261028.ps1
+SHA256 **65bf7b7a1963c9c103764c6e1b6677cecb2b5a06d2cffc1bcb56372c9fc86cc3**,125642 byte.
+Yeni release **689649c0-61df-40aa-bbfb-b84fa1cc2ac0**; beklenen current release
+**efc5ee91-e39e-4cc4-9cc1-60b648e18cf9**.
+Komut ve beklenen sonuçlar **docs/checkpoints/2026-10-28-windows-combined-worker-prepare-handoff.md** içinde kayıtlı.
+Windows'ta henüz Prepare/Apply çalıştırılmadı; sonraki işlem yalnız Prepare ve sonucunu incelemek.
+Linux dev.42 kabul edildi; GPO/endpoint uygulaması ve gerçek birleşik pozitif roundtrip hâlâ açık.
+Bu teslimat işlemi tam yedek, yeni anahtar/hesap/sertifika veya dağıtım görevi oluşturmadı.
+
 ## 🔴✓ Dev.42 canlı Linux kurulumu kabul edildi — Windows birleşik worker hazırlığı sırada — 28 Ekim 2026
 
 Operatör **COMBINED_JOBS_FINISHED /verified=true**, sürüm **0.14.0-dev.42**,
