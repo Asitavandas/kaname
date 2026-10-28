@@ -17,13 +17,18 @@ try{
  $delivery=Join-Path $PSScriptRoot '../docs/checkpoints/2026-10-28-dc01-combined-candidate.ps1'
  $dt=$null;$de=$null;$null=[Management.Automation.Language.Parser]::ParseFile($delivery,[ref]$dt,[ref]$de)
  Check ($de.Count -eq 0) 'Fixed operator delivery parses in Windows PowerShell 5.1'
+ $rd=Join-Path $PSScriptRoot '../docs/checkpoints/2026-10-28-dc01-combined-runtime.ps1'
+ $rt=$null;$re=$null;$null=[Management.Automation.Language.Parser]::ParseFile($rd,[ref]$rt,[ref]$re)
+ Check ($re.Count -eq 0) 'Fixed combined runtime delivery parses in Windows PowerShell 5.1'
  $pins=Get-Content -LiteralPath (Join-Path $FixtureDirectory 'pins.json') -Raw|ConvertFrom-Json
  $draft=Join-Path $FixtureDirectory 'draft.zip'
  foreach($name in @('traversal','large','content','apply')){Reject {Read-AuthWireCombinedDraft (Join-Path $FixtureDirectory ($name+'.zip')) $pins.$name} ('Reject '+$name)}
  Reject {Read-AuthWireCombinedDraft $draft ('0'*64)} 'Wrong outer hash'
  $d=Read-AuthWireCombinedDraft $draft $pins.draft
  Check ($d.Files.Count -eq 18) 'Complete public draft accepted'
- $template=Join-Path $PSScriptRoot '../kaname/device_client/Install-AuthWire.ps1'
+ $template=Join-Path $FixtureDirectory 'reviewed-installer.ps1'
+ $templateSource=Join-Path $PSScriptRoot '../kaname/device_client/Install-AuthWire.ps1'
+ [IO.File]::WriteAllText($template,[IO.File]::ReadAllText($templateSource).Replace("`r`n","`n"),[Text.UTF8Encoding]::new($false))
  $templateHash=(Get-FileHash -LiteralPath $template -Algorithm SHA256).Hash.ToLowerInvariant()
  Reject {New-AuthWireCombinedInstaller ([IO.File]::ReadAllBytes($template)) ('0'*64) $d.Files} 'Unreviewed template rejected'
  $cert=New-SelfSignedCertificate -Type CodeSigningCert -Subject 'CN=AuthWire combined isolated fixture' -CertStoreLocation 'Cert:\LocalMachine\My' -Provider 'Microsoft Software Key Storage Provider' -KeyLength 3072 -HashAlgorithm SHA256 -KeyUsage DigitalSignature -KeyUsageProperty Sign -KeyExportPolicy NonExportable -NotAfter (Get-Date).AddDays(1)
@@ -46,6 +51,38 @@ try{
  Check (-not $prepared.CanStage -and -not $prepared.CanApplyGpo -and -not $prepared.ArtifactExecuted -and -not $prepared.AdChanged -and -not $prepared.ServicesChanged) 'No apply, execution or infrastructure change claim'
  Check ((Get-AuthWireCombinedSignerSnapshot $cert $metadata.Native.KeyName $metadata.Native.UniqueName $metadata.KeySddl) -ceq $before) 'Native key, marker, certificate and ACL preserved'
  Check ((Get-FileHash -LiteralPath $draft -Algorithm SHA256).Hash.ToLowerInvariant() -ceq $pins.draft) 'Original input ZIP unchanged'
+ # Read-only verifier uses only public inputs; no signer access or signing API.
+ Import-Functions (Join-Path $PSScriptRoot '../windows/connector/Test-AuthWireCombinedContent.ps1')
+ $verifyParameters=@{ConnectorId=([guid]::ParseExact($parent.Substring($parent.Length-32),'N')).ToString('D');PlanId=$prepared.PlanId;PlanVersion=$prepared.PlanVersion;DraftSha256=$prepared.DraftSha256;ManifestSha256=$prepared.ManifestSha256;PublisherThumbprint=$cert.Thumbprint;ServiceSid=$callParameters.ServiceSid}
+ $savedSnapshotFunction=(Get-Item Function:Get-AuthWireCombinedSignerSnapshot).ScriptBlock
+ try{
+  function global:Get-AuthWireCombinedSignerSnapshot {throw 'PRIVATE_SIGNER_ACCESS_FORBIDDEN'}
+  function global:Set-AuthenticodeSignature {throw 'SIGNING_FORBIDDEN'}
+  $readonly=Test-AuthWireCombinedContent @verifyParameters
+  Check ($readonly.ContentVerified -and $readonly.SignaturesVerified -eq 3 -and -not $readonly.PrivateKeyOpened -and -not $readonly.CanStage) 'Public-only verifier succeeds while private/signing functions are denied'
+  $badPin=$verifyParameters.Clone();$badPin.ManifestSha256='0'*64
+  Reject {Test-AuthWireCombinedContent @badPin} 'Readonly wrong manifest pin rejected'
+  Reject {Test-AuthWireServiceCombinedContent @verifyParameters} 'Administrator cannot claim service SID proof'
+ }finally{Set-Item Function:global:Get-AuthWireCombinedSignerSnapshot $savedSnapshotFunction;Remove-Item Function:Set-AuthenticodeSignature -Force}
+ # Actual non-admin virtual SCM account runs the same service-bound verifier.
+ $probe=Join-Path $PSScriptRoot '../windows/connector/Test-AuthWireCombinedService.ps1'
+ $helper=Join-Path $PSScriptRoot '../windows/connector/Test-AuthWireCombinedContent.ps1'
+ $probeName='AuthWireLogonProbe-'+[guid]::NewGuid().ToString('N')
+ $sidHash=[Security.Cryptography.SHA1]::Create()
+ try{$sidBytes=$sidHash.ComputeHash([Text.Encoding]::Unicode.GetBytes($probeName.ToUpperInvariant()))}finally{$sidHash.Dispose()}
+ $virtualSid='S-1-5-80-'+((0..4|ForEach-Object{[BitConverter]::ToUInt32($sidBytes,$_ * 4)}) -join '-')
+ $ownedPaths=@((Get-Item -LiteralPath $parent);(Get-ChildItem -LiteralPath $parent -Recurse -Force))
+ try{
+  foreach($item in $ownedPaths){if($item.PSIsContainer){Set-AuthWireCandidateAcl $item.FullName $virtualSid -Directory}else{Set-AuthWireCandidateAcl $item.FullName $virtualSid}}
+  $signed=Set-AuthenticodeSignature -LiteralPath $helper -Certificate $cert -HashAlgorithm SHA256
+  Check ($signed.Status.ToString() -ceq 'Valid') 'Reviewed keyless SCM helper signed'
+  . $probe
+  $servicePins=$verifyParameters.Clone();$servicePins.ServiceSid=$virtualSid
+  $runtime=Invoke-AuthWireServiceProbeCore -RuntimeAccount ('NT SERVICE\'+$probeName) -ExpectedSid $virtualSid -PublisherThumbprint $cert.Thumbprint -Pins $servicePins -ServiceName $probeName
+  Write-Host ($runtime|ConvertTo-Json -Depth 6)
+  Check ($runtime.ProbeVerified -and $runtime.CandidateVerified -and $runtime.ServiceLogonVerified -and $runtime.RuntimeSid -ceq $virtualSid) 'Actual non-admin SCM verifies combined content and runtime SID'
+  Check ($runtime.TemporaryServiceRemoved -and $runtime.TemporaryBinaryRemoved -and $runtime.TemporaryVerifierRemoved -and $runtime.TemporaryResultDirectoryRemoved -and $runtime.CleanupErrors.Count -eq 0) 'Temporary combined SCM artifacts cleaned up'
+ }finally{foreach($item in $ownedPaths){if($item.PSIsContainer){Set-AuthWireCandidateAcl $item.FullName $callParameters.ServiceSid -Directory}else{Set-AuthWireCandidateAcl $item.FullName $callParameters.ServiceSid}}}
  $result=Invoke-AuthWireCombinedCandidate @callParameters -Mode Verify
  Check ($result.ManifestSha256 -ceq $prepared.ManifestSha256) 'Independent Verify accepts prepared directory'
  $again=Invoke-AuthWireCombinedCandidate @callParameters -Mode Prepare
