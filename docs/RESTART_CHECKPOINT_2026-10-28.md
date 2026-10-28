@@ -1,5 +1,37 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## 🔴✓ Kalıcı Windows birleşik worker Apply kabul edildi — panel içerik görevi sırada — 28 Ekim 2026
+
+Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY /Mode Apply /Stage applied /Error=null**
+sonucunu paylaştı. **ServiceTransitioned=true**; kalıcı Connector
+**efc5ee91-e39e-4cc4-9cc1-60b648e18cf9 → 689649c0-61df-40aa-bbfb-b84fa1cc2ac0** geçişi kabul edildi.
+Kaynak bileşeni **157b2d4bc705539f78f982a860331e537010cab1**; SourceSignaturesValid=true,
+ChangesMayBePartial=false. Mevcut hesap, eşleştirme, channel key, eski kaynaklar ve signer snapshot korundu.
+**AD/GPO, signer key ACL ve trust store değişmedi; yeni anahtar/hesap/servis oluşturulmadı; CanApplyGpo=false.**
+Kanıt: **C:\ProgramData\AuthWire-ConnectorUpgradeEvidence-689649c061df40aabbfbb84fa1cc2ac0-69466a1b270542f9832734e1055622f7**.
+Tam çıktı **docs/checkpoints/2026-10-28-customer-combined-worker-applied.json** içinde kayıtlı.
+
+İncelenen source'da Apply başarıdan önce yeni release/runtime kimliğine bağlı taze HTTPS health ile
+Probe/Candidate/Scope/**CombinedChannelVerified** kapılarını zorunlu tutar.
+Dolayısıyla applied sonucu bu kurulum kapısının geçtiğine dair operatör kanıtıdır;
+asistanın bağımsız DC01 health/servis okuması veya pozitif birleşik aday doğrulaması değildir.
+Önceki paket için ArchivePath kaydedildi; bu müşteride geri alma çalıştırılmış sayılmaz.
+
+**Sıradaki adım:** paneli Ctrl+F5 ile yenile → **İmzalı dağıtım adayları** bölümünde
+**AuthWire Pilot - Merkezi Windows · v1 · Birleşik paket** satırını seç →
+**Doğrulamayı önizle → Doğrulamayı gönder** → yaklaşık30–60 saniye sonra **Yenile**.
+Hedef manifest **124360dc02e641fe6532f5058fa4915610f74d5c2de7028c5913d7cb9d431c5b**,
+taslak **5dd35e4d28f6b6495223224f89d339c4cdd595099df5ac726b812238feca0ce5** korunur.
+Ağ profilleri satırındaki eski doğrulama birleşik paket kanıtı olarak kullanılmaz.
+Beklenen birleşik satır mesajı: **“İmza ve içerik Connector tarafından doğrulandı. GPO ve dağıtım kontrolü bekleniyor.”**
+Görev queued/leased iken tekrar gönderilmez; önce Yenile ile aynı görevin sonucu izlenir.
+
+Henüz birleşik görev gönderildiği veya gerçek pozitif content sonucu alındığı bildirilmedi.
+Taze birleşik AD/GPO/SYSVOL, staging/rollback, gerçek endpoint kabulü ve ürünün bütünü açık.
+Linux dev.42; Windows son kabul689649c0; **54/94 tamam,40 açık**; nihai kılavuz kapısı değişmedi.
+Her işlemden sonra sonuç/kanıt/devam kaydı eklendi; bu adım yeni tam yedek veya GPO/cihaz dağıtımı değildir.
+
+
 ## 🔴✓ Windows birleşik worker Prepare kabul edildi — Apply sırada — 28 Ekim 2026
 
 Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY /ToolVersion1.3.0 /Mode Prepare /Stage prepared**
