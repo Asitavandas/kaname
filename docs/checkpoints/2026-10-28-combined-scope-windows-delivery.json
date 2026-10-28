@@ -1,0 +1,10 @@
+{
+  "source_component": "c67adc15b731dbb7876cef1ed848ee1ce483b8bb",
+  "release": "e6d734b1-59c8-48e5-8a6e-c40b43be3114",
+  "expected_current_release": "689649c0-61df-40aa-bbfb-b84fa1cc2ac0",
+  "archive_sha256": "f348716cddef27503c1d8b1e698963d1612193ee9a74bd7df06e58588cae0ddd",
+  "script_sha256": "44d7be4e9c3ff2b473e6beed69e498d5976fc49f4341ff48310c6826b5bb54f2",
+  "source_files": 24,
+  "bytes": 134621,
+  "applied": false
+}
