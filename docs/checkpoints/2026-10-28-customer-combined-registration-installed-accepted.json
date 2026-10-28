@@ -1,0 +1,68 @@
+{
+  "event": "CUSTOMER_COMBINED_REGISTRATION_DEV41_INSTALLED_ACCEPTED",
+  "operator_result": {
+    "event": "COMBINED_REGISTRATION_FINISHED",
+    "verified": true,
+    "version": "0.14.0-dev.41",
+    "release": "ae21bb729cf57215b13546fa3e4cb8d2202ca68f",
+    "changed": true,
+    "checks": {
+      "protected_files": true,
+      "broker_process": true,
+      "radius_process": true,
+      "timers": true,
+      "business_state": true
+    },
+    "radius_active": true,
+    "radius_restarted": false,
+    "radius_pid_before": "1243360",
+    "radius_pid_after": "1243360",
+    "broker_process_preserved": true,
+    "policy_changed": false,
+    "deployment_plans_created": false,
+    "gpo_changed": false,
+    "connector_binding_written": false,
+    "certificates_changed": false,
+    "windows_endpoints_changed": false,
+    "windows_packages_changed": false,
+    "ad_gpo_changed": false,
+    "native_module_changed": false,
+    "backup_workers_changed": false,
+    "full_data_backup_created": false,
+    "backup_timer_preserved": true,
+    "pairing_actions_executed": false,
+    "probe_jobs_created": false,
+    "candidate_jobs_created": false,
+    "scope_jobs_created": false,
+    "gpo_apply_enabled": false,
+    "combined_worker_delivery_pending": true,
+    "candidate_records_created": false,
+    "combined_receipt_registration_added": true,
+    "operator_browser_acceptance_pending": true,
+    "real_endpoint_acceptance_pending": true,
+    "evidence": "/var/lib/authwire-updates/combined-registration-dev41-20261028T094925Z-b9c1e309"
+  },
+  "panel_reads": {
+    "before_all_statuses_200": true,
+    "after_all_statuses_200": true,
+    "authenticated": true,
+    "loopback": true
+  },
+  "assistant_readonly_observation": {
+    "version": "0.14.0-dev.41",
+    "radius_state": "active",
+    "radius_pid": "1243360",
+    "broker_state": "active",
+    "broker_pid": "1069437",
+    "panel_state": "active",
+    "panel_pid": "1991730",
+    "independent_business_database_read": false
+  },
+  "next_step": "Register the previously accepted exact combined Prepare operator_result via panel preview/record; do not re-sign or recreate it.",
+  "overall": {
+    "completed": 54,
+    "total": 94,
+    "open": 40
+  },
+  "final_guide_ready": false
+}

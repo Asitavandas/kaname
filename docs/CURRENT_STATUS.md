@@ -20,6 +20,31 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Dev.41 Linux kurulumu kabul edildi — birleşik panel kaydı bekliyor — 28 Ekim 2026
+
+Operatör **COMBINED_REGISTRATION_FINISHED /verified=true**, sürüm **0.14.0-dev.41**,
+release **ae21bb729cf57215b13546fa3e4cb8d2202ca68f** sonucunu paylaştı.
+Korunan dosyalar, broker/RADIUS süreçleri, timer ve iş durumu kontrolleri geçti.
+RADIUS PID **1243360** ve broker PID **1069437** korundu; RADIUS yeniden başlatılmadı.
+Önce/sonra bütün authenticated loopback panel okumaları **200**; aday/Connector/dağıtım API'leri erişilebilir.
+Policy, plan, sertifika, Windows paket/cihaz, AD/GPO, native modül ve yedek worker değişmedi;
+tam yedek alınmadı, yedek timer korundu. Yeni kayıt veya görev oluşturulmadı.
+
+Kanıt: **/var/lib/authwire-updates/combined-registration-dev41-20261028T094925Z-b9c1e309**.
+Asistan ayrıca salt okunur sürüm ve systemd kontrolünde dev.41, RADIUS/broker active ve aynı PID'leri,
+panel active/PID **1991730** durumunu gördü. Bu okuma DB iş durumu kanıtını bağımsız tekrar üretmez;
+iş durumu korunumu operatör installer çıktısına dayanır.
+
+**Tarayıcı kabulü ve birleşik operatör kaydı henüz bekliyor.**
+Önceden kabul edilmiş **WINDOWS_COMBINED_SIGNING_DELIVERY /Prepare /verified** çıktısının
+yalnız operator_result bölümü tekrar aramayı gerektirmemek için
+**docs/checkpoints/2026-10-28-combined-registration-panel-receipt.json** içine aynen ayrıldı.
+Yeni Windows işi çalıştırılmadı veya paket yeniden imzalanmadı. Panelde
+**İmzalı dağıtım adayları → Hazırlık sonucunu kaydet → Önizle → Kaydet** yolu kullanılacak.
+Bu kayıt sonucundan sonra birleşik typed kalıcı Connector worker/job kanalı hazırlanacak.
+**combined_worker_delivery_pending=true, GPO apply=false**, gerçek cihaz kabulü açık.
+Genel **54/94 /40 açık**, nihai kılavuz kapısı değişmedi. Tamamlanan bu adım ve sonraki adım kaydedildi.
+
 ## Birleşik paket panel kaydı hazır — dev.41 canlı uygulama bekliyor — 28 Ekim 2026
 
 **Kayıt tercihi:** Kullanıcı her tamamlanan işlemin ve doğrulama sonucunun kalıcı kayda alınmasını istedi.

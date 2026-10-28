@@ -18,6 +18,17 @@ Timer etkin; ürün servisleri durdurulmadı/yeniden başlatılmadı.
 Bu arşivde veri restore veya tam OS boot restore provası yapılmadı; off-host kopya ve Windows/DC01 yedeği ayrı.
 Henüz reboot yapılmış veya açılış sonrası sağlık doğrulanmış sayılmaz.
 
+## Son güncelleme — dev.41 kuruldu; birleşik panel kaydı bekliyor
+
+Dev.41 kurulum sonucu doğrulandı. RADIUS1243360/broker1069437 korundu; panel active1991730.
+Kanıt: /var/lib/authwire-updates/combined-registration-dev41-20261028T094925Z-b9c1e309
+Yeni kayıt/görev/GPO uygulaması yok. Tarayıcı kabulü bekler.
+Sıradaki işlem: mevcut başarılı birleşik Prepare çıktısının operator_result bölümünü
+İmzalı dağıtım adayları/Hazırlık sonucunu kaydet alanında önizleyip kaydetmek.
+Hazır JSON: docs/checkpoints/2026-10-28-combined-registration-panel-receipt.json.
+Ardından typed birleşik kalıcı worker/job entegrasyonu.54/94,40 açık; final guide ready=false.
+Aşağıdaki dev.41 uygulama-bekliyor notu tarihsel hazırlık kaydıdır; kurulum artık tamamlandı.
+
 ## Güncel devam adımı — birleşik kayıt dev.41 hazır, canlı uygulama bekliyor
 
 Kullanıcı her tamamlanan işlemi GitHub'a kayıt etme tercihini yineledi; tam yedek her işlemde alınmayacak.
