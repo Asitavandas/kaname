@@ -14,9 +14,9 @@ const assert = require('node:assert/strict');
    for(const e of document.querySelectorAll('[hidden]'))e.hidden=false;
    window.$=id=>document.getElementById(id);window.authGeneration=1;window.allowWrite=true;
    window.can=(resource,write)=>!write||window.allowWrite;window.rows=[];window.recordCalls=0;window.verifyCalls=0;window.workerReady=false;window.verifyJobs=[];
-   window.scopeReady=false;window.scopeJobs=[];window.combinedScopeJobs=[];window.combinedScopeReady=false;window.combinedScopeCalls=0;window.combinedJobs=[];window.combinedReady=false;window.combinedCalls=0;window.scopeCalls=0;
+   window.stagingReady=false;window.stagingJobs=[];window.stagingCalls=0;window.scopeReady=false;window.scopeJobs=[];window.combinedScopeJobs=[];window.combinedScopeReady=false;window.combinedScopeCalls=0;window.combinedJobs=[];window.combinedReady=false;window.combinedCalls=0;window.scopeCalls=0;
    window.api=async(path,value)=>{
-    if(path==='/api/deployment/candidates')return {revision:10,candidates:window.rows,can_apply:false,verification_worker_ready:window.workerReady,verification_jobs:window.verifyJobs,scope_worker_ready:window.scopeReady,scope_verification_jobs:window.scopeJobs,combined_verification_jobs:window.combinedJobs,combined_scope_worker_ready:window.combinedScopeReady,combined_scope_verification_jobs:window.combinedScopeJobs,combined_worker_ready:window.combinedReady};
+    if(path==='/api/deployment/candidates')return {revision:10,candidates:window.rows,can_apply:false,verification_worker_ready:window.workerReady,verification_jobs:window.verifyJobs,scope_worker_ready:window.scopeReady,scope_verification_jobs:window.scopeJobs,combined_verification_jobs:window.combinedJobs,combined_scope_worker_ready:window.combinedScopeReady,combined_scope_verification_jobs:window.combinedScopeJobs,combined_worker_ready:window.combinedReady,staging_preview_worker_ready:window.stagingReady,staging_preview_jobs:window.stagingJobs};
     if(path==='/api/deployment/candidates/preview')return {id:value.registration_id,plan_id:'<img src=x onerror=alert(1)>',plan_version:1,gpo_id:'gpo',manifest_sha256:'abc',preview_hash:'a'.repeat(64)};
     if(path==='/api/deployment/candidates/record'){
      window.recordCalls++;window.rows=[{id:value.registration_id,plan_id:'plan',plan_version:1,state:'operator_reported',manifest_sha256:'abc'}];
@@ -26,6 +26,10 @@ const assert = require('node:assert/strict');
     if(path==='/api/deployment/candidates/verify/create'){
      window.verifyCalls++;window.verifyJobs=[{id:value.job_id,candidate_id:value.candidate_id,state:'queued',outcome:null}];
      throw Object.assign(new Error('lost verify response'),{status:0});
+    }
+    if(path==='/api/deployment/candidates/staging-preview/preview')return {job_id:value.job_id,operation:value.operation,preview_hash:'f'.repeat(64),read_only:true,can_apply:false,target:{candidate_id:value.candidate_id,manifest_sha256:'abc',draft_sha256:'d'.repeat(64),network_candidate_id:'network-fixture',machine_profile_version:3,target_count:200,target_sids_sha256:'b'.repeat(64),content_result_sha256:'c'.repeat(64)}};
+    if(path==='/api/deployment/candidates/staging-preview/create'){
+     window.stagingCalls++;window.stagingJobs=[{id:value.job_id,candidate_id:value.candidate_id,state:'queued',outcome:null}];throw Object.assign(new Error('lost staging preview response'),{status:0});
     }
     if(path==='/api/deployment/candidates/combined-scope/preview')return {job_id:value.job_id,operation:value.operation,preview_hash:'e'.repeat(64),read_only:true,can_apply:false,target:{candidate_id:value.candidate_id,manifest_sha256:'abc',draft_sha256:'d'.repeat(64),network_candidate_id:'network-fixture',machine_profile_version:3,target_count:200,target_sids_sha256:'b'.repeat(64),content_result_sha256:'c'.repeat(64)}};
     if(path==='/api/deployment/candidates/combined-scope/create'){
@@ -112,6 +116,26 @@ const assert = require('node:assert/strict');
   assert.match(await combined.textContent(),/AD hedefleri ve GPO okuma kontrolü başarılı/);
 
 
+  await page.evaluate(()=>{window.allowWrite=true;window.stagingReady=true;window.rows[1].content_verified=true;window.rows[1].state='content_verified';return loadCandidateStatus();});
+  await page.getByRole('button',{name:'Paket hazırlığını önizle',exact:true}).click();
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/SYSVOL dosyası yazılmayacak/);
+  await page.getByRole('button',{name:'Hazırlık önizlemesini gönder',exact:true}).click();
+  await page.waitForFunction(()=>window.stagingCalls===1&&document.getElementById('dep-candidate-list').textContent.includes('önizleme sonucu bekleniyor'));
+  assert.equal(await page.evaluate(()=>window.stagingCalls),1);
+  assert.equal(await page.getByRole('button',{name:'Paket hazırlığını önizle',exact:true}).isDisabled(),true);
+  await page.evaluate(()=>{
+   window.stagingJobs[0].state='completed';window.stagingJobs[0].outcome='staging_preview_verified';
+   Object.assign(window.rows[1],{staging_preview_verified:true,staging_preview_fresh:true,staging_preview_sha256:'f'.repeat(64),staging_preview:{relative_destination:'Machine/AuthWire-fixture-v1-abc',file_count:20,total_bytes:620,checked_at:Math.floor(Date.now()/1000),files:Array.from({length:20},(_,i)=>({Path:i===0?'<img src=x onerror=alert(1)>':'file-'+i,Size:31,Sha256:'a'.repeat(64)}))}});
+   return loadCandidateStatus();
+  });
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/Önerilen klasör: Machine/);
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/SYSVOL dosyası yazılmadı/);
+  assert.equal(await page.locator('#dep-candidate-list table tr').count(),21);
+  assert.equal(await page.locator('#dep-candidate-list img').count(),0);
+  await page.evaluate(()=>{window.rows[1].staging_preview_fresh=false;window.allowWrite=false;return loadCandidateStatus();});
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/güncel kontrol gerekiyor/);
+  assert.equal(await page.getByRole('button',{name:'Paket hazırlığını önizle',exact:true}).count(),0);
+  await page.evaluate(()=>{window.allowWrite=true;candidateControls();});
   await page.locator('#dep-candidate-open').click();
   await page.locator('#dep-candidate-json').fill('private draft');
   await page.evaluate(()=>{authGeneration++;resetCandidateRegistration();});

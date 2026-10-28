@@ -21,6 +21,7 @@ from kaname.connector_jobs import ConnectorJobs, OPERATION
 from kaname.candidate_jobs import CandidateJobs
 from kaname.combined_jobs import CombinedJobs
 from kaname.combined_scope_jobs import CombinedScopeJobs
+from kaname.staging_preview_jobs import StagingPreviewJobs
 from tests.test_combined_candidate_registration import combined_receipt
 from kaname.scope_jobs import ScopeJobs,target_sids_hash
 from kaname.deployment_candidates import DeploymentCandidates
@@ -40,13 +41,15 @@ def main():
         (root/'base.json').write_text(json.dumps(base),encoding='ascii')
         original_scope_target=ScopeJobs._target
         original_combined_scope_target=CombinedScopeJobs._target
+        original_staging_target=StagingPreviewJobs._target
         original=Handler.connector_peer
         def fixture_peer(handler):
             if (root/'case.txt').exists() and ((root/'case.txt').read_text().strip()=='offline' or
                     ((root/'case.txt').read_text().strip()=='candidate-offline' and handler.path.startswith('/api/connector/v1/candidates/')) or
                     ((root/'case.txt').read_text().strip()=='scope-offline' and handler.path.startswith('/api/connector/v1/scope/')) or
                     ((root/'case.txt').read_text().strip()=='combined-offline' and handler.path.startswith('/api/connector/v1/combined/')) or
-                    ((root/'case.txt').read_text().strip()=='combined-scope-offline' and handler.path.startswith('/api/connector/v1/combined-scope/'))):
+                    ((root/'case.txt').read_text().strip()=='combined-scope-offline' and handler.path.startswith('/api/connector/v1/combined-scope/')) or
+                    ((root/'case.txt').read_text().strip()=='staging-preview-offline' and handler.path.startswith('/api/connector/v1/staging-preview/'))):
                 handler.respond(503,{'error':'FIXTURE_OFFLINE'});return
             original(handler)
         Handler.connector_peer=fixture_peer
@@ -159,6 +162,23 @@ def main():
                 sr=cs.status()['jobs'][0]['result']
                 assert sr['outcome']=='combined_scope_snapshot_rejected' and sr['reason']=='CONTENT_REJECTED' and sr['checks']==[]
                 (root/'combined-scope-rejected').write_text('verified signed child rejection',encoding='ascii')
+                # Isolated negative read only: use the same fixed content target,
+                # then let the genuine AllSigned child fail without customer AD.
+                StagingPreviewJobs._target=fixture_combined_scope_target
+                staging=StagingPreviewJobs(candidates);end=time.monotonic()+90
+                while not staging.status()['worker_ready']:
+                    if process.poll() is not None or time.monotonic()>end:raise RuntimeError('Staging preview capability missing')
+                    time.sleep(.25)
+                intent={'expected_revision':store.snapshot()['revision'],'job_id':str(uuid.uuid4()),'candidate_id':combined_request['registration_id'],'operation':'combined.staging.preview.v1'}
+                preview=staging.preview(intent);staging.create(intent|{'preview_hash':preview['preview_hash']},str(uuid.uuid4()))
+                end=time.monotonic()+90
+                while staging.status()['jobs'][0]['state']!='completed':
+                    if process.poll() is not None or time.monotonic()>end:raise RuntimeError('Staging preview result missing')
+                    time.sleep(.25)
+                with store.connect() as db:
+                    result=staging._read(db)['jobs'][0]['result']
+                assert result['outcome']=='staging_preview_rejected' and result['preview'] is None and result['preview_sha256']==''
+                (root/'staging-preview-rejected').write_text('verified genuine signed child rejection',encoding='ascii')
                 process.wait(timeout=720)
                 if process.returncode:raise RuntimeError('Native service fixture failed')
             result=json.loads((root/'service-result.json').read_text(encoding='utf-8-sig'))
@@ -168,12 +188,13 @@ def main():
             assert result['scope_channel_required'] and result['scope_channel_failed_upgrade_rollback']
             assert result['combined_channel_required'] and result['combined_channel_failed_upgrade_rollback']
             assert result['combined_scope_channel_required'] and result['combined_scope_channel_failed_upgrade_rollback']
+            assert result['staging_preview_channel_required'] and result['staging_preview_channel_failed_upgrade_rollback']
             assert result['fresh_public_control'] and result['fresh_control_modes']==['Inspect','Start','Start','Stop','Start','Remove']
             assert server.connector_pairing.status()['online'] and not server.connector_pairing.status()['can_apply']
             after=store.snapshot()
             assert snapshot['config']==after['config'] and snapshot['policies']==after['policies']
             # Scope queue creation and signed completion each add an audit revision.
-            assert after['revision']==snapshot['revision']+11 and len(store.audit())==len(audit)+11, (after['revision']-snapshot['revision'],len(store.audit())-len(audit))
+            assert after['revision']==snapshot['revision']+13 and len(store.audit())==len(audit)+13, (after['revision']-snapshot['revision'],len(store.audit())-len(audit))
             status=jobs.status()
             assert status['jobs'][0]['state']=='completed' and status['jobs'][0]['result']['release_id']==result['release_id']
             assert status['worker_probe_ready'] and not status['can_apply']
@@ -185,6 +206,7 @@ def main():
             if process is not None and process.returncode:print(log[-12000:])
             ScopeJobs._target=original_scope_target
             CombinedScopeJobs._target=original_combined_scope_target
+            StagingPreviewJobs._target=original_staging_target
             server.shutdown();server.server_close();thread.join();Handler.connector_peer=original
 
 if __name__=='__main__':main()

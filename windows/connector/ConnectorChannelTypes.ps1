@@ -58,6 +58,38 @@ public static class ChannelTypesV1 {
    }
   }
  }
+ public static string PostStagingPreview(string baseUrl,string fqdn,string pin,string path,string json){
+  Uri root;if(!Uri.TryCreate(baseUrl,UriKind.Absolute,out root)||root.Scheme!="https"||root.Host!=fqdn||root.UserInfo!=""||root.Query!=""||root.Fragment!=""||root.AbsolutePath!="/"||!Regex.IsMatch(pin,"\\A[0-9a-f]{64}\\z")||
+    (path!="/api/connector/v1/staging-preview/poll"&&path!="/api/connector/v1/staging-preview/result"))throw new InvalidOperationException("CONNECTOR_HTTPS_CONFIGURATION_REJECTED");
+  byte[] body=new UTF8Encoding(false,true).GetBytes(json);if(body.Length>(path=="/api/connector/v1/staging-preview/result"?32768:4096))throw new InvalidOperationException("CONNECTOR_HTTPS_BODY_LIMIT");
+  using(var handler=new HttpClientHandler()){
+   handler.SslProtocols=SslProtocols.Tls12;handler.AllowAutoRedirect=false;handler.UseProxy=false;handler.Proxy=null;
+   handler.UseCookies=false;handler.UseDefaultCredentials=false;handler.Credentials=null;handler.PreAuthenticate=false;
+   handler.MaxResponseHeadersLength=16;handler.AutomaticDecompression=DecompressionMethods.None;
+   handler.CheckCertificateRevocationList=true;
+   handler.ServerCertificateCustomValidationCallback=delegate(HttpRequestMessage message,X509Certificate2 cert,X509Chain chain,SslPolicyErrors errors){
+    if(errors!=SslPolicyErrors.None||cert==null)return false;
+    if(DateTime.UtcNow<cert.NotBefore.ToUniversalTime()||DateTime.UtcNow>=cert.NotAfter.ToUniversalTime())return false;
+    using(var sha=SHA256.Create())return BitConverter.ToString(sha.ComputeHash(cert.RawData)).Replace("-","").ToLowerInvariant()==pin;
+   };
+   using(var client=new HttpClient(handler)){
+    client.Timeout=TimeSpan.FromSeconds(5);client.MaxResponseContentBufferSize=4096;
+    using(var timeout=new CancellationTokenSource(5000))
+    using(var request=new HttpRequestMessage(HttpMethod.Post,new Uri(root,path))){
+     request.Headers.ConnectionClose=true;request.Headers.Accept.ParseAdd("application/json");
+     request.Content=new ByteArrayContent(body);request.Content.Headers.ContentType=new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+     try{using(var response=client.SendAsync(request,HttpCompletionOption.ResponseContentRead,timeout.Token).GetAwaiter().GetResult()){
+      var content=response.Content;var type=content.Headers.ContentType;
+      if(response.StatusCode!=HttpStatusCode.OK||content.Headers.ContentLength>4096||content.Headers.ContentEncoding.Count!=0||type==null||
+       !String.Equals(type.MediaType,"application/json",StringComparison.OrdinalIgnoreCase)||
+       (type.CharSet!=null&&!String.Equals(type.CharSet,"utf-8",StringComparison.OrdinalIgnoreCase)))throw new InvalidOperationException();
+      byte[] bytes=content.ReadAsByteArrayAsync().GetAwaiter().GetResult();if(bytes.Length>4096)throw new InvalidOperationException();
+      return new UTF8Encoding(false,true).GetString(bytes);
+     }}catch{throw new InvalidOperationException("CONNECTOR_HTTPS_REJECTED");}
+    }
+   }
+  }
+ }
  public static string Frame(string json){var m=Regex.Match(json,"\\A\\s*\\{\\s*\"frame\"\\s*:\\s*\"([A-Za-z0-9+/=]{1,2732})\"\\s*\\}\\s*\\z");if(!m.Success)throw new InvalidOperationException("CONNECTOR_REPLY_REJECTED");return m.Groups[1].Value;}
  static bool FlatJob(string json,string[] names){
   var head=Regex.Match(json,"\\A\\s*\\{(.*)\\}\\s*\\z",RegexOptions.Singleline);if(!head.Success)return false;

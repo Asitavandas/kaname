@@ -126,7 +126,7 @@ def inventory(items):
 
 
 POLL_SECTIONS = frozenset(('windows_connector_probe_jobs', 'windows_candidate_verify_jobs',
-                           'windows_deployment_scope_jobs', 'windows_combined_verify_jobs', 'windows_combined_scope_jobs'))
+                           'windows_deployment_scope_jobs', 'windows_combined_verify_jobs', 'windows_combined_scope_jobs', 'windows_staging_preview_jobs'))
 
 
 def stable_runtime_payload(name, payload):
@@ -136,7 +136,7 @@ def stable_runtime_payload(name, payload):
     entire original row, including replay IDs and last_poll. Unknown/malformed
     structures retain their exact original bytes in the stability guard.
     """
-    if name not in POLL_SECTIONS or type(payload) is not str or len(payload) > 100000:
+    if name not in POLL_SECTIONS or type(payload) is not str or len(payload) > (1048576 if name == 'windows_staging_preview_jobs' else 100000):
         return payload
     def unique(pairs):
         result = {}

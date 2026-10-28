@@ -77,6 +77,7 @@ try{
  Check ($p.Preview.read_only -and -not $p.Preview.can_stage -and -not $p.Preview.can_apply_gpo -and -not $p.Preview.writer_available -and $p.Preview.requires_new_write_approval) 'proposal grants no execution authority'
  Check ($p.Preview.expires_at-$p.Preview.checked_at -eq 90) 'bounded proposal lifetime'
  Check ($p.Preview.rollback.relative_directory -ceq $p.Preview.relative_destination -and $p.Preview.rollback.requires_ownership_journal -and $p.Preview.rollback.requires_exact_staged_tree -and $p.Preview.rollback.drift_requires_review -and -not $p.Preview.rollback.delete_existing_data) 'rollback is an exact ownership-bound requirement, not implemented delete'
+ if($env:AUTHWIRE_STAGING_WIRE_OUTPUT){[IO.File]::WriteAllText($env:AUTHWIRE_STAGING_WIRE_OUTPUT,(@{target=$t;preview=$p.Preview;preview_sha256=$p.PreviewSha256}|ConvertTo-Json -Depth 10),[Text.UTF8Encoding]::new($false))}
  $reverse=@($ledger);[Array]::Reverse($reverse)
  $r=New-AuthWireCombinedStagingPlanCore $t $reverse $before ('3'*64) 1793196000
  Check ($p.PreviewSha256 -ceq $r.PreviewSha256) 'ordinal row order stable'

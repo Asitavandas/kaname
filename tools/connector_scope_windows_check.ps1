@@ -142,3 +142,10 @@ try{
  Check ((Get-AuthWireScopeDataHash $first) -cne (Get-AuthWireScopeDataHash @(Read-AuthWireCombinedSysvolTree $tree))) 'combined comment byte drift observed'
 }finally{if(Test-Path -LiteralPath $tree){Remove-Item -LiteralPath $tree -Recurse -Force}}
 Write-Output ('AUTHWIRE_SCOPE_WINDOWS_OK checks='+$script:checks+' customer_ad_tested=false')
+
+# Preview output has its own bounded drain; the original Run remains 8192 chars.
+$r=[AuthWire.Connector.ScopeProcessV1]::RunPreview($exe,'-NoProfile -NonInteractive -Command "[Console]::Write((''x''*12000))"',10000)
+Check ($r.ExitCode -eq 0 -and -not $r.Truncated -and $r.Output.Length -eq 12000) 'preview bounded output permits the fixed file ledger'
+$r=[AuthWire.Connector.ScopeProcessV1]::RunPreview($exe,'-NoProfile -NonInteractive -Command "[Console]::Write((''x''*17000))"',10000)
+Check ($r.Truncated -and $r.Output.Length -le 16384) 'preview oversized output refused'
+Write-Host ('AUTHWIRE_STAGING_CHILD_BOUNDS_WINDOWS_OK total_checks='+$checks)
