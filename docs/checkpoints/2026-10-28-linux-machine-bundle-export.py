@@ -1,0 +1,134 @@
+"""Fixed customer pilot export. Only new public-asset ZIP output; no installation."""
+import base64
+import hashlib
+import io
+import json
+import os
+from pathlib import Path
+import sqlite3
+import stat
+import sys
+import types
+import zipfile
+
+SOURCE = Path('/opt/kaname-lab/source')
+DATABASE = Path('/var/lib/kaname-lab/kaname.sqlite3')
+TLS = Path('/etc/kaname-lab/web.crt')
+NETWORK = Path('/home/segmentiq/authwire-pilot-network-profiles-20261026.zip')
+OUTPUT = Path('/home/segmentiq/authwire-pilot-combined-draft-20261028.zip')
+COMPONENT = 'e0edcd463a4da5f5f77695052bba580bd3829f28'
+NETWORK_SHA = '528a793a637e2a8bdd30808acf7a624b83b125419d1ef1c8077249955a146e38'
+TLS_SHA = 'a58838b95510f759943e5f1b7fefe29e227960a5c1171b5ebc6d5089df47a76d'
+PLAN = '524653f5-1359-46f5-84a5-46355bb82aff'
+PINS = {
+ 'kaname/__init__.py':'8c9e3abe757ff0d55cd4d9b562a5b53d87a8f6081f1c935e2623b1b839de3a88',
+ 'kaname/deployment.py':'121aaa19486bf9e68463d041f34267a9ac7af98ab0207a689c97604d85296611',
+ 'kaname/device_enrollment.py':'9d8b1c60167686330f0e1c2b7fa82ba0e3e8b265271235eeb78ff19302a5d300',
+ 'kaname/models.py':'cd5af23115c1d4bf8b95e09b15f4a5d41a3d91646b4f7a3c6802901430de814e',
+ 'kaname/pki.py':'1ccf775e7ad390e40e56ada967cdd387ea96d12fcac2ce6cbf12f420260f28da',
+ 'kaname/device_client/AuthWire-Client.ps1':'bf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60',
+ # Preserve the live installer. Main also has a later retry-trigger timing fix;
+ # adopting that version is outside this read-only draft export.
+ 'kaname/device_client/Install-AuthWire.ps1':'faec4a852f61528b8e8df9ab6240323ab4cedae497cadd921568ccf06dac3609',
+}
+LIBRARY = 'IiIiUmVhZG9ubHkgbWFjaGluZS1waWxvdCBhc3NldCBjb21wb3NpdGlvbjsgbm90IGEgc2lnbmVkL2V4ZWN1dGFibGUgZGVwbG95bWVudC4KCk5vIHNlcnZpY2UgY29uc3RydWN0b3JzLCBwcml2YXRlLWtleS92YXVsdCByZWFkcywgc2NoZW1hIHdyaXRlcyBvciBHUE8gY2FsbHMuClRoZSBjYWxsZXIgc3VwcGxpZXMgYW4gZXhwbGljaXQgcXVlcnktb25seSBTUUxpdGUgc25hcHNob3QgYW5kIHBpbm5lZCBvbGQgbmV0d29yayBaSVAuCiIiIgppbXBvcnQgaGFzaGxpYgppbXBvcnQgaW8KaW1wb3J0IGpzb24KZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQpmcm9tIHR5cGVzIGltcG9ydCBTaW1wbGVOYW1lc3BhY2UKZnJvbSB1cmxsaWIucGFyc2UgaW1wb3J0IHVybHNwbGl0CmltcG9ydCB6aXBmaWxlCgpmcm9tIGNyeXB0b2dyYXBoeSBpbXBvcnQgeDUwOQpmcm9tIGNyeXB0b2dyYXBoeS5oYXptYXQucHJpbWl0aXZlcyBpbXBvcnQgaGFzaGVzCgpmcm9tIC5kZXBsb3ltZW50IGltcG9ydCBuZXR3b3JrX3htbApmcm9tIC5kZXZpY2VfZW5yb2xsbWVudCBpbXBvcnQgRGV2aWNlRW5yb2xsbWVudApmcm9tIC5tb2RlbHMgaW1wb3J0IHN0cmljdF9qc29uCmZyb20gLnBraSBpbXBvcnQgaW5zdGFudAoKCmNsYXNzIEJ1bmRsZUVycm9yKFZhbHVlRXJyb3IpOgogICAgcGFzcwoKCmRlZiBzaGEoZGF0YSk6CiAgICByZXR1cm4gaGFzaGxpYi5zaGEyNTYoZGF0YSkuaGV4ZGlnZXN0KCkKCgpkZWYgcmVxdWlyZShjb25kaXRpb24sIGNvZGUpOgogICAgaWYgbm90IGNvbmRpdGlvbjoKICAgICAgICByYWlzZSBCdW5kbGVFcnJvcihjb2RlKQoKCmRlZiByZWFkX3ppcChyYXcpOgogICAgcmVxdWlyZSh0eXBlKHJhdykgaXMgYnl0ZXMgYW5kIDEgPD0gbGVuKHJhdykgPD0gMTA0ODU3NiwgJ0JVTkRMRV9aSVBfTElNSVQnKQogICAgcmVzdWx0ID0ge307IHRvdGFsID0gMAogICAgd2l0aCB6aXBmaWxlLlppcEZpbGUoaW8uQnl0ZXNJTyhyYXcpKSBhcyBhcmNoaXZlOgogICAgICAgIHJlcXVpcmUoMSA8PSBsZW4oYXJjaGl2ZS5pbmZvbGlzdCgpKSA8PSAxNiwgJ0JVTkRMRV9GSUxFX0xJTUlUJykKICAgICAgICBmb3IgZW50cnkgaW4gYXJjaGl2ZS5pbmZvbGlzdCgpOgogICAgICAgICAgICBuYW1lID0gZW50cnkuZmlsZW5hbWUKICAgICAgICAgICAgcmVxdWlyZShyZS5mdWxsbWF0Y2gocidbQS1aYS16MC05XVtBLVphLXowLTkuLV17MCw3OX0nLCBuYW1lKSBhbmQKICAgICAgICAgICAgICAgICAgICBuYW1lLmNhc2Vmb2xkKCkgbm90IGluIHtuLmNhc2Vmb2xkKCkgZm9yIG4gaW4gcmVzdWx0fSBhbmQKICAgICAgICAgICAgICAgICAgICBub3QgZW50cnkuaXNfZGlyKCkgYW5kIG5vdCBlbnRyeS5mbGFnX2JpdHMgJiAxIGFuZAogICAgICAgICAgICAgICAgICAgIChlbnRyeS5leHRlcm5hbF9hdHRyID4+IDE2KSAmIDBvMTcwMDAwICE9IDBvMTIwMDAwIGFuZAogICAgICAgICAgICAgICAgICAgIGVudHJ5LmNvbXByZXNzX3R5cGUgaW4gKHppcGZpbGUuWklQX1NUT1JFRCwgemlwZmlsZS5aSVBfREVGTEFURUQpLCAnQlVORExFX0VOVFJZX1JFSkVDVEVEJykKICAgICAgICAgICAgdG90YWwgKz0gZW50cnkuZmlsZV9zaXplCiAgICAgICAgICAgIHJlcXVpcmUoMCA8PSBlbnRyeS5maWxlX3NpemUgPD0gMjYyMTQ0IGFuZCB0b3RhbCA8PSAxMDQ4NTc2LCAnQlVORExFX0NPTlRFTlRfTElNSVQnKQogICAgICAgICAgICB3aXRoIGFyY2hpdmUub3BlbihlbnRyeSkgYXMgc3RyZWFtOgogICAgICAgICAgICAgICAgdmFsdWUgPSBzdHJlYW0ucmVhZCgyNjIxNDUpCiAgICAgICAgICAgIHJlcXVpcmUobGVuKHZhbHVlKSA9PSBlbnRyeS5maWxlX3NpemUsICdCVU5ETEVfQ09OVEVOVF9MSU1JVCcpCiAgICAgICAgICAgIHJlc3VsdFtuYW1lXSA9IHZhbHVlCiAgICByZXR1cm4gcmVzdWx0CgoKZGVmIHNuYXBzaG90X2Fzc2V0cyhkYiwgbmV0d29ya19ieXRlcywgKiwgbmV0d29ya19zaGEyNTYsIHBsYW5faWQsIHBsYW5fdmVyc2lvbiwKICAgICAgICAgICAgICAgICAgICB0bHNfcGVtLCB0bHNfc2hhMjU2LCBob3N0bmFtZSwgcG9ydCk6CiAgICAiIiJSZXR1cm4gYnl0ZXMgZnJvbSBvbmUgY2FsbGVyLW93bmVkIHJlYWQgdHJhbnNhY3Rpb247IG5ldmVyIGNvbW1pdCBvciB3cml0ZS4KCiAgICBUaGUgb3JpZ2luYWwgbmV0d29yayBjYW5kaWRhdGUgcmVtYWlucyB1bmNoYW5nZWQuIEN1cnJlbnQgcHVibGljIERCIHZhbHVlcwogICAgbXVzdCBtYXRjaCBpdHMgc2F2ZWQgcGxhbi9wcm9maWxlcy9DQS4gR2xvYmFsIGF1ZGl0IHJldmlzaW9uIGNoYW5nZXMgYWxvbmUgZG8KICAgIG5vdCBpbnZhbGlkYXRlIHRob3NlIGltbXV0YWJsZSBwbGFuIGRlcGVuZGVuY2llcy4KICAgICIiIgogICAgcmVxdWlyZShkYi5leGVjdXRlKCdQUkFHTUEgcXVlcnlfb25seScpLmZldGNob25lKClbMF0gPT0gMSBhbmQgZGIuaW5fdHJhbnNhY3Rpb24sCiAgICAgICAgICAgICdCVU5ETEVfUVVFUllfT05MWV9TTkFQU0hPVF9SRVFVSVJFRCcpCiAgICByZXF1aXJlKHR5cGUobmV0d29ya19zaGEyNTYpIGlzIHN0ciBhbmQgcmUuZnVsbG1hdGNoKCdbYS1mMC05XXs2NH0nLCBuZXR3b3JrX3NoYTI1NikKICAgICAgICAgICAgYW5kIHNoYShuZXR3b3JrX2J5dGVzKSA9PSBuZXR3b3JrX3NoYTI1NiwgJ0JVTkRMRV9ORVRXT1JLX0hBU0hfTUlTTUFUQ0gnKQogICAgbmV0d29yayA9IHJlYWRfemlwKG5ldHdvcmtfYnl0ZXMpCiAgICByZXF1aXJlKCdwbGFuLmpzb24nIGluIG5ldHdvcmsgYW5kICdtYW5pZmVzdC5qc29uJyBpbiBuZXR3b3JrLCAnQlVORExFX05FVFdPUktfUkVRVUlSRUQnKQogICAgcHJldmlldyA9IHN0cmljdF9qc29uKG5ldHdvcmtbJ3BsYW4uanNvbiddKTsgcGxhbiA9IHByZXZpZXdbJ3BsYW4nXQogICAgcmVxdWlyZShwbGFuWydpZCddID09IHBsYW5faWQgYW5kIHR5cGUocGxhbl92ZXJzaW9uKSBpcyBpbnQgYW5kIHBsYW5bJ3ZlcnNpb24nXSA9PSBwbGFuX3ZlcnNpb24sCiAgICAgICAgICAgICdCVU5ETEVfUExBTl9NSVNNQVRDSCcpCiAgICByZXF1aXJlKHBsYW5bJ2F1dGhfbW9kZSddID09ICdtYWNoaW5lJyBhbmQgbm90IHBsYW5bJ3VzZXJfcHJvZmlsZV9pZCddLCAnQlVORExFX01BQ0hJTkVfUElMT1RfT05MWScpCiAgICByZXF1aXJlKHR5cGUocGxhblsnd2lyZWQnXSkgaXMgYm9vbCBhbmQgdHlwZShwbGFuWyd3aXJlbGVzcyddKSBpcyBib29sIGFuZAogICAgICAgICAgICAocGxhblsnd2lyZWQnXSBvciBwbGFuWyd3aXJlbGVzcyddKSwgJ0JVTkRMRV9ORVRXT1JLX1JFUVVJUkVEJykKICAgIG5hbWVzID0geydyb290LWNhLnBlbScsICdpc3N1ZXItY2EucGVtJywgJ3BsYW4uanNvbicsICdtYW5pZmVzdC5qc29uJywgJ1JFQURNRS50eHQnfQogICAgbmFtZXMgfD0geydXaXJlZC1FQVAtVExTLnhtbCd9IGlmIHBsYW5bJ3dpcmVkJ10gZWxzZSBzZXQoKQogICAgbmFtZXMgfD0geydXaUZpLUVBUC1UTFMueG1sJ30gaWYgcGxhblsnd2lyZWxlc3MnXSBlbHNlIHNldCgpCiAgICByZXF1aXJlKHNldChuZXR3b3JrKSA9PSBuYW1lcywgJ0JVTkRMRV9ORVRXT1JLX0ZJTEVfU0VUJykKICAgIG1hbmlmZXN0ID0gc3RyaWN0X2pzb24obmV0d29ya1snbWFuaWZlc3QuanNvbiddKQogICAgcmVxdWlyZShtYW5pZmVzdCA9PSB7J2Zvcm1hdCc6IDEsICdwbGFuX2lkJzogcGxhbl9pZCwgJ3ZlcnNpb24nOiBwbGFuX3ZlcnNpb24sCiAgICAgICAgICAgICAgICAgICAgICAgICdwcmV2aWV3X2hhc2gnOiBwcmV2aWV3WydwcmV2aWV3X2hhc2gnXSwKICAgICAgICAgICAgICAgICAgICAgICAgJ2ZpbGVzJzoge246IHNoYShiKSBmb3IgbiwgYiBpbiBuZXR3b3JrLml0ZW1zKCkgaWYgbiAhPSAnbWFuaWZlc3QuanNvbid9fSwKICAgICAgICAgICAgJ0JVTkRMRV9ORVRXT1JLX01BTklGRVNUX01JU01BVENIJykKICAgIHJvdyA9IGRiLmV4ZWN1dGUoJ1NFTEVDVCBwYXlsb2FkIEZST00gcnVudGltZV9zZXR0aW5ncyBXSEVSRSBuYW1lPT8nLCAoJ3dpbmRvd3NfZGVwbG95bWVudF9wbGFucycsKSkuZmV0Y2hvbmUoKQogICAgcmVxdWlyZShyb3cgaXMgbm90IE5vbmUsICdCVU5ETEVfUExBTl9OT1RfRk9VTkQnKQogICAgcGxhbnMgPSBzdHJpY3RfanNvbihyb3dbMF0pOyBjdXJyZW50ID0gW3AgZm9yIHAgaW4gcGxhbnMgaWYgcFsnaWQnXSA9PSBwbGFuX2lkXQogICAgcmVxdWlyZShsZW4oY3VycmVudCkgPT0gMSBhbmQgY3VycmVudFswXSA9PSBwbGFuLCAnQlVORExFX1BMQU5fQ0hBTkdFRCcpCiAgICBjb25maWcgPSBzdHJpY3RfanNvbihkYi5leGVjdXRlKCdTRUxFQ1QgY29uZmlnIEZST00gc3RhdGUgV0hFUkUgaWQ9MScpLmZldGNob25lKClbMF0pCiAgICByZXF1aXJlKGNvbmZpZ1snYWRfZG9tYWluJ10gPT0gcGxhblsnZG9tYWluJ10gYW5kIGNvbmZpZ1snYXBwbGlhbmNlX2ZxZG4nXSA9PSBob3N0bmFtZSwKICAgICAgICAgICAgJ0JVTkRMRV9ET01BSU5fT1JfSE9TVF9DSEFOR0VEJykKICAgIGZpZWxkcyA9ICgnaWQnLCd2ZXJzaW9uJywnbmFtZScsJ2RvbWFpbicsJ2dyb3VwX3NpZCcsJ3ZhbGlkaXR5X2RheXMnLCdyZW5ld19iZWZvcmVfZGF5cycsJ2VuYWJsZWQnKQogICAgcm93ID0gZGIuZXhlY3V0ZSgnU0VMRUNUICogRlJPTSBkZXZpY2VfcHJvZmlsZXMgV0hFUkUgaWQ9PycsIChwbGFuWydtYWNoaW5lX3Byb2ZpbGVfaWQnXSwpKS5mZXRjaG9uZSgpCiAgICByZXF1aXJlKHJvdyBpcyBub3QgTm9uZSwgJ0JVTkRMRV9QUk9GSUxFX1JFUVVJUkVEJykKICAgIHByb2ZpbGUgPSBkaWN0KHppcChmaWVsZHMsIHJvdykpCiAgICByZXF1aXJlKHByZXZpZXdbJ2Vucm9sbG1lbnRfcHJvZmlsZXMnXSA9PSBbcHJvZmlsZV0gYW5kIHByb2ZpbGVbJ2VuYWJsZWQnXSA9PSAxIGFuZAogICAgICAgICAgICBwcm9maWxlWydkb21haW4nXSA9PSBwbGFuWydkb21haW4nXSBhbmQgcHJvZmlsZVsnZ3JvdXBfc2lkJ10gPT0gcGxhblsnY29tcHV0ZXJfZ3JvdXBfc2lkJ10sCiAgICAgICAgICAgICdCVU5ETEVfUFJPRklMRV9DSEFOR0VEJykKICAgIHJvdyA9IGRiLmV4ZWN1dGUoJ1NFTEVDVCByb290X2NlcnQsaXNzdWVyX2NlcnQgRlJPTSBwa2lfYXV0aG9yaXR5IFdIRVJFIGlkPTEnKS5mZXRjaG9uZSgpCiAgICByZXF1aXJlKHJvdyBhbmQgcm93WzBdID09IG5ldHdvcmtbJ3Jvb3QtY2EucGVtJ10gYW5kIHJvd1sxXSA9PSBuZXR3b3JrWydpc3N1ZXItY2EucGVtJ10sICdCVU5ETEVfQ0FfQ0hBTkdFRCcpCiAgICByb290LCBpc3N1ZXIgPSBbeDUwOS5sb2FkX3BlbV94NTA5X2NlcnRpZmljYXRlKGIpIGZvciBiIGluIHJvd10KICAgIHJvb3QudmVyaWZ5X2RpcmVjdGx5X2lzc3VlZF9ieShyb290KTsgaXNzdWVyLnZlcmlmeV9kaXJlY3RseV9pc3N1ZWRfYnkocm9vdCkKICAgIG5vdyA9IGluc3RhbnQoKQogICAgcmVxdWlyZShhbGwoYy5ub3RfdmFsaWRfYmVmb3JlX3V0YyA8PSBub3cgPCBjLm5vdF92YWxpZF9hZnRlcl91dGMgYW5kCiAgICAgICAgICAgICAgICBjLmV4dGVuc2lvbnMuZ2V0X2V4dGVuc2lvbl9mb3JfY2xhc3MoeDUwOS5CYXNpY0NvbnN0cmFpbnRzKS52YWx1ZS5jYQogICAgICAgICAgICAgICAgZm9yIGMgaW4gKHJvb3QsIGlzc3VlcikpLCAnQlVORExFX0NBX05PVF9DVVJSRU5UJykKICAgIHJvb3Rfc2hhMSA9IHJvb3QuZmluZ2VycHJpbnQoaGFzaGVzLlNIQTEoKSkuaGV4KCkKICAgIHJlcXVpcmUocHJldmlld1sndHJ1c3QnXVsncm9vdF90aHVtYnByaW50J10gPT0gcm9vdF9zaGExLCAnQlVORExFX1JPT1RfTUlTTUFUQ0gnKQogICAgZm9yIGVuYWJsZWQsIGZpbGVuYW1lLCB3aXJlbGVzcyBpbiBbKHBsYW5bJ3dpcmVkJ10sJ1dpcmVkLUVBUC1UTFMueG1sJyxGYWxzZSksCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChwbGFuWyd3aXJlbGVzcyddLCdXaUZpLUVBUC1UTFMueG1sJyxUcnVlKV06CiAgICAgICAgaWYgZW5hYmxlZDoKICAgICAgICAgICAgcmVxdWlyZShuZXR3b3JrW2ZpbGVuYW1lXSA9PSBuZXR3b3JrX3htbChwbGFuLCByb290X3NoYTEsIHdpcmVsZXNzPXdpcmVsZXNzKSwgJ0JVTkRMRV9ORVRXT1JLX1hNTF9DSEFOR0VEJykKICAgIHRscyA9IHg1MDkubG9hZF9wZW1feDUwOV9jZXJ0aWZpY2F0ZSh0bHNfcGVtKQogICAgcmVxdWlyZSh0bHMuZmluZ2VycHJpbnQoaGFzaGVzLlNIQTI1NigpKS5oZXgoKSA9PSB0bHNfc2hhMjU2IGFuZAogICAgICAgICAgICB0bHMubm90X3ZhbGlkX2JlZm9yZV91dGMgPD0gbm93IDwgdGxzLm5vdF92YWxpZF9hZnRlcl91dGMgYW5kCiAgICAgICAgICAgIGhvc3RuYW1lIGluIHRscy5leHRlbnNpb25zLmdldF9leHRlbnNpb25fZm9yX2NsYXNzKHg1MDkuU3ViamVjdEFsdGVybmF0aXZlTmFtZSkudmFsdWUuZ2V0X3ZhbHVlc19mb3JfdHlwZSh4NTA5LkROU05hbWUpLAogICAgICAgICAgICAnQlVORExFX1RMU19NSVNNQVRDSCcpCiAgICByZXF1aXJlKHR5cGUocG9ydCkgaXMgaW50IGFuZCAxIDw9IHBvcnQgPD0gNjU1MzUsICdCVU5ETEVfUE9SVF9SRVFVSVJFRCcpCiAgICAjIFJldXNlIHRoZSB1bmNoYW5nZWQgcHJvZHVjdGlvbiBwdWJsaWMtYXNzZXQgZXhwb3J0ZXIgdGhyb3VnaCBpdHMgdHdvCiAgICAjIHJlYWQtb25seSBpbnB1dHMuIERvIG5vdCBpbnN0YW50aWF0ZSBlbnJvbGxtZW50L1BLSSBzZXJ2aWNlcyBvbiBhIFJPIERCLgogICAgY29udGV4dCA9IFNpbXBsZU5hbWVzcGFjZShwcm9maWxlPWxhbWJkYSBpZGVudGl0eTogZGljdChwcm9maWxlKSBpZiBpZGVudGl0eSA9PSBwcm9maWxlWydpZCddIGVsc2UgTm9uZSwKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcGtpPVNpbXBsZU5hbWVzcGFjZShwdWJsaWNfYnVuZGxlPWxhbWJkYTogeydyb290LWNhLnBlbSc6cm93WzBdLCAnaXNzdWVyLWNhLnBlbSc6cm93WzFdfSkpCiAgICBlbnJvbGxtZW50X3JhdyA9IERldmljZUVucm9sbG1lbnQucGFja2FnZShjb250ZXh0LCBwcm9maWxlWydpZCddLCBob3N0bmFtZT1ob3N0bmFtZSwgcG9ydD1wb3J0LCB0bHNfcGVtPXRsc19wZW0pCiAgICBlbnJvbGxtZW50ID0gcmVhZF96aXAoZW5yb2xsbWVudF9yYXcpCiAgICBleHBlY3RlZCA9IHsnQXV0aFdpcmUtQ2xpZW50LnBzMScsJ0luc3RhbGwtQXV0aFdpcmUucHMxJywnY29uZmlnLmpzb24nLCdyb290LWNhLnBlbScsJ2lzc3Vlci1jYS5wZW0nLCdSRUFETUUudHh0JywnU0hBMjU2U1VNUy50eHQnfQogICAgaWYgdGxzLmlzc3VlciA9PSB0bHMuc3ViamVjdDoKICAgICAgICBleHBlY3RlZC5hZGQoJ2h0dHBzLXRydXN0LnBlbScpCiAgICByZXF1aXJlKHNldChlbnJvbGxtZW50KSA9PSBleHBlY3RlZCwgJ0JVTkRMRV9FTlJPTExNRU5UX0ZJTEVfU0VUJykKICAgIGNmZyA9IHN0cmljdF9qc29uKGVucm9sbG1lbnRbJ2NvbmZpZy5qc29uJ10pCiAgICByZXF1aXJlKGNmZyA9PSB7J3VybCc6ZidodHRwczovL3tob3N0bmFtZX06e3BvcnR9JywgJ3Nwbic6J0hUVFAvJytob3N0bmFtZSwgJ2RvbWFpbic6cGxhblsnZG9tYWluJ10sCiAgICAgICAgICAgICAgICAgICAgJ3Byb2ZpbGVfaWQnOnByb2ZpbGVbJ2lkJ10sICd0bHNfc2hhMjU2Jzp0bHNfc2hhMjU2fSwgJ0JVTkRMRV9FTlJPTExNRU5UX0NPTkZJRycpCiAgICByZXF1aXJlKHVybHNwbGl0KGNmZ1sndXJsJ10pLmhvc3RuYW1lID09IGhvc3RuYW1lLCAnQlVORExFX0VOUk9MTE1FTlRfQ09ORklHJykKICAgIGZpbGVzID0geyduZXR3b3JrLXByb2ZpbGVzLnppcCc6bmV0d29ya19ieXRlc30KICAgIGZpbGVzLnVwZGF0ZSh7J25ldHdvcmsvJytuOmIgZm9yIG4sYiBpbiBuZXR3b3JrLml0ZW1zKCl9KQogICAgZmlsZXMudXBkYXRlKHsnZW5yb2xsbWVudC8nK246YiBmb3IgbixiIGluIGVucm9sbG1lbnQuaXRlbXMoKX0pCiAgICBmaWxlc1snUkVBRE1FLnR4dCddID0gKAogICAgICAgICdBdXRoV2lyZSBtYWNoaW5lIHBpbG90IGNvbWJpbmVkIGFzc2V0IHByZXBhcmF0aW9uXHJcbicKICAgICAgICAnVU5TSUdORUQgRFJBRlQ6IFdpbmRvd3Mgc2lnbmF0dXJlIHZhbGlkYXRpb24gYW5kIGZpbmFsIHNpZ25lZCBhcHByb3ZhbCBhcmUgcmVxdWlyZWQuXHJcbicKICAgICAgICAnTm90aGluZyB3YXMgY29waWVkIHRvIFNZU1ZPTCwgaW5zdGFsbGVkLCBlbnJvbGxlZCBvciBhY3RpdmF0ZWQuXHJcbicKICAgICAgICAnVGhlIGV4aXN0aW5nIGVucm9sbG1lbnQgaW5zdGFsbGVyIGRvZXMgbm90IGltcG9ydCBFdGhlcm5ldC9XaS1GaSBYTUwuXHJcbicKICAgICAgICAnQSBzZXBhcmF0ZWx5IHJldmlld2VkIEdQTy9uZXR3b3JrIGFwcGxpY2F0aW9uIHBhdGggaXMgc3RpbGwgcmVxdWlyZWQuXHJcbicKICAgICAgICAnTm8gc2hhcmVkIGNsaWVudCBjZXJ0aWZpY2F0ZSwgcHJpdmF0ZSBrZXksIHBhc3N3b3JkIG9yIGNvZGUtc2lnbmluZyBrZXkgaXMgaW5jbHVkZWQuXHJcbicKICAgICkuZW5jb2RlKCdhc2NpaScpCiAgICBpbmZvID0geydmb3JtYXQnOidBdXRoV2lyZU1hY2hpbmVEZXBsb3ltZW50RHJhZnRWMScsJ3BsYW5faWQnOnBsYW5faWQsJ3BsYW5fdmVyc2lvbic6cGxhbl92ZXJzaW9uLAogICAgICAgICAgICAnbWFjaGluZV9wcm9maWxlX2lkJzpwcm9maWxlWydpZCddLCdtYWNoaW5lX3Byb2ZpbGVfdmVyc2lvbic6cHJvZmlsZVsndmVyc2lvbiddLAogICAgICAgICAgICAnbmV0d29ya196aXBfc2hhMjU2JzpuZXR3b3JrX3NoYTI1Niwnc291cmNlX3ByZXZpZXdfc2hhMjU2JzpwcmV2aWV3WydwcmV2aWV3X2hhc2gnXSwKICAgICAgICAgICAgJ3JlcXVpcmVzX3dpbmRvd3Nfc2lnbmluZyc6VHJ1ZSwnY2VydGlmaWNhdGVfc2VydmljZV9ydW50aW1lX3Rlc3RlZCc6RmFsc2UsCiAgICAgICAgICAgICdjYW5fc3RhZ2UnOkZhbHNlLCdjYW5fYXBwbHknOkZhbHNlLCdydW50aW1lX2FwcGxpZWQnOkZhbHNlLCdncG9fY2hhbmdlZCc6RmFsc2UsCiAgICAgICAgICAgICdmaWxlcyc6e246c2hhKGIpIGZvciBuLGIgaW4gc29ydGVkKGZpbGVzLml0ZW1zKCkpfX0KICAgIGZpbGVzWydidW5kbGUtbWFuaWZlc3QuanNvbiddID0gKGpzb24uZHVtcHMoaW5mbyxzb3J0X2tleXM9VHJ1ZSxpbmRlbnQ9MikrJ1xuJykuZW5jb2RlKCkKICAgIG91dCA9IGlvLkJ5dGVzSU8oKQogICAgd2l0aCB6aXBmaWxlLlppcEZpbGUob3V0LCd3Jyx6aXBmaWxlLlpJUF9ERUZMQVRFRCkgYXMgYXJjaGl2ZToKICAgICAgICBmb3IgbmFtZSxkYXRhIGluIHNvcnRlZChmaWxlcy5pdGVtcygpKToKICAgICAgICAgICAgZW50cnk9emlwZmlsZS5aaXBJbmZvKG5hbWUsKDIwMjYsMSwxLDAsMCwwKSk7ZW50cnkuY29tcHJlc3NfdHlwZT16aXBmaWxlLlpJUF9ERUZMQVRFRAogICAgICAgICAgICBlbnRyeS5leHRlcm5hbF9hdHRyPTBvMTAwNjQ0IDw8IDE2O2FyY2hpdmUud3JpdGVzdHIoZW50cnksZGF0YSkKICAgIHJldHVybiBvdXQuZ2V0dmFsdWUoKQo='
+LIBRARY_SHA = 'aca5e3119ac795ce728a8a99793b6f3964ce3440f697eb25f30c0e3fa84119ea'
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+def require(value, code):
+    if not value:
+        raise ValueError(code)
+
+def regular(path, limit, root=False):
+    before = path.lstat()
+    require(stat.S_ISREG(before.st_mode) and before.st_size <= limit, 'EXPORT_FILE_TYPE_OR_LIMIT')
+    require(not root or (before.st_uid == 0 and not before.st_mode & 0o022), 'EXPORT_SOURCE_OWNER')
+    flags = os.O_RDONLY | os.O_NOFOLLOW
+    with os.fdopen(os.open(path, flags), 'rb') as stream:
+        opened = os.fstat(stream.fileno())
+        require((before.st_dev,before.st_ino) == (opened.st_dev,opened.st_ino), 'EXPORT_FILE_CHANGED')
+        data = stream.read(limit+1)
+    require(len(data) <= limit, 'EXPORT_FILE_LIMIT')
+    return data
+
+def public_preflight():
+    for path in (SOURCE, SOURCE/'kaname', SOURCE/'kaname/device_client'):
+        info = path.lstat()
+        require(stat.S_ISDIR(info.st_mode) and info.st_uid == 0 and not info.st_mode & 0o022,
+                'EXPORT_SOURCE_DIRECTORY')
+    for name, pin in PINS.items():
+        require(digest(regular(SOURCE/name, 1048576, root=True)) == pin, 'EXPORT_SOURCE_HASH:'+name)
+    network = regular(NETWORK, 1048576)
+    require(digest(network) == NETWORK_SHA, 'EXPORT_NETWORK_HASH')
+    library = base64.b64decode(LIBRARY, validate=True)
+    require(digest(library) == LIBRARY_SHA, 'EXPORT_LIBRARY_HASH')
+    require(not OUTPUT.exists() and not OUTPUT.is_symlink(), 'EXPORT_OUTPUT_ALREADY_EXISTS')
+    return network, library
+
+def publish_new(path, data, uid, gid):
+    # O_EXCL refuses existing files and symlinks. Only our new inode is removed
+    # if its write fails; an operator's earlier export is never overwritten.
+    descriptor = os.open(path, os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW, 0o600)
+    identity = os.fstat(descriptor)
+    try:
+        with os.fdopen(descriptor, 'wb') as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+            os.fchown(stream.fileno(), uid, gid)
+    except BaseException:
+        try:
+            current = path.lstat()
+            if (current.st_dev,current.st_ino) == (identity.st_dev,identity.st_ino):
+                path.unlink()
+        except FileNotFoundError:
+            pass
+        raise
+
+def main():
+    require(sys.platform.startswith('linux') and sys.argv[1:] in ([], ['--inspect-public']), 'EXPORT_ARGUMENTS')
+    network, library = public_preflight()
+    if sys.argv[1:]:
+        print(json.dumps({'event':'MACHINE_DEPLOYMENT_EXPORT_PUBLIC_PREFLIGHT',
+                         'source_pins_verified':True,'network_sha256':NETWORK_SHA,
+                         'private_database_opened':False,'tls_file_opened':False,'output_created':False}))
+        return
+    require(os.geteuid() == 0, 'EXPORT_OPERATOR_SUDO_REQUIRED')
+    home = OUTPUT.parent.lstat()
+    require(stat.S_ISDIR(home.st_mode) and home.st_uid == 1000, 'EXPORT_HOME_OWNER')
+    require(stat.S_ISREG(DATABASE.lstat().st_mode), 'EXPORT_DATABASE_TYPE')
+    tls = regular(TLS, 65536, root=True)
+    sys.path.insert(0, str(SOURCE))
+    sys.dont_write_bytecode = True
+    module = types.ModuleType('kaname.deployment_bundle')
+    module.__package__ = 'kaname'
+    exec(compile(library, '<verified-deployment-bundle>', 'exec'), module.__dict__)
+    with sqlite3.connect('file:'+str(DATABASE)+'?mode=ro', uri=True, timeout=3) as db:
+        db.execute('PRAGMA query_only=ON')
+        db.execute('BEGIN')
+        package = module.snapshot_assets(db, network, network_sha256=NETWORK_SHA,
+            plan_id=PLAN,plan_version=1,tls_pem=tls,tls_sha256=TLS_SHA,
+            hostname='kaname.vizyonveri.local',port=8765)
+    public_preflight()
+    require(regular(TLS,65536,root=True) == tls, 'EXPORT_TLS_CHANGED')
+    with zipfile.ZipFile(io.BytesIO(package)) as archive:
+        manifest = json.loads(archive.read('bundle-manifest.json'))
+        count = len(archive.namelist())
+    publish_new(OUTPUT,package,home.st_uid,home.st_gid)
+    print(json.dumps({'event':'MACHINE_DEPLOYMENT_DRAFT_EXPORTED','source_component':COMPONENT,
+        'output':str(OUTPUT),'sha256':digest(package),'bytes':len(package),'files':count,
+        'plan_id':PLAN,'plan_version':1,'machine_profile_id':manifest['machine_profile_id'],
+        'machine_profile_version':manifest['machine_profile_version'],'network_sha256':NETWORK_SHA,
+        'query_only_snapshot':True,'existing_client_preserved':True,'private_keys_read':False,
+        'services_changed':False,'ad_changed':False,'gpo_changed':False,'endpoint_changed':False,
+        'requires_windows_signing':True,'can_stage':False,'can_apply':False}))
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as error:
+        print(json.dumps({'event':'MACHINE_DEPLOYMENT_DRAFT_EXPORT_FAILED',
+            'category':type(error).__name__,'error':str(error)[:180],'can_apply':False}))
+        raise SystemExit(1)

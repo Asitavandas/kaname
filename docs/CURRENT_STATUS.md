@@ -1,6 +1,6 @@
 # AuthWire current work record
 
-Updated: 27 October 2026, Europe/Istanbul. This record supplements the 9 October
+Updated: 28 October 2026, Europe/Istanbul. This record supplements the 9 October
 `AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-09.docx` / `.pdf`; those reports are a
 dated baseline. Use this record when producing their next requested revision.
 The operator requested ongoing tracking; on 15 October at16:52 requested a
@@ -19,6 +19,18 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+
+## Birleşik makine paketi taslağı hazırlanıyor — operatör export'u bekleniyor — 28 Ekim 2026
+
+A04 içindeki enrollment/installer + ağ profili birleştirme alt adımı PR104'tedir.
+Kaynak bileşeni **e0edcd463a4da5f5f77695052bba580bd3829f28** üzerindeki altı workflow başarılıdır; teslimat helper'ı ve altı ek testi son CI kontrolüne sunulmuştur.
+Sabit Linux helper'ının **--inspect-public** kontrolü uid1000 ile geçti; kaynak pinleri/özgün ağ ZIP'i doğrulandı, özel DB/TLS dosyası veya çıktı açılmadı.
+**Gerçek müşteri birleşik ZIP'i henüz oluşturulmadı.** Operatör sudo export'u bekleniyor; yalnız yeni public varlık ZIP'i yazılır, DB salt okunur transaction ile okunur.
+**requires_windows_signing=true, can_stage=false, can_apply=false**; SYSVOL/GPO/servis/endpoint/özel anahtar değişikliği yok.
+Canlı kurulum betiği korunur; main'deki daha yeni retry trigger zamanlama düzeltmesi canlıda yoktur ve dağıtım öncesi ayrı takip edilecektir.
+Windows imzalama, tam paket kabulü, controlled staging/ağ uygulama yolu ve gerçek cihaz EAP-TLS/VLAN testleri açıktır.
+Linux dev.40, Windows efc5ee91, **54/94 /40 açık** ve nihai kılavuz beklemesi korunur.
+Ayrıntı **MACHINE_DEPLOYMENT_BUNDLE.md**. Bu kayıt export veya ürünün tümü tamamlandı anlamına gelmez.
 
 ## 🔴✓ DC01 SYSVOL alt ağaç operatör envanteri kabul edildi — 27 Ekim 2026 23:57 İstanbul
 
