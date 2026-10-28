@@ -163,11 +163,15 @@ def stable_runtime_payload(name, payload):
                 return payload
         last = v['last_poll']
         if last is not None:
-            if type(last) is not dict or set(last) != {'scope','at','release_id'} or not hexdigest(last['scope']) or not number(last['at']):
+            last_keys = {'scope', 'at'}
+            if name != 'windows_connector_probe_jobs':
+                last_keys.add('release_id')
+            if type(last) is not dict or set(last) != last_keys or not hexdigest(last['scope']) or not number(last['at']):
                 return payload
-            release = last['release_id']
-            if type(release) is not str or str(uuid.UUID(release)) != release or uuid.UUID(release).int == 0:
-                return payload
+            if 'release_id' in last_keys:
+                release = last['release_id']
+                if type(release) is not str or str(uuid.UUID(release)) != release or uuid.UUID(release).int == 0:
+                    return payload
         return json.dumps({'format':v['format'], 'jobs':v['jobs']}, sort_keys=True,
                           separators=(',',':'), allow_nan=False)
     except (ValueError, TypeError, KeyError, RecursionError):

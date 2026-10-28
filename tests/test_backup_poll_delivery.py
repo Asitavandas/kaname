@@ -11,7 +11,7 @@ from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1]
 class BackupPollDeliveryTests(unittest.TestCase):
     def setUp(self):
-        spec=importlib.util.spec_from_file_location('backup_poll_delivery',ROOT/'docs/checkpoints/2026-10-28-backup-poll-fix.py')
+        spec=importlib.util.spec_from_file_location('backup_poll_delivery',ROOT/'docs/checkpoints/2026-10-28-backup-poll-fix-r2.py')
         self.module=importlib.util.module_from_spec(spec);spec.loader.exec_module(self.module)
     def test_embedded_worker_exactly_matches_reviewed_source(self):
         raw=base64.b64decode(self.module.PAYLOAD,validate=True)

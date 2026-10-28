@@ -20,6 +20,22 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Yedek ilk hotfix sonrası hâlâ başarısız — probe biçimi düzeltmesi — 28 Ekim 2026
+
+Operatör ilk hotfix'i uyguladı: iki worker SHA256 **fab31d283971b3d36d3cf4c4f480f36e32e16f7f5a627ebbd422ec9741d31288**,
+ürün PID'leri korunmuş, DB/unit/restore checker değişmemiş. Yeni iş **10:11:56 İstanbul**
+**BACKUP_FAILED /capture /ValueError**, önceki arşivler temizlenmemiş. Yeni başarılı yedek henüz yok.
+Asistan salt okunur kaynak hash/PID ve journal kontrolü uygulamayı ve başarısızlığı doğruladı.
+
+İlk düzeltme probe last_poll kaydına da release_id şartı koymuştu; gerçek ConnectorJobs yazıcısı
+yalnız **scope/at** üretir. Candidate ve scope kuyrukları **scope/at/release_id** üretir.
+Bu nedenle probe satırı ham korumada kalmış ve sürekli poll değişimi capture guard'ını tetiklemeye devam etmiştir.
+İkinci düzeltme her kuyruk için yalnız gerçek kesin biçimi tanır. Bilinmeyen/ek alanlar ve kalıcı jobs/results
+korunur; tam poll/replay verisi SQLite arşivinde kalır. Testler gerçek RSA/SQLite poll yazıcılarıyla genişletildi.
+Sabit r2 helper yalnız kurulmuş ilk hotfix hash'inden geçiş yapar; yeni yedekten önce canlı üç kuyruğun
+biçiminin tanındığını salt okunur kontrol eder. RADIUS/panel/broker restart veya DB/AD/GPO değişikliği yapmaz.
+**İkinci hotfix uygulaması ve yeni BACKUP_SUCCESS bekleniyor.** Ürün 54/94 /40 açık; reboot ve A04 ilerlemesi beklemede.
+
 ## Yedek kararlılık hatası için dar düzeltme hazır — uygulama/yeni yedek bekleniyor — 28 Ekim 2026
 
 Operatör salt okunur teşhisi: dört DB, schema değişimi yok; yalnız **kaname.sqlite3/runtime_settings**
