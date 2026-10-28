@@ -1,5 +1,32 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## Birleşik kapsam canlı kontrolü READ_FAILED — inceleme/düzeltme açık — 28 Ekim 2026
+
+Operatör **image(20261028-125714).png** ekranında birleşik paketin content doğrulaması başarılı,
+ancak **“AD/GPO kontrolü tamamlanamadı: READ_FAILED”** sonucunu paylaştı.
+Manifest **124360dc02e641fe6532f5058fa4915610f74d5c2de7028c5913d7cb9d431c5b** ve
+taslak **5dd35e4d28f6b6495223224f89d339c4cdd595099df5ac726b812238feca0ce5** aynı kaldı.
+Görüntü SHA256 **3eb23134c2dbcedcf71e3461c55ee9f11c822c0e7318fcae7e8677bc2b6b4497**.
+Bu sonuç başarılı kapsam kabulü değildir; GPO/endpoint dağıtımı yapılmadı.
+
+Kaynak incelemesinde somut uyumsuzluk bulundu:
+**CombinedDeploymentScope.ps1 /Read-AuthWireCombinedSysvolTree**, UNC SYSVOL dosyalarında
+**Read-AuthWireCandidateBytes** çağırıyor. Bu yerel aday okuyucusunun
+**Assert-AuthWireCandidatePath** koruması UNC yollarını açıkça **DEPLOYMENT_PATH_REJECTED** ile reddediyor.
+Child exception'ı dışarı vermediği için panel READ_FAILED gösteriyor.
+Bu uyumsuzluğun kaynakta varlığı doğrulandı; müşterideki ham exception görülmediğinden
+başka bir okuma sorununun da bulunmadığı iddia edilmiyor.
+
+Yerel aday yolu koruması korunacak; yalnız doğrulanmış SYSVOL root'unda iki sabit dosyayı,
+reparse/boyut/okuma bütçesi ve salt okunur stream ile okuyacak ayrı helper eklenecek.
+Regresyon gerçek geçici Windows SMB/UNC paylaşımıyla test edilecek;
+yerel aday okuyucusunun UNC reddi de ayrıca korunacak.
+Henüz kaynak/servis/policy/AD/GPO/endpoint canlı değişikliği veya yeni görev/yedek yok.
+Yeni Apply veya aynı görev tekrar çalıştırılmadı.
+Son canlı Linux dev.43 /Windows e6d734b1; birleşik içerik kabulü korunuyor.
+**54/94 tamam,40 açık**; kapsam, staging/rollback ve gerçek endpoint kabulü açık.
+
+
 ## 🔴✓ Windows birleşik kapsam worker Apply kabul edildi — gerçek kapsam görevi sırada — 28 Ekim 2026
 
 Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY /ToolVersion1.4.0 /Mode Apply /Stage applied**,

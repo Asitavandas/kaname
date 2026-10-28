@@ -1,0 +1,16 @@
+{
+  "event": "CUSTOMER_COMBINED_SCOPE_READ_FAILED",
+  "date": "2026-10-28",
+  "screenshot": "image(20261028-125714).png",
+  "screenshot_sha256": "3eb23134c2dbcedcf71e3461c55ee9f11c822c0e7318fcae7e8677bc2b6b4497",
+  "visible_reason": "READ_FAILED",
+  "combined_content_still_verified": true,
+  "manifest_sha256": "124360dc02e641fe6532f5058fa4915610f74d5c2de7028c5913d7cb9d431c5b",
+  "draft_sha256": "5dd35e4d28f6b6495223224f89d339c4cdd595099df5ac726b812238feca0ce5",
+  "verified_source_incompatibility": "SYSVOL UNC file reader calls local candidate helper, whose guard rejects UNC paths",
+  "customer_raw_exception_observed": false,
+  "scope_acceptance_pending": true,
+  "live_changes_by_this_investigation": false,
+  "gpo_apply_enabled": false,
+  "next_step": "Add a dedicated bounded readonly SYSVOL file reader; test actual SMB/UNC without weakening the local path guard"
+}
