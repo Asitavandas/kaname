@@ -119,6 +119,12 @@ try{
  $null=New-SmbShare -Name $share -Path $root -ReadAccess $who -ErrorAction Stop
  $unc='\\localhost\'+$share
  $uncInventory=Get-AuthWireSysvolInventory $unc
+ if($uncInventory.Sha256 -cne $before.Sha256){
+  $currentLocal=Get-AuthWireSysvolInventory $root
+  Write-Host ('STAGING_FIXTURE_BASELINE='+($before.Entries|ConvertTo-Json -Depth 5 -Compress))
+  Write-Host ('STAGING_FIXTURE_LOCAL_NOW='+($currentLocal.Entries|ConvertTo-Json -Depth 5 -Compress))
+  Write-Host ('STAGING_FIXTURE_UNC='+($uncInventory.Entries|ConvertTo-Json -Depth 5 -Compress))
+ }
  Check ($uncInventory.Sha256 -ceq $before.Sha256) 'real SMB full inventory equals local bytes and ACL'
  Check ((New-AuthWireCombinedStagingPlanCore $t $ledger $uncInventory ('3'*64) 1793196000).PreviewSha256 -ceq $p.PreviewSha256) 'UNC and local proposal canonical equality'
  Reject {Read-AuthWireCandidateBytes (Join-Path $unc 'GPT.INI') 4096} 'local-candidate UNC prohibition preserved'
