@@ -35,6 +35,12 @@ function SourceAcl([string]$path,[switch]$Directory) {
 $share=$null;$startedServer=$false
 try{
  $null=New-Item -ItemType Directory -Path $root
+ # Managed GPO roots have protected DACLs. An inherited TEMP share root can
+ # report inherited ACE flags differently over SMB and is not that baseline.
+ $rootAcl=Get-Acl -LiteralPath $root
+ $rootAcl.SetAccessRuleProtection($true,$true)
+ Set-Acl -LiteralPath $root -AclObject $rootAcl
+ Check ((Get-Acl -LiteralPath $root).AreAccessRulesProtected) 'fixture matches protected managed-GPO root'
  foreach($n in @('Machine','User')){$null=New-Item -ItemType Directory -Path (Join-Path $root $n)}
  [IO.File]::WriteAllText((Join-Path $root 'GPT.INI'),"[General]`r`nVersion=0`r`n")
  [IO.File]::WriteAllText((Join-Path $root 'GPO.cmt'),'synthetic marker')
