@@ -18,7 +18,11 @@ Sabit kaynak scripti docs/checkpoints/2026-10-28-linux-machine-bundle-export.py.
 
 --inspect-public Linux uid1000 ile geçti: kaynak pinleri ve özgün ağ ZIP özeti doğrulandı.
 Bu kontrolde özel DB/TLS dosyası açılmadı, çıktı oluşturulmadı.
-Tam export operatör sudo çalıştırması bekliyor.
+Operatör sudo export'u 28 Ekim 2026'da başarılı: 18 dosya /29.086 bayt.
+ZIP SHA256 5dd35e4d28f6b6495223224f89d339c4cdd595099df5ac726b812238feca0ce5.
+Asistan arşiv ve tüm manifest dosya özetlerini Linux'ta ayrıca salt okunur doğruladı.
+DC01 aktarımı ve birleşik format için imzalama uygulaması henüz kabul edilmedi.
+Eski ağ-only candidate signer bu taslağa doğrudan uygulanamaz.
 Beklenen çıktı /home/segmentiq/authwire-pilot-combined-draft-20261028.zip, 0600 operatör sahipliği.
 Önceden mevcut çıktı veya symlink reddedilir, üzerine yazılmaz.
 Plan 524653f5-1359-46f5-84a5-46355bb82aff v1; beklenen mevcut makine profili/CA/config ile eşleşmezse export durur.
@@ -33,7 +37,7 @@ gerekirse yeni taslak üretilmesi ve gerçek Windows retry kabulü dağıtım ö
 
 ## Açık kapılar
 Taslak imzasızdır: requires_windows_signing=true, can_stage=false, can_apply=false.
-Gerçek müşteri export'u, Windows imzalama/son paket onayı, kontrollü SYSVOL staging,
+Windows imzalama/son paket onayı, kontrollü SYSVOL staging,
 GPO uygulama/bağlama ve test cihazında sertifika + Ethernet/Wi-Fi EAP-TLS/VLAN kabulü açık.
 Enrollment installer tek başına ağ XML'lerini etkinleştirmez; ağ uygulama yolu ayrıca geliştirilmelidir.
 Mevcut ağ adayı veya panel attestation tam kurulum adayı gibi yükseltilmez.

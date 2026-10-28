@@ -1,0 +1,53 @@
+{
+  "event": "CUSTOMER_COMBINED_MACHINE_DRAFT_ACCEPTED",
+  "date_local": "2026-10-28",
+  "timezone": "Europe/Istanbul",
+  "operator_result": {
+    "event": "MACHINE_DEPLOYMENT_DRAFT_EXPORTED",
+    "source_component": "e0edcd463a4da5f5f77695052bba580bd3829f28",
+    "output": "/home/segmentiq/authwire-pilot-combined-draft-20261028.zip",
+    "sha256": "5dd35e4d28f6b6495223224f89d339c4cdd595099df5ac726b812238feca0ce5",
+    "bytes": 29086,
+    "files": 18,
+    "plan_id": "524653f5-1359-46f5-84a5-46355bb82aff",
+    "plan_version": 1,
+    "machine_profile_id": "e3597842-3499-4ace-aaf3-29890eabd908",
+    "machine_profile_version": 3,
+    "network_sha256": "528a793a637e2a8bdd30808acf7a624b83b125419d1ef1c8077249955a146e38",
+    "query_only_snapshot": true,
+    "existing_client_preserved": true,
+    "private_keys_read": false,
+    "services_changed": false,
+    "ad_changed": false,
+    "gpo_changed": false,
+    "endpoint_changed": false,
+    "requires_windows_signing": true,
+    "can_stage": false,
+    "can_apply": false
+  },
+  "independent_appliance_readonly_check": {
+    "archive_sha256_matches": true,
+    "all_manifest_file_hashes_match": true,
+    "exact_file_set": true,
+    "file_count": 18,
+    "mode": "0600",
+    "owner": "segmentiq",
+    "bytes": 29086,
+    "modified_by_check": false
+  },
+  "acceptance_scope": "Unsigned public-asset export only; not Windows signing, complete install, SYSVOL staging or GPO/endpoint acceptance.",
+  "next": "Transfer the pinned ZIP to DC01. Develop combined package signing; existing network-only candidate signer must not be used on this format.",
+  "pending": [
+    "DC01 archive transfer/hash confirmation",
+    "reviewed combined-package signing implementation and Windows acceptance",
+    "main retry trigger correction adoption before deployment",
+    "controlled SYSVOL staging and network/GPO application",
+    "real endpoint enrollment and Ethernet/Wi-Fi EAP-TLS/VLAN acceptance"
+  ],
+  "progress": {
+    "accepted": 54,
+    "total": 94,
+    "open": 40
+  },
+  "final_guide_ready": false
+}

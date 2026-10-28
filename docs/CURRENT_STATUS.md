@@ -20,6 +20,19 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Birleşik makine taslağı dışa aktarıldı ve arşiv doğrulandı — 28 Ekim 2026
+
+Operatör **MACHINE_DEPLOYMENT_DRAFT_EXPORTED** sonucunu paylaştı: **18 dosya /29.086 bayt**, plan **524653f5-1359-46f5-84a5-46355bb82aff v1**, makine profili **e3597842-3499-4ace-aaf3-29890eabd908 v3**.
+Çıktı **/home/segmentiq/authwire-pilot-combined-draft-20261028.zip**, SHA256 **5dd35e4d28f6b6495223224f89d339c4cdd595099df5ac726b812238feca0ce5**.
+Asistan Linux'ta ayrıca salt okunur doğruladı: ZIP özeti, tam dosya kümesi ve manifestteki bütün dosya özetleri eşleşiyor; dosya **0600 /segmentiq:segmentiq**.
+Operatör sonucu **query_only_snapshot=true**, istemci korunmuş, özel anahtar okunmamış; servis/AD/GPO/endpoint değişmemiş. Bu iddialar operatör export çıktısından; arşiv doğrulaması DB işlemini yeniden çalıştırmaz.
+
+**Kabul sınırı:** Public varlık taslağıdır; **requires_windows_signing=true, can_stage=false, can_apply=false**.
+Eski Windows aday imzalayıcısı yalnız ağ paketi formatını destekler; birleşik taslağa doğrudan uygulanmayacak. DC01 aktarım/özet kabulü ve birleşik paket imzalama geliştirmesi sırada.
+Main'deki retry trigger düzeltmesinin dağıtım öncesi alınması, kontrollü SYSVOL staging/ağ uygulama yolu, GPO uygulama ve gerçek cihaz sertifika/EAP-TLS/VLAN kabulü açık.
+Linux dev.40, Windows efc5ee91, genel **54/94 /40 açık**, nihai ürün/kılavuz beklemesi korunur.
+Kanıt **checkpoints/2026-10-28-customer-combined-machine-draft-accepted.json**.
+
 ## Birleşik makine paketi taslağı hazırlanıyor — operatör export'u bekleniyor — 28 Ekim 2026
 
 A04 içindeki enrollment/installer + ağ profili birleştirme alt adımı PR104'tedir.
