@@ -1,7 +1,7 @@
-"""Separate bounded live-directory/owned-GPO READ snapshot jobs.
+"""Bounded readonly staging proposals from a live directory/GPO read.
 
 A successful snapshot is never GPO staging, write permission or execution.
-A Windows scope-capable worker must be delivered separately.
+A Windows staging-preview-capable worker must be delivered separately.
 """
 from .connector_jobs import (ConnectorJobs, JobError, require, guid, HEX,
                              scope_id, sha, LIFETIME, LEASE, LIMIT)

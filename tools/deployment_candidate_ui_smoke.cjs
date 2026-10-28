@@ -135,6 +135,7 @@ const assert = require('node:assert/strict');
   await page.evaluate(()=>{window.rows[1].staging_preview_fresh=false;window.allowWrite=false;return loadCandidateStatus();});
   assert.match(await page.locator('#dep-candidate-list').textContent(),/güncel kontrol gerekiyor/);
   assert.equal(await page.getByRole('button',{name:'Paket hazırlığını önizle',exact:true}).count(),0);
+  await page.evaluate(()=>{window.allowWrite=true;candidateControls();});
   await page.locator('#dep-candidate-open').click();
   await page.locator('#dep-candidate-json').fill('private draft');
   await page.evaluate(()=>{authGeneration++;resetCandidateRegistration();});

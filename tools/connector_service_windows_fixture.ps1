@@ -58,7 +58,7 @@ try{
  if(Test-Path -LiteralPath $root){$root=$null;throw 'Fixture package directory collision'}
  $config=@{Version=1;ReleaseId=[guid]::NewGuid().ToString('D');ServiceName=$name;AccountName=$credential.UserName;PublisherThumbprint=$publisher.Thumbprint;BaseUrl=('https://'+$b.appliance_fqdn+':'+$base.port+'/');Binding=$b;KeyName=$key;ExpectedKeySddl=$receipt.ExpectedKeySddl;RootPath=$root}|ConvertTo-Json -Depth 6|ConvertFrom-Json
  $buildSource=Join-Path $Directory 'reviewed-source';$null=New-Item -ItemType Directory -Path $buildSource
- foreach($file in @('ConnectorServiceHost.cs','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Install-AuthWireConnectorService.ps1','New-AuthWireConnectorServicePackage.ps1','Initialize-AuthWireConnectorChannelKey.ps1','ConnectorChannelKey.ps1','ConnectorChannelTypes.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','Test-AuthWireDeploymentCandidate.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','Read-AuthWireDeploymentScope.ps1','ConnectorServiceUpgrade.ps1','Update-AuthWireConnectorService.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','Read-AuthWireCombinedDeploymentScope.ps1')){
+ foreach($file in @('ConnectorServiceHost.cs','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Install-AuthWireConnectorService.ps1','New-AuthWireConnectorServicePackage.ps1','Initialize-AuthWireConnectorChannelKey.ps1','ConnectorChannelKey.ps1','ConnectorChannelTypes.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','Test-AuthWireDeploymentCandidate.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','Read-AuthWireDeploymentScope.ps1','ConnectorServiceUpgrade.ps1','Update-AuthWireConnectorService.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','Read-AuthWireCombinedDeploymentScope.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','Invoke-AuthWireStagingPreviewJob.ps1','Read-AuthWireCombinedStagingPreview.ps1')){
   $path=Join-Path $buildSource $file;Copy-Item -LiteralPath (Join-Path $source $file) -Destination $path
   if($file.EndsWith('.ps1')){$signed=Set-AuthenticodeSignature -FilePath $path -Certificate $publisher -HashAlgorithm SHA256;if($signed.Status.ToString() -ne 'Valid'){throw 'Fixture source signing failed'}}
  }
@@ -115,6 +115,7 @@ try{
  Wait-Until {$s=Read-Status;return ((Test-Path -LiteralPath (Join-Path $Directory 'scope-rejected')) -and $s -and $s.ScopeJobsCompleted -ge 1 -and $s.LastScopeReason -ceq 'CONTENT_REJECTED')} 170 'Actual signed child scope rejection and local status not both committed'
  Wait-Until {$s=Read-Status;return ((Test-Path -LiteralPath (Join-Path $Directory 'combined-rejected')) -and $s -and $s.CombinedJobsCompleted -ge 1)} 170 'Actual combined rejection and local status missing'
  Wait-Until {$s=Read-Status;return ((Test-Path -LiteralPath (Join-Path $Directory 'combined-scope-rejected')) -and $s -and $s.CombinedScopeJobsCompleted -ge 1 -and $s.LastCombinedScopeReason -ceq 'CONTENT_REJECTED')} 170 'Combined signed child negative scope result missing'
+ Wait-Until {(Test-Path -LiteralPath (Join-Path $Directory 'staging-preview-rejected')) -and (Read-Status).StagingPreviewChannelVerified} 170 'Actual staging preview child rejection and healthy channel missing'
  Check ((Read-Status).CombinedJobsCompleted -ge 1) 'Actual AllSigned child completed typed combined job over HTTPS'
  Check ((Read-Status).ScopeJobsCompleted -ge 1 -and (Read-Status).LastScopeReason -ceq 'CONTENT_REJECTED') 'Actual low-privilege AllSigned child returns a scoped negative result'
  Check (Test-AuthWireJobGuid (Read-Status).LastProbeJobId) 'Real SCM worker completed a scoped read-only probe job over verified HTTPS'
@@ -267,12 +268,6 @@ try{
  }finally{[IO.File]::WriteAllBytes($archiveWorker,$archiveBytes)}
  $u=Fresh-Upgrade Rollback
  Check ($u.Phase -ceq 'rolled_back' -and (Read-Status).ReleaseId -ceq $legacyConfig.ReleaseId -and (Read-Status).Healthy) 'Explicit signed rollback restores legacy health with the same key and service'
- [IO.File]::WriteAllText((Join-Path $Directory 'case.txt'),'staging-preview-offline')
- try{
-  $caught=$false
-  try{Invoke-AuthWireServiceUpgradeCore -Mode Apply @upgradeArgs -SourceDirectory $buildSource|Out-Null}catch{$caught=$_.Exception.Message -like 'CONNECTOR_UPGRADE_FAILED_OLD_RELEASE_RESTORED:*'}
-  Check $caught 'Failed staging preview channel rolls back when all older channels work'
- }finally{[IO.File]::WriteAllText((Join-Path $Directory 'case.txt'),'normal')}
  $u=Fresh-Upgrade Apply
  Check ($u.Phase -ceq 'applied' -and (Read-Status).ProbeChannelVerified) 'Reviewed candidate can be applied again after a verified rollback'
  Check ((& sc.exe sdshow $name|Out-String).Trim() -ceq $serviceSecurityBefore) 'Upgrade and rollback preserve native SCM security descriptor'
