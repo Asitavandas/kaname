@@ -1,5 +1,39 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## 🔴✓ Windows birleşik kapsam worker Apply kabul edildi — gerçek kapsam görevi sırada — 28 Ekim 2026
+
+Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY /ToolVersion1.4.0 /Mode Apply /Stage applied**,
+**Error=null /ChangesMayBePartial=false** sonucunu paylaştı. **ServiceTransitioned=true**.
+Kalıcı Windows Connector **689649c0-61df-40aa-bbfb-b84fa1cc2ac0 → e6d734b1-59c8-48e5-8a6e-c40b43be3114**
+geçişi kabul edildi; source bileşeni **c67adc15b731dbb7876cef1ed848ee1ce483b8bb**.
+SourceSignaturesValid=true; mevcut hesap, eşleştirme, channel key, önceki kaynaklar ve signer snapshot korundu.
+AD/GPO, key ACL ve trust store değişmedi; yeni anahtar veya servis oluşturulmadı.
+**CanApplyGpo=false**; bu Connector güncellemesi GPO/endpoint dağıtımı değildir.
+
+Kanıt: **C:\ProgramData\AuthWire-ConnectorUpgradeEvidence-e6d734b159c848e58a6ec40b43be3114-1ac6276ee60744ef865f2d3989508a6c**.
+Tam normalize edilmiş operatör sonucu **docs/checkpoints/2026-10-28-customer-combined-scope-worker-applied.json**.
+Kabul operatör çıktısına dayanır; asistanın bağımsız DC01/servis/DB okuması değildir.
+İncelenen source'da applied öncesinde yeni release/runtime kimliği ve taze HTTPS health ile
+Probe/Candidate/Scope/Combined/**CombinedScopeChannelVerified** kapıları zorunludur.
+Bu gate'in geçmesi gerçek birleşik AD/GPO/SYSVOL görevi veya pozitif kapsam sonucu sayılmaz.
+Önceki paket ArchivePath'i kaydedildi; müşteride rollback provası yapıldığı iddia edilmez.
+
+**Son kabul:** Linux **dev.43**, Windows **e6d734b1**; birleşik content pozitif/browser kabulü korunuyor.
+**Sıradaki operatör adımı:** paneli Ctrl+F5 ile yenile → İmzalı dağıtım adaylarında
+**AuthWire Pilot - Merkezi Windows · v1 · Birleşik paket** satırı →
+**AD/GPO kontrolünü önizle → AD/GPO kontrolünü gönder** → yaklaşık30–60 saniye sonra **Yenile**.
+Doğrulamayı önizle içerik işini tekrar çalıştırır; bu aşamada AD/GPO kontrolü seçilir.
+Beklenen mesaj: **“AD hedefleri ve GPO okuma kontrolü başarılı. Dağıtım henüz uygulanmadı.”**
+Bu yeni birleşik görev kabul edilen content hash'ine ve tam hedef setine bağlıdır; SYSVOL dosya ağacını da okur.
+Ağ profilleri satırının önceki sonucu birleşik kapsam kabulü değildir.
+queued/leased durumunda yeni görev oluşturulmadan Yenile ile aynı sonuç izlenir.
+Kapsam tazeliği90 saniyedir; stale mesajı dağıtım hatası veya GPO değişikliği sayılmaz.
+
+Henüz birleşik kapsam görevinin gönderildiği veya pozitif sonuç alındığı bildirilmedi.
+Kontrollü staging/rollback ve gerçek pilot endpoint kabulü açık; **54/94 tamam,40 açık**.
+Nihai kılavuz kapısı değişmedi. Yeni tam yedek alınmadı; sonuç ve devam noktası kaydedildi.
+
+
 ## 🔴✓ Windows birleşik kapsam worker Prepare kabul edildi — Apply sırada — 28 Ekim 2026
 
 Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY /ToolVersion1.4.0 /Mode Prepare /Stage prepared**

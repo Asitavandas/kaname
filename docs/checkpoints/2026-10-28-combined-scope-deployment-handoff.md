@@ -63,3 +63,20 @@ Beklenen Stage=applied, Error=null, Upgrade.ServiceTransitioned=true,
 NewReleaseId=e6d734b1-59c8-48e5-8a6e-c40b43be3114,
 SourceSignaturesValid/SignerSnapshotPreserved=true, CanApplyGpo=false.
 Çıktı kabul edilmeden görev gönderilmez; bu update GPO/endpoint dağıtımı açmaz.
+
+## Windows Apply kabul edildi — panel gerçek kapsam kontrolü
+
+28 Ekim2026 operator Apply/Stage=applied/Error=null/ServiceTransitioned=true kabul edildi.
+Windows son release e6d734b1-59c8-48e5-8a6e-c40b43be3114; Linux dev.43.
+Tam sonuç: 2026-10-28-customer-combined-scope-worker-applied.json.
+
+1. Paneli Ctrl+F5 ile yenile.
+2. İmzalı dağıtım adayları → AuthWire Pilot - Merkezi Windows · v1 · Birleşik paket.
+3. AD/GPO kontrolünü önizle → AD/GPO kontrolünü gönder.
+4. Yaklaşık30–60 saniye sonra Yenile ile aynı görevi izle; queued/leased iken tekrar gönderme.
+5. Beklenen: AD hedefleri ve GPO okuma kontrolü başarılı. Dağıtım henüz uygulanmadı.
+
+Bu salt okunur iş SYSVOL ağacını da kontrol eder. Mevcut content doğrulamasını tekrar göndermek gerekmez.
+Ağ profilleri satırının eski scope sonucu bu kabul sayılmaz. Tazelik90 saniye; ekran sonucu paylaşılınca kayıt güncellenir.
+Hata/ret durumunda aynı işi veya Apply'ı tekrar yürütmeden mevcut ekran/sonuç incelenir.
+Henüz müşteri pozitif kapsam, staging veya endpoint kurulumu kabul edilmiş değildir.
