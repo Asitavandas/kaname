@@ -1,0 +1,60 @@
+{
+  "event": "CUSTOMER_UNC_FIX_HEALTH_CHANNEL_MISMATCH_READONLY",
+  "date": "2026-10-28",
+  "source": "operator_supplied_output",
+  "active": {
+    "release_id": "e6d734b1-59c8-48e5-8a6e-c40b43be3114",
+    "runtime_sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+    "worker_pid": 9804,
+    "checked_utc": "2026-10-28T13:42:16.3559014+00:00",
+    "last_success_utc": "2026-10-28T13:42:01.2412569+00:00",
+    "healthy": true,
+    "consecutive_failures": 0,
+    "channels": {
+      "probe": false,
+      "candidate": false,
+      "scope": false,
+      "combined": false,
+      "combined_scope": true
+    }
+  },
+  "failed_candidate": {
+    "release_id": "cf74295c-ec97-4edf-a15a-877b155d1740",
+    "runtime_sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+    "worker_pid": 6416,
+    "checked_utc": "2026-10-28T13:34:03.0678245+00:00",
+    "last_success_utc": "2026-10-28T13:33:50.6018880+00:00",
+    "healthy": true,
+    "consecutive_failures": 0,
+    "channels": {
+      "probe": false,
+      "candidate": false,
+      "scope": true,
+      "combined": false,
+      "combined_scope": true
+    },
+    "status_is_historical": true
+  },
+  "config_null_status_fields_expected": true,
+  "interpretation": "Basic HTTPS health and correct SID succeeded on both snapshots. Candidate snapshot fails mandatory all-five-channel upgrade gate; initial inner error was discarded by current updater, so exact throw not independently observed. Channel flags reset per cycle; false flags also preexist on active release. Queue/transport/validation cause unresolved; no guard relaxation or retry.",
+  "linux_logs": "journal access supplied no useful lines; application HTTP logging disabled",
+  "linux_db_direct_read": "unprivileged access denied; no bypass attempted",
+  "next_readonly_diagnostic": {
+    "file": "docs/checkpoints/2026-10-28-connector-queues-readonly.py",
+    "staged_path": "/home/segmentiq/authwire-connector-queues-readonly-20261028.py",
+    "sha256": "62dc12667fb94a53358cc49dd0ce268547fb93989737d5541d7fe6ba301b585b",
+    "fixtures_empty": 5,
+    "fixtures_invalid": 5,
+    "executed_on_production": false,
+    "database_mode": "ro + PRAGMA query_only + SELECT only",
+    "secrets_exported": false
+  },
+  "apply_retried": false,
+  "production_settings_changed": false,
+  "signer_post_comparison_pending": true,
+  "customer_scope_success_pending": true,
+  "overall_completed": 54,
+  "overall_open": 40,
+  "ready_for_final_guide": false,
+  "guide_delivered": false
+}

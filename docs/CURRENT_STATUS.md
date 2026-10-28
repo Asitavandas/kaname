@@ -1,5 +1,32 @@
 # AuthWire current work record
 
+## Eski sürüm sağlığı doğrulandı; yeni paket beş kanal eşiğini geçememiş — 28 Ekim 2026
+
+Operatör doğru paket yollarından kayıtları paylaştı. Canlı **e6d734b1-59c8-48e5-8a6e-c40b43be3114**,
+worker **9804**, beklenen gMSA SID ile **Healthy=true /ConsecutiveFailures=0**,
+CheckedUtc **2026-10-28T13:42:16.3559014Z**. Probe/candidate/scope/combined false, combined-scope true.
+Candidate **cf74295c-ec97-4edf-a15a-877b155d1740** tarihsel sağlık kaydı
+**2026-10-28T13:34:03.0678245Z**, worker **6416**, doğru SID ile Healthy=true/0 failure;
+probe/candidate/combined false, scope/combined-scope true.
+service.json yalnız konfigürasyon olduğundan seçilen sağlık alanlarının null olması beklenir.
+
+Runtime bayrakları her döngüde sıfırlayıp ilgili poll/reply doğrulamasıyla doldurur;
+Healthy yalnız temel health exchange'i ölçer. Updater yeni sürüm için beş kanalın tümünü aynı
+taze sağlık kaydında zorunlu tutar; paylaşılan candidate kaydı bu koşulu sağlamıyor.
+İlk iç hata mevcut catch tarafından geri dönüş mesajıyla örtüldüğünden kesin ilk throw görülmedi.
+Kanal false durumları eski sürümde de var; **SYSVOL fix'in bunları yarattığı iddia edilmez**.
+Kök neden (queue schema/transport/reply) henüz belirlenmedi. Kontroller gevşetilmeyecek; Apply tekrarlanmadı.
+
+Linux journal yararlı çıktı vermedi; HTTP log_message kapalı. Unprivileged DB okuması erişim reddi aldı,
+yetki aşılmadı. Beş queue'nun mevcut _read validatörlerini **mode=ro /query_only /SELECT** ile çağıran
+sabit salt okunur helper hazırlandı; beş empty ve beş invalid-schema fixture kontrolü geçti.
+Helper **/home/segmentiq/authwire-connector-queues-readonly-20261028.py**,
+SHA256 **62dc12667fb94a53358cc49dd0ce268547fb93989737d5541d7fe6ba301b585b**.
+Üretimde henüz çalıştırılmadı; operatör pinned sudo komutuyla yalnız kuyruk sayısı/şema/hata kodunu paylaşacak.
+Anahtarlar, sırlar, payload/job kimlikleri yazdırılmaz; servis/DB/business state değiştirilmez.
+Signer's son karşılaştırması ve müşteri pozitif kapsam kontrolü bekliyor. Genel takip **54 tamamlanan/40 açık**.
+
+
 ## UNC düzeltmesi geri dönüş kontrolü — servis çalışıyor, sağlık yolu kontrolü düzeltilecek — 28 Ekim 2026
 
 Operatör çıktısı: **AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46 Running**,
