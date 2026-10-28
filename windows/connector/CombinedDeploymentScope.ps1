@@ -20,6 +20,28 @@ function Get-AuthWireCombinedScopeContext($Target,[hashtable]$Binding,[string]$P
  if($approval.group_sid -cne $Target.group_sid -or $approval.domain -cne $Target.domain -or $approval.machine_profile_id -cne $Target.machine_profile_id -or $approval.machine_profile_version -ne $Target.machine_profile_version){throw 'SCOPE_CONTENT_REJECTED'}
  return [pscustomobject]@{Approval=$approval;NetworkTarget=$network}
 }
+function Read-AuthWireCombinedSysvolFile([string]$Root,[ValidateSet('gpo.cmt','gpt.ini')][string]$Name){
+ # Root is constructed from the verified domain/PDC/GPO context. Never accept
+ # a request-supplied filename or reuse the local-candidate UNC prohibition.
+ if(-not [IO.Path]::IsPathRooted($Root) -or $Root.StartsWith('\\?\') -or $Root.StartsWith('\\.\')){throw 'SCOPE_GPO_CHANGED'}
+ $directory=Get-Item -LiteralPath $Root -Force -ErrorAction Stop
+ if(-not $directory.PSIsContainer -or ($directory.Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'SCOPE_GPO_CHANGED'}
+ $path=Join-Path $directory.FullName $Name
+ $item=Get-Item -LiteralPath $path -Force -ErrorAction Stop
+ if($item.PSIsContainer -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or $item.Length -lt 1 -or $item.Length -gt 4096){throw 'SCOPE_GPO_CHANGED'}
+ $stream=$null;$memory=$null
+ try{
+  $stream=[IO.File]::Open($item.FullName,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+  if($stream.Length -lt 1 -or $stream.Length -gt 4096 -or $stream.Length -ne $item.Length){throw 'SCOPE_GPO_CHANGED'}
+  $memory=[IO.MemoryStream]::new();$buffer=New-Object byte[] 512;$total=0
+  while(($count=$stream.Read($buffer,0,$buffer.Length)) -gt 0){
+   $total+=$count;if($total -gt 4096){throw 'SCOPE_GPO_CHANGED'}
+   $memory.Write($buffer,0,$count)
+  }
+  if($total -ne $stream.Length -or $total -ne $item.Length){throw 'SCOPE_GPO_CHANGED'}
+  return ,$memory.ToArray()
+ }finally{if($memory){$memory.Dispose()};if($stream){$stream.Dispose()}}
+}
 function Read-AuthWireCombinedSysvolTree([string]$Root){
  # The caller constructs Root from its verified domain/PDC and pinned GPO GUID.
  $item=Get-Item -LiteralPath $Root -Force -ErrorAction Stop
@@ -36,7 +58,7 @@ function Read-AuthWireCombinedSysvolTree([string]$Root){
    if(-not $child.PSIsContainer -or @(Get-ChildItem -LiteralPath $child.FullName -Force -ErrorAction Stop).Count -ne 0){throw 'SCOPE_GPO_CHANGED'}
   }else{
    if($child.PSIsContainer -or $child.Length -gt 4096 -or $child.Length -lt 1){throw 'SCOPE_GPO_CHANGED'}
-   $bytes=Read-AuthWireCandidateBytes $child.FullName 4096;$length=$bytes.Length
+   $bytes=Read-AuthWireCombinedSysvolFile $Root $name;$length=$bytes.Length
    $hash=Get-AuthWireCandidateHash $bytes
    if($name -ceq 'gpt.ini'){
     if($bytes.Length -ge 2 -and $bytes[0] -eq 255 -and $bytes[1] -eq 254){$text=[Text.UnicodeEncoding]::new($false,$true,$true).GetString($bytes,2,$bytes.Length-2)}

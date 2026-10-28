@@ -299,7 +299,7 @@ try{
  Reject {Assert-AuthWireSignedDelivery $deliveryDirectory $publisher.Thumbprint} 'Existing signed customer source drift is rejected before package preparation'
 
  # The new fixed nineteen-file delivery is tested without running its DC01-only main.
- $deliveryScript=Join-Path $PSScriptRoot '..\docs\checkpoints\2026-10-28-dc01-combined-scope-worker-upgrade.ps1'
+ $deliveryScript=Join-Path $PSScriptRoot '..\docs\checkpoints\2026-10-28-dc01-sysvol-unc-fix.ps1'
  $tokens=$null;$errors=$null;$deliveryAst=[Management.Automation.Language.Parser]::ParseFile($deliveryScript,[ref]$tokens,[ref]$errors)
  Check ($errors.Count -eq 0) 'Candidate worker delivery parses in native Windows PowerShell 5.1'
  foreach($f in $deliveryAst.FindAll({param($node)$node -is [Management.Automation.Language.FunctionDefinitionAst]},$false)){. ([scriptblock]::Create($f.Extent.Text))}
