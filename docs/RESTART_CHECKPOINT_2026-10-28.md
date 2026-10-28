@@ -1,5 +1,19 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## UNC düzeltmesi geri dönüş kontrolü — servis çalışıyor, sağlık yolu kontrolü düzeltilecek — 28 Ekim 2026
+
+Operatör çıktısı: **AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46 Running**,
+hesap **VIZYONVERI\\aw-deploy$**, PID **556**. Journal **Phase=rolled_back**,
+old release **e6d734b1-59c8-48e5-8a6e-c40b43be3114**, new release **cf74295c-ec97-4edf-a15a-877b155d1740**.
+Önceki asistan tanı komutunda paket klasörü yanlışlıkla **AuthWireConnector-…** yazıldı;
+doğru klasör **AuthWire-Connector-…**. Bu nedenle iki **STATUS_FILE_ABSENT** çıktısı
+gerçek sağlık dosyalarının bulunmadığına kanıt değildir. Servis SCM durumu ve journal çıktısı geçerlidir.
+Yeni adım doğru literal paket yollarında salt okunur service.json/status.json kontrolüdür.
+Canlı sürümün güncel sağlık kaydı ve başarısız candidate kanalları henüz görülmedi;
+Apply tekrar edilmedi, READ_FAILED çözülmüş kabul edilmedi. Signer son karşılaştırması da bekliyor.
+Linux dev.43 kalır; bu kontrolde ayar değişmedi ve yeni tam yedek alınmadı. Genel takip 54 tamamlanan/40 açık.
+
+
 ## DC01 SYSVOL UNC Apply başarısız — otomatik geri dönüş bildirildi, inceleme bekliyor — 28 Ekim 2026
 
 Operatör **ToolVersion 1.4.1 / Mode Apply** çıktısını paylaştı:
