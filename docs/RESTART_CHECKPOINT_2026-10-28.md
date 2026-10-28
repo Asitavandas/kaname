@@ -1,5 +1,38 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## 🔴✓ Birleşik paket kalıcı Connector içerik doğrulaması panelde kabul edildi — 28 Ekim 2026
+
+Operatör ekran görüntüsünde **AuthWire Pilot - Merkezi Windows · v1 · Birleşik paket**
+satırı ve **“İmza ve içerik Connector tarafından doğrulandı. GPO ve dağıtım kontrolü bekleniyor.”**
+durumu görünüyor. Sertifika kurulumu+ağ profilleri birlikte doğrulanan birleşik kayıt açıkça seçilmiş.
+Manifest **124360dc02e641fe6532f5058fa4915610f74d5c2de7028c5913d7cb9d431c5b** ve
+taslak **5dd35e4d28f6b6495223224f89d339c4cdd595099df5ac726b812238feca0ce5**
+önceden kabul edilen imzalı adayla aynı.
+Bu, dev.42 görev kanalı ve689649c0 kalıcı worker sonrası gerçek müşteri pozitif content sonucunun
+**panel gösterimiyle kabulüdür**; eski ağ-only doğrulamasıyla karıştırılmadı.
+
+Kanıt: **image(20261028-120334).png**,
+SHA256 **3b730b6fbd659ab53437f94ec221e50f1ab954518c39e7de6b7afd44e1d57fe0**.
+Kaynak operatör ekranıdır; asistanın bağımsız API/Windows/DB okuması değildir.
+Görev kimliği ve ham imzalı result bu görüntüde bulunmuyor; bunlar uydurulmadı.
+Kabul kaydı: **docs/checkpoints/2026-10-28-customer-combined-content-browser-accepted.json**.
+
+**Tamamlanan alt adım:** birleşik imzalı aday hazırlığı → ayrı panel kaydı → dev.42 typed görev kanalı →
+kalıcı Windows worker Prepare/Apply → pozitif birleşik içerik sonucu ve tarayıcı kabulü.
+Linux son kabul **0.14.0-dev.42**; Windows son kabul **689649c0-61df-40aa-bbfb-b84fa1cc2ac0**.
+İçerik kabulü GPO/AD/SYSVOL tazeliği, gerçek staging/rollback veya endpoint kurulumu değildir.
+Bu kayıt ürün/policy/AD/GPO/cihaz ayarlarını değiştirmez ve yeni tam yedek oluşturmaz.
+
+**Sıradaki geliştirme/kontrol:** aynı birleşik adaya ve güncel içerik sonucuna bağlı,
+güncel AD hedef üyeliklerini ve yönetilen GPO/SYSVOL durumunu salt okunur doğrulayacak kapsam adımı.
+Mevcut ağ-only scope kanalı birleşik kanıt sayılmaz; birleşik hedef/paket pinleri korunarak
+destek hazırlanmalı, önizleme/görev/worker sonucu ayrı kaydedilmelidir.
+Sonra kontrollü staging/rollback ve gerçek pilot endpoint kabulü açık kalır.
+Planın merkezi Windows dağıtımı maddesi devam ediyor; henüz GPO uygulaması başlatılmadı.
+Genel **54/94 tamam,40 açık** sayımı ve **READY_FOR_FINAL_GUIDE=false /GUIDE_DELIVERED=false** değişmedi.
+Her tamamlanan işlemi kaydetme tercihi bu kabul ve devam noktasıyla yerine getirildi.
+
+
 ## 🔴✓ Kalıcı Windows birleşik worker Apply kabul edildi — panel içerik görevi sırada — 28 Ekim 2026
 
 Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY /Mode Apply /Stage applied /Error=null**
