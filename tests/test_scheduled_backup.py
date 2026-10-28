@@ -266,7 +266,10 @@ class BackupInstallerTests(unittest.TestCase):
         root = Path(__file__).parents[1]
         ns = runpy.run_path(str(root / 'docs/checkpoints/2026-10-18-scheduled-backup-access-history.py'))
         self.assertEqual(ns['INSTALLER_SHA'], hashlib.sha256((root / 'tools/backup_install.py').read_bytes()).hexdigest())
-        manifest = json.dumps({n: hashlib.sha256((root / 'tools' / n).read_bytes()).hexdigest() for n in installer.FILES}, sort_keys=True, indent=2) + '\n'
+        files = {n: hashlib.sha256((root / 'tools' / n).read_bytes()).hexdigest() for n in installer.FILES}
+        # Historical access-history installer pins its pre-hotfix worker.
+        files['scheduled_backup.py'] = '83de9cb66df58b5f0a12c18c6526731e9697023f268a12c7b566ba6efbda77b0'
+        manifest = json.dumps(files, sort_keys=True, indent=2) + '\n'
         self.assertEqual(ns['MANIFEST_SHA'], hashlib.sha256(manifest.encode()).hexdigest())
 
     def test_hardened_timer_first_backup_restore_then_enable_preserves_product(self):
