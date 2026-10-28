@@ -20,6 +20,30 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ DC01 birleşik paketin gerçek gMSA kimliğiyle salt okunur kontrolü kabul edildi — 28 Ekim 2026
+
+Operatör **WINDOWS_COMBINED_RUNTIME_DELIVERY /RunProbe /Stage=verified** sonucunu paylaştı.
+DC01 **VIZYONVERI\\aw-deploy$**, runtime SID **S-1-5-21-34256453-3348971241-2809240126-1648**,
+geçici runtime PID **9288**; **ServiceLogonVerified=true, ProbeVerified=true, CandidateVerified=true,
+ContentVerified=true, ServiceIdentityVerified=true, SignaturesVerified=3**.
+Plan **524653f5-1359-46f5-84a5-46355bb82aff v1**; manifest **124360dc02e641fe6532f5058fa4915610f74d5c2de7028c5913d7cb9d431c5b**,
+özgün draft **5dd35e4d28f6b6495223224f89d339c4cdd595099df5ac726b812238feca0ce5**.
+Bu operatör çıktısı kabulüdür; ayrı asistan DC01 dosya/servis okuması değildir.
+**9288 geçici probe PID'idir; kalıcı Connector PID'i olarak kullanılmaz.**
+
+**TemporaryServiceRemoved/TemporaryBinaryRemoved/TemporaryVerifierRemoved/TemporaryResultDirectoryRemoved=true**,
+Error=null ve CleanupErrors=[]; özgün ZIP korunmuş. Doğrulayıcı private key açmamış, deployment artifact çalıştırılmamış;
+kalıcı Connector, AD/GPO ve logon rights değiştirilmemiş, secret export yok.
+Kanıt yolu **C:\\ProgramData\\AuthWire-CandidateProbe-707b20123a304c599e8463068f0fdcd1\\summary.json**.
+
+**Kabul sınırı/devam:** **GpoStateChecked=false, DirectoryFreshnessChecked=false, CanStage=false, CanApplyGpo=false**.
+Bu standalone geçici SCM kanıtıdır; panelin birleşik job/registry yolu veya kalıcı worker güncellemesi kabulü değildir.
+Sırada birleşik iş/kayıt entegrasyonu ve staging öncesi güncel AD/GPO/tam SYSVOL guard'ları;
+ardından kontrollü staging/rollback, GPO/ağ uygulaması ve gerçek cihaz sertifika/Ethernet/Wi-Fi EAP-TLS/VLAN testleri vardır.
+Başarılı aynı kontrol gereksiz tekrarlanmayacak.
+Linux dev.40, Windows efc5ee91, **54/94 /40 açık** ve nihai ürün/kılavuz beklemesi korunur.
+Kanıt **checkpoints/2026-10-28-customer-combined-gmsa-runtime-accepted.json**.
+
 ## Birleşik paket için salt okunur servis kimliği doğrulama aracı hazır — müşteri kontrolü bekleniyor — 28 Ekim 2026
 
 **PR106** merge **60c39b36b594e3e1f9076a2a9e50ce87cdeda32b**, son test head **a69f9a6d2c1f6c2476a4ebb258e9299e6129cb14** üzerinde dört workflow başarılı.

@@ -28,7 +28,11 @@ Hata/temizlik sorunu varsa ProbeVerified false kalır ve kanıt yolu paylaşılm
 Beklenen event WINDOWS_COMBINED_RUNTIME_DELIVERY; iç sonuçta ProbeVerified,
 ServiceLogonVerified, CandidateVerified ve TemporaryServiceRemoved true olmalıdır.
 Candidate.ContentVerified ve ServiceIdentityVerified true, RuntimeSid ...1648 olmalıdır.
-Müşteri RunProbe çıktısı henüz alınmadı.
+Müşteri RunProbe çıktısı 28 Ekim 2026'da kabul edildi: DC01 / VIZYONVERI\\aw-deploy$,
+exact SID ...1648, geçici PID9288; ProbeVerified/ServiceLogonVerified/CandidateVerified ve
+ContentVerified/ServiceIdentityVerified true, SignaturesVerified=3. Geçici servis/exe/helper/result
+kaldırıldı, Error=null/CleanupErrors=[]. Bu operatör sonucudur; ayrı asistan DC01 okuması değildir.
+9288 kalıcı Connector PID'i değildir. GPO/AD güncelliği veya staging kabulü verilmedi.
 
 ## Açık işler
 Bu standalone servis hesabı kanıtıdır. Panelin birleşik job/registry kanalı henüz eklenmedi;
