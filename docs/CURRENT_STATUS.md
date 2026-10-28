@@ -20,6 +20,40 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Dev.42 canlı Linux kurulumu kabul edildi — Windows birleşik worker hazırlığı sırada — 28 Ekim 2026
+
+Operatör **COMBINED_JOBS_FINISHED /verified=true**, sürüm **0.14.0-dev.42**,
+release **375677c9bd733cae0f25fd6fc59c0ea826b25f78** sonucunu paylaştı.
+Korunan dosyalar, broker/RADIUS süreçleri, timer ve iş durumu kontrolleri geçti.
+Önce/sonra bütün authenticated loopback okumaları200 döndü; combined job kanalı eklendi,
+ancak birleşik görev oluşturulmadı. RADIUS PID **1243360** ve broker PID **1069437** korundu.
+Kanıt: **/var/lib/authwire-updates/combined-jobs-dev42-20261028T114518Z-941ed9a1**.
+
+Asistan ayrıca salt okunur source sürümünü dev.42, panel active/PID **2035660**,
+RADIUS/broker active ve aynı PID'leri, backup timer active durumunu doğruladı.
+Kurulu ve source backup worker hash'leri **4f489caa2113c86bda5d0d294878920e218769751e0edbb9385aa40135a924b6**;
+release.json aynı worker hash'ini gösteriyor; restore checker hash'i değişmedi.
+Asistan unprivileged olarak private web.crt okuyamadığından HTTPS kontrolünü bağımsız tekrarlamadı;
+HTTP200/iş durumu korunumu operatörün sudo installer kanıtına dayanır. DB veya gizli değer okunmadı.
+
+**backup_workers_changed=true beklenen uyumluluk güncellemesidir:** birleşik görev kanalının
+poll/last_poll hareketleri yedek kararlılık kontrolüne eklendi; tam yedek alınmadı.
+Politika, sertifika, plan, eşleştirme, AD/GPO, Windows paket/cihaz ve native modül değişmedi.
+Son kabul edilen tam yedek28 Ekim10:28 arşividir; bu güncelleme yeni backup/restore provası sayılmaz.
+
+Windows teslimatını vermeden önce wrapper'ın b546 başlangıç sürümü pininin artık eski olduğu bulundu.
+Mevcut son kabul edilen scope worker **efc5ee91-e39e-4cc4-9cc1-60b648e18cf9** olduğundan
+yalnız ExpectedCurrentRelease girdisi düzeltildi;21 dosyalık imzalanacak kaynak arşivi değişmedi.
+**PR111** bu düzeltmeyi ve regresyon kontrolünü kaydeder; son CI/teslimat hash'i aşağıdaki takip kaydına işlenecek.
+Eski staged Windows helper henüz operatöre çalıştırılmak üzere verilmedi ve Windows'ta uygulanmadı.
+
+**Sıradaki operatör adımı:** düzeltilmiş Windows helper ile **Prepare**;
+çalışan servis/PID'yi değiştirmeden aday paket ve geri alma kaydı hazırlanır.
+Başarılı sonucu takiben **Apply**, taze health/capability ve birleşik panel doğrulama görevi.
+Windows son canlı release hâlâ **efc5ee91-e39e-4cc4-9cc1-60b648e18cf9**.
+Birleşik gerçek pozitif roundtrip, browser kabulü, taze AD/GPO/SYSVOL, staging/rollback ve endpoint kabulü açık.
+**GPO apply=false;54/94 tamam,40 açık; nihai kılavuz kapısı değişmedi.**
+
 ## Birleşik kalıcı doğrulama hazır — dev.42 ve Windows uygulaması bekliyor — 28 Ekim 2026
 
 **PR110** merge **bbeeb482099302dea45ed1f03cdd6cca6165cff0**, test head **f924535281b63c48e1facfe24964e73f50c5a9fd**.
