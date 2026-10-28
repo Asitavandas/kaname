@@ -1,5 +1,30 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## Linux dev.44 kuruldu ve koruma kontrolleri geçti — Windows önizleme worker teslimatı sırada — 28 Ekim 2026
+
+Operatör **STAGING_PREVIEW_JOBS_FINISHED /verified=true /version=0.14.0-dev.44** sonucunu paylaştı.
+Kaynak bileşen **21003f27bdedd0cb61c3dcfc9fffaaaf943552c7**.
+Kanıt **/var/lib/authwire-updates/staging-preview-jobs-dev44-20261028T182406Z-86efc09b**
+(zaman damgası **21:24:06 Europe/Istanbul**). Önce/sonra panel okuma kontrollerinin tamamı HTTP200;
+korunan dosya, broker, RADIUS, timer ve iş verisi kontrolleri true.
+RADIUS yeniden başlatılmadı, PID **1243360**; broker PID **1069437** korundu.
+
+Ek salt okunur host kontrolü kurulu **dev.44** sürümünü ve üç aktif servisi doğruladı.
+Panel PID **2163240**, yeni backup worker **bf11bef7b45083a28781817e579eaab906d8bf3a581d80a84d98d1a7889f4662**;
+restore checker **8d887e14588d8f9b5fe1b164678aef0feb24fd5b2288ffcec1d6da4d062ceab5** değişmedi.
+**Backup worker güncellendi; yeni tam veri yedeği alınmadı.** Önceki yeni backup/kapatma iptali geçerlidir.
+
+Linux preview görev kanalı eklendi. Yeni görev/adayı oluşturulmadı; pairing, sertifika,
+Windows paketi/endpoint ve AD/GPO değişmedi. **Canlı Windows hâlâ cf74295c**;
+yeni altıncı kanal ve gerçek müşteri gMSA önizlemesi henüz doğrulanmadı.
+HTTP200 kontrolü operatör tarayıcı veya gerçek endpoint kabulü sayılmadı.
+GPO apply=false; gerçek SYSVOL staging/rollback/aktivasyon yapılmadı.
+
+Sıradaki adım aynı mevcut hesap/pairing/anahtarları koruyan Windows preview worker teslimatını
+hazırlayıp doğrulamak; operatörden önce **Prepare**, sonucu kaydettikten sonra **Apply** kanıtı almak.
+Ardından gerçek gMSA önizlemesi ve panel kabulü. Genel **54/94 tamamlanan,40 açık** değişmedi;
+kılavuz bayrakları false. Ayrıntı: **docs/checkpoints/2026-10-28-customer-staging-preview-dev44-installed.json**.
+
 ## Linux dev.44 önizleme kanalı teslimatı hazır — sudo sonucu bekleniyor — 28 Ekim 2026
 
 **PR116** merge **3bf268b296bce3fa31b578af1a299ae613477705**, test edilen head **efe6f74eff0449a561baf0c5ec4b7600be0a0761**.
