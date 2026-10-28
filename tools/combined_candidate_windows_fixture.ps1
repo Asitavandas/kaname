@@ -60,7 +60,7 @@ try{
   $badPin=$verifyParameters.Clone();$badPin.ManifestSha256='0'*64
   Reject {Test-AuthWireCombinedContent @badPin} 'Readonly wrong manifest pin rejected'
   Reject {Test-AuthWireServiceCombinedContent @verifyParameters} 'Administrator cannot claim service SID proof'
- }finally{Set-Item Function:global:Get-AuthWireCombinedSignerSnapshot $savedSnapshotFunction;Remove-Item Function:global:Set-AuthenticodeSignature}
+ }finally{Set-Item Function:global:Get-AuthWireCombinedSignerSnapshot $savedSnapshotFunction;Remove-Item Function:Set-AuthenticodeSignature -Force}
  # Actual non-admin virtual SCM account runs the same service-bound verifier.
  $probe=Join-Path $PSScriptRoot '../windows/connector/Test-AuthWireCombinedService.ps1'
  $helper=Join-Path $PSScriptRoot '../windows/connector/Test-AuthWireCombinedContent.ps1'
