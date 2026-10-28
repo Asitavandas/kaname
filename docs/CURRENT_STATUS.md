@@ -20,6 +20,27 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Yedekleme başarısızlığı inceleniyor — yeniden açılış öncesi öncelik — 28 Ekim 2026
+
+Operatör **sudo systemctl start authwire-backup.service** çalıştırdı; iş exit1 ile başarısız.
+Asistan salt okunur systemd/journal kontrolünde 28 Ekim09:47:20–09:50:23 İstanbul çalışmasının
+**BACKUP_FAILED /ValueError** çıktısını gördü. 27 ve28 Ekim doğal gece işleri de aynı türde başarısız.
+Journal'daki son başarılı kayıt **26 Ekim03:19:04 İstanbul**, arşiv **authwire-scheduled-20261026T001904Z-f6ad3585d4ef.tar.gz**,
+SHA256 **3db0772ad74d8c6e047f930264e85946683e95ea1da7b131e528b643d338309f**.
+Bu eski journal kaydıdır; dosya varlığı/digest veya restore şimdi yeniden doğrulanmadı.
+Disk çıktısı43G toplam/18G kullanım/23G boş; hata mesajı tam neden bildirmiyor.
+
+Canlı backup worker kaynak özeti **83de9cb66df58b5f0a12c18c6526731e9697023f268a12c7b566ba6efbda77b0**.
+Kararlılık fingerprint'i runtime_settings içinde yalnız directory_health satırını dışlıyor.
+Sürekli Connector poll/health kayıtlarının bu guard'ı değiştirmesi bir **hipotezdir**, henüz kesin neden değildir.
+Yedekleme/servis/DB guard'ları gevşetilmedi, işler tekrar başlatılmadı ve eski yedekler silinmedi.
+
+Sabit salt okunur teşhis **/home/segmentiq/authwire-backup-diagnostic-20261028.py**,
+SHA256 **2b253ac5140b166c21bbefbf89ea9e8e990c28fc7d27677421a7d3edff05a1f7**. Operatör sudo ile36 saniyelik DB tablo/row özeti değişim
+gözlemini ve last-run/last-success güvenli metadata'sını okuyacak; servis/DB yazısı veya yeni backup yok.
+Değerler/sırlar dışarı verilmez. Yeni yedek başarılı kabul edilmez; önce teşhis ve düzeltme,
+sonra gerçek başarılı yedek/özet kontrolü. Geliştirme ve reboot devam kaydı bu backup kabulünün yerine geçmez.
+
 ## Çalışma duraklatıldı — sunucu yeniden açılışı öncesi kalıcı devam kaydı — 28 Ekim 2026
 
 Kullanıcı sunucuyu kapatıp açma ihtimaline karşı kayıt istedi. Son kabul, DC01 üzerinde
