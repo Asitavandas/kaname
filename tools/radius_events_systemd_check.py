@@ -80,7 +80,11 @@ password=secrets.token_hex(24).encode();PKIService(s.root).initialize(password);
         env = dict(os.environ, PYTHONPATH=str(install.SOURCE), PYTHONNOUSERSITE='1', PYTHONDONTWRITEBYTECODE='1')
         command('/usr/sbin/runuser', '-u', install.ACCOUNT, '--', '/opt/kaname-lab/venv/bin/python', '-B', '-c', script,
                 cwd=install.SOURCE, env=env)
-        candidate = (repo / 'tools/scheduled_backup.py').read_bytes()
+        candidate = (repo / 'tests/fixtures/scheduled_backup_pre_poll_v1.py').read_bytes()
+        assert install.digest(candidate) == '83de9cb66df58b5f0a12c18c6526731e9697023f268a12c7b566ba6efbda77b0'
+        # Exercise the original two-step compatibility migration with frozen
+        # historical bytes. Current poll-stability code is tested separately.
+        install.atomic(install.SOURCE / 'tools/scheduled_backup.py', candidate)
         original_worker = candidate.replace(install.USER_BACKUP_CHANGE[1], install.USER_BACKUP_CHANGE[0], 1).replace(install.BACKUP_CHANGE[1], install.BACKUP_CHANGE[0], 1)
         assert install.digest(original_worker) == install.OLD_WORKER_SHA
         install.WORKER.parent.mkdir(mode=0o755)

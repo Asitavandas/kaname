@@ -45,6 +45,32 @@ class CandidateHTTPTests(unittest.TestCase):
         for path in ('/api/deployment/candidates/apply','/api/deployment/candidates/execute'):
             self.assertEqual(404,self.request('POST',path,{},self.headers)[0])
 
+    def test_combined_receipt_roundtrip_remains_separate_and_old_jobs_are_refused(self):
+        from .test_combined_candidate_registration import combined_receipt
+        def save(value):
+            c,p,_=self.request('POST','/api/deployment/candidates/preview',value,self.headers)
+            self.assertEqual(200,c,p)
+            body=value|{'preview_hash':p['preview_hash']}
+            c,r,_=self.request('POST','/api/deployment/candidates/record',body,self.headers)
+            self.assertEqual(200,c,r)
+            return r['id']
+        network=save(self.body())
+        value=self.body()|{'receipt_json':json.dumps(combined_receipt(self.data['plans'][0]))}
+        for headers in (self.headers|{'X-Kaname-CSRF':'bad'},self.headers|{'Origin':'https://evil.example'},
+                        {'Authorization':'Bearer '+self.server.token}):
+            self.assertEqual(403,self.request('POST','/api/deployment/candidates/preview',value,headers)[0])
+        combined=save(value)
+        code,status,_=self.request('GET','/api/deployment/candidates',headers=self.headers)
+        self.assertEqual(200,code,status);self.assertEqual(2,len(status['candidates']))
+        row=next(r for r in status['candidates'] if r['id']==combined)
+        self.assertEqual(network,row['network_candidate_id']);self.assertFalse(row['content_verified'])
+        self.assertEqual('combined_machine_v1',row['artifact_kind'])
+        for route,operation in [('verify','candidate.verify.v1'),('scope','deployment.scope.verify.v1')]:
+            value={'expected_revision':status['revision'],'candidate_id':combined,
+                   'job_id':str(uuid.uuid4()),'operation':operation}
+            c,r,_=self.request('POST','/api/deployment/candidates/'+route+'/preview',value,self.headers)
+            self.assertEqual(400,c,r);self.assertEqual('CANDIDATE_JOB_FORMAT_UNSUPPORTED',r['error'])
+
     def test_both_write_grants_required_and_read_only_cannot_preview(self):
         for grants in ({'certificates.authority':'write'},{'system.connectors':'write'},
                        {'certificates.authority':'read','system.connectors':'read'}):
@@ -73,3 +99,4 @@ class CandidateHTTPTests(unittest.TestCase):
 
 
 if __name__=='__main__':unittest.main()
+

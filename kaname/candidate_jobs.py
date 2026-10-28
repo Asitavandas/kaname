@@ -40,6 +40,7 @@ class CandidateJobs(ConnectorJobs):
         require(guid(identity))
         row = next((r for r in self.candidates._read(db) if r['id'] == identity), None)
         require(row is not None, 'CANDIDATE_JOB_TARGET_CHANGED')
+        require('artifact_kind' not in row, 'CANDIDATE_JOB_FORMAT_UNSUPPORTED')
         binding = scope_id(self._binding(db))
         require(row['binding_scope'] == binding, 'CANDIDATE_JOB_TARGET_CHANGED')
         require(self.candidates._dependencies(db,row['plan_id'],row['plan_version']) == row['dependency_sha256'],
@@ -112,6 +113,7 @@ class CandidateJobs(ConnectorJobs):
                              'created_at':j['created'],'result':j['result']} for j in reversed(v['jobs'])]}
 
     def content_verified(self,db,row):
+        if 'artifact_kind' in row: return False
         # Current dependency check is performed by the candidate status caller.
         expected={'candidate_id':row['id'],**{n:row[n] for n in TARGET-{'candidate_id'}}}
         latest=next((j for j in reversed(self._read(db)['jobs']) if
@@ -185,3 +187,4 @@ class CandidateJobs(ConnectorJobs):
         from .connector_jobs import verify_job_proof
         return verify_job_proof(raw,binding,kind,self.clock,
             prefix='AUTHWIRE-CANDIDATE-JOB-',poll_path=POLL_PATH,result_path=RESULT_PATH)
+
