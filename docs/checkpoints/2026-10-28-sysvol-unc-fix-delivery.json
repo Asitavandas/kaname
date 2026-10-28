@@ -1,0 +1,11 @@
+{
+  "source_component": "a5030a3a8f6c47e5009800a65b7209a348adb2f7",
+  "release": "cf74295c-ec97-4edf-a15a-877b155d1740",
+  "expected_current_release": "e6d734b1-59c8-48e5-8a6e-c40b43be3114",
+  "script_sha256": "7f84588eeda9301d541a25d3e89bc2aeacc7e0e2ffa1fc36a5e57e563bc56498",
+  "archive_sha256": "96e6b14015e7cb94b3adb4ff5becd70748eb001fb0fab1a86e343fce1474728c",
+  "source_files": 24,
+  "bytes": 135205,
+  "windows_applied": false,
+  "linux_update_required": false
+}
