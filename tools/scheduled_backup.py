@@ -125,6 +125,55 @@ def inventory(items):
     return files, sorted(dbs)
 
 
+POLL_SECTIONS = frozenset(('windows_connector_probe_jobs', 'windows_candidate_verify_jobs',
+                           'windows_deployment_scope_jobs'))
+
+
+def stable_runtime_payload(name, payload):
+    """Ignore only validated transport polling metadata, never jobs/results.
+
+    This projection affects comparison only. SQLite backup still copies the
+    entire original row, including replay IDs and last_poll. Unknown/malformed
+    structures retain their exact original bytes in the stability guard.
+    """
+    if name not in POLL_SECTIONS or type(payload) is not str or len(payload) > 100000:
+        return payload
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result: raise ValueError('Duplicate JSON key')
+            result[key] = value
+        return result
+    def constant(value):
+        raise ValueError('Non-finite JSON')
+    def number(value):
+        return type(value) is int and 0 < value < 2**40
+    def hexdigest(value):
+        return type(value) is str and re.fullmatch('[a-f0-9]{64}', value) is not None
+    try:
+        v = json.loads(payload, object_pairs_hook=unique, parse_constant=constant)
+        if type(v) is not dict or set(v) != {'format','jobs','polls','last_poll'}:
+            return payload
+        if type(v['format']) is not int or v['format'] != 1 or type(v['jobs']) is not list:
+            return payload
+        if type(v['polls']) is not list or len(v['polls']) > 128:
+            return payload
+        for poll in v['polls']:
+            if type(poll) is not dict or set(poll) != {'id','until'} or not hexdigest(poll['id']) or not number(poll['until']):
+                return payload
+        last = v['last_poll']
+        if last is not None:
+            if type(last) is not dict or set(last) != {'scope','at','release_id'} or not hexdigest(last['scope']) or not number(last['at']):
+                return payload
+            release = last['release_id']
+            if type(release) is not str or str(uuid.UUID(release)) != release or uuid.UUID(release).int == 0:
+                return payload
+        return json.dumps({'format':v['format'], 'jobs':v['jobs']}, sort_keys=True,
+                          separators=(',',':'), allow_nan=False)
+    except (ValueError, TypeError, KeyError, RecursionError):
+        return payload
+
+
 def db_fingerprint(path):
     """Only known transient/cache tables are excluded from the stability guard.
 
@@ -139,6 +188,8 @@ def db_fingerprint(path):
             quoted = '"' + name.replace('"', '""') + '"'
             where = " WHERE name<>'directory_health'" if name == 'runtime_settings' else ''
             rows = db.execute('SELECT * FROM ' + quoted + where).fetchall()
+            if name == 'runtime_settings':
+                rows = [(r[0], stable_runtime_payload(r[0], r[1]), *r[2:]) for r in rows]
             h.update(name.encode()); h.update(repr(sorted(rows, key=repr)).encode())
         return h.hexdigest()
 
