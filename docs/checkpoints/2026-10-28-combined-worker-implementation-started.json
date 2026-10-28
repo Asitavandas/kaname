@@ -1,0 +1,21 @@
+{
+  "event": "COMBINED_WORKER_IMPLEMENTATION_STARTED",
+  "base": "a108285f706c320564ba3947b92a1f6423703ca0",
+  "scope": "Separate typed combined content queue and permanent Windows worker, current network verification retained.",
+  "read_only_scope": true,
+  "gpo_apply_enabled": false,
+  "linux_live_changed": false,
+  "windows_live_changed": false,
+  "full_backup_created": false,
+  "isolated_linux_lifecycle_tests_passed": 19,
+  "backup_projection_extension_planned": true,
+  "last_live_version": "0.14.0-dev.41",
+  "last_live_radius_pid": "1243360",
+  "last_live_broker_pid": "1069437",
+  "current_user_preference": "Record each completed operation; no full backup per change.",
+  "pending": [
+    "Native Windows source/package and failure rollback validation",
+    "Linux and Windows pinned operator deliveries",
+    "Operator controlled live application and combined positive roundtrip"
+  ]
+}
