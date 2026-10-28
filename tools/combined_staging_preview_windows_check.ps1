@@ -11,7 +11,7 @@ $tokens=$null;$errors=$null;$ast=[Management.Automation.Language.Parser]::ParseF
 Check ($errors.Count -eq 0) 'native parser'
 # Library must not acquire execution capability through new write/process commands.
 $commands=@($ast.FindAll({param($n)$n -is [Management.Automation.Language.CommandAst]},$true)|ForEach-Object {$_.GetCommandName()})
-Check (@($commands|Where-Object {$_ -match '^(Set-|New-Item|Remove-|Copy-|Move-|Start-|Stop-|Invoke-|Register-|Import-Certificate)' }).Count -eq 0) 'no mutating or invocation cmdlets'
+Check (@($commands|Where-Object {$_ -cne 'Set-StrictMode' -and $_ -match '^(Set-|New-Item|Remove-|Copy-|Move-|Start-|Stop-|Invoke-|Register-|Import-Certificate)' }).Count -eq 0) 'no mutating or invocation cmdlets'
 $root=Join-Path $env:TEMP ('aw-staging-preview-'+[guid]::NewGuid().ToString('N'))
 $connector=[guid]::NewGuid().ToString('D')
 $candidateRoot=Join-Path $env:ProgramData ('AuthWire-CombinedCandidates-'+([guid]$connector).ToString('N'))
