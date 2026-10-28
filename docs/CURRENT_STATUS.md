@@ -20,6 +20,29 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Yedek kararlılık hatası için dar düzeltme hazır — uygulama/yeni yedek bekleniyor — 28 Ekim 2026
+
+Operatör salt okunur teşhisi: dört DB, schema değişimi yok; yalnız **kaname.sqlite3/runtime_settings**
+ve **windows_candidate_verify_jobs /windows_connector_probe_jobs /windows_deployment_scope_jobs** satırları değişiyor.
+Kaynak incelemesi bu kuyrukların sürekli poll/replay/last_poll metadata güncellediğini, eski guard'ın
+bütün satırları karşılaştırdığını gösterdi. Snapshot'ın kararlılık kontrolü bu geçici trafikle çakışıyor.
+
+**PR107** merge **cd9faa1b269f3964c7ba51afc8bb579dfe85813b**, test head **c0d3ece8c9198516d986d415544555577a785375**:
+üç workflow başarılı; genel **939 test /28 skipped**, yedek arşiv/restore/systemd kabul kontrolleri başarılı.
+Düzeltme yalnız bu üç bilinen v1 kuyruğun geçerli **polls/last_poll** alanlarını karşılaştırma projeksiyonundan ayırır.
+**Jobs, targets, leases, results, diğer runtime kayıtları ve bilinmeyen/bozuk payload'lar korunur**.
+SQLite arşivi ham polls/last_poll/replay kayıtları dahil tüm veriyi içerir; veri yedekten çıkarılmaz.
+Gerçek iş/result değişikliği testte yayını hâlâ engeller.
+
+Sabit hotfix **/home/segmentiq/authwire-backup-poll-fix-20261028.py**, SHA256
+**8a5d4d3274e28c5902213f896a304f0e4723829fca219364133c468a57d3ab67**; Linux kopyası doğrulandı.
+Operatör sudo ile iki worker kopyası ve backup release hash kaydını update lock altında,
+eski küçük kaynak kopyalarını koruyarak günceller; sonra normal yedek servisini bir kez başlatır,
+sonuç ve arşiv SHA256'sını kontrol eder. Kaynak uygulama hatasında değişen kaynaklar guard'lı geri alınır.
+Uygulama servisleri, timer/unit'ler, restore checker, DB/AD/GPO/Windows değişmez.
+**Canlı hotfix uygulaması ve yeni BACKUP_SUCCESS henüz kabul edilmedi**; eski26 Ekim yedeği güncel yedek sayılmaz.
+Güvenli kapatma öncesinde yeni sonuç beklenir; restart checkpoint ilerleme kaydı ayrı olarak saklıdır.
+
 ## Yedekleme başarısızlığı inceleniyor — yeniden açılış öncesi öncelik — 28 Ekim 2026
 
 Operatör **sudo systemctl start authwire-backup.service** çalıştırdı; iş exit1 ile başarısız.

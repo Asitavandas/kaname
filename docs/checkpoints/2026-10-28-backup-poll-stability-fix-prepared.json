@@ -1,0 +1,50 @@
+{
+  "event": "BACKUP_POLL_STABILITY_FIX_PREPARED",
+  "date_local": "2026-10-28",
+  "pr": 107,
+  "merge": "cd9faa1b269f3964c7ba51afc8bb579dfe85813b",
+  "tested_head": "c0d3ece8c9198516d986d415544555577a785375",
+  "workflows": [
+    {
+      "id": 40647475591,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40647475580,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40647475850,
+      "name": "AuthWire private backup acceptance",
+      "conclusion": "success"
+    }
+  ],
+  "foundation_tests": 939,
+  "foundation_skipped": 28,
+  "operator_diagnostic": {
+    "phase": "capture",
+    "database_count": 4,
+    "schema_changes": [],
+    "changed_table": "runtime_settings",
+    "changed_sections": [
+      "windows_candidate_verify_jobs",
+      "windows_connector_probe_jobs",
+      "windows_deployment_scope_jobs"
+    ]
+  },
+  "comparison_projection_only": [
+    "polls",
+    "last_poll"
+  ],
+  "all_jobs_targets_leases_results_preserved": true,
+  "full_raw_metadata_still_archived": true,
+  "helper": "/home/segmentiq/authwire-backup-poll-fix-20261028.py",
+  "helper_sha256": "8a5d4d3274e28c5902213f896a304f0e4723829fca219364133c468a57d3ab67",
+  "new_worker_sha256": "fab31d283971b3d36d3cf4c4f480f36e32e16f7f5a627ebbd422ec9741d31288",
+  "live_hotfix_applied": false,
+  "new_live_backup_accepted": false,
+  "product_services_restarted": false,
+  "pause_checkpoint_still_valid": true
+}
