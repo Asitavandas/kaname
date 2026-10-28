@@ -1,0 +1,54 @@
+{
+  "event": "WINDOWS_STAGING_PREVIEW_WORKER_DELIVERY_PREPARED",
+  "date": "2026-10-28",
+  "timezone": "Europe/Istanbul",
+  "release_id": "df28f70c-104e-4d6d-972c-e311d38adde6",
+  "source_commit": "92b2af9b78347058802f4bb135b5fbb243abc813",
+  "old_release": "cf74295c-ec97-4edf-a15a-877b155d1740",
+  "tool_version": "1.5.0",
+  "archive_sha256": "62eff1fa1bc2492a2e83abf39961e90fe148c3cdb98d4dd148eb17c035b8dc63",
+  "archive_bytes": 87324,
+  "files": 28,
+  "script_sha256": "2c8fbe776a240bc98bbb387c529a90ab4fbfc3fa2467096799d3a9e159ea33cf",
+  "script_bytes": 148185,
+  "repo_path": "docs/checkpoints/2026-10-28-dc01-staging-preview-worker-upgrade.ps1",
+  "linux": {
+    "installed_version": "0.14.0-dev.44",
+    "source_release": "21003f27bdedd0cb61c3dcfc9fffaaaf943552c7",
+    "customer_install_verified": true,
+    "evidence": "/var/lib/authwire-updates/staging-preview-jobs-dev44-20261028T182406Z-86efc09b",
+    "radius_pid": "1243360",
+    "broker_pid": "1069437",
+    "new_data_backup_created": false
+  },
+  "scope": {
+    "mode_sequence": [
+      "Inspect",
+      "Prepare",
+      "Apply"
+    ],
+    "operator_first_action": "Prepare",
+    "wrapper_helpers_unchanged_from_accepted_141": true,
+    "new_account_required": false,
+    "pairing_preserved": true,
+    "existing_channel_key_preserved": true,
+    "signer_policy_binding_acl_and_clr_marker_must_be_preserved": true,
+    "all_six_channels_required_for_new_release": true,
+    "can_apply_gpo": false,
+    "sysvol_staging_enabled": false,
+    "ad_gpo_changed": false
+  },
+  "validation": {
+    "local_archive_tests": 5,
+    "all_28_source_git_blobs_match_main": true,
+    "native_delivery_ci_pending": true,
+    "customer_windows_prepare_run": false,
+    "customer_windows_apply_run": false,
+    "new_gmsa_preview_verified": false
+  },
+  "overall_completed": 54,
+  "overall_open": 40,
+  "ready_for_final_guide": false,
+  "guide_delivered": false,
+  "next_step": "Finish native exact-wrapper signing and previous full-package compatibility checks, then deliver the SHA-pinned script to Linux transfer path and request elevated DC01 Prepare only. Record the operator result before Apply."
+}
