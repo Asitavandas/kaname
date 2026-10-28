@@ -20,6 +20,26 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Birleşik paket için salt okunur servis kimliği doğrulama aracı hazır — müşteri kontrolü bekleniyor — 28 Ekim 2026
+
+**PR106** merge **60c39b36b594e3e1f9076a2a9e50ce87cdeda32b**, son test head **a69f9a6d2c1f6c2476a4ebb258e9299e6129cb14** üzerinde dört workflow başarılı.
+Genel **932 test /28 skipped**, native Windows5.1 **28 kontrol**: private/signing işlevleri engelliyken
+public doğrulama, yanlış pin/hesap reddi, gerçek yönetici olmayan SCM kimliğiyle imzalı paketi
+okuma ve geçici servis/exe/helper/result temizliği geçti. Bu izole fixture kanıtıdır, DC01 kabulü değildir.
+
+Sabit DC01 helper **/home/segmentiq/authwire-dc01-combined-runtime-20261028.ps1**,
+SHA256 **3caf4882a6871f4936b6021d68c44f664f14556ffc5cd3bdd7ef0bd87e8eec78**, Linux kopyası doğrulandı.
+Mevcut **aw-deploy$** ile geçici servis üzerinden exact manifest/draft/üç imza/ACL kontrolü yapar.
+Kalıcı Connector PID/hesap/durum ve native signer snapshot korunumu kontrol edilir.
+Müşteri **RunProbe sonucu henüz yok**; gMSA doğrulaması veya panel attestation başarılı diye işaretlenmez.
+**CanStage=false/CanApplyGpo=false**; GPO/SYSVOL/ağ uygulaması ve deployment artifact execution yok.
+
+**Devam:** Müşteri servis hesabı sonucu; ardından birleşik job/registry/worker entegrasyonu ve
+güncel kapsam guard'larıyla controlled staging/rollback. Eski ağ-only aday aynı kalır.
+GPO/ağ uygulaması ve gerçek endpoint sertifika/EAP-TLS/VLAN kabulü açık.
+Linux dev.40, Windows efc5ee91, **54/94 /40 açık**, tam yedek alınmaması ve nihai kılavuz beklemesi korunur.
+Ayrıntı **COMBINED_RUNTIME_VERIFICATION.md**, kanıt **checkpoints/2026-10-28-combined-runtime-delivery-prepared.json**.
+
 ## 🔴✓ DC01 birleşik yerel imzalı kopya kabul edildi — 28 Ekim 2026
 
 Operatör **WINDOWS_COMBINED_SIGNING_DELIVERY /Prepare /Stage=verified** sonucunu paylaştı.

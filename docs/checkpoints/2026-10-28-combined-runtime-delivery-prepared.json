@@ -1,0 +1,53 @@
+{
+  "event": "COMBINED_RUNTIME_VERIFIER_DELIVERY_PREPARED",
+  "date_local": "2026-10-28",
+  "timezone": "Europe/Istanbul",
+  "pr": 106,
+  "merge": "60c39b36b594e3e1f9076a2a9e50ce87cdeda32b",
+  "tested_head": "a69f9a6d2c1f6c2476a4ebb258e9299e6129cb14",
+  "source_component": "ae637a2722a358f58ee23311ce518d1c3e0b8759",
+  "workflows": [
+    {
+      "id": 40644158905,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40644158898,
+      "name": "AuthWire combined signed package checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40644158891,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40644158903,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "conclusion": "success"
+    }
+  ],
+  "foundation_tests": 932,
+  "foundation_skipped": 28,
+  "native_windows_checks": 28,
+  "actual_nonadmin_scm_fixture_passed": true,
+  "helper": "/home/segmentiq/authwire-dc01-combined-runtime-20261028.ps1",
+  "helper_sha256": "3caf4882a6871f4936b6021d68c44f664f14556ffc5cd3bdd7ef0bd87e8eec78",
+  "helper_bytes": 59966,
+  "linux_copy_hash_verified": true,
+  "customer_gmsa_probe_pending": true,
+  "permanent_connector_upgraded": false,
+  "panel_combined_job_channel_implemented": false,
+  "sysvol_staged": false,
+  "gpo_applied": false,
+  "can_stage": false,
+  "can_apply": false,
+  "full_backup_created": false,
+  "progress": {
+    "accepted": 54,
+    "total": 94,
+    "open": 40
+  },
+  "final_guide_ready": false
+}
