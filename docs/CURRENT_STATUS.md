@@ -1,5 +1,19 @@
 # AuthWire current work record
 
+## SYSVOL UNC düzeltmesi: DC01 Prepare başarılı, Apply bekliyor — 28 Ekim 2026
+
+Operatörün paylaştığı **ToolVersion 1.4.1 / Mode Prepare** çıktısı kabul edildi.
+Kaynak **a5030a3a8f6c47e5009800a65b7209a348adb2f7**, yeni release **cf74295c-ec97-4edf-a15a-877b155d1740**.
+**Stage=prepared**, **SourceSignaturesValid=true**, **PackagePrepared=true**, **Error=null**.
+**ServiceTransitioned=false**: çalışan sürüm hâlâ **e6d734b1-59c8-48e5-8a6e-c40b43be3114**.
+Mevcut hesap, eşleştirme, channel key ve signer snapshot korundu; AD/GPO, trust ve key ACL değişmedi.
+Evidence: `C:\ProgramData\AuthWire-ConnectorUpgradeEvidence-cf74295cec974edfa15a877b155d1740-6a4e5a860cdf483693433e0ae66e96a9`.
+Sonraki adım aynı hash-pinned helper ile kontrollü **Apply**, ardından yeni salt okunur birleşik AD/GPO kapsam görevi.
+Müşteri ortamındaki **READ_FAILED henüz çözülmüş kabul edilmedi**. Linux **dev.43** kalır.
+Bu adımda yeni tam yedek alınmadı. Genel takip **54/94 tamamlanan,40 açık**; nihai kılavuz hazır/teslim edildi işaretlenmedi.
+Ayrıntı: `docs/checkpoints/2026-10-28-sysvol-unc-fix-customer-prepare.json`.
+
+
 Updated: 28 October 2026, Europe/Istanbul. This record supplements the 9 October
 `AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-09.docx` / `.pdf`; those reports are a
 dated baseline. Use this record when producing their next requested revision.
