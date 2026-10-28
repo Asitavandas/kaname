@@ -61,6 +61,25 @@ try{
   Reject {Test-AuthWireCombinedContent @badPin} 'Readonly wrong manifest pin rejected'
   Reject {Test-AuthWireServiceCombinedContent @verifyParameters} 'Administrator cannot claim service SID proof'
  }finally{Set-Item Function:global:Get-AuthWireCombinedSignerSnapshot $savedSnapshotFunction;Remove-Item Function:global:Set-AuthenticodeSignature}
+ # Actual non-admin virtual SCM account runs the same service-bound verifier.
+ $probe=Join-Path $PSScriptRoot '../windows/connector/Test-AuthWireCombinedService.ps1'
+ $helper=Join-Path $PSScriptRoot '../windows/connector/Test-AuthWireCombinedContent.ps1'
+ $probeName='AuthWireLogonProbe-'+[guid]::NewGuid().ToString('N')
+ $sidHash=[Security.Cryptography.SHA1]::Create()
+ try{$sidBytes=$sidHash.ComputeHash([Text.Encoding]::Unicode.GetBytes($probeName.ToUpperInvariant()))}finally{$sidHash.Dispose()}
+ $virtualSid='S-1-5-80-'+((0..4|ForEach-Object{[BitConverter]::ToUInt32($sidBytes,$_ * 4)}) -join '-')
+ $ownedPaths=@((Get-Item -LiteralPath $parent);(Get-ChildItem -LiteralPath $parent -Recurse -Force))
+ try{
+  foreach($item in $ownedPaths){if($item.PSIsContainer){Set-AuthWireCandidateAcl $item.FullName $virtualSid -Directory}else{Set-AuthWireCandidateAcl $item.FullName $virtualSid}}
+  $signed=Set-AuthenticodeSignature -LiteralPath $helper -Certificate $cert -HashAlgorithm SHA256
+  Check ($signed.Status.ToString() -ceq 'Valid') 'Reviewed keyless SCM helper signed'
+  . $probe
+  $servicePins=$verifyParameters.Clone();$servicePins.ServiceSid=$virtualSid
+  $runtime=Invoke-AuthWireServiceProbeCore -RuntimeAccount ('NT SERVICE\'+$probeName) -ExpectedSid $virtualSid -PublisherThumbprint $cert.Thumbprint -Pins $servicePins -ServiceName $probeName
+  Write-Host ($runtime|ConvertTo-Json -Depth 6)
+  Check ($runtime.ProbeVerified -and $runtime.CandidateVerified -and $runtime.ServiceLogonVerified -and $runtime.RuntimeSid -ceq $virtualSid) 'Actual non-admin SCM verifies combined content and runtime SID'
+  Check ($runtime.TemporaryServiceRemoved -and $runtime.TemporaryBinaryRemoved -and $runtime.TemporaryVerifierRemoved -and $runtime.TemporaryResultDirectoryRemoved -and $runtime.CleanupErrors.Count -eq 0) 'Temporary combined SCM artifacts cleaned up'
+ }finally{foreach($item in $ownedPaths){if($item.PSIsContainer){Set-AuthWireCandidateAcl $item.FullName $callParameters.ServiceSid -Directory}else{Set-AuthWireCandidateAcl $item.FullName $callParameters.ServiceSid}}}
  $result=Invoke-AuthWireCombinedCandidate @callParameters -Mode Verify
  Check ($result.ManifestSha256 -ceq $prepared.ManifestSha256) 'Independent Verify accepts prepared directory'
  $again=Invoke-AuthWireCombinedCandidate @callParameters -Mode Prepare

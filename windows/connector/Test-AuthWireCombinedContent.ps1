@@ -1,5 +1,6 @@
 #Requires -Version 5.1
 # Public-only combined verifier. No signer acquisition, elevation, signing or writes.
+param([Parameter(Mandatory=$true)][string]$ConnectorId,[Parameter(Mandatory=$true)][string]$PlanId,[Parameter(Mandatory=$true)][int]$PlanVersion,[Parameter(Mandatory=$true)][string]$DraftSha256,[Parameter(Mandatory=$true)][string]$ManifestSha256,[Parameter(Mandatory=$true)][string]$PublisherThumbprint,[Parameter(Mandatory=$true)][string]$ServiceSid)
 Set-StrictMode -Version 2
 function Initialize-AuthWireCandidateTypes {
  if('AuthWire.Deployment.CandidateJsonV1' -as [type]){return}
@@ -178,7 +179,7 @@ function Test-AuthWireCombinedContent {
  param([string]$ConnectorId,[string]$PlanId,[int]$PlanVersion,[string]$DraftSha256,[string]$ManifestSha256,[string]$PublisherThumbprint,[string]$ServiceSid)
  foreach($id in @($ConnectorId,$PlanId)){Assert-AuthWireCandidateGuid $id}
  foreach($h in @($DraftSha256,$ManifestSha256)){if($h -cnotmatch '\A[0-9a-f]{64}\z'){throw 'COMBINED_READONLY_PIN_REQUIRED'}}
- if($PlanVersion -lt 1 -or $ServiceSid -cnotmatch '\AS-1-5-21-(?:[1-9][0-9]{0,9}-){3}[1-9][0-9]{0,9}\z' -or $PublisherThumbprint -cnotmatch '\A[0-9A-F]{40}\z'){throw 'COMBINED_READONLY_IDENTITY_REQUIRED'}
+ if($PlanVersion -lt 1 -or ($ServiceSid -cnotmatch '\AS-1-5-21-(?:[1-9][0-9]{0,9}-){3}[1-9][0-9]{0,9}\z' -and $ServiceSid -cnotmatch '\AS-1-5-80-(?:[0-9]{1,10}-){4}[0-9]{1,10}\z') -or $PublisherThumbprint -cnotmatch '\A[0-9A-F]{40}\z'){throw 'COMBINED_READONLY_IDENTITY_REQUIRED'}
  $templateHash='ab1a11c68381006173518df77deeb0d32fc56e0b28cc260c42b7378c624be14a'
  $root=Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) ('AuthWire-CombinedCandidates-'+([guid]$ConnectorId).ToString('N'))
  Assert-AuthWireCandidateAcl $root $ServiceSid -Directory
@@ -203,3 +204,5 @@ function Test-AuthWireServiceCombinedContent {
  $result|Add-Member NoteProperty ServiceIdentityVerified $true
  return $result
 }
+
+Test-AuthWireServiceCombinedContent @PSBoundParameters | ConvertTo-Json -Depth 5
