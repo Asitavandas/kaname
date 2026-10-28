@@ -1,5 +1,34 @@
 # AuthWire current work record
 
+## SYSVOL UNC düzeltmesi DC01'e başarıyla uygulandı — pozitif AD/GPO kapsam tekrarı bekliyor — 28 Ekim 2026
+
+Operatörün kontrollü ikinci **Apply** çıktısı kabul edildi: **ToolVersion 1.4.1**, kaynak
+**a5030a3a8f6c47e5009800a65b7209a348adb2f7**, yeni aktif Windows release
+**cf74295c-ec97-4edf-a15a-877b155d1740** (önceki **e6d734b1-59c8-48e5-8a6e-c40b43be3114**).
+**Stage=applied /Phase=applied /Error=null /ChangesMayBePartial=false /ServiceTransitioned=true**.
+Kaynak imzaları geçerli; değişmeyen updater'ın beş kanalı aynı taze health kaydında zorunlu tutan
+kontrolü geçilerek applied'a ulaşıldı. Ayrı bir post-Apply sağlık örneği henüz paylaşılmadı.
+
+**SignerSnapshotPreserved=true**: native before/after karşılaştırması tamamlandı; önceki başarısız
+denemede bekleyen signer son karşılaştırması kapandı. Hesap, eşleştirme ve channel key korundu.
+AD/GPO, key ACL ve trust store değişmedi; yeni hesap/servis/channel key oluşturulmadı; sırlar dışa aktarılmadı.
+Evidence: `C:\ProgramData\AuthWire-ConnectorUpgradeEvidence-cf74295cec974edfa15a877b155d1740-d5ff82bd4a2541018674854efa61a308`.
+Önceki sürüm archive: `C:\Program Files\AuthWire-Connector-4c23eebe071546d188eea2e96ad7ee46.previous-e6d734b159c848e58a6ec40b43be3114`.
+Linux **0.14.0-dev.43** kalır; bu işlemde yeni tam yedek alınmadı, backup timer değişmedi.
+
+**Sıradaki operatör adımı:** panelde **İmzalı dağıtım adayları** içindeki
+**AuthWire Pilot - Merkezi Windows · v1 · Birleşik paket** satırında
+**AD/GPO kontrolünü önizle → AD/GPO kontrolünü gönder**, ardından **Yenile**.
+Bu yeni görev salt okunur AD/GPO ve SYSVOL kontrolüdür, dağıtım/endpoint uygulaması değildir.
+Beklenen pozitif metin **AD hedefleri ve GPO okuma kontrolü başarılı. Dağıtım henüz uygulanmadı.**
+ve yeni kontrol zamanı. Görev henüz gönderilmedi; **READ_FAILED giderildi kabulü pozitif müşteri
+kapsam sonucu gelmeden yapılmayacak**.
+
+İlk başarısız Apply'ın kesin iç exception'ı hâlâ bilinmiyor; partial kanal bayrakları daha sonra toparlandı.
+Takip işi: original upgrade exception ve sınırlı kanal hata kodlarının korunması; hiçbir gate gevşetilmedi.
+Genel durum **54/94 tamamlanan,40 açık**; nihai kılavuz bayrakları false kalır.
+
+
 ## Eski Windows sürümünde beş kanal tekrar doğrulandı — kontrollü Apply tekrarı bekliyor — 28 Ekim 2026
 
 Operatörün üç örneği **e6d734b1-59c8-48e5-8a6e-c40b43be3114** üzerinde Healthy=true,
