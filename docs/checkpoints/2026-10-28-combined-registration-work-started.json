@@ -1,0 +1,23 @@
+{
+  "event": "COMBINED_REGISTRATION_IMPLEMENTATION_STARTED",
+  "base": "d45693a8ce8a9cb1db7cf8bfe15245dce87f71e5",
+  "operator_requested": "Continue next step and save every completed operation; no full backup per change.",
+  "readonly_linux_observation": {
+    "radius_active": true,
+    "radius_pid": "1243360",
+    "broker_active": true,
+    "broker_pid": "1069437",
+    "panel_active": true,
+    "panel_pid": "1841447",
+    "boot_time_local": "2026-10-14 18:00:33",
+    "reboot_observed": false
+  },
+  "scope": "Distinct combined operator receipt registry; existing network record retained; old worker paths reject combined format.",
+  "focused_fixture_tests_passed": 7,
+  "full_ci_pending": true,
+  "linux_installed": false,
+  "windows_changed": false,
+  "gpo_apply_enabled": false,
+  "combined_permanent_worker_integration_pending": true,
+  "full_backup_created_for_this_change": false
+}
