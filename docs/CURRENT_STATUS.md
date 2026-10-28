@@ -20,6 +20,45 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Birleşik paket panel kaydı hazır — dev.41 canlı uygulama bekliyor — 28 Ekim 2026
+
+**Kayıt tercihi:** Kullanıcı her tamamlanan işlemin ve doğrulama sonucunun kalıcı kayda alınmasını istedi.
+Her mantıksal adım için kaynak/sonuç/kanıt/sonraki adım GitHub durum ve checkpoint kayıtlarına işlenecek.
+Bu tercih her değişiklikte tam yedek istemek değildir; önceki tam-yedek-almama tercihi korunur.
+
+**PR109** merge **749d84faa21058c6719df2ba4f635b8f80e87f1d**, test head **edebc092a5bcd253533a4ba53ee954034676830d**, ürün kaynak bileşeni
+**ae21bb729cf57215b13546fa3e4cb8d2202ca68f**. Altı workflow başarılı: genel **960 test /28 skipped**,
+tarayıcıda ayrı birleşik satır/yanlış görev engeli, gerçek native RADIUS/systemd, Linux kaynak hazırlama,
+device enrollment ve bounded retry kontrolleri. Yerel source delivery/rollback için9 test ve
+müşteri verisine erişmeden geçici Linux fixture ortamında7 RSA/SQLite kayıt testi geçti.
+Önceki yedek poll düzeltmesinin ortaya çıkardığı tarihsel RADIUS test hazırlığı uyumsuzluğu,
+pinli eski worker fixture'ıyla düzeltildi; ürün RADIUS/yedek korumaları değiştirilmedi.
+
+Panel aynı planın güncel ağ-only kaydını korur; **WINDOWS_COMBINED_SIGNING_DELIVERY** Prepare/verified
+sonucunu **combined_machine_v1** olarak ayrı draft/manifest/publisher/network-reference pinleriyle kaydeder.
+Çıktıda host/GPO bulunmadığı için mevcut güncel plan/binding/dependency ile eşleşen tek ağ kaydına bağlanır;
+bu ilişki canlı Windows/GPO doğrulaması değildir. Yollar saklanmaz/açılmaz/çalıştırılmaz.
+Bozuk veya yetki/uygulama iddiası içeren kayıt reddedilir; mevcut çift yetki, HTTPS/session/CSRF ve
+yazma sırasında güncel yetki kontrolleri korunur. Ağ kaydı değişmez; eski content/scope görevleri
+birleşik kaydı doğrulayamaz. **content_verified=false, connector_verified=false, can_apply=false**.
+Birleşik kayıt satırında kalıcı doğrulamanın henüz kullanılabilir olmadığı açıkça görünür.
+
+Linux'a hazır stage **/home/segmentiq/authwire-stage-dev41-ae21bb729cf5**;180 dosya,
+manifest **93cbe46e5af959a0778500e3d5020691164692182463077ceaef78ffa5546bb7**.
+Sabit sudo helper **/home/segmentiq/authwire-combined-registration-20261028.py**,
+SHA256 **408a2dcd5de9f5542bec00f7bcd86be9c3b3c415cb9adc90c108a9a075be151c**.
+Uzak dosya/manifest ve kurulu kaynak guard'ı salt okunur doğrulandı.
+Yalnız altı registry/UI/version dosyasına izin verir; bütün diğer kurulu kaynaklar ve28 server fonksiyonu korunur.
+Plan: yalnız panel restart; RADIUS/broker PID, policy/certificates, Windows/GPO, yedek worker/timer korunur.
+Kaynak geri alma ve eşzamanlı iş değişikliğinde otomatik geri alma yapmama kontrolleri test edildi.
+
+**Henüz canlı dev.41 kurulmadı; operatör sonucu ve tarayıcı kabulü bekleniyor.**
+Linux son kabul dev.40, Windows kalıcı Connector efc5ee91-e39e-4cc4-9cc1-60b648e18cf9.
+Yeni aday/görev/kural/sertifika oluşturulmadı, GPO/staging uygulanmadı ve bu değişiklik için tam yedek alınmadı.
+28 Ekim10:28 doğrulanmış Linux yedeği korunuyor. Genel **54/94 /40 açık**, nihai kılavuz kapısı değişmedi.
+Sonraki sıra: dev.41 uygulama + birleşik operatör kaydı; birleşik typed kalıcı worker/job kanalı;
+taze AD/GPO/tam SYSVOL kontrolleri; staging/rollback ve uç cihaz kabulü.
+
 ## 🔴✓ Linux yeni yedek ve poll düzeltmesi kabul edildi — 28 Ekim 2026 10:28 İstanbul
 
 Operatör r2 helper sonucu **BACKUP_POLL_FIX_FINISHED**: worker iki konumda

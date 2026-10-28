@@ -18,6 +18,20 @@ Timer etkin; ürün servisleri durdurulmadı/yeniden başlatılmadı.
 Bu arşivde veri restore veya tam OS boot restore provası yapılmadı; off-host kopya ve Windows/DC01 yedeği ayrı.
 Henüz reboot yapılmış veya açılış sonrası sağlık doğrulanmış sayılmaz.
 
+## Güncel devam adımı — birleşik kayıt dev.41 hazır, canlı uygulama bekliyor
+
+Kullanıcı her tamamlanan işlemi GitHub'a kayıt etme tercihini yineledi; tam yedek her işlemde alınmayacak.
+PR109 merge 749d84faa21058c6719df2ba4f635b8f80e87f1d; test head edebc092a5bcd253533a4ba53ee954034676830d.
+960 test/28 skipped ve altı workflow geçti. A04 registry alt adımı hazır; live dev.41 ve browser kabulü bekler.
+Linux helper: /home/segmentiq/authwire-combined-registration-20261028.py
+SHA256: 408a2dcd5de9f5542bec00f7bcd86be9c3b3c415cb9adc90c108a9a075be151c
+Stage: /home/segmentiq/authwire-stage-dev41-ae21bb729cf5
+Manifest: 93cbe46e5af959a0778500e3d5020691164692182463077ceaef78ffa5546bb7
+Yalnız panel restart planlı; RADIUS/broker/yedek/GPO/Windows değişmez.
+Operatör uygulama sonucundan sonra mevcut birleşik imzalama çıktısı ayrı hazırlık kaydı olarak alınacak.
+Ardından typed birleşik kalıcı Connector worker/job kanalı hazırlanacak.
+Önceki ağ-only doğrulaması birleşik paket doğrulaması diye kabul edilmeyecek.
+
 ## Son kabul edilen durum
 - Linux AuthWire: son operatör kabulü 0.14.0-dev.40.
 - Windows kalıcı Connector: son kabul edilen release efc5ee91-e39e-4cc4-9cc1-60b648e18cf9.

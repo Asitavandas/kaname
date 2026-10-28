@@ -1,0 +1,72 @@
+{
+  "event": "COMBINED_REGISTRATION_DEV41_DELIVERY_VERIFIED",
+  "source_component": "ae21bb729cf57215b13546fa3e4cb8d2202ca68f",
+  "tested_head": "edebc092a5bcd253533a4ba53ee954034676830d",
+  "merge": "749d84faa21058c6719df2ba4f635b8f80e87f1d",
+  "workflows": [
+    {
+      "id": 40655482948,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40655483040,
+      "name": "KANAME Linux source preparation",
+      "conclusion": "success"
+    },
+    {
+      "id": 40655483115,
+      "name": "AuthWire device enrollment pilot checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40655483017,
+      "name": "KANAME browser checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40655483068,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40655483043,
+      "name": "KANAME real RADIUS protocol proof",
+      "conclusion": "success"
+    }
+  ],
+  "foundation_tests": 960,
+  "skipped": 28,
+  "source_delivery_tests": 9,
+  "isolated_linux_registry_tests": 7,
+  "remote_source_check_passed": true,
+  "remote_helper_hash_verified": true,
+  "remote_manifest_hash_verified": true,
+  "stage_files": 180,
+  "stage": "/home/segmentiq/authwire-stage-dev41-ae21bb729cf5",
+  "manifest_sha256": "93cbe46e5af959a0778500e3d5020691164692182463077ceaef78ffa5546bb7",
+  "operator_helper": "/home/segmentiq/authwire-combined-registration-20261028.py",
+  "operator_helper_sha256": "408a2dcd5de9f5542bec00f7bcd86be9c3b3c415cb9adc90c108a9a075be151c",
+  "linux_live_applied": false,
+  "operator_browser_acceptance_pending": true,
+  "combined_worker_delivery_pending": true,
+  "source_file_changes_allowed": [
+    "kaname/__init__.py",
+    "kaname/candidate_jobs.py",
+    "kaname/deployment_candidates.py",
+    "kaname/static/deployment.js",
+    "kaname/static/index.html",
+    "pyproject.toml"
+  ],
+  "planned_panel_restart": true,
+  "planned_radius_restart": false,
+  "planned_broker_restart": false,
+  "gpo_apply_enabled": false,
+  "full_backup_created": false,
+  "last_verified_backup_sha256": "3c4b00b745063980c962f712a426a4ce2e845d62abb096ec2346941a5062c002",
+  "general_progress": {
+    "completed": 54,
+    "total": 94,
+    "open": 40
+  }
+}
