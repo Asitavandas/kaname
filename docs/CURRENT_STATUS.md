@@ -1,5 +1,26 @@
 # AuthWire current work record
 
+## Eski Windows sürümünde beş kanal tekrar doğrulandı — kontrollü Apply tekrarı bekliyor — 28 Ekim 2026
+
+Operatörün üç örneği **e6d734b1-59c8-48e5-8a6e-c40b43be3114** üzerinde Healthy=true,
+ConsecutiveFailures=0 ve **probe/candidate/scope/combined/combined-scope=true** gösteriyor.
+**İki benzersiz CheckedUtc** var: **13:56:25.3813701Z**, **13:57:03.4885640Z**;
+üçüncü örnek ikinci kaydın tekrarıdır, üçüncü bağımsız başarı sayılmaz.
+Önceki kanal hataları bu iki taze örnekte sürmüyor. Kesintili hata ile uyumludur;
+ilk transport/validation istisnası hâlâ bilinmiyor.
+
+Updater kodu **rolled_back** journal'dan aynı Prepare edilmiş candidate ile Apply tekrarını destekliyor:
+eski/yeni release, hesap, imza, package/tree hash, kanal anahtarı ve servis marker kontrolleri yeniden yapılır.
+Yeni sürümün **beş kanalının aynı taze sağlık kaydında doğrulanması**, mevcut timeout ve otomatik
+rollback koşulları korunacak. Kontrolleri gevşetmeden **aynı hash-pinned helper ile bir kontrollü Apply tekrarı** önerildi.
+Hedef **cf74295c-ec97-4edf-a15a-877b155d1740**, helper SHA256
+**7f84588eeda9301d541a25d3e89bc2aeacc7e0e2ffa1fc36a5e57e563bc56498**.
+**Tekrar henüz yürütülmedi.** İkinci hata olursa kör tekrar yapılmayacak; hata ayrıntısı görünürlüğü geliştirilecek.
+Pozitif müşteri SYSVOL kapsam görevi ve signer son karşılaştırması bekliyor.
+Linux dev.43 kalır; bu okumada ayar değişmedi/yeni tam yedek alınmadı.
+Genel durum **54 tamamlanan/40 açık**, kılavuz hazır/teslim false.
+
+
 ## Linux beş görev kuyruğu salt okunur doğrulandı — 28 Ekim 2026
 
 Operatör pinned diagnostic çıktısı **checked_utc_epoch=1793195507**:

@@ -1,0 +1,64 @@
+{
+  "event": "CUSTOMER_ACTIVE_RELEASE_ALL_FIVE_CHANNELS_RECOVERED",
+  "date": "2026-10-28",
+  "source": "operator_supplied_output",
+  "release_id": "e6d734b1-59c8-48e5-8a6e-c40b43be3114",
+  "observations": [
+    {
+      "checked_utc": "2026-10-28T13:56:25.3813701+00:00",
+      "last_success_utc": "2026-10-28T13:56:25.2095070+00:00",
+      "healthy": true,
+      "consecutive_failures": 0,
+      "probe_channel_verified": true,
+      "candidate_channel_verified": true,
+      "scope_channel_verified": true,
+      "combined_channel_verified": true,
+      "combined_scope_channel_verified": true
+    },
+    {
+      "checked_utc": "2026-10-28T13:57:03.4885640+00:00",
+      "last_success_utc": "2026-10-28T13:56:55.7888639+00:00",
+      "healthy": true,
+      "consecutive_failures": 0,
+      "probe_channel_verified": true,
+      "candidate_channel_verified": true,
+      "scope_channel_verified": true,
+      "combined_channel_verified": true,
+      "combined_scope_channel_verified": true
+    },
+    {
+      "checked_utc": "2026-10-28T13:57:03.4885640+00:00",
+      "last_success_utc": "2026-10-28T13:56:55.7888639+00:00",
+      "healthy": true,
+      "consecutive_failures": 0,
+      "probe_channel_verified": true,
+      "candidate_channel_verified": true,
+      "scope_channel_verified": true,
+      "combined_channel_verified": true,
+      "combined_scope_channel_verified": true
+    }
+  ],
+  "unique_checked_utc_count": 2,
+  "third_observation_repeats_second": true,
+  "interpretation": "Earlier channel failures no longer present in two unique active-release snapshots. Consistent with intermittent failure; exact original transport/validation exception remains unobserved. This is not acceptance of target release or positive SYSVOL scope task.",
+  "controlled_retry": {
+    "new_release_id": "cf74295c-ec97-4edf-a15a-877b155d1740",
+    "mode": "Apply",
+    "same_delivery_sha256": "7f84588eeda9301d541a25d3e89bc2aeacc7e0e2ffa1fc36a5e57e563bc56498",
+    "existing_rolled_back_journal_supported": true,
+    "five_channel_fresh_health_gate_preserved": true,
+    "timeouts_unchanged": true,
+    "signature_and_tree_hash_guards_preserved": true,
+    "automatic_rollback_preserved": true,
+    "operator_execution_pending": true
+  },
+  "production_settings_changed_by_this_review": false,
+  "apply_retried_yet": false,
+  "full_data_backup_created": false,
+  "customer_scope_success_pending": true,
+  "signer_post_comparison_pending": true,
+  "overall_completed": 54,
+  "overall_open": 40,
+  "ready_for_final_guide": false,
+  "guide_delivered": false
+}
