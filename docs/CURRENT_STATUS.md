@@ -20,6 +20,21 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Çalışma duraklatıldı — sunucu yeniden açılışı öncesi kalıcı devam kaydı — 28 Ekim 2026
+
+Kullanıcı sunucuyu kapatıp açma ihtimaline karşı kayıt istedi. Son kabul, DC01 üzerinde
+birleşik paketin **aw-deploy$** kimliğiyle başarılı salt okunur doğrulamasıdır.
+Kalıcı devam belgesi **RESTART_CHECKPOINT_2026-10-28.md** içine kaynak/servis sürümleri,
+kalıcı paket ve kanıt konumları, özetler, açık işler ve yeniden açılış kontrol sırası kaydedildi.
+Bu çalışma güç işlemi veya tam sistem/veri yedeği oluşturmaz. PowerShell Temp/değişkenlerine bağımlı değildir.
+
+**Yeniden açılışta önce salt okunur sağlık kontrolü:** Etkilenen host/VM, Linux RADIUS/control/panel,
+DC01 AD/DNS ve kalıcı Connector'ın açılış sonrası taze başarısı. PID değişmesi normaldir;
+eski PID eşitliği beklenmez. Başarılı kurulum/imzalama/probe işlemleri gereksiz tekrarlanmayacak.
+Sonra **birleşik panel/Connector job-registry entegrasyonu**, taze kapsam guard'ları ve
+controlled SYSVOL staging/rollback işine devam edilecek.
+**CanStage/CanApplyGpo=false**, gerçek cihaz kabulü açık, **54/94 /40 açık** ve nihai kılavuz beklemesi korunur.
+
 ## 🔴✓ DC01 birleşik paketin gerçek gMSA kimliğiyle salt okunur kontrolü kabul edildi — 28 Ekim 2026
 
 Operatör **WINDOWS_COMBINED_RUNTIME_DELIVERY /RunProbe /Stage=verified** sonucunu paylaştı.
