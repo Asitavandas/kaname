@@ -1,0 +1,17 @@
+{
+  "event": "COMBINED_WORKER_DELIVERY_CHECKPOINT",
+  "live_linux_version": "0.14.0-dev.41",
+  "linux42_applied": false,
+  "windows_applied": false,
+  "linux_updater_tests_passed": 14,
+  "native_combined_package_tests": "passed",
+  "permanent_worker_test": {
+    "first_run": "failed",
+    "reason": "C# HTTPS transport exact allowlist lacked two new combined routes",
+    "corrected": true,
+    "retest_pending": true
+  },
+  "unrelated_expired_machine_fixture": "initial runner failure; retry pending, client code unchanged",
+  "gpo_apply_enabled": false,
+  "full_backup_created": false
+}

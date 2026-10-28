@@ -98,10 +98,10 @@ class BackupPollStabilityTests(unittest.TestCase):
 class BackupProductionPollContractTests(unittest.TestCase):
     def test_real_authenticated_poll_writers_stay_stable_for_each_queue(self):
         # Use real engines/RSA frames/SQLite rather than hand-authored JSON shapes.
-        from tests import test_connector_jobs, test_candidate_jobs, test_scope_jobs
+        from tests import test_connector_jobs, test_candidate_jobs, test_scope_jobs, test_combined_jobs
         fixtures_by_queue=(test_connector_jobs.ConnectorJobTests,
                            test_candidate_jobs.CandidateJobTests,
-                           test_scope_jobs.ScopeJobTests)
+                           test_scope_jobs.ScopeJobTests, test_combined_jobs.CombinedJobTests)
         for fixture_class in fixtures_by_queue:
             with self.subTest(queue=fixture_class.__name__):
                 fixture_class.setUpClass()

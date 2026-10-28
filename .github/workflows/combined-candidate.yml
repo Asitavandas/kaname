@@ -1,10 +1,10 @@
 name: AuthWire combined signed package checks
 on:
   pull_request:
-    paths: ['windows/connector/New-AuthWireCombinedCandidate.ps1', 'windows/connector/Test-AuthWireCombinedContent.ps1', 'windows/connector/Test-AuthWireCombinedService.ps1', 'tools/combined_candidate_windows_*', 'tests/test_combined_candidate_delivery.py', 'docs/checkpoints/2026-10-28-dc01-combined-candidate.ps1', '.github/workflows/combined-candidate.yml']
+    paths: ['windows/connector/New-AuthWireCombinedCandidate.ps1', 'windows/connector/Test-AuthWireCombinedContent.ps1', 'windows/connector/Test-AuthWireCombinedService.ps1', 'windows/connector/CombinedCandidateContent.ps1', 'windows/connector/Invoke-AuthWireCombinedJob.ps1', 'tools/combined_candidate_windows_*', 'tests/test_combined_candidate_delivery.py', 'docs/checkpoints/2026-10-28-dc01-combined-candidate.ps1', '.github/workflows/combined-candidate.yml']
   push:
     branches: [main]
-    paths: ['windows/connector/New-AuthWireCombinedCandidate.ps1', 'windows/connector/Test-AuthWireCombinedContent.ps1', 'windows/connector/Test-AuthWireCombinedService.ps1', 'tools/combined_candidate_windows_*', 'tests/test_combined_candidate_delivery.py', 'docs/checkpoints/2026-10-28-dc01-combined-candidate.ps1', '.github/workflows/combined-candidate.yml']
+    paths: ['windows/connector/New-AuthWireCombinedCandidate.ps1', 'windows/connector/Test-AuthWireCombinedContent.ps1', 'windows/connector/Test-AuthWireCombinedService.ps1', 'windows/connector/CombinedCandidateContent.ps1', 'windows/connector/Invoke-AuthWireCombinedJob.ps1', 'tools/combined_candidate_windows_*', 'tests/test_combined_candidate_delivery.py', 'docs/checkpoints/2026-10-28-dc01-combined-candidate.ps1', '.github/workflows/combined-candidate.yml']
   workflow_dispatch:
 permissions:
   contents: read

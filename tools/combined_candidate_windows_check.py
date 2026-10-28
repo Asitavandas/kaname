@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import uuid
 import zipfile
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
@@ -61,6 +62,12 @@ def main():
                 value=out.getvalue();(path/(name+'.zip')).write_bytes(value)
                 pins[name]=hashlib.sha256(value).hexdigest()
             (path/'pins.json').write_text(json.dumps(pins),encoding='utf-8')
+            target=dict(candidate_id=str(uuid.uuid4()),network_candidate_id=str(uuid.uuid4()),plan_id=approval['plan_id'],plan_version=1,
+                        gpo_id=approval['gpo_id'],approval_sha256='a'*64,network_manifest_sha256='b'*64,
+                        manifest_sha256='c'*64,draft_sha256=pins['draft'],dependency_sha256='d'*64,
+                        publisher_thumbprint=approval['publisher_thumbprint'],machine_profile_id=approval['machine_profile_id'],
+                        machine_profile_version=3,domain=approval['domain'],root_thumbprint=approval['root_thumbprint'].lower(),group_sid=approval['group_sid'])
+            (path/'combined-target.json').write_text(json.dumps({'target':target,'sha256':hashlib.sha256(json.dumps(target,sort_keys=True,separators=(',',':')).encode()).hexdigest()}))
             command=[str(Path(os.environ['SystemRoot'])/'System32/WindowsPowerShell/v1.0/powershell.exe'),
                 '-NoProfile','-NonInteractive','-File','tools/combined_candidate_windows_fixture.ps1',
                 '-FixtureDirectory',str(path)]

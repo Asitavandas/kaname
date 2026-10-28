@@ -78,6 +78,7 @@ class CandidateJobsDeliveryTests(unittest.TestCase):
   # The next reviewed release extends only peer dispatch; this historical updater
   # keeps its old pin and is not used to install the current source.
   self.n['SERVER_PROTECTED']={k:v for k,v in self.n['SERVER_PROTECTED'].items() if k!='Handler.connector_peer'}
+  self.n['SERVER_PROTECTED']={k:v for k,v in self.n['SERVER_PROTECTED'].items() if k not in {'Handler.connector_peer','Handler.deployment_candidate_admin','Handler.do_POST'}} # Reviewed combined dispatch only; guard/auth bodies remain pinned.
   self.real_server_guard(raw)
   changed=raw.replace(b'def guard(self',b'def altered_guard(self',1)
   self.assertNotEqual(raw,changed)
