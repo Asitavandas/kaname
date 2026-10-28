@@ -6,7 +6,7 @@ foreach($f in @('Compare-AuthWireSigningKeyAcl.ps1','ConnectorChannelTypes.ps1',
 $checks=0
 function Check([bool]$v,[string]$m){if(-not $v){throw $m};$script:checks++}
 function Reject([scriptblock]$s,[string]$m){$caught=$false;try{$null=& $s}catch{$caught=$true};Check $caught $m}
-function Wait-Until([scriptblock]$s,[int]$seconds,[string]$message){$end=[DateTime]::UtcNow.AddSeconds($seconds);do{if(& $s){return};Start-Sleep -Milliseconds 500}while([DateTime]::UtcNow -lt $end);throw $message}
+function Wait-Until([scriptblock]$s,[int]$seconds,[string]$message){$end=[DateTime]::UtcNow.AddSeconds($seconds);do{if(Test-Path -LiteralPath (Join-Path $Directory 'abort')){throw 'Fixture parent aborted'};if(& $s){return};Start-Sleep -Milliseconds 500}while([DateTime]::UtcNow -lt $end);throw $message}
 function Read-Status {if(Test-Path -LiteralPath $script:statusPath){try{return (Get-Content -LiteralPath $script:statusPath -Raw|ConvertFrom-Json)}catch{}};return $null}
 $freshControlModes=@()
 function Invoke-FreshPublicControl([string]$Mode){

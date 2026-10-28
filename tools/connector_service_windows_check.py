@@ -175,7 +175,8 @@ def main():
                 while staging.status()['jobs'][0]['state']!='completed':
                     if process.poll() is not None or time.monotonic()>end:raise RuntimeError('Staging preview result missing')
                     time.sleep(.25)
-                result=staging.status()['jobs'][0]['result']
+                with store.connect() as db:
+                    result=staging._read(db)['jobs'][0]['result']
                 assert result['outcome']=='staging_preview_rejected' and result['preview'] is None and result['preview_sha256']==''
                 (root/'staging-preview-rejected').write_text('verified genuine signed child rejection',encoding='ascii')
                 process.wait(timeout=720)
