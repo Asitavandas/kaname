@@ -37,3 +37,9 @@ class CombinedWorkerDeliveryTests(unittest.TestCase):
   self.assertNotEqual(release,'efc5ee91-e39e-4cc4-9cc1-60b648e18cf9')
   component=re.search(r"\$sourceCommit='([^']+)'",text).group(1)
   self.assertRegex(component,r'\A[0-9a-f]{40}\Z')
+
+ def test_dc01_delivery_is_bound_to_the_last_accepted_scope_worker_release(self):
+  text=ENTRY.read_text()
+  current=re.search(r"\$oldRelease=\[guid\]'([^']+)'",text).group(1)
+  self.assertEqual('efc5ee91-e39e-4cc4-9cc1-60b648e18cf9',current)
+  self.assertIn('-ExpectedCurrentRelease $oldRelease',text)

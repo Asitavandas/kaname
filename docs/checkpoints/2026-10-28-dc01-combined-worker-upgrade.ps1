@@ -316,7 +316,7 @@ function Get-AuthWireExistingDeliverySigner([string]$Thumbprint){
 }
 $publisherThumbprint='FFC134BC305757457163F99C7479B4168E397129'
 $connectorId=[guid]'4c23eebe-0715-46d1-88ee-a2e96ad7ee46'
-$oldRelease=[guid]'b5469eaa-0ccf-4558-bd84-c2f6a10ecb2f'
+$oldRelease=[guid]'efc5ee91-e39e-4cc4-9cc1-60b648e18cf9'
 $newRelease=[guid]$releaseId
 $directory=Join-Path $env:ProgramData ('AuthWire-ConnectorUpgradeSources-'+$newRelease.ToString('N'))
 $receiptPath=Join-Path $directory 'source-preparation.json'
