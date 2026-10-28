@@ -1,5 +1,31 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## 🔴✓ Windows birleşik worker Prepare kabul edildi — Apply sırada — 28 Ekim 2026
+
+Operatör **WINDOWS_CONNECTOR_UPGRADE_DELIVERY /ToolVersion1.3.0 /Mode Prepare /Stage prepared**
+sonucunu paylaştı. Kaynak imzaları geçerli, **Error=null /ChangesMayBePartial=false**.
+Beklenen current release **efc5ee91-e39e-4cc4-9cc1-60b648e18cf9**, yeni aday
+**689649c0-61df-40aa-bbfb-b84fa1cc2ac0**, kaynak bileşeni **157b2d4bc705539f78f982a860331e537010cab1**.
+**PackagePrepared=true; ExistingAccountPreserved/PairingPreserved/ChannelKeyPreserved=true**.
+Signer snapshot ve eski kaynaklar korundu. **ServiceTransitioned=false**; çalışan Connector hâlâ eski sürümdedir.
+GPO/AD, key ACL, trust store değişmedi; yeni anahtar/servis oluşturulmadı. **CanApplyGpo=false**.
+
+Kanıt: **C:\ProgramData\AuthWire-ConnectorUpgradeEvidence-689649c061df40aabbfbb84fa1cc2ac0-3628c461f2914802999776d7114ac9c6**.
+Journal: **C:\ProgramData\AuthWire-ConnectorUpgrade-4c23eebe071546d188eea2e96ad7ee46-689649c061df40aabbfbb84fa1cc2ac0\upgrade.json**.
+Tam operatör JSON'u **docs/checkpoints/2026-10-28-customer-combined-worker-prepared.json** içinde kaydedildi.
+Bu kabul operatör çıktısına dayanır; asistanın bağımsız Windows oturumu/servis okuması değildir.
+ArchivePath planlanan geri alma konumudur; Prepare sırasında eski paket arşivlenmiş veya geri alma denenmiş sayılmaz.
+
+**Sıradaki işlem:** aynı hash doğrulanmış r2 launcher ile **-Mode Apply**.
+Bu işlem yalnız kalıcı Windows Connector'ı kontrollü stop/start ile yeni worker'a geçirir;
+mevcut hesap/eşleştirme/anahtar/signer ve önceki paket korunur. Linux RADIUS değiştirilmez.
+Yeni sürüm için taze HTTPS health ve birleşik capability kabul kapısıdır;
+uygulama sonucu ve taze health görüldükten sonra panelden birleşik doğrulama görevi gönderilecek.
+Henüz Apply yapılmadı, müşteri pozitif birleşik roundtrip veya GPO/endpoint dağıtımı yok.
+Linux son kabul **dev.42**, genel **54/94 tamam,40 açık**; nihai kılavuz kapısı değişmedi.
+Her işlemden sonra kayıt tercihi yerine getirildi; yeni tam yedek alınmadı.
+
+
 ## Windows Prepare teslimatı doğrulandı — 28 Ekim 2026
 
 PR111 merge **01d323fab033bcc8e56d59cae0cec0328cb7f4e3**; test head **1fdeba003642f34e1bf13a1722b782722ba09d93**.

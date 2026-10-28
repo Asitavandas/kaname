@@ -31,3 +31,23 @@ Eski d825... hash'li wrapper b546 başlangıç sürümüne bağlıydı ve Window
 r2 yalnız başlangıç sürümü girdisini efc5... yapar; embedded21-source arşiv SHA256
 dffba96918da2e4295bf018f126de4297335ee4100cd5912370e97fb3b8b7509 değişmedi.
 Yeni launcher SHA256:65bf7b7a1963c9c103764c6e1b6677cecb2b5a06d2cffc1bcb56372c9fc86cc3.
+
+## Prepare kabul edildi — Apply devam komutu
+
+28 Ekim 2026 operatör sonucu Stage=prepared, Error=null, SourceSignaturesValid=true,
+SignerSnapshotPreserved=true; ServiceTransitioned=false. Çalışan release efc5ee91 olarak kalır.
+Tam sonuç: 2026-10-28-customer-combined-worker-prepared.json.
+
+DC01 yönetici PowerShell'de:
+
+```powershell
+$awFile = Join-Path $env:TEMP 'AuthWire-Combined-Worker-Upgrade-r2-20261028.ps1'
+if ((Get-FileHash -LiteralPath $awFile -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant() -cne '65bf7b7a1963c9c103764c6e1b6677cecb2b5a06d2cffc1bcb56372c9fc86cc3') {
+    throw 'Kurulum dosyasi degismis'
+}
+& ([scriptblock]::Create([IO.File]::ReadAllText($awFile))) -Mode Apply
+```
+
+Bu aşama Connector servisini kontrollü yeniden başlatır. Beklenen Stage=applied, Error=null,
+Upgrade.ServiceTransitioned=true, SourceSignaturesValid/SignerSnapshotPreserved=true ve CanApplyGpo=false.
+Çıktı kabul edilmeden birleşik job veya GPO/endpoint dağıtımı başlatılmaz.
