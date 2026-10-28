@@ -1,5 +1,23 @@
 # AuthWire current work record
 
+## DC01 SYSVOL UNC Apply başarısız — otomatik geri dönüş bildirildi, inceleme bekliyor — 28 Ekim 2026
+
+Operatör **ToolVersion 1.4.1 / Mode Apply** çıktısını paylaştı:
+**Stage=package_apply_requires_review**, **Upgrade=null**, **ChangesMayBePartial=true**.
+Hata: **CONNECTOR_UPGRADE_FAILED_OLD_RELEASE_RESTORED**.
+Hedef release **cf74295c-ec97-4edf-a15a-877b155d1740** canlıya kabul edilmedi.
+Araç önceki **e6d734b1-59c8-48e5-8a6e-c40b43be3114** sürümün geri yüklendiğini bildiriyor;
+güncel servis/sağlık durumu operatörün salt okunur çıktısıyla ayrıca doğrulanacak.
+**SignerSnapshotPreserved=false**: wrapper iç updater hatası üzerine son signer karşılaştırmasına
+ulaşamadan catch'e girdiğinden bu alan varsayılan false kalır; tek başına anahtar değişikliği kanıtı değildir.
+**ExistingSigningKeyAclChanged=false**, AD/GPO/trust değişmedi, sırlar dışa aktarılmadı.
+Evidence: `C:\ProgramData\AuthWire-ConnectorUpgradeEvidence-cf74295cec974edfa15a877b155d1740-4756876a2d9844a3a7326c229df405f5`.
+Sıradaki işlem journal phase, canlı ve candidate state/status.json dosyaları ve sınırlı SCM olaylarının salt okunur kontrolü.
+Apply tekrar edilmeyecek; yeni panel kapsam görevi henüz başlatılmayacak.
+**READ_FAILED çözülmüş kabul edilmedi**; Linux **dev.43**, genel durum **54 tamamlanan/40 açık**.
+Yeni tam yedek alınmadı; kılavuz hazır/teslim bayrakları false kalır.
+
+
 ## SYSVOL UNC düzeltmesi: DC01 Prepare başarılı, Apply bekliyor — 28 Ekim 2026
 
 Operatörün paylaştığı **ToolVersion 1.4.1 / Mode Prepare** çıktısı kabul edildi.
