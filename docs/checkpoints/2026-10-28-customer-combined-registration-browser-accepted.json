@@ -1,0 +1,27 @@
+{
+  "event": "CUSTOMER_COMBINED_REGISTRATION_BROWSER_ACCEPTED",
+  "date_local": "2026-10-28",
+  "timezone": "Europe/Istanbul",
+  "version_last_installed": "0.14.0-dev.41",
+  "evidence_source": "Operator-provided browser screenshot",
+  "screenshot_filename": "image(20261028-095711).png",
+  "screenshot_sha256": "6f6cdd126842ef816f6b814f2f99c26810a1c97043e0f4f09525960e869158fb",
+  "visible_title": "AuthWire Pilot - Merkezi Windows · v1 · Birleşik paket",
+  "visible_status": "Operatör sonucu kaydedildi. Connector doğrulaması bekleniyor.",
+  "visible_limit": "Sertifika kurulumu ve ağ profilleri birlikte kaydedildi. Bu paket için kalıcı Connector doğrulaması henüz kullanılabilir değil.",
+  "manifest_sha256": "124360dc02e641fe6532f5058fa4915610f74d5c2de7028c5913d7cb9d431c5b",
+  "draft_sha256": "5dd35e4d28f6b6495223224f89d339c4cdd595099df5ac726b812238feca0ce5",
+  "matches_previously_accepted_combined_preparation": true,
+  "accepted_scope": "Operator receipt registration and distinct combined browser row with honest pending status.",
+  "independent_live_database_read": false,
+  "permanent_combined_worker_verified": false,
+  "gpo_applied": false,
+  "endpoint_installation_accepted": false,
+  "next_step": "Implement typed combined candidate verification jobs and permanent Windows Connector worker; preserve network-only record/verification.",
+  "progress": {
+    "accepted": 54,
+    "total": 94,
+    "open": 40
+  },
+  "final_guide_ready": false
+}

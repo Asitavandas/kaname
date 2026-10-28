@@ -18,6 +18,16 @@ Timer etkin; ürün servisleri durdurulmadı/yeniden başlatılmadı.
 Bu arşivde veri restore veya tam OS boot restore provası yapılmadı; off-host kopya ve Windows/DC01 yedeği ayrı.
 Henüz reboot yapılmış veya açılış sonrası sağlık doğrulanmış sayılmaz.
 
+## Güncel devam noktası — dev.41 ve birleşik panel kaydı kabul edildi
+
+Operatör ekranı birleşik satırı, beklenen pending durumunu ve doğru manifest/draft hash'lerini gösterdi.
+Dev.41 canlı kurulum ve birleşik operatör kayıt/browser adımı tamamlandı.
+Kanıt: docs/checkpoints/2026-10-28-customer-combined-registration-browser-accepted.json
+Sıradaki iş: typed birleşik aday doğrulama görevi ve kalıcı Windows Connector worker entegrasyonu.
+Mevcut paket yeniden oluşturulmayacak/imzalanmayacak; ağ-only kanıtı birleşik kabul sayılmayacak.
+GPO staging/apply ve gerçek endpoint kabulü açık;54/94,40 açık; final guide ready=false.
+Aşağıdaki kayıt-bekliyor notları tarihsel hazırlık/kurulum kayıtlarıdır.
+
 ## Son güncelleme — dev.41 kuruldu; birleşik panel kaydı bekliyor
 
 Dev.41 kurulum sonucu doğrulandı. RADIUS1243360/broker1069437 korundu; panel active1991730.

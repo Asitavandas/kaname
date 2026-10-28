@@ -20,6 +20,29 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Birleşik paket panel kaydı ve tarayıcı görünümü kabul edildi — 28 Ekim 2026
+
+Operatör ekran görüntüsünde **AuthWire Pilot - Merkezi Windows · v1 · Birleşik paket** satırı ve
+**“Operatör sonucu kaydedildi. Connector doğrulaması bekleniyor.”** durumu görünüyor.
+Manifest **124360dc02e641fe6532f5058fa4915610f74d5c2de7028c5913d7cb9d431c5b** ve
+taslak **5dd35e4d28f6b6495223224f89d339c4cdd595099df5ac726b812238feca0ce5**
+önceden kabul edilen birleşik imzalı hazırlıkla aynı. Panel sertifika kurulumu+ağ profillerini ayrı
+birleşik kayıt olarak gösteriyor; kalıcı Connector doğrulamasının henüz kullanılabilir olmadığını açıkça belirtiyor.
+Bu ekran adımın beklenen görünümüdür; hata mesajı veya gerçek GPO uygulama sonucu değildir.
+
+Kanıt **image(20261028-095711).png**, SHA256
+**6f6cdd126842ef816f6b814f2f99c26810a1c97043e0f4f09525960e869158fb**.
+Kabul operatör ekranına dayanır; ayrı asistan canlı DB okuması değildir.
+**Dev.41 kurulum + birleşik operatör kaydı + bu satırın tarayıcı görünümü tamamlandı.**
+Kalıcı birleşik worker doğrulaması, taze AD/GPO/SYSVOL, staging/rollback ve cihaz kurulumu açık kalır.
+Eski ağ-only kanıtı birleşik doğrulama sayılmaz; GPO/endpoint kabulü veya ürünün tamamlanması iddia edilmez.
+Genel **54/94 /40 açık**, nihai kılavuz kapısı değişmedi.
+
+**Sıradaki geliştirme:** birleşik adayın kendi hedef/manifest/draft bağımlılıklarını taşıyan typed
+doğrulama görev kanalı ve kalıcı Windows Connector worker teslimatı. Mevcut imzalı paket ve
+ağ-only kayıt korunacak; paket yeniden üretilmeyecek veya imzalanmayacak.
+Kullanıcının her tamamlanan işlemi kaydetme ve her değişiklikte tam yedek almama tercihleri korunur.
+
 ## 🔴✓ Dev.41 Linux kurulumu kabul edildi — birleşik panel kaydı bekliyor — 28 Ekim 2026
 
 Operatör **COMBINED_REGISTRATION_FINISHED /verified=true**, sürüm **0.14.0-dev.41**,
