@@ -106,6 +106,30 @@ try{
  [IO.File]::WriteAllText((Join-Path $tree 'GPT.INI'),"[General]`r`nVersion=0`r`n")
  $first=@(Read-AuthWireCombinedSysvolTree $tree);$second=@(Read-AuthWireCombinedSysvolTree $tree)
  Check ($first.Count -eq 4 -and (Get-AuthWireScopeDataHash $first) -ceq (Get-AuthWireScopeDataHash $second)) 'combined full tree stable native read'
+ # Actual SMB path, not a mocked local path. The legacy reader must still reject it.
+ $shareName='aw-sysvol-'+[guid]::NewGuid().ToString('N');$shareCreated=$false;$startedServer=$false
+ try{
+  if((Get-Service -Name LanmanServer).Status -ne 'Running'){Start-Service -Name LanmanServer;$startedServer=$true}
+  $who=[Security.Principal.WindowsIdentity]::GetCurrent();try{$reader=$who.Name}finally{$who.Dispose()}
+  $null=New-SmbShare -Name $shareName -Path $tree -ReadAccess $reader -ErrorAction Stop;$shareCreated=$true
+  $unc='\\localhost\'+$shareName
+  $oldRejected=$false
+  try{$null=Read-AuthWireCandidateBytes (Join-Path $unc 'GPT.INI') 4096}catch{$oldRejected=$_.Exception.Message -ceq 'DEPLOYMENT_PATH_REJECTED'}
+  Check $oldRejected 'local candidate path guard still refuses UNC with the original error'
+  $remote=@(Read-AuthWireCombinedSysvolTree $unc)
+  Check ($remote.Count -eq 4) 'real SMB UNC full SYSVOL tree read succeeds'
+  foreach($file in @('gpo.cmt','gpt.ini')){
+   Check ((@($remote|Where-Object {$_.Path -ceq $file})[0].Sha256) -ceq (@($first|Where-Object {$_.Path -ceq $file})[0].Sha256)) ('SMB bytes match local file '+$file)
+  }
+  Reject {Read-AuthWireCombinedSysvolFile $unc '..\outside'} 'SYSVOL accepts only two fixed file names'
+  [IO.File]::WriteAllBytes((Join-Path $tree 'GPO.cmt'),(New-Object byte[] 4097))
+  Reject {Read-AuthWireCombinedSysvolTree $unc} 'oversized SMB file rejected before reading'
+  [IO.File]::WriteAllText((Join-Path $tree 'GPO.cmt'),'fixture ownership comment')
+ }finally{
+  if($shareCreated){Remove-SmbShare -Name $shareName -Force -Confirm:$false -ErrorAction Stop}
+  if($startedServer){Stop-Service -Name LanmanServer -ErrorAction Stop}
+ }
+
  [IO.File]::WriteAllText((Join-Path $tree 'Machine\hidden.ps1'),'Write-Output 1')
  Reject {Read-AuthWireCombinedSysvolTree $tree} 'combined rejects hidden deployment content'
  Remove-Item -LiteralPath (Join-Path $tree 'Machine\hidden.ps1')
