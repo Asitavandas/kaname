@@ -1,0 +1,103 @@
+{
+  "event": "COMBINED_SCOPE_READY_FOR_CONTROLLED_DEPLOYMENT",
+  "date": "2026-10-28",
+  "timezone": "Europe/Istanbul",
+  "pr": 112,
+  "merge": "94c888bfa979e1c773bf0aee356692db69ed584e",
+  "tested_head": "b4eed841150059170658a9b004594b4638c66e9c",
+  "source_component": "c67adc15b731dbb7876cef1ed848ee1ce483b8bb",
+  "workflows": [
+    {
+      "id": 40688207906,
+      "name": "AuthWire private backup acceptance",
+      "conclusion": "success"
+    },
+    {
+      "id": 40688208111,
+      "name": "AuthWire combined signed package checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40688207986,
+      "name": "KANAME Linux source preparation",
+      "conclusion": "success"
+    },
+    {
+      "id": 40688208107,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40688208094,
+      "name": "AuthWire device enrollment pilot checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40688207972,
+      "name": "KANAME browser checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40688207933,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40688207918,
+      "name": "KANAME real RADIUS protocol proof",
+      "conclusion": "success"
+    },
+    {
+      "id": 40688207914,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "conclusion": "success"
+    }
+  ],
+  "python_tests": 1045,
+  "skipped": 28,
+  "native_scope_checks": 41,
+  "native_scm_checks": 90,
+  "local_rsa_http_backup_tests": 49,
+  "local_delivery_rollback_tests": 14,
+  "local_windows_archive_tests": 3,
+  "linux": {
+    "source_component": "c67adc15b731dbb7876cef1ed848ee1ce483b8bb",
+    "files": 182,
+    "allowed": [
+      "kaname/__init__.py",
+      "kaname/combined_scope_jobs.py",
+      "kaname/deployment_candidates.py",
+      "kaname/server.py",
+      "kaname/static/deployment.js",
+      "pyproject.toml",
+      "tools/scheduled_backup.py"
+    ],
+    "manifest_sha256": "61a0310f43d5aea90e79554c39950c792b5bf8bd4e59f55a832c13e105995338",
+    "updater_sha256": "19a33302b0b80dbf186a75e4e09aae91195ae82ce905e59dd2341d8c277d36d2",
+    "worker_sha256": "e0623c6998db9c8fa45df2f9e5ff6d514e451567d711fece5ef5417330ada8b6",
+    "applied": false
+  },
+  "windows": {
+    "source_component": "c67adc15b731dbb7876cef1ed848ee1ce483b8bb",
+    "release": "e6d734b1-59c8-48e5-8a6e-c40b43be3114",
+    "expected_current_release": "689649c0-61df-40aa-bbfb-b84fa1cc2ac0",
+    "archive_sha256": "f348716cddef27503c1d8b1e698963d1612193ee9a74bd7df06e58588cae0ddd",
+    "script_sha256": "44d7be4e9c3ff2b473e6beed69e498d5976fc49f4341ff48310c6826b5bb54f2",
+    "source_files": 24,
+    "bytes": 134621,
+    "applied": false
+  },
+  "remote_staging_readonly_verified": true,
+  "windows_transfer_timeout_recovered": true,
+  "live_linux_version": "0.14.0-dev.42",
+  "live_windows_release": "689649c0-61df-40aa-bbfb-b84fa1cc2ac0",
+  "combined_content_browser_accepted": true,
+  "real_combined_scope_acceptance_pending": true,
+  "gpo_apply_enabled": false,
+  "production_jobs_created": false,
+  "full_data_backup_created": false,
+  "overall_completed": 54,
+  "overall_open": 40,
+  "ready_for_final_guide": false,
+  "guide_delivered": false
+}

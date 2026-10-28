@@ -1,5 +1,64 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## Birleşik AD/GPO/SYSVOL kapsam kontrolü hazır — dev.43 ve Windows kurulumu bekliyor — 28 Ekim 2026
+
+**PR112** merge **94c888bfa979e1c773bf0aee356692db69ed584e**, test head **b4eed841150059170658a9b004594b4638c66e9c**,
+kaynak bileşeni **c67adc15b731dbb7876cef1ed848ee1ce483b8bb**.
+Dokuz workflow başarılı: **1045 Python testi /28 skipped**, tarayıcı, gerçek RADIUS,
+native birleşik paket, Linux kaynak hazırlama, yedek ve Windows kontrolleri.
+Native scope hedef/hash/gerçek geçici dosya ağacında41 kontrol; imzalı kalıcı SCM fixture'ında90 kontrol geçti.
+SCM fixture'ı typed birleşik scope görevinde gerçek imzalı negatif sonucu ve yeni kanal kesildiğinde
+upgrade reddi/rollback davranışını sınadı. Hosted fixture müşteri AD/gMSA pozitif kabulü değildir.
+Yerel49 RSA/SQLite/HTTPS/yedek,14 delivery/rollback ve üç exact Windows archive kontrolü geçti.
+Bu sayılar ürünün bütünü veya müşteri kapsam testi tamamlanmış anlamına gelmez.
+
+**Yeni davranış:** ayrı **combined.scope.verify.v1** capability/purpose/route ve
+**windows_combined_scope_jobs** sırası. Hedef, birleşik adayın19 alanına; son kabul edilen birleşik
+içerik kanıtının hash'ine; tüm güncel AD hedef SID setine; profile/network/draft/manifest pinlerine bağlı.
+İçerik kanıtı veya bağımlılık değişirse eski lease/snapshot geçersiz olur. Sonuç yalnız90 saniye taze
+okuma snapshot'ıdır. Eski ağ-only scope ve birleşik content kanalları kendi görevlerini korur.
+Başarılı sonuç **connector_verified/can_apply** açmaz.
+
+İmzalı, süre/çıktı bütçeli AllSigned child; birleşik ve ağ içeriğini okuma öncesi/sonrası yeniden doğrular.
+AD nested/primary üyelikleri, etkin bilgisayarlar, managed GPO kimliği/marker/owner/izinler,
+bağsız/ayarsız/zero-version durumunu ve SYSVOL root ACL'ini kontrol eder.
+SYSVOL'de dört kök öğe, boş Machine/User dizinleri, dosya byte hash/ACL'leri,
+GPT.INI tek Version=0 ve iki kararlı okuma zorunludur; gizli deployment dosyası/reparse/drift reddedilir.
+Deployment artifact çalıştırılmaz; AD/GPO/endpoint ayarı yazılmaz.
+Mevcut25 server fonksiyon gövdesi pinli; üç incelenmiş dispatch gövdesi genişletildi.
+
+**Linux dev.43 teslimatı hazırlanıp sunucuda salt okunur doğrulandı; henüz uygulanmadı.**
+Helper **/home/segmentiq/authwire-combined-scope-jobs-20261028.py**
+SHA256 **19a33302b0b80dbf186a75e4e09aae91195ae82ce905e59dd2341d8c277d36d2**.
+Stage **/home/segmentiq/authwire-stage-dev43-c67adc15b731**,182 dosya;
+manifest **61a0310f43d5aea90e79554c39950c792b5bf8bd4e59f55a832c13e105995338**.
+Yalnız yedi source dosyası (yeni combined_scope_jobs.py dahil), kurulu backup worker ve release hash pair'i güncellenir.
+Yeni worker **e0623c6998db9c8fa45df2f9e5ff6d514e451567d711fece5ef5417330ada8b6**, restore checker değişmez.
+Beşinci sıranın yalnız doğrulanmış poll metadata'sı kararlılık karşılaştırmasına eklenir;
+tüm DB/poll/replay verisi ve durable işler/sonuçlar gerçek yedekte korunur.
+Panel restart planlı; RADIUS/broker ve timer korunur. Idle/exclusive lock, source/worker exact rollback,
+üçüncü taraf drift ve eşzamanlı iş değişikliğinde otomatik geri alma yapmama testleri geçti.
+
+**Windows teslimatı hazır; henüz Windows'ta Prepare/Apply çalıştırılmadı.**
+Helper **/home/segmentiq/authwire-dc01-combined-scope-worker-upgrade-20261028.ps1**
+SHA256 **44d7be4e9c3ff2b473e6beed69e498d5976fc49f4341ff48310c6826b5bb54f2**;24 incelenmiş source,
+archive **f348716cddef27503c1d8b1e698963d1612193ee9a74bd7df06e58588cae0ddd**.
+Yeni release **e6d734b1-59c8-48e5-8a6e-c40b43be3114**, beklenen current **689649c0-61df-40aa-bbfb-b84fa1cc2ac0**.
+Mevcut gMSA, eşleştirme, channel key, signer ve eski paket korunur.
+Yeni release ancak taze **CombinedScopeChannelVerified** dahil beş kanal sağlıklıysa kabul edilir;
+başarısız geçişte eski sürüme geri dönülür.
+İlk dosya aktarım timeout'u parça aktarımıyla giderildi; byte hash ve tek kaynak manifesti tekrar doğrulandı.
+
+**Canlı son kabul değişmedi:** Linux **dev.42**, Windows **689649c0-61df-40aa-bbfb-b84fa1cc2ac0**;
+birleşik content pozitif/browser kabulü tamam. Müşteride yeni scope okuması yapılmadı.
+Devam: Linux pinned sudo helper → Windows Prepare → Apply → birleşik satırda
+**AD/GPO kontrolünü önizle/gönder/Yenile** → gerçek kapsam sonucu.
+Ardından kontrollü staging/rollback ve gerçek pilot endpoint kabulü açık.
+Yeni tam yedek alınmadı; mevcut28 Ekim10:28 doğrulanmış yedek son kabul edilen arşivdir.
+**54/94 tamam,40 açık; READY_FOR_FINAL_GUIDE=false, GUIDE_DELIVERED=false** korunur.
+Tamamlanan kaynak/test/teslimat ve sonraki işlem kalıcı kayda işlendi.
+
+
 ## 🔴✓ Birleşik paket kalıcı Connector içerik doğrulaması panelde kabul edildi — 28 Ekim 2026
 
 Operatör ekran görüntüsünde **AuthWire Pilot - Merkezi Windows · v1 · Birleşik paket**
