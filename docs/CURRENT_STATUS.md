@@ -20,6 +20,40 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## 🔴✓ Dev.43 canlı Linux kurulumu kabul edildi — Windows kapsam worker Prepare sırada — 28 Ekim 2026
+
+Operatör **COMBINED_SCOPE_JOBS_FINISHED /verified=true**, sürüm **0.14.0-dev.43**,
+release **c67adc15b731dbb7876cef1ed848ee1ce483b8bb** sonucunu paylaştı.
+Korunan dosyalar, broker/RADIUS süreçleri, timer ve iş durumu kontrolleri geçti.
+Önce/sonra bütün authenticated loopback okumaları200; birleşik kapsam görev kanalı eklendi,
+ancak yeni kapsam görevi veya aday kaydı oluşturulmadı.
+RADIUS **1243360** ve broker **1069437** korundu; RADIUS yeniden başlatılmadı.
+Kanıt: **/var/lib/authwire-updates/combined-scope-jobs-dev43-20261028T124458Z-78543b4b**.
+
+Asistan ayrıca salt okunur source sürümünü dev.43, panel active/PID **2058459**,
+RADIUS/broker active ve aynı PID'leri, backup timer active durumunu doğruladı.
+Kurulu/source backup worker SHA **e0623c6998db9c8fa45df2f9e5ff6d514e451567d711fece5ef5417330ada8b6**;
+release.json eşleşiyor, restore checker **8d887e14588d8f9b5fe1b164678aef0feb24fd5b2288ffcec1d6da4d062ceab5** değişmedi.
+DB okunmadı; HTTPS/session200 ve iş durumu korunumu operatörün sudo installer kanıtına dayanır.
+**backup_workers_changed=true** beşinci sıranın poll uyumluluğu için beklenen güncellemedir;
+tam yedek alınmadı ve backup timer korundu.
+
+Politika, sertifika, plan, eşleştirme, AD/GPO, Windows paket/endpoint ve native modül değişmedi.
+**combined_scope_worker_delivery_pending=true /gpo_apply_enabled=false** beklenen ara durumdur.
+Windows son kabul edilen release hâlâ **689649c0-61df-40aa-bbfb-b84fa1cc2ac0**;
+birleşik pozitif content/browser kabulü korunuyor, yeni canlı kapsam kabulü henüz yok.
+
+**Sıradaki operatör işlemi:** DC01'de yönetici64-bit Windows PowerShell ile
+**authwire-dc01-combined-scope-worker-upgrade-20261028.ps1 -Mode Prepare**.
+Dosya Linux home'da hazır; SHA **44d7be4e9c3ff2b473e6beed69e498d5976fc49f4341ff48310c6826b5bb54f2**.
+Asistan uzak dosya hash'ini ve wrapper'ın **689649c0** current-release pinini tekrar doğruladı.
+Yeni aday release **e6d734b1-59c8-48e5-8a6e-c40b43be3114**,24 incelenmiş source.
+Prepare mevcut servis/PID'yi değiştirmeden paket ve journal hazırlar; çıktı kabulünden sonra Apply yapılacak.
+Henüz Windows Prepare/Apply veya birleşik kapsam işi yürütülmedi.
+Ardından panelde birleşik satırın AD/GPO kontrolünü önizle/gönder/Yenile akışıyla gerçek kapsam sonucu alınacak.
+Staging/rollback, gerçek endpoint ve bütün ürün kabulü açık; **54/94 tamam,40 açık**.
+Nihai kılavuz kapısı değişmedi; sonuç ve sonraki işlem kaydedildi.
+
 ## Birleşik AD/GPO/SYSVOL kapsam kontrolü hazır — dev.43 ve Windows kurulumu bekliyor — 28 Ekim 2026
 
 **PR112** merge **94c888bfa979e1c773bf0aee356692db69ed584e**, test head **b4eed841150059170658a9b004594b4638c66e9c**,

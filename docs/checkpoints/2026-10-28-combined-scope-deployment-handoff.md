@@ -21,3 +21,24 @@ SHA256 44d7be4e9c3ff2b473e6beed69e498d5976fc49f4341ff48310c6826b5bb54f2; yeni re
 Beklenen current689649c0'dır. Yeni release taze birleşik scope capability istemeden kabul edilmez.
 Sonrasında birleşik paket satırında AD/GPO kontrolünü önizle → gönder → Yenile ile gerçek scope sonucu alınır.
 GPO/endpoint dağıtımı bu read-only kanalda açılmaz.
+
+## Dev.43 kabul edildi — Windows Prepare
+
+Linux COMBINED_SCOPE_JOBS_FINISHED/verified=true kaydedildi. Windows current release689649c0.
+DC01 yönetici64-bit Windows PowerShell'de:
+
+```powershell
+$awFile = Join-Path $env:TEMP 'AuthWire-Combined-Scope-Worker-Upgrade-20261028.ps1'
+scp 'segmentiq@10.35.50.246:/home/segmentiq/authwire-dc01-combined-scope-worker-upgrade-20261028.ps1' "$awFile"
+if ($LASTEXITCODE -ne 0) { throw 'Dosya aktarilamadi' }
+if ((Get-FileHash -LiteralPath $awFile -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant() -cne '44d7be4e9c3ff2b473e6beed69e498d5976fc49f4341ff48310c6826b5bb54f2') {
+    throw 'Kurulum dosyasi degismis'
+}
+& ([scriptblock]::Create([IO.File]::ReadAllText($awFile))) -Mode Prepare
+```
+
+Beklenen Event=WINDOWS_CONNECTOR_UPGRADE_DELIVERY, ToolVersion1.4.0, Mode=Prepare,
+Stage=prepared, Error=null, SourceSignaturesValid/SignerSnapshotPreserved=true,
+Upgrade.PreviousReleaseId=689649c0-61df-40aa-bbfb-b84fa1cc2ac0,
+NewReleaseId=e6d734b1-59c8-48e5-8a6e-c40b43be3114, ServiceTransitioned=false.
+Çıktı kabul edilmeden Apply çalıştırılmaz. Henüz GPO/endpoint uygulaması yapılmaz.
