@@ -1,0 +1,56 @@
+{
+  "event": "COMBINED_SIGNING_DELIVERY_PREPARED",
+  "date_local": "2026-10-28",
+  "pr": 105,
+  "merge": "a97fc75b79348320edc062c09ce7bed9440752de",
+  "tested_head": "fde15f7f3bc8acc88f9f24d77ff320137ac3fea0",
+  "source_component": "5069c9f5682e064391c601c6dd1d3d648bdb5a86",
+  "workflows": [
+    {
+      "id": 40641577892,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40641577908,
+      "name": "AuthWire combined signed package checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40641577888,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 40641577897,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "conclusion": "success"
+    }
+  ],
+  "native_windows_checks": 21,
+  "foundation_tests": 929,
+  "foundation_skipped": 28,
+  "operator_helper": "/home/segmentiq/authwire-dc01-combined-candidate-20261028.ps1",
+  "helper_sha256": "25667b231cffdfeec7cd73aadb85dd3054569efe61a677dadb0443824a92033f",
+  "helper_bytes": 36657,
+  "linux_copy_hash_verified": true,
+  "operator_prepare_pending": true,
+  "customer_windows_signatures_verified": false,
+  "original_draft_preserved_by_design": true,
+  "reviewed_installer_retry_correction_in_local_copy_only": true,
+  "linux_installer_template_changed": false,
+  "permanent_connector_changed": false,
+  "services_restarted": false,
+  "ad_gpo_changed": false,
+  "endpoint_changed": false,
+  "key_trust_changes": false,
+  "can_stage": false,
+  "can_apply": false,
+  "full_backup_created": false,
+  "progress": {
+    "accepted": 54,
+    "total": 94,
+    "open": 40
+  },
+  "final_guide_ready": false
+}

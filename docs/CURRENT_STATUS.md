@@ -20,6 +20,25 @@ pause checkpoint and an updated report with red check marks against 9 October.
 
 
 
+## Birleşik taslağın DC01 aktarımı kabul edildi; yerel imzalama aracı hazır — 28 Ekim 2026
+
+Operatör **COMBINED_DRAFT_TRANSFER_VERIFIED** sonucunda Windows geçici dizinindeki ZIP özetini
+**5dd35e4d28f6b6495223224f89d339c4cdd595099df5ac726b812238feca0ce5** olarak doğruladı.
+Bu operatör aktarım/özet kabulüdür; ayrı asistan DC01 okuması veya imza kabulü değildir.
+
+**PR105** merge **a97fc75b79348320edc062c09ce7bed9440752de**, son test head **fde15f7f3bc8acc88f9f24d77ff320137ac3fea0**.
+Dört workflow başarılı; genel **929 test /28 skipped**, native Windows5.1 **21 kontrol**.
+Yeni araç ayrı yerel kopyada istemci, incelenmiş main installer ve inert paket manifesti için üç Authenticode imzası üretir/doğrular.
+Kalıcı signer binding/anahtar özellikleri/key ACL/CLR marker korunur; özgün ZIP değişmez; tekrar Prepare mevcut kopyayı doğrular.
+Installer'ın retry zamanlama düzeltmesi yalnız yeni yerel kopyaya alınır; Linux ve uç cihaz dosyaları değiştirilmez.
+Müşteri imzalama sonucu **henüz yok**. Sabit helper **/home/segmentiq/authwire-dc01-combined-candidate-20261028.ps1**, SHA256 **25667b231cffdfeec7cd73aadb85dd3054569efe61a677dadb0443824a92033f**.
+
+**Sınır/devam:** **can_stage=false/can_apply=false**; GPO/SYSVOL/servis/AD/endpoint/key ACL/trust uygulaması yok.
+Hazırlama elevated operatörle yapılır; müşteri gMSA runtime imzalama/dağıtımı kabulü sayılmaz.
+Müşteri Prepare çıktısı, birleşik worker/registry/staging yolu, gerçek cihaz sertifika + Ethernet/Wi-Fi EAP-TLS/VLAN kabulü açıktır.
+Linux dev.40, Windows efc5ee91, **54/94 /40 açık** ve nihai kılavuz beklemesi korunur.
+Ayrıntı **COMBINED_SIGNED_PREPARATION.md**; checkpoint kayıtları **2026-10-28-customer-combined-transfer-accepted.json** ve **2026-10-28-combined-signing-delivery-prepared.json**.
+
 ## 🔴✓ Birleşik makine taslağı dışa aktarıldı ve arşiv doğrulandı — 28 Ekim 2026
 
 Operatör **MACHINE_DEPLOYMENT_DRAFT_EXPORTED** sonucunu paylaştı: **18 dosya /29.086 bayt**, plan **524653f5-1359-46f5-84a5-46355bb82aff v1**, makine profili **e3597842-3499-4ace-aaf3-29890eabd908 v3**.

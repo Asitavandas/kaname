@@ -1,0 +1,13 @@
+{
+  "event": "CUSTOMER_COMBINED_DRAFT_TRANSFER_ACCEPTED",
+  "date_local": "2026-10-28",
+  "timezone": "Europe/Istanbul",
+  "operator_result": {
+    "Event": "COMBINED_DRAFT_TRANSFER_VERIFIED",
+    "Path": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\AuthWire-Combined-24c81a6d18484ea3ba9b68f37ccb019a\\authwire-pilot-combined-draft-20261028.zip",
+    "Sha256": "5DD35E4D28F6B6495223224F89D339C4CDD595099DF5AC726B812238FECA0CE5"
+  },
+  "independent_dc01_read": false,
+  "windows_signing_accepted": false,
+  "gpo_apply_accepted": false
+}
