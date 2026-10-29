@@ -1,5 +1,37 @@
 # AuthWire current work record
 
+## Sınırlı dosya yazma/geri alma çekirdeği kaynakta test edildi — canlı entegrasyon bekliyor — 29 Ekim 2026
+
+**PR118** merge **8ae5a1a8f6b05caf7bb4a3a18b1a8f49329ccb50**; test edilen head **dc6c8d817638728777eba7e2e1df4bf97e200fa0**.
+Yeni **StagingFilesystem.ps1** güvenilen çağıran için izole dosya işlem çekirdeğidir.
+90 saniyelik tam önizleme, 20 dosyalık kaynak hash/boyut/ACL listesi ve beş öğeli boş GPO tabanını
+yeniden doğrular; yalnız türetilen yeni sürüm klasörüne CreateNew ile yazar.
+Yerel intent/complete kayıtları flush edilir; kaynak dosyalar ve yol dizinleri handle ile sabitlenir.
+Reparse/ADS/hardlink ve mevcut hedef reddedilir. Geri alma öncesinde ayrıca rollback intent yazılır;
+yalnız tamamlanmış sahiplik kaydındaki tam dosya kimliği/hash/ACL ağacı eşleşirse handle üzerinden silinir.
+Recursive delete veya mevcut verinin üzerine yazma yoktur.
+
+**Dört workflow başarılı.** Native WinPS5.1/gerçek geçici SMB testinde **81 kontrol**
+(40 mevcut önizleme,41 dosya işlem/sahiplik kontrolü) geçti; gerçek 20 dosyalı yazma ve geri alma,
+bayat/yanlış onay, korunan GPO, kaynak/taban/izin/ADS/hardlink/junction farkı, dosya değiştirme kimliği,
+handle ile yazma/yeniden adlandırma yasağı, tekrar istek ve completion kayıt hatası sınandı.
+Genel **1075 test /28 ortam atlaması**; Windows regresyon workflow'unun beş job'ı başarılı,
+gerçek düşük yetkili imzalı SCM yaşam döngüsü **85 kontrol** ile altı kanal/kesinti/crash/otomatik ve açık rollback'i geçti.
+Test edilen source head için run'lar **40846597760 /40846597638 /40846597682 /40846597807**.
+
+**Bu kaynak bileşeni canlı Connector paketine, API/görev kanalına veya panel yazma butonuna eklenmedi.**
+Müşteri Linux/DC01/AD/GPO/SYSVOL/endpoint veya anahtar/sertifika ayarı değiştirilmedi.
+Canlı kabul edilen durum Linux **dev.44**, Windows **df28f70c**, son gerçek salt okunur önizleme **11:36:38**.
+Hash argümanı kimlik doğrulama veya operatör yazma onayı değildir.
+Kesinti/kısmi I/O hatasında intent ve varsa kısmi klasör incelemeye bırakılır; otomatik partial cleanup/resume yoktur.
+
+**Sıradaki iş:** yetkili typed yazma/geri alma onayı ve idempotent görev akışını, güncel canlı AD/PDC/GPO/link/sürüm,
+imza/izin kontrollerini ve sabit türetilmiş yolları kullanan bounded Connector adapter'ını hazırlamak.
+Kısmi işlem/kesinti kurtarma kapısı ayrıca tamamlanmalı; ardından ayrı müşteri teslimatı ve gerçek gMSA staging/rollback kabulü.
+GPO aktivasyonu/çoğaltma ve gerçek endpoint kabulü halen açık. Gelecek yazma için yeni taze önizleme gerekecek.
+Genel **54/94 tamamlanan,40 açık** değişmedi; kılavuz bayrakları false. Yeni tam veri yedeği alınmadı.
+Kod/test ayrıntısı **docs/STAGING_FILESYSTEM.md**; kanıt **docs/checkpoints/2026-10-29-staging-filesystem-source.json**.
+
 ## Gerçek hazırlık önizlemesi panelde doğrulandı — SYSVOL yazıcısı sonraki aşama — 29 Ekim 2026
 
 Operatör **Paket dosyaları ve geri alma sınırı** bölümünü iki ekran görüntüsüyle paylaştı.

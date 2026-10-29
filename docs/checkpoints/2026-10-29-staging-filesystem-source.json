@@ -1,0 +1,111 @@
+{
+  "event": "STAGING_FILESYSTEM_SOURCE_TESTED",
+  "date": "2026-10-29",
+  "timezone": "Europe/Istanbul",
+  "pr": 118,
+  "source_head": "dc6c8d817638728777eba7e2e1df4bf97e200fa0",
+  "merge_commit": "8ae5a1a8f6b05caf7bb4a3a18b1a8f49329ccb50",
+  "source_files": {
+    "windows/connector/StagingFilesystem.ps1": {
+      "bytes": 19139,
+      "sha256": "82ba26706d78e369c42b836b2761338c88bdd0dd361eb977e227d1df84f58ff8"
+    },
+    "tools/staging_filesystem_windows_check.ps1": {
+      "bytes": 22019,
+      "sha256": "72dbc7c11fddd51d79cc9cf9da99a743471a7c6066aca29dc04300026e04c56d"
+    },
+    ".github/workflows/staging-filesystem.yml": {
+      "bytes": 923,
+      "sha256": "8a9e2d3ac293a444cdb915ae87d6d30ce14abf88266dd180c78d6a38db659b5d"
+    }
+  },
+  "validation": {
+    "native": {
+      "workflow": 40846597760,
+      "job": 123355496028,
+      "conclusion": "success",
+      "checks": 81,
+      "retained_preview_checks": 40,
+      "transaction_checks": 41,
+      "real_disposable_smb_stage": true,
+      "exact_hash_acl_identity_rollback": true,
+      "fixture_source_artifacts_executed": false,
+      "customer_ad_tested": false,
+      "core_fixture_services_created": false
+    },
+    "foundation": {
+      "workflow": 40846597638,
+      "job": 123355495799,
+      "conclusion": "success",
+      "tests": 1075,
+      "skipped": 28
+    },
+    "windows_regression": {
+      "workflow": 40846597682,
+      "conclusion": "success",
+      "jobs": 5,
+      "scm_job": 123355496089,
+      "scm_checks": 85,
+      "all_six_channels": true,
+      "automatic_outage_recovery": true,
+      "automatic_upgrade_rollback": true,
+      "explicit_upgrade_rollback": true,
+      "crash_recovery": true,
+      "customer_gmsa_tested": false
+    },
+    "bounded_retry": {
+      "workflow": 40846597807,
+      "conclusion": "success"
+    }
+  },
+  "implemented": {
+    "trusted_caller_filesystem_engine": true,
+    "fresh_exact_preview_recomputed": true,
+    "fixed_20_file_set": true,
+    "create_new_only": true,
+    "durable_intent_and_completion": true,
+    "rollback_intent_before_deletion": true,
+    "read_only_source_handles": true,
+    "pinned_ancestors": true,
+    "reparse_ads_hardlink_rejection": true,
+    "rollback_requires_approved_complete_hash_and_exact_file_ids_hashes_acls": true,
+    "recursive_delete_used": false
+  },
+  "boundaries": {
+    "hash_argument_is_authentication": false,
+    "live_service_package_changed": false,
+    "api_job_or_panel_write_action_added": false,
+    "customer_filesystem_writer_delivered": false,
+    "customer_sysvol_changed": false,
+    "customer_ad_gpo_changed": false,
+    "customer_endpoint_changed": false,
+    "customer_services_changed": false,
+    "customer_certificates_keys_or_trust_changed": false,
+    "new_data_backup_created": false,
+    "can_stage_customer": false,
+    "can_apply_gpo": false
+  },
+  "open_work": [
+    "Authenticated typed stage/rollback approval and idempotent job protocol; derive all paths from validated binding, never request paths.",
+    "Live AD/PDC/GPO/link/version/permissions/signature revalidation before stage and rollback; bounded runtime adapter and delivery.",
+    "Interrupted/incomplete stage or rollback leaves evidence and partial data for review; automatic partial cleanup/resume not implemented.",
+    "Real customer gMSA staging/rollback acceptance after source adapter and recovery gates pass.",
+    "GPO activation/replication and real endpoint wired/wireless acceptance; account simplification and earlier cf742 initial Apply inner-error follow-up remain open."
+  ],
+  "deployment_state": {
+    "linux": "0.14.0-dev.44",
+    "windows_release": "df28f70c-104e-4d6d-972c-e311d38adde6",
+    "readonly_preview_accepted_at_local": "2026-10-29T11:36:38+03:00",
+    "new_fresh_preview_required_before_any_future_write": true
+  },
+  "fixture_corrections": [
+    "Use WinPS native stream provider for ADS create/delete instead of incompatible .NET/provider pathname calls.",
+    "Keep strict canonical path validation; canonicalize the runner TEMP short-name fixture root.",
+    "Use .NET UNC path composition and exact one-byte native file disposition layout.",
+    "Restore identity test backup by same-share rename, not UNC/local move that can replace the file identity; ownership/ACL guard retained."
+  ],
+  "overall_completed": 54,
+  "overall_open": 40,
+  "ready_for_final_guide": false,
+  "guide_delivered": false
+}

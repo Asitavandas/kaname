@@ -1,5 +1,9 @@
 # Birleşik paket staging önizlemesi
 
+29 Ekim kaynak ilerlemesi: PR118 ile izole dosya yazma/geri alma çekirdeği ve geçici SMB testleri eklendi.
+Canlı Connector veya panel yazma akışına bağlanmadı; typed onay, canlı scope adapter'ı ve kesinti kurtarma kapıları açık.
+Ayrıntı: STAGING_FILESYSTEM.md ve checkpoints/2026-10-29-staging-filesystem-source.json.
+
 İlk kaynak kaydı 28 Ekim 2026. Güncelleme 29 Ekim: Linux dev.44 ve Windows df28f70c teslim edildi;
 operatör 11:36:38 Europe/Istanbul zamanlı 20 dosya/102464 bayt hazırlık önizlemesini panelde görüntüledi.
 Kanıt: checkpoints/2026-10-29-customer-staging-preview-browser-accepted.json.
