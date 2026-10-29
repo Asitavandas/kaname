@@ -157,15 +157,24 @@ function Assert-AuthWireStagingFilesystemContext($Target,$PreviewRecord,[string]
  if($p.relative_destination -cne $relative -or $p.scope_target_sha256 -cne (Get-AuthWireCombinedScopeTargetHash $Target)){throw 'STAGING_TARGET_CHANGED'}
  return $relative
 }
+function Assert-AuthWireStagingWriteDeadline([long]$NotAfter,[long]$StartedAt,$Timer){
+ # Zero is retained only for the historical low-level fixture interface.
+ # The authorized stage adapter always supplies the original grant expiry.
+ if($NotAfter -eq 0){return}
+ $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+ if($NotAfter -le $StartedAt -or $now -lt $StartedAt -or $now -ge $NotAfter -or $Timer.ElapsedMilliseconds -ge ($NotAfter-$StartedAt)*1000){throw 'STAGING_AUTHORIZATION_EXPIRED'}
+}
 function Invoke-AuthWireStagingFilesystemStage {
  [CmdletBinding()]
- param($Target,$PreviewRecord,[string]$ApprovedPreviewSha256,[string]$SourceRoot,[string]$GpoRoot,[string]$JournalRoot,[string]$OperationId,[string]$ProtectedGpoId)
+ param($Target,$PreviewRecord,[string]$ApprovedPreviewSha256,[string]$SourceRoot,[string]$GpoRoot,[string]$JournalRoot,[string]$OperationId,[string]$ProtectedGpoId,[long]$NotAfter=0)
  # Low-level engine for a trusted future adapter. These paths must NEVER be
  # forwarded from a network request. This function does not authorize AD writes.
  Initialize-AuthWireStagingFilesystemTypes
  Assert-AuthWireCandidateGuid $OperationId
  $relative=Assert-AuthWireStagingFilesystemContext $Target $PreviewRecord $ApprovedPreviewSha256 $GpoRoot $ProtectedGpoId
  Assert-AuthWireStagingJournalRoot $JournalRoot
+ $clockStart=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$writeClock=[Diagnostics.Stopwatch]::StartNew()
+ Assert-AuthWireStagingWriteDeadline $NotAfter $clockStart $writeClock
  $pins=[AuthWire.Staging.TreeLeaseV1]::new();$source=$null;$staged=$null;$journalPins=$null
  try{
   $pins.PinAncestors($GpoRoot);$pins.PinAncestors(([IO.Path]::Combine($GpoRoot,'Machine')))
@@ -180,6 +189,7 @@ function Invoke-AuthWireStagingFilesystemStage {
   $destination=[IO.Path]::Combine($GpoRoot,$relative.Replace('/','\'))
   if(Test-Path -LiteralPath $destination){throw 'STAGING_DESTINATION_EXISTS'}
   $journal=Join-Path $JournalRoot $OperationId
+  Assert-AuthWireStagingWriteDeadline $NotAfter $clockStart $writeClock
   [AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($journal)
   $journalPins=[AuthWire.Staging.TreeLeaseV1]::new();$journalPins.PinAncestors($journal)
   $intent=[pscustomobject][ordered]@{format='AuthWireFilesystemIntentV1';operation_id=$OperationId;preview_sha256=$ApprovedPreviewSha256;target_sha256=(Get-AuthWireCombinedScopeTargetHash $Target);gpo_root=$GpoRoot;relative_destination=$relative;baseline_sha256=$baseline.Sha256;protected_gpo_id=$ProtectedGpoId}
@@ -187,15 +197,19 @@ function Invoke-AuthWireStagingFilesystemStage {
   # Recheck expiry immediately before creating anything in the GPO tree.
   $null=Assert-AuthWireStagingFilesystemContext $Target $PreviewRecord $ApprovedPreviewSha256 $GpoRoot $ProtectedGpoId
   if((Get-AuthWireSysvolInventory $GpoRoot).Sha256 -cne $baseline.Sha256){throw 'STAGING_BASELINE_CHANGED'}
+  Assert-AuthWireStagingWriteDeadline $NotAfter $clockStart $writeClock
   [AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($destination)
   $pins.PinAncestors($destination)
-  foreach($d in @('enrollment','network')){[AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory(([IO.Path]::Combine($destination,$d)));$pins.PinAncestors(([IO.Path]::Combine($destination,$d)))}
+  foreach($d in @('enrollment','network')){Assert-AuthWireStagingWriteDeadline $NotAfter $clockStart $writeClock;[AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory(([IO.Path]::Combine($destination,$d)));$pins.PinAncestors(([IO.Path]::Combine($destination,$d)))}
   foreach($r in $PreviewRecord.Preview.files){
+   Assert-AuthWireStagingWriteDeadline $NotAfter $clockStart $writeClock
    $from=[IO.Path]::Combine($SourceRoot,$r.Path.Replace('/','\'));$to=[IO.Path]::Combine($destination,$r.Path.Replace('/','\'))
    $bytes=[IO.File]::ReadAllBytes($from)
    if($bytes.Length -ne $r.Size -or (Get-AuthWireCandidateHash $bytes) -cne $r.Sha256){throw 'STAGING_SOURCE_CHANGED'}
+   Assert-AuthWireStagingWriteDeadline $NotAfter $clockStart $writeClock
    $stream=[IO.File]::Open($to,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
    try{$stream.Write($bytes,0,$bytes.Length);$stream.Flush($true)}finally{$stream.Dispose()}
+   Assert-AuthWireStagingWriteDeadline $NotAfter $clockStart $writeClock
   }
   $staged=[AuthWire.Staging.TreeLeaseV1]::Tree($destination,$false)
   $rows=Get-AuthWireStagingFilesystemRows $staged
@@ -205,7 +219,9 @@ function Invoke-AuthWireStagingFilesystemStage {
   $outside=@($all.Entries|Where-Object {$_.Path -cne $relative -and -not $_.Path.StartsWith($relative+'/',[StringComparison]::Ordinal)})
   if((Get-AuthWireScopeDataHash $outside) -cne $baseline.Sha256){throw 'STAGING_OUTSIDE_CHANGED_REQUIRES_REVIEW'}
   $complete=[pscustomobject][ordered]@{format='AuthWireFilesystemCompleteV1';operation_id=$OperationId;intent_sha256=(Get-AuthWireScopeDataHash $intent);tree_sha256=(Get-AuthWireStagingFilesystemDigest $rows);tree=$rows;baseline=$baseline.Entries}
+  Assert-AuthWireStagingWriteDeadline $NotAfter $clockStart $writeClock
   Write-AuthWireStagingJournal (Join-Path $journal 'complete.json') $complete
+  Assert-AuthWireStagingWriteDeadline $NotAfter $clockStart $writeClock
   return [pscustomobject]@{Phase='staged';OperationId=$OperationId;RelativeDestination=$relative;FileCount=20;CanApplyGpo=$false;JournalPath=$journal}
  }finally{if($staged){$staged.Dispose()};if($source){$source.Dispose()};if($journalPins){$journalPins.Dispose()};$pins.Dispose()}
  # Interrupted/failed transactions leave intent and any partial tree for review.

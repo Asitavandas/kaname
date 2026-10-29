@@ -118,6 +118,12 @@ function New-AuthWireStagingWriteProof([hashtable]$Binding,[Security.Cryptograph
  return $proof
 }
 
+function Get-AuthWireWriteGpoPath([string]$Pdc,$Target){
+ Assert-AuthWireCandidateGuid $Target.gpo_id
+ if($Target.domain -isnot [string] -or $Target.domain.Length -gt 253 -or $Pdc.Length -gt 253 -or -not $Pdc.EndsWith('.'+$Target.domain,[StringComparison]::Ordinal)){throw 'WRITE_PREFLIGHT_PATH_REJECTED'}
+ foreach($value in @($Target.domain,$Pdc)){foreach($label in $value.Split('.')){if($label -cnotmatch '\A[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\z'){throw 'WRITE_PREFLIGHT_PATH_REJECTED'}}}
+ return ('\\'+$Pdc+'\SYSVOL\'+$Target.domain+'\Policies\{'+$Target.gpo_id+'}')
+}
 function Get-AuthWireWriteStageLiveContext($Offer,[hashtable]$Binding,[string]$Publisher,[string]$BaseUrl){
  # Trusted local caller only; no path is taken from the offer. Existing public
  # candidate/signature + non-admin service identity validation remains in use.
@@ -138,7 +144,7 @@ function Get-AuthWireWriteStageLiveContext($Offer,[hashtable]$Binding,[string]$P
  if($after.DNSRoot -cne $before.DNSRoot -or $after.DomainSID.Value -cne $domainSid -or [string]$after.PDCEmulator -cne $server){throw 'WRITE_LIVE_PDC_CHANGED'}
  $source=Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) ('AuthWire-CombinedCandidates-'+([guid]$Binding.connector_id).ToString('N'))
  $source=Join-Path $source ($target.plan_id+'-v'+$target.plan_version+'-'+$target.draft_sha256+'-ab1a11c683810061')
- $gpo='\\'+$server+'\SYSVOL\'+$target.domain+'\Policies\{'+$target.gpo_id+'}'
+ $gpo=Get-AuthWireWriteGpoPath $server $target
  # The original engine hashes a fixed-property-order object. Network/persisted
  # object ordering is irrelevant to approval; normalize without changing data.
  $normalized=[pscustomobject]@{Preview=(ConvertTo-AuthWireWriteOrderedPreview $fresh.Preview);PreviewSha256=$Offer.target.preview_record.PreviewSha256}
@@ -202,7 +208,7 @@ function Assert-AuthWireWriteLiveContextAt($Value,$Offer,[hashtable]$Binding,[lo
  if($v.protected_gpo_id -ceq $t.gpo_id -or $v.pdc -isnot [string] -or $v.pdc -cnotmatch '\A[a-z0-9.-]{1,253}\z' -or -not $v.pdc.EndsWith('.'+$t.domain,[StringComparison]::Ordinal)){throw 'WRITE_PREFLIGHT_REJECTED'}
  $source=Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) ('AuthWire-CombinedCandidates-'+([guid]$Binding.connector_id).ToString('N'))
  $source=Join-Path $source ($t.plan_id+'-v'+$t.plan_version+'-'+$t.draft_sha256+'-ab1a11c683810061')
- $gpo='\\'+$v.pdc+'\SYSVOL\'+$t.domain+'\Policies\{'+$t.gpo_id+'}'
+ $gpo=Get-AuthWireWriteGpoPath $v.pdc $t
  if($v.source_root -cne $source -or $v.gpo_root -cne $gpo){throw 'WRITE_PREFLIGHT_PATH_REJECTED'}
 }
 function Invoke-AuthWireStagingWritePreflight([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release){
