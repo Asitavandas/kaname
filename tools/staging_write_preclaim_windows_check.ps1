@@ -200,7 +200,10 @@ namespace AuthWire.PreclaimFixture {
    if(Test-Path -LiteralPath $j){throw 'Unexpected existing fixture journal'}
    $o=MakeOffer;$null=New-Item -ItemType Directory -Path $j
    if($case.StartsWith('grant_consume_',[StringComparison]::Ordinal)){$consumptionRoots+=,$j}
-   $ja=Get-Acl -LiteralPath $j;$ja.SetAccessRuleProtection($true,$true);Set-Acl -LiteralPath $j -AclObject $ja
+   $ja=Get-Acl -LiteralPath $j
+   if($case.StartsWith('grant_consume_',[StringComparison]::Ordinal)){$ja.SetSecurityDescriptorSddlForm('O:BAG:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)')}
+   else{$ja.SetAccessRuleProtection($true,$true)}
+   Set-Acl -LiteralPath $j -AclObject $ja
    $null=Save-AuthWireStagingWriteOffer $o $b $release $request $j
    $context=Get-AuthWireWriteStageLiveContext $o $b $t.publisher_thumbprint 'https://kaname.lab.example/'
    $jobDir=Join-Path $j $o.job_id
