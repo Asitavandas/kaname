@@ -1,0 +1,34 @@
+name: AuthWire isolated one-shot staging cycle
+on:
+  pull_request:
+    paths:
+      - 'windows/connector/**'
+      - 'tools/staging_write_execution_windows_check.ps1'
+      - 'tools/staging_write_cycle_windows_check.py'
+      - '.github/workflows/staging-write-cycle.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'windows/connector/**'
+      - 'tools/staging_write_execution_windows_check.ps1'
+      - 'tools/staging_write_cycle_windows_check.py'
+      - '.github/workflows/staging-write-cycle.yml'
+permissions:
+  contents: read
+jobs:
+  native-cycle:
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - run: python -m pip install cryptography==46.0.0
+      - name: Real pinned TLS and SQLite POLL CLAIM RESULT around signed CNG SMB stage
+        shell: powershell
+        run: |
+          python tools/staging_write_cycle_windows_check.py
+          if($LASTEXITCODE -ne 0){throw 'Controlled cycle fixture failed'}

@@ -7,6 +7,8 @@ $lib=Join-Path $PSScriptRoot '..\windows\connector'
 $root=[IO.Path]::GetFullPath((Join-Path $env:TEMP ('aw-stage-execution-'+[guid]::NewGuid().ToString('N'))))
 $package=Join-Path $root 'signed-package';$share=$null;$startedServer=$false;$key=$null;$rsa=$null;$signer=$null;$public=$null
 $journal=$null;$candidateBase=$null;$oldModulePath=$env:PSModulePath;$script:checks=0
+$flowDirectory=$env:AUTHWIRE_WRITE_CYCLE_DIRECTORY;$flowMode=[bool]$flowDirectory
+$webStore=$null;$webCert=$null;$webAdded=$false;$hostBytes=$null;$hosts=$null;$web=$null
 function Check($v,[string]$name){if(-not $v){throw ('EXECUTION_FIXTURE:'+ $name)};$script:checks++}
 function Reject([scriptblock]$fn,[string]$name){$failed=$false;try{& $fn|Out-Null}catch{$failed=$true};Check $failed $name}
 function Clone($v){return ($v|ConvertTo-Json -Depth 15 -Compress|ConvertFrom-Json)}
@@ -16,7 +18,7 @@ try{
  $signer=New-SelfSignedCertificate -Type CodeSigningCert -Subject ('CN=AuthWire-Stage-Fixture-'+[guid]::NewGuid().ToString('N')) -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 3072 -KeyExportPolicy NonExportable -NotAfter (Get-Date).AddDays(1)
  $public=[Security.Cryptography.X509Certificates.X509Certificate2]::new($signer.Export([Security.Cryptography.X509Certificates.X509ContentType]::Cert))
  foreach($name in @('Root','TrustedPublisher')){$s=[Security.Cryptography.X509Certificates.X509Store]::new($name,'LocalMachine');try{$s.Open('ReadWrite');$s.Add($public)}finally{$s.Close()}}
- $files=@('Test-AuthWireDeploymentCandidate.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','StagingFilesystem.ps1','StagingWritePreclaim.ps1','StagingWriteTransport.ps1','StagingWriteConsumption.ps1','StagingWriteProcess.ps1','StagingWriteExecution.ps1','StagingWriteResult.ps1','Read-AuthWireStagingWritePreflight.ps1','Invoke-AuthWireStagingWriteChild.ps1')
+ $files=@('Test-AuthWireDeploymentCandidate.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','ConnectorChannelTypes.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','StagingFilesystem.ps1','StagingWritePreclaim.ps1','StagingWriteTransport.ps1','StagingWriteConsumption.ps1','StagingWriteProcess.ps1','StagingWriteExecution.ps1','StagingWriteResult.ps1','StagingWriteCycle.ps1','Read-AuthWireStagingWritePreflight.ps1','Invoke-AuthWireStagingWriteChild.ps1')
  foreach($name in $files){[IO.File]::WriteAllBytes((Join-Path $package $name),[IO.File]::ReadAllBytes((Join-Path $lib $name)))}
  # Test production namespace derivation BEFORE replacing only its environment.
  . (Join-Path $package 'Test-AuthWireDeploymentCandidate.ps1') -LibraryOnly
@@ -66,6 +68,22 @@ function Invoke-AuthWireStagingFilesystemStage {
 }
 '@
  [IO.File]::AppendAllText((Join-Path $package 'StagingFilesystem.ps1'),$engineShim)
+ if($flowMode){
+  $flowShim=@'
+
+# Fixture-only switch to the requested stage fault AFTER real intent consumption.
+$script:FixtureConsumeBody=${function:New-AuthWireAuthorizedFilesystemIntent}
+function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
+ $r=& $script:FixtureConsumeBody @PSBoundParameters
+ $file=Join-Path $PSScriptRoot 'fixture.json';$fixture=Get-Content -LiteralPath $file -Raw|ConvertFrom-Json
+ $receipt=Read-AuthWireStagingJournal (Join-Path (Join-Path $JournalRoot $JobId) 'authorization.json')
+ $fixture.expires_at=$receipt.grant.expires_at;$fixture.case=$fixture.requested_case
+ [IO.File]::WriteAllText($file,($fixture|ConvertTo-Json -Depth 12 -Compress))
+ return $r
+}
+'@
+  [IO.File]::AppendAllText((Join-Path $package 'StagingWriteConsumption.ps1'),$flowShim)
+ }
  $modules=Join-Path $package 'fixture-modules';$null=New-Item -ItemType Directory -Path $modules
  foreach($name in @('ActiveDirectory','GroupPolicy')){
   $directory=Join-Path $modules $name;$null=New-Item -ItemType Directory -Path $directory
@@ -85,16 +103,30 @@ function Invoke-AuthWireStagingFilesystemStage {
  $keyName='AuthWire-Channel-'+([guid]$connector).ToString('N')+'-'+[guid]::NewGuid().ToString('N')
  $key=[Security.Cryptography.CngKey]::Create([Security.Cryptography.CngAlgorithm]::Rsa,$keyName,$parameters);$rsa=[Security.Cryptography.RSACng]::new($key)
  $b=@{instance_id=[guid]::NewGuid().ToString('D');connector_id=$connector;generation=1;host_guid=[guid]::NewGuid().ToString('D');host_fqdn=([Environment]::MachineName.ToLowerInvariant()+'.lab.example');service_sid=$sid;appliance_fqdn='kaname.lab.example';appliance_tls_sha256=('a'*64);channel_key_sha256=(Get-AuthWireChannelPublicKeyId $rsa)}
+ $url='https://kaname.lab.example/'
+ if($flowMode){
+  $web=Get-Content -LiteralPath (Join-Path $flowDirectory 'base.json') -Raw|ConvertFrom-Json
+  $b.appliance_fqdn=$web.fqdn;$b.appliance_tls_sha256=$web.pin;$url='https://'+$web.fqdn+':'+$web.port+'/'
+  $webCert=[Security.Cryptography.X509Certificates.X509Certificate2]::new((Join-Path $flowDirectory 'web.crt'))
+  $webStore=[Security.Cryptography.X509Certificates.X509Store]::new('Root','LocalMachine');$webStore.Open('ReadWrite')
+  if($webStore.Certificates.Find('FindByThumbprint',$webCert.Thumbprint,$false).Count){throw 'Unexpected fixture web trust'}
+  $webStore.Add($webCert);$webAdded=$true
+  $hosts=Join-Path $env:SystemRoot 'System32\drivers\etc\hosts';$hostBytes=[IO.File]::ReadAllBytes($hosts)
+  [IO.File]::WriteAllBytes($hosts,($hostBytes+[Text.Encoding]::ASCII.GetBytes("`r`n127.0.0.1 "+$web.fqdn+"`r`n")))
+  Initialize-AuthWireChannelTypes
+ }
  $journal=Get-AuthWireStagingWriteJournalRoot $b;if(Test-Path -LiteralPath $journal){throw 'Unexpected fixture journal'};PrivateRoot $journal
  $candidateBase=Join-Path $env:ProgramData ('AuthWire-CombinedCandidates-'+([guid]$connector).ToString('N'));if(Test-Path -LiteralPath $candidateBase){throw 'Unexpected fixture candidates'};PrivateRoot $candidateBase
  $keyPath=Join-Path (Join-Path $env:ProgramData 'Microsoft\Crypto\Keys') $key.UniqueName;$keyAcl=(Get-Acl -LiteralPath $keyPath).Sddl
- $config=@{Version=1;ReleaseId=$release;ServiceName=('AuthWireConnector-'+([guid]$connector).ToString('N'));AccountName=[Security.Principal.WindowsIdentity]::GetCurrent().Name;PublisherThumbprint=$signer.Thumbprint;BaseUrl='https://kaname.lab.example/';Binding=$b;KeyName=$keyName;ExpectedKeySddl=$keyAcl;RootPath=$package}
+ $config=@{Version=1;ReleaseId=$release;ServiceName=('AuthWireConnector-'+([guid]$connector).ToString('N'));AccountName=[Security.Principal.WindowsIdentity]::GetCurrent().Name;PublisherThumbprint=$signer.Thumbprint;BaseUrl=$url;Binding=$b;KeyName=$keyName;ExpectedKeySddl=$keyAcl;RootPath=$package}
  [IO.File]::WriteAllText((Join-Path $package 'service.json'),($config|ConvertTo-Json -Depth 8 -Compress))
  $shareDirectory=Join-Path $root 'share';PrivateRoot $shareDirectory
  if((Get-Service LanmanServer).Status -ne 'Running'){Start-Service LanmanServer;$startedServer=$true}
  $share='aw-stage-execution-'+[guid]::NewGuid().ToString('N');$null=New-SmbShare -Name $share -Path $shareDirectory -FullAccess ([Security.Principal.WindowsIdentity]::GetCurrent().Name)
- $outcomes=@()
- foreach($case in @('success','drift','partial','bad_result','launch_disk','metadata_disk','identity','timeout')){
+ $outcomes=@();$exe=Join-Path ([Environment]::GetFolderPath('Windows')) 'System32\WindowsPowerShell\v1.0\powershell.exe'
+ $cases=@('success','drift','partial','bad_result','launch_disk','metadata_disk','identity','timeout')
+ if($flowMode){$cases+=@('lost_ack','lost_grant','poll_lost','poll_bad','idle')}
+ foreach($case in $cases){
   $t=[pscustomobject][ordered]@{candidate_id=[guid]::NewGuid().ToString('D');network_candidate_id=[guid]::NewGuid().ToString('D');plan_id=[guid]::NewGuid().ToString('D');plan_version=1;gpo_id=[guid]::NewGuid().ToString('D');approval_sha256=('a'*64);network_manifest_sha256=('b'*64);manifest_sha256=('c'*64);draft_sha256=('d'*64);dependency_sha256=('e'*64);publisher_thumbprint=$signer.Thumbprint;machine_profile_id=[guid]::NewGuid().ToString('D');machine_profile_version=3;domain='lab.example';root_thumbprint=('f'*40);group_sid=($domainSid+'-1647');content_result_sha256=('2'*64);target_sids_sha256=('3'*64);target_count=1}
   $draft=[Text.Encoding]::ASCII.GetBytes('fixture never execute '+$case);$t.draft_sha256=Get-AuthWireCandidateHash $draft
   $source=Join-Path $candidateBase ($t.plan_id+'-v1-'+$t.draft_sha256+'-ab1a11c683810061');PrivateRoot $source
@@ -114,8 +146,47 @@ function Invoke-AuthWireStagingFilesystemStage {
   $intentFrame='AuthWireStagingWriteIntentV1'+"`n"+$scope+"`n"+$id+"`ncombined.filesystem.stage.v1`n"+(Get-AuthWireWriteHash $target)+"`n"
   $offer=[pscustomobject]@{format=1;request_id=$request;scope_sha256=$scope;job_id=$id;operation='combined.filesystem.stage.v1';lease_id=('6'*64);intent_sha256=(Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes($intentFrame)));expires_at=$preview.Preview.expires_at;target=$target;write_authorized=$false;can_apply_gpo=$false}
   $live=[pscustomobject]@{format='AuthWireWriteLiveContextV1';job_id=$id;intent_sha256=$offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $target);source_root=$source;gpo_root=$gpo;protected_gpo_id=[guid]::NewGuid().ToString('D');pdc='dc01.lab.example';checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();can_apply_gpo=$false}
-  $fixture=[pscustomobject]@{case='prepare';gpo_id=$t.gpo_id;gpo_root=$gpo;live=$live;expires_at=0}
+  $fixture=[pscustomobject]@{case='prepare';requested_case=$case;gpo_id=$t.gpo_id;gpo_root=$gpo;live=$live;expires_at=0}
   [IO.File]::WriteAllText((Join-Path $package 'fixture.json'),($fixture|ConvertTo-Json -Depth 12 -Compress))
+  if($flowMode){
+   # Only the queued job and AD/current-context lookup are seeded/stubbed.
+   # POLL, CLAIM, stage, RESULT and all replay gates are production bodies.
+   $data=@{case=$case;binding=$b;public_key_pem=[AuthWire.Connector.ChannelTypesV1]::PublicPem($rsa);offer=$offer}
+   [IO.File]::WriteAllText((Join-Path $flowDirectory 'input.json'),($data|ConvertTo-Json -Depth 15 -Compress),[Text.UTF8Encoding]::new($false))
+   $watch=[Diagnostics.Stopwatch]::StartNew();$failure='';$cycle=$null
+   try{$cycle=Invoke-AuthWireStagingWriteCycle $journal $b $release $rsa $url}catch{$failure=$_.Exception.Message};$watch.Stop()
+   Check (Test-Path -LiteralPath (Join-Path $journal 'cycle-poll.json')) 'one-shot poll durable before transmission'
+   if($case -cin @('poll_lost','poll_bad')){
+    Check ($failure -cne '' -and -not (Test-Path -LiteralPath (Join-Path $journal 'cycle-offer.json'))) 'lost or changed offer stops before local claim'
+    Reject {Resume-AuthWireStagingWriteCycleResult $journal $b $release $rsa $url} 'unknown offer cannot fabricate a result'
+   }elseif($case -ceq 'idle'){
+    Check ($failure -ceq '' -and $cycle.Phase -ceq 'no_job' -and $cycle.FilesystemEffects -ceq 'none') 'strict no-job response creates no job or filesystem effect'
+   }elseif($case -ceq 'lost_grant'){
+    Check ($failure -ceq '' -and $cycle.Phase -ceq 'local_reconciliation_required' -and -not $cycle.ResultRecorded) 'lost issued grant remains uncertain without execution'
+    Check (-not (Test-Path -LiteralPath (Join-Path (Join-Path $journal $id) 'grant-consumed.json'))) 'no consumption or stage after lost grant response'
+    Reject {Resume-AuthWireStagingWriteCycleResult $journal $b $release $rsa $url} 'absent receipt never reclaims or invents an authorization'
+   }else{
+    if($failure -cne ''){Write-Host ('CYCLE_UNEXPECTED_FAILURE case='+$case+' code='+$failure)}
+    Check ($failure -ceq '' -and $cycle.JobId -ceq $id -and -not $cycle.CanApplyGpo -and -not $cycle.ArtifactExecuted) 'real one-cycle request preserves identity and no activation'
+    $job=Join-Path $journal $id
+    if($case -ceq 'lost_ack'){Check (-not $cycle.ResultRecorded -and $cycle.Phase -ceq 'result_pending') 'lost ACK preserves outcome and pending local status'}else{Check $cycle.ResultRecorded 'single cycle result reaches real core'}
+    $expected=if($case -cin @('success','lost_ack')){'staged'}else{'requires_review'}
+    if($cycle.Outcome -cne $expected -and (Test-Path -LiteralPath (Join-Path $job 'execution-requires-review.json'))){$review=Read-AuthWireStagingJournal (Join-Path $job 'execution-requires-review.json');Write-Host ('CYCLE_STAGE_DIAGNOSTIC '+($review.diagnostic|ConvertTo-Json -Compress))}
+    Check ($cycle.Outcome -ceq $expected) ('real complete cycle outcome '+$case)
+    if($expected -ceq 'staged'){Check (@(Get-ChildItem -LiteralPath (Join-Path $gpo $preview.Preview.relative_destination.Replace('/','\')) -Recurse -File).Count -eq 20) 'real cycle stages exact twenty-file SMB payload'}
+    $treeHash=(Get-AuthWireSysvolInventory $gpo).Sha256;$readsFile=Join-Path $package ('reads-'+$id+'.txt');$reads=[IO.File]::ReadAllText($readsFile)
+    . (Join-Path $package 'StagingWriteCycle.ps1')
+    Check ((Resume-AuthWireStagingWriteCycleResult $journal $b $release $rsa $url).ResultRecorded) 'result-only recovery after reload acknowledges unchanged body'
+    Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $treeHash -and [IO.File]::ReadAllText($readsFile) -ceq $reads) 'result recovery never repeats live read or SMB write'
+   }
+   Reject {Invoke-AuthWireStagingWriteCycle $journal $b $release $rsa $url} 'existing history refuses a second POLL before signing or network'
+   Check (Test-Path -LiteralPath (Join-Path $gpo 'GPT.INI')) 'baseline remains after each real cycle'
+   $outcomes+=,[pscustomobject]@{case=$case;job_id=$id;seconds=[Math]::Round($watch.Elapsed.TotalSeconds,2);phase=$(if($cycle){$cycle.Phase}else{'refused'});outcome=$(if($cycle){$cycle.Outcome}else{''})}
+   # Test-fixture isolation only: remove this owned private test root between
+   # independent cases. No production SDK reset/cleanup/unlock exists.
+   Remove-Item -LiteralPath $journal -Recurse -Force;PrivateRoot $journal
+   continue
+  }
   $null=Save-AuthWireStagingWriteOffer $offer $b $release $request $journal
   $job=Join-Path $journal $id;Write-AuthWireStagingJournal (Join-Path $job 'preflight.json') $live
   $proof=New-AuthWireStagingWriteClaim $journal $id $b $release $rsa
@@ -133,6 +204,7 @@ function Invoke-AuthWireStagingFilesystemStage {
   try{$result=Invoke-AuthWireAuthorizedFilesystemStage $journal $id $b $release $rsa}catch{$failure=$_.Exception.Message};$watch.Stop()
   $destination=Join-Path $gpo $preview.Preview.relative_destination.Replace('/','\')
   if($case -ceq 'success'){
+   if($failure -cne '' -and (Test-Path -LiteralPath (Join-Path $job 'execution-requires-review.json'))){$review=Read-AuthWireStagingJournal (Join-Path $job 'execution-requires-review.json');Write-Host ('STAGE_SAFE_DIAGNOSTIC '+($review.diagnostic|ConvertTo-Json -Compress))}
    Check ($failure -ceq '' -and $result.FilesystemStaged -and -not $result.PeerResultSubmitted -and -not $result.CanApplyGpo -and -not $result.ArtifactExecuted) 'actual signed child stages without activation or artifact execution'
    Check (@(Get-ChildItem -LiteralPath $destination -Recurse -File).Count -eq 20) 'actual SMB contains twenty exact payload files'
    Check ((Get-AuthWireScopeDataHash (Read-AuthWireStagingJournal (Join-Path (Join-Path $journal $result.FilesystemOperationId) 'complete.json'))) -ceq $result.CompleteSha256) 'parent result binds actual completed engine journal'
@@ -148,6 +220,13 @@ function Invoke-AuthWireStagingFilesystemStage {
     Check (-not (Test-Path -LiteralPath (Join-Path (Join-Path $journal $reserved.FilesystemOperationId) 'complete.json'))) 'missing engine completion not fabricated'
    }
    if($case -ceq 'timeout'){Check ($watch.Elapsed.TotalSeconds -lt 23) 'signed writer hard deadline plus bounded cleanup'}
+   if($case -cne 'launch_disk'){
+    $review=Read-AuthWireStagingJournal (Join-Path $job 'execution-requires-review.json');$diag=$review.diagnostic
+    Check ($review.format -ceq 'AuthWireStageReviewV2' -and $diag.format -ceq 'AuthWireStageDiagnosticV1' -and ($diag|ConvertTo-Json -Compress).Length -lt 512) 'bounded safe failure metadata retained'
+    if($case -ceq 'timeout'){Check $diag.timed_out 'timeout identified without raw child output'}
+    if($case -ceq 'drift'){Check ($diag.child_phase -ceq 'context') 'signed child context failure phase retained'}
+    if($case -ceq 'partial'){Check ($diag.child_phase -ceq 'engine') 'signed child engine failure phase retained'}
+   }
   }
   Check (Test-Path -LiteralPath (Join-Path $job 'stage-launch.json')) 'durable one-launch gate retained'
   Check (Test-Path -LiteralPath (Join-Path $journal ('gpo-'+$t.gpo_id+'.json'))) 'GPO lock retained after every result'
@@ -173,7 +252,7 @@ function Invoke-AuthWireStagingFilesystemStage {
   Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $treeHash -and [IO.File]::ReadAllText($readFile) -ceq $readsBefore) 'result freeze changes no SMB state and performs no new AD observation'
   $outcomes+=,[pscustomobject]@{case=$case;seconds=[Math]::Round($watch.Elapsed.TotalSeconds,2);staged=($case -ceq 'success')}
  }
- foreach($name in @('ConnectorServicePackage.ps1','ConnectorServiceRuntime.ps1')){foreach($module in @('StagingWriteExecution','StagingWriteResult')){Check (-not ([IO.File]::ReadAllText((Join-Path $lib $name))).Contains($module)) 'execution and result adapters absent from active package/runtime'}}
+ foreach($name in @('ConnectorServicePackage.ps1','ConnectorServiceRuntime.ps1')){foreach($module in @('StagingWriteExecution','StagingWriteResult','StagingWriteCycle')){Check (-not ([IO.File]::ReadAllText((Join-Path $lib $name))).Contains($module)) 'execution and result adapters absent from active package/runtime'}}
  Check ((Get-Acl -LiteralPath $keyPath).Sddl -ceq $keyAcl) 'dedicated native key ACL preserved'
  $timer=[Diagnostics.Stopwatch]::StartNew();Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-1) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()) $timer} 'engine refuses expired authorization';Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+90) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+60) $timer} 'engine refuses clock rollback'
  # Real controller death: this independently tests the new kernel job runner,
@@ -215,10 +294,14 @@ try{
   while($alive -and $wait.Elapsed.TotalSeconds -lt 4){try{$probe=[Diagnostics.Process]::GetProcessById($childPid);try{$alive=-not $probe.HasExited}finally{$probe.Dispose()}}catch [ArgumentException]{$alive=$false};if($alive){Start-Sleep -Milliseconds 100}}
   Check (-not $alive -and -not (Test-Path -LiteralPath ($ready+'.escaped'))) 'kill-on-close job terminates child when controller dies'
  }finally{if(-not $controllerProcess.HasExited){Stop-Process -Id $controllerProcess.Id -Force};$controllerProcess.Dispose()}
- Write-Host ('AUTHWIRE_AUTHORIZED_STAGE_WINDOWS_OK checks='+$checks+' outcomes='+($outcomes|ConvertTo-Json -Compress)+' actual_smb=true seeded_grants=true namespace_ad_content_simulated=true customer_changed=false')
+ Write-Host ('AUTHWIRE_AUTHORIZED_STAGE_WINDOWS_OK checks='+$checks+' outcomes='+($outcomes|ConvertTo-Json -Compress)+' actual_smb=true seeded_grants='+(-not $flowMode)+' namespace_ad_content_simulated=true customer_changed=false')
+ if($flowMode){[IO.File]::WriteAllText((Join-Path $flowDirectory 'native-summary.json'),(@{checks=$checks;outcomes=$outcomes}|ConvertTo-Json -Depth 6 -Compress),[Text.UTF8Encoding]::new($false))}
 }catch{Write-Host ('EXECUTION_FIXTURE_FAILURE checks='+$checks+' stack='+$_.ScriptStackTrace);throw}
 finally{
  $env:PSModulePath=$oldModulePath
+ if($hostBytes -and $hosts){[IO.File]::WriteAllBytes($hosts,$hostBytes)}
+ if($webAdded){$webStore.Remove($webCert)}
+ if($webStore){$webStore.Close();$webStore.Dispose()};if($webCert){$webCert.Dispose()}
  if($share){Remove-SmbShare -Name $share -Force -ErrorAction SilentlyContinue}
  if($startedServer){Stop-Service LanmanServer}
  if($rsa){$rsa.Dispose()};if($key){$key.Delete();$key.Dispose()}
