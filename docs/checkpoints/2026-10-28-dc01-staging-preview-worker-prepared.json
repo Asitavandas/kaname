@@ -41,14 +41,46 @@
   "validation": {
     "local_archive_tests": 5,
     "all_28_source_git_blobs_match_main": true,
-    "native_delivery_ci_pending": true,
+    "native_delivery_ci_pending": false,
     "customer_windows_prepare_run": false,
     "customer_windows_apply_run": false,
-    "new_gmsa_preview_verified": false
+    "new_gmsa_preview_verified": false,
+    "tested_head": "82bb633214d1fdaf3314af47679db2c91d474d96",
+    "pr_number": 117,
+    "merge_commit": "22b704f5e42dbb1ac0125ddb0d3ddd0a3c1f754c",
+    "foundation": {
+      "workflow": 40746579732,
+      "job": 123021850420,
+      "conclusion": "success",
+      "tests": 1075,
+      "skipped": 28
+    },
+    "native_delivery": {
+      "workflow": 40746579556,
+      "job": 123021850690,
+      "conclusion": "success",
+      "checks": 64,
+      "source_files": 28,
+      "previous_full_package_verified": true,
+      "signer_preserved": true,
+      "services_created": false,
+      "customer_ad_tested": false
+    },
+    "bounded_retry": {
+      "workflow": 40746579055,
+      "conclusion": "success"
+    }
   },
   "overall_completed": 54,
   "overall_open": 40,
   "ready_for_final_guide": false,
   "guide_delivered": false,
-  "next_step": "Finish native exact-wrapper signing and previous full-package compatibility checks, then deliver the SHA-pinned script to Linux transfer path and request elevated DC01 Prepare only. Record the operator result before Apply."
+  "next_step": "DC01 elevated Windows PowerShell5.1: transfer and SHA256-check the fixed tool, then run Prepare only. Record the full operator result before separate Apply; real gMSA preview and panel acceptance remain pending.",
+  "delivery": {
+    "linux_path": "/home/segmentiq/authwire-dc01-staging-preview-worker-upgrade-20261028.ps1",
+    "sha256_verified_on": "2026-10-29",
+    "sha256": "2c8fbe776a240bc98bbb387c529a90ab4fbfc3fa2467096799d3a9e159ea33cf",
+    "customer_transferred": false
+  },
+  "operator_prepare_command": "$ErrorActionPreference = 'Stop'\n$awTool = Join-Path $env:TEMP 'AuthWire-Staging-Preview-Worker-Upgrade-20261028.ps1'\nscp segmentiq@10.35.50.246:/home/segmentiq/authwire-dc01-staging-preview-worker-upgrade-20261028.ps1 $awTool\nif ($LASTEXITCODE -ne 0) { throw 'Dosya aktarilamadi' }\nif ((Get-FileHash -LiteralPath $awTool -Algorithm SHA256).Hash -ne '2C8FBE776A240BC98BBB387C529A90AB4FBFC3FA2467096799D3A9E159EA33CF') { throw 'Dosya ozeti uyusmuyor' }\n& $awTool -Mode Prepare"
 }

@@ -1,5 +1,40 @@
 # AuthWire current work record
 
+## Windows önizleme worker teslimatı test edildi — DC01 Prepare bekleniyor — 29 Ekim 2026
+
+**PR117** merge **22b704f5e42dbb1ac0125ddb0d3ddd0a3c1f754c**; test edilen head **82bb633214d1fdaf3314af47679db2c91d474d96**.
+Üç workflow başarılı: foundation **40746579732** (**1075 test,28 ortam atlaması**),
+native Windows teslimat **40746579556** (**64 kontrol,28 kaynak**) ve bounded retry **40746579055**.
+WinPS5.1 test ortamında gerçek önceki tam paket tanındı, yeni aday aynı test kanal anahtarıyla hazırlandı;
+imza/native signer özellikleri korundu, bozuk/fazladan kaynak ve yanlış host reddedildi.
+Testler müşteri DC01 Prepare/Apply veya gerçek AD/gMSA kabulü sayılmadı; testte servis/AD hesabı oluşturulmadı.
+
+Hazır araç **ToolVersion1.5.0**; kaynak **92b2af9b78347058802f4bb135b5fbb243abc813**.
+Beklenen mevcut Windows sürümü **cf74295c-ec97-4edf-a15a-877b155d1740**;
+hedef **df28f70c-104e-4d6d-972c-e311d38adde6**.
+Aktarım dosyası **/home/segmentiq/authwire-dc01-staging-preview-worker-upgrade-20261028.ps1**;
+29 Ekim salt okunur SHA256 kontrolü **2c8fbe776a240bc98bbb387c529a90ab4fbfc3fa2467096799d3a9e159ea33cf** ile eşleşti.
+Kabul edilen1.4.1 wrapper'ın host/account/pairing/anahtar/ACL/CLR-marker ve koruma yardımcıları değişmedi.
+Yeni hesap veya anahtar gerekmiyor. Yeni Apply altı kanalın sağlığını ister.
+
+**Müşteri Windows Prepare ve Apply henüz çalıştırılmadı.** Canlı kabul edilen durum Linux **dev.44**,
+Windows **cf74295c**. Sıradaki operatör adımı **DC01'de yönetici Windows PowerShell5.1 ile yalnız Prepare**;
+tam sonucu kaydettikten sonra ayrı Apply, ardından gerçek gMSA önizlemesi ve panel kabulü.
+Prepare mevcut kalıcı servisi değiştirmeden imzalı aday paket hazırlar.
+Gerçek SYSVOL staging/geri alma, GPO aktivasyonu ve endpoint dağıtımı bu araçla açılmaz.
+Önceki ilk Apply'ın gizli iç hata kaydı incelemesi, hesap sadeleştirme, gerçek endpoint kabulü halen açık.
+Genel **54/94 tamamlanan,40 açık**; kılavuz bayrakları false. Yeni tam veri yedeği veya kapatma yok.
+Ayrıntı **docs/checkpoints/2026-10-28-dc01-staging-preview-worker-prepared.json**.
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$awTool = Join-Path $env:TEMP 'AuthWire-Staging-Preview-Worker-Upgrade-20261028.ps1'
+scp segmentiq@10.35.50.246:/home/segmentiq/authwire-dc01-staging-preview-worker-upgrade-20261028.ps1 $awTool
+if ($LASTEXITCODE -ne 0) { throw 'Dosya aktarilamadi' }
+if ((Get-FileHash -LiteralPath $awTool -Algorithm SHA256).Hash -ne '2C8FBE776A240BC98BBB387C529A90AB4FBFC3FA2467096799D3A9E159EA33CF') { throw 'Dosya ozeti uyusmuyor' }
+& $awTool -Mode Prepare
+```
+
 ## Linux dev.44 kuruldu ve koruma kontrolleri geçti — Windows önizleme worker teslimatı sırada — 28 Ekim 2026
 
 Operatör **STAGING_PREVIEW_JOBS_FINISHED /verified=true /version=0.14.0-dev.44** sonucunu paylaştı.
