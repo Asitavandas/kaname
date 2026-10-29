@@ -25,6 +25,15 @@ original grant window with a two-second margin. Existing bounded kill/drain wait
 are additional, up to3 seconds each. There is no retry after launch failure,
 response loss, timeout, process crash or module reload.
 
+The dedicated stage runner assigns the process to a Windows kill-on-close job
+before releasing a private auto-reset event. Assignment or metadata persistence
+failure never opens that gate. The parent flushes the exact child PID/start-time
+record before release; the child must match its own identity and consume the
+single signal. A direct later invocation cannot reuse a durable launch record
+without that live parent-held gate. Parent death closes the kernel job and kills
+the assigned child; descendants created after assignment inherit the job. This
+is stronger than terminating only the immediate PowerShell process on timeout.
+
 The child pins the local package/config, requires exact config fields and root,
 opens only the configured dedicated machine CNG key and verifies its unchanged
 ACL/public identity. It revalidates all authority/intent records, verifies the
@@ -84,6 +93,11 @@ Every case checks retained locks and no relaunch after SDK reload. Exact source
 and SMB bytes/ACLs, real journals, key ACL preservation and cleanup of only unique
 fixture keys/trust/shares/directories are checked. Native CI evidence is recorded
 in the source checkpoint after completion.
+
+A new direct signed child invocation also must fail without another live
+observation. A separate real controller-death fixture verifies the kernel job
+terminates its sleeping child; this is not a customer reboot or an interrupted
+customer SMB transaction/restore test.
 
 Remaining gates: result/POLL worker orchestration, separate rollback approval,
 interrupted/partial transaction and lost-result reconciliation, strict backup

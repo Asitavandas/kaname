@@ -16,7 +16,7 @@ try{
  $signer=New-SelfSignedCertificate -Type CodeSigningCert -Subject ('CN=AuthWire-Stage-Fixture-'+[guid]::NewGuid().ToString('N')) -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 3072 -KeyExportPolicy NonExportable -NotAfter (Get-Date).AddDays(1)
  $public=[Security.Cryptography.X509Certificates.X509Certificate2]::new($signer.Export([Security.Cryptography.X509Certificates.X509ContentType]::Cert))
  foreach($name in @('Root','TrustedPublisher')){$s=[Security.Cryptography.X509Certificates.X509Store]::new($name,'LocalMachine');try{$s.Open('ReadWrite');$s.Add($public)}finally{$s.Close()}}
- $files=@('Test-AuthWireDeploymentCandidate.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','StagingFilesystem.ps1','StagingWritePreclaim.ps1','StagingWriteTransport.ps1','StagingWriteConsumption.ps1','StagingWriteExecution.ps1','Read-AuthWireStagingWritePreflight.ps1','Invoke-AuthWireStagingWriteChild.ps1')
+ $files=@('Test-AuthWireDeploymentCandidate.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','StagingFilesystem.ps1','StagingWritePreclaim.ps1','StagingWriteTransport.ps1','StagingWriteConsumption.ps1','StagingWriteProcess.ps1','StagingWriteExecution.ps1','Read-AuthWireStagingWritePreflight.ps1','Invoke-AuthWireStagingWriteChild.ps1')
  foreach($name in $files){[IO.File]::WriteAllBytes((Join-Path $package $name),[IO.File]::ReadAllBytes((Join-Path $lib $name)))}
  # Test production namespace derivation BEFORE replacing only its environment.
  . (Join-Path $package 'Test-AuthWireDeploymentCandidate.ps1') -LibraryOnly
@@ -34,6 +34,7 @@ function Get-AuthWireWriteGpoPath([string]$Pdc,$Target){
 }
 function Get-AuthWireWriteStageLiveContext($Offer,[hashtable]$Binding,[string]$Publisher,[string]$BaseUrl){
  $fixture=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'fixture.json') -Raw|ConvertFrom-Json
+ [IO.File]::AppendAllText((Join-Path $PSScriptRoot ('reads-'+$Offer.job_id+'.txt')),"read`n")
  $v=$fixture.live;$v.checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
  if($fixture.case -ceq 'drift'){$v.pdc='dc02.lab.example'}
  return $v
@@ -149,14 +150,60 @@ function Invoke-AuthWireStagingFilesystemStage {
   Check (Test-Path -LiteralPath (Join-Path $job 'stage-launch.json')) 'durable one-launch gate retained'
   Check (Test-Path -LiteralPath (Join-Path $journal ('gpo-'+$t.gpo_id+'.json'))) 'GPO lock retained after every result'
   $treeHash=(Get-AuthWireSysvolInventory $gpo).Sha256
+  $readFile=Join-Path $package ('reads-'+$id+'.txt');$readsBefore=[IO.File]::ReadAllText($readFile)
   . (Join-Path $package 'StagingWriteExecution.ps1')
-  Reject {Invoke-AuthWireAuthorizedFilesystemStage $journal $id $b $release $rsa} 'module reload cannot relaunch stage'
+  $repeatError='';try{Invoke-AuthWireAuthorizedFilesystemStage $journal $id $b $release $rsa|Out-Null}catch{$repeatError=$_.Exception.Message}
+  Check ($repeatError -ceq 'WRITE_EXECUTION_ALREADY_LAUNCHED_REQUIRES_REVIEW') 'durable launch gate rejects replay independently of context freshness'
+  $exe=Join-Path ([Environment]::GetFolderPath('Windows')) 'System32\WindowsPowerShell\v1.0\powershell.exe'
+  $arguments='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+(Join-Path $package 'Invoke-AuthWireStagingWriteChild.ps1')+'" -JournalRoot "'+$journal+'" -JobId '+$id+' -IntentSha256 '+$reserved.FilesystemIntentSha256
+  $replay=[AuthWire.Connector.ScopeProcessV1]::Run($exe,$arguments,8000)
+  Check (-not $replay.TimedOut -and $replay.ExitCode -eq 20) 'new direct signed child cannot reopen a closed one-use gate'
+  Check ([IO.File]::ReadAllText($readFile) -ceq $readsBefore) 'parent and direct child replay perform no second live observation'
   Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $treeHash) 'replay changes no SMB bytes or permissions'
   $outcomes+=,[pscustomobject]@{case=$case;seconds=[Math]::Round($watch.Elapsed.TotalSeconds,2);staged=($case -ceq 'success')}
  }
  foreach($name in @('ConnectorServicePackage.ps1','ConnectorServiceRuntime.ps1')){Check (-not ([IO.File]::ReadAllText((Join-Path $lib $name))).Contains('StagingWriteExecution')) 'execution adapter absent from active package/runtime'}
  Check ((Get-Acl -LiteralPath $keyPath).Sddl -ceq $keyAcl) 'dedicated native key ACL preserved'
- $timer=[Diagnostics.Stopwatch]::StartNew();Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-1) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()) $timer} 'engine refuses expired authorization';Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+30) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+1) $timer} 'engine refuses clock rollback'
+ $timer=[Diagnostics.Stopwatch]::StartNew();Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-1) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()) $timer} 'engine refuses expired authorization';Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+90) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+60) $timer} 'engine refuses clock rollback'
+ # Real controller death: this independently tests the new kernel job runner,
+ # not a customer reboot or a live interrupted SMB transaction.
+ $sleepFile=Join-Path $package 'fixture-sleeper.ps1';$controllerFile=Join-Path $package 'fixture-controller.ps1'
+ $sleeper=@'
+param([string]$GateName,[string]$Ready)
+$ErrorActionPreference='Stop'
+$g=[Threading.EventWaitHandle]::OpenExisting($GateName)
+try{if(-not $g.WaitOne(2000)){throw 'No fixture gate'}}finally{$g.Dispose()}
+[IO.File]::WriteAllText($Ready,[string]$PID)
+Start-Sleep -Seconds 60
+[IO.File]::WriteAllText(($Ready+'.escaped'),'must not survive controller')
+'@
+ $controller=@'
+param([string]$Ready)
+$ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot 'StagingWriteProcess.ps1')
+Initialize-AuthWireStageProcess
+$name='Local\AuthWireStageFixture-'+[guid]::NewGuid().ToString('N')
+$g=[Threading.EventWaitHandle]::new($false,[Threading.EventResetMode]::AutoReset,$name)
+try{
+ $noop=[Action[int,long]]{param($childPid,$ticks)}
+ $exe=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+ $arguments='-NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+(Join-Path $PSScriptRoot 'fixture-sleeper.ps1')+'" -GateName '+$name+' -Ready "'+$Ready+'"'
+ [AuthWire.Connector.StageProcessV1]::Run($exe,$arguments,15000,$g,$noop)|Out-Null
+}finally{$g.Dispose()}
+'@
+ [IO.File]::WriteAllText($sleepFile,$sleeper);[IO.File]::WriteAllText($controllerFile,$controller)
+ foreach($file in @($sleepFile,$controllerFile)){Check ((Set-AuthenticodeSignature -FilePath $file -Certificate $signer -HashAlgorithm SHA256).Status -eq 'Valid') 'signed controller-death fixture'}
+ $ready=Join-Path $root 'child-ready.txt'
+ $controllerProcess=Start-Process -FilePath $exe -ArgumentList ('-NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$controllerFile+'" -Ready "'+$ready+'"') -PassThru -WindowStyle Hidden
+ try{
+  $wait=[Diagnostics.Stopwatch]::StartNew();while(-not (Test-Path -LiteralPath $ready) -and $wait.Elapsed.TotalSeconds -lt 10){Start-Sleep -Milliseconds 100}
+  Check (Test-Path -LiteralPath $ready) 'job child started behind gate before controller-death test'
+  $childPid=[int][IO.File]::ReadAllText($ready)
+  Stop-Process -Id $controllerProcess.Id -Force;$null=$controllerProcess.WaitForExit(3000)
+  $wait.Restart();$alive=$true
+  while($alive -and $wait.Elapsed.TotalSeconds -lt 4){try{$probe=[Diagnostics.Process]::GetProcessById($childPid);try{$alive=-not $probe.HasExited}finally{$probe.Dispose()}}catch [ArgumentException]{$alive=$false};if($alive){Start-Sleep -Milliseconds 100}}
+  Check (-not $alive -and -not (Test-Path -LiteralPath ($ready+'.escaped'))) 'kill-on-close job terminates child when controller dies'
+ }finally{if(-not $controllerProcess.HasExited){Stop-Process -Id $controllerProcess.Id -Force};$controllerProcess.Dispose()}
  Write-Host ('AUTHWIRE_AUTHORIZED_STAGE_WINDOWS_OK checks='+$checks+' outcomes='+($outcomes|ConvertTo-Json -Compress)+' actual_smb=true seeded_grants=true namespace_ad_content_simulated=true customer_changed=false')
 }catch{Write-Host ('EXECUTION_FIXTURE_FAILURE checks='+$checks+' stack='+$_.ScriptStackTrace);throw}
 finally{
