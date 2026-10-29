@@ -1,5 +1,70 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## Windows görev ön kontrolü ve kalıcı CLAIM hazırlığı kaynakta doğrulandı — 29 Ekim 2026
+
+**PR121**, merge **f4f327769b22a985bbfc4223d39fe7bd5e5cbb5f**, test edilen head **50dcb7cc87de1e64bba720c99ed47fa42ed27083**.
+Yeni Windows katmanı yalnız stage-preclaim içindir: teklif/target/intent ve önizleme hash'ini,
+binding/release/süreyi doğrular; yol/komut/ek alan ve yetki overclaim'ini reddeder.
+Kaynak/SYSVOL yolları doğrulanmış yerel aday ve mevcut domain/PDC/GPO bilgisinden türetilir.
+Sabit AllSigned reader mevcut imza/içerik/hizmet kimliği ve AD/GPO/SYSVOL okumasını kullanır.
+Ağdan gelen/SQLite'da sıralanmış JSON nesnesi, verileri değiştirilmeden eski sabit-sıra guard'ına
+normalize edilir; kesin şema korunur. PDC mevcut okuma boyunca tutarlıdır; eski önizlemede
+PDC alanı olmadığı için eski PDC'nin değişmediği iddia edilmez.
+
+Özel ACL'li sabit yerel journal kökünde GPO kilidi ve job kaydı yeni dosya oluşturma/flush ile
+tutulur. Makine genelinde nonblocking mutex eşzamanlı oluşturma/kapasite yarışını engeller;
+sınır32 job/64 üst kayıttır. CLAIM hazırlanmasından önce claim-started diske yazılır.
+İmza hatası, kayıp yanıt veya module reload ikinci CLAIM üretmez; belirsizlik/kilit korunur.
+Readonly child'ın çalışma bütçesi en çok30s, mevcut kill/drain cleanup beklemeleri ayrıca bounded.
+CLAIM için aynı hedefin en fazla5s önceki canlı preflight kaydı gerekir.
+
+**82 native WinPS5.1 kontrolü +18 Python/RSA çapraz kontrolü geçti.**
+**1123 testlik genel koşu başarılı (28 ortam atlaması)**; dört CI workflow başarılı.
+Eski imzalı kalıcı SCM servisi/regresyonları da geçti. Native testler yeni geçici CNG key,
+özel yerel kayıt ve sentetik envanter kullanır; AD/içerik observations simüledir.
+Gerçek sabit imzalı child'ın yanlış config'i AD'ye erişmeden reddetmesi, timeout, parent'ın
+hatalı sonucu kaydetmemesi, NTFS ACL/reparse/ADS/hardlink, eşzamanlı admission ve imza hatası
+ayrıca sınandı. İlk fixture/CI eşleme hataları (junction provider temizliği, PowerShell exit
+ölçümü, native derived key-ID/Python binding ayrımı) düzeltildi; ürün kapıları gevşetilmedi.
+
+**Kaynak GitHub main'e kaydedildi; müşteri Linux/DC01'e kurulmadı.**
+Kalıcı worker/paket listesine eklenmedi; SDK ağ isteği göndermez, grant kabul etmez,
+filesystem motorunu çağırmaz, rollback preflight/recording açmaz, kayıt/kilit silmez.
+Server create ve yeni peer rotaları kapalıdır; GPO activation veya cihaz dağıtımı başlamadı.
+Müşteri servis/AD/GPO/SYSVOL/key ACL/trust ayarı değiştirilmedi; yeni tam veri yedeği alınmadı.
+Son bilinen kabul edilmiş sürümler Linux **dev.44**, Windows **df28f70c**; yeni canlı ölçüm yok.
+Ayrıntı **docs/STAGING_WRITE_PRECLAIM.md** ve
+**docs/checkpoints/2026-10-29-windows-write-preclaim-source.json**.
+
+**Sıradaki açık işler:** bounded pinned write transport ve exact grant yanıtı/yerel kayıt;
+yeniden canlı kontrol sonrası bounded stage yürütme ve sonuç; ayrı rollback adapter/onay yolu;
+kayıp yanıt/reboot journal uzlaştırma, partial recovery ve ayrı onaylı unlock; strict backup
+projection; gerçek onay/create/peer açılması; imzalı teslim ve gerçek gMSA/AD/SMB kabulü.
+Sonrasında GPO activation ve gerçek uç kabulü ayrıca yapılır. Yeni boş journal kökü seçmek
+recovery değildir; upgrade/re-pair/restart boyunca aynı hazırlanmış güvenilir kök korunmalıdır.
+
+### Kalan süre yeniden değerlendirildi
+
+PR120 sonrası aralıklar korunur: bu kaynak alt katmanı kapandı; tam yürütme/kurtarma ve
+müşteri teslim kabulü kapanmadı. Geçen takvim zamanı ve test sayısı otomatik düşülmedi.
+Diğer iş paketleri/bağımlılıklar ve güncel işgünü tablosu
+**docs/reports/2026-10-29-process-forecast.md** içinde güncellendi.
+
+| Hedef | Kalan tahmin | Koşullu pencere |
+|---|---|---|
+| Yazma entegrasyonu ve kurtarma paketi | **4–7 aktif iş günü** | Grant/worker/recovery/teslim turlarına bağlı |
+| İlk küçük otomatik pilot | **2–3 hafta** | **12–19 Kasım 2026** |
+| 500/1000 teknik ölçek + tek hesap dahil temel ürün | **6–9 hafta** | **10–31 Aralık 2026** |
+| Yalnız temel sürüm seçilirse kılavuz dahil | **7–10 hafta** | **17 Aralık 2026–7 Ocak 2027** |
+| Tüm kayıtlı geliştirmeler ve nihai kılavuz | **13–19 hafta** | **28 Ocak–11 Mart 2027** |
+
+Temel aktif saha **20–30 saat**, tüm kapsam **30–45 saat**; ek **7–14 takvim günü** gözlem
+ayrı tutulur. Düzenli5 gün/hafta ortak çalışma ve hazır test erişimi varsayılır. Dış yedek hedefi,
+restore VM, üretici API ve ölçek uçlarına erişim beklemelerinin son tarihi bilinmiyor.
+512 tek-görev hedef sınırı korundu; 200 ürün kotası değildir. 500/1000 teknik kabulü açık.
+Makro **54/94 tamamlanan,40 açık**; **READY_FOR_FINAL_GUIDE=false / GUIDE_DELIVERED=false**.
+
+
 ## Yönetici durum/inceleme katmanı kaynakta tamamlandı — yazma kapalı — 29 Ekim 2026
 
 **PR120**, merge **1823ff3e8f8a49d0a18684f9d1331b9ca747d8f3**, test edilen head **92e478c064b32ee2a94d9070d5519df0c03b706a**.

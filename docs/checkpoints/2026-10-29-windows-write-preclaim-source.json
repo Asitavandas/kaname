@@ -1,0 +1,212 @@
+{
+  "event": "WINDOWS_STAGE_PRECLAIM_SOURCE_CHECKPOINT",
+  "date_local": "2026-10-29",
+  "timezone": "Europe/Istanbul",
+  "repository": "Asitavandas/kaname",
+  "pr": 121,
+  "base": "cb8295fc83c6ca2f28792abc7ac1655722828500",
+  "tested_head": "50dcb7cc87de1e64bba720c99ed47fa42ed27083",
+  "files": [
+    {
+      "path": ".github/workflows/staging-write-preclaim.yml",
+      "bytes": 1804,
+      "git_blob_sha": "60278efbb19deb61921cbf4259ee68a587ae34ef",
+      "sha256": "43cc50c1f805250ada07123afbdeb7662917bdc7453c9a362e01e347cb503e49"
+    },
+    {
+      "path": "docs/STAGING_WRITE_PRECLAIM.md",
+      "bytes": 5021,
+      "git_blob_sha": "f7b967dd590e5a87a118b84da48a16564427d7c6",
+      "sha256": "9d23327474bfbfd0f162e8070c06472186524ee73da3ddff0a8bf39423bc2ca5"
+    },
+    {
+      "path": "tools/staging_write_preclaim_windows_check.ps1",
+      "bytes": 22928,
+      "git_blob_sha": "fc9d4f49f7ae0b526c208c19ab20a44b3d7faca9",
+      "sha256": "db6acc29d41dd0b1eb4cb8fcfdef8d956ea61b86eb27bee9e4eea0836daf00b6"
+    },
+    {
+      "path": "tools/staging_write_preclaim_wire_check.py",
+      "bytes": 3138,
+      "git_blob_sha": "4a67339c9af5af27e6055b72cf9aa8eac1e2eea0",
+      "sha256": "557919d4f1f5a809dfbdfd1e6aa89c8e3a8c4a778bd34225ad2ad9a84f4078fd"
+    },
+    {
+      "path": "windows/connector/Read-AuthWireStagingWritePreflight.ps1",
+      "bytes": 1554,
+      "git_blob_sha": "9504f3997b5905e0a305029f6de6f10f134c91a3",
+      "sha256": "5dbcdca4a92cb819bbe08bc23ab228ef657f9e4c9052a99bba2fa0c5e0d12349"
+    },
+    {
+      "path": "windows/connector/StagingWritePreclaim.ps1",
+      "bytes": 21576,
+      "git_blob_sha": "24a2ee957fe2d830d3f816d530a34658e433bf71",
+      "sha256": "d8c5117d9b91be6ec21ae37a020b053a9001043bae1ad4c4532f76d2745906e3"
+    }
+  ],
+  "scope": "Isolated stage preclaim validation, bounded readonly preflight and durable local intent. Not a complete or installed execution adapter.",
+  "validation": {
+    "native_checks": 82,
+    "python_rsa_wire_checks": 18,
+    "native_job_id": 123615659625,
+    "simulated_ad_and_content_observations": true,
+    "actual_disposable_cng_machine_key": true,
+    "private_key_exported": false,
+    "actual_signed_fixed_reader_negative_path": true,
+    "actual_bounded_child_timeout": true,
+    "inter_thread_mutex_busy_refused": true,
+    "initial_fixes": [
+      "WinPS junction Remove-Item fixture cleanup replaced with nonrecursive native unlink preserving target",
+      "PowerShell script success checked independently of unset external exit code",
+      "Native derived key-ID mapped to strict Python binding schema; derived key-ID and scope explicitly compared",
+      "Preview property order normalized before old fixed-order context guard; exact fields and idempotent types retained"
+    ],
+    "general_suite": {
+      "tests": 1123,
+      "skipped": 28,
+      "run_id": 40921505470,
+      "job_id": 123615659048,
+      "seconds": 224.339
+    },
+    "temporary_ci_trust_entries_created_and_cleaned": true,
+    "customer_signing_key_touched": false,
+    "all_four_ci_workflows_passed": true,
+    "windows_permanent_service_regression": {
+      "checks": 85,
+      "job_id": 123615658840,
+      "customer_gmsa_tested": false,
+      "passed": true
+    }
+  },
+  "security": {
+    "new_network_send": false,
+    "claim_sent": false,
+    "grant_acceptance_implemented": false,
+    "filesystem_engine_invoked": false,
+    "rollback_preflight_available": false,
+    "automatic_cleanup_or_unlock": false,
+    "permanent_worker_or_package_registered": false,
+    "server_create_or_peer_enabled": false,
+    "gpo_activation_enabled": false,
+    "durable_claim_marker_before_signing": true,
+    "signing_failure_keeps_uncertainty": true,
+    "lost_reply_or_module_reload_never_generates_second_claim": true,
+    "local_store_jobs": 32,
+    "local_store_root_entries": 64,
+    "claim_preflight_fresh_seconds": 5,
+    "readonly_child_work_budget_ms": 30000,
+    "readonly_child_cleanup_overhead": "Existing runner bounded kill/drain waits up to3s each; not an atomic AD snapshot.",
+    "pdc_claim": "Consistent during current read, stored locally. Previous preview has no historic PDC field; no claim of unchanged PDC since old preview.",
+    "fixed_trusted_journal_root_required_across_restart_and_repair": true
+  },
+  "customer_changes": {
+    "linux_updated": false,
+    "windows_updated": false,
+    "ad_gpo_sysvol_changed": false,
+    "services_restarted": false,
+    "existing_keys_or_acls_or_trust_changed": false,
+    "full_backup_created": false,
+    "customer_gmsa_ad_smb_tested": false
+  },
+  "last_known_installed": {
+    "linux": "0.14.0-dev.44",
+    "windows_release": "df28f70c-104e-4d6d-972c-e311d38adde6",
+    "fresh_customer_read_this_step": false
+  },
+  "open_gates": [
+    "Pinned bounded write transport and exact grant response/local recording",
+    "Fresh validation and bounded filesystem stage execution/result reporting",
+    "Separate rollback live preflight/execution approval path",
+    "Lost reply/reboot journal reconciliation, partial recovery and separately approved unlock",
+    "Strict backup projection retaining all business metadata",
+    "Enable explicit approval/create/peer only after prerequisites; signed delivery and actual gMSA/AD/SMB acceptance",
+    "Separate GPO activation, endpoint acceptance and500/1000 technical scale validation"
+  ],
+  "forecast": {
+    "remaining_stage_recovery_workdays": [
+      4,
+      7
+    ],
+    "first_pilot_weeks": [
+      2,
+      3
+    ],
+    "first_pilot_window": [
+      "2026-11-12",
+      "2026-11-19"
+    ],
+    "base_with_single_account_scale_weeks": [
+      6,
+      9
+    ],
+    "base_window": [
+      "2026-12-10",
+      "2026-12-31"
+    ],
+    "base_with_guide_weeks": [
+      7,
+      10
+    ],
+    "all_scope_and_guide_weeks": [
+      13,
+      19
+    ],
+    "all_scope_window": [
+      "2027-01-28",
+      "2027-03-11"
+    ],
+    "base_active_operator_hours": [
+      20,
+      30
+    ],
+    "all_scope_operator_hours": [
+      30,
+      45
+    ],
+    "observation_calendar_days": [
+      7,
+      14
+    ],
+    "change": "Ranges retained after partial source-only milestone; no full execution/recovery/delivery/customer acceptance closed. Calendar time and test counts are not subtracted.",
+    "unbounded_external_waits": [
+      "off-host backup",
+      "restore VM",
+      "vendor API",
+      "scale endpoints/access"
+    ]
+  },
+  "single_scope_target_limit": 512,
+  "two_hundred_is_product_quota": false,
+  "macro_completed": 54,
+  "macro_total": 94,
+  "macro_open": 40,
+  "READY_FOR_FINAL_GUIDE": false,
+  "GUIDE_DELIVERED": false,
+  "merge_sha": "f4f327769b22a985bbfc4223d39fe7bd5e5cbb5f",
+  "ci_workflows": [
+    {
+      "name": "AuthWire bounded retry network probe checks",
+      "run_id": 40921505345,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40921505345"
+    },
+    {
+      "name": "AuthWire isolated write preclaim checks",
+      "run_id": 40921505568,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40921505568"
+    },
+    {
+      "name": "KANAME foundation checks",
+      "run_id": 40921505470,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40921505470"
+    },
+    {
+      "name": "AuthWire Windows connector bootstrap checks",
+      "run_id": 40921505362,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40921505362"
+    }
+  ]
+}
