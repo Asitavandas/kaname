@@ -1,5 +1,36 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## DC01 önizleme worker Prepare başarılı — Apply bekleniyor — 29 Ekim 2026
+
+Operatör **ToolVersion1.5.0 /Mode=Prepare /Stage=prepared** sonucunun tamamını paylaştı.
+Kaynak **92b2af9b78347058802f4bb135b5fbb243abc813**, hedef sürüm **df28f70c-104e-4d6d-972c-e311d38adde6**.
+Kaynaklar hazırlandı ve **SourceSignaturesValid=true /PackagePrepared=true**.
+Mevcut hesap, eşleştirme ve kanal anahtarı korundu; **SignerSnapshotPreserved=true**.
+**Error=null /ChangesMayBePartial=false /ServiceTransitioned=false**.
+AD/GPO, key ACL ve trust store değişmedi; yeni servis veya kanal anahtarı oluşturulmadı.
+
+Aday **C:\Program Files\AuthWire-Connector-4c23eebe071546d188eea2e96ad7ee46.candidate-df28f70c104e4d6d972ce311d38adde6**.
+Kanıt **C:\ProgramData\AuthWire-ConnectorUpgradeEvidence-df28f70c104e4d6d972ce311d38adde6-c04e8ef41d274e5096e46a615002f0c8**.
+Journal **C:\ProgramData\AuthWire-ConnectorUpgrade-4c23eebe071546d188eea2e96ad7ee46-df28f70c104e4d6d972ce311d38adde6\upgrade.json**.
+Tam kullanıcı sonucu **docs/checkpoints/2026-10-29-customer-staging-preview-worker-prepare.json** içinde kayıtlı.
+
+**Canlı kabul edilen Windows sürümü hâlâ cf74295c; Apply henüz çalıştırılmadı.**
+Sıradaki adım aynı hash kontrollü araçla DC01 yönetici WinPS5.1 **Apply**; bu işlem Connector servisini
+kontrollü durdurup yeni sürümle başlatır ve yeni sürümün altı kanal sağlığını kontrol eder.
+Tam Apply sonucu alınmadan yükseltme başarılı sayılmaz. Sonra gerçek gMSA hazırlık önizlemesi ve panel kabulü beklenir.
+CanApplyGpo=false; gerçek SYSVOL staging/geri alma, GPO aktivasyonu ve endpoint dağıtımı halen açık.
+Linux dev.44 kabulü geçerli; bu Windows Prepare sonucundan Linux/RADIUS yeni sağlık durumu çıkarılmadı.
+Genel **54/94 tamamlanan,40 açık** değişmedi; kılavuz bayrakları false. Yeni tam veri yedeği alınmadı.
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$awTool = Join-Path $env:TEMP 'AuthWire-Staging-Preview-Worker-Upgrade-20261028.ps1'
+if ((Get-FileHash -LiteralPath $awTool -Algorithm SHA256).Hash -ne '2C8FBE776A240BC98BBB387C529A90AB4FBFC3FA2467096799D3A9E159EA33CF') {
+    throw 'Dosya ozeti uyusmuyor'
+}
+& $awTool -Mode Apply
+```
+
 ## Windows önizleme worker teslimatı test edildi — DC01 Prepare bekleniyor — 29 Ekim 2026
 
 **PR117** merge **22b704f5e42dbb1ac0125ddb0d3ddd0a3c1f754c**; test edilen head **82bb633214d1fdaf3314af47679db2c91d474d96**.
