@@ -13,15 +13,28 @@ function Assert-AuthWireStagingWriteJournalLocation([string]$JournalRoot,[hashta
  Assert-AuthWireStagingJournalRoot $JournalRoot
 }
 function Read-AuthWireWriteAuthorization([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
+ $a=Read-AuthWireWriteAuthorizationEvidence $JournalRoot $JobId $Binding $Release $Key
+ if([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -ge $a.Receipt.grant.expires_at){throw 'WRITE_AUTHORIZATION_EXPIRED'}
+ return $a
+}
+function Read-AuthWireWriteAuthorizationEvidence([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
  Assert-AuthWireStagingWriteJournalLocation $JournalRoot $Binding
- $offer=Read-AuthWireStagingWriteOffer $JournalRoot $JobId $Binding $Release
+ Assert-AuthWireCandidateGuid $JobId;Initialize-AuthWireStagingFilesystemTypes
+ $timePin=[AuthWire.Staging.TreeLeaseV1]::new()
+ try{
+ $timePin.PinAncestors($JournalRoot);$timePin.PinAncestors((Join-Path $JournalRoot $JobId))
+ $timeFile=Join-Path (Join-Path $JournalRoot $JobId) 'claim-sent.json';$timePin.PinFile($timeFile)
+ $timeRecord=Read-AuthWireStagingJournal $timeFile
+ Assert-AuthWireCandidateFields $timeRecord @('format','job_id','request_id','proof_sha256','sent_at')
+ if(-not (Test-AuthWireWriteInteger $timeRecord.sent_at)){throw 'WRITE_AUTHORIZATION_REJECTED'}
+ $offer=Read-AuthWireStagingWriteOfferAt $JournalRoot $JobId $Binding $Release $timeRecord.sent_at
  if($offer.operation -cne 'combined.filesystem.stage.v1'){throw 'WRITE_ROLLBACK_CONSUMPTION_UNAVAILABLE'}
  $pin=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
   $pin.PinAncestors($JournalRoot);$job=Join-Path $JournalRoot $JobId;$pin.PinAncestors($job)
   foreach($n in @('offer.json','preflight.json','claim-started.json','claim-proof.json','claim-sent.json','authorization.json')){$pin.PinFile((Join-Path $job $n))}
   $pin.PinFile((Join-Path $JournalRoot ('gpo-'+$offer.target.scope_target.gpo_id+'.json')))
-  $again=Read-AuthWireStagingWriteOffer $JournalRoot $JobId $Binding $Release
+  $again=Read-AuthWireStagingWriteOfferAt $JournalRoot $JobId $Binding $Release $timeRecord.sent_at
   if((Get-AuthWireWriteHash $again) -cne (Get-AuthWireWriteHash $offer)){throw 'WRITE_LOCAL_RECORD_CHANGED'}
   $preflight=Read-AuthWireStagingJournal (Join-Path $job 'preflight.json')
   $started=Read-AuthWireStagingJournal (Join-Path $job 'claim-started.json')
@@ -45,9 +58,10 @@ function Read-AuthWireWriteAuthorization([string]$JournalRoot,[string]$JobId,[ha
      -not (Test-AuthWireWriteInteger $receipt.sent_at) -or $receipt.sent_at -ne $sent.sent_at -or -not (Test-AuthWireWriteInteger $receipt.received_at)){throw 'WRITE_AUTHORIZATION_REJECTED'}
   Assert-AuthWireWriteGrantAt $receipt.grant $offer $request $sent.sent_at $receipt.received_at
   $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
-  if($now -lt $receipt.received_at -or $now -ge $receipt.grant.expires_at){throw 'WRITE_AUTHORIZATION_EXPIRED'}
+  if($now -lt $receipt.received_at){throw 'WRITE_AUTHORIZATION_EXPIRED'}
   return [pscustomobject]@{Offer=$offer;Receipt=$receipt;Preflight=$preflight;AuthorizationSha256=(Get-AuthWireWriteHash $receipt)}
  }finally{$pin.Dispose()}
+ }finally{$timePin.Dispose()}
 }
 function Read-AuthWireWriteIntentContext([string]$JournalRoot,[string]$JobId,$Offer,[hashtable]$Binding,[long]$ExpiresAt){
  Initialize-AuthWireScopeProcess

@@ -5,6 +5,11 @@ Set-StrictMode -Version 2
 function Assert-AuthWireStageStrings($Value,[string[]]$Names){
  foreach($n in $Names){if($Value.$n -isnot [string]){throw 'WRITE_EXECUTION_RECORD_REJECTED'}}
 }
+function Enter-AuthWireWriteOutcomeLock([string]$JobId){
+ Assert-AuthWireCandidateGuid $JobId
+ $m=[Threading.Mutex]::new($false,('Global\AuthWireWriteOutcome-'+([guid]$JobId).ToString('N')))
+ try{if(-not $m.WaitOne(0)){throw 'WRITE_OUTCOME_BUSY'};return $m}catch [Threading.AbandonedMutexException]{$m.ReleaseMutex();$m.Dispose();throw 'WRITE_OUTCOME_ABANDONED_REQUIRES_REVIEW'}catch{$m.Dispose();throw}
+}
 function New-AuthWireStageInputPins([string]$JournalRoot,[string]$JobId,$Offer){
  $p=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
@@ -15,10 +20,15 @@ function New-AuthWireStageInputPins([string]$JournalRoot,[string]$JobId,$Offer){
  }catch{$p.Dispose();throw}
 }
 function Read-AuthWireAuthorizedStageIntent([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
- $a=Read-AuthWireWriteAuthorization $JournalRoot $JobId $Binding $Release $Key
+ $s=Read-AuthWireAuthorizedStageIntentEvidence $JournalRoot $JobId $Binding $Release $Key
+ if([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -ge $s.Authorization.Receipt.grant.expires_at){throw 'WRITE_AUTHORIZATION_EXPIRED'}
+ return $s
+}
+function Read-AuthWireAuthorizedStageIntentEvidence([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
+ $a=Read-AuthWireWriteAuthorizationEvidence $JournalRoot $JobId $Binding $Release $Key
  $p=New-AuthWireStageInputPins $JournalRoot $JobId $a.Offer
  try{
-  $again=Read-AuthWireWriteAuthorization $JournalRoot $JobId $Binding $Release $Key
+  $again=Read-AuthWireWriteAuthorizationEvidence $JournalRoot $JobId $Binding $Release $Key
   if($again.AuthorizationSha256 -cne $a.AuthorizationSha256){throw 'WRITE_LOCAL_RECORD_CHANGED'}
   $job=Join-Path $JournalRoot $JobId
   $c=Read-AuthWireStagingJournal (Join-Path $job 'grant-consumed.json')
@@ -28,7 +38,7 @@ function Read-AuthWireAuthorizedStageIntent([string]$JournalRoot,[string]$JobId,
   Assert-AuthWireCandidateGuid $op
   if($c.format -cne 'AuthWireWriteGrantConsumedV1' -or $c.binding_scope -cne $a.Receipt.binding_scope -or $c.release_id -cne $Release -or $c.job_id -cne $JobId -or
      $c.authorization_sha256 -cne $a.AuthorizationSha256 -or $c.filesystem_operation_id -cne $op -or -not (Test-AuthWireWriteInteger $c.consumed_at) -or
-     $c.consumed_at -lt $a.Receipt.received_at -or $c.consumed_at -gt $now -or -not (Test-AuthWireWriteInteger $c.expires_at) -or $c.expires_at -ne $a.Receipt.grant.expires_at){throw 'WRITE_EXECUTION_RECORD_REJECTED'}
+     $c.consumed_at -lt $a.Receipt.received_at -or $c.consumed_at -gt $now -or $c.consumed_at -ge $a.Receipt.grant.expires_at -or -not (Test-AuthWireWriteInteger $c.expires_at) -or $c.expires_at -ne $a.Receipt.grant.expires_at){throw 'WRITE_EXECUTION_RECORD_REJECTED'}
   $i=Read-AuthWireStagingJournal (Join-Path $job 'filesystem-intent.json')
   Assert-AuthWireCandidateFields $i @('format','job_id','filesystem_operation_id','binding_scope','release_id','authorization_sha256','consumption_sha256','offer_sha256','target_sha256','preview_sha256','live_context','expires_at','filesystem_write_enabled','can_apply_gpo')
   Assert-AuthWireStageStrings $i @('format','job_id','filesystem_operation_id','binding_scope','release_id','authorization_sha256','consumption_sha256','offer_sha256','target_sha256','preview_sha256')
@@ -37,7 +47,7 @@ function Read-AuthWireAuthorizedStageIntent([string]$JournalRoot,[string]$JobId,
      $i.target_sha256 -cne (Get-AuthWireWriteHash $a.Offer.target) -or $i.preview_sha256 -cne $a.Offer.target.preview_record.PreviewSha256 -or
      -not (Test-AuthWireWriteInteger $i.expires_at) -or $i.expires_at -ne $c.expires_at -or $i.filesystem_write_enabled -isnot [bool] -or $i.filesystem_write_enabled -or $i.can_apply_gpo -isnot [bool] -or $i.can_apply_gpo){throw 'WRITE_EXECUTION_RECORD_REJECTED'}
   $live=$i.live_context
-  if(-not (Test-AuthWireWriteInteger $live.checked_at) -or $live.checked_at -lt $c.consumed_at -or $live.checked_at -gt $now){throw 'WRITE_EXECUTION_RECORD_REJECTED'}
+  if(-not (Test-AuthWireWriteInteger $live.checked_at) -or $live.checked_at -lt $c.consumed_at -or $live.checked_at -gt $now -or $live.checked_at -ge $i.expires_at){throw 'WRITE_EXECUTION_RECORD_REJECTED'}
   Assert-AuthWireWriteLiveContextAt $live $a.Offer $Binding $live.checked_at
   foreach($n in @('source_root','gpo_root','protected_gpo_id','pdc')){if($live.$n -cne $a.Preflight.$n){throw 'WRITE_EXECUTION_SCOPE_CHANGED'}}
   return [pscustomobject]@{Authorization=$a;Consumed=$c;Intent=$i;IntentSha256=(Get-AuthWireWriteHash $i)}
@@ -134,10 +144,13 @@ function Invoke-AuthWireAuthorizedFilesystemStage([string]$JournalRoot,[string]$
  $s=Read-AuthWireAuthorizedStageIntent $JournalRoot $JobId $Binding $Release $Key
  $p=New-AuthWireStageInputPins $JournalRoot $JobId $s.Authorization.Offer
  $gate=$null
+ $decisionLock=$null
  try{
   $again=Read-AuthWireAuthorizedStageIntent $JournalRoot $JobId $Binding $Release $Key
   if($again.IntentSha256 -cne $s.IntentSha256){throw 'WRITE_LOCAL_RECORD_CHANGED'}
+  $decisionLock=Enter-AuthWireWriteOutcomeLock $JobId
   $job=Join-Path $JournalRoot $JobId
+  if(Test-Path -LiteralPath (Join-Path $job 'result-outbox.json')){throw 'WRITE_EXECUTION_RESULT_ALREADY_FROZEN'}
   if(Test-Path -LiteralPath (Join-Path $job 'stage-launch.json')){throw 'WRITE_EXECUTION_ALREADY_LAUNCHED_REQUIRES_REVIEW'}
   Assert-AuthWireWriteLiveContext $s.Intent.live_context $s.Authorization.Offer $Binding
   $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$clock=[Diagnostics.Stopwatch]::StartNew()
@@ -150,6 +163,8 @@ function Invoke-AuthWireAuthorizedFilesystemStage([string]$JournalRoot,[string]$
   if(-not $created){throw 'WRITE_EXECUTION_GATE_ALREADY_EXISTS'}
   $launch=[pscustomobject][ordered]@{format='AuthWireStageLaunchV1';job_id=$JobId;filesystem_operation_id=$s.Intent.filesystem_operation_id;execution_intent_sha256=$s.IntentSha256;authorization_sha256=$s.Authorization.AuthorizationSha256;gate_name=$gateName;started_at=$now;expires_at=$s.Intent.expires_at;work_budget_ms=$budget}
   Write-AuthWireStagingJournal (Join-Path $job 'stage-launch.json') $launch
+  # Hold the global decision mutex through child completion and observation.
+  # This also covers the launch-to-child-metadata gap across Windows sessions.
   try{
    Initialize-AuthWireStageProcess
    $exe=Join-Path ([Environment]::GetFolderPath('Windows')) 'System32\WindowsPowerShell\v1.0\powershell.exe'
@@ -184,5 +199,5 @@ function Invoke-AuthWireAuthorizedFilesystemStage([string]$JournalRoot,[string]$
    try{Write-AuthWireStagingJournal (Join-Path $job 'execution-requires-review.json') ([pscustomobject]@{format='AuthWireStageReviewV1';job_id=$JobId;execution_intent_sha256=$s.IntentSha256;reason='OUTCOME_REQUIRES_REVIEW';checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()})}catch{}
    throw 'WRITE_EXECUTION_REQUIRES_REVIEW'
   }
- }finally{if($gate){$gate.Dispose()};$p.Dispose()}
+ }finally{if($decisionLock){$decisionLock.ReleaseMutex();$decisionLock.Dispose()};if($gate){$gate.Dispose()};$p.Dispose()}
 }
