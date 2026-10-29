@@ -107,6 +107,9 @@ namespace AuthWire.PreclaimFixture {
  Assert-AuthWireWriteLiveContext $live $offer $b
  Check ($live.gpo_root -ceq ('\\dc01.lab.example\SYSVOL\lab.example\Policies\{'+$t.gpo_id+'}')) 'GPO path derived locally'
  Check ($live.source_root.StartsWith([Environment]::GetFolderPath('CommonApplicationData'),[StringComparison]::Ordinal)) 'source path derived from ProgramData'
+ $permutedOffer=MakeOffer $reversed
+ $permutedLive=Get-AuthWireWriteStageLiveContext $permutedOffer $b $t.publisher_thumbprint 'https://kaname.lab.example/'
+ Check ($permutedLive.target_sha256 -ceq (Get-AuthWireWriteHash $target)) 'permuted JSON property order reaches the original fixed-order context guard'
  $script:pdcChanges=$true;$script:domainCalls=0
  Reject {Get-AuthWireWriteStageLiveContext $offer $b $t.publisher_thumbprint 'https://kaname.lab.example/'} 'PDC movement during preflight'
  $script:pdcChanges=$false;$script:protected=$t.gpo_id

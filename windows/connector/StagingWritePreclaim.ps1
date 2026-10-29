@@ -32,13 +32,19 @@ function Get-AuthWireWriteHash($Value){
 }
 function Test-AuthWireWriteHash($Value){return ($Value -is [string] -and $Value -cmatch '\A[0-9a-f]{64}\z')}
 function Test-AuthWireWriteInteger($Value){return (($Value -is [int] -or $Value -is [long]) -and $Value -gt 0 -and $Value -lt 1099511627776)}
-function Get-AuthWireWritePreviewHash($Preview){
+function ConvertTo-AuthWireWriteOrderedPreview($Preview){
  $ordered=[ordered]@{}
- foreach($n in @('format','operation','scope_target_sha256','scope_observations_sha256','baseline_inventory_sha256','source_ledger_sha256','plan_id','plan_version','gpo_id','manifest_sha256','draft_sha256','relative_destination','files','file_count','total_bytes','checked_at','expires_at','rollback','read_only','can_stage','can_apply_gpo','writer_available','requires_new_write_approval')){
-  if($n -ceq 'files'){$ordered[$n]=@(foreach($r in $Preview.files){$v=[ordered]@{};foreach($k in @('Path','Size','Sha256','Sddl')){$v[$k]=$r.$k};$v})}
-  elseif($n -ceq 'rollback'){$v=[ordered]@{};foreach($k in @('relative_directory','requires_ownership_journal','requires_exact_staged_tree','drift_requires_review','delete_existing_data')){$v[$k]=$Preview.rollback.$k};$ordered[$n]=$v}
+ $names=@('format','operation','scope_target_sha256','scope_observations_sha256','baseline_inventory_sha256','source_ledger_sha256','plan_id','plan_version','gpo_id','manifest_sha256','draft_sha256','relative_destination','files','file_count','total_bytes','checked_at','expires_at','rollback','read_only','can_stage','can_apply_gpo','writer_available','requires_new_write_approval')
+ Assert-AuthWireCandidateFields $Preview $names
+ foreach($n in $names){
+  if($n -ceq 'files'){$ordered[$n]=@(foreach($r in $Preview.files){Assert-AuthWireCandidateFields $r @('Path','Size','Sha256','Sddl');$v=[ordered]@{};foreach($k in @('Path','Size','Sha256','Sddl')){$v[$k]=$r.$k};$v})}
+  elseif($n -ceq 'rollback'){$fields=@('relative_directory','requires_ownership_journal','requires_exact_staged_tree','drift_requires_review','delete_existing_data');Assert-AuthWireCandidateFields $Preview.rollback $fields;$v=[ordered]@{};foreach($k in $fields){$v[$k]=$Preview.rollback.$k};$ordered[$n]=$v}
   else{$ordered[$n]=$Preview.$n}
  }
+ return [pscustomobject]$ordered
+}
+function Get-AuthWireWritePreviewHash($Preview){
+ $ordered=ConvertTo-AuthWireWriteOrderedPreview $Preview
  $json=ConvertTo-AuthWireWriteJson $ordered $false
  if([Text.Encoding]::ASCII.GetByteCount($json) -gt 14000){throw 'WRITE_PREVIEW_LIMIT'}
  return (Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes($json)))
@@ -132,7 +138,10 @@ function Get-AuthWireWriteStageLiveContext($Offer,[hashtable]$Binding,[string]$P
  $source=Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) ('AuthWire-CombinedCandidates-'+([guid]$Binding.connector_id).ToString('N'))
  $source=Join-Path $source ($target.plan_id+'-v'+$target.plan_version+'-'+$target.draft_sha256+'-ab1a11c683810061')
  $gpo='\\'+$server+'\SYSVOL\'+$target.domain+'\Policies\{'+$target.gpo_id+'}'
- $null=Assert-AuthWireStagingFilesystemContext $target $Offer.target.preview_record $Offer.target.preview_record.PreviewSha256 $gpo $a.protected_gpo_id
+ # The original engine hashes a fixed-property-order object. Network/persisted
+ # object ordering is irrelevant to approval; normalize without changing data.
+ $normalized=[pscustomobject]@{Preview=(ConvertTo-AuthWireWriteOrderedPreview $fresh.Preview);PreviewSha256=$Offer.target.preview_record.PreviewSha256}
+ $null=Assert-AuthWireStagingFilesystemContext $target $normalized $normalized.PreviewSha256 $gpo $a.protected_gpo_id
  return [pscustomobject][ordered]@{format='AuthWireWriteLiveContextV1';job_id=$Offer.job_id;intent_sha256=$Offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $Offer.target);source_root=$source;gpo_root=$gpo;protected_gpo_id=$a.protected_gpo_id;pdc=$server;checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();can_apply_gpo=$false}
 }
 

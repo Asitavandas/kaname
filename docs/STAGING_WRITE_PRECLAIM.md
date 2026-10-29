@@ -14,6 +14,9 @@ kapalıdır. Bu modül ağ isteği göndermez, grant kabul etmez, dosya yürüt�
 - Server target/intent ve sıra bağımsız canonical JSON özeti ile mevcut20 dosyalı
   önizlemenin sıra tanımlı özeti doğrulanır. Yol/komut/ek alan, farklı binding veya
   release, kaynak/ACL/hash farkı, aşılmış süre ve yetki overclaim'i reddedilir.
+  Eski filesystem guard'ına giden önizleme sabit alan sırasına normalize edilir;
+  ağ/SQLite JSON alan sırası onayın anlamını değiştirmez. Ek alanlar atılarak
+  gizlenmez; normalize etmeden önce kesin şema doğrulanır.
 - Özel ACL'li yerel journal kökü çağıran tarafından sağlanmalıdır. Ağ teklifinden
   journal/source/SYSVOL yolu alınmaz. GPO kilidi ve job offer kaydı CreateNew ve
   Flush(true) ile yazılır; namespace sahiplenilmez veya mevcut ACL gevşetilmez.
