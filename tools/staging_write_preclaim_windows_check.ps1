@@ -46,6 +46,14 @@ try{
   $intent='AuthWireStagingWriteIntentV1'+"`n"+$scope+"`n"+$id+"`ncombined.filesystem.stage.v1`n"+(Get-AuthWireWriteHash $WriteTarget)+"`n"
   return [pscustomobject][ordered]@{format=1;request_id=$request;scope_sha256=$scope;job_id=$id;operation='combined.filesystem.stage.v1';lease_id=('6'*64);intent_sha256=(Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes($intent)));expires_at=$WriteTarget.preview_record.Preview.expires_at;target=$WriteTarget;write_authorized=$false;can_apply_gpo=$false}
  }
+ function NewFixtureTarget {
+  # Independent test transaction, not renewal of a saved offer/grant. Long
+  # unrelated TLS/ACL scenarios must not share one 90-second preview clock.
+  $fresh=Clone $target
+  $fresh.preview_record=New-AuthWireCombinedStagingPlanCore $t $files $inventory ('4'*64) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
+  $fresh.preview_job_id=[guid]::NewGuid().ToString('D')
+  return $fresh
+ }
  $offer=MakeOffer
  Assert-AuthWireWriteOffer $offer $b $release $request;Check $true 'valid bounded offer'
  Check ((Get-AuthWireWritePreviewHash $preview.Preview) -ceq $preview.PreviewSha256) 'fixed preview order matches existing plan'
@@ -198,7 +206,7 @@ namespace AuthWire.PreclaimFixture {
    if($case.StartsWith('grant_consume_',[StringComparison]::Ordinal)){$b=$b.Clone();$b.connector_id=[guid]::NewGuid().ToString('D');$j=Get-AuthWireStagingWriteJournalRoot $b}
    else{$j=Join-Path $root $case}
    if(Test-Path -LiteralPath $j){throw 'Unexpected existing fixture journal'}
-   $o=MakeOffer;$null=New-Item -ItemType Directory -Path $j
+   $o=MakeOffer (NewFixtureTarget);$null=New-Item -ItemType Directory -Path $j
    if($case.StartsWith('grant_consume_',[StringComparison]::Ordinal)){$consumptionRoots+=,$j}
    $ja=Get-Acl -LiteralPath $j
    if($case.StartsWith('grant_consume_',[StringComparison]::Ordinal)){$ja.SetSecurityDescriptorSddlForm('O:BAG:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)')}
@@ -329,19 +337,21 @@ namespace AuthWire.PreclaimFixture {
    $b=$savedBinding
   }
  }
+ $auxOffer=MakeOffer (NewFixtureTarget)
+ $auxLive=Get-AuthWireWriteStageLiveContext $auxOffer $b $t.publisher_thumbprint 'https://kaname.lab.example/'
  $failedJournal=Join-Path $root 'failed-signing';$null=New-Item -ItemType Directory -Path $failedJournal
  $ja=Get-Acl -LiteralPath $failedJournal;$ja.SetAccessRuleProtection($true,$true);Set-Acl -LiteralPath $failedJournal -AclObject $ja
- $null=Save-AuthWireStagingWriteOffer $offer $b $release $request $failedJournal
- $live.checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();Write-AuthWireStagingJournal (Join-Path (Join-Path $failedJournal $offer.job_id) 'preflight.json') $live
+ $null=Save-AuthWireStagingWriteOffer $auxOffer $b $release $request $failedJournal
+ $auxLive.checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();Write-AuthWireStagingJournal (Join-Path (Join-Path $failedJournal $auxOffer.job_id) 'preflight.json') $auxLive
  $originalProof=${function:New-AuthWireStagingWriteProof}
- try{function New-AuthWireStagingWriteProof {throw 'SIMULATED_SIGNING_FAILURE'};Reject {New-AuthWireStagingWriteClaim $failedJournal $offer.job_id $b $release $rsa} 'signing failure refused'}finally{Set-Item -Path Function:New-AuthWireStagingWriteProof -Value $originalProof}
- Check (Test-Path -LiteralPath (Join-Path (Join-Path $failedJournal $offer.job_id) 'claim-started.json')) 'failed signing retains intent'
- Check (-not (Test-Path -LiteralPath (Join-Path (Join-Path $failedJournal $offer.job_id) 'claim-proof.json'))) 'failed signing does not publish a proof'
- Reject {New-AuthWireStagingWriteClaim $failedJournal $offer.job_id $b $release $rsa} 'failed signing cannot be blindly retried'
+ try{function New-AuthWireStagingWriteProof {throw 'SIMULATED_SIGNING_FAILURE'};Reject {New-AuthWireStagingWriteClaim $failedJournal $auxOffer.job_id $b $release $rsa} 'signing failure refused'}finally{Set-Item -Path Function:New-AuthWireStagingWriteProof -Value $originalProof}
+ Check (Test-Path -LiteralPath (Join-Path (Join-Path $failedJournal $auxOffer.job_id) 'claim-started.json')) 'failed signing retains intent'
+ Check (-not (Test-Path -LiteralPath (Join-Path (Join-Path $failedJournal $auxOffer.job_id) 'claim-proof.json'))) 'failed signing does not publish a proof'
+ Reject {New-AuthWireStagingWriteClaim $failedJournal $auxOffer.job_id $b $release $rsa} 'failed signing cannot be blindly retried'
  $fullJournal=Join-Path $root 'full-store';$null=New-Item -ItemType Directory -Path $fullJournal
  $ja=Get-Acl -LiteralPath $fullJournal;$ja.SetAccessRuleProtection($true,$true);Set-Acl -LiteralPath $fullJournal -AclObject $ja
  foreach($i in 1..64){[IO.File]::WriteAllText((Join-Path $fullJournal ('owned-fixture-'+$i)), 'fixture')}
- Reject {Save-AuthWireStagingWriteOffer $offer $b $release $request $fullJournal} 'local store bounded before another job'
+ Reject {Save-AuthWireStagingWriteOffer $auxOffer $b $release $request $fullJournal} 'local store bounded before another job'
  $poll=New-AuthWireStagingWriteProof $b $rsa POLL @{capability='combined.filesystem.write.v1';release_id=$release}
  $result=New-AuthWireStagingWriteProof $b $rsa RESULT @{job_id=$offer.job_id;lease_id=$offer.lease_id;intent_sha256=$offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $target);release_id=$release;authorization_id='';checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();outcome='refused_before_authorization';reason='PREFLIGHT_FAILED';journal_sha256='';tree_sha256='';filesystem_effects='none'}
  Reject {New-AuthWireStagingWriteProof $b $rsa CLAIM @{padding=('x'*1025)}} 'proof payload bounded'
@@ -360,19 +370,25 @@ namespace AuthWire.PreclaimFixture {
  $dependencies=@('Compare-AuthWireSigningKeyAcl.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','StagingFilesystem.ps1','StagingWritePreclaim.ps1','StagingWriteConsumption.ps1','Test-AuthWireDeploymentCandidate.ps1','Read-AuthWireStagingWritePreflight.ps1')
  foreach($name in $dependencies){$to=Join-Path $readerPackage $name;[IO.File]::WriteAllBytes($to,[IO.File]::ReadAllBytes((Join-Path $lib $name)));$sig=Set-AuthenticodeSignature -FilePath $to -Certificate $signer -HashAlgorithm SHA256;Check ($sig.Status -eq 'Valid') 'disposable signed reader dependency'}
  [IO.File]::WriteAllText((Join-Path $readerPackage 'service.json'),'{"RootPath":"deliberately-wrong"}')
+ $readerOffer=MakeOffer (NewFixtureTarget)
+ $readerJournal=Join-Path $root 'reader-journal';$null=New-Item -ItemType Directory -Path $readerJournal
+ $ra=Get-Acl -LiteralPath $readerJournal;$ra.SetAccessRuleProtection($true,$true);Set-Acl -LiteralPath $readerJournal -AclObject $ra
+ $null=Save-AuthWireStagingWriteOffer $readerOffer $b $release $request $readerJournal
+ $readerLive=Get-AuthWireWriteStageLiveContext $readerOffer $b $t.publisher_thumbprint 'https://kaname.lab.example/'
+ Write-AuthWireStagingJournal (Join-Path (Join-Path $readerJournal $readerOffer.job_id) 'preflight.json') $readerLive
  Initialize-AuthWireScopeProcess
  $exe=Join-Path ([Environment]::GetFolderPath('Windows')) 'System32\WindowsPowerShell\v1.0\powershell.exe'
- $arguments='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+(Join-Path $readerPackage 'Read-AuthWireStagingWritePreflight.ps1')+'" -JournalRoot "'+$journal+'" -JobId '+$offer.job_id
+ $arguments='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+(Join-Path $readerPackage 'Read-AuthWireStagingWritePreflight.ps1')+'" -JournalRoot "'+$readerJournal+'" -JobId '+$readerOffer.job_id
  $read=[AuthWire.Connector.ScopeProcessV1]::Run($exe,$arguments,10000)
  Check (-not $read.TimedOut -and -not $read.Truncated -and $read.ExitCode -eq 20 -and $read.Output.Trim() -ceq '{"error":"WRITE_PREFLIGHT_FAILED"}') 'actual signed fixed child safely refuses config before AD'
  . (Join-Path $readerPackage 'StagingWritePreclaim.ps1')
- $preflightPath=Join-Path (Join-Path $journal $offer.job_id) 'preflight.json'
+ $preflightPath=Join-Path (Join-Path $readerJournal $readerOffer.job_id) 'preflight.json'
  $preflightBefore=Get-AuthWireCandidateHash (Read-AuthWireCandidateBytes $preflightPath 65536)
- $refusal='';try{Invoke-AuthWireStagingWritePreflight $journal $offer.job_id $b $release|Out-Null}catch{$refusal=$_.Exception.Message}
+ $refusal='';try{Invoke-AuthWireStagingWritePreflight $readerJournal $readerOffer.job_id $b $release|Out-Null}catch{$refusal=$_.Exception.Message}
  Check ($refusal -ceq 'WRITE_PREFLIGHT_FAILED') 'actual parent invokes fixed signed child and rejects failure'
  Check ((Get-AuthWireCandidateHash (Read-AuthWireCandidateBytes $preflightPath 65536)) -ceq $preflightBefore) 'failed child never replaces earlier preflight record'
  . (Join-Path $readerPackage 'StagingWriteConsumption.ps1')
- $code='';try{Read-AuthWireWriteIntentContext $journal $offer.job_id $offer $b ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+30)|Out-Null}catch{$code=$_.Exception.Message}
+ $code='';try{Read-AuthWireWriteIntentContext $readerJournal $readerOffer.job_id $readerOffer $b ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+30)|Out-Null}catch{$code=$_.Exception.Message}
  Check ($code -ceq 'WRITE_INTENT_PREFLIGHT_FAILED') 'actual fixed AllSigned intent reader refuses config before AD'
  $slow=Join-Path $readerPackage 'bounded-fixture.ps1';[IO.File]::WriteAllText($slow,'Start-Sleep -Seconds 3');$null=Set-AuthenticodeSignature -FilePath $slow -Certificate $signer -HashAlgorithm SHA256
  $timer=[Diagnostics.Stopwatch]::StartNew();$read=[AuthWire.Connector.ScopeProcessV1]::Run($exe,('-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$slow+'"'),200);$timer.Stop()
