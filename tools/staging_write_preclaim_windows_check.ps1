@@ -141,6 +141,12 @@ try{
  $arguments='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+(Join-Path $readerPackage 'Read-AuthWireStagingWritePreflight.ps1')+'" -JournalRoot "'+$journal+'" -JobId '+$offer.job_id
  $read=[AuthWire.Connector.ScopeProcessV1]::Run($exe,$arguments,10000)
  Check (-not $read.TimedOut -and -not $read.Truncated -and $read.ExitCode -eq 20 -and $read.Output.Trim() -ceq '{"error":"WRITE_PREFLIGHT_FAILED"}') 'actual signed fixed child safely refuses config before AD'
+ . (Join-Path $readerPackage 'StagingWritePreclaim.ps1')
+ $preflightPath=Join-Path (Join-Path $journal $offer.job_id) 'preflight.json'
+ $preflightBefore=Get-AuthWireCandidateHash (Read-AuthWireCandidateBytes $preflightPath 65536)
+ $refusal='';try{Invoke-AuthWireStagingWritePreflight $journal $offer.job_id $b $release|Out-Null}catch{$refusal=$_.Exception.Message}
+ Check ($refusal -ceq 'WRITE_PREFLIGHT_FAILED') 'actual parent invokes fixed signed child and rejects failure'
+ Check ((Get-AuthWireCandidateHash (Read-AuthWireCandidateBytes $preflightPath 65536)) -ceq $preflightBefore) 'failed child never replaces earlier preflight record'
  $slow=Join-Path $readerPackage 'bounded-fixture.ps1';[IO.File]::WriteAllText($slow,'Start-Sleep -Seconds 3');$null=Set-AuthenticodeSignature -FilePath $slow -Certificate $signer -HashAlgorithm SHA256
  $timer=[Diagnostics.Stopwatch]::StartNew();$read=[AuthWire.Connector.ScopeProcessV1]::Run($exe,('-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$slow+'"'),200);$timer.Stop()
  Check ($read.TimedOut -and $timer.ElapsedMilliseconds -lt 5000) 'actual AllSigned timeout is bounded'

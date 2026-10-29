@@ -34,5 +34,6 @@ jobs:
         run: |
           $env:AUTHWIRE_WRITE_WIRE_OUTPUT=Join-Path $env:RUNNER_TEMP write-preclaim-wire.json
           tools/staging_write_preclaim_windows_check.ps1
-          if($LASTEXITCODE -ne 0){throw 'Native preclaim check failed'}
+          if(-not $?){throw 'Native preclaim check failed'}
           python tools/staging_write_preclaim_wire_check.py $env:AUTHWIRE_WRITE_WIRE_OUTPUT
+          if($LASTEXITCODE -ne 0){throw 'Python wire check failed'}
