@@ -16,6 +16,12 @@ const assert = require('node:assert/strict');
    window.can=(resource,write)=>!write||window.allowWrite;window.rows=[];window.recordCalls=0;window.verifyCalls=0;window.workerReady=false;window.verifyJobs=[];
    window.stagingReady=false;window.stagingJobs=[];window.stagingCalls=0;window.scopeReady=false;window.scopeJobs=[];window.combinedScopeJobs=[];window.combinedScopeReady=false;window.combinedScopeCalls=0;window.combinedJobs=[];window.combinedReady=false;window.combinedCalls=0;window.scopeCalls=0;
    window.api=async(path,value)=>{
+    if(path==='/api/deployment/staging-write'){
+     if(window.writeStatusDelay)return new Promise(resolve=>window.releaseWriteStatus=resolve);
+     if(window.writeStatusError)throw new Error('status unavailable');
+     return window.writeStatus||{approval_enabled:false,write_authorization_enabled:false,execution_adapter_available:false,can_apply_gpo:false,jobs:[]};
+    }
+    if(path.includes('/staging-write/')&&path.endsWith('/create'))throw Error('UI must never submit write approvals');
     if(path==='/api/deployment/candidates')return {revision:10,candidates:window.rows,can_apply:false,verification_worker_ready:window.workerReady,verification_jobs:window.verifyJobs,scope_worker_ready:window.scopeReady,scope_verification_jobs:window.scopeJobs,combined_verification_jobs:window.combinedJobs,combined_scope_worker_ready:window.combinedScopeReady,combined_scope_verification_jobs:window.combinedScopeJobs,combined_worker_ready:window.combinedReady,staging_preview_worker_ready:window.stagingReady,staging_preview_jobs:window.stagingJobs};
     if(path==='/api/deployment/candidates/preview')return {id:value.registration_id,plan_id:'<img src=x onerror=alert(1)>',plan_version:1,gpo_id:'gpo',manifest_sha256:'abc',preview_hash:'a'.repeat(64)};
     if(path==='/api/deployment/candidates/record'){
@@ -93,7 +99,7 @@ const assert = require('node:assert/strict');
   assert.match(await page.locator('#dep-candidate-list').textContent(),/DIRECTORY_SCOPE_CHANGED/);
   assert.doesNotMatch(await page.locator('#dep-candidate-list').textContent(),/AD hedefleri ve GPO okuma kontrolü başarılı/);
   await page.evaluate(()=>{window.rows.push({...window.rows[0],id:'combined-fixture',artifact_kind:'combined_machine_v1',state:'operator_reported',content_verified:false,scope_snapshot_verified:false,scope_snapshot_fresh:false,scope_reason:null,draft_sha256:'d'.repeat(64),content_verification_available:true,network_candidate_id:'network-fixture'});return loadCandidateStatus();});
-  const combined=page.locator('#dep-candidate-list article').last();
+  const combined=page.locator('#dep-candidate-list article').filter({hasText:' · Birleşik paket'});
   assert.match(await combined.textContent(),/Birleşik paket/);
   assert.match(await combined.textContent(),/Bu kontrol cihazlara dağıtım başlatmaz/);
   assert.equal(await combined.getByRole('button',{name:'Doğrulamayı önizle',exact:true}).isDisabled(),true);
@@ -135,6 +141,31 @@ const assert = require('node:assert/strict');
   await page.evaluate(()=>{window.rows[1].staging_preview_fresh=false;window.allowWrite=false;return loadCandidateStatus();});
   assert.match(await page.locator('#dep-candidate-list').textContent(),/güncel kontrol gerekiyor/);
   assert.equal(await page.getByRole('button',{name:'Paket hazırlığını önizle',exact:true}).count(),0);
+  await page.evaluate(()=>{
+   window.writeStatus={approval_enabled:false,write_authorization_enabled:false,execution_adapter_available:false,can_apply_gpo:false,jobs:[
+    {id:'<img src=x onerror=alert(1)>',operation:'combined.filesystem.stage.v1',state:'requires_review'},
+    {id:'reported',operation:'combined.filesystem.rollback.v1',state:'completed'},
+    {id:'grant',operation:'combined.filesystem.stage.v1',state:'authorized'}]};
+   return loadCandidateStatus();
+  });
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/sonuç|Sonuç/);
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/İşlemi tekrar başlatmayın/);
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/bağımsız disk kabulü anlamına gelmez/);
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/Yetki verilmiş; dosya sonucu henüz doğrulanmadı/);
+  assert.equal(await page.locator('#dep-candidate-list img').count(),0);
+  assert.equal(await page.getByRole('button',{name:'Paket dosyalarını yaz',exact:true}).count(),0);
+  for(const change of ['approval_enabled','write_authorization_enabled','execution_adapter_available','can_apply_gpo']){
+   await page.evaluate(key=>{window.writeStatus[key]=true;return loadCandidateStatus();},change);
+   assert.match(await page.locator('#dep-candidate-list').textContent(),/İşlem durumu alınamadı/);
+   await page.evaluate(key=>window.writeStatus[key]=false,change);
+  }
+  await page.evaluate(()=>{window.writeStatusError=true;return loadCandidateStatus();});
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/mevcut görevlerin sonucu hakkında karar vermeyin/);
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/Önerilen klasör: Machine/);
+  await page.evaluate(()=>{window.writeStatusError=false;window.writeStatusDelay=true;window.pendingWriteLoad=loadCandidateStatus();});
+  await page.waitForFunction(()=>typeof window.releaseWriteStatus==='function');
+  await page.evaluate(async()=>{authGeneration++;resetCandidateRegistration();window.releaseWriteStatus(window.writeStatus);await window.pendingWriteLoad;window.writeStatusDelay=false;});
+  assert.equal(await page.locator('#dep-candidate-list').textContent(),'');
   await page.evaluate(()=>{window.allowWrite=true;candidateControls();});
   await page.locator('#dep-candidate-open').click();
   await page.locator('#dep-candidate-json').fill('private draft');
@@ -147,3 +178,4 @@ const assert = require('node:assert/strict');
   console.log('AUTHWIRE_CANDIDATE_RECEIPT_UI_OK: content and scope separation, capability gating, lost-response reconciliation, snapshot expiry/rejection, reset and roles');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1);});
+

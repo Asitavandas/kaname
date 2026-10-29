@@ -1,7 +1,9 @@
 # Yazma/geri alma görevlerinin onay ve yetkilendirme çekirdeği
 
-29 Ekim 2026. `kaname/staging_write_jobs.py` yalnız kaynak/test bileşenidir.
-server.py içine, canlı API'ye, panele veya Windows paketine kaydedilmedi.
+29 Ekim 2026. `kaname/staging_write_jobs.py` kaynak/test bileşenidir.
+Kaynak server.py/panel katmanında yalnız yönetici durum/inceleme yolu eklendi;
+HTTP create kapalı, peer/write rotaları ve Windows yürütücüsü kayıtlı değildir.
+Müşteri Linux/Windows paketine teslim edilmedi. Ayrıntı: STAGING_WRITE_ADMIN.md.
 StagingFilesystem.ps1 çağrısı veya gerçek dosya yazması yapmaz. Bu ilk protokol
 katmanının geçmesi, uçtan uca yazma/geri alma iş akışının tamamlanması değildir.
 
@@ -14,9 +16,10 @@ POLL cevabı onaylanan20 dosyalı önizlemeyi de taşır; Windows adapter'ında
 cevap boyutu ve kesin şema denetimi ayrıca uygulanmalıdır.
 
 Bu sınıfın yönetici çağıranı güvenilir iç servistir: actor UUID ve ack metni
-kimlik doğrulama değildir. Gelecek HTTP adapter'ı certificates.authority ve
+kimlik doğrulama değildir. Kaynak HTTP inceleme adapter'ı certificates.authority ve
 system.connectors yazma yetkilerini, güncel oturumu, Origin/CSRF ve revizyonu
-zorunlu uygulamalıdır. Bu adapter ve testleri henüz yoktur.
+zorunlu uygular; gövde sonrası session ve roller yeniden doğrulanır. Görev oluşturma
+ve tek kullanımlı CLAIM'i dışarı açacak yürütme adapter'ı hâlâ kapalıdır.
 
 ## Sıra
 
@@ -76,7 +79,8 @@ authorization ve sonuçlar yedekte/iş verisi karşılaştırmasında korunmalı
 
 ## Teslimat öncesi açık işler
 
-- Yetkili HTTP/panel inceleme ve onay akışı; rol/oturum/Origin/CSRF testleri.
+- HTTP/panel durum ve inceleme kaynakta eklendi; gerçek onay/create ve peer rotalarını
+  kalan yürütme/kurtarma/backup kapıları tamamlandıktan sonra açma.
 - Sınırlandırılmış Windows proof/claim ve canlı scope adapter'ı; yerel durable
   iş kaydı, kayıp CLAIM yanıtında durma, filesystem core'a güvenilen yol türetme.
 - Stage/rollback ve journal kayıtlarıyla sonuç uzlaştırma; partial cleanup/resume
@@ -87,3 +91,4 @@ authorization ve sonuçlar yedekte/iş verisi karşılaştırmasında korunmalı
 36 yeni yerel RSA/SQLite testi ve mevcut ilgili okuma/proof testleriyle toplam90
 kontrol geçti. Tam repo CI ve test edilen kaynak head'i checkpoint'te ayrıca
 kaydedilir. Müşteri AD/GPO/servis/sertifika veya diskine değişiklik yapılmadı.
+

@@ -99,7 +99,7 @@ async function loadCandidateStatus(){
  if(!candidateAccess()||candidateVerifySending)return null;
  if(candidateVerifyBusy){candidateVerifyTicket++;candidateVerifyBusy=false;}
  const generation=authGeneration,ticket=++candidateTicket;
- try{const value=await api('/api/deployment/candidates');if(generation!==authGeneration||ticket!==candidateTicket||!candidateAccess())return null;
+ try{const [value,writeStatus]=await Promise.all([api('/api/deployment/candidates'),api('/api/deployment/staging-write').catch(()=>null)]);if(generation!==authGeneration||ticket!==candidateTicket||!candidateAccess())return null;
   candidateRows=value.candidates;const box=$('dep-candidate-list');box.replaceChildren();
   if(candidateVerifyUncertain&&[...(value.verification_jobs||[]),...(value.scope_verification_jobs||[]),...(value.combined_verification_jobs||[]),...(value.combined_scope_verification_jobs||[]),...(value.staging_preview_jobs||[])].some(j=>j.id===candidateVerifyUncertain))candidateVerifyUncertain=null;
   for(const row of candidateRows){const item=depNode('article');const plan=depState?.plans.find(p=>p.id===row.plan_id);
@@ -137,8 +137,22 @@ async function loadCandidateStatus(){
     }
    }
    box.append(item);}
+  if(candidateRows.some(r=>r.artifact_kind==='combined_machine_v1'))renderStagingWriteStatus(box,writeStatus);
   if(!candidateRows.length)box.append(depNode('p','Henüz hazırlık sonucu kaydedilmedi.'));candidateControls();return value;
  }catch(error){if(generation===authGeneration&&ticket===candidateTicket)$('dep-candidate-feedback').textContent=error.code||error.message;return null;}
+}
+function renderStagingWriteStatus(box,status){
+ const item=depNode('article');item.append(depNode('strong','Dosya yazma ve geri alma durumu'));
+ item.append(depNode('p','Bu arayüzde yeni dosya yazma veya geri alma onayı kapalı.'));
+ if(!status||status.approval_enabled!==false||status.write_authorization_enabled!==false||status.execution_adapter_available!==false||status.can_apply_gpo!==false||!Array.isArray(status.jobs)){
+  item.append(depNode('p','İşlem durumu alınamadı; mevcut görevlerin sonucu hakkında karar vermeyin. Yenile ile tekrar kontrol edin.'));
+ }else{
+  item.append(depNode('p','Windows yürütücüsü, kesinti kurtarması ve yedekleme kontrolleri tamamlandıktan sonra kontrollü onay açılacak.'));
+  const states={queued:'Görev kayıtlı; yürütme yetkisi verilmedi.',leased:'Görev alındı; yürütme yetkisi verilmedi.',authorized:'Yetki verilmiş; dosya sonucu henüz doğrulanmadı.',requires_review:'Sonuç belirsiz; inceleme gerekiyor. İşlemi tekrar başlatmayın.',completed:'Connector sonuç bildirimi kayıtlı; bağımsız disk kabulü anlamına gelmez.',expired:'Süresi dolmuş; otomatik tekrar başlatılmaz.',obsolete:'Bağlantı kapsamı değişmiş; otomatik tekrar başlatılmaz.'};
+  if(!status.jobs.length)item.append(depNode('p','Kayıtlı yazma/geri alma görevi yok.'));
+  for(const job of status.jobs){const operation=job.operation==='combined.filesystem.stage.v1'?'Dosya yazma':job.operation==='combined.filesystem.rollback.v1'?'Geri alma':'Bilinmeyen işlem';item.append(depNode('p',operation+' · '+String(job.id)+' · '+(states[job.state]||'Durum tanınmadı; inceleme gerekiyor.')));}
+ }
+ box.append(item);
 }
 function renderStagingPreview(row,item,value){
  const job=(value.staging_preview_jobs||[]).find(j=>j.candidate_id===row.id);
@@ -370,3 +384,4 @@ $('connector-job-refresh').addEventListener('click',loadConnectorJobs);
 $('connector-job-preview-button').addEventListener('click',previewConnectorJob);
 $('connector-job-create').addEventListener('click',createConnectorJob);
 $('connector-job-cancel').addEventListener('click',()=>{if(!connectorJobBusy){connectorJobPreview=null;connectorJobPermissions();}});
+
