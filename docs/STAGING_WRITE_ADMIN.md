@@ -33,7 +33,8 @@ Başarılı review testi yalnız kontrollü fixture'daki dahili RSA poll kaydın
 ## Panel
 
 Birleşik aday listesinde ayrı bir "Dosya yazma ve geri alma durumu" alanı vardır.
-Yazma/geri alma gönderme butonu yoktur. Mevcut okuma/önizleme akışı devam eder.
+Yazma/geri alma gönderme butonu yoktur. Mevcut okuma/önizleme akışı devam eder;
+ek durum sorgusu gecikse bile aday listesi bu sorguyu beklemez.
 Durum sorgusu başarısızsa bunu "işlem yok" veya "başarılı" diye göstermez.
 Queued/leased henüz izin değildir; authorized dosya sonucunu kanıtlamaz;
 requires_review tekrar başlatılmaması gereken belirsizliktir; completed ise yalnız
