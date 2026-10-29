@@ -1,5 +1,25 @@
 # AuthWire current work record
 
+## Süreç tahmini kaydedildi — 29 Ekim 2026
+
+Operatör mevcut tempoyla iş paketleri ve canlı test sürelerini istedi.
+Koşullu mühendislik tahmini: ilk otomatik merkezi pilot **2–3 hafta (12–19 Kasım)**;
+temel ürün + tek hesap **5–8 hafta (3–24 Aralık)**.
+Temel sürüm hedef seçilirse kılavuz dahil **6–9 hafta**; tüm kayıtlı geliştirmeler ve nihai kılavuz
+için **12–18 hafta (21 Ocak–4 Mart 2027)**. Bunlar taahhüt veya ölçülmüş hız modeli değildir.
+
+Temel saha kabulü yaklaşık **15–25 aktif saat /5–8 ayrı test günü**;
+tüm geliştirmelerle **25–40 saat** ve buna ek **7–14 takvim günü** gözlem.
+Haftada beş gün düzenli ortak ilerleme, aynı gün kurulum çıktıları, test erişimi ve hazır altyapı varsayılır.
+Tek gMSA için AD okuma ve Kerberos taşıması ayrıca **6–10 iş günü** tahmin edildi.
+Kullanılabilir üretici API yetkisi, off-host yedek hedefi, restore VM'si veya ölçek uçları yoksa
+ilgili tam kapanış için tarih verilemez. G02/G03 ilk üretici/sınırlı model kapsamıdır.
+
+Ayrıntılı iş/süre/bağımlılık ve kabul tablosu **docs/reports/2026-10-29-process-forecast.md**.
+Genel **54/94 tamam,40 açık** değişmedi. Yüksek test sayısı veya dar önceki saha kabulü bütün ürün tamamlandı sayılmadı.
+Kılavuz bayrakları false; bu rapor kılavuz değildir. Panel/AD/GPO/servis/yedek/cihaz ayarı değiştirilmedi.
+Sonraki geliştirme aynı: onaylı ve idempotent staging/rollback görevi, canlı scope adapter'ı ve kısmi işlem kurtarması.
+
 ## Sınırlı dosya yazma/geri alma çekirdeği kaynakta test edildi — canlı entegrasyon bekliyor — 29 Ekim 2026
 
 **PR118** merge **8ae5a1a8f6b05caf7bb4a3a18b1a8f49329ccb50**; test edilen head **dc6c8d817638728777eba7e2e1df4bf97e200fa0**.
