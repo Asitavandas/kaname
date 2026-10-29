@@ -1,0 +1,228 @@
+{
+  "event": "WINDOWS_WRITE_CLAIM_TRANSPORT_SOURCE_CHECKPOINT",
+  "date_local": "2026-10-29",
+  "timezone": "Europe/Istanbul",
+  "repository": "Asitavandas/kaname",
+  "pr": 122,
+  "base": "f9a3e3bd1ff41c18dc0caa9ee893afdeed852f80",
+  "tested_head": "95b4776b1efe91cecc9cdec7d7314c49eb515609",
+  "files": [
+    {
+      "path": "windows/connector/StagingWriteTransport.ps1",
+      "bytes": 14007,
+      "sha256": "71880f6930263ef1515a4cfb66a0c8a2f8cd0b512576bb36dd7af106376284f4",
+      "git_blob_sha": "1395163255941141c3c75335fd5d08163bc49017"
+    },
+    {
+      "path": "tools/staging_write_preclaim_windows_check.ps1",
+      "bytes": 34124,
+      "sha256": "369ed2e364d77742bd9beed56d5c649f4129368639a067ecd0e9c28a6763081d",
+      "git_blob_sha": "c53143781da377bf652ee3ea7cfcf6a119d1e465"
+    },
+    {
+      "path": "tools/staging_write_transport_windows_check.py",
+      "bytes": 9778,
+      "sha256": "4392e5cf039fd5495b8b6289adf5f2e52f6317094683572f8bfaae72958dde27",
+      "git_blob_sha": "e46f9c0e018d91bf4a502d2a1d73750fdd07adda"
+    },
+    {
+      "path": ".github/workflows/staging-write-preclaim.yml",
+      "bytes": 1697,
+      "sha256": "16ecd8a79f8b9f0f8e39da24d95fa7375d4187830ec9b4078da6139924889ece",
+      "git_blob_sha": "af46769813bb90bddb4cf0000465d61146c0e98a"
+    },
+    {
+      "path": "docs/STAGING_WRITE_TRANSPORT.md",
+      "bytes": 5446,
+      "sha256": "f3b38c6783ab2ef37578b4dceab3639a38032de2c37efb34d4844e59082e86be",
+      "git_blob_sha": "af5ab9976b7ad5684aedfe6fb0c989a3d84de245"
+    },
+    {
+      "path": "windows/connector/StagingWritePreclaim.ps1",
+      "bytes": 21869,
+      "sha256": "9adba0b239f77ad848d7ae7e48ea8e284c57f35028cd9d6b74cd56afadd676a0",
+      "git_blob_sha": "0e34aff8548fab2ada8b6a116997cda941294f07"
+    }
+  ],
+  "scope": "Isolated bounded pinned HTTPS CLAIM and durable local authorization receipt. Not a complete or installed execution adapter.",
+  "validation": {
+    "native_checks": 168,
+    "python_rsa_wire_checks": 18,
+    "native_run_id": 40926531763,
+    "native_job_id": 123633423825,
+    "actual_disposable_cng_machine_key": true,
+    "private_connector_key_exported": false,
+    "actual_pinned_https": true,
+    "actual_unchanged_sqlite_claim_core": true,
+    "real_fixture_grants": 4,
+    "core_replays_refused": 4,
+    "http_attempts_per_job": 1,
+    "redirects_followed": 0,
+    "seeded_leased_offers": true,
+    "paired_binding_lookup_stubbed": true,
+    "current_ad_candidate_context_stubbed": true,
+    "administrator_enqueue_tested_by_this_fixture": false,
+    "cases": [
+      "accepted durable receipt",
+      "mismatched response retains uncertainty",
+      "lost response retains uncertainty",
+      "receipt disk failure retains uncertainty",
+      "SDK reload cannot send again",
+      "boolean identities rejected without PowerShell coercion",
+      "normal TLS trust plus leaf pin and hostname",
+      "streamed unknown-length response bounds",
+      "absolute header and body timeout",
+      "original preclaim signed-child/native journal checks"
+    ],
+    "initial_fixture_fixes": [
+      "Normalize in-memory proof to persisted strict JSON shape before testing reader",
+      "Expect exactly four audited authorization revision increments; preserve unchanged config/policies"
+    ],
+    "general_suite": {
+      "tests": 1123,
+      "seconds": 335.306,
+      "skipped": 28,
+      "run_id": 40926531809,
+      "job_id": 123633425220
+    },
+    "all_four_ci_workflows_passed": true,
+    "windows_permanent_service_regression": {
+      "checks": 85,
+      "job_id": 123633423990,
+      "customer_gmsa_tested": false,
+      "passed": true
+    }
+  },
+  "security": {
+    "source_sdk_network_send": true,
+    "production_write_channel_registered": false,
+    "permanent_worker_or_package_registered": false,
+    "server_create_or_peer_enabled": false,
+    "filesystem_engine_invoked": false,
+    "gpo_activation_enabled": false,
+    "automatic_retry_cleanup_or_unlock": false,
+    "marker_before_network_with_create_new_and_flush": true,
+    "grant_record_before_success_with_create_new_and_flush": true,
+    "strict_original_claim_signature_binding_identity_and_payload": true,
+    "exact_grant_types_and_fields": true,
+    "request_limit_bytes": 4096,
+    "poll_response_limit_bytes": 32768,
+    "claim_result_response_limit_bytes": 4096,
+    "absolute_http_deadline_ms": 5000,
+    "original_grant_expiry_never_extended": true,
+    "normal_chain_name_revocation_plus_leaf_pin": true,
+    "fixed_journal_root_preserved_across_restart_required": true,
+    "received_receipt_is_not_filesystem_outcome": true,
+    "grant_consumption_and_filesystem_execution_still_unimplemented": true
+  },
+  "customer_changes": {
+    "linux_updated": false,
+    "windows_updated": false,
+    "ad_gpo_sysvol_changed": false,
+    "services_restarted": false,
+    "existing_keys_acls_or_trust_changed": false,
+    "full_backup_created": false,
+    "customer_gmsa_ad_smb_tested": false
+  },
+  "last_known_installed": {
+    "linux": "0.14.0-dev.44",
+    "windows_release": "df28f70c-104e-4d6d-972c-e311d38adde6",
+    "fresh_customer_read_this_step": false
+  },
+  "open_gates": [
+    "POLL/result worker orchestration and one-use grant consumption bound to filesystem intent",
+    "Fresh AD/PDC/source/ACL rechecks and bounded stage execution/result recording",
+    "Separate rollback preflight/execution approval path",
+    "Lost reply/reboot reconciliation, partial recovery and separately approved unlock",
+    "Strict backup projection retaining every business field",
+    "Enable approval/create/peer only after prerequisites; signed Linux/Windows delivery and actual gMSA/AD/SMB acceptance",
+    "Separate GPO activation, endpoint acceptance, single-account migration and500/1000 technical scale validation"
+  ],
+  "forecast": {
+    "remaining_stage_recovery_workdays": [
+      4,
+      7
+    ],
+    "first_pilot_weeks": [
+      2,
+      3
+    ],
+    "first_pilot_window": [
+      "2026-11-12",
+      "2026-11-19"
+    ],
+    "base_with_single_account_scale_weeks": [
+      6,
+      9
+    ],
+    "base_window": [
+      "2026-12-10",
+      "2026-12-31"
+    ],
+    "base_with_guide_weeks": [
+      7,
+      10
+    ],
+    "all_scope_and_guide_weeks": [
+      13,
+      19
+    ],
+    "all_scope_window": [
+      "2027-01-28",
+      "2027-03-11"
+    ],
+    "base_active_operator_hours": [
+      20,
+      30
+    ],
+    "all_scope_operator_hours": [
+      30,
+      45
+    ],
+    "observation_calendar_days": [
+      7,
+      14
+    ],
+    "change": "Ranges retained after CLAIM transport/receipt source milestone. POLL/result orchestration, grant consumption, execution, rollback, recovery, backup and delivery/customer acceptance remain open. No automatic subtraction of calendar time or test counts.",
+    "unbounded_external_waits": [
+      "off-host backup",
+      "restore VM",
+      "vendor API",
+      "scale endpoints/access"
+    ]
+  },
+  "single_scope_target_limit": 512,
+  "two_hundred_is_product_quota": false,
+  "macro_completed": 54,
+  "macro_total": 94,
+  "macro_open": 40,
+  "READY_FOR_FINAL_GUIDE": false,
+  "GUIDE_DELIVERED": false,
+  "merge_sha": "ce65c93bc03efb89f3f68b232b6f34bf9b11f9d9",
+  "ci_workflows": [
+    {
+      "name": "AuthWire bounded retry network probe checks",
+      "run_id": 40926531862,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40926531862"
+    },
+    {
+      "name": "AuthWire isolated write preclaim checks",
+      "run_id": 40926531763,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40926531763"
+    },
+    {
+      "name": "KANAME foundation checks",
+      "run_id": 40926531809,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40926531809"
+    },
+    {
+      "name": "AuthWire Windows connector bootstrap checks",
+      "run_id": 40926531688,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40926531688"
+    }
+  ]
+}

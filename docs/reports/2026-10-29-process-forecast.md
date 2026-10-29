@@ -1,5 +1,35 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## PR122 sonrası süre değerlendirmesi — 29 Ekim 2026
+
+Test edilen kaynak **95b4776b1efe91cecc9cdec7d7314c49eb515609**: Windows SDK'sına bounded pinned HTTPS CLAIM taşıması ve
+tek kullanımlık yanıtın kalıcı kaydı eklendi. **168 native WinPS5.1 kontrolü +18 Python/RSA çapraz
+kontrolü** geçti. Geçici HTTPS sunucusunda gerçek SQLite çekirdeği 4 izin üretti; her biri replay'i
+reddetti ve istemci SDK reload sonrasında ikinci HTTP gönderimi yapmadı. Kayıp/hatalı yanıt ile
+receipt disk hatası belirsizliği/kilidi korudu. Binding/AD/candidate context testte simüledir.
+Kaynak müşteri Linux/DC01'e kurulmadı; create/peer ve dosya yürütme kapalıdır.
+
+PR121 sonrası **4–7 aktif iş günü** yazma entegrasyonu/kurtarma bandı yeniden değerlendirildi ve
+korundu. CLAIM transport/grant alt katmanı ilerledi; POLL/result worker orkestrasyonu, grant
+tüketimi, yeniden canlı kontrol sonrası bounded dosya yürütme, rollback, kesinti uzlaştırması,
+strict backup projection, imzalı teslim ve müşteri kabulü henüz kapanmadı. Bu geniş paketten
+takvim günü veya test sayısı otomatik düşülmedi. Diğer iş paketlerinde yeni saha/erişim ölçümü
+yok; aşağıdaki işgünü ve bağımlılık tablosu korunur.
+
+| Hedef | Kalan tahmin | Koşullu pencere |
+|---|---|---|
+| İlk küçük otomatik pilot | **2–3 hafta** | **12–19 Kasım 2026** |
+| 500/1000 teknik ölçek + tek hesap dahil temel ürün | **6–9 hafta** | **10–31 Aralık 2026** |
+| Temel sürüm seçeneği, kılavuz dahil | **7–10 hafta** | **17 Aralık 2026–7 Ocak 2027** |
+| Tüm kayıtlı geliştirmeler ve nihai kılavuz | **13–19 hafta** | **28 Ocak–11 Mart 2027** |
+
+Aktif saha temel kapsamda **20–30**, tüm kapsamda **30–45 saat**; ek **7–14 takvim günü** gözlem
+ayrı tutulur. Düzenli 5 gün/hafta ortak çalışma ve hazır test erişimi varsayılır. Dış yedek hedefi,
+restore VM, üretici API ve ölçek uçlarına erişim beklemelerinin son tarihi bilinmiyor.
+200 ürün kotası değildir; tek görev512 hedef sınırı korunur. 500/1000 teknik kabulü,
+tek hesap geçişi ve nihai operatör kabulü açıktır. Makro 54/94 ve 40 açık; guide bayrakları false.
+
+
 ## PR121 sonrası süre değerlendirmesi — 29 Ekim 2026
 
 Kaynak **50dcb7cc87de1e64bba720c99ed47fa42ed27083**: Windows stage-preclaim doğrulaması, canlı gözlemlerden yerel yol
@@ -133,7 +163,7 @@ Saha sütunu operatörün aktif oturum zamanını gösterir; günlük çalışma
 
 | İş | Şu anki durum / kalan kapsam | Tahmini çalışma | Aktif saha oturumu | Ön koşul / kapanış |
 |---|---|---:|---:|---|
-| 1. Onaylı staging/geri alma görevi | Dosya çekirdeği/protokol, HTTP durum/inceleme ve Windows stage-preclaim/yerel durable kayıt kaynakta test edildi. Gerçek transport/grant, dosya yürütücüsüne bağlama, rollback adapter ve kısmi kurtarma açık; create/peer kapalı | 4–7 iş günü | 1–2 saat | Aynı gMSA ile gerçek yazma, tekrar/kesinti ve güvenli geri alma kanıtı |
+| 1. Onaylı staging/geri alma görevi | Dosya çekirdeği/protokol, HTTP durum/inceleme, Windows preclaim ve bounded pinned CLAIM/kalıcı grant kaydı kaynakta test edildi. POLL/result worker akışı, grant tüketimi/dosya yürütücüsü, rollback adapter ve kısmi kurtarma açık; create/peer kapalı | 4–7 iş günü | 1–2 saat | Aynı gMSA ile gerçek yazma, tekrar/kesinti ve güvenli geri alma kanıtı |
 | 2. GPO etkinleştirme | Startup/uzantı/sürüm/link/çoğaltma ve kapsam koruması açık | 2–4 iş günü | 2–3 saat | İş1; ilk seçilmiş pilot PC'de doğal kurulum ve beklenen sertifika/ağ sonucu |
 | 3. Kullanıcı EAP-TLS | Sunucu/istemci/panel hazır. Gerçek kullanıcı deposu, Ethernet/Wi-Fi, kullanıcı VLAN ve kimlik geçişi kabulü açık | 2–4 iş günü | 2–4 saat | Kontrollü kullanıcı dağıtımı, en az iki farklı kullanıcıyla ret/izin ve yaşam döngüsü |
 | 4. Tek hesap standardı | gMSA Connector çalışıyor. AD katalog/canlı okuma ve Windows Kerberos acceptor taşınacak; eski bağımlılıklar kaldırılacak | 6–10 iş günü | 2–3 saat | Kimlik bütünlüğü, MIC/path/body/CSR bağı, replay/ret/kesinti testleri; eski hesapları ancak bağımlılık kanıtından sonra kaldırma |

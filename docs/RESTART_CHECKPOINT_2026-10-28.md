@@ -1,5 +1,72 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## Windows tek kullanımlık izin taşıması ve kalıcı yanıt kaydı kaynakta doğrulandı — 29 Ekim 2026
+
+**PR122**, merge **ce65c93bc03efb89f3f68b232b6f34bf9b11f9d9**, test edilen head **95b4776b1efe91cecc9cdec7d7314c49eb515609**.
+Windows SDK'sına ayrı bounded pinned HTTPS taşıması eklendi. Normal zincir/ad/geçerlilik/
+revocation kontrolüne ek olarak eşleştirilmiş leaf SHA256 pini zorunludur. Sabit üç write yolu
+dışında yol, HTTP, redirect, proxy/credential/cookie ve decompression kabul edilmez.
+İstek en çok 4 KiB, POLL yanıtı 32 KiB, CLAIM/RESULT yanıtı 4 KiB; başlık ve streamed body aynı
+5 saniyelik son süreye bağlıdır. Chunked/Content-Length'siz büyük yanıtlar da okuma sırasında sınırlanır.
+
+Gönderimden önce özel yerel offer/GPO lock/preflight/claim kayıtları native pin altında tekrar
+okunur. Mevcut SID/host/non-exportable machine key, gerçek imza, exact frame/path/binding/payload
+ve 5 saniyelik preflight/claim tazeliği doğrulanır. Önce **claim-sent.json CreateNew + Flush(true)**
+yazılır; bağlantı/TLS hatasında, kayıp/yanlış yanıtta veya receipt disk hatasında bu marker ve
+GPO kilidi kalır. SDK reload/restart ikinci gönderime izin vermez. Yeni proof/retry/unlock yoktur.
+Grant yanıtının exact tür/alan/request/job/intent/target/expiry/flags bilgileri eşleşmeden
+authorization.json yazılmaz. Gelen süre uzatılmaz. Kalıcı kayıt tamamlanmadan başarı döndürülmez.
+PowerShell bool→metin karşılaştırma dönüşümü offer/preflight/claim/grant kimliklerinde ayrıca reddedilir.
+
+**168 native WinPS5.1 kontrolü +18 Python/RSA çapraz kontrolü başarılı.**
+Geçici gerçek HTTPS + değiştirilmemiş SQLite CLAIM çekirdeği dört izin üretti: başarılı receipt,
+yanıt uyuşmazlığı, kayıp yanıt ve receipt disk hatası. Her izin core replay'i reddetti; her job
+için yalnız bir istemci HTTP gönderimi oldu. TLS güven/pin/ad, boyut, UTF8/media type ve header/body
+timeout testleri geçti. AD/candidate güncelliği ve pairing lookup testte açıkça simüledir; önceden
+leased test teklifleri seed edilir. Bu test gerçek yönetici enqueue, müşteri gMSA/AD/SMB kabulü değildir.
+**1123 testlik genel koşu başarılı (28 ortam atlaması, 335.306 saniye)**; dört CI workflow başarılı.
+İmzalı kalıcı SCM servis regresyonunun **85 kontrolü** de geçti. İlk fixture koşularındaki bellek
+hashtable/kalıcı JSON şekli ve beklenen dört audit/revizyon artışı karşılaştırmaları düzeltildi;
+strict kontroller gevşetilmedi, başarısız koşular tamamlanmış kabul edilmedi.
+
+**Kaynak GitHub main'e kaydedildi; müşteri Linux/DC01'e kurulmadı.**
+SDK kalıcı worker/paket listesine eklenmedi. Yalnız CLAIM orkestrasyonu vardır; POLL/result worker
+akışı, grant'ın tek kullanımlık tüketimi ve filesystem yürütücüsüne bağlanması henüz yoktur.
+Dönüşte GrantRecorded=true olsa da **FilesystemWriteEnabled=false / CanApplyGpo=false** kalır.
+Server create/yeni peer rotaları kapalıdır; GPO staging/activation ve cihaz dağıtımı başlamadı.
+Müşteri servis/AD/GPO/SYSVOL/key ACL/trust ayarı değiştirilmedi; yeni tam veri yedeği alınmadı.
+Son bilinen kurulu sürümler Linux **dev.44**, Windows **df28f70c**; bu adımda yeni canlı ölçüm yok.
+Ayrıntı **docs/STAGING_WRITE_TRANSPORT.md** ve
+**docs/checkpoints/2026-10-29-windows-write-claim-transport-source.json**.
+
+**Sıradaki açık işler:** POLL/result worker akışı, izni filesystem intent'ine bir kez bağlama,
+yeniden canlı AD/PDC/source/ACL kontrolüyle bounded stage; ayrı rollback/onay adapter'ı; kayıp
+yanıt/reboot journal uzlaştırması, partial recovery ve ayrı onaylı unlock; strict backup projection;
+imzalı teslim ve gerçek gMSA/AD/SMB kabulü. GPO activation ve uç kabulü ayrı kapanış kapılarıdır.
+Yeni boş journal kökü seçmek recovery değildir; aynı hazırlanmış güvenilir kök korunmalıdır.
+
+### Kalan süre yeniden değerlendirildi
+
+PR121 sonrası aralıklar korunur. CLAIM taşıması/kayıt alt katmanı ilerledi; tam yürütme/kurtarma,
+backup, teslim ve müşteri kabulü kapanmadığından takvim günü veya test sayısı otomatik düşülmedi.
+Tüm açık iş paketlerinin süre/bağımlılık tablosu **docs/reports/2026-10-29-process-forecast.md** içinde
+güncellendi; diğer işlerde yeni saha/erişim ölçümü yoktur.
+
+| Hedef | Kalan tahmin | Koşullu pencere |
+|---|---|---|
+| Yazma entegrasyonu ve kurtarma paketi | **4–7 aktif iş günü** | Worker/execution/recovery/teslim turlarına bağlı |
+| İlk küçük otomatik pilot | **2–3 hafta** | **12–19 Kasım 2026** |
+| 500/1000 teknik ölçek + tek hesap dahil temel ürün | **6–9 hafta** | **10–31 Aralık 2026** |
+| Yalnız temel sürüm seçilirse kılavuz dahil | **7–10 hafta** | **17 Aralık 2026–7 Ocak 2027** |
+| Tüm kayıtlı geliştirmeler ve nihai kılavuz | **13–19 hafta** | **28 Ocak–11 Mart 2027** |
+
+Temel aktif saha **20–30 saat**, tüm kapsam **30–45 saat**; ek **7–14 takvim günü** gözlem ayrı.
+Düzenli 5 gün/hafta ortak çalışma ve hazır test erişimi varsayılır. Dış yedek hedefi, restore VM,
+üretici API ve ölçek uçlarına erişim beklemelerinin son tarihi bilinmiyor. 512 tek-görev sınırı
+korundu; 200 ürün kotası değildir, 500/1000 teknik kabulü açıktır. Makro **54/94 tamam,40 açık**;
+**READY_FOR_FINAL_GUIDE=false / GUIDE_DELIVERED=false**.
+
+
 ## Windows görev ön kontrolü ve kalıcı CLAIM hazırlığı kaynakta doğrulandı — 29 Ekim 2026
 
 **PR121**, merge **f4f327769b22a985bbfc4223d39fe7bd5e5cbb5f**, test edilen head **50dcb7cc87de1e64bba720c99ed47fa42ed27083**.
