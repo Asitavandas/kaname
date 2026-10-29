@@ -225,7 +225,7 @@ namespace AuthWire.PreclaimFixture {
       try{$bad=Clone $receipt;$bad.$field=$true;[IO.File]::WriteAllText($receiptFile,($bad|ConvertTo-Json -Depth 12 -Compress));Reject {Read-AuthWireWriteAuthorization $j $o.job_id $b $release $rsa} 'saved authority identity/time fields do not coerce booleans'}finally{[IO.File]::WriteAllBytes($receiptFile,$receiptBytes)}
      }
      try{$bad=Clone $receipt;$bad.grant.expires_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-1;[IO.File]::WriteAllText($receiptFile,($bad|ConvertTo-Json -Depth 12 -Compress));Reject {Read-AuthWireWriteAuthorization $j $o.job_id $b $release $rsa} 'expired grant cannot produce a filesystem intent'}finally{[IO.File]::WriteAllBytes($receiptFile,$receiptBytes)}
-     $hard=Join-Path $root ('receipt-link-'+[guid]::NewGuid().ToString('N'));$null=New-Item -ItemType HardLink -Path $hard -Target $receiptFile
+     $hard=Join-Path $jobDir ('receipt-link-'+[guid]::NewGuid().ToString('N'));$null=New-Item -ItemType HardLink -Path $hard -Target $receiptFile
      try{Reject {Read-AuthWireWriteAuthorization $j $o.job_id $b $release $rsa} 'authorization hardlink refused'}finally{Remove-Item -LiteralPath $hard}
      try{Set-Content -LiteralPath $receiptFile -Stream hidden -Value x;Reject {Read-AuthWireWriteAuthorization $j $o.job_id $b $release $rsa} 'authorization alternate stream refused'}finally{Remove-Item -LiteralPath $receiptFile -Stream hidden}
      $originalIntentReader=${function:Read-AuthWireWriteIntentContext};$originalJournalWriter=${function:Write-AuthWireStagingJournal};$script:intentReads=0
