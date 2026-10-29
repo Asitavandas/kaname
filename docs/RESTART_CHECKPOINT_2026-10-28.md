@@ -1,5 +1,31 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## Gerçek hazırlık önizlemesi panelde doğrulandı — SYSVOL yazıcısı sonraki aşama — 29 Ekim 2026
+
+Operatör **Paket dosyaları ve geri alma sınırı** bölümünü iki ekran görüntüsüyle paylaştı.
+Kontrol zamanı **29.10.2026 11:36:38 Europe/Istanbul**. Mevcut birleşik aday için
+**20 dosya /102464 bayt** ve hedef **Machine/AuthWire-524653f5135946f584a546355bb82aff-v1-124360dc02e641fe6532f5058fa4915610f74d5c2de7028c5913d7cb9d431c5b** görüntülendi.
+20 satırın boyutları yeniden toplandı: **102464 bayt**.
+Önizleme SHA256 **76b22e299cc4c45b6d76e8d803862588a712d26cf08f7e49c0a37c7bdac62a5d**.
+Görüntülerdeki manifest/draft hashleri mevcut kabul edilen birleşik adayla eşleşiyor.
+
+Bu kayıt, gerçek müşteri Connector önizleme sonucunun panelde görüntülenmesine ilişkin operatör kanıtıdır.
+İncelenen UI bu ayrıntıları yalnız doğrulanmış preview sonucunda gösterir; worker mevcut gMSA hesabıyla çalışır.
+Bu kontrol sırasında raw job/imzalı payload alınmadı ve 20 kaynak dosyanın hashleri bağımsız yeniden hesaplanmadı.
+Ekran görüntüleri ve hashleri **docs/checkpoints/2026-10-29-customer-staging-preview-browser-accepted.json** içinde referanslandı.
+90 saniyelik güncellik süresi kalıcı değildir; ileride yazma işlemi için yeni güncel önizleme gerekecek.
+
+**Önizleme dosya yazmadı ve dağıtım yetkisi vermedi.** Yalnız yeni sürüm klasörünü kapsayan geri alma sınırı,
+sahiplik kaydı ve tam dosya/izin eşleşmesi koşulları panelde görünüyor.
+Linux **dev.44**, kabul edilen Windows **df28f70c**. Gerçek hazırlık önizlemesi/panel alt kabulü kaydedildi.
+Genel ürün tamamlanması değildir: **54/94 tamamlanan,40 açık** sayımı değişmedi; kılavuz bayrakları false.
+
+**Sıradaki iş:** güncel önizleme, açık yazma onayı, sahiplik journal'ı ve drift kontrolüyle sınırlı
+SYSVOL staging/geri alma yazıcısını kaynakta hazırlamak, incelemek ve test etmek.
+Bu yazıcı mevcut teslimatta yoktur; canlı SYSVOL'a kopyalama/silme komutu verilmedi.
+GPO link/startup/sürüm/çoğaltma aktivasyonu ve gerçek endpoint kabulü sonraki açık kapılardır.
+Yeni tam veri yedeği alınmadı; hesap sadeleştirme ve önceki ilk cf742 Apply iç hata incelemesi açık kalır.
+
 ## DC01 önizleme worker Apply başarılı — gerçek panel önizlemesi bekleniyor — 29 Ekim 2026
 
 Operatör **ToolVersion1.5.0 /Mode=Apply /Stage=applied /Upgrade.Phase=applied** sonucunun tamamını paylaştı.

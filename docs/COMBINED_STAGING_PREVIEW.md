@@ -1,6 +1,9 @@
 # Birleşik paket staging önizlemesi
 
-28 Ekim 2026. Kaynak bileşenidir; canlı worker'a/panele henüz yüklenmedi.
+İlk kaynak kaydı 28 Ekim 2026. Güncelleme 29 Ekim: Linux dev.44 ve Windows df28f70c teslim edildi;
+operatör 11:36:38 Europe/Istanbul zamanlı 20 dosya/102464 bayt hazırlık önizlemesini panelde görüntüledi.
+Kanıt: checkpoints/2026-10-29-customer-staging-preview-browser-accepted.json.
+Bu kabul yalnız salt okunur önizlemeyi kapsar; yazıcı/staging/geri alma ve GPO/endpoint uygulaması henüz yoktur.
 Bu modülde SYSVOL yazıcısı, dosya silme, GPO aktivasyonu veya yürütme token'ı yoktur.
 
 ## Tek işlem ve sabit kapsam

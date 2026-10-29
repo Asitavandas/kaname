@@ -1,0 +1,134 @@
+{
+  "event": "CUSTOMER_COMBINED_STAGING_PREVIEW_BROWSER_EVIDENCE_ACCEPTED",
+  "received_date": "2026-10-29",
+  "timezone": "Europe/Istanbul",
+  "evidence_type": "two_operator_screenshots_of_expanded_preview_details",
+  "connector_id": "4c23eebe-0715-46d1-88ee-a2e96ad7ee46",
+  "accepted_windows_release": "df28f70c-104e-4d6d-972c-e311d38adde6",
+  "plan_id": "524653f5-1359-46f5-84a5-46355bb82aff",
+  "plan_version": 1,
+  "manifest_sha256": "124360dc02e641fe6532f5058fa4915610f74d5c2de7028c5913d7cb9d431c5b",
+  "draft_sha256": "5dd35e4d28f6b6495223224f89d339c4cdd595099df5ac726b812238feca0ce5",
+  "observed_preview": {
+    "checked_at_local": "2026-10-29T11:36:38+03:00",
+    "relative_destination": "Machine/AuthWire-524653f5135946f584a546355bb82aff-v1-124360dc02e641fe6532f5058fa4915610f74d5c2de7028c5913d7cb9d431c5b",
+    "file_count": 20,
+    "total_bytes": 102464,
+    "preview_sha256": "76b22e299cc4c45b6d76e8d803862588a712d26cf08f7e49c0a37c7bdac62a5d",
+    "files": [
+      {
+        "path": "AuthWire-Combined-Manifest.ps1",
+        "bytes": 6286
+      },
+      {
+        "path": "README.txt",
+        "bytes": 251
+      },
+      {
+        "path": "enrollment/AuthWire-Client.ps1",
+        "bytes": 24346
+      },
+      {
+        "path": "enrollment/Install-AuthWire.ps1",
+        "bytes": 18015
+      },
+      {
+        "path": "enrollment/README.txt",
+        "bytes": 559
+      },
+      {
+        "path": "enrollment/SHA256SUMS.txt",
+        "bytes": 567
+      },
+      {
+        "path": "enrollment/config.json",
+        "bytes": 264
+      },
+      {
+        "path": "enrollment/https-trust.pem",
+        "bytes": 611
+      },
+      {
+        "path": "enrollment/issuer-ca.pem",
+        "bytes": 1517
+      },
+      {
+        "path": "enrollment/root-ca.pem",
+        "bytes": 1517
+      },
+      {
+        "path": "network-profiles.zip",
+        "bytes": 6110
+      },
+      {
+        "path": "network/README.txt",
+        "bytes": 590
+      },
+      {
+        "path": "network/WiFi-EAP-TLS.xml",
+        "bytes": 2500
+      },
+      {
+        "path": "network/Wired-EAP-TLS.xml",
+        "bytes": 2191
+      },
+      {
+        "path": "network/issuer-ca.pem",
+        "bytes": 1517
+      },
+      {
+        "path": "network/manifest.json",
+        "bytes": 722
+      },
+      {
+        "path": "network/plan.json",
+        "bytes": 2183
+      },
+      {
+        "path": "network/root-ca.pem",
+        "bytes": 1517
+      },
+      {
+        "path": "original-draft.zip",
+        "bytes": 29086
+      },
+      {
+        "path": "signed-manifest.json",
+        "bytes": 2115
+      }
+    ],
+    "rollback_text": "Only the newly created version directory; requires ownership journal and full file/ACL match. Stop on drift.",
+    "write_authority_granted": false
+  },
+  "screenshot_references": [
+    {
+      "library_file_id": "libfile_b2725c3d5fdc8191a781b0593eb67796",
+      "uploaded_name": "image(20261029-083758).png",
+      "bytes": 228332,
+      "sha256": "7239c0fd9be7cf993dd63f54c0801e4c006431fd445866f846e774739d235d2e"
+    },
+    {
+      "library_file_id": "libfile_56e727b4ebcc8191b6646bab6fc317fb",
+      "uploaded_name": "image(20261029-083833).png",
+      "bytes": 101654,
+      "sha256": "7d9acd4d5d397a21b38c7675c8726eb310690f70468302d828840314fc689615"
+    }
+  ],
+  "assessment": {
+    "real_customer_preview_displayed": true,
+    "operator_browser_preview_acceptance_evidence": true,
+    "gmsa_runtime_context": "Existing applied release uses VIZYONVERI\\aw-deploy$; preview details are rendered only for verified preview result in reviewed panel source.",
+    "all_20_displayed_sizes_sum_verified": true,
+    "raw_job_or_signed_payload_read_by_this_check": false,
+    "all_file_hashes_independently_recomputed": false,
+    "screenshot_freshness_not_permanent": true,
+    "preview_validity_seconds": 90,
+    "sysvol_written_by_preview": false,
+    "gpo_activated": false,
+    "endpoint_deployed": false,
+    "overall_completed": 54,
+    "overall_open": 40,
+    "new_data_backup_created": false
+  },
+  "next_step": "Implement/review/test the controlled SYSVOL staging and bounded rollback writer with fresh preview, explicit write approval, ownership journal and drift checks. No customer write command is available or authorized by this readonly preview."
+}
