@@ -55,7 +55,7 @@ def main():
         core = object.__new__(StagingWriteJobs)
         core.store = store; core.ops = ops; core.clock = time.time
         lock = threading.Lock(); metrics = {'claims': {}, 'grants': 0, 'replay_refused': 0,
-                                          'redirect_followed': 0}
+                                          'redirect_followed': 0, 'results': {}, 'result_bodies': {}, 'result_requests': {}}
         original_business = store.snapshot(); original_audit = store.audit()
 
         def claim(raw):
@@ -100,6 +100,23 @@ def main():
                 size = int(self.headers.get('Content-Length', '0'))
                 assert 0 < size <= 4096
                 raw = self.rfile.read(size)
+                if self.path == '/api/connector/v1/staging-write/result':
+                    envelope = json.loads(raw)
+                    frame = base64.b64decode(envelope['frame']).decode('ascii').splitlines()
+                    payload = json.loads(base64.b64decode(envelope['payload']))
+                    identity = payload['job_id']
+                    with lock:
+                        metrics['results'][identity] = metrics['results'].get(identity, 0)+1
+                        metrics['result_bodies'].setdefault(identity, []).append(payload)
+                        metrics['result_requests'].setdefault(identity, []).append(frame[10])
+                        reply = core.complete(raw)
+                    if case == 'grant_consume_ok' and metrics['results'][identity] == 1:
+                        self.close_connection = True; self.connection.shutdown(2); return
+                    if case == 'grant_consume_context': reply['request_id'] = '0'*64
+                    body = json.dumps(reply, separators=(',', ':')).encode('ascii')
+                    self.send_response(200); self.send_header('Content-Type', 'application/json')
+                    self.send_header('Content-Length', str(len(body))); self.send_header('Connection', 'close')
+                    self.end_headers(); self.wfile.write(body); self.close_connection = True; return
                 if self.path == '/must-not-follow':
                     metrics['redirect_followed'] += 1
                 if case == 'slow':
@@ -153,7 +170,7 @@ def main():
         try:
             subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-File',
                 str(Path(__file__).with_name('staging_write_preclaim_windows_check.ps1'))],
-                check=True, timeout=150, env=env)
+                check=True, timeout=210, env=env)
             check_wire(root/'wire.json')
             assert metrics['grants'] == metrics['replay_refused'] == 9
             assert len(metrics['claims']) == 9 and set(metrics['claims'].values()) == {1}
@@ -161,13 +178,22 @@ def main():
             after = store.snapshot()
             assert after['config'] == original_business['config']
             assert after['policies'] == original_business['policies']
-            assert after['revision'] == original_business['revision'] + 9
+            assert after['revision'] == original_business['revision'] + 14
             audit = store.audit()
-            assert len(audit) == len(original_audit) + 9
-            assert all(row['event'].startswith('staging_write_authorized:') for row in audit[:9])
+            assert len(audit) == len(original_audit) + 14
+            assert sum(row['event'].startswith('staging_write_authorized:') for row in audit) == 9
+            assert sum(row['event'].startswith('staging_write_result:') for row in audit) == 5
             with store.connect() as db:
                 jobs = core._read(db)['jobs']
-            assert len(jobs) == 9 and all(j['state'] == 'authorized' for j in jobs)
+            assert len(jobs) == 9
+            assert sum(j['state'] == 'authorized' for j in jobs) == 4
+            assert sum(j['state'] == 'requires_review' for j in jobs) == 5
+            assert len(metrics['results']) == 5 and sorted(metrics['results'].values()) == [1, 1, 1, 2, 3]
+            for identity, bodies in metrics['result_bodies'].items():
+                assert all(body == bodies[0] for body in bodies)
+                assert bodies[0]['outcome'] == 'requires_review'
+                assert len(set(metrics['result_requests'][identity])) == len(bodies)
+            metrics.pop('result_bodies'); metrics.pop('result_requests')
             print('AUTHWIRE_WRITE_TRANSPORT_WINDOWS_OK ' + json.dumps(metrics, sort_keys=True))
         finally:
             server.shutdown(); server.server_close(); thread.join(timeout=3)

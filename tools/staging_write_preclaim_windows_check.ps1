@@ -2,12 +2,12 @@
 $ErrorActionPreference='Stop';Set-StrictMode -Version 2
 $lib=Join-Path $PSScriptRoot '..\windows\connector'
 . (Join-Path $lib 'Test-AuthWireDeploymentCandidate.ps1') -LibraryOnly
-foreach($n in @('Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','ConnectorChannelTypes.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','Invoke-AuthWireCombinedJob.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','StagingFilesystem.ps1','StagingWritePreclaim.ps1','StagingWriteTransport.ps1','StagingWriteConsumption.ps1')){. (Join-Path $lib $n)}
+foreach($n in @('Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','ConnectorChannelTypes.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','Invoke-AuthWireCombinedJob.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','StagingFilesystem.ps1','StagingWritePreclaim.ps1','StagingWriteTransport.ps1','StagingWriteConsumption.ps1','StagingWriteExecution.ps1','StagingWriteResult.ps1')){. (Join-Path $lib $n)}
 $script:checks=0
 function Check($v,[string]$name){if(-not $v){throw ('PRECLAIM_FIXTURE:'+ $name)};$script:checks++}
 function Reject([scriptblock]$fn,[string]$name){$failed=$false;try{& $fn|Out-Null}catch{$failed=$true};Check $failed $name}
 function Clone($v){return ($v|ConvertTo-Json -Depth 12 -Compress|ConvertFrom-Json)}
-foreach($n in @('StagingWritePreclaim.ps1','Read-AuthWireStagingWritePreflight.ps1','StagingWriteTransport.ps1','StagingWriteConsumption.ps1')){
+foreach($n in @('StagingWritePreclaim.ps1','Read-AuthWireStagingWritePreflight.ps1','StagingWriteTransport.ps1','StagingWriteConsumption.ps1','StagingWriteResult.ps1')){
  $tokens=$null;$errors=$null;$a=[Management.Automation.Language.Parser]::ParseFile((Join-Path $lib $n),[ref]$tokens,[ref]$errors)
  Check ($errors.Count -eq 0) ('native parser '+$n)
  $calls=@($a.FindAll({param($node)$node -is [Management.Automation.Language.CommandAst]},$true)|ForEach-Object {$_.GetCommandName()})
@@ -262,6 +262,55 @@ namespace AuthWire.PreclaimFixture {
      . (Join-Path $lib 'StagingWriteConsumption.ps1')
      Reject {New-AuthWireAuthorizedFilesystemIntent $j $o.job_id $b $release $rsa} 'SDK reload cannot reset consumed grant'
      Check (Test-Path -LiteralPath (Join-Path $j ('gpo-'+$t.gpo_id+'.json'))) 'consumption keeps the same GPO lock'
+     if($case -ceq 'grant_consume_ok'){
+      $gateName='Local\AuthWireStage-'+([guid]$o.job_id).ToString('N')+'-'+[guid]::NewGuid().ToString('N')
+      $activeGate=[Threading.EventWaitHandle]::new($false,[Threading.EventResetMode]::AutoReset,$gateName)
+      $launchFile=Join-Path $jobDir 'stage-launch.json'
+      try{
+       Write-AuthWireStagingJournal $launchFile ([pscustomobject]@{gate_name=$gateName})
+       Reject {New-AuthWireWriteResultOutbox $j $o.job_id $b $release $rsa} 'active real kernel gate prevents outcome freezing'
+       Check (-not (Test-Path -LiteralPath (Join-Path $jobDir 'result-outbox.json'))) 'live stage result never frozen'
+      }finally{$activeGate.Dispose();Remove-Item -LiteralPath $launchFile}
+     }
+     if($case -ceq 'grant_consume_disk'){
+      $originalJournalWriter=${function:Write-AuthWireStagingJournal}
+      try{
+       function Write-AuthWireStagingJournal([string]$Path,$Value){if([IO.Path]::GetFileName($Path) -ceq 'result-outbox.json'){throw 'SIMULATED_OUTBOX_DISK_FAILURE'};& $originalJournalWriter $Path $Value}
+       Reject {Send-AuthWireWriteResult $j $o.job_id $b $release $rsa $url} 'outbox flush failure stops before signing or network'
+       Check (-not (Test-Path -LiteralPath (Join-Path $jobDir 'result-attempt-1.json'))) 'network attempt not reserved before durable outbox'
+      }finally{Set-Item Function:Write-AuthWireStagingJournal $originalJournalWriter}
+     }
+     $outbox=New-AuthWireWriteResultOutbox $j $o.job_id $b $release $rsa
+     Check ($outbox.body.outcome -ceq 'requires_review' -and $outbox.body.reason -ceq 'OUTCOME_UNKNOWN' -and $outbox.body.filesystem_effects -ceq 'unconfirmed') 'no observed execution never claims success or no filesystem effects'
+     $frozenHash=Get-AuthWireWriteHash $outbox
+     Check ((Get-AuthWireWriteHash (New-AuthWireWriteResultOutbox $j $o.job_id $b $release $rsa)) -ceq $frozenHash) 'outbox immutable across reconstruction'
+     $outboxFile=Join-Path $jobDir 'result-outbox.json';$outboxBytes=[IO.File]::ReadAllBytes($outboxFile)
+     foreach($field in @('job_id','authorization_id','checked_at','outcome','filesystem_effects')){
+      try{$bad=Clone $outbox;$bad.body.$field=$true;$bad.body_sha256=Get-AuthWireWriteHash $bad.body;[IO.File]::WriteAllText($outboxFile,($bad|ConvertTo-Json -Depth 12 -Compress));Reject {Read-AuthWireWriteResultOutbox $j $o.job_id $b $release $rsa} 'frozen result strict field types'}finally{[IO.File]::WriteAllBytes($outboxFile,$outboxBytes)}
+     }
+     $hard=Join-Path $jobDir 'outbox-link';$null=New-Item -ItemType HardLink -Path $hard -Target $outboxFile
+     try{Reject {Read-AuthWireWriteResultOutbox $j $o.job_id $b $release $rsa} 'outbox hardlink refused'}finally{Remove-Item -LiteralPath $hard}
+     try{Set-Content -LiteralPath $outboxFile -Stream hidden -Value x;Reject {Read-AuthWireWriteResultOutbox $j $o.job_id $b $release $rsa} 'outbox alternate stream refused'}finally{Remove-Item -LiteralPath $outboxFile -Stream hidden}
+     if($case -ceq 'grant_consume_ok'){
+      $code='';try{Invoke-AuthWireAuthorizedFilesystemStage $j $o.job_id $b $release $rsa|Out-Null}catch{$code=$_.Exception.Message}
+      Check ($code -ceq 'WRITE_EXECUTION_RESULT_ALREADY_FROZEN') 'frozen result closes stage before any launch'
+      Reject {Send-AuthWireWriteResult $j $o.job_id $b $release $rsa $url} 'server commit with lost ACK remains uncertain locally'
+      Check (-not (Test-Path -LiteralPath (Join-Path $jobDir 'result-accepted.json'))) 'lost ACK never fabricated locally'
+     }
+     if($case -ceq 'grant_consume_stale'){
+      $lateResult=@{root=$j;job=$o.job_id;binding=$b.Clone();offer=$o;hash=$frozenHash;expiry=$receipt.grant.expires_at}
+     }elseif($case -ceq 'grant_consume_context'){
+      foreach($n in 1..3){Reject {Send-AuthWireWriteResult $j $o.job_id $b $release $rsa $url} 'mismatched ACK never accepted even after server commit'}
+      $code='';try{Send-AuthWireWriteResult $j $o.job_id $b $release $rsa $url|Out-Null}catch{$code=$_.Exception.Message}
+      Check ($code -ceq 'WRITE_RESULT_ATTEMPT_LIMIT_REQUIRES_REVIEW') 'three durable attempts cap result retries across calls'
+      Check (-not (Test-Path -LiteralPath (Join-Path $jobDir 'result-accepted.json'))) 'wrong ACK never becomes accepted receipt'
+     }else{
+      $reply=Send-AuthWireWriteResult $j $o.job_id $b $release $rsa $url
+      Check ($reply.ResultRecorded -and -not $reply.AlreadyRecorded -and -not $reply.CanApplyGpo) 'real CNG TLS result accepted by real SQLite core'
+      . (Join-Path $lib 'StagingWriteResult.ps1')
+      Check ((Send-AuthWireWriteResult $j $o.job_id $b $release $rsa $url).AlreadyRecorded) 'reload with accepted receipt sends no extra request'
+      Check ((Get-AuthWireWriteHash (Read-AuthWireWriteResultOutbox $j $o.job_id $b $release $rsa)) -ceq $frozenHash) 'ACK retry preserves exact original body'
+     }
     }
    }else{
     $originalJournalWriter=${function:Write-AuthWireStagingJournal}
@@ -279,8 +328,6 @@ namespace AuthWire.PreclaimFixture {
    Check (Test-Path -LiteralPath (Join-Path $j ('gpo-'+$t.gpo_id+'.json'))) 'uncertain authorization retains durable GPO lock'
    $b=$savedBinding
   }
-  $webStore.Remove($webCert);$webAdded=$false
-  [IO.File]::WriteAllBytes($hosts,$hostBytes);$hostBytes=$null
  }
  $failedJournal=Join-Path $root 'failed-signing';$null=New-Item -ItemType Directory -Path $failedJournal
  $ja=Get-Acl -LiteralPath $failedJournal;$ja.SetAccessRuleProtection($true,$true);Set-Acl -LiteralPath $failedJournal -AclObject $ja
@@ -301,7 +348,7 @@ namespace AuthWire.PreclaimFixture {
  $gpoAfter=Get-AuthWireSysvolInventory $gpoRoot
  Check ($gpoAfter.Sha256 -ceq $inventory.Sha256) 'no GPO tree bytes or ACL changed'
  Check (@(Get-ChildItem -LiteralPath (Join-Path $gpoRoot 'Machine') -Force).Count -eq 0) 'no package staged or executed'
- foreach($name in @('ConnectorServicePackage.ps1','ConnectorServiceRuntime.ps1')){foreach($module in @('StagingWritePreclaim','StagingWriteTransport','StagingWriteConsumption')){Check (-not ([IO.File]::ReadAllText((Join-Path $lib $name))).Contains($module)) 'new source SDK not registered in active package/runtime'}}
+ foreach($name in @('ConnectorServicePackage.ps1','ConnectorServiceRuntime.ps1')){foreach($module in @('StagingWritePreclaim','StagingWriteTransport','StagingWriteConsumption','StagingWriteResult')){Check (-not ([IO.File]::ReadAllText((Join-Path $lib $name))).Contains($module)) 'new source SDK not registered in active package/runtime'}}
  Initialize-AuthWireChannelTypes
  if($env:AUTHWIRE_WRITE_WIRE_OUTPUT){$wire=[ordered]@{binding=$b;public_key_pem=[AuthWire.Connector.ChannelTypesV1]::PublicPem($rsa);target=$target;target_sha256=(Get-AuthWireWriteHash $target);offer=$offer;proofs=@(@{kind='POLL';proof=$poll},@{kind='CLAIM';proof=$proof},@{kind='RESULT';proof=$result})};[IO.File]::WriteAllText($env:AUTHWIRE_WRITE_WIRE_OUTPUT,($wire|ConvertTo-Json -Depth 15 -Compress),[Text.UTF8Encoding]::new($false))}
  # Genuine fixed AllSigned child: use only a disposable signed package with an
@@ -330,6 +377,21 @@ namespace AuthWire.PreclaimFixture {
  $slow=Join-Path $readerPackage 'bounded-fixture.ps1';[IO.File]::WriteAllText($slow,'Start-Sleep -Seconds 3');$null=Set-AuthenticodeSignature -FilePath $slow -Certificate $signer -HashAlgorithm SHA256
  $timer=[Diagnostics.Stopwatch]::StartNew();$read=[AuthWire.Connector.ScopeProcessV1]::Run($exe,('-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$slow+'"'),200);$timer.Stop()
  Check ($read.TimedOut -and $timer.ElapsedMilliseconds -lt 5000) 'actual AllSigned timeout is bounded'
+ if($env:AUTHWIRE_WRITE_TRANSPORT_DIRECTORY){
+  # All time-sensitive old tests have finished. Wait past the original grant,
+  # retaining its immutable body and proof history; no new CLAIM is permitted.
+  $remaining=[int][Math]::Max(1,$lateResult.expiry-[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+1)
+  Check ($remaining -le 31) 'expiry wait bounded'
+  Start-Sleep -Seconds $remaining
+  $b=$lateResult.binding;$j=$lateResult.root;$id=$lateResult.job
+  Reject {Read-AuthWireWriteAuthorization $j $id $b $release $rsa} 'expired grant cannot authorize execution'
+  Check ((Read-AuthWireWriteAuthorizationEvidence $j $id $b $release $rsa).Offer.job_id -ceq $id) 'expired authority readable only as historical evidence'
+  [IO.File]::WriteAllText((Join-Path $td 'core-input.json'),(@{binding=$b;public_key_pem=[AuthWire.Connector.ChannelTypesV1]::PublicPem($rsa);offer=$lateResult.offer}|ConvertTo-Json -Depth 15 -Compress),[Text.UTF8Encoding]::new($false))
+  Check ((Send-AuthWireWriteResult $j $id $b $release $rsa $url).ResultRecorded) 'frozen result accepted after original write authority expires'
+  Check ((Get-AuthWireWriteHash (Read-AuthWireWriteResultOutbox $j $id $b $release $rsa)) -ceq $lateResult.hash) 'expiry never refreshes body or write authority'
+  $webStore.Remove($webCert);$webAdded=$false
+  [IO.File]::WriteAllBytes($hosts,$hostBytes);$hostBytes=$null
+ }
  Write-Host ('AUTHWIRE_WRITE_PRECLAIM_WINDOWS_OK checks='+$checks+' customer_ad_tested=false write_enabled=false claim_sent_to_disposable_fixture='+[bool]$env:AUTHWIRE_WRITE_TRANSPORT_DIRECTORY)
 }catch{
  Write-Host ('PRECLAIM_FIXTURE_FAILURE checks='+$checks+' stack='+$_.ScriptStackTrace)

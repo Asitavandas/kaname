@@ -91,6 +91,9 @@ function Assert-AuthWireWriteTarget($Target,[string]$Operation){
  }else{throw 'WRITE_OPERATION_REJECTED'}
 }
 function Assert-AuthWireWriteOffer($Offer,[hashtable]$Binding,[string]$Release,[string]$RequestId){
+ Assert-AuthWireWriteOfferAt $Offer $Binding $Release $RequestId ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
+}
+function Assert-AuthWireWriteOfferAt($Offer,[hashtable]$Binding,[string]$Release,[string]$RequestId,[long]$ObservedAt){
  Assert-AuthWireCandidateFields $Offer @('format','request_id','scope_sha256','job_id','operation','lease_id','intent_sha256','expires_at','target','write_authorized','can_apply_gpo')
  Assert-AuthWireCandidateGuid $Release
  $scope=Get-AuthWireJobScope $Binding
@@ -100,7 +103,7 @@ function Assert-AuthWireWriteOffer($Offer,[hashtable]$Binding,[string]$Release,[
  Assert-AuthWireCandidateGuid $Offer.job_id
  Assert-AuthWireWriteTarget $Offer.target $Offer.operation
  $intent='AuthWireStagingWriteIntentV1'+"`n"+$scope+"`n"+$Offer.job_id+"`n"+$Offer.operation+"`n"+(Get-AuthWireWriteHash $Offer.target)+"`n"
- $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+ $now=$ObservedAt
  if(-not (Test-AuthWireWriteHash $Offer.lease_id) -or $Offer.intent_sha256 -cne (Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes($intent))) -or
     $Offer.target.writer_release_id -cne $Release -or -not (Test-AuthWireWriteInteger $Offer.expires_at) -or $Offer.expires_at -le $now+5 -or $Offer.expires_at -gt $now+90){throw 'WRITE_OFFER_REJECTED'}
  if($Offer.operation -ceq 'combined.filesystem.stage.v1' -and ($Offer.target.preview_record.Preview.checked_at -gt $now -or $Offer.expires_at -gt $Offer.target.preview_record.Preview.expires_at)){throw 'WRITE_OFFER_REJECTED'}
@@ -180,6 +183,9 @@ function Save-AuthWireStagingWriteOffer($Offer,[hashtable]$Binding,[string]$Rele
  }finally{if($taken){$mutex.ReleaseMutex()};if($mutex){$mutex.Dispose()};$pin.Dispose()}
 }
 function Read-AuthWireStagingWriteOffer([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release){
+ return (Read-AuthWireStagingWriteOfferAt $JournalRoot $JobId $Binding $Release ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()))
+}
+function Read-AuthWireStagingWriteOfferAt([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[long]$ObservedAt){
  Assert-AuthWireCandidateGuid $JobId;Assert-AuthWireStagingJournalRoot $JournalRoot;Initialize-AuthWireStagingFilesystemTypes
  $pin=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
@@ -187,7 +193,7 @@ function Read-AuthWireStagingWriteOffer([string]$JournalRoot,[string]$JobId,[has
   $file=Join-Path $job 'offer.json';$pin.PinFile($file);$v=Read-AuthWireStagingJournal $file
   Assert-AuthWireCandidateFields $v @('format','binding_scope','release_id','offer')
   if($v.format -cne 'AuthWireWriteOfferV1' -or $v.binding_scope -cne (Get-AuthWireJobScope $Binding) -or $v.release_id -cne $Release -or $v.offer.job_id -cne $JobId){throw 'WRITE_LOCAL_RECORD_CHANGED'}
-  Assert-AuthWireWriteOffer $v.offer $Binding $Release $v.offer.request_id
+  Assert-AuthWireWriteOfferAt $v.offer $Binding $Release $v.offer.request_id $ObservedAt
   $lock=Join-Path $JournalRoot ('gpo-'+$v.offer.target.scope_target.gpo_id+'.json');$pin.PinFile($lock)
   $l=Read-AuthWireStagingJournal $lock;Assert-AuthWireCandidateFields $l @('format','job_id','intent_sha256')
   if($l.format -cne 'AuthWireWriteGpoLockV1' -or $l.job_id -cne $JobId -or $l.intent_sha256 -cne $v.offer.intent_sha256){throw 'WRITE_LOCAL_RECORD_CHANGED'}
