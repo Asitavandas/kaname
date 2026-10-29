@@ -105,7 +105,7 @@ expires after90s independently of directory freshness or user authorization.
   and CSR proof; define fail-closed behavior when AD/Connector is unavailable.
 - Scoped GPO jobs use only the prepared owned GPO and separately controlled
   publisher trust. Existing trust GPOs are not silently adopted/delegated.
-- Controlled pilot, outage/recovery/rollback and 200-device acceptance, then
+- Controlled pilot, outage/recovery/rollback and staged scale acceptance (200 is an initial checkpoint, not a product quota; 500/1000 technical validation is planned), then
   dependency-based retirement of old LDAP and HTTP account/SPN/keytab usage.
 
 No new AD account, private-key export, customer state mutation, service restart,

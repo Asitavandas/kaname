@@ -112,7 +112,7 @@ alınmaz; zamanlanmış işin devamına yetki varsayılmaz.
 3. 5–10 bilgisayarlık pilotta GPO/receipt, kullanıcı logon'u ve cihaz
    başlangıcı; Ethernet/Wi-Fi, user/machine geçişi, yanlış hedef reddi,
    kesinti ve geri alma. Gerçek cihaz çalışması pazartesiye bırakıldı.
-4. Doğrulanmış kademeli 200 kullanıcı/bilgisayar ölçeği.
+4. Kademeli ölçek kabulü: 200 ilk basamak,500/1000 teknik doğrulama hedefleri. Gerçek saha ve yük fixture kanıtı ayrı kaydedilir. Mevcut tek scope görevi512 hedefle sınırlı; güvenli parçalama/bütünlük/sonuç birleştirme henüz uygulanmadı. Ayrıntı: CAPACITY_AND_ACCEPTANCE.md.
 
 dev.34'te bu dört kapıdan hiçbiri tamamlanmış sayılmaz. Güncel durum
 CURRENT_STATUS.md dosyasındadır.

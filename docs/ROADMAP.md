@@ -1,5 +1,12 @@
 # AuthWire — güncel çalışma planı
 
+## 29 Ekim 2026 — raporlama ve ölçek açıklaması
+
+Her durum raporunda kalan süre yeniden hesaplanır: [raporlama kuralı](STATUS_REPORTING_RULES.md).
+200 bir ilk ölçek kabul basamağıdır; ürün kotası değildir. Mevcut scope görevi512 hedefle sınırlı;
+500/1000 teknik ölçek ve güvenli parçalama desteği açık iş olarak planlandı.
+[Kapasite/kabul ayrımı](CAPACITY_AND_ACCEPTANCE.md) ve [güncel süre tahmini](reports/2026-10-29-process-forecast.md).
+
 21 Ekim2026. Kurulu pilot sürümü0.14.0-dev.13'tür; policy butonunun geliştirme, teknik test ve canlı kurulum/yedek/restore/API kabulü tamam; 🔴✓operatör Etkin durum ve Devre dışı bırak butonu görünümünü doğruladı; gerçek policy toggle saha kabulü bekler. Ayrıntılı kanıtlar ve tarihli
 sonuçlar [CURRENT_STATUS.md](CURRENT_STATUS.md), işletim/kurtarma adımları
 [OPERATIONS_0_14_0.md](OPERATIONS_0_14_0.md) içindedir. Eski sürüm notları tarihsel

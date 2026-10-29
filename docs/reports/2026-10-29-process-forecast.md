@@ -1,19 +1,32 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## Aynı gün revizyonu — kapasite ve raporlama talebi
+
+Her durum raporunda kalan süre yeniden hesaplanacak; [raporlama kuralları](../STATUS_REPORTING_RULES.md).
+200 ürün kotası değildir. Mevcut tek scope/preview görevi512 hedefle sınırlıdır;1000 hedef için güvenli
+parçalama ve sonuç birleştirme henüz yoktur. [Kaynak incelemesi ve ölçek planı](../CAPACITY_AND_ACCEPTANCE.md).
+
+Ölçek paketine3–5 ek işgünü payı kondu: önceki2–4 gün yerine5–9 aktif işgünü.
+Bu nedenle ilk küçük pilot2–3 hafta korunurken ölçek kanıtlı temel kapanış5–8'den6–9 haftaya,
+tüm hedef kapsam12–18'den13–19 haftaya revize edildi. Bu ilerleme veya kapasite garantisi değildir.
+Temel saha eforu20–30 saat, tüm geliştirmelerle30–45 saat olarak yeniden planlandı.
+Sayı sınırları kodda yükseltilmedi; bu güncelleme yalnız plan/rapor kaydıdır.
+
+
 29 Ekim 2026 · Europe/Istanbul · planlama tahmini, teslim tarihi taahhüdü değildir.
 
 ## Yönetici özeti
 
 Mevcut düzenli çalışma temposu korunursa panelden ilk otomatik merkezi pilot dağıtımı ve dar uç kabulü için **2–3 hafta**;
-temel ürünün açık kabul kapıları ve tek hesap hedefi için **5–8 hafta**;
-nihai temel sürüm kılavuzu dahil teslimat için **6–9 hafta** planlıyorum.
-Kayıtlı yedi geliştirme paketi de kapsandığında toplam işlevsel kapsam için **12–18 hafta** daha gerçekçi bir aralıktır.
+temel ürünün açık kabul kapıları ve tek hesap hedefi için **6–9 hafta**;
+nihai temel sürüm kılavuzu dahil teslimat için **7–10 hafta** planlıyorum.
+Kayıtlı yedi geliştirme paketi de kapsandığında toplam işlevsel kapsam için **13–19 hafta** daha gerçekçi bir aralıktır.
 
 29 Ekim başlangıçlı koşullu takvim:
 - İlk otomatik merkezi pilot: **12–19 Kasım 2026**.
-- Temel ürünün işlevsel kabulü + tek hesap: **3–24 Aralık 2026**.
-- Bu temel sürümün kılavuzu dahil teslimi: **10–31 Aralık 2026**.
-- Bütün kayıtlı geliştirmeler ve nihai kılavuz: **21 Ocak–4 Mart 2027**.
+- Temel ürünün işlevsel kabulü + tek hesap: **10–31 Aralık 2026**.
+- Bu temel sürümün kılavuzu dahil teslimi: **17 Aralık 2026–7 Ocak 2027**.
+- Bütün kayıtlı geliştirmeler ve nihai kılavuz: **28 Ocak–11 Mart 2027**.
 
 Kullanıcının nihai hedefi tüm geliştirmeleri içerirse, temel sürüm kılavuzu tarihi yalnız ara sürüm seçeneğidir.
 Tek nihai kılavuz, gerçek hedef kapsam tamamlanıp operatör kabulü alındıktan sonra hazırlanır.
@@ -71,7 +84,7 @@ Saha sütunu operatörün aktif oturum zamanını gösterir; günlük çalışma
 | 5. Sertifika/AD olumsuz ve kurtarma | Expiry, yanlış issuer, rollover, silinmiş/kapalı hesap, AD kesintisi ve kalan retry çeşitleri | 3–5 iş günü | 3–4 saat | Ayrı test profili/uç; mevcut erişimi koruyan ret ve güvenli toparlanma |
 | 6. Accounting ve işletim kayıtları | Start/Stop/Interim, oturum ilişkisi, saklama/temizlik ve hata görünürlüğü | 3–5 iş günü | 1–2 saat | NAS desteği ve gerçek oturum verisi; kaynak-zaman ilişkisi ayrıca doğrulanır |
 | 7. Yedek/restore ve temiz appliance | Yerel yedek var; sunucu dışı kopya, gerçek boot restore, temiz import/bağımsız kimlik ve güncelleme geri dönüşü açık | 3–5 iş günü | 2–4 saat | Dış hedef ve ayrı VM; altyapı bekleme süresi hariç |
-| 8. Temel regresyon/kapasite | Kademeli yayılım, kalan panel/servis/güç senaryoları, kontrollü yük ve gözlem | 2–4 aktif iş günü + 7–14 takvim günü gözlem | 2–3 saat | Önce dar pilot; gerçek 200 uç yoksa sentetik yük gerçek 200 uç kabulünü kapatmaz |
+| 8. Temel regresyon/kapasite | 200/500/1000 teknik basamakları, 512 üstü güvenli görev parçalama/sonuç birleştirme, kademeli yayılım ve gözlem | 5–9 aktif iş günü + 7–14 takvim günü gözlem | 4–8 saat | İşlem sınırı toplam cihaz kotası değildir; gerçek saha ve sentetik/protokol yük kanıtları ayrı |
 | 9. G02/G03 ilk cihaz ailesi | Mod temelleri var. Gerçek cihaz okuma/uygulama/geri alma ve ilk üretici bulut bağlantısı açık | 6–12 iş günü | 3–5 saat | Kullanılabilir desteklenen resmi API ve erişim. İlk üretici/sınırlı model içindir; ek üreticiler yeniden tahmin edilir |
 | 10. G04 VLAN/port keşfi | Otomatik kaynak, tazelik, doğru port/SSID/cihaz eşleme | 3–5 iş günü | 1–2 saat | İş9 veya güvenilir cihaz okuma yolu |
 | 11. G05 tüm kimlik seçicileri | OU/Everyone ve tüm seçicilerin gerçek yetkilendirme/ret kapsamı | 2–4 iş günü | 1–2 saat | Gerçek AD ve kullanıcı/bilgisayar kimliği; kullanıcıdan bilgisayar hedefi tahmin edilmez |
@@ -87,9 +100,9 @@ yedi geliştirmenin tamamı için güven daha düşüktür.
 ## Canlı testler ne kadar sürer?
 
 - İlk otomatik pilot turu: hazırlıklar hazır olduğunda **2–4 saat aktif oturum**; genellikle 1–2 güne bölünür.
-- Temel ürünün kalan saha kabulleri: yaklaşık **15–25 saat aktif operatör katılımı**;
-  sonuç ve düzeltmelere göre **5–8 ayrı test gününe** dağılabilir; bu günlerde toplam yaklaşık 2–4 saat ayrılması varsayılır.
-- Yedi geliştirme ve cihaz/topoloji/öneri kabulleri de dahil: toplam yaklaşık **25–40 saat aktif saha çalışması**.
+- Temel ürünün kalan saha kabulleri: yaklaşık **20–30 saat aktif operatör katılımı**;
+  sonuç ve düzeltmelere göre **6–10 ayrı test gününe** dağılabilir; bu günlerde toplam yaklaşık 2–4 saat ayrılması varsayılır.
+- Yedi geliştirme ve cihaz/topoloji/öneri kabulleri de dahil: toplam yaklaşık **30–45 saat aktif saha çalışması**.
 - Buna ek olarak **7–14 takvim günü gözlem** planlanır; bu süre boyunca bilgisayar başında beklemek gerekmez.
   Yenileme, ağ geri dönüşü, otomatik görevler, audit ve veri kalitesi izlenir; geliştirme ile örtüşebilir.
 - Gözlemde hata çıkarsa ilgili test grubu düzeltmeden sonra tekrarlanır. Altyapı/cihaz erişimi beklemeleri
@@ -106,9 +119,9 @@ bazı expiry/olumsuz senaryolar için ayrı test profili veya ikinci uç, restor
 1. İlk hafta: onaylı staging/rollback görev akışı, canlı scope adapter'ı, kesinti kurtarma ve teknik testler.
 2. İkinci/üçüncü hafta: müşteri teslimatı, GPO aktivasyonu, ilk otomatik pilot ve uç regresyonu.
 3. Üçüncü–altıncı hafta: kullanıcı EAP-TLS, tek hesap AD/Kerberos taşınması, yaşam döngüsü ve işletim açıkları.
-4. Beşinci–sekizinci hafta: temel sürümün restore/kapasite/regresyon ve uzun gözlem kabullerini kapatma.
+4. Altıncı–dokuzuncu hafta: temel sürümün restore/kapasite/regresyon ve uzun gözlem kabullerini kapatma.
 5. Hedef yalnız temel sürümse: kabul sonrası 3–5 iş günü kılavuz ve son teslim.
-6. Hedef bütün geliştirmelerse: cihaz entegrasyonları → keşif → topoloji → öneri; toplam 12–18 hafta,
+6. Hedef bütün geliştirmelerse: cihaz entegrasyonları → keşif → topoloji → öneri; toplam 13–19 hafta,
    nihai kılavuz gerçek kapsam kabulünden sonra.
 
 Tamamlanma yalnız kaynağın yazılmasıyla verilmez: teknik test, müşteri kurulumu, gerçek uç kabulü,
