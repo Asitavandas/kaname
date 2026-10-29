@@ -88,7 +88,8 @@ to a temporary localhost SMB share. This does not test a real domain, customer
 gMSA, production SYSVOL name resolution or customer signing keys.
 
 Cases cover stage success, context drift, engine completion disk failure,
-incorrect engine result, launch-marker disk failure and a blocked child timeout.
+incorrect engine result, launch-marker/child-metadata disk failure, wrong child
+identity and a blocked child timeout.
 Every case checks retained locks and no relaunch after SDK reload. Exact source
 and SMB bytes/ACLs, real journals, key ACL preservation and cleanup of only unique
 fixture keys/trust/shares/directories are checked. Native CI evidence is recorded

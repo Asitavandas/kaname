@@ -51,6 +51,8 @@ function Write-AuthWireStagingJournal([string]$Path,$Value){
  $name=[IO.Path]::GetFileName($Path)
  if($fixture.case -ceq 'partial' -and $name -ceq 'complete.json'){throw 'FIXTURE_COMPLETION_DISK_FAILURE'}
  if($fixture.case -ceq 'launch_disk' -and $name -ceq 'stage-launch.json'){& $script:FixtureWriterBody $Path $Value;throw 'FIXTURE_LAUNCH_DISK_FAILURE'}
+ if($fixture.case -ceq 'metadata_disk' -and $name -ceq 'stage-child.json'){throw 'FIXTURE_CHILD_METADATA_DISK_FAILURE'}
+ if($fixture.case -ceq 'identity' -and $name -ceq 'stage-child.json'){$Value.process_id++}
  & $script:FixtureWriterBody $Path $Value
 }
 function Invoke-AuthWireStagingFilesystemStage {
@@ -92,7 +94,7 @@ function Invoke-AuthWireStagingFilesystemStage {
  if((Get-Service LanmanServer).Status -ne 'Running'){Start-Service LanmanServer;$startedServer=$true}
  $share='aw-stage-execution-'+[guid]::NewGuid().ToString('N');$null=New-SmbShare -Name $share -Path $shareDirectory -FullAccess ([Security.Principal.WindowsIdentity]::GetCurrent().Name)
  $outcomes=@()
- foreach($case in @('success','drift','partial','bad_result','launch_disk','timeout')){
+ foreach($case in @('success','drift','partial','bad_result','launch_disk','metadata_disk','identity','timeout')){
   $t=[pscustomobject][ordered]@{candidate_id=[guid]::NewGuid().ToString('D');network_candidate_id=[guid]::NewGuid().ToString('D');plan_id=[guid]::NewGuid().ToString('D');plan_version=1;gpo_id=[guid]::NewGuid().ToString('D');approval_sha256=('a'*64);network_manifest_sha256=('b'*64);manifest_sha256=('c'*64);draft_sha256=('d'*64);dependency_sha256=('e'*64);publisher_thumbprint=$signer.Thumbprint;machine_profile_id=[guid]::NewGuid().ToString('D');machine_profile_version=3;domain='lab.example';root_thumbprint=('f'*40);group_sid=($domainSid+'-1647');content_result_sha256=('2'*64);target_sids_sha256=('3'*64);target_count=1}
   $draft=[Text.Encoding]::ASCII.GetBytes('fixture never execute '+$case);$t.draft_sha256=Get-AuthWireCandidateHash $draft
   $source=Join-Path $candidateBase ($t.plan_id+'-v1-'+$t.draft_sha256+'-ab1a11c683810061');PrivateRoot $source
@@ -139,7 +141,7 @@ function Invoke-AuthWireStagingFilesystemStage {
    Check ($failure -ne '') ('failed stage surfaced '+$case)
    Check (-not (Test-Path -LiteralPath (Join-Path $job 'execution-observed.json'))) 'failed child never reported observed completion'
    if($case -cne 'launch_disk'){Check (Test-Path -LiteralPath (Join-Path $job 'execution-requires-review.json')) 'uncertain outcome recorded for review'}
-   if($case -cin @('drift','launch_disk','timeout')){Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $before.Sha256) 'refused or prewrite timeout preserves entire SMB baseline'}
+   if($case -cin @('drift','launch_disk','metadata_disk','identity','timeout')){Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $before.Sha256) 'refused or prewrite timeout preserves entire SMB baseline'}
    if($case -ceq 'partial'){
     Check (Test-Path -LiteralPath $destination) 'partial outcome never recursively cleaned'
     Check (Test-Path -LiteralPath (Join-Path (Join-Path $journal $reserved.FilesystemOperationId) 'intent.json')) 'actual engine intent retained on completion failure'
