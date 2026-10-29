@@ -1,5 +1,52 @@
 # AuthWire current work record
 
+## Yazma/geri alma görev protokolü kaynakta test edildi — HTTP/Windows entegrasyonu açık — 29 Ekim 2026
+
+**PR119** merge **0dab5f1c4e6e45487a98dfc3da5cd51b39dde05c**, test edilen head **4ddaa2dd31994c5be6ff0a2cf97a3a4413110820**.
+Yeni **staging_write_jobs.py** güvenilen yönetici çağıranı için ayrı, kalıcı bir yazma onay protokolüdür.
+Aktör/revizyon/ayrı yazma-silme ack metni; kabul edilmiş taze dosya önizlemesi, binding nesli,
+kapsam ve worker sürümü inceleme hash'ine bağlanır. Ayrı RSA POLL/CLAIM/RESULT amaç/yolları vardır.
+İş bir kez lease edilir; yalnız ayrı ve tek kullanımlı CLAIM en fazla30 saniyelik izin verir.
+Aynı/eşzamanlı CLAIM ikinci izni döndürmez. Yanıt kaybı, süre aşımı ve binding iptali belirsiz
+işi sessizce yeniden çalıştırmaz; aynı GPO inceleme bekler. Geri alma ayrı onayla önceki tamamlanmış
+stage journal/tree özetine bağlanır. Geç gelen kesinti kanıtı tutulabilir, fakat kilidi açmaz.
+
+**36 yeni gerçek SQLite/RSA testi /90 odaklı test geçti.** Altı CI workflow başarılı.
+**1111 testlik genel koşu başarılı (28 ortam atlaması)**; RADIUS, tarayıcı, Linux kaynak hazırlığı,
+istemci/Kerberos ve bounded retry regresyonları başarılı.
+İlk yerel fixture'da yanlış işlem ack'inin test üreticisinde erkenden KeyError vermesi ve yeniden
+pair sonrası eski adayın önce context kapısına takılması düzeltildi; yetki/kapsam kapıları gevşetilmedi.
+Kaynakta onay süresi sonrası kesinti kanıtını kaybetmeyen, kilidi koruyan ek yol da sınandı.
+
+**Bu katman server/API/panel veya Windows paketine kaydedilmedi; filesystem çekirdeğini çağırmıyor.**
+Actor UUID/ack kimlik doğrulama değildir. Gerçek HTTP çağıranında iki mevcut write yetkisi,
+oturum/Origin/CSRF zorunludur; adapter henüz yok. Peer sonucu disk attestation'ı veya müşteri kabulü değildir.
+Kısmi işlem uzlaştırma/temizleme ve güvenli resume/unblock açık. Yeni ledger'ın backup poll projection'ı da
+teslimat öncesi açık kapıdır; mevcut backup kodu yeni kaydı sessizce dışlamaz.
+512 hedef sınırı korunur.1000 hedef desteği bu değişiklikte tamamlanmadı; kapsam okuma parçaları,
+aynı GPO dosya yazmasını tekrar yürüten işler olarak tasarlanmayacak.
+
+**Sıradaki iş:** yetkili HTTP/panel akışı, bounded Windows CLAIM/live-scope adapter'ı ve yerel durable iş kaydı;
+ardından journal uzlaştırma/kısmi kurtarma ve strict backup projection, sonra müşteri teslim/kabulü.
+Canlı kabul edilen sürümler Linux **dev.44**, Windows **df28f70c**; bu kaynak çalışması müşteri
+Linux/DC01/AD/GPO/SYSVOL/servis/anahtar/sertifika ayarını değiştirmedi. Yeni tam yedek alınmadı.
+Ayrıntı **docs/STAGING_WRITE_PROTOCOL.md** ve **docs/checkpoints/2026-10-29-staging-write-protocol-source.json**.
+
+### Güncellenen kalan süre değerlendirmesi
+
+Önceki kapasite revizyonuna göre **süre bandı korunuyor**: bu kaynak alt katmanı tamamlandı,
+ancak canlı yazma entegrasyonu ve kurtarma kabulü kapanmadı; geçen saat/gün otomatik düşülmedi.
+| Hedef | Kalan tahmin | Koşullu pencere |
+|---|---|---|
+| Yazma entegrasyonu ve kurtarma paketi | **4–7 iş günü** | Çıktılar/erişim ve teslim turlarına bağlı |
+| İlk küçük otomatik merkezi pilot | **2–3 hafta** | **12–19 Kasım 2026** |
+| 500/1000 teknik ölçek kapısı dahil temel ürün + tek hesap | **6–9 hafta** | **10–31 Aralık 2026** |
+| Tüm kayıtlı geliştirmeler ve nihai kılavuz | **13–19 hafta** | **28 Ocak–11 Mart 2027** |
+
+Temel aktif saha **20–30 saat**, tüm geliştirmelerle **30–45 saat**; ek **7–14 takvim günü** gözlem.
+Ön koşul/altyapı/API beklemeleri ve ciddi bulgu halinde takvim yeniden değerlendirilir.
+Genel **54/94 tamamlanan,40 açık** ve kılavuz bayrakları false değişmedi.
+
 ## Raporlarda kalan süre ve kapasite ayrımı — 29 Ekim 2026
 
 Kullanıcı talebi kalıcı çalışma kuralı olarak **docs/STATUS_REPORTING_RULES.md** içine kaydedildi:

@@ -1,0 +1,142 @@
+{
+  "event": "STAGING_WRITE_PROTOCOL_SOURCE_TESTED",
+  "date": "2026-10-29",
+  "timezone": "Europe/Istanbul",
+  "pr": 119,
+  "source_head": "4ddaa2dd31994c5be6ff0a2cf97a3a4413110820",
+  "merge_commit": "0dab5f1c4e6e45487a98dfc3da5cd51b39dde05c",
+  "files": {
+    "kaname/staging_write_jobs.py": {
+      "bytes": 24767,
+      "sha256": "163999d27e1e7ea37fdfed5f96111ef6105e11c1c95dbe451b4ea2ab2f541f87"
+    },
+    "tests/test_staging_write_jobs.py": {
+      "bytes": 26612,
+      "sha256": "ec8ffe8c352e05174617b411c994ccfbb5034e671247f69971ceeed6015f7c6f"
+    },
+    "docs/STAGING_WRITE_PROTOCOL.md": {
+      "bytes": 5644,
+      "sha256": "641d47d3e617cbb9c50bdc5a77be13f6b8cfba5445274e69ed8cbbc66746b44a"
+    }
+  },
+  "validation": {
+    "new_sqlite_rsa_tests": 36,
+    "focused_tests_passed": 90,
+    "foundation": {
+      "run": 40857233656,
+      "job": 123391145304,
+      "tests": 1111,
+      "skipped": 28,
+      "conclusion": "success"
+    },
+    "workflows": [
+      {
+        "id": 40857233664,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40857233675,
+        "name": "KANAME Linux source preparation",
+        "conclusion": "success"
+      },
+      {
+        "id": 40857233656,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40857233702,
+        "name": "KANAME real RADIUS protocol proof",
+        "conclusion": "success"
+      },
+      {
+        "id": 40857233601,
+        "name": "AuthWire device enrollment pilot checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 40857233615,
+        "name": "KANAME browser checks",
+        "conclusion": "success"
+      }
+    ],
+    "real_customer_ad_or_filesystem_tested": false
+  },
+  "implemented": [
+    "Actor/revision/explicit operation acknowledgement and exact accepted-preview review binding.",
+    "One-off lease and RSA purpose-separated POLL/CLAIM/RESULT; replayed/concurrent CLAIM cannot return a second write grant.",
+    "Target, worker release and binding generation pins; lost authorization response holds a per-GPO uncertainty lock.",
+    "Separate rollback approval binds a completed stage journal and tree digest.",
+    "Idempotent outcome recording, bounded late interruption evidence, audit/state transaction atomicity and old-generation uncertainty retention.",
+    "Bounded 1MiB ledger, 32 durable job IDs and 128 transport nonces; no automatic job-ID pruning."
+  ],
+  "boundaries": {
+    "source_only": true,
+    "http_routes_registered": false,
+    "admin_actor_uuid_is_authentication": false,
+    "both_admin_permissions_session_origin_csrf_still_required": true,
+    "windows_write_proof_or_execution_adapter_delivered": false,
+    "filesystem_core_invoked": false,
+    "partial_reconciliation_cleanup_implemented": false,
+    "new_backup_projection_implemented": false,
+    "existing_512_target_bound_changed": false,
+    "capacity_500_or_1000_verified": false,
+    "can_apply_gpo": false,
+    "customer_linux_or_windows_changed": false,
+    "customer_ad_gpo_sysvol_changed": false,
+    "customer_services_keys_trust_changed": false,
+    "new_full_backup_created": false
+  },
+  "open_gates": [
+    "Authenticated HTTP/panel review/create/status with both current permissions, session, Origin/CSRF and revision controls.",
+    "Bounded signed Windows claim/proof adapter, trusted path derivation, local durable job record and fresh AD/PDC/GPO/signature checks before filesystem stage/rollback.",
+    "Read-only journal reconciliation and separately authorized partial cleanup/resume/unblock; no DB-row deletion shortcut.",
+    "Strict backup transport projection before any live queue rollout; retain every approval/authorization/target/result in backup business data.",
+    "Signed customer delivery and real gMSA SMB stage/rollback acceptance; separate GPO activation and endpoint gates.",
+    "500/1000 scope collection/aggregation still open; batching must not duplicate the same physical GPO staging write."
+  ],
+  "forecast_review": {
+    "date": "2026-10-29",
+    "previous_source": "f964a19be0291c658800307d8e56db33c07cc1ed",
+    "write_integration_remaining_workdays": [
+      4,
+      7
+    ],
+    "first_small_pilot_remaining_weeks": [
+      2,
+      3
+    ],
+    "base_with_scale_remaining_weeks": [
+      6,
+      9
+    ],
+    "all_scope_remaining_weeks": [
+      13,
+      19
+    ],
+    "base_operator_hours": [
+      20,
+      30
+    ],
+    "all_operator_hours": [
+      30,
+      45
+    ],
+    "observation_calendar_days": [
+      7,
+      14
+    ],
+    "changed": false,
+    "reason": "One source-only protocol sublayer is complete, but HTTP authorization, live Windows adapter, uncertain-outcome recovery, backup projection and customer acceptance remain. No elapsed calendar day was blindly subtracted and no new customer acceptance closed.",
+    "conditional_windows": {
+      "first_pilot": "2026-11-12..2026-11-19",
+      "base": "2026-12-10..2026-12-31",
+      "all": "2027-01-28..2027-03-11"
+    }
+  },
+  "overall_completed": 54,
+  "overall_open": 40,
+  "ready_for_final_guide": false,
+  "guide_delivered": false
+}

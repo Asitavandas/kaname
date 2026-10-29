@@ -1,5 +1,16 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## PR119 sonrası süre değerlendirmesi — 29 Ekim 2026
+
+Yazma/geri alma protokolünün kaynak katmanı36 yeni test ve altı CI workflow ile doğrulandı;
+[ayrıntılı kayıt](../checkpoints/2026-10-29-staging-write-protocol-source.json).
+Yetkili HTTP/panel, canlı Windows scope/CLAIM, yerel durable kayıt, belirsiz sonuç uzlaştırma,
+kısmi kurtarma ve backup projection henüz açık olduğundan yazma entegrasyonu bandı **4–7 iş günü**
+olarak korunur. Alt katman ilerlemesi tam müşteri kabulü sayılmadı; geçen saat/gün otomatik düşülmedi.
+İlk küçük pilot **2–3 hafta**, ölçek kapılı temel ürün **6–9 hafta**, tüm kapsam **13–19 hafta**.
+Aktif saha **20–30 /30–45 saat**, gözlem **7–14 takvim günü**; önceki koşullu tarihler değişmedi.
+
+
 ## Aynı gün revizyonu — kapasite ve raporlama talebi
 
 Her durum raporunda kalan süre yeniden hesaplanacak; [raporlama kuralları](../STATUS_REPORTING_RULES.md).
@@ -77,7 +88,7 @@ Saha sütunu operatörün aktif oturum zamanını gösterir; günlük çalışma
 
 | İş | Şu anki durum / kalan kapsam | Tahmini çalışma | Aktif saha oturumu | Ön koşul / kapanış |
 |---|---|---:|---:|---|
-| 1. Onaylı staging/geri alma görevi | Çekirdek hazır. Yetkili panel/API işi, bounded worker, canlı AD/GPO kontrolü, idempotency ve kısmi işlem kurtarması açık | 4–7 iş günü | 1–2 saat | Aynı gMSA ile gerçek yazma, tekrar/kesinti ve güvenli geri alma kanıtı |
+| 1. Onaylı staging/geri alma görevi | Dosya çekirdeği ve tek kullanımlı görev protokolü kaynakta test edildi. Yetkili HTTP/panel, Windows adapter, canlı AD/GPO ve kısmi işlem kurtarması açık | 4–7 iş günü | 1–2 saat | Aynı gMSA ile gerçek yazma, tekrar/kesinti ve güvenli geri alma kanıtı |
 | 2. GPO etkinleştirme | Startup/uzantı/sürüm/link/çoğaltma ve kapsam koruması açık | 2–4 iş günü | 2–3 saat | İş1; ilk seçilmiş pilot PC'de doğal kurulum ve beklenen sertifika/ağ sonucu |
 | 3. Kullanıcı EAP-TLS | Sunucu/istemci/panel hazır. Gerçek kullanıcı deposu, Ethernet/Wi-Fi, kullanıcı VLAN ve kimlik geçişi kabulü açık | 2–4 iş günü | 2–4 saat | Kontrollü kullanıcı dağıtımı, en az iki farklı kullanıcıyla ret/izin ve yaşam döngüsü |
 | 4. Tek hesap standardı | gMSA Connector çalışıyor. AD katalog/canlı okuma ve Windows Kerberos acceptor taşınacak; eski bağımlılıklar kaldırılacak | 6–10 iş günü | 2–3 saat | Kimlik bütünlüğü, MIC/path/body/CSR bağı, replay/ret/kesinti testleri; eski hesapları ancak bağımlılık kanıtından sonra kaldırma |
