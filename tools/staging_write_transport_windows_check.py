@@ -56,7 +56,7 @@ def main():
         core.store = store; core.ops = ops; core.clock = time.time
         lock = threading.Lock(); metrics = {'claims': {}, 'grants': 0, 'replay_refused': 0,
                                           'redirect_followed': 0}
-        original_business = store.snapshot()
+        original_business = store.snapshot(); original_audit = store.audit()
 
         def claim(raw):
             data = json.loads((root/'core-input.json').read_text(encoding='utf-8-sig'))
@@ -157,7 +157,13 @@ def main():
             assert metrics['grants'] == metrics['replay_refused'] == 4
             assert len(metrics['claims']) == 4 and set(metrics['claims'].values()) == {1}
             assert not metrics['redirect_followed']
-            assert store.snapshot() == original_business
+            after = store.snapshot()
+            assert after['config'] == original_business['config']
+            assert after['policies'] == original_business['policies']
+            assert after['revision'] == original_business['revision'] + 4
+            audit = store.audit()
+            assert len(audit) == len(original_audit) + 4
+            assert all(row['event'].startswith('staging_write_authorized:') for row in audit[:4])
             with store.connect() as db:
                 jobs = core._read(db)['jobs']
             assert len(jobs) == 4 and all(j['state'] == 'authorized' for j in jobs)

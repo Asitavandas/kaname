@@ -80,6 +80,16 @@ function Assert-AuthWireStoredWriteClaim($Proof,$Started,$Offer,[hashtable]$Bind
     -not (Test-AuthWireWriteInteger $Started.checked_at) -or $Started.checked_at -gt $now -or $now-$Started.checked_at -gt 5){throw 'WRITE_CLAIM_RECORD_STALE'}
  $names=@('instance_id','connector_id','generation','host_guid','host_fqdn','service_sid','appliance_fqdn','appliance_tls_sha256','channel_key_sha256')
  if($Binding.Count -ne 9 -or @($names|Where-Object{-not $Binding.ContainsKey($_)}).Count){throw 'WRITE_CLAIM_RECORD_REJECTED'}
+ foreach($n in @('instance_id','connector_id','host_guid')){Assert-AuthWireCandidateGuid $Binding[$n]}
+ if(($Binding.generation -isnot [int] -and $Binding.generation -isnot [long]) -or $Binding.generation -lt 1 -or $Binding.generation -gt 2147483647){throw 'WRITE_CLAIM_RECORD_REJECTED'}
+ foreach($n in @('host_fqdn','appliance_fqdn')){
+  $v=$Binding[$n]
+  if($v -isnot [string] -or $v.Length -gt 253 -or $v -cne $v.ToLowerInvariant() -or $v.Split('.').Count -lt 2){throw 'WRITE_CLAIM_RECORD_REJECTED'}
+  foreach($label in $v.Split('.')){if($label -cnotmatch '\A[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\z'){throw 'WRITE_CLAIM_RECORD_REJECTED'}}
+ }
+ if($Binding.service_sid -isnot [string] -or $Binding.service_sid -cnotmatch '\AS-1-5-21-(?:[1-9][0-9]{0,9}-){3}[1-9][0-9]{0,9}\z'){throw 'WRITE_CLAIM_RECORD_REJECTED'}
+ foreach($part in $Binding.service_sid.Split('-')[4..7]){if([long]$part -gt 4294967295){throw 'WRITE_CLAIM_RECORD_REJECTED'}}
+ foreach($n in @('appliance_tls_sha256','channel_key_sha256')){if(-not (Test-AuthWireWriteHash $Binding[$n])){throw 'WRITE_CLAIM_RECORD_REJECTED'}}
  $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
  try{$sid=$identity.User.Value}finally{$identity.Dispose()}
  $keyPolicy=$Key.Key

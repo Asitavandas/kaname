@@ -140,6 +140,8 @@ namespace AuthWire.PreclaimFixture {
  $started=Read-AuthWireStagingJournal (Join-Path (Join-Path $journal $offer.job_id) 'claim-started.json')
  $storedProof=Clone $proof
  $claimRequest=Assert-AuthWireStoredWriteClaim $storedProof $started $offer $b $release $rsa
+ $wrongBinding=$b.Clone();$wrongBinding.generation='1';Reject {Assert-AuthWireStoredWriteClaim $storedProof $started $offer $wrongBinding $release $rsa} 'stored frame cannot hide a string generation in local binding'
+ $wrongBinding=$b.Clone();$wrongBinding.extra='x';Reject {Assert-AuthWireStoredWriteClaim $storedProof $started $offer $wrongBinding $release $rsa} 'stored claim binding has exact fields'
  $sent=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
  $grant=[pscustomobject]@{format=1;request_id=$claimRequest;job_id=$offer.job_id;operation=$offer.operation;intent_sha256=$offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $target);authorization_id=('7'*64);expires_at=($sent+30);write_authorized=$true;can_apply_gpo=$false}
  Assert-AuthWireWriteGrant $grant $offer $claimRequest $sent;Check $true 'strict grant response accepted without executing it'
