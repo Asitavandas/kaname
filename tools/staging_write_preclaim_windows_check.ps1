@@ -138,7 +138,8 @@ namespace AuthWire.PreclaimFixture {
  Reject {New-AuthWireStagingWriteClaim $journal $offer.job_id $b $release $rsa} 'module reload does not reset durable claim'
  # Exact receipt schema and native proof verification; no network needed here.
  $started=Read-AuthWireStagingJournal (Join-Path (Join-Path $journal $offer.job_id) 'claim-started.json')
- $claimRequest=Assert-AuthWireStoredWriteClaim $proof $started $offer $b $release $rsa
+ $storedProof=Clone $proof
+ $claimRequest=Assert-AuthWireStoredWriteClaim $storedProof $started $offer $b $release $rsa
  $sent=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
  $grant=[pscustomobject]@{format=1;request_id=$claimRequest;job_id=$offer.job_id;operation=$offer.operation;intent_sha256=$offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $target);authorization_id=('7'*64);expires_at=($sent+30);write_authorized=$true;can_apply_gpo=$false}
  Assert-AuthWireWriteGrant $grant $offer $claimRequest $sent;Check $true 'strict grant response accepted without executing it'
@@ -151,7 +152,7 @@ namespace AuthWire.PreclaimFixture {
  $v=Clone $proof;$v.payload=[Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes('{}'));Reject {Assert-AuthWireStoredWriteClaim $v $started $offer $b $release $rsa} 'stored payload substitution rejected'
  $v=Clone $proof;$v.signature=[Convert]::ToBase64String((New-Object byte[] 384));Reject {Assert-AuthWireStoredWriteClaim $v $started $offer $b $release $rsa} 'stored signature independently verified'
  $v=Clone $proof;$v.frame+="`n";Reject {Assert-AuthWireStoredWriteClaim $v $started $offer $b $release $rsa} 'noncanonical stored base64 rejected'
- $v=Clone $started;$v.checked_at=$sent-6;Reject {Assert-AuthWireStoredWriteClaim $proof $v $offer $b $release $rsa} 'stale claim cannot be transmitted later'
+ $v=Clone $started;$v.checked_at=$sent-6;Reject {Assert-AuthWireStoredWriteClaim $storedProof $v $offer $b $release $rsa} 'stale claim cannot be transmitted later'
  if($env:AUTHWIRE_WRITE_TRANSPORT_DIRECTORY){
   Initialize-AuthWireWriteTransportTypes;Initialize-AuthWireChannelTypes
   $url='https://'+$b.appliance_fqdn+':'+$web.port+'/'
@@ -259,6 +260,9 @@ namespace AuthWire.PreclaimFixture {
  $timer=[Diagnostics.Stopwatch]::StartNew();$read=[AuthWire.Connector.ScopeProcessV1]::Run($exe,('-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$slow+'"'),200);$timer.Stop()
  Check ($read.TimedOut -and $timer.ElapsedMilliseconds -lt 5000) 'actual AllSigned timeout is bounded'
  Write-Host ('AUTHWIRE_WRITE_PRECLAIM_WINDOWS_OK checks='+$checks+' customer_ad_tested=false write_enabled=false claim_sent_to_disposable_fixture='+[bool]$env:AUTHWIRE_WRITE_TRANSPORT_DIRECTORY)
+}catch{
+ Write-Host ('PRECLAIM_FIXTURE_FAILURE checks='+$checks+' stack='+$_.ScriptStackTrace)
+ throw
 }finally{
  if($hostBytes -and $hosts){[IO.File]::WriteAllBytes($hosts,$hostBytes)}
  if($webAdded){$webStore.Remove($webCert)}
