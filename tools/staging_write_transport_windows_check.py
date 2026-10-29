@@ -102,7 +102,7 @@ def main():
                 raw = self.rfile.read(size)
                 if self.path == '/api/connector/v1/staging-write/result':
                     envelope = json.loads(raw)
-                    frame = base64.b64decode(envelope['frame']).decode('ascii').split('\\n')
+                    frame = base64.b64decode(envelope['frame']).decode('ascii').splitlines()
                     payload = json.loads(base64.b64decode(envelope['payload']))
                     identity = payload['job_id']
                     with lock:
