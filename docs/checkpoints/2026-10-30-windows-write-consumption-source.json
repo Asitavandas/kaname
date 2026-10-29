@@ -1,0 +1,240 @@
+{
+  "event": "WINDOWS_WRITE_GRANT_CONSUMPTION_SOURCE_CHECKPOINT",
+  "date_local": "2026-10-30",
+  "test_date_local": "2026-10-29",
+  "timezone": "Europe/Istanbul",
+  "repository": "Asitavandas/kaname",
+  "pr": 123,
+  "base": "340025ba91d98d5c187323ca8c4651ed69673eb1",
+  "tested_head": "f0d83009fdc64d2b169ffe45ea96dc149561354f",
+  "merge_sha": "67daabaf4e6c48636eac98e77fb2b146f5143cc6",
+  "files": [
+    {
+      "path": "windows/connector/StagingWriteConsumption.ps1",
+      "bytes": 10321,
+      "sha256": "1d74cd35389d96adb3028595f6b40f6d9dbc8547e9208c59111cd3f248786ca4",
+      "git_blob_sha": "a81bff2bf4ee23eae8f1f6b5349e1d682f9fb045"
+    },
+    {
+      "path": "windows/connector/StagingWritePreclaim.ps1",
+      "bytes": 22120,
+      "sha256": "d6c1db202732f65b3791f88dd750969f73479effb602a6cf393cb0044164e49e",
+      "git_blob_sha": "1cdf322a59bbc8e1daa7956ba948f0ecba87925e"
+    },
+    {
+      "path": "windows/connector/StagingWriteTransport.ps1",
+      "bytes": 14607,
+      "sha256": "50ffa827891c9c3a90bb9aeaf49af4c96c071afd4017410a30bbfe38191a226a",
+      "git_blob_sha": "e6eedca3aac5014709750cb819db64d7847ef6cb"
+    },
+    {
+      "path": "tools/staging_write_preclaim_windows_check.ps1",
+      "bytes": 41350,
+      "sha256": "a97bea7c9c068eb8051d14fc231232d4ee8328e0c2effc01fe56d91930888787",
+      "git_blob_sha": "c3b87e01754c1bb307112322262119d5bafa3e07"
+    },
+    {
+      "path": "tools/staging_write_transport_windows_check.py",
+      "bytes": 9923,
+      "sha256": "8dab23132bac41a5fe472c54b1f89624835ce6c52f504d21500b61010c6c8646",
+      "git_blob_sha": "813d91d33510596b9a2f173313b0942db63bd31e"
+    },
+    {
+      "path": "docs/STAGING_WRITE_CONSUMPTION.md",
+      "bytes": 5428,
+      "sha256": "e6731f12a55a301ad583ba5974448ebe8bbabbcd530bac8b657f4e366f3cea64",
+      "git_blob_sha": "aea3fa9ee34f628eb85a57947b8410581a367101"
+    }
+  ],
+  "scope": "Saved authorization verification, fixed local journal root, one-use grant consumption and authorization-bound filesystem intent. Not an installed/complete stage executor.",
+  "validation": {
+    "native_checks": 297,
+    "python_rsa_wire_checks": 18,
+    "native_run_id": 40931972527,
+    "native_job_id": 123652473178,
+    "actual_disposable_cng_ntfs_and_pinned_https": true,
+    "unchanged_sqlite_claim_core": true,
+    "real_fixture_grants": 9,
+    "core_replays_refused": 9,
+    "http_attempts_per_job": 1,
+    "consumption_cases": 5,
+    "successful_filesystem_intents": 1,
+    "simulated_positive_ad_content_reader_observations": true,
+    "paired_binding_and_current_ad_lookup_stubbed": true,
+    "seeded_leased_offers": true,
+    "actual_fixed_allsigned_reader_negative_path": true,
+    "actual_customer_gmsa_ad_smb_tested": false,
+    "actual_reboot_tested": false,
+    "private_connector_key_exported": false,
+    "cases": [
+      "intent recorded after consumption",
+      "intent disk failure retains consumed marker",
+      "PDC/context drift retains consumed marker",
+      "simulated reader timeout retains consumed marker",
+      "pre-consumption observation refused",
+      "receipt hash/type/time tampering refused",
+      "authorization hardlink and ADS refused",
+      "duplicate and SDK reload never consume again",
+      "same GPO lock retained",
+      "alternate local store refused",
+      "original transport/native wire regressions"
+    ],
+    "initial_fixture_fixes": [
+      "Private ACL on new owned ProgramData test roots only",
+      "Authorization hardlink kept on its journal volume",
+      "Clock tests avoid second-boundary timing races without weakening guards"
+    ],
+    "general_suite": {
+      "tests": 1123,
+      "skipped": 28,
+      "seconds": 291.267,
+      "run_id": 40931972547,
+      "job_id": 123652473075
+    },
+    "windows_permanent_service_regression": {
+      "checks": 85,
+      "job_id": 123652473629,
+      "passed": true,
+      "customer_gmsa_tested": false
+    },
+    "all_four_ci_workflows_passed": true
+  },
+  "security": {
+    "source_sdk_only": true,
+    "authoritative_journal_root": "%ProgramData%\\AuthWire-WriteJournal-<connector GUID N>",
+    "journal_root_created_or_acl_changed_by_sdk": false,
+    "consumption_before_live_reader_and_intent": true,
+    "create_new_flush_true": true,
+    "atomic_one_use_marker": true,
+    "exact_original_receipt_claim_scope_release_and_hashes": true,
+    "historical_validation_never_renews_expiry": true,
+    "current_expiry_and_elapsed_use_budget": true,
+    "complete_reboot_clock_reconciliation_implemented": false,
+    "intent_reader_work_budget_ms": 8000,
+    "intent_reader_cleanup": "Existing bounded kill/drain waits up to3s each are additional to work budget.",
+    "paths_locally_derived_and_compared_with_preclaim": true,
+    "operation_id_is_locator_not_authorization": true,
+    "filesystem_engine_invoked": false,
+    "filesystem_completion_fabricated": false,
+    "automatic_retry_cleanup_unlock": false,
+    "permanent_worker_or_package_registered": false,
+    "server_create_or_peer_enabled": false,
+    "gpo_activation_enabled": false
+  },
+  "customer_changes": {
+    "linux_updated": false,
+    "windows_updated": false,
+    "ad_gpo_sysvol_changed": false,
+    "services_restarted": false,
+    "existing_keys_acls_or_trust_changed": false,
+    "full_backup_created": false,
+    "customer_gmsa_ad_smb_tested": false
+  },
+  "last_known_installed": {
+    "linux": "0.14.0-dev.44",
+    "windows_release": "df28f70c-104e-4d6d-972c-e311d38adde6",
+    "fresh_customer_read_this_step": false
+  },
+  "open_gates": [
+    "Consume exact saved intent into bounded stage child within original grant window; bind actual filesystem journal/result",
+    "POLL/result worker orchestration",
+    "Separate rollback preflight and approval adapter",
+    "Lost reply/reboot reconciliation, partial recovery and separately approved unlock",
+    "Strict backup projection retaining every business field",
+    "Signed Linux/Windows delivery and actual gMSA/AD/SMB acceptance before create/peer activation",
+    "Separate GPO activation, endpoint acceptance, single-account migration and500/1000 technical scale validation"
+  ],
+  "forecast": {
+    "remaining_stage_recovery_workdays": [
+      4,
+      7
+    ],
+    "first_pilot_weeks": [
+      2,
+      3
+    ],
+    "first_pilot_window": [
+      "2026-11-13",
+      "2026-11-20"
+    ],
+    "base_with_single_account_scale_weeks": [
+      6,
+      9
+    ],
+    "base_window": [
+      "2026-12-11",
+      "2027-01-01"
+    ],
+    "base_with_guide_weeks": [
+      7,
+      10
+    ],
+    "base_with_guide_window": [
+      "2026-12-18",
+      "2027-01-08"
+    ],
+    "all_scope_and_guide_weeks": [
+      13,
+      19
+    ],
+    "all_scope_window": [
+      "2027-01-29",
+      "2027-03-12"
+    ],
+    "base_active_operator_hours": [
+      20,
+      30
+    ],
+    "all_scope_operator_hours": [
+      30,
+      45
+    ],
+    "observation_calendar_days": [
+      7,
+      14
+    ],
+    "reassessed_on": "2026-10-30",
+    "comparison": "PR122 status dated2026-10-29",
+    "change": "Work ranges retained after consumption/intent source milestone. Full bounded stage, actual journal/result, rollback, recovery, backup, delivery and customer acceptance remain open. No calendar day or test count subtracted. Conditional date windows explicitly rebased from29 to30Oct (+1 calendar day), not silently shifted.",
+    "assumptions": "Regular joint work5 days/week, same-day operator outputs and available test access; not measured statistical velocity or background work.",
+    "unbounded_external_waits": [
+      "off-host backup",
+      "restore VM",
+      "vendor API",
+      "scale endpoints/access"
+    ]
+  },
+  "single_scope_target_limit": 512,
+  "two_hundred_is_product_quota": false,
+  "macro_completed": 54,
+  "macro_total": 94,
+  "macro_open": 40,
+  "READY_FOR_FINAL_GUIDE": false,
+  "GUIDE_DELIVERED": false,
+  "ci_workflows": [
+    {
+      "name": "KANAME foundation checks",
+      "run_id": 40931972547,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40931972547"
+    },
+    {
+      "name": "AuthWire bounded retry network probe checks",
+      "run_id": 40931972511,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40931972511"
+    },
+    {
+      "name": "AuthWire isolated write preclaim checks",
+      "run_id": 40931972527,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40931972527"
+    },
+    {
+      "name": "AuthWire Windows connector bootstrap checks",
+      "run_id": 40931972569,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40931972569"
+    }
+  ]
+}
