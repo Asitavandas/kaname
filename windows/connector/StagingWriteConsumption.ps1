@@ -86,12 +86,14 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
   if($op -ceq $JobId -or (Test-Path -LiteralPath (Join-Path $JournalRoot $op)) -or (Test-Path -LiteralPath (Join-Path $job 'filesystem-intent.json'))){throw 'WRITE_FILESYSTEM_JOURNAL_EXISTS_REQUIRES_REVIEW'}
   $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
   if($now -lt $a.Receipt.received_at -or $now -ge $a.Receipt.grant.expires_at){throw 'WRITE_AUTHORIZATION_EXPIRED'}
+  $useWatch=[Diagnostics.Stopwatch]::StartNew()
   $consumed=[pscustomobject][ordered]@{format='AuthWireWriteGrantConsumedV1';binding_scope=(Get-AuthWireJobScope $Binding);release_id=$Release;job_id=$JobId;authorization_sha256=$a.AuthorizationSha256;filesystem_operation_id=$op;consumed_at=$now;expires_at=$a.Receipt.grant.expires_at}
   # This atomic CreateNew + Flush(true) happens BEFORE another reader/process,
   # filesystem intent or future write. No automatic retry after this point.
   Write-AuthWireStagingJournal (Join-Path $job 'grant-consumed.json') $consumed
   $live=Read-AuthWireWriteIntentContext $JournalRoot $JobId $a.Offer $Binding $a.Receipt.grant.expires_at
   Assert-AuthWireWriteLiveContext $live $a.Offer $Binding
+  if($live.checked_at -lt $now -or [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -lt $now -or $useWatch.ElapsedMilliseconds -ge ($a.Receipt.grant.expires_at-$now)*1000){throw 'WRITE_INTENT_USE_CLOCK_REJECTED'}
   foreach($n in @('source_root','gpo_root','protected_gpo_id','pdc')){if($live.$n -cne $a.Preflight.$n){throw 'WRITE_INTENT_SCOPE_CHANGED'}}
   # Current signatures/AD/PDC/source/ACL observations must still match the
   # originally approved preview. Network paths never come from a grant field.
@@ -101,7 +103,8 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
   Write-AuthWireStagingJournal (Join-Path $job 'filesystem-intent.json') $intent
   # Persistence cannot extend the grant. An expired/uncertain saved intent is
   # retained for review and never reported as executable/completed staging.
-  if([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -ge $a.Receipt.grant.expires_at){throw 'WRITE_AUTHORIZATION_EXPIRED'}
+  $after=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+  if($after -lt $now -or $after -ge $a.Receipt.grant.expires_at -or $useWatch.ElapsedMilliseconds -ge ($a.Receipt.grant.expires_at-$now)*1000){throw 'WRITE_AUTHORIZATION_EXPIRED'}
   return [pscustomobject]@{JobId=$JobId;Phase='filesystem_intent_recorded';GrantConsumed=$true;FilesystemOperationId=$op;FilesystemIntentSha256=(Get-AuthWireWriteHash $intent);FilesystemWriteEnabled=$false;CanApplyGpo=$false}
  }finally{$pin.Dispose()}
 }

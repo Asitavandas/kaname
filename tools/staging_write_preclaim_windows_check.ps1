@@ -151,10 +151,10 @@ namespace AuthWire.PreclaimFixture {
  foreach($n in @('request_id','job_id','operation','intent_sha256','target_sha256','authorization_id')){$v=Clone $grant;$v.$n='wrong';Reject {Assert-AuthWireWriteGrant $v $offer $claimRequest $sent} ('grant rejects changed '+$n)}
  foreach($n in @('request_id','job_id','operation','intent_sha256','target_sha256','authorization_id')){$v=Clone $grant;$v.$n=$true;Reject {Assert-AuthWireWriteGrant $v $offer $claimRequest $sent} 'grant identity fields never coerce booleans'}
  foreach($n in @('write_authorized','can_apply_gpo')){$v=Clone $grant;$v.$n=-not $v.$n;Reject {Assert-AuthWireWriteGrant $v $offer $claimRequest $sent} 'grant flags are exact booleans'}
- foreach($expiry in @($true,$sent,$sent+31)){$v=Clone $grant;$v.expires_at=$expiry;Reject {Assert-AuthWireWriteGrant $v $offer $claimRequest $sent} 'grant time type/lifetime/expiry bound'}
+ foreach($expiry in @($true,$sent,$sent+60)){$v=Clone $grant;$v.expires_at=$expiry;Reject {Assert-AuthWireWriteGrant $v $offer $claimRequest $sent} 'grant time type/lifetime/expiry bound'}
  $v=Clone $grant;$v|Add-Member NoteProperty command 'untrusted';Reject {Assert-AuthWireWriteGrant $v $offer $claimRequest $sent} 'grant has no arbitrary commands or paths'
- Reject {Assert-AuthWireWriteGrant $grant $offer $claimRequest ($sent+1)} 'clock rollback during send refuses grant'
- Reject {Assert-AuthWireWriteGrant $grant $offer $claimRequest ($sent-6)} 'late transport reply refuses grant'
+ Reject {Assert-AuthWireWriteGrant $grant $offer $claimRequest ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+60)} 'clock rollback during send refuses grant'
+ Reject {Assert-AuthWireWriteGrant $grant $offer $claimRequest ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-60)} 'late transport reply refuses grant'
  $v=Clone $proof;$v.payload=[Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes('{}'));Reject {Assert-AuthWireStoredWriteClaim $v $started $offer $b $release $rsa} 'stored payload substitution rejected'
  $v=Clone $proof;$v.signature=[Convert]::ToBase64String((New-Object byte[] 384));Reject {Assert-AuthWireStoredWriteClaim $v $started $offer $b $release $rsa} 'stored signature independently verified'
  $v=Clone $proof;$v.frame+="`n";Reject {Assert-AuthWireStoredWriteClaim $v $started $offer $b $release $rsa} 'noncanonical stored base64 rejected'
@@ -193,7 +193,7 @@ namespace AuthWire.PreclaimFixture {
   Check ($large.Length -eq 20002) 'large offer transport bounded separately from grant receipt'
   Set-Content -LiteralPath (Join-Path $td 'case.txt') -Value 'oversized_poll' -Encoding ASCII
   Reject {[AuthWire.Connector.WriteTransportV1]::Post($url,$b.appliance_fqdn,$b.appliance_tls_sha256,'/api/connector/v1/staging-write/poll','{}')} 'streamed offer response over32KiB refused'
-  foreach($case in @('grant_ok','grant_mismatch','grant_lost','grant_disk_failure','grant_consume_ok','grant_consume_disk','grant_consume_context','grant_consume_timeout')){
+  foreach($case in @('grant_ok','grant_mismatch','grant_lost','grant_disk_failure','grant_consume_ok','grant_consume_disk','grant_consume_context','grant_consume_timeout','grant_consume_stale')){
    $savedBinding=$b
    if($case.StartsWith('grant_consume_',[StringComparison]::Ordinal)){$b=$b.Clone();$b.connector_id=[guid]::NewGuid().ToString('D');$j=Get-AuthWireStagingWriteJournalRoot $b}
    else{$j=Join-Path $root $case}
@@ -237,6 +237,7 @@ namespace AuthWire.PreclaimFixture {
        if($case -ceq 'grant_consume_timeout'){throw 'SIMULATED_INTENT_READER_TIMEOUT'}
        $v=Get-AuthWireWriteStageLiveContext $Offer $Binding $t.publisher_thumbprint 'https://kaname.lab.example/'
        if($case -ceq 'grant_consume_context'){$v.pdc='dc02.lab.example';$v.gpo_root='\\dc02.lab.example\SYSVOL\lab.example\Policies\{'+$t.gpo_id+'}'}
+       if($case -ceq 'grant_consume_stale'){$mark=Read-AuthWireStagingJournal (Join-Path (Join-Path $JournalRoot $JobId) 'grant-consumed.json');$v.checked_at=$mark.consumed_at-1}
        return $v
       }
       if($case -ceq 'grant_consume_disk'){

@@ -32,8 +32,11 @@ claim and preflight had to be fresh when sent, and the grant had to match the
 five-second transport window and thirty-second grant lifetime. This is not a new
 issuance or lease extension. Public live/transmission wrappers still use actual
 wall-clock time. At use, current wall-clock time must be at least the recorded
-receipt time and strictly before the original server expiry. A clock rollback,
-invalid timestamp/type, edited receipt/proof or expired grant fails closed.
+receipt time and strictly before the original server expiry. Time earlier than
+the saved receipt, invalid timestamps/types, edited proofs or expired grants fail
+closed. The use operation also keeps a monotonic elapsed-time budget and refuses
+a post-consumption observation earlier than its own consumption time. Complete
+post-reboot clock/recovery reconciliation remains a separate unfinished gate.
 
 ## Consume before another operation
 
@@ -68,10 +71,10 @@ root, removing a marker or re-creating the grant is not recovery.
 ## Test boundaries and remaining gates
 
 The hosted fixture uses real native CNG, NTFS records, pinned HTTPS and unchanged
-SQLite claim logic. Eight distinct grants are authorized; each core replay is
-refused and each job has one native HTTP attempt. Four grants cover successful
-consumption, intent disk failure, current-context drift and a simulated reader
-timeout. The positive live AD/content reader observation is explicitly simulated;
+SQLite claim logic. Nine distinct grants are authorized; each core replay is
+refused and each job has one native HTTP attempt. Five grants cover successful
+consumption, intent disk failure, current-context drift, a simulated reader
+timeout and a pre-consumption observation. The positive live AD/content reader observation is explicitly simulated;
 strict path derivation, receipt/signature verification and local persistence are
 real. The genuine fixed AllSigned child is also checked on its fail-closed invalid
 config path. Customer gMSA/AD/SMB acceptance is not claimed.
