@@ -73,10 +73,14 @@ function ConvertFrom-AuthWireWriteBase64($Value,[int]$Limit){
  return ,$raw
 }
 function Assert-AuthWireStoredWriteClaim($Proof,$Started,$Offer,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
+ return (Assert-AuthWireStoredWriteClaimAt $Proof $Started $Offer $Binding $Release $Key ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()))
+}
+function Assert-AuthWireStoredWriteClaimAt($Proof,$Started,$Offer,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[long]$ObservedAt){
+ # Historical receipt validation only. Transmission uses the wall-clock wrapper.
  Assert-AuthWireCandidateFields $Started @('format','job_id','intent_sha256','checked_at')
  Assert-AuthWireCandidateFields $Proof @('frame','signature','payload')
  foreach($n in @('format','job_id','intent_sha256')){if($Started.$n -isnot [string]){throw 'WRITE_CLAIM_RECORD_REJECTED'}}
- $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+ $now=$ObservedAt
  if($Started.format -cne 'AuthWireWriteClaimStartedV1' -or $Started.job_id -cne $Offer.job_id -or $Started.intent_sha256 -cne $Offer.intent_sha256 -or
     -not (Test-AuthWireWriteInteger $Started.checked_at) -or $Started.checked_at -gt $now -or $now-$Started.checked_at -gt 5){throw 'WRITE_CLAIM_RECORD_STALE'}
  $names=@('instance_id','connector_id','generation','host_guid','host_fqdn','service_sid','appliance_fqdn','appliance_tls_sha256','channel_key_sha256')
@@ -116,9 +120,13 @@ function Assert-AuthWireStoredWriteClaim($Proof,$Started,$Offer,[hashtable]$Bind
  return $f[10]
 }
 function Assert-AuthWireWriteGrant($Value,$Offer,[string]$RequestId,[long]$SentAt){
+ Assert-AuthWireWriteGrantAt $Value $Offer $RequestId $SentAt ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
+}
+function Assert-AuthWireWriteGrantAt($Value,$Offer,[string]$RequestId,[long]$SentAt,[long]$ReceivedAt){
+ # Validating a saved receipt does not renew its original server expiry.
  Assert-AuthWireCandidateFields $Value @('format','request_id','job_id','operation','intent_sha256','target_sha256','authorization_id','expires_at','write_authorized','can_apply_gpo')
  foreach($n in @('request_id','job_id','operation','intent_sha256','target_sha256','authorization_id')){if($Value.$n -isnot [string]){throw 'WRITE_GRANT_REJECTED'}}
- $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+ $now=$ReceivedAt
  if($Value.format -isnot [int] -or $Value.format -ne 1 -or -not (Test-AuthWireWriteHash $RequestId) -or $Value.request_id -cne $RequestId -or
     $Value.job_id -cne $Offer.job_id -or $Value.operation -cne $Offer.operation -or $Value.intent_sha256 -cne $Offer.intent_sha256 -or $Value.target_sha256 -cne (Get-AuthWireWriteHash $Offer.target) -or
     -not (Test-AuthWireWriteHash $Value.authorization_id) -or $Value.write_authorized -isnot [bool] -or -not $Value.write_authorized -or $Value.can_apply_gpo -isnot [bool] -or $Value.can_apply_gpo -or

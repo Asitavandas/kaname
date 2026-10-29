@@ -189,10 +189,14 @@ function Read-AuthWireStagingWriteOffer([string]$JournalRoot,[string]$JobId,[has
  }finally{$pin.Dispose()}
 }
 function Assert-AuthWireWriteLiveContext($Value,$Offer,[hashtable]$Binding){
+ Assert-AuthWireWriteLiveContextAt $Value $Offer $Binding ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
+}
+function Assert-AuthWireWriteLiveContextAt($Value,$Offer,[hashtable]$Binding,[long]$ObservedAt){
+ # Historical receipt validation only. Live callers use the wall-clock wrapper.
  $v=$Value;$t=$Offer.target.scope_target
  Assert-AuthWireCandidateFields $v @('format','job_id','intent_sha256','target_sha256','source_root','gpo_root','protected_gpo_id','pdc','checked_at','can_apply_gpo')
  foreach($n in @('format','job_id','intent_sha256','target_sha256','source_root','gpo_root')){if($v.$n -isnot [string]){throw 'WRITE_PREFLIGHT_REJECTED'}}
- $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+ $now=$ObservedAt
  if($v.format -cne 'AuthWireWriteLiveContextV1' -or $v.job_id -cne $Offer.job_id -or $v.intent_sha256 -cne $Offer.intent_sha256 -or $v.target_sha256 -cne (Get-AuthWireWriteHash $Offer.target) -or $v.can_apply_gpo -isnot [bool] -or $v.can_apply_gpo -or -not (Test-AuthWireWriteInteger $v.checked_at) -or $v.checked_at -gt $now -or $now-$v.checked_at -gt 5){throw 'WRITE_PREFLIGHT_STALE'}
  Assert-AuthWireCandidateGuid $v.protected_gpo_id
  if($v.protected_gpo_id -ceq $t.gpo_id -or $v.pdc -isnot [string] -or $v.pdc -cnotmatch '\A[a-z0-9.-]{1,253}\z' -or -not $v.pdc.EndsWith('.'+$t.domain,[StringComparison]::Ordinal)){throw 'WRITE_PREFLIGHT_REJECTED'}

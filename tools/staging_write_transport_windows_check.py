@@ -114,7 +114,8 @@ def main():
                 elif case == 'invalid_utf8': body = b'\xff'
                 elif case == 'wrong_type': kind = 'text/plain'
                 elif case == 'slow_body': body = b'{}'
-                elif case in {'grant_ok', 'grant_mismatch', 'grant_lost', 'grant_disk_failure'}:
+                elif case in {'grant_ok', 'grant_mismatch', 'grant_lost', 'grant_disk_failure',
+                              'grant_consume_ok', 'grant_consume_disk', 'grant_consume_context', 'grant_consume_timeout'}:
                     assert self.path == '/api/connector/v1/staging-write/claim'
                     with lock:
                         reply = claim(raw)
@@ -154,19 +155,19 @@ def main():
                 str(Path(__file__).with_name('staging_write_preclaim_windows_check.ps1'))],
                 check=True, timeout=150, env=env)
             check_wire(root/'wire.json')
-            assert metrics['grants'] == metrics['replay_refused'] == 4
-            assert len(metrics['claims']) == 4 and set(metrics['claims'].values()) == {1}
+            assert metrics['grants'] == metrics['replay_refused'] == 8
+            assert len(metrics['claims']) == 8 and set(metrics['claims'].values()) == {1}
             assert not metrics['redirect_followed']
             after = store.snapshot()
             assert after['config'] == original_business['config']
             assert after['policies'] == original_business['policies']
-            assert after['revision'] == original_business['revision'] + 4
+            assert after['revision'] == original_business['revision'] + 8
             audit = store.audit()
-            assert len(audit) == len(original_audit) + 4
-            assert all(row['event'].startswith('staging_write_authorized:') for row in audit[:4])
+            assert len(audit) == len(original_audit) + 8
+            assert all(row['event'].startswith('staging_write_authorized:') for row in audit[:8])
             with store.connect() as db:
                 jobs = core._read(db)['jobs']
-            assert len(jobs) == 4 and all(j['state'] == 'authorized' for j in jobs)
+            assert len(jobs) == 8 and all(j['state'] == 'authorized' for j in jobs)
             print('AUTHWIRE_WRITE_TRANSPORT_WINDOWS_OK ' + json.dumps(metrics, sort_keys=True))
         finally:
             server.shutdown(); server.server_close(); thread.join(timeout=3)
