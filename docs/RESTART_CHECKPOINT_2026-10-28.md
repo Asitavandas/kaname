@@ -1,5 +1,82 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## Değiştirilemez yazma sonucu ve sınırlı yeniden bildirim — 30 Ekim 2026
+
+**PR125**, test edilen kaynak **93ae3bc29563fc954270d79033dd748bf3baee22**, merge **5a163ee97c91095a8ca80e5dd32a1dc29d7b442a**.
+
+Sonuç ağdan önce sabit özel journal köküne **result-outbox.json / CreateNew + Flush(true)**
+ile yazılır. Başarılı staged bildirimi parent gözlemini, child kimliğini, özgün
+authorization/intent/launch ile gerçek engine completion/tree hash zincirini birlikte ister.
+Bu tarihsel işlem kanıtıdır; mevcut SYSVOL'un bağımsız yeni tasdiki veya geri alma yetkisi değildir.
+Tam gözlem yoksa **requires_review / OUTCOME_UNKNOWN / unconfirmed** üretilir:
+kısmi yazma, timeout veya kayıp sonuç başarıya dönüştürülmez; sıfır dosya etkisi varsayılmaz.
+Bozuk gözlem kanıtı işlemeyi durdurur. Sonuç dondurulduktan sonra gövde/zaman değişmez ve
+yeni stage başlatılamaz. Global iş mutex'i parent/child ve gözlem boyunca tutulur;
+canlı gate ve exact PID/start-time ayrıca kontrol edilir.
+
+Her çağrı en çok bir HTTPS RESULT gönderir; iş başına **üç kalıcı deneme** sınırı vardır.
+Aynı gövde için yeni nonce/imza kullanılır. Sunucu kaydetmiş fakat ACK kaybolmuşsa yalnız
+aynı sonuç yeniden bildirilir; **CLAIM, grant yenileme, AD gözlemi ve dosya yazma tekrarlanmaz**.
+Tam eşleşen typed ACK kalıcı kayda alınınca sonraki çağrı ağa çıkmadan döner.
+Disk/imza/taşıma hatası, yanlış ACK, bozuk/eksik deneme sırası ve tükenen sınır kanıtı korur.
+Tarihsel kanıt okuması, canlı 30 saniyelik yazma yetkisinden ayrıldı; expiry hiçbir biçimde yenilenmez.
+İlk sonuç için mevcut 300 saniyelik grace ve sabit pinned TLS/5 saniye/boyut sınırları korundu.
+Sonuç bildirimi hiçbir GPO kilidini kaldırmaz, cleanup veya rollback çalıştırmaz.
+
+**Test kanıtı:** 372 native WinPS5.1 kontrolü +18 Python/RSA çapraz kontrolü geçti.
+Gerçek CNG/TLS/SQLite ile 9 özgün CLAIM, 9 replay reddi, 5 sonuç için 8 RESULT isteği
+ve yalnız 5 sonuç audit geçişi doğrulandı. Kayıp ACK, yanlış ACK/üç-deneme sınırı,
+outbox flush hatası, strict alanlar, hardlink/ADS, reload, canlı gate ve özgün grant
+dolduktan sonra yalnız sonuç bildirimi sınandı. Ayrı imzalı child/gerçek SMB fixture'ında
+**154 kontrol** geçti; gözlenen başarı doğru hash'lerle, yedi belirsiz/başarısız senaryo inceleme
+sonucuyla donduruldu. İki fixture tek parça müşteri uçtan uca kabulü değildir:
+ilkinde binding/AD ve leased offer, ikincide grant/AD/içerik/namespace seed veya simüledir.
+Genel koşu **1123 test, 28 ortam atlaması, 307.189 saniye** ile başarılı. İmzalı kalıcı SCM/HTTPS servis regresyonunda **85 kontrol**, beş CI workflow'un tamamı başarılı.
+
+Test geçmişi saklandı: Python fixture'daki literal satır ayracı hatası düzeltildi.
+Aynı production stage gövdesi iki koşuda 154 kontrolü geçti; güncel head'in ilk koşusunda
+başarı senaryosu bir kez kapanmadı, aynı head tekrarında geçti. Generic parent hata kaydı
+iç nedeni saklamadığından sebep zamanlama/ortam diye varsayılmadı ve sınırlar gevşetilmedi.
+Kontrollü teslimden önce güvenli iç tanı/yeniden üretim takibi açıktır; yeşil tekrar
+müşteri güvenilirlik veya gecikme garantisi değildir.
+
+**Kaynak GitHub main'e kaydedildi; Linux/DC01'e kurulmadı.** Kalıcı worker/paket ve üretim
+create/peer rotaları kapalı; GPO apply kapalıdır. Müşteri AD/GPO/SYSVOL, cihaz, servis,
+mevcut key ACL/trust değiştirilmedi, yeni tam veri yedeği alınmadı. Son bilinen canlı
+sürümler Linux **dev.44**, Windows **df28f70c**; bu adımda yeni canlı ölçüm yoktur.
+Ayrıntı **docs/STAGING_WRITE_RESULT.md** ve
+**docs/checkpoints/2026-10-30-write-result-outbox-source.json**.
+
+**Açık / test bekleyen:** bounded POLL→CLAIM→consume→stage→RESULT bütün görev çevrimi,
+yetki öncesi ret bildirimi, ayrı onaylı rollback, kayıp sonuç/reboot/kısmi journal uzlaştırması,
+ayrı onaylı unlock, strict backup projection, imzalı kontrollü teslim ve gerçek
+gMSA/AD/domain-SYSVOL kabulü. Sonra GPO aktivasyonu/gerçek uç; tek hesap ve 500/1000 ölçek
+kapıları ayrıca açık. Nihai kılavuz hedef işlevsel sürüm ve operatör kabulünden sonra.
+
+### Kalan süre yeniden değerlendirildi
+
+PR124'teki yazma/kurtarma **3–6 aktif iş günü** bandı **korundu**. Sonuç alt kapısı ilerledi;
+bütün görev/rollback/recovery ve müşteri teslim çevrimi henüz ölçülmedi. Dar kaynak
+kapanışından otomatik gün düşülmedi. Diğer paketlerde yeni saha/erişim kanıtı olmadığından
+iş bazında süre ve bağımlılıklar **docs/reports/2026-10-29-process-forecast.md** içinde korundu.
+
+| Hedef | Kalan tahmin | 30 Ekim başlangıçlı koşullu pencere |
+|---|---|---|
+| Yazma/kurtarma/teslim | **3–6 aktif iş günü** | Bütün görev, geri alma, kurtarma ve teslim çevrimlerine bağlı |
+| İlk küçük otomatik pilot | **2–3 hafta** | **13–20 Kasım 2026** |
+| Tek hesap +500/1000 teknik ölçek dahil temel ürün | **6–9 hafta** | **11 Aralık 2026–1 Ocak 2027** |
+| Temel sürüm seçilirse kılavuz dahil | **7–10 hafta** | **18 Aralık 2026–8 Ocak 2027** |
+| Tüm kayıtlı geliştirmeler +nihai kılavuz | **13–19 hafta** | **29 Ocak–12 Mart 2027** |
+
+Aktif saha temel kapsam **20–30 saat**, tüm kapsam **30–45 saat**; ek **7–14 takvim günü**
+gözlem ayrı. Düzenli 5 gün/hafta ortak ilerleme, aynı gün operatör çıktısı ve hazır erişim
+varsayılır; bunlar mühendislik tahmini, teslim taahhüdü değildir. Dış yedek hedefi,
+restore VM, üretici API ve ölçek uçlarına erişim beklemelerinin son tarihi bilinmiyor.
+200 toplam cihaz kotası değildir; tek görev 512 sınırı ve 500/1000 teknik kabul gereği korunur.
+Makro **54/94 tamam,40 açık**; alt kaynak bileşeni tüm ürün kabulü sayılmadı.
+**READY_FOR_FINAL_GUIDE=false / GUIDE_DELIVERED=false** korunur.
+
+
 ## Yetkiye bağlı sınırlı dosya yazma süreci kaynakta doğrulandı — 30 Ekim 2026
 
 **PR124**, merge **9d1bba56d1f624e899a08d29c79ed243a16caf34**, test edilen head **628bd7cd18d1ff7abebde5c4fb4f1b8f51962914**.
