@@ -198,8 +198,8 @@ function Invoke-AuthWireStagingWritePreflight([string]$JournalRoot,[string]$JobI
  if($JournalRoot.Length -gt 1800 -or $JournalRoot.Contains('"')){throw 'WRITE_JOURNAL_PATH_REJECTED'}
  $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$budget=[int][Math]::Min(30000,($offer.expires_at-$now-5)*1000)
  if($budget -lt 100){throw 'WRITE_OFFER_EXPIRED'}
- $args='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$file+'" -JournalRoot "'+$JournalRoot.TrimEnd('\')+'" -JobId '+$JobId
- $r=[AuthWire.Connector.ScopeProcessV1]::Run($exe,$args,$budget)
+ $arguments='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$file+'" -JournalRoot "'+$JournalRoot.TrimEnd('\')+'" -JobId '+$JobId
+ $r=[AuthWire.Connector.ScopeProcessV1]::Run($exe,$arguments,$budget)
  if($r.TimedOut -or $r.Truncated -or $r.ExitCode -ne 0){throw 'WRITE_PREFLIGHT_FAILED'}
  $v=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($r.Output))
  Assert-AuthWireWriteLiveContext $v $offer $Binding

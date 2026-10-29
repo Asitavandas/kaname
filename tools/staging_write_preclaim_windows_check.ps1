@@ -14,7 +14,7 @@ foreach($n in @('StagingWritePreclaim.ps1','Read-AuthWireStagingWritePreflight.p
  Check (@($calls|Where-Object {$_ -cmatch '\A(?:Invoke-AuthWireStagingFilesystem|Remove-|Set-Acl|New-Service|Start-Service|Set-GP|New-GP|Set-AD)'}).Count -eq 0) ('no execution/deletion/GPO/ACL commands '+$n)
 }
 $root=[IO.Path]::GetFullPath((Join-Path $env:TEMP ('aw-preclaim-'+[guid]::NewGuid().ToString('N'))))
-$key=$null;$rsa=$null;$signer=$null
+$key=$null;$rsa=$null;$signer=$null;$public=$null
 try{
  $null=New-Item -ItemType Directory -Path $root
  $acl=Get-Acl -LiteralPath $root;$acl.SetSecurityDescriptorSddlForm('O:BAG:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)');Set-Acl -LiteralPath $root -AclObject $acl
@@ -72,7 +72,8 @@ try{
  Reject {Save-AuthWireStagingWriteOffer $offer $b $release $request $weak} 'broad journal ACL refused'
  Check (@(Get-ChildItem -LiteralPath $weak -Force).Count -eq 0) 'ACL failure writes no local intent'
  $junction=Join-Path $root 'journal-link';$null=New-Item -ItemType Junction -Path $junction -Target $journal
- try{Reject {Read-AuthWireStagingWriteOffer $junction $offer.job_id $b $release} 'journal reparse refused'}finally{Remove-Item -LiteralPath $junction -Force}
+ try{Reject {Read-AuthWireStagingWriteOffer $junction $offer.job_id $b $release} 'journal reparse refused'}finally{[IO.Directory]::Delete($junction,$false)}
+ Check (Test-Path -LiteralPath $journal) 'unlinking only fixture junction preserves journal'
  $file=Join-Path (Join-Path $journal $offer.job_id) 'offer.json'
  $link=Join-Path $root 'offer-hardlink.json';$null=New-Item -ItemType HardLink -Path $link -Target $file
  Reject {Read-AuthWireStagingWriteOffer $journal $offer.job_id $b $release} 'journal hardlink refused';Remove-Item -LiteralPath $link
@@ -145,7 +146,8 @@ try{
  Check ($read.TimedOut -and $timer.ElapsedMilliseconds -lt 5000) 'actual AllSigned timeout is bounded'
  Write-Host ('AUTHWIRE_WRITE_PRECLAIM_WINDOWS_OK checks='+$checks+' customer_ad_tested=false write_enabled=false claim_sent=false')
 }finally{
- if($signer){foreach($storeName in @('Root','TrustedPublisher','My')){$path='Cert:\LocalMachine\'+$storeName+'\'+$signer.Thumbprint;if(Test-Path -LiteralPath $path){Remove-Item -LiteralPath $path -Force}}}
+ if($signer){foreach($storeName in @('Root','TrustedPublisher','My')){$path='Cert:\LocalMachine\'+$storeName+'\'+$signer.Thumbprint;if(Test-Path -LiteralPath $path){if($storeName -ceq 'My'){Remove-Item -LiteralPath $path -DeleteKey -Force}else{Remove-Item -LiteralPath $path -Force}}}}
+ if($public){$public.Dispose()}
  if($rsa){$rsa.Dispose()};if($key){try{$key.Delete()}finally{$key.Dispose()}}
  if(Test-Path -LiteralPath $root){Remove-Item -LiteralPath $root -Recurse -Force}
 }
