@@ -43,7 +43,7 @@
     "all_28_source_git_blobs_match_main": true,
     "native_delivery_ci_pending": false,
     "customer_windows_prepare_run": true,
-    "customer_windows_apply_run": false,
+    "customer_windows_apply_run": true,
     "new_gmsa_preview_verified": false,
     "tested_head": "82bb633214d1fdaf3314af47679db2c91d474d96",
     "pr_number": 117,
@@ -70,13 +70,15 @@
       "workflow": 40746579055,
       "conclusion": "success"
     },
-    "customer_windows_prepare_verified": true
+    "customer_windows_prepare_verified": true,
+    "customer_windows_apply_verified": true,
+    "all_six_channels_passed_upgrade_gate": true
   },
   "overall_completed": 54,
   "overall_open": 40,
   "ready_for_final_guide": false,
   "guide_delivered": false,
-  "next_step": "Run the same SHA256-pinned tool in elevated DC01 WinPS5.1 with -Mode Apply. Record the complete result; only after successful upgrade perform real gMSA preview/panel acceptance. No SYSVOL writer or GPO activation enabled.",
+  "next_step": "Panel: refresh the existing combined package, choose Paket hazırlığını önizle then Hazırlık önizlemesini gönder once; wait and refresh read-only. Capture the full result/file list. Real gMSA staging preview and operator browser acceptance remain pending; do not create a second plan/candidate.",
   "delivery": {
     "linux_path": "/home/segmentiq/authwire-dc01-staging-preview-worker-upgrade-20261028.ps1",
     "sha256_verified_on": "2026-10-29",
@@ -85,5 +87,6 @@
   },
   "operator_prepare_command": "$ErrorActionPreference = 'Stop'\n$awTool = Join-Path $env:TEMP 'AuthWire-Staging-Preview-Worker-Upgrade-20261028.ps1'\nscp segmentiq@10.35.50.246:/home/segmentiq/authwire-dc01-staging-preview-worker-upgrade-20261028.ps1 $awTool\nif ($LASTEXITCODE -ne 0) { throw 'Dosya aktarilamadi' }\nif ((Get-FileHash -LiteralPath $awTool -Algorithm SHA256).Hash -ne '2C8FBE776A240BC98BBB387C529A90AB4FBFC3FA2467096799D3A9E159EA33CF') { throw 'Dosya ozeti uyusmuyor' }\n& $awTool -Mode Prepare",
   "customer_prepare_receipt": "docs/checkpoints/2026-10-29-customer-staging-preview-worker-prepare.json",
-  "operator_apply_command": "$ErrorActionPreference = 'Stop'\n$awTool = Join-Path $env:TEMP 'AuthWire-Staging-Preview-Worker-Upgrade-20261028.ps1'\nif ((Get-FileHash -LiteralPath $awTool -Algorithm SHA256).Hash -ne '2C8FBE776A240BC98BBB387C529A90AB4FBFC3FA2467096799D3A9E159EA33CF') {\n    throw 'Dosya ozeti uyusmuyor'\n}\n& $awTool -Mode Apply"
+  "operator_apply_command": "$ErrorActionPreference = 'Stop'\n$awTool = Join-Path $env:TEMP 'AuthWire-Staging-Preview-Worker-Upgrade-20261028.ps1'\nif ((Get-FileHash -LiteralPath $awTool -Algorithm SHA256).Hash -ne '2C8FBE776A240BC98BBB387C529A90AB4FBFC3FA2467096799D3A9E159EA33CF') {\n    throw 'Dosya ozeti uyusmuyor'\n}\n& $awTool -Mode Apply",
+  "customer_apply_receipt": "docs/checkpoints/2026-10-29-customer-staging-preview-worker-apply.json"
 }

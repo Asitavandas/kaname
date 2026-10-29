@@ -1,5 +1,33 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## DC01 önizleme worker Apply başarılı — gerçek panel önizlemesi bekleniyor — 29 Ekim 2026
+
+Operatör **ToolVersion1.5.0 /Mode=Apply /Stage=applied /Upgrade.Phase=applied** sonucunun tamamını paylaştı.
+**Kabul edilen Windows Connector sürümü df28f70c-104e-4d6d-972c-e311d38adde6**,
+kaynak **92b2af9b78347058802f4bb135b5fbb243abc813**. Önceki sürüm cf74295c arşiv yolu kayıtta korunur.
+**SourceSignaturesValid=true /ServiceTransitioned=true /Error=null /ChangesMayBePartial=false**.
+Mevcut hesap, pairing ve kanal anahtarı korundu; **SignerSnapshotPreserved=true**.
+AD/GPO, key ACL ve trust store değişmedi; yeni servis veya kanal anahtarı oluşturulmadı.
+
+İncelenen yükseltme kaynağında applied sonucu yalnız Running servis, doğru runtime SID/yeni sürüm,
+taze sağlıklı worker ve **altı kanalın** (yeni StagingPreviewChannelVerified dahil) doğrulanmasından sonra yazılır.
+Bu sonuç bu yükseltme kapısının geçtiğini gösterir; bağımsız sonraki anlık status okuması veya gerçek görev başarısı değildir.
+Kanıt **C:\ProgramData\AuthWire-ConnectorUpgradeEvidence-df28f70c104e4d6d972ce311d38adde6-78280346890f47cc98c11fa37eb7b57a**.
+Tam kullanıcı sonucu **docs/checkpoints/2026-10-29-customer-staging-preview-worker-apply.json** içinde kayıtlı.
+
+**Sıradaki operatör adımı:** panelde mevcut **AuthWire Pilot - Merkezi Windows · v1 · Birleşik paket**
+kaydını Yenile ile aç; **Paket hazırlığını önizle → Hazırlık önizlemesini gönder** akışını bir kez çalıştır.
+Görevi yeniden oluşturmadan bekle/Yenile; sonuç ve **Paket dosyaları ve geri alma sınırı** bölümünü kaydet.
+Beklenen başarı **Paket hazırlığı önizlemesi hazır. SYSVOL dosyası yazılmadı.**; 20 dosya/boyut/hash,
+önerilen klasör, önizleme SHA256 ve kontrol zamanı ayrı değerlendirilir.
+90 saniyelik güncellik dolunca eski sonuç kayıtlı kalır; bu dağıtım veya yazma yetkisi değildir.
+Yeni plan/aday oluşturulmayacak. Gerçek müşteri gMSA hazırlık önizlemesi ve operatör tarayıcı kabulü henüz bekleniyor.
+
+Linux dev.44 kabulü geçerli; bu Windows Apply sonucu Linux/RADIUS için yeni anlık gözlem sayılmadı.
+CanApplyGpo=false; gerçek SYSVOL staging/geri alma, GPO aktivasyonu ve endpoint kabulü halen açık.
+Önceki ilk cf742 Apply gizli iç hata incelemesi ve hesap sadeleştirme açık kalır.
+Genel **54/94 tamamlanan,40 açık**; kılavuz bayrakları false. Yeni tam veri yedeği alınmadı.
+
 ## DC01 önizleme worker Prepare başarılı — Apply bekleniyor — 29 Ekim 2026
 
 Operatör **ToolVersion1.5.0 /Mode=Prepare /Stage=prepared** sonucunun tamamını paylaştı.
