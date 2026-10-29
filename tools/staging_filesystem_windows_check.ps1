@@ -206,8 +206,10 @@ try{
  try{$changedAcl=Get-Acl -LiteralPath $file;$changedAcl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new([Security.Principal.SecurityIdentifier]::new('S-1-1-0'),'Read','Allow'));Set-Acl -LiteralPath $file -AclObject $changedAcl;Reject {Rollback $op $completePin} 'rollback refuses ACL drift'}finally{Set-Acl -LiteralPath $file -AclObject $savedAcl}
  Check ((Get-AuthWireSysvolInventory $unc).Sha256 -ceq $stagedHash) 'all drift cases restored before approved rollback'
  # Same bytes and ACL are insufficient if a staged file was replaced.
- $moved=[IO.Path]::Combine($journalRoot,'saved-file.txt')
+ $moved=[IO.Path]::Combine(('\\localhost\'+$share),'saved-file.txt')
  try{[IO.File]::Move($file,$moved);[IO.File]::WriteAllBytes($file,$saved);Set-Acl -LiteralPath $file -AclObject $savedAcl;Reject {Rollback $op $completePin} 'file identity replacement rejected'}finally{[IO.File]::Delete($file);[IO.File]::Move($moved,$file)}
+ $verify=[AuthWire.Staging.TreeLeaseV1]::Tree($destination,$false)
+ try{$restoredRows=Get-AuthWireStagingFilesystemRows $verify;Check ((Get-AuthWireStagingFilesystemDigest $restoredRows) -ceq $complete.tree_sha256) 'same-share fixture rename restores original file identity and ACL'}finally{$verify.Dispose()}
  $rolled=Rollback $op $completePin
  Check ($rolled.Phase -ceq 'rolled_back' -and $rolled.BaselineRestored -and -not $rolled.CanApplyGpo) 'handle-based rollback succeeds'
  Check ((Get-AuthWireSysvolInventory $unc).Sha256 -ceq $before.Sha256) 'full original GPO bytes and ACL baseline restored'
