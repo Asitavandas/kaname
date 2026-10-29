@@ -75,6 +75,7 @@ function ConvertFrom-AuthWireWriteBase64($Value,[int]$Limit){
 function Assert-AuthWireStoredWriteClaim($Proof,$Started,$Offer,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
  Assert-AuthWireCandidateFields $Started @('format','job_id','intent_sha256','checked_at')
  Assert-AuthWireCandidateFields $Proof @('frame','signature','payload')
+ foreach($n in @('format','job_id','intent_sha256')){if($Started.$n -isnot [string]){throw 'WRITE_CLAIM_RECORD_REJECTED'}}
  $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
  if($Started.format -cne 'AuthWireWriteClaimStartedV1' -or $Started.job_id -cne $Offer.job_id -or $Started.intent_sha256 -cne $Offer.intent_sha256 -or
     -not (Test-AuthWireWriteInteger $Started.checked_at) -or $Started.checked_at -gt $now -or $now-$Started.checked_at -gt 5){throw 'WRITE_CLAIM_RECORD_STALE'}
@@ -110,11 +111,13 @@ function Assert-AuthWireStoredWriteClaim($Proof,$Started,$Offer,[hashtable]$Bind
  if((Get-AuthWireJobHash $payload) -cne $f[14] -or -not $Key.VerifyData($raw,$signature,[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)){throw 'WRITE_CLAIM_RECORD_REJECTED'}
  $body=ConvertFrom-AuthWireCandidateJson $payload
  Assert-AuthWireCandidateFields $body @('job_id','lease_id','intent_sha256','target_sha256','release_id')
+ foreach($n in @('job_id','lease_id','intent_sha256','target_sha256','release_id')){if($body.$n -isnot [string]){throw 'WRITE_CLAIM_RECORD_REJECTED'}}
  if($body.job_id -cne $Offer.job_id -or $body.lease_id -cne $Offer.lease_id -or $body.intent_sha256 -cne $Offer.intent_sha256 -or $body.target_sha256 -cne (Get-AuthWireWriteHash $Offer.target) -or $body.release_id -cne $Release){throw 'WRITE_CLAIM_RECORD_REJECTED'}
  return $f[10]
 }
 function Assert-AuthWireWriteGrant($Value,$Offer,[string]$RequestId,[long]$SentAt){
  Assert-AuthWireCandidateFields $Value @('format','request_id','job_id','operation','intent_sha256','target_sha256','authorization_id','expires_at','write_authorized','can_apply_gpo')
+ foreach($n in @('request_id','job_id','operation','intent_sha256','target_sha256','authorization_id')){if($Value.$n -isnot [string]){throw 'WRITE_GRANT_REJECTED'}}
  $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
  if($Value.format -isnot [int] -or $Value.format -ne 1 -or -not (Test-AuthWireWriteHash $RequestId) -or $Value.request_id -cne $RequestId -or
     $Value.job_id -cne $Offer.job_id -or $Value.operation -cne $Offer.operation -or $Value.intent_sha256 -cne $Offer.intent_sha256 -or $Value.target_sha256 -cne (Get-AuthWireWriteHash $Offer.target) -or
@@ -138,7 +141,7 @@ function Invoke-AuthWireStagingWriteClaimTransport([string]$JournalRoot,[string]
   $started=Read-AuthWireStagingJournal (Join-Path $job 'claim-started.json')
   $record=Read-AuthWireStagingJournal (Join-Path $job 'claim-proof.json')
   Assert-AuthWireCandidateFields $record @('format','job_id','proof')
-  if($record.format -cne 'AuthWireWriteClaimProofV1' -or $record.job_id -cne $JobId){throw 'WRITE_CLAIM_RECORD_REJECTED'}
+  if($record.format -isnot [string] -or $record.format -cne 'AuthWireWriteClaimProofV1' -or $record.job_id -isnot [string] -or $record.job_id -cne $JobId){throw 'WRITE_CLAIM_RECORD_REJECTED'}
   $request=Assert-AuthWireStoredWriteClaim $record.proof $started $offer $Binding $Release $Key
   if(Test-Path -LiteralPath (Join-Path $job 'authorization.json')){throw 'WRITE_LOCAL_RECEIPT_EXISTS_REQUIRES_REVIEW'}
   $sentAt=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()

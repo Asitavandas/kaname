@@ -55,6 +55,7 @@ try{
  foreach($change in @('path','command','extra')){$v=Clone $offer;$v|Add-Member NoteProperty $change 'untrusted';Reject {Assert-AuthWireWriteOffer $v $b $release $request} 'unknown request field rejected'}
  foreach($field in @('write_authorized','can_apply_gpo')){$v=Clone $offer;$v.$field=$true;Reject {Assert-AuthWireWriteOffer $v $b $release $request} 'offer cannot grant authority'}
  foreach($field in @('intent_sha256','scope_sha256','lease_id')){$v=Clone $offer;$v.$field='bad';Reject {Assert-AuthWireWriteOffer $v $b $release $request} 'offer identity hash rejected'}
+ foreach($field in @('request_id','scope_sha256','intent_sha256')){$v=Clone $offer;$v.$field=$true;Reject {Assert-AuthWireWriteOffer $v $b $release $request} 'offer identity never coerces a bool to a hash'}
  $v=Clone $offer;$v.target.writer_release_id=[guid]::NewGuid().ToString('D');Reject {Assert-AuthWireWriteOffer $v $b $release $request} 'wrong worker release'
  $v=Clone $offer;$v.expires_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-1;Reject {Assert-AuthWireWriteOffer $v $b $release $request} 'expired lease'
  $v=Clone $target;$v.preview_record.Preview.files[0].Path='../escape';Reject {Assert-AuthWireWriteTarget $v 'combined.filesystem.stage.v1'} 'source traversal'
@@ -127,6 +128,7 @@ namespace AuthWire.PreclaimFixture {
  $v=Clone $live;$v.gpo_root='\\evil\share';Reject {Assert-AuthWireWriteLiveContext $v $offer $b} 'returned UNC cannot redirect'
  $v=Clone $live;$v.checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-6;Reject {Assert-AuthWireWriteLiveContext $v $offer $b} 'five second claim preflight freshness'
  $v=Clone $live;$v.can_apply_gpo=$true;Reject {Assert-AuthWireWriteLiveContext $v $offer $b} 'context never grants GPO activation'
+ foreach($field in @('format','job_id','intent_sha256','target_sha256','source_root','gpo_root')){$v=Clone $live;$v.$field=$true;Reject {Assert-AuthWireWriteLiveContext $v $offer $b} 'live context strings never coerce booleans'}
  # Test the durable preclaim gate using a controlled already-validated reader result.
  $live.checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
  Write-AuthWireStagingJournal (Join-Path (Join-Path $journal $offer.job_id) 'preflight.json') $live
@@ -146,6 +148,7 @@ namespace AuthWire.PreclaimFixture {
  $grant=[pscustomobject]@{format=1;request_id=$claimRequest;job_id=$offer.job_id;operation=$offer.operation;intent_sha256=$offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $target);authorization_id=('7'*64);expires_at=($sent+30);write_authorized=$true;can_apply_gpo=$false}
  Assert-AuthWireWriteGrant $grant $offer $claimRequest $sent;Check $true 'strict grant response accepted without executing it'
  foreach($n in @('request_id','job_id','operation','intent_sha256','target_sha256','authorization_id')){$v=Clone $grant;$v.$n='wrong';Reject {Assert-AuthWireWriteGrant $v $offer $claimRequest $sent} ('grant rejects changed '+$n)}
+ foreach($n in @('request_id','job_id','operation','intent_sha256','target_sha256','authorization_id')){$v=Clone $grant;$v.$n=$true;Reject {Assert-AuthWireWriteGrant $v $offer $claimRequest $sent} 'grant identity fields never coerce booleans'}
  foreach($n in @('write_authorized','can_apply_gpo')){$v=Clone $grant;$v.$n=-not $v.$n;Reject {Assert-AuthWireWriteGrant $v $offer $claimRequest $sent} 'grant flags are exact booleans'}
  foreach($expiry in @($true,$sent,$sent+31)){$v=Clone $grant;$v.expires_at=$expiry;Reject {Assert-AuthWireWriteGrant $v $offer $claimRequest $sent} 'grant time type/lifetime/expiry bound'}
  $v=Clone $grant;$v|Add-Member NoteProperty command 'untrusted';Reject {Assert-AuthWireWriteGrant $v $offer $claimRequest $sent} 'grant has no arbitrary commands or paths'
@@ -155,6 +158,12 @@ namespace AuthWire.PreclaimFixture {
  $v=Clone $proof;$v.signature=[Convert]::ToBase64String((New-Object byte[] 384));Reject {Assert-AuthWireStoredWriteClaim $v $started $offer $b $release $rsa} 'stored signature independently verified'
  $v=Clone $proof;$v.frame+="`n";Reject {Assert-AuthWireStoredWriteClaim $v $started $offer $b $release $rsa} 'noncanonical stored base64 rejected'
  $v=Clone $started;$v.checked_at=$sent-6;Reject {Assert-AuthWireStoredWriteClaim $storedProof $v $offer $b $release $rsa} 'stale claim cannot be transmitted later'
+ foreach($n in @('format','job_id','intent_sha256')){$v=Clone $started;$v.$n=$true;Reject {Assert-AuthWireStoredWriteClaim $storedProof $v $offer $b $release $rsa} 'claim marker identity fields never coerce booleans'}
+ foreach($n in @('job_id','lease_id','intent_sha256','target_sha256','release_id')){
+  $badBody=@{job_id=$offer.job_id;lease_id=$offer.lease_id;intent_sha256=$offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $target);release_id=$release};$badBody[$n]=$true
+  $badProof=Clone (New-AuthWireStagingWriteProof $b $rsa CLAIM $badBody)
+  Reject {Assert-AuthWireStoredWriteClaim $badProof $started $offer $b $release $rsa} 'valid RSA signature cannot hide boolean claim identity'
+ }
  if($env:AUTHWIRE_WRITE_TRANSPORT_DIRECTORY){
   Initialize-AuthWireWriteTransportTypes;Initialize-AuthWireChannelTypes
   $url='https://'+$b.appliance_fqdn+':'+$web.port+'/'
