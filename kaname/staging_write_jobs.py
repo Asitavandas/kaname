@@ -92,13 +92,15 @@ class StagingWriteJobs(ConnectorJobs):
                     j['created'] <= v['checked_at'] <= j['lease_until'] and
                     v['journal_sha256'] == v['tree_sha256'] == '' and v['filesystem_effects'] == 'none')
         if not (v['authorization_id'] == j['authorization_id'] and
-                j['authorized_at'] <= v['checked_at'] <= j['authorized_until']):
+                j['authorized_at'] <= v['checked_at']):
             return False
         if v['outcome'] == 'requires_review':
             return (type(v['reason']) is str and v['reason'] in REVIEW_REASONS and
+                    v['checked_at'] <= j['deadline'] + RESULT_GRACE and
                     v['filesystem_effects'] == 'unconfirmed' and
                     all(x == '' or is_hash(x) for x in (v['journal_sha256'], v['tree_sha256'])))
-        if not (v['reason'] == 'OK' and is_hash(v['journal_sha256']) and is_hash(v['tree_sha256'])):
+        if not (v['checked_at'] <= j['authorized_until'] and v['reason'] == 'OK' and
+                is_hash(v['journal_sha256']) and is_hash(v['tree_sha256'])):
             return False
         if j['operation'] == STAGE:
             return v['outcome'] == 'staged' and v['filesystem_effects'] == 'created_owned_directory'

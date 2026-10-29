@@ -39,7 +39,9 @@ zorunlu uygulamalıdır. Bu adapter ve testleri henüz yoktur.
 6. İmzalı sonuç; asıl job/lease/intent/target/sürüm/yetkilendirme kimliğine
    bağlıdır. Yetkilendirme süresi içinde gözlenen sonuç en çok300 saniyelik
    transport gecikmesiyle kaydedilebilir. Bu yeni yürütme izni değildir.
-   Plan sonradan değişse bile eski işin sonuç kanıtı kaybedilmez.
+   Plan sonradan değişse bile eski işin sonuç kanıtı kaybedilmez. Kesinti/kısmi
+   hata daha geç gözlenebilir: deadline+300 saniyeye kadar gözlenen belirsizlik
+   kanıtı ayrıca kaydedilebilir, ancak kilidi açmaz veya yeni izin vermez.
 
 ## Sahiplik ve belirsiz durum
 
@@ -82,6 +84,6 @@ authorization ve sonuçlar yedekte/iş verisi karşılaştırmasında korunmalı
 - Yeni ledger'ın backup poll projection'ı, source teslimi ve gerçek gMSA/SMB kabulü.
 - Ayrı GPO aktivasyon/çoğaltma ve endpoint kabul kapıları.
 
-35 yeni yerel RSA/SQLite testi ve mevcut ilgili okuma/proof testleriyle toplam89
+36 yeni yerel RSA/SQLite testi ve mevcut ilgili okuma/proof testleriyle toplam90
 kontrol geçti. Tam repo CI ve test edilen kaynak head'i checkpoint'te ayrıca
 kaydedilir. Müşteri AD/GPO/servis/sertifika veya diskine değişiklik yapılmadı.

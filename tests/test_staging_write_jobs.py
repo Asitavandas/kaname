@@ -275,6 +275,18 @@ class StagingWriteJobTests(unittest.TestCase):
         with self.assertRaisesRegex(JobError, 'GPO_BUSY'):
             self.enqueue()
 
+    def test_late_partial_failure_keeps_evidence_without_releasing_the_lock(self):
+        offer = self.offer(); authorization = self.authorize(offer)
+        self.now += 60  # failure can be observed after the write grant expires
+        result = self.result(offer, authorization, outcome='requires_review', reason='WORKER_INTERRUPTED',
+                             filesystem_effects='unconfirmed')
+        self.jobs.complete(self.proof('RESULT', result))
+        self.assertEqual('requires_review', self.jobs.status()['jobs'][0]['state'])
+        with self.store.connect() as db:
+            self.assertEqual(result, self.jobs._read(db)['jobs'][0]['result'])
+        with self.assertRaisesRegex(JobError, 'GPO_BUSY'):
+            self.enqueue()
+
     def test_rollback_requires_completed_stage_receipt_and_separate_approval(self):
         self.jobs.poll(self.proof())
         with self.assertRaisesRegex(JobError, 'RECEIPT_REQUIRED'):
