@@ -32,7 +32,7 @@ function SourceAcl([string]$path,[switch]$Directory) {
  $acl=if($Directory){[Security.AccessControl.DirectorySecurity]::new()}else{[Security.AccessControl.FileSecurity]::new()}
  $acl.SetSecurityDescriptorSddlForm($sddl);Set-Acl -LiteralPath $path -AclObject $acl
 }
-$share=$null;$startedServer=$false;$journalRoot=Join-Path $env:TEMP ('aw-stage-journal-'+[guid]::NewGuid().ToString('N'))
+$share=$null;$startedServer=$false;$journalRoot=[IO.Path]::GetFullPath((Join-Path $env:TEMP ('aw-stage-journal-'+[guid]::NewGuid().ToString('N'))))
 try{
  $null=New-Item -ItemType Directory -Path $root
  # Managed GPO roots have protected DACLs. An inherited TEMP share root can
