@@ -171,7 +171,7 @@ try{
  try{[IO.File]::WriteAllText($source,'tampered');Reject {Stage ([guid]::NewGuid().ToString('D'))} 'source byte drift before write'}finally{[IO.File]::WriteAllBytes($source,$original)}
  $foreign=Join-Path $candidate 'unexpected.txt'
  try{[IO.File]::WriteAllText($foreign,'foreign');Reject {Stage ([guid]::NewGuid().ToString('D'))} 'foreign source refuses write'}finally{Remove-Item -LiteralPath $foreign}
- try{[IO.File]::WriteAllText(($source+':foreign'),'hidden');Reject {Stage ([guid]::NewGuid().ToString('D'))} 'source ADS refuses write'}finally{Remove-Item -LiteralPath ($source+':foreign')}
+ try{[IO.File]::WriteAllText(($source+':foreign'),'hidden');Reject {Stage ([guid]::NewGuid().ToString('D'))} 'source ADS refuses write'}finally{[IO.File]::Delete($source+':foreign')}
  $foreign=Join-Path $unc 'Machine\foreign.txt'
  try{[IO.File]::WriteAllText($foreign,'foreign');Reject {Stage ([guid]::NewGuid().ToString('D'))} 'baseline drift refuses write'}finally{Remove-Item -LiteralPath $foreign}
  Check (@(Get-ChildItem -LiteralPath $journalRoot).Count -eq 0) 'all refused preflights leave no transaction directories'
@@ -192,7 +192,7 @@ try{
  try{[IO.File]::WriteAllText($file,'changed');Reject {Rollback $op $completePin} 'rollback refuses byte drift';Check (Test-Path -LiteralPath $destination) 'drift refusal keeps staged tree'}finally{[IO.File]::WriteAllBytes($file,$saved)}
  $foreign=Join-Path $destination 'foreign.txt'
  try{[IO.File]::WriteAllText($foreign,'foreign');Reject {Rollback $op $completePin} 'rollback refuses extra file';Check (Test-Path -LiteralPath $foreign) 'foreign file never deleted'}finally{Remove-Item -LiteralPath $foreign}
- try{[IO.File]::WriteAllText(($file+':foreign'),'hidden');Reject {Rollback $op $completePin} 'rollback refuses hidden stream'}finally{Remove-Item -LiteralPath ($file+':foreign')}
+ try{[IO.File]::WriteAllText(($file+':foreign'),'hidden');Reject {Rollback $op $completePin} 'rollback refuses hidden stream'}finally{[IO.File]::Delete($file+':foreign')}
  $savedAcl=Get-Acl -LiteralPath $file
  try{$changedAcl=Get-Acl -LiteralPath $file;$changedAcl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new([Security.Principal.SecurityIdentifier]::new('S-1-1-0'),'Read','Allow'));Set-Acl -LiteralPath $file -AclObject $changedAcl;Reject {Rollback $op $completePin} 'rollback refuses ACL drift'}finally{Set-Acl -LiteralPath $file -AclObject $savedAcl}
  Check ((Get-AuthWireSysvolInventory $unc).Sha256 -ceq $stagedHash) 'all drift cases restored before approved rollback'
