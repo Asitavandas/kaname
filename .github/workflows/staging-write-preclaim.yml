@@ -10,6 +10,7 @@ on:
       - 'kaname/connector_channel.py'
       - 'tools/staging_write_preclaim_windows_check.ps1'
       - 'tools/staging_write_preclaim_wire_check.py'
+      - 'tools/staging_write_transport_windows_check.py'
       - '.github/workflows/staging-write-preclaim.yml'
   push:
     branches: [main]
@@ -22,6 +23,7 @@ on:
       - 'kaname/connector_channel.py'
       - 'tools/staging_write_preclaim_windows_check.ps1'
       - 'tools/staging_write_preclaim_wire_check.py'
+      - 'tools/staging_write_transport_windows_check.py'
       - '.github/workflows/staging-write-preclaim.yml'
 permissions:
   contents: read
@@ -37,11 +39,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install cryptography==46.0.0
-      - name: Native preclaim durability and Python RSA protocol interoperability
+      - name: Native durability, bounded pinned TLS and real SQLite single-use claim
         shell: powershell
         run: |
-          $env:AUTHWIRE_WRITE_WIRE_OUTPUT=Join-Path $env:RUNNER_TEMP write-preclaim-wire.json
-          tools/staging_write_preclaim_windows_check.ps1
-          if(-not $?){throw 'Native preclaim check failed'}
-          python tools/staging_write_preclaim_wire_check.py $env:AUTHWIRE_WRITE_WIRE_OUTPUT
-          if($LASTEXITCODE -ne 0){throw 'Python wire check failed'}
+          python tools/staging_write_transport_windows_check.py
+          if($LASTEXITCODE -ne 0){throw 'Native transport and wire checks failed'}

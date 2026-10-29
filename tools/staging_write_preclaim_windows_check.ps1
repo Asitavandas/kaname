@@ -2,12 +2,12 @@
 $ErrorActionPreference='Stop';Set-StrictMode -Version 2
 $lib=Join-Path $PSScriptRoot '..\windows\connector'
 . (Join-Path $lib 'Test-AuthWireDeploymentCandidate.ps1') -LibraryOnly
-foreach($n in @('Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','ConnectorChannelTypes.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','Invoke-AuthWireCombinedJob.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','StagingFilesystem.ps1','StagingWritePreclaim.ps1')){. (Join-Path $lib $n)}
+foreach($n in @('Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','ConnectorChannelTypes.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','Invoke-AuthWireCombinedJob.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','StagingFilesystem.ps1','StagingWritePreclaim.ps1','StagingWriteTransport.ps1')){. (Join-Path $lib $n)}
 $script:checks=0
 function Check($v,[string]$name){if(-not $v){throw ('PRECLAIM_FIXTURE:'+ $name)};$script:checks++}
 function Reject([scriptblock]$fn,[string]$name){$failed=$false;try{& $fn|Out-Null}catch{$failed=$true};Check $failed $name}
 function Clone($v){return ($v|ConvertTo-Json -Depth 12 -Compress|ConvertFrom-Json)}
-foreach($n in @('StagingWritePreclaim.ps1','Read-AuthWireStagingWritePreflight.ps1')){
+foreach($n in @('StagingWritePreclaim.ps1','Read-AuthWireStagingWritePreflight.ps1','StagingWriteTransport.ps1')){
  $tokens=$null;$errors=$null;$a=[Management.Automation.Language.Parser]::ParseFile((Join-Path $lib $n),[ref]$tokens,[ref]$errors)
  Check ($errors.Count -eq 0) ('native parser '+$n)
  $calls=@($a.FindAll({param($node)$node -is [Management.Automation.Language.CommandAst]},$true)|ForEach-Object {$_.GetCommandName()})
@@ -15,6 +15,7 @@ foreach($n in @('StagingWritePreclaim.ps1','Read-AuthWireStagingWritePreflight.p
 }
 $root=[IO.Path]::GetFullPath((Join-Path $env:TEMP ('aw-preclaim-'+[guid]::NewGuid().ToString('N'))))
 $key=$null;$rsa=$null;$signer=$null;$public=$null
+$webCert=$null;$webStore=$null;$webAdded=$false;$hostBytes=$null;$hosts=$null
 try{
  $null=New-Item -ItemType Directory -Path $root
  $acl=Get-Acl -LiteralPath $root;$acl.SetSecurityDescriptorSddlForm('O:BAG:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)');Set-Acl -LiteralPath $root -AclObject $acl
@@ -24,6 +25,12 @@ try{
  $key=[Security.Cryptography.CngKey]::Create([Security.Cryptography.CngAlgorithm]::Rsa,('aw-preclaim-'+[guid]::NewGuid().ToString('N')),$p);$rsa=[Security.Cryptography.RSACng]::new($key)
  $sid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value;$domainSid=$sid.Substring(0,$sid.LastIndexOf('-'))
  $b=@{instance_id=[guid]::NewGuid().ToString('D');connector_id=[guid]::NewGuid().ToString('D');generation=1;host_guid=[guid]::NewGuid().ToString('D');host_fqdn=([Environment]::MachineName.ToLowerInvariant()+'.lab.example');service_sid=$sid;appliance_fqdn='kaname.lab.example';appliance_tls_sha256=('a'*64);channel_key_sha256=(Get-AuthWireChannelPublicKeyId $rsa)}
+ if($env:AUTHWIRE_WRITE_TRANSPORT_DIRECTORY){
+  if($env:RUNNER_ENVIRONMENT -ne 'github-hosted'){throw 'Hosted TLS fixture only'}
+  $td=$env:AUTHWIRE_WRITE_TRANSPORT_DIRECTORY
+  $web=Get-Content -LiteralPath (Join-Path $td 'base.json') -Raw|ConvertFrom-Json
+  $b.appliance_fqdn=$web.fqdn;$b.appliance_tls_sha256=$web.pin
+ }
  $release=[guid]::NewGuid().ToString('D');$request='1'*64
  $t=[pscustomobject][ordered]@{candidate_id=[guid]::NewGuid().ToString('D');network_candidate_id=[guid]::NewGuid().ToString('D');plan_id=[guid]::NewGuid().ToString('D');plan_version=1;gpo_id=[guid]::NewGuid().ToString('D');approval_sha256=('a'*64);network_manifest_sha256=('b'*64);manifest_sha256=('c'*64);draft_sha256=('d'*64);dependency_sha256=('e'*64);publisher_thumbprint=('A'*40);machine_profile_id=[guid]::NewGuid().ToString('D');machine_profile_version=3;domain='lab.example';root_thumbprint=('f'*40);group_sid=($domainSid+'-1647');content_result_sha256=('2'*64);target_sids_sha256=('3'*64);target_count=1}
  $gpoRoot=Join-Path $root ('fixture-{'+$t.gpo_id+'}');$null=New-Item -ItemType Directory -Path $gpoRoot
@@ -129,6 +136,83 @@ namespace AuthWire.PreclaimFixture {
  Reject {New-AuthWireStagingWriteClaim $journal $offer.job_id $b $release $rsa} 'lost reply never produces second claim'
  . (Join-Path $lib 'StagingWritePreclaim.ps1')
  Reject {New-AuthWireStagingWriteClaim $journal $offer.job_id $b $release $rsa} 'module reload does not reset durable claim'
+ # Exact receipt schema and native proof verification; no network needed here.
+ $started=Read-AuthWireStagingJournal (Join-Path (Join-Path $journal $offer.job_id) 'claim-started.json')
+ $claimRequest=Assert-AuthWireStoredWriteClaim $proof $started $offer $b $release $rsa
+ $sent=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+ $grant=[pscustomobject]@{format=1;request_id=$claimRequest;job_id=$offer.job_id;operation=$offer.operation;intent_sha256=$offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $target);authorization_id=('7'*64);expires_at=($sent+30);write_authorized=$true;can_apply_gpo=$false}
+ Assert-AuthWireWriteGrant $grant $offer $claimRequest $sent;Check $true 'strict grant response accepted without executing it'
+ foreach($n in @('request_id','job_id','operation','intent_sha256','target_sha256','authorization_id')){$v=Clone $grant;$v.$n='wrong';Reject {Assert-AuthWireWriteGrant $v $offer $claimRequest $sent} ('grant rejects changed '+$n)}
+ foreach($n in @('write_authorized','can_apply_gpo')){$v=Clone $grant;$v.$n=-not $v.$n;Reject {Assert-AuthWireWriteGrant $v $offer $claimRequest $sent} 'grant flags are exact booleans'}
+ foreach($expiry in @($true,$sent,$sent+31)){$v=Clone $grant;$v.expires_at=$expiry;Reject {Assert-AuthWireWriteGrant $v $offer $claimRequest $sent} 'grant time type/lifetime/expiry bound'}
+ $v=Clone $grant;$v|Add-Member NoteProperty command 'untrusted';Reject {Assert-AuthWireWriteGrant $v $offer $claimRequest $sent} 'grant has no arbitrary commands or paths'
+ Reject {Assert-AuthWireWriteGrant $grant $offer $claimRequest ($sent+1)} 'clock rollback during send refuses grant'
+ Reject {Assert-AuthWireWriteGrant $grant $offer $claimRequest ($sent-6)} 'late transport reply refuses grant'
+ $v=Clone $proof;$v.payload=[Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes('{}'));Reject {Assert-AuthWireStoredWriteClaim $v $started $offer $b $release $rsa} 'stored payload substitution rejected'
+ $v=Clone $proof;$v.signature=[Convert]::ToBase64String((New-Object byte[] 384));Reject {Assert-AuthWireStoredWriteClaim $v $started $offer $b $release $rsa} 'stored signature independently verified'
+ $v=Clone $proof;$v.frame+="`n";Reject {Assert-AuthWireStoredWriteClaim $v $started $offer $b $release $rsa} 'noncanonical stored base64 rejected'
+ $v=Clone $started;$v.checked_at=$sent-6;Reject {Assert-AuthWireStoredWriteClaim $proof $v $offer $b $release $rsa} 'stale claim cannot be transmitted later'
+ if($env:AUTHWIRE_WRITE_TRANSPORT_DIRECTORY){
+  Initialize-AuthWireWriteTransportTypes;Initialize-AuthWireChannelTypes
+  $url='https://'+$b.appliance_fqdn+':'+$web.port+'/'
+  $route='/api/connector/v1/staging-write/claim'
+  $webCert=[Security.Cryptography.X509Certificates.X509Certificate2]::new((Join-Path $td 'web.crt'))
+  $webStore=[Security.Cryptography.X509Certificates.X509Store]::new('Root','LocalMachine');$webStore.Open('ReadWrite')
+  if($webStore.Certificates.Find('FindByThumbprint',$webCert.Thumbprint,$false).Count){throw 'Unexpected fixture trust'}
+  $hosts=Join-Path $env:SystemRoot 'System32\drivers\etc\hosts';$hostBytes=[IO.File]::ReadAllBytes($hosts)
+  [IO.File]::WriteAllBytes($hosts,($hostBytes+[Text.Encoding]::ASCII.GetBytes("`r`n127.0.0.1 "+$b.appliance_fqdn+' other-'+$b.appliance_fqdn+"`r`n")))
+  Reject {[AuthWire.Connector.WriteTransportV1]::Post($url,$b.appliance_fqdn,$b.appliance_tls_sha256,$route,'{}')} 'TLS requires normal trust as well as pin'
+  $webStore.Add($webCert);$webAdded=$true
+  Reject {[AuthWire.Connector.WriteTransportV1]::Post($url,$b.appliance_fqdn,('0'*64),$route,'{}')} 'trusted TLS wrong pin rejected'
+  Reject {[AuthWire.Connector.WriteTransportV1]::Post($url.Replace($b.appliance_fqdn,('other-'+$b.appliance_fqdn)),('other-'+$b.appliance_fqdn),$b.appliance_tls_sha256,$route,'{}')} 'TLS hostname mismatch rejected even with right pin'
+  Reject {[AuthWire.Connector.WriteTransportV1]::Post($url.Replace('https:','http:'),$b.appliance_fqdn,$b.appliance_tls_sha256,$route,'{}')} 'plain HTTP refused'
+  Reject {[AuthWire.Connector.WriteTransportV1]::Post(($url+'?q=x'),$b.appliance_fqdn,$b.appliance_tls_sha256,$route,'{}')} 'URL query refused'
+  Reject {[AuthWire.Connector.WriteTransportV1]::Post($url,$b.appliance_fqdn,$b.appliance_tls_sha256,'/other','{}')} 'unreviewed route refused'
+  Reject {[AuthWire.Connector.WriteTransportV1]::Post($url,$b.appliance_fqdn,$b.appliance_tls_sha256,$route,('x'*4097))} 'request bound checked before send'
+  foreach($case in @('redirect','oversized','invalid_utf8','wrong_type','slow','slow_body')){
+   Set-Content -LiteralPath (Join-Path $td 'case.txt') -Value $case -Encoding ASCII
+   $watch=[Diagnostics.Stopwatch]::StartNew()
+   Reject {[AuthWire.Connector.WriteTransportV1]::Post($url,$b.appliance_fqdn,$b.appliance_tls_sha256,$route,'{}')} ('TLS response rejected '+$case)
+   if($case -in @('slow','slow_body')){Check ($watch.Elapsed.TotalSeconds -lt 9) 'absolute body/header deadline bounded'}
+  }
+  Set-Content -LiteralPath (Join-Path $td 'case.txt') -Value 'large_poll' -Encoding ASCII
+  $large=[AuthWire.Connector.WriteTransportV1]::Post($url,$b.appliance_fqdn,$b.appliance_tls_sha256,'/api/connector/v1/staging-write/poll','{}')
+  Check ($large.Length -eq 20002) 'large offer transport bounded separately from grant receipt'
+  Set-Content -LiteralPath (Join-Path $td 'case.txt') -Value 'oversized_poll' -Encoding ASCII
+  Reject {[AuthWire.Connector.WriteTransportV1]::Post($url,$b.appliance_fqdn,$b.appliance_tls_sha256,'/api/connector/v1/staging-write/poll','{}')} 'streamed offer response over32KiB refused'
+  foreach($case in @('grant_ok','grant_mismatch','grant_lost','grant_disk_failure')){
+   $o=MakeOffer;$j=Join-Path $root $case;$null=New-Item -ItemType Directory -Path $j
+   $ja=Get-Acl -LiteralPath $j;$ja.SetAccessRuleProtection($true,$true);Set-Acl -LiteralPath $j -AclObject $ja
+   $null=Save-AuthWireStagingWriteOffer $o $b $release $request $j
+   $context=Clone $live;$context.job_id=$o.job_id;$context.intent_sha256=$o.intent_sha256;$context.checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+   $jobDir=Join-Path $j $o.job_id
+   Write-AuthWireStagingJournal (Join-Path $jobDir 'preflight.json') $context
+   $null=New-AuthWireStagingWriteClaim $j $o.job_id $b $release $rsa
+   [IO.File]::WriteAllText((Join-Path $td 'core-input.json'),(@{binding=$b;public_key_pem=[AuthWire.Connector.ChannelTypesV1]::PublicPem($rsa);offer=$o}|ConvertTo-Json -Depth 15 -Compress),[Text.UTF8Encoding]::new($false))
+   Set-Content -LiteralPath (Join-Path $td 'case.txt') -Value $case -Encoding ASCII
+   if($case -ceq 'grant_ok'){
+    $r=Invoke-AuthWireStagingWriteClaimTransport $j $o.job_id $b $release $rsa $url
+    Check ($r.GrantRecorded -and $r.Phase -ceq 'authorization_recorded' -and -not $r.FilesystemWriteEnabled -and -not $r.CanApplyGpo) 'real CNG/HTTPS/SQLite grant durably recorded; no execution'
+    $receipt=Read-AuthWireStagingJournal (Join-Path $jobDir 'authorization.json')
+    Check ($receipt.binding_scope -ceq (Get-AuthWireJobScope $b) -and $receipt.release_id -ceq $release -and $receipt.offer_sha256 -ceq (Get-AuthWireWriteHash $o) -and $receipt.grant.job_id -ceq $o.job_id) 'receipt pins original offer scope and release'
+   }else{
+    $originalJournalWriter=${function:Write-AuthWireStagingJournal}
+    try{
+     if($case -ceq 'grant_disk_failure'){
+      function Write-AuthWireStagingJournal([string]$Path,$Value){if([IO.Path]::GetFileName($Path) -ceq 'authorization.json'){throw 'SIMULATED_RECEIPT_DISK_FAILURE'};& $originalJournalWriter $Path $Value}
+     }
+     Reject {Invoke-AuthWireStagingWriteClaimTransport $j $o.job_id $b $release $rsa $url} ('real single-use grant reply fails closed '+$case)
+    }finally{Set-Item -Path Function:Write-AuthWireStagingJournal -Value $originalJournalWriter}
+    Check (-not (Test-Path -LiteralPath (Join-Path $jobDir 'authorization.json'))) 'lost or changed reply does not record a valid grant'
+   }
+   Check (Test-Path -LiteralPath (Join-Path $jobDir 'claim-sent.json')) 'send gate survives both accepted and uncertain replies'
+   . (Join-Path $lib 'StagingWriteTransport.ps1')
+   Reject {Invoke-AuthWireStagingWriteClaimTransport $j $o.job_id $b $release $rsa $url} 'module reload cannot transmit the same claim twice'
+   Check (Test-Path -LiteralPath (Join-Path $j ('gpo-'+$t.gpo_id+'.json'))) 'uncertain authorization retains durable GPO lock'
+  }
+  $webStore.Remove($webCert);$webAdded=$false
+  [IO.File]::WriteAllBytes($hosts,$hostBytes);$hostBytes=$null
+ }
  $failedJournal=Join-Path $root 'failed-signing';$null=New-Item -ItemType Directory -Path $failedJournal
  $ja=Get-Acl -LiteralPath $failedJournal;$ja.SetAccessRuleProtection($true,$true);Set-Acl -LiteralPath $failedJournal -AclObject $ja
  $null=Save-AuthWireStagingWriteOffer $offer $b $release $request $failedJournal
@@ -148,7 +232,7 @@ namespace AuthWire.PreclaimFixture {
  $gpoAfter=Get-AuthWireSysvolInventory $gpoRoot
  Check ($gpoAfter.Sha256 -ceq $inventory.Sha256) 'no GPO tree bytes or ACL changed'
  Check (@(Get-ChildItem -LiteralPath (Join-Path $gpoRoot 'Machine') -Force).Count -eq 0) 'no package staged or executed'
- foreach($name in @('ConnectorServicePackage.ps1','ConnectorServiceRuntime.ps1')){Check (-not ([IO.File]::ReadAllText((Join-Path $lib $name))).Contains('StagingWritePreclaim')) 'new preclaim not registered in active package/runtime'}
+ foreach($name in @('ConnectorServicePackage.ps1','ConnectorServiceRuntime.ps1')){foreach($module in @('StagingWritePreclaim','StagingWriteTransport')){Check (-not ([IO.File]::ReadAllText((Join-Path $lib $name))).Contains($module)) 'new source SDK not registered in active package/runtime'}}
  Initialize-AuthWireChannelTypes
  if($env:AUTHWIRE_WRITE_WIRE_OUTPUT){$wire=[ordered]@{binding=$b;public_key_pem=[AuthWire.Connector.ChannelTypesV1]::PublicPem($rsa);target=$target;target_sha256=(Get-AuthWireWriteHash $target);offer=$offer;proofs=@(@{kind='POLL';proof=$poll},@{kind='CLAIM';proof=$proof},@{kind='RESULT';proof=$result})};[IO.File]::WriteAllText($env:AUTHWIRE_WRITE_WIRE_OUTPUT,($wire|ConvertTo-Json -Depth 15 -Compress),[Text.UTF8Encoding]::new($false))}
  # Genuine fixed AllSigned child: use only a disposable signed package with an
@@ -174,8 +258,11 @@ namespace AuthWire.PreclaimFixture {
  $slow=Join-Path $readerPackage 'bounded-fixture.ps1';[IO.File]::WriteAllText($slow,'Start-Sleep -Seconds 3');$null=Set-AuthenticodeSignature -FilePath $slow -Certificate $signer -HashAlgorithm SHA256
  $timer=[Diagnostics.Stopwatch]::StartNew();$read=[AuthWire.Connector.ScopeProcessV1]::Run($exe,('-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$slow+'"'),200);$timer.Stop()
  Check ($read.TimedOut -and $timer.ElapsedMilliseconds -lt 5000) 'actual AllSigned timeout is bounded'
- Write-Host ('AUTHWIRE_WRITE_PRECLAIM_WINDOWS_OK checks='+$checks+' customer_ad_tested=false write_enabled=false claim_sent=false')
+ Write-Host ('AUTHWIRE_WRITE_PRECLAIM_WINDOWS_OK checks='+$checks+' customer_ad_tested=false write_enabled=false claim_sent_to_disposable_fixture='+[bool]$env:AUTHWIRE_WRITE_TRANSPORT_DIRECTORY)
 }finally{
+ if($hostBytes -and $hosts){[IO.File]::WriteAllBytes($hosts,$hostBytes)}
+ if($webAdded){$webStore.Remove($webCert)}
+ if($webStore){$webStore.Close();$webStore.Dispose()};if($webCert){$webCert.Dispose()}
  if($signer){foreach($storeName in @('Root','TrustedPublisher','My')){$path='Cert:\LocalMachine\'+$storeName+'\'+$signer.Thumbprint;if(Test-Path -LiteralPath $path){if($storeName -ceq 'My'){Remove-Item -LiteralPath $path -DeleteKey -Force}else{Remove-Item -LiteralPath $path -Force}}}}
  if($public){$public.Dispose()}
  if($rsa){$rsa.Dispose()};if($key){try{$key.Delete()}finally{$key.Dispose()}}
