@@ -1,11 +1,12 @@
 """Verify real native WinPS proof output with the existing Python verifier."""
+import base64
 import copy
 import json
 from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from kaname.connector_jobs import JobError, verify_job_proof
+from kaname.connector_jobs import JobError, scope_id, verify_job_proof
 from kaname.connector_registry import decode_binding, digest
 from kaname.staging_write_jobs import STAGE, target_valid, intent_id, POLL_PATH, CLAIM_PATH, RESULT_PATH
 from kaname.staging_preview_jobs import preview_hash
@@ -13,17 +14,21 @@ from kaname.staging_preview_jobs import preview_hash
 
 def main(path):
     value = json.loads(Path(path).read_text(encoding='utf-8-sig'))
-    binding = decode_binding(value['binding'] | {'public_key_pem': value['public_key_pem']})
+    native_binding = dict(value['binding'])
+    native_key_id = native_binding.pop('channel_key_sha256')
+    binding = decode_binding(native_binding | {'public_key_pem': value['public_key_pem']})
+    assert binding.fields()[-1] == native_key_id
     target = value['target']; offer = value['offer']
     assert target_valid(target, STAGE)
     assert digest(target) == value['target_sha256']
     assert preview_hash(target['preview_record']['Preview']) == target['preview_record']['PreviewSha256']
     assert intent_id(offer['scope_sha256'], offer['job_id'], STAGE, target) == offer['intent_sha256']
-    checks = 4
+    assert scope_id(binding) == offer['scope_sha256']
+    checks = 6
     for row in value['proofs']:
         raw = json.dumps(row['proof'], separators=(',', ':')).encode()
         kind = row['kind']
-        frame = __import__('base64').b64decode(row['proof']['frame']).decode('ascii').split('\n')
+        frame = base64.b64decode(row['proof']['frame']).decode('ascii').split('\n')
         # Offline wire evidence stays verifiable after the actual60s transport
         # window. The production verifier still receives its real wall clock.
         clock = lambda: int(frame[12])
@@ -39,7 +44,7 @@ def main(path):
             try:
                 bad = copy.deepcopy(row['proof'])
                 if change == 'tamper':
-                    bad['payload'] = __import__('base64').b64encode(b'{}').decode()
+                    bad['payload'] = base64.b64encode(b'{}').decode()
                 verify_job_proof(json.dumps(bad).encode(), binding, 'POLL' if kind != 'POLL' and change == 'wrong_kind' else 'RESULT' if change == 'wrong_kind' else kind, clock,
                     prefix=args['prefix'], poll_path='/wrong' if change == 'wrong_path' else POLL_PATH,
                     result_path='/wrong' if change == 'wrong_path' else args['result_path'])
