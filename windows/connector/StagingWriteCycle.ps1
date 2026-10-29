@@ -19,6 +19,7 @@ function Assert-AuthWireWritePollReply($Value,[hashtable]$Binding,[string]$Relea
 }
 function Read-AuthWireWriteCycleOffer([string]$JournalRoot,[hashtable]$Binding,[string]$Release){
  Assert-AuthWireStagingWriteJournalLocation $JournalRoot $Binding
+ Initialize-AuthWireStagingFilesystemTypes
  $p=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
   $p.PinAncestors($JournalRoot);$path=Join-Path $JournalRoot 'cycle-offer.json';$p.PinFile($path);$v=Read-AuthWireStagingJournal $path
@@ -51,6 +52,7 @@ function Resume-AuthWireStagingWriteCycleResult([string]$JournalRoot,[hashtable]
 function Invoke-AuthWireStagingWriteCycle([string]$JournalRoot,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[string]$BaseUrl){
  Assert-AuthWireCandidateGuid $Release
  Assert-AuthWireStagingWriteJournalLocation $JournalRoot $Binding
+ Initialize-AuthWireStagingFilesystemTypes
  $m=Enter-AuthWireWriteCycleLock $Binding;$p=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
   $p.PinAncestors($JournalRoot)

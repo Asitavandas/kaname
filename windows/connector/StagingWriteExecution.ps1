@@ -212,7 +212,7 @@ function Invoke-AuthWireAuthorizedFilesystemStage([string]$JournalRoot,[string]$
    $diagnostic=[pscustomobject]@{format='AuthWireStageDiagnosticV1';parent_phase=$parentPhase;child_phase='unknown';exception_kind='unknown';timed_out=$false;truncated=$false;exit_code=$null;elapsed_ms=$clock.ElapsedMilliseconds;work_budget_ms=$budget}
    if($r){
     $diagnostic.timed_out=[bool]$r.TimedOut;$diagnostic.truncated=[bool]$r.Truncated;$diagnostic.exit_code=[int]$r.ExitCode
-    if(-not $r.Truncated -and $r.Output.Length -le 512){try{
+    if(-not $r.Truncated -and $r.Output -is [string] -and $r.Output.Length -le 512){try{
      $failure=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($r.Output))
      Assert-AuthWireCandidateFields $failure @('error','phase','exception_kind')
      if($failure.error -is [string] -and $failure.error -ceq 'WRITE_EXECUTION_REQUIRES_REVIEW' -and $failure.phase -is [string] -and $failure.phase -cin @('load','config','key','intent','modules','gate','identity','context','engine','postcheck','result_flush') -and $failure.exception_kind -is [string] -and $failure.exception_kind -cin @('io','security','timeout','runtime','other')){$diagnostic.child_phase=$failure.phase;$diagnostic.exception_kind=$failure.exception_kind}

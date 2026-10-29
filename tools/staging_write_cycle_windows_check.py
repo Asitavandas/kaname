@@ -152,7 +152,9 @@ def main():
             assert len(store.audit()) == len(original_audit)+19
             after = store.snapshot()
             assert after['config'] == original['config'] and after['policies'] == original['policies']
-            assert after['revision'] == original['revision']+44
+            # Only audit transitions advance the business revision. Queued
+            # fixture seeding and POLL bookkeeping do not advance it.
+            assert after['revision'] == original['revision']+19
             print('AUTHWIRE_WRITE_CYCLE_WINDOWS_OK ' + json.dumps({
                 'native_checks': native['checks'], 'cases': 13, 'original_polls': 13,
                 'original_claims': 10, 'result_requests': 10, 'result_transitions': 9,
