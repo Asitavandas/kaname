@@ -24,7 +24,7 @@ namespace AuthWire.Staging {
    public uint Attributes; public System.Runtime.InteropServices.ComTypes.FILETIME C,A,W;
    public uint Volume,High,Low,Links,IndexHigh,IndexLow;
   }
-  [StructLayout(LayoutKind.Sequential)] struct Disposition { [MarshalAs(UnmanagedType.Bool)] public bool Delete; }
+  [StructLayout(LayoutKind.Sequential)] struct Disposition { public byte Delete; }
   [StructLayout(LayoutKind.Sequential,CharSet=CharSet.Unicode)] struct StreamInfo {
    public long Size; [MarshalAs(UnmanagedType.ByValTStr,SizeConst=296)] public string Name;
   }
@@ -108,7 +108,7 @@ namespace AuthWire.Staging {
    // No recursive delete or pathname delete is used. Added foreign children make
    // a directory delete fail; they are never traversed or removed.
    var ordered=new List<Entry>(entries);ordered.Sort((a,b)=>{int x=b.R.Path.Length.CompareTo(a.R.Path.Length);return x!=0?x:StringComparer.Ordinal.Compare(b.R.Path,a.R.Path);});
-   foreach(var e in ordered){if(!e.Delete)Fail("STAGING_DELETE_LEASE_REQUIRED");var d=new Disposition{Delete=true};if(!SetFileInformationByHandle(e.H,4,ref d,4))NativeFail();e.H.Dispose();}
+   foreach(var e in ordered){if(!e.Delete)Fail("STAGING_DELETE_LEASE_REQUIRED");var d=new Disposition{Delete=1};if(!SetFileInformationByHandle(e.H,4,ref d,1))NativeFail();e.H.Dispose();}
   }
   public void Dispose(){for(int i=entries.Count-1;i>=0;i--)entries[i].H.Dispose();entries.Clear();}
  }
@@ -167,7 +167,7 @@ function Invoke-AuthWireStagingFilesystemStage {
  Assert-AuthWireStagingJournalRoot $JournalRoot
  $pins=[AuthWire.Staging.TreeLeaseV1]::new();$source=$null;$staged=$null;$journalPins=$null
  try{
-  $pins.PinAncestors($GpoRoot);$pins.PinAncestors((Join-Path $GpoRoot 'Machine'))
+  $pins.PinAncestors($GpoRoot);$pins.PinAncestors(([IO.Path]::Combine($GpoRoot,'Machine')))
   $pins.PinAncestors($SourceRoot);$pins.PinAncestors($JournalRoot)
   $source=[AuthWire.Staging.TreeLeaseV1]::Tree($SourceRoot,$false)
   $sourceRows=Get-AuthWireStagingFilesystemRows $source
@@ -176,7 +176,7 @@ function Invoke-AuthWireStagingFilesystemStage {
   $baseline=Get-AuthWireSysvolInventory $GpoRoot
   $recomputed=New-AuthWireCombinedStagingPlanCore $Target $sourceFiles $baseline $PreviewRecord.Preview.scope_observations_sha256 $PreviewRecord.Preview.checked_at
   if($recomputed.PreviewSha256 -cne $ApprovedPreviewSha256){throw 'STAGING_PREVIEW_CHANGED'}
-  $destination=Join-Path $GpoRoot $relative.Replace('/','\')
+  $destination=[IO.Path]::Combine($GpoRoot,$relative.Replace('/','\'))
   if(Test-Path -LiteralPath $destination){throw 'STAGING_DESTINATION_EXISTS'}
   $journal=Join-Path $JournalRoot $OperationId
   [AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($journal)
@@ -188,9 +188,9 @@ function Invoke-AuthWireStagingFilesystemStage {
   if((Get-AuthWireSysvolInventory $GpoRoot).Sha256 -cne $baseline.Sha256){throw 'STAGING_BASELINE_CHANGED'}
   [AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($destination)
   $pins.PinAncestors($destination)
-  foreach($d in @('enrollment','network')){[AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory((Join-Path $destination $d));$pins.PinAncestors((Join-Path $destination $d))}
+  foreach($d in @('enrollment','network')){[AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory(([IO.Path]::Combine($destination,$d)));$pins.PinAncestors(([IO.Path]::Combine($destination,$d)))}
   foreach($r in $PreviewRecord.Preview.files){
-   $from=Join-Path $SourceRoot $r.Path.Replace('/','\');$to=Join-Path $destination $r.Path.Replace('/','\')
+   $from=[IO.Path]::Combine($SourceRoot,$r.Path.Replace('/','\'));$to=[IO.Path]::Combine($destination,$r.Path.Replace('/','\'))
    $bytes=[IO.File]::ReadAllBytes($from)
    if($bytes.Length -ne $r.Size -or (Get-AuthWireCandidateHash $bytes) -cne $r.Sha256){throw 'STAGING_SOURCE_CHANGED'}
    $stream=[IO.File]::Open($to,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
@@ -218,7 +218,7 @@ function Invoke-AuthWireStagingFilesystemRollback {
  Assert-AuthWireStagingJournalRoot $JournalRoot
  $pins=[AuthWire.Staging.TreeLeaseV1]::new();$owned=$null
  try{
-  $pins.PinAncestors($GpoRoot);$pins.PinAncestors((Join-Path $GpoRoot 'Machine'));$pins.PinAncestors($JournalRoot)
+  $pins.PinAncestors($GpoRoot);$pins.PinAncestors(([IO.Path]::Combine($GpoRoot,'Machine')));$pins.PinAncestors($JournalRoot)
   $journal=Join-Path $JournalRoot $OperationId;$pins.PinAncestors($journal)
   foreach($n in @('intent.json','complete.json')){$pins.PinFile((Join-Path $journal $n))}
   if(Test-Path -LiteralPath (Join-Path $journal 'rolled-back.json')){throw 'STAGING_ROLLBACK_ALREADY_RECORDED'}
@@ -231,7 +231,7 @@ function Invoke-AuthWireStagingFilesystemRollback {
   $all=Get-AuthWireSysvolInventory $GpoRoot
   $outside=@($all.Entries|Where-Object {$_.Path -cne $relative -and -not $_.Path.StartsWith($relative+'/',[StringComparison]::Ordinal)})
   if((Get-AuthWireScopeDataHash $outside) -cne $intent.baseline_sha256){throw 'STAGING_OUTSIDE_DRIFT_REJECTED'}
-  $owned=[AuthWire.Staging.TreeLeaseV1]::Tree((Join-Path $GpoRoot $relative.Replace('/','\')),$true)
+  $owned=[AuthWire.Staging.TreeLeaseV1]::Tree(([IO.Path]::Combine($GpoRoot,$relative.Replace('/','\'))),$true)
   $rows=Get-AuthWireStagingFilesystemRows $owned
   if((Get-AuthWireStagingFilesystemDigest $rows) -cne $complete.tree_sha256){throw 'STAGING_ROLLBACK_DRIFT_REJECTED'}
   $owned.DeleteOwnedTree();$owned.Dispose();$owned=$null

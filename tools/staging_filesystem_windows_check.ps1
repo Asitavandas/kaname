@@ -159,7 +159,7 @@ try{
  $unc='\\localhost\'+$share+'\{'+$t.gpo_id+'}'
  Check ((Get-AuthWireSysvolInventory $unc).Sha256 -ceq $before.Sha256) 'moved isolated GPO fixture baseline unchanged'
  function Stage([string]$id,$proposal=$fresh,[string]$pin=$fresh.PreviewSha256,[string]$protectedId=$protected){
-  Invoke-AuthWireStagingFilesystemStage -Target $t -PreviewRecord $proposal -ApprovedPreviewSha256 $pin -SourceRoot $candidate -GpoRoot $unc -JournalRoot $journalRoot -OperationId $id -ProtectedGpoId $protectedId
+  try{Invoke-AuthWireStagingFilesystemStage -Target $t -PreviewRecord $proposal -ApprovedPreviewSha256 $pin -SourceRoot $candidate -GpoRoot $unc -JournalRoot $journalRoot -OperationId $id -ProtectedGpoId $protectedId}catch{Write-Host $_.ScriptStackTrace;throw}
  }
  function Rollback([string]$id,[string]$pin){Invoke-AuthWireStagingFilesystemRollback -GpoRoot $unc -JournalRoot $journalRoot -OperationId $id -ApprovedCompleteSha256 $pin}
  Reject {Stage ([guid]::NewGuid().ToString('D')) $fresh ('0'*64)} 'wrong approval hash refuses any write'
@@ -180,7 +180,7 @@ try{
  $op=[guid]::NewGuid().ToString('D')
  $stage=Stage $op
  Check ($stage.Phase -ceq 'staged' -and $stage.FileCount -eq 20 -and -not $stage.CanApplyGpo) 'actual SMB stage completes without activation'
- $destination=Join-Path $unc $fresh.Preview.relative_destination.Replace('/','\')
+ $destination=[IO.Path]::Combine($unc,$fresh.Preview.relative_destination.Replace('/','\'))
  Check (@(Get-ChildItem -LiteralPath $destination -Recurse -File).Count -eq 20) 'twenty staged files'
  $completePath=Join-Path (Join-Path $journalRoot $op) 'complete.json'
  $complete=Read-AuthWireStagingJournal $completePath;$completePin=Get-AuthWireScopeDataHash $complete
