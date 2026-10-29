@@ -1,0 +1,334 @@
+{
+  "event": "WINDOWS_CONTROLLED_STAGING_CYCLE_SOURCE_CHECKPOINT",
+  "date_local": "2026-10-30",
+  "timezone": "Europe/Istanbul",
+  "repository": "Asitavandas/kaname",
+  "pr": 126,
+  "base": "3aa39133639926536eb10752a3a644141989a21a",
+  "tested_head": "c896837a15e892cb07b1f5c708d1687f4f08f9ee",
+  "scope": "Source-only single controlled POLL/preflight/CLAIM/consume/signed stage/immutable RESULT cycle and explicit result-only recovery; no permanent worker/package registration or production route activation.",
+  "validation": {
+    "real_machine_cng_pinned_tls_sqlite_signed_child_smb_in_same_cycle": true,
+    "queued_jobs_and_operator_approval_history_seeded": true,
+    "ad_current_target_content_and_namespace_observations_simulated": true,
+    "native_caller_hosted_windows_account_not_customer_gmsa": true,
+    "expected_cycle_cases": 13,
+    "expected_original_polls": 13,
+    "expected_original_claims": 10,
+    "expected_result_requests": 10,
+    "expected_result_transitions": 9,
+    "expected_staged": 2,
+    "expected_review": 7,
+    "expected_unknown_grant": 1,
+    "expected_unknown_offer": 2,
+    "expected_idle": 1,
+    "no_second_poll_claim_or_stage_on_reentry": true,
+    "result_only_recovery_repeats_no_live_read_or_smb_write": true,
+    "separate_prior_seeded_grant_fixture_retained": true,
+    "prior_transport_fixture_retained": true,
+    "actual_customer_reboot_or_domain_sysvol_tested": false,
+    "ci_timings_not_customer_performance": true,
+    "history": [
+      {
+        "head": "5e1642890aebbd3eca2ce3d2247c6ea1d3590505",
+        "run_id": 40969268172,
+        "job_id": 123781598753,
+        "native_cycle_checks": 139,
+        "native_cases_passed": 13,
+        "conclusion": "failed_final_python_revision_assertion",
+        "reason": "Fixture counted seeding and POLL bookkeeping as business revisions. Existing Operations._save does not advance revision; only audit transitions do. Corrected expected delta44 to19; core unchanged."
+      },
+      {
+        "head": "8b133b1c167cdd3070293c929281711fb9a558f5",
+        "run_id": 40969708654,
+        "job_id": 123783094385,
+        "native_cycle_checks": 139,
+        "conclusion": "passed"
+      },
+      {
+        "head": "8b133b1c167cdd3070293c929281711fb9a558f5",
+        "run_id": 40969708636,
+        "job_id": 123783094149,
+        "conclusion": "failed",
+        "reason": "Independent preclaim scenarios reused one original90-second preview. Long fixture exhausted it before a later SaveOffer. Isolated new test targets/previews and auxiliary reader transactions; no saved authority renewed and production limits unchanged."
+      }
+    ],
+    "cycle_native_checks": 139,
+    "cycle_run_id": 40970282373,
+    "cycle_job_id": 123785016441,
+    "cycle_cases": 13,
+    "original_polls": 13,
+    "original_claims": 10,
+    "result_requests": 10,
+    "result_transitions": 9,
+    "actual_business_revision_delta": 19,
+    "authorized_stage_native_checks": 167,
+    "execution_run_id": 40970282375,
+    "execution_job_id": 123785016139,
+    "safe_context_engine_timeout_diagnostics_verified": true,
+    "preclaim_native_checks": 372,
+    "python_rsa_wire_checks": 18,
+    "preclaim_run_id": 40970282380,
+    "preclaim_job_id": 123785016862,
+    "cycle_fixture_seconds": {
+      "success": 19.29,
+      "drift": 7.4,
+      "partial": 7.64,
+      "bad_result": 7.59,
+      "launch_disk": 4.67,
+      "metadata_disk": 4.59,
+      "identity": 6.99,
+      "timeout": 19.72,
+      "lost_ack": 8.63,
+      "lost_grant": 1.71,
+      "poll_lost": 0.16,
+      "poll_bad": 0.17,
+      "idle": 0.12
+    },
+    "general_suite": {
+      "tests": 1123,
+      "skipped": 28,
+      "seconds": 220.55,
+      "run_id": 40970282300,
+      "job_id": 123785015992,
+      "passed": true
+    },
+    "all_six_ci_workflows_passed": true,
+    "windows_permanent_service_regression": {
+      "checks": 85,
+      "run_id": 40970282328,
+      "job_id": 123785016286,
+      "passed": true,
+      "real_signed_scm_and_https": true,
+      "customer_gmsa_tested": false
+    }
+  },
+  "security": {
+    "installer_fixed_empty_private_journal_root_required": true,
+    "global_connector_cycle_mutex": true,
+    "durable_poll_proof_before_http": true,
+    "any_existing_history_refuses_another_cycle_before_signing_or_network": true,
+    "lost_or_no_job_poll_not_automatically_pruned_or_retried": true,
+    "no_alternate_root_reset_cleanup_or_unlock": true,
+    "exact_typed_poll_reply_matches_request_scope": true,
+    "rollback_not_accepted_by_stage_cycle": true,
+    "fixed_allsigned_preflight_and_child_preserved": true,
+    "original_preview_and_grant_deadlines_preserved": true,
+    "lost_grant_receipt_never_reclaimed_or_consumed": true,
+    "result_recovery_does_not_poll_claim_consume_or_execute": true,
+    "immutable_result_and_three_durable_attempts_preserved": true,
+    "safe_diagnostics_allowlisted_phase_and_exception_category_only": true,
+    "diagnostics_bounded_numeric_timeout_truncation_exit_metadata": true,
+    "raw_exception_stdout_stderr_paths_keys_or_config_not_persisted": true,
+    "previous_pr125_failure_not_retrospectively_attributed": true,
+    "whole_transaction_wall_clock_guarantee_claimed": false,
+    "permanent_worker_registered": false,
+    "production_routes_enabled": false,
+    "gpo_activation_enabled": false,
+    "payload_executed": false
+  },
+  "customer_changes": {
+    "linux_updated": false,
+    "windows_updated": false,
+    "ad_gpo_sysvol_changed": false,
+    "services_restarted": false,
+    "existing_keys_acls_or_trust_changed": false,
+    "full_backup_created": false,
+    "customer_gmsa_ad_smb_tested": false
+  },
+  "last_known_installed": {
+    "linux": "0.14.0-dev.44",
+    "windows_release": "df28f70c-104e-4d6d-972c-e311d38adde6",
+    "fresh_customer_read_this_step": false
+  },
+  "open_gates": [
+    "Separately approved authenticated bounded rollback adapter",
+    "Pre-authorization refusal reporting",
+    "Permanent idle/history lifecycle and bounded retention before worker enablement",
+    "Lost result/reboot/partial-journal reconciliation and separately approved unlock",
+    "Reproduce/capture any recurrence of the old PR125 stage failure with new safe diagnostics; actual customer latency/least-privilege acceptance",
+    "Strict backup projection, off-host backup and boot restore acceptance",
+    "Controlled signed package delivery and actual customer gMSA/AD/domain-SYSVOL acceptance before routes enable",
+    "Separate GPO activation, endpoint acceptance, single-account migration and 500/1000 technical scale"
+  ],
+  "forecast": {
+    "remaining_stage_recovery_workdays": [
+      3,
+      6
+    ],
+    "first_pilot_weeks": [
+      2,
+      3
+    ],
+    "first_pilot_window": [
+      "2026-11-13",
+      "2026-11-20"
+    ],
+    "base_with_single_account_scale_weeks": [
+      6,
+      9
+    ],
+    "base_window": [
+      "2026-12-11",
+      "2027-01-01"
+    ],
+    "base_with_guide_weeks": [
+      7,
+      10
+    ],
+    "base_with_guide_window": [
+      "2026-12-18",
+      "2027-01-08"
+    ],
+    "all_scope_and_guide_weeks": [
+      13,
+      19
+    ],
+    "all_scope_window": [
+      "2027-01-29",
+      "2027-03-12"
+    ],
+    "base_active_operator_hours": [
+      20,
+      30
+    ],
+    "all_scope_operator_hours": [
+      30,
+      45
+    ],
+    "observation_calendar_days": [
+      7,
+      14
+    ],
+    "reassessed_on": "2026-10-30",
+    "comparison": "PR125 immutable-result source checkpoint",
+    "change": "Retain3–6 active workdays: a single controlled source cycle and combined technical test advance, but permanent worker idle/history lifecycle, approved rollback, reconciliation and customer delivery remain unmeasured. All other work-package ranges and30Oct conditional dates retained; no automatic subtraction of calendar time/test counts.",
+    "assumptions": "Regular joint work5 days/week, same-day operator outputs and available test access; not measured statistical velocity or background work.",
+    "unbounded_external_waits": [
+      "off-host backup",
+      "restore VM",
+      "vendor API",
+      "scale endpoints/access"
+    ]
+  },
+  "single_scope_target_limit": 512,
+  "two_hundred_is_product_quota": false,
+  "macro_completed": 54,
+  "macro_total": 94,
+  "macro_open": 40,
+  "READY_FOR_FINAL_GUIDE": false,
+  "GUIDE_DELIVERED": false,
+  "files": [
+    {
+      "path": "windows/connector/StagingWriteCycle.ps1",
+      "bytes": 8759,
+      "sha256": "02742d9de11eaf3648d83afa527974c86f22ef01f92b46e209e352562a9d7fbd",
+      "git_blob_sha": "e0cb70c6d7f5e13e95ffb42ab6ce59e17c0c9f8e"
+    },
+    {
+      "path": "windows/connector/StagingWriteExecution.ps1",
+      "bytes": 23546,
+      "sha256": "d1b90c9682e2aa66b7aabd4882ca5734fc5af7949b425e3f8f8e77f3a269aa66",
+      "git_blob_sha": "a6cbf9ab596626149f00d94e5e56b2f48cbb7f70"
+    },
+    {
+      "path": "windows/connector/Invoke-AuthWireStagingWriteChild.ps1",
+      "bytes": 3984,
+      "sha256": "1cc924e7fb4e409a0371da91a59e8991e200fd6172b376ba1164195fbecc1ad0",
+      "git_blob_sha": "3ae6c99cfcf6073b783d1fb5edf378e2ca54e387"
+    },
+    {
+      "path": "tools/staging_write_execution_windows_check.ps1",
+      "bytes": 32879,
+      "sha256": "b2cfe0892b4185ca71e37780e3973fdfd9c20012c12a8bbe8eaa8612713fe506",
+      "git_blob_sha": "2cfc467d18cb579edd722a6ef7812c3698d6839e"
+    },
+    {
+      "path": "tools/staging_write_cycle_windows_check.py",
+      "bytes": 10022,
+      "sha256": "a8ff9615198d21da2569af19113bd6773e7a3f6382fe8c8906d35b13f2b2d5f4",
+      "git_blob_sha": "fbe8d16868e68a898641d04b86303bf47db4634d"
+    },
+    {
+      "path": ".github/workflows/staging-write-cycle.yml",
+      "bytes": 1184,
+      "sha256": "4d32c8c4eec66a8641929fade03fd536f57ad5ee23afbe30248c5e9a2b21054e",
+      "git_blob_sha": "7d32118df0178a0f970fdf4e236e90c587436495"
+    },
+    {
+      "path": "docs/STAGING_WRITE_CYCLE.md",
+      "bytes": 4945,
+      "sha256": "3f51542dac392cb59b55877544dae559374820c3dbf39ae93249abe98a17ff6b",
+      "git_blob_sha": "00b6675909a217b1b7b9d215e6be63b6a544ae10"
+    },
+    {
+      "path": "tools/staging_write_preclaim_windows_check.ps1",
+      "bytes": 48858,
+      "sha256": "42a465286dff3f1c11d9a1a2b90ed50bba613d73ff53117b45162a196b6fc3b4",
+      "git_blob_sha": "e60070d9141e95fefec22d1831feebae1957053e"
+    }
+  ],
+  "merge_sha": "9c70cff148136fa194f6c64a157d8de7005c6537",
+  "ci_workflows": [
+    {
+      "id": 40970282375,
+      "name": "AuthWire isolated authorized stage execution",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 10,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40970282375/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40970282375/logs",
+      "workflow_id": 401134937
+    },
+    {
+      "id": 40970282300,
+      "name": "KANAME foundation checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 1244,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40970282300/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40970282300/logs",
+      "workflow_id": 373980015
+    },
+    {
+      "id": 40970282280,
+      "name": "AuthWire bounded retry network probe checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 770,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40970282280/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40970282280/logs",
+      "workflow_id": 390643325
+    },
+    {
+      "id": 40970282380,
+      "name": "AuthWire isolated write preclaim checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 28,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40970282380/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40970282380/logs",
+      "workflow_id": 400886599
+    },
+    {
+      "id": 40970282373,
+      "name": "AuthWire isolated one-shot staging cycle",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 3,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40970282373/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40970282373/logs",
+      "workflow_id": 401181139
+    },
+    {
+      "id": 40970282328,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 180,
+      "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40970282328/jobs",
+      "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/40970282328/logs",
+      "workflow_id": 395329531
+    }
+  ]
+}
