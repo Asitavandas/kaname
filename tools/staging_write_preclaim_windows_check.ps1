@@ -41,6 +41,7 @@ try{
  $offer=MakeOffer
  Assert-AuthWireWriteOffer $offer $b $release $request;Check $true 'valid bounded offer'
  Check ((Get-AuthWireWritePreviewHash $preview.Preview) -ceq $preview.PreviewSha256) 'fixed preview order matches existing plan'
+ Check ((Get-AuthWireWritePreviewHash (ConvertTo-AuthWireWriteOrderedPreview $preview.Preview)) -ceq $preview.PreviewSha256) 'preview normalization preserves strict schema and hash on repeated use'
  Check ((ConvertTo-AuthWireWriteJson ([pscustomobject]@{z='quote" slash\ apostrophe''';a=@($null,$true,42)})) -ceq '{"a":[null,true,42],"z":"quote\" slash\\ apostrophe''"}') 'canonical JSON exact ASCII quoting and types'
  $reversed=ConvertFrom-AuthWireCandidateJson ([Text.Encoding]::ASCII.GetBytes((ConvertTo-AuthWireWriteJson $target)))
  Check ((Get-AuthWireWriteHash $reversed) -ceq (Get-AuthWireWriteHash $target)) 'target hash ignores property order'

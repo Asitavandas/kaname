@@ -37,8 +37,8 @@ function ConvertTo-AuthWireWriteOrderedPreview($Preview){
  $names=@('format','operation','scope_target_sha256','scope_observations_sha256','baseline_inventory_sha256','source_ledger_sha256','plan_id','plan_version','gpo_id','manifest_sha256','draft_sha256','relative_destination','files','file_count','total_bytes','checked_at','expires_at','rollback','read_only','can_stage','can_apply_gpo','writer_available','requires_new_write_approval')
  Assert-AuthWireCandidateFields $Preview $names
  foreach($n in $names){
-  if($n -ceq 'files'){$ordered[$n]=@(foreach($r in $Preview.files){Assert-AuthWireCandidateFields $r @('Path','Size','Sha256','Sddl');$v=[ordered]@{};foreach($k in @('Path','Size','Sha256','Sddl')){$v[$k]=$r.$k};$v})}
-  elseif($n -ceq 'rollback'){$fields=@('relative_directory','requires_ownership_journal','requires_exact_staged_tree','drift_requires_review','delete_existing_data');Assert-AuthWireCandidateFields $Preview.rollback $fields;$v=[ordered]@{};foreach($k in $fields){$v[$k]=$Preview.rollback.$k};$ordered[$n]=$v}
+  if($n -ceq 'files'){$ordered[$n]=@(foreach($r in $Preview.files){Assert-AuthWireCandidateFields $r @('Path','Size','Sha256','Sddl');$v=[ordered]@{};foreach($k in @('Path','Size','Sha256','Sddl')){$v[$k]=$r.$k};[pscustomobject]$v})}
+  elseif($n -ceq 'rollback'){$fields=@('relative_directory','requires_ownership_journal','requires_exact_staged_tree','drift_requires_review','delete_existing_data');Assert-AuthWireCandidateFields $Preview.rollback $fields;$v=[ordered]@{};foreach($k in $fields){$v[$k]=$Preview.rollback.$k};$ordered[$n]=[pscustomobject]$v}
   else{$ordered[$n]=$Preview.$n}
  }
  return [pscustomobject]$ordered
