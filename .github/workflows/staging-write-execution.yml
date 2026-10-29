@@ -1,0 +1,28 @@
+name: AuthWire isolated authorized stage execution
+on:
+  pull_request:
+    paths:
+      - 'windows/connector/**'
+      - 'tools/staging_write_execution_windows_check.ps1'
+      - '.github/workflows/staging-write-execution.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'windows/connector/**'
+      - 'tools/staging_write_execution_windows_check.ps1'
+      - '.github/workflows/staging-write-execution.yml'
+permissions:
+  contents: read
+jobs:
+  native-execution:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Actual signed bounded child, CNG authority and disposable SMB stage
+        shell: powershell
+        run: |
+          tools/staging_write_execution_windows_check.ps1
+          if(-not $?){throw 'Authorized stage fixture failed'}
