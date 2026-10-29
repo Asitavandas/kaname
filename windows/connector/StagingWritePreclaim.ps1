@@ -94,6 +94,7 @@ function Assert-AuthWireWriteOffer($Offer,[hashtable]$Binding,[string]$Release,[
  Assert-AuthWireCandidateFields $Offer @('format','request_id','scope_sha256','job_id','operation','lease_id','intent_sha256','expires_at','target','write_authorized','can_apply_gpo')
  Assert-AuthWireCandidateGuid $Release
  $scope=Get-AuthWireJobScope $Binding
+ foreach($n in @('request_id','scope_sha256','intent_sha256')){if(-not (Test-AuthWireWriteHash $Offer.$n)){throw 'WRITE_OFFER_REJECTED'}}
  if($Offer.format -isnot [int] -or $Offer.format -ne 1 -or -not (Test-AuthWireWriteHash $RequestId) -or $Offer.request_id -cne $RequestId -or
     $Offer.scope_sha256 -cne $scope -or $Offer.write_authorized -isnot [bool] -or $Offer.write_authorized -or $Offer.can_apply_gpo -isnot [bool] -or $Offer.can_apply_gpo){throw 'WRITE_OFFER_REJECTED'}
  Assert-AuthWireCandidateGuid $Offer.job_id
@@ -190,6 +191,7 @@ function Read-AuthWireStagingWriteOffer([string]$JournalRoot,[string]$JobId,[has
 function Assert-AuthWireWriteLiveContext($Value,$Offer,[hashtable]$Binding){
  $v=$Value;$t=$Offer.target.scope_target
  Assert-AuthWireCandidateFields $v @('format','job_id','intent_sha256','target_sha256','source_root','gpo_root','protected_gpo_id','pdc','checked_at','can_apply_gpo')
+ foreach($n in @('format','job_id','intent_sha256','target_sha256','source_root','gpo_root')){if($v.$n -isnot [string]){throw 'WRITE_PREFLIGHT_REJECTED'}}
  $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
  if($v.format -cne 'AuthWireWriteLiveContextV1' -or $v.job_id -cne $Offer.job_id -or $v.intent_sha256 -cne $Offer.intent_sha256 -or $v.target_sha256 -cne (Get-AuthWireWriteHash $Offer.target) -or $v.can_apply_gpo -isnot [bool] -or $v.can_apply_gpo -or -not (Test-AuthWireWriteInteger $v.checked_at) -or $v.checked_at -gt $now -or $now-$v.checked_at -gt 5){throw 'WRITE_PREFLIGHT_STALE'}
  Assert-AuthWireCandidateGuid $v.protected_gpo_id
