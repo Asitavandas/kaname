@@ -1,0 +1,277 @@
+{
+  "event": "WINDOWS_AUTHORIZED_STAGE_EXECUTION_SOURCE_CHECKPOINT",
+  "date_local": "2026-10-30",
+  "timezone": "Europe/Istanbul",
+  "repository": "Asitavandas/kaname",
+  "pr": 124,
+  "base": "446540770ef1a44c22707a1c2e7c4a13bdf0fed5",
+  "tested_head": "628bd7cd18d1ff7abebde5c4fb4f1b8f51962914",
+  "files": [
+    {
+      "path": "windows/connector/StagingFilesystem.ps1",
+      "bytes": 20407,
+      "sha256": "f61494af740131011e73e7227c3376fd24d41df79b3a671bfb98614c15bc92ad",
+      "git_blob_sha": "e7348bfacc3bc7b93833d5b042acdfd3e8767004"
+    },
+    {
+      "path": "windows/connector/StagingWritePreclaim.ps1",
+      "bytes": 22636,
+      "sha256": "921ad830d6167825d75e51f552869cea1eff34b66b6b60ecd56fb6d66984ce8d",
+      "git_blob_sha": "621b9a65a13b34240fc3c48d1c77de4155c5e10c"
+    },
+    {
+      "path": "windows/connector/StagingWriteExecution.ps1",
+      "bytes": 20382,
+      "sha256": "8406ca126837dedbcb4ba7e4b3945455aff848a3b29e7dca0bbb638efed1f8d6",
+      "git_blob_sha": "aca0a75e92f508f35db9f676e9e85d66a8822dd3"
+    },
+    {
+      "path": "windows/connector/Invoke-AuthWireStagingWriteChild.ps1",
+      "bytes": 3357,
+      "sha256": "a4fbfc3cac65a5471a0d417b9859d05550baea5c0686d053efadc3bd878944cd",
+      "git_blob_sha": "561cabc28965989f8b9c48701bb03153e6199e36"
+    },
+    {
+      "path": "tools/staging_write_execution_windows_check.ps1",
+      "bytes": 23961,
+      "sha256": "9b3a8f9ae0f4f3d5e8a84f463e23135874b3fbdcc423b99577e65e50ee1781d7",
+      "git_blob_sha": "60b677fbb47b3019971f62f1dfad2b8f2525fb94"
+    },
+    {
+      "path": ".github/workflows/staging-write-execution.yml",
+      "bytes": 896,
+      "sha256": "af8e918468afc172489f0634111c1daab51564870be322e7ab33ce64884b09fa",
+      "git_blob_sha": "2e18d94a944012c342e88dcb017d41c1cb949d10"
+    },
+    {
+      "path": "docs/STAGING_WRITE_EXECUTION.md",
+      "bytes": 6792,
+      "sha256": "8f702e6a1f582e5f021a09c055b621b17825e76cd9077535ca5c58757c27f445",
+      "git_blob_sha": "d3354c6bfe2e585e1455f60aaed1f233f322c513"
+    },
+    {
+      "path": "windows/connector/StagingWriteProcess.ps1",
+      "bytes": 4654,
+      "sha256": "d5812dd81979e04f1bb4041cf0279021649346f0b53bc8e18015ddf3320b800a",
+      "git_blob_sha": "aa9adbf0c8c55af62d90e37c7d39d2696d76eeb5"
+    }
+  ],
+  "scope": "Source-only one-shot signed stage adapter, exact child identity/live gate/kill-on-close job and actual filesystem journal result binding. Not installed or enabled in production.",
+  "validation": {
+    "native_execution_checks": 127,
+    "native_execution_run_id": 40962455737,
+    "native_execution_job_id": 123758481215,
+    "actual_signed_adapter_and_child_bodies": true,
+    "actual_disposable_cng_ntfs_smb": true,
+    "actual_twenty_file_stage": true,
+    "grant_receipts_seeded": true,
+    "positive_ad_content_observations_simulated": true,
+    "sysvol_namespace_fixture_mapping": true,
+    "production_namespace_derivation_separately_checked": true,
+    "actual_customer_gmsa_or_domain_sysvol_tested": false,
+    "cases": [
+      "successful20-file SMB stage with real journal binding",
+      "current PDC/context drift",
+      "engine completion disk failure retains partial tree",
+      "incorrect engine result retains uncertain outcome",
+      "launch-marker disk failure",
+      "child identity metadata disk failure",
+      "wrong child PID identity",
+      "bounded blocked-child timeout"
+    ],
+    "direct_signed_child_replay_refused": true,
+    "no_second_live_observation_on_replay": true,
+    "actual_separate_controller_death_kills_child": true,
+    "actual_customer_reboot_tested": false,
+    "fixture_timings_seconds": {
+      "success": 10.54,
+      "drift": 8.12,
+      "partial": 8.83,
+      "bad_result": 8.8,
+      "launch_disk": 2.34,
+      "metadata_disk": 2.37,
+      "identity": 7.91,
+      "timeout": 17.38
+    },
+    "timings_are_ci_fixture_not_customer_performance": true,
+    "existing_filesystem_smb_and_exact_rollback_checks": 81,
+    "filesystem_run_id": 40962455792,
+    "filesystem_job_id": 123758481749,
+    "existing_preclaim_checks": 297,
+    "python_rsa_wire_checks": 18,
+    "preclaim_run_id": 40962455923,
+    "preclaim_job_id": 123758481273,
+    "general_suite": {
+      "tests": 1123,
+      "seconds": 298.309,
+      "skipped": 28,
+      "run_id": 40962455574,
+      "job_id": 123758480245
+    },
+    "windows_permanent_service_regression": {
+      "checks": 85,
+      "job_id": 123758480370,
+      "run_id": 40962455611,
+      "passed": true,
+      "customer_gmsa_tested": false
+    },
+    "all_six_ci_workflows_passed": true,
+    "private_connector_key_exported": false,
+    "review_strengthening": "Initial immediate-child-only runner replaced before source closure by a live gate, exact PID/start-time record and kill-on-close Windows job to cover controller death."
+  },
+  "security": {
+    "saved_authority_and_consumption_intent_revalidated": true,
+    "one_launch_create_new_flush_before_process": true,
+    "child_entry_create_new_flush_before_scope_and_write": true,
+    "child_assigned_to_kill_on_close_job_before_gate_release": true,
+    "restricted_auto_reset_live_gate": true,
+    "exact_pid_and_process_start_time_before_gate_release": true,
+    "child_checks_own_pid_and_start_time": true,
+    "child_work_budget_ms": 15000,
+    "grant_margin_seconds": 2,
+    "bounded_cleanup_extra": "Existing termination/drain waits up to3s each; remote pending SMB effects cannot be ruled out by process kill.",
+    "child_requires_fixed_allsigned_entry": true,
+    "no_network_paths_commands_or_urls_in_child_arguments": true,
+    "fresh_ad_pdc_source_scope_before_engine": true,
+    "original_grant_expiry_forwarded_to_engine": true,
+    "deadline_checked_before_new_directories_files_and_completion": true,
+    "elapsed_and_wall_clock_guards": true,
+    "legacy_low_level_zero_deadline_interface_remains_trusted_not_authorization": true,
+    "exact_actual_engine_intent_completion_tree_digest_binding": true,
+    "local_completion_is_child_evidence_not_independent_customer_attestation": true,
+    "peer_result_submitted": false,
+    "automatic_retry_cleanup_rollback_unlock": false,
+    "permanent_worker_or_package_registered": false,
+    "production_create_or_peer_enabled": false,
+    "gpo_activation_enabled": false,
+    "artifact_executed": false
+  },
+  "customer_changes": {
+    "linux_updated": false,
+    "windows_updated": false,
+    "ad_gpo_sysvol_changed": false,
+    "services_restarted": false,
+    "existing_keys_acls_or_trust_changed": false,
+    "full_backup_created": false,
+    "customer_gmsa_ad_smb_tested": false
+  },
+  "last_known_installed": {
+    "linux": "0.14.0-dev.44",
+    "windows_release": "df28f70c-104e-4d6d-972c-e311d38adde6",
+    "fresh_customer_read_this_step": false
+  },
+  "open_gates": [
+    "POLL/result worker orchestration with correct uncertain/late result handling",
+    "Separate approved bounded rollback adapter",
+    "Lost result/parent failure/reboot and partial transaction reconciliation; explicit separately approved unlock",
+    "Strict backup projection preserving all business metadata",
+    "Signed package delivery and actual gMSA/AD/domain-SYSVOL acceptance before production create/peer enablement",
+    "Separate GPO activation, endpoint acceptance, single-account migration and500/1000 technical scale validation"
+  ],
+  "forecast": {
+    "remaining_stage_recovery_workdays": [
+      3,
+      6
+    ],
+    "first_pilot_weeks": [
+      2,
+      3
+    ],
+    "first_pilot_window": [
+      "2026-11-13",
+      "2026-11-20"
+    ],
+    "base_with_single_account_scale_weeks": [
+      6,
+      9
+    ],
+    "base_window": [
+      "2026-12-11",
+      "2027-01-01"
+    ],
+    "base_with_guide_weeks": [
+      7,
+      10
+    ],
+    "base_with_guide_window": [
+      "2026-12-18",
+      "2027-01-08"
+    ],
+    "all_scope_and_guide_weeks": [
+      13,
+      19
+    ],
+    "all_scope_window": [
+      "2027-01-29",
+      "2027-03-12"
+    ],
+    "base_active_operator_hours": [
+      20,
+      30
+    ],
+    "all_scope_operator_hours": [
+      30,
+      45
+    ],
+    "observation_calendar_days": [
+      7,
+      14
+    ],
+    "reassessed_on": "2026-10-30",
+    "comparison": "PR123/30Oct source-consumption checkpoint",
+    "change": "Stage/recovery estimate revised4–7 to3–6 active workdays because bounded authorized stage and real journal/completion binding now pass actual disposable SMB tests. This is engineering reassessment of a closed source component, not subtraction of elapsed calendar time or test counts. Customer delivery/acceptance and orchestration/rollback/recovery/backup remain open. Overall week/date ranges unchanged from30Oct.",
+    "assumptions": "Regular joint work5 days/week, same-day operator outputs and available test access; not measured statistical velocity or background work.",
+    "unbounded_external_waits": [
+      "off-host backup",
+      "restore VM",
+      "vendor API",
+      "scale endpoints/access"
+    ]
+  },
+  "single_scope_target_limit": 512,
+  "two_hundred_is_product_quota": false,
+  "macro_completed": 54,
+  "macro_total": 94,
+  "macro_open": 40,
+  "READY_FOR_FINAL_GUIDE": false,
+  "GUIDE_DELIVERED": false,
+  "ci_workflows": [
+    {
+      "name": "KANAME foundation checks",
+      "run_id": 40962455574,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40962455574"
+    },
+    {
+      "name": "AuthWire isolated write preclaim checks",
+      "run_id": 40962455923,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40962455923"
+    },
+    {
+      "name": "AuthWire isolated authorized stage execution",
+      "run_id": 40962455737,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40962455737"
+    },
+    {
+      "name": "AuthWire isolated staging filesystem checks",
+      "run_id": 40962455792,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40962455792"
+    },
+    {
+      "name": "AuthWire bounded retry network probe checks",
+      "run_id": 40962455736,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40962455736"
+    },
+    {
+      "name": "AuthWire Windows connector bootstrap checks",
+      "run_id": 40962455611,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40962455611"
+    }
+  ],
+  "merge_sha": "9d1bba56d1f624e899a08d29c79ed243a16caf34"
+}

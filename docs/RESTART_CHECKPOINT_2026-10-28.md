@@ -1,5 +1,86 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## Yetkiye bağlı sınırlı dosya yazma süreci kaynakta doğrulandı — 30 Ekim 2026
+
+**PR124**, merge **9d1bba56d1f624e899a08d29c79ed243a16caf34**, test edilen head **628bd7cd18d1ff7abebde5c4fb4f1b8f51962914**.
+Saklanan özgün authorization/consumption/filesystem-intent, sabit AllSigned child ve gerçek
+dosya motoru günlüğüne bağlandı. İşlem öncesi exact tür/alan/hash/scope/release/SID/host/key
+ve özgün expiry kontrolleri tekrarlanır. Başlatmadan önce **stage-launch.json CreateNew + Flush(true)**
+yazılır. Parent kayıtlı işlem niyetinden System32 WinPS5.1 sabit script'ini çağırır; ağdan komut,
+URL veya source/GPO yolu child argümanı yapılamaz.
+
+Child, Windows **kill-on-close Job Object** içine atandıktan ve exact PID/start-time kaydı
+diske yazıldıktan sonra private auto-reset kapısı açılır. Child kendi kimliğini ve tek sinyali
+doğrulayıp **stage-entered.json** yazar. Parent beklenmedik biçimde kapanırsa kernel job child'ı
+sonlandırır; eski launch dosyası, kapalı kapıyla tek başına yeniden çalışma yetkisi vermez.
+Süre sınırı en çok **15 saniye** ve kalan özgün grant süresine **2 saniye marjla** bağlıdır;
+bounded kill/drain cleanup beklemeleri ilave olarak en çok 3'er saniyedir.
+
+Child güncel public içerik/imza/AD/PDC/GPO/SYSVOL gözlemlerini tekrarlar; source/GPO/protected GPO/PDC
+özgün bağlamla eşleşir. Engine'e özgün grant expiry aktarılır; yeni journal/dizin/dosya ve complete
+öncesinde gerçek saat ve elapsed-time sınırları denetlenir. Mevcut 20 dosya/4MiB, yeni sürüm dizini,
+native pin/kimlik/ACL/ADS/hardlink ve dış baseline korumaları kalır. Kopyalanan artifact çalıştırılmaz.
+GPO link/settings/startup/uzantı/GPT version aktivasyonu bu staging işlemi değildir.
+
+Gerçek engine intent/completion/tree hash'leri ve 23 satırlık sahiplik günlüğü; authorization,
+execution-intent, launch, child identity ve yeni preflight kaydına bağlanır. Child önce
+**execution-complete.json**, parent doğruladıktan sonra **execution-observed.json** yazar.
+Bu yerel imzalı-child kanıtıdır; bağımsız müşteri filesystem tasdiki veya appliance'ın kabul ettiği
+peer sonucu değildir. **PeerResultSubmitted=false / CanApplyGpo=false / ArtifactExecuted=false**.
+
+**127 yeni native kontrol** başarılı: gerçek imzalı child/CNG/NTFS ve geçici SMB'ye 20 dosya yazımı.
+Sekiz senaryo; başarı, PDC/bağlam değişimi, engine completion disk hatası, yanlış engine sonucu,
+launch/child-metadata disk hatası, yanlış child kimliği ve timeout. SDK reload ve yeni doğrudan
+imzalı child tekrarında ikinci canlı gözlem/yazma olmadı. Ayrı gerçek controller-death testi,
+üst süreç öldüğünde kernel job'ın child'ı sonlandırdığını doğruladı. Bu müşteri reboot/restore
+veya canlı yarım SMB işlemi kurtarma kabulü değildir. Grant'lar seed edilir; pozitif AD/içerik/
+SYSVOL namespace ortamı açıkça simüledir. Production namespace türetimi ayrıca kontrol edildi.
+Mevcut **81 SMB/rollback** ve **297 preclaim +18 RSA** kontrolleri de geçti.
+**1123 testlik genel koşu başarılı (28 ortam atlaması, 298.309 saniye)**;
+altı CI workflow başarılı. İmzalı kalıcı SCM servis regresyonunda **85 kontrol** geçti.
+İlk process-only yaklaşım, kaynak kapanmadan önce parent death için live gate/exact PID ve
+kill-on-close job ile güçlendirildi; sıradan timeout testi bu sınırı tek başına kapatmadı.
+
+**Kaynak GitHub main'e kaydedildi; müşteri Linux/DC01'e kurulmadı.**
+Kalıcı worker/paket listesine eklenmedi; üretim create/peer rotaları ve GPO activation kapalı.
+Müşteri AD/GPO/SYSVOL, servis, key ACL veya trust ayarı değiştirilmedi; yeni tam veri yedeği alınmadı.
+Son bilinen kabul edilmiş sürümler Linux **dev.44**, Windows **df28f70c**; yeni canlı müşteri ölçümü yok.
+Ayrıntı **docs/STAGING_WRITE_EXECUTION.md** ve
+**docs/checkpoints/2026-10-30-authorized-stage-execution-source.json**.
+
+Timeout veya kayıp/hatalı sonuç, dosyaların yazılmadığı anlamına gelmez. Kısmi/tam ağaç ve tüm
+journal/kilitler korunur; inceleme kaydı best-effort yazılır. Launch flush hatasında yalnız
+consumed/partial launch kayıtları kalabilir. Hiçbir dal otomatik retry/rollback/cleanup/unlock yapmaz.
+**Açık işler:** POLL/result orkestrasyonu ve doğru geç/belirsiz sonuç; ayrı onaylı bounded rollback;
+kayıp sonuç/parent failure/reboot ve partial journal uzlaştırması; ayrı onaylı unlock; strict backup
+projection; imzalı teslim ve gerçek gMSA/AD/domain-SYSVOL kabulü. GPO activation, gerçek uç kabulü,
+tek hesap geçişi ve 500/1000 teknik ölçek kapıları ayrıca açıktır.
+
+### Kalan süre yeniden değerlendirildi
+
+PR123'teki **4–7 aktif iş günü**, bounded stage/gerçek journal-completion alt kapısı geçici gerçek
+SMB ile doğrulandığından **3–6 aktif iş günü** olarak yeniden planlandı. Geçen takvim günü veya test
+sayısı doğrusal düşülmedi; bu kapatılan kaynak bileşenine dayalı mühendislik değerlendirmesidir.
+Diğer kritik paketler/müşteri saha-erişim kapılarında yeni kanıt yok; genel hafta ve 30 Ekim
+başlangıçlı koşullu pencereler korunur. Tüm iş paketleri **docs/reports/2026-10-29-process-forecast.md**
+içinde güncellendi.
+
+| Hedef | Kalan tahmin | Koşullu pencere |
+|---|---|---|
+| Yazma entegrasyonu ve kurtarma | **3–6 aktif iş günü** | Orkestrasyon/rollback/recovery/teslim çevrimlerine bağlı |
+| İlk küçük otomatik pilot | **2–3 hafta** | **13–20 Kasım 2026** |
+| 500/1000 teknik ölçek + tek hesap dahil temel ürün | **6–9 hafta** | **11 Aralık 2026–1 Ocak 2027** |
+| Yalnız temel sürüm seçilirse kılavuz dahil | **7–10 hafta** | **18 Aralık 2026–8 Ocak 2027** |
+| Tüm kayıtlı geliştirmeler ve nihai kılavuz | **13–19 hafta** | **29 Ocak–12 Mart 2027** |
+
+Temel aktif saha **20–30 saat**, tüm kapsam **30–45 saat**; ek **7–14 takvim günü** gözlem ayrı.
+Düzenli 5 gün/hafta ortak ilerleme/hazır erişim varsayılır; pencereler teslim taahhüdü değildir.
+Dış yedek hedefi/restore VM/üretici API/ölçek uçlarına erişim beklemelerinin son tarihi bilinmiyor.
+CI fixture saniyeleri müşteri performans/kapsam kabulü değildir. Tek görev 512 sınırı korundu;
+200 ürün kotası değildir, 500/1000 teknik kabulü açıktır. Makro **54/94 tamam,40 açık**;
+**READY_FOR_FINAL_GUIDE=false / GUIDE_DELIVERED=false**.
+
+
 ## Windows grant tüketimi ve yetkiye bağlı dosya işlem niyeti kaynakta doğrulandı — 30 Ekim 2026
 
 **PR123**, merge **67daabaf4e6c48636eac98e77fb2b146f5143cc6**, test edilen head **f0d83009fdc64d2b169ffe45ea96dc149561354f**.

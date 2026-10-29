@@ -1,5 +1,39 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## PR124 sonrası süre değerlendirmesi — 30 Ekim 2026
+
+Test edilen kaynak **628bd7cd18d1ff7abebde5c4fb4f1b8f51962914**: özgün grant/consumption/intent, tek başlatma ve gerçek
+dosya motoru günlüğüne bağlandı. Sabit AllSigned child, exact PID/start-time, private auto-reset gate
+ve kill-on-close Windows Job Object ile sınırlandı. Kaynak parent/child gövdeleri korunarak gerçek
+geçici SMB alanında 20 dosya yazımı ve **127 native kontrol** geçti; mevcut **81 SMB/rollback**
+ve **297 preclaim +18 RSA** kontrolleri de başarılı. Tam CI kapanışı kaynak checkpoint'ine kaydedilir.
+Grant'lar seed edilir; pozitif AD/içerik ve SYSVOL namespace ortamı açıkça simüledir.
+Müşteri Linux/DC01 kurulumu, gerçek gMSA/domain SYSVOL veya cihaz kabulü değildir.
+
+Önceki PR123 tahmini **4–7 aktif iş günü** idi. Bounded stage child ve gerçek journal/completion
+bağlama alt kapısı artık geçici gerçek SMB ile doğrulandığı için kalan yazma/kurtarma paketi
+**3–6 aktif iş günü** olarak yeniden planlandı. Bu, geçen saat/gün veya test sayısını doğrusal
+düşürmek değildir. POLL/result orkestrasyonu, ayrı rollback/onay, kayıp sonuç/partial recovery,
+strict backup projection ve imzalı müşteri teslim/kabulü hâlâ açıktır.
+
+İlk pilot ve genel kapanış bantları korunur: diğer kritik paketlerde ve gerçek saha/erişim
+kapanışlarında yeni kanıt yoktur. 30 Ekim başlangıçlı koşullu pencereler değişmedi.
+
+| Hedef | Kalan tahmin | Koşullu pencere |
+|---|---|---|
+| Yazma entegrasyonu ve kurtarma | **3–6 aktif iş günü** | Orkestrasyon/rollback/recovery/teslim çevrimlerine bağlı |
+| İlk küçük otomatik pilot | **2–3 hafta** | **13–20 Kasım 2026** |
+| 500/1000 teknik ölçek + tek hesap dahil temel ürün | **6–9 hafta** | **11 Aralık 2026–1 Ocak 2027** |
+| Yalnız temel sürüm seçilirse kılavuz dahil | **7–10 hafta** | **18 Aralık 2026–8 Ocak 2027** |
+| Tüm kayıtlı geliştirmeler ve nihai kılavuz | **13–19 hafta** | **29 Ocak–12 Mart 2027** |
+
+Temel aktif saha **20–30 saat**, tüm kapsam **30–45 saat**; ek **7–14 takvim günü** gözlem ayrı.
+Düzenli 5 gün/hafta ortak ilerleme ve hazır erişim varsayılır. Dış yedek hedefi, restore VM,
+üretici API ve ölçek uçlarına erişim beklemelerinin son tarihi bilinmiyor. CI'da ölçülen saniyeler
+müşteri performans/kapsam kabulü değildir. Tek görev 512 sınırı ve 200→500→1000 teknik kabul planı
+korundu; 200 toplam cihaz kotası değildir. Makro 54/94 ve 40 açık; kılavuz bayrakları false.
+
+
 ## PR123 kapanışı ve süre değerlendirmesi — 30 Ekim 2026
 
 Önceki karşılaştırma PR122/29 Ekim kaydıdır. Test edilen kaynak **f0d83009fdc64d2b169ffe45ea96dc149561354f**, merge **67daabaf4e6c48636eac98e77fb2b146f5143cc6**.
@@ -202,7 +236,7 @@ Saha sütunu operatörün aktif oturum zamanını gösterir; günlük çalışma
 
 | İş | Şu anki durum / kalan kapsam | Tahmini çalışma | Aktif saha oturumu | Ön koşul / kapanış |
 |---|---|---:|---:|---|
-| 1. Onaylı staging/geri alma görevi | Dosya çekirdeği/protokol, HTTP inceleme, Windows preclaim/CLAIM ve tek kullanımlık grant tüketimi → yetkiye bağlı dosya işlem niyeti kaynakta test edildi. Bounded stage child/journal-result bağlama, POLL/result worker, rollback ve kısmi kurtarma açık; create/peer kapalı | 4–7 iş günü | 1–2 saat | Aynı gMSA ile gerçek yazma, tekrar/kesinti ve güvenli geri alma kanıtı |
+| 1. Onaylı staging/geri alma görevi | Bounded AllSigned stage adapter ve gerçek journal/result bağlama kaynakta gerçek geçici SMB ile test edildi; canlı kapılar kapalı. POLL/result worker, ayrı rollback, kayıp sonuç/kısmi kurtarma, backup ve müşteri teslim/kabulü açık | 3–6 iş günü | 1–2 saat | Aynı gMSA ile gerçek yazma, tekrar/kesinti ve güvenli geri alma kanıtı |
 | 2. GPO etkinleştirme | Startup/uzantı/sürüm/link/çoğaltma ve kapsam koruması açık | 2–4 iş günü | 2–3 saat | İş1; ilk seçilmiş pilot PC'de doğal kurulum ve beklenen sertifika/ağ sonucu |
 | 3. Kullanıcı EAP-TLS | Sunucu/istemci/panel hazır. Gerçek kullanıcı deposu, Ethernet/Wi-Fi, kullanıcı VLAN ve kimlik geçişi kabulü açık | 2–4 iş günü | 2–4 saat | Kontrollü kullanıcı dağıtımı, en az iki farklı kullanıcıyla ret/izin ve yaşam döngüsü |
 | 4. Tek hesap standardı | gMSA Connector çalışıyor. AD katalog/canlı okuma ve Windows Kerberos acceptor taşınacak; eski bağımlılıklar kaldırılacak | 6–10 iş günü | 2–3 saat | Kimlik bütünlüğü, MIC/path/body/CSR bağı, replay/ret/kesinti testleri; eski hesapları ancak bağımlılık kanıtından sonra kaldırma |
