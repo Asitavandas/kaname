@@ -127,7 +127,8 @@ function Assert-AuthWireStagingJournalRoot([string]$Path){
  $null=Assert-AuthWireCandidatePath $Path
  $item=Get-Item -LiteralPath $Path -Force -ErrorAction Stop
  if(-not $item.PSIsContainer){throw 'STAGING_JOURNAL_ROOT_REQUIRED'}
- $sid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+ $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
+ try{$sid=$identity.User.Value}finally{$identity.Dispose()}
  $acl=Get-Acl -LiteralPath $Path -ErrorAction Stop
  if(-not $acl.AreAccessRulesProtected -or $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value -cnotin @($sid,'S-1-5-18','S-1-5-32-544')){throw 'STAGING_JOURNAL_ACL_REJECTED'}
  foreach($ace in $acl.GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier])){
@@ -222,6 +223,7 @@ function Invoke-AuthWireStagingFilesystemRollback {
   $journal=Join-Path $JournalRoot $OperationId;$pins.PinAncestors($journal)
   foreach($n in @('intent.json','complete.json')){$pins.PinFile((Join-Path $journal $n))}
   if(Test-Path -LiteralPath (Join-Path $journal 'rolled-back.json')){throw 'STAGING_ROLLBACK_ALREADY_RECORDED'}
+  if(Test-Path -LiteralPath (Join-Path $journal 'rollback-started.json')){throw 'STAGING_ROLLBACK_INCOMPLETE_REQUIRES_REVIEW'}
   $intent=Read-AuthWireStagingJournal (Join-Path $journal 'intent.json');$complete=Read-AuthWireStagingJournal (Join-Path $journal 'complete.json')
   Assert-AuthWireCandidateFields $intent @('format','operation_id','preview_sha256','target_sha256','gpo_root','relative_destination','baseline_sha256','protected_gpo_id')
   Assert-AuthWireCandidateFields $complete @('format','operation_id','intent_sha256','tree_sha256','tree','baseline')
@@ -234,6 +236,7 @@ function Invoke-AuthWireStagingFilesystemRollback {
   $owned=[AuthWire.Staging.TreeLeaseV1]::Tree(([IO.Path]::Combine($GpoRoot,$relative.Replace('/','\'))),$true)
   $rows=Get-AuthWireStagingFilesystemRows $owned
   if((Get-AuthWireStagingFilesystemDigest $rows) -cne $complete.tree_sha256){throw 'STAGING_ROLLBACK_DRIFT_REJECTED'}
+  Write-AuthWireStagingJournal (Join-Path $journal 'rollback-started.json') ([pscustomobject]@{format='AuthWireFilesystemRollbackIntentV1';operation_id=$OperationId;complete_sha256=$ApprovedCompleteSha256})
   $owned.DeleteOwnedTree();$owned.Dispose();$owned=$null
   if((Get-AuthWireSysvolInventory $GpoRoot).Sha256 -cne $intent.baseline_sha256){throw 'STAGING_ROLLBACK_POSTCHECK_REQUIRES_REVIEW'}
   Write-AuthWireStagingJournal (Join-Path $journal 'rolled-back.json') ([pscustomobject]@{format='AuthWireFilesystemRollbackV1';operation_id=$OperationId;complete_sha256=$ApprovedCompleteSha256;baseline_restored=$true})

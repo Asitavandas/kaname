@@ -177,6 +177,14 @@ try{
  try{[IO.File]::WriteAllText($foreign,'foreign');Reject {Stage ([guid]::NewGuid().ToString('D'))} 'baseline drift refuses write'}finally{Remove-Item -LiteralPath $foreign}
  Check (@(Get-ChildItem -LiteralPath $journalRoot).Count -eq 0) 'all refused preflights leave no transaction directories'
  Check ((Get-AuthWireSysvolInventory $unc).Sha256 -ceq $before.Sha256) 'all refused preflights preserve GPO'
+ $hardlink=Join-Path $candidate 'hardlink.txt'
+ try{$null=New-Item -ItemType HardLink -Path $hardlink -Target $source;Reject {Stage ([guid]::NewGuid().ToString('D'))} 'source hardlink rejected'}finally{Remove-Item -LiteralPath $hardlink -Force}
+ $link=[IO.Path]::Combine($journalRoot,'source-junction')
+ try{$null=New-Item -ItemType Junction -Path $link -Target $candidate;Reject {Invoke-AuthWireStagingFilesystemStage -Target $t -PreviewRecord $fresh -ApprovedPreviewSha256 $fresh.PreviewSha256 -SourceRoot $link -GpoRoot $unc -JournalRoot $journalRoot -OperationId ([guid]::NewGuid().ToString('D')) -ProtectedGpoId $protected} 'source junction rejected'}finally{[IO.Directory]::Delete($link)}
+ $journalAcl=Get-Acl -LiteralPath $journalRoot
+ try{$weak=Get-Acl -LiteralPath $journalRoot;$weak.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new([Security.Principal.SecurityIdentifier]::new('S-1-1-0'),'Read','Allow'));Set-Acl -LiteralPath $journalRoot -AclObject $weak;Reject {Stage ([guid]::NewGuid().ToString('D'))} 'journal foreign principal rejected'}finally{Set-Acl -LiteralPath $journalRoot -AclObject $journalAcl}
+ $lease=[AuthWire.Staging.TreeLeaseV1]::Tree($candidate,$false)
+ try{Reject {[IO.File]::WriteAllText($source,'forbidden')} 'pinned source denies writes';Reject {[IO.Directory]::Move($candidate,($candidate+'-renamed'))} 'pinned source root denies rename'}finally{$lease.Dispose()}
  $op=[guid]::NewGuid().ToString('D')
  $stage=Stage $op
  Check ($stage.Phase -ceq 'staged' -and $stage.FileCount -eq 20 -and -not $stage.CanApplyGpo) 'actual SMB stage completes without activation'
@@ -197,11 +205,15 @@ try{
  $savedAcl=Get-Acl -LiteralPath $file
  try{$changedAcl=Get-Acl -LiteralPath $file;$changedAcl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new([Security.Principal.SecurityIdentifier]::new('S-1-1-0'),'Read','Allow'));Set-Acl -LiteralPath $file -AclObject $changedAcl;Reject {Rollback $op $completePin} 'rollback refuses ACL drift'}finally{Set-Acl -LiteralPath $file -AclObject $savedAcl}
  Check ((Get-AuthWireSysvolInventory $unc).Sha256 -ceq $stagedHash) 'all drift cases restored before approved rollback'
+ # Same bytes and ACL are insufficient if a staged file was replaced.
+ $moved=[IO.Path]::Combine($journalRoot,'saved-file.txt')
+ try{[IO.File]::Move($file,$moved);[IO.File]::WriteAllBytes($file,$saved);Set-Acl -LiteralPath $file -AclObject $savedAcl;Reject {Rollback $op $completePin} 'file identity replacement rejected'}finally{[IO.File]::Delete($file);[IO.File]::Move($moved,$file)}
  $rolled=Rollback $op $completePin
  Check ($rolled.Phase -ceq 'rolled_back' -and $rolled.BaselineRestored -and -not $rolled.CanApplyGpo) 'handle-based rollback succeeds'
  Check ((Get-AuthWireSysvolInventory $unc).Sha256 -ceq $before.Sha256) 'full original GPO bytes and ACL baseline restored'
  Reject {Rollback $op $completePin} 'rollback cannot replay'
  Check (Test-Path -LiteralPath $completePath) 'audit journal survives rollback'
+ Check (Test-Path -LiteralPath (Join-Path (Join-Path $journalRoot $op) 'rollback-started.json')) 'rollback intent durably recorded before deletion'
  # An I/O failure while persisting completion must leave an explicit incomplete
  # transaction; production engine has no fault injection parameter.
  $writerBody=${function:Write-AuthWireStagingJournal}
