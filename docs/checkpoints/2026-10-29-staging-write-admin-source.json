@@ -1,0 +1,260 @@
+{
+  "event": "STAGING_WRITE_ADMIN_REVIEW_SOURCE_CHECKPOINT",
+  "date_local": "2026-10-29",
+  "timezone": "Europe/Istanbul",
+  "repository": "Asitavandas/kaname",
+  "pr": 120,
+  "base": "ed7dc04edb66188b53b50054f6e9895c86acd907",
+  "tested_head": "92e478c064b32ee2a94d9070d5519df0c03b706a",
+  "scope": "Source-only authenticated administrator status/review and nonblocking panel status; execution closed.",
+  "files": [
+    {
+      "path": "docs/STAGING_WRITE_ADMIN.md",
+      "bytes": 4203,
+      "git_blob_sha": "3fc6b1ba05ed1b184437d5bd8291c13caa7e640a"
+    },
+    {
+      "path": "docs/STAGING_WRITE_PROTOCOL.md",
+      "bytes": 6024,
+      "git_blob_sha": "9e12c4b6690321de977a50527356be9c2e75f6f7"
+    },
+    {
+      "path": "kaname/server.py",
+      "bytes": 78890,
+      "git_blob_sha": "c027a7931b839f1031da62383d938f175f2db618"
+    },
+    {
+      "path": "kaname/staging_write_jobs.py",
+      "bytes": 24768,
+      "git_blob_sha": "382158c01a1fa064960f82d1dce54c4e31db3b0b"
+    },
+    {
+      "path": "kaname/static/deployment.js",
+      "bytes": 51944,
+      "git_blob_sha": "6f81104c0a341264a2941c15a40d8558286b760c"
+    },
+    {
+      "path": "tests/test_candidate_jobs_delivery.py",
+      "bytes": 10263,
+      "git_blob_sha": "f7a4af2efcd28e5dc2d131305a9de09a8210ac9f"
+    },
+    {
+      "path": "tests/test_combined_jobs_delivery.py",
+      "bytes": 14466,
+      "git_blob_sha": "3f015c67eebb0d90d67c94852583da2e5b5af3b9"
+    },
+    {
+      "path": "tests/test_combined_registration_delivery.py",
+      "bytes": 10448,
+      "git_blob_sha": "289cfc864cd60642b182bbf8c1d8c2a25fa31775"
+    },
+    {
+      "path": "tests/test_combined_scope_jobs_delivery.py",
+      "bytes": 14487,
+      "git_blob_sha": "f37428718abb8ef47c3c36c64905f850da9ca561"
+    },
+    {
+      "path": "tests/test_connector_probe_job_delivery.py",
+      "bytes": 8984,
+      "git_blob_sha": "8895096a9a183916cebfd37ce00eed9138f9c59b"
+    },
+    {
+      "path": "tests/test_scope_jobs_delivery.py",
+      "bytes": 10203,
+      "git_blob_sha": "b4cac1bc8aeeabe1645823f144227f6b16a80454"
+    },
+    {
+      "path": "tests/test_staging_write_admin_http.py",
+      "bytes": 14275,
+      "git_blob_sha": "d45a9f6f70159353bae58bf36a9d661548bd0256"
+    },
+    {
+      "path": "tests/test_staging_write_jobs.py",
+      "bytes": 26654,
+      "git_blob_sha": "551f049201fe9fe9832e807353494136841243f0"
+    },
+    {
+      "path": "tools/deployment_candidate_ui_smoke.cjs",
+      "bytes": 19706,
+      "git_blob_sha": "f8e2c9381cd19bb8955af19e3bc8ffbd9320dd81"
+    }
+  ],
+  "authorization_boundary": {
+    "https": true,
+    "both_existing_permissions": true,
+    "origin_csrf": true,
+    "interactive_session_only": true,
+    "body_read_then_session_and_role_recheck": true,
+    "read_review_actor_from_session": true,
+    "review_has_no_job_or_revision_write": true,
+    "http_create_unconditionally_refused": true,
+    "write_peer_routes_registered": false,
+    "write_submit_button": false,
+    "gpo_apply": false
+  },
+  "ui_checks": [
+    "unresponsive extra status query does not block candidate list",
+    "stale refresh/logout responses discarded",
+    "XSS inputs rendered as text",
+    "malformed response and unexpected true authority flags remain closed",
+    "unknown outcome requires review and no replay",
+    "peer result does not imply independent disk/customer acceptance"
+  ],
+  "validation": {
+    "new_https_tests": 12,
+    "local_targeted_tests_passed": 71,
+    "local_historical_delivery_tests_passed": 63,
+    "initial_ci_failure": "Six historical installer compatibility tests rejected new function set. Fixed only test adaptation: explicit AST pins for reviewed new handler and GET dispatch; unknown/tampered functions still refused. Historical deployment scripts unchanged.",
+    "runtime_source_equivalent_to": "b88f0df83b4b259bfc76f33313ffd117e509c4d4",
+    "historical_installers_changed": false,
+    "handler_ast_sha256": "b76772b9d4fdbd1f0829c31fa241dddff8ec1b57424e243e59bacfdb711a0332",
+    "get_response_ast_sha256": "0ca6ca0f3a37ae7f600dff10163ca280bdece488cd653660dd1fcdbbd9b0d8a6",
+    "foundation": {
+      "tests": 1123,
+      "skipped": 28,
+      "seconds": 307.958,
+      "run_id": 40911345988,
+      "job_id": 123579830525,
+      "conclusion": "success"
+    },
+    "windows_signed_scm": {
+      "checks": 85,
+      "job_id": 123579831457,
+      "customer_gmsa_tested": false,
+      "conclusion": "success"
+    },
+    "full_ci_passed": true
+  },
+  "customer_changes": {
+    "linux_updated": false,
+    "windows_updated": false,
+    "services_restarted": false,
+    "ad_gpo_sysvol_changed": false,
+    "keys_or_trust_changed": false,
+    "full_backup_created": false,
+    "customer_acceptance_claimed": false
+  },
+  "last_customer_accepted_versions": {
+    "linux": "0.14.0-dev.44",
+    "windows_release_id": "df28f70c-104e-4d6d-972c-e311d38adde6",
+    "fresh_live_measurement_this_step": false
+  },
+  "next_gates": [
+    "bounded signed Windows CLAIM/live AD/PDC/GPO/source adapter",
+    "protected durable local operation record",
+    "lost grant reply and reboot/journal reconciliation; partial recovery",
+    "strict backup projection retaining all business approvals/results",
+    "explicit approval form and enabling create/peer only after preceding gates",
+    "signed delivery and real gMSA/SMB acceptance; separate GPO activation and endpoint acceptance"
+  ],
+  "capacity": {
+    "first_scale_checkpoint": 200,
+    "two_hundred_is_total_product_quota": false,
+    "single_scope_job_limit": 512,
+    "total_capacity_verified_for_500_1000": false,
+    "technical_500_1000_acceptance_open": true
+  },
+  "forecast": {
+    "staging_integration_active_workdays": [
+      4,
+      7
+    ],
+    "first_small_pilot_weeks": [
+      2,
+      3
+    ],
+    "first_small_pilot_window": [
+      "2026-11-12",
+      "2026-11-19"
+    ],
+    "base_with_scale_and_single_account_weeks": [
+      6,
+      9
+    ],
+    "base_window": [
+      "2026-12-10",
+      "2026-12-31"
+    ],
+    "base_with_guide_weeks": [
+      7,
+      10
+    ],
+    "all_scope_with_final_guide_weeks": [
+      13,
+      19
+    ],
+    "all_scope_window": [
+      "2027-01-28",
+      "2027-03-11"
+    ],
+    "base_operator_active_hours": [
+      20,
+      30
+    ],
+    "all_scope_operator_hours": [
+      30,
+      45
+    ],
+    "observation_calendar_days": [
+      7,
+      14
+    ],
+    "change_from_previous": "No range reduction: narrow HTTP review sublayer completed, end-to-end Windows recovery/delivery/customer acceptance still open. Calendar pause is not automatic progress.",
+    "unbounded_dependencies": [
+      "off-host backup target",
+      "restore VM",
+      "vendor API access",
+      "scale/endpoint availability"
+    ]
+  },
+  "macro_completed": 54,
+  "macro_total": 94,
+  "macro_open": 40,
+  "READY_FOR_FINAL_GUIDE": false,
+  "GUIDE_DELIVERED": false,
+  "merge_sha": "1823ff3e8f8a49d0a18684f9d1331b9ca747d8f3",
+  "ci_workflows": [
+    {
+      "name": "AuthWire bounded retry network probe checks",
+      "run_id": 40911345901,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40911345901"
+    },
+    {
+      "name": "AuthWire device enrollment pilot checks",
+      "run_id": 40911346179,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40911346179"
+    },
+    {
+      "name": "KANAME Linux source preparation",
+      "run_id": 40911345947,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40911345947"
+    },
+    {
+      "name": "KANAME browser checks",
+      "run_id": 40911345927,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40911345927"
+    },
+    {
+      "name": "KANAME real RADIUS protocol proof",
+      "run_id": 40911346044,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40911346044"
+    },
+    {
+      "name": "KANAME foundation checks",
+      "run_id": 40911345988,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40911345988"
+    },
+    {
+      "name": "AuthWire Windows connector bootstrap checks",
+      "run_id": 40911345985,
+      "conclusion": "success",
+      "url": "https://github.com/Asitavandas/kaname/actions/runs/40911345985"
+    }
+  ]
+}

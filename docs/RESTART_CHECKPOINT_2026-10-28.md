@@ -1,5 +1,60 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## Yönetici durum/inceleme katmanı kaynakta tamamlandı — yazma kapalı — 29 Ekim 2026
+
+**PR120**, merge **1823ff3e8f8a49d0a18684f9d1331b9ca747d8f3**, test edilen head **92e478c064b32ee2a94d9070d5519df0c03b706a**.
+Kaynak server/panel artık yazma/geri alma kayıtlarının dar durumunu ve actor bağlı yönetici
+incelemesini sunar. İki mevcut yetki, HTTPS, Origin/CSRF ve panel oturumu zorunludur;
+gövde okunduktan sonra rol/hesap version/enabled ve session expiry/idle/CSRF yeniden doğrulanır.
+Maintenance anahtarı bu yeni uçlara kabul edilmez. Review ledger/audit/revizyon yazmaz.
+**Create koşulsuz kapalıdır; peer POLL/CLAIM/RESULT ve apply/execute rotaları kayıtlı değildir.**
+Panelde yazma/geri alma gönderme butonu yoktur. Yavaş ek durum sorgusu aday listesini
+bekletmez; eski yenileme/oturum yanıtları atılır. Belirsiz sonuç tekrar başlatma olarak
+sunulmaz; peer bildirimi bağımsız dosya veya saha kabulü sayılmaz.
+
+**12 yeni doğrulanan HTTPS testi**, **71 odaklı test**, **63 teslimat testi** başarılı.
+**1123 testlik genel koşu başarılı (28 ortam atlaması)**; yedi CI workflow başarılı.
+İlk genel koşudaki altı hata, tarihsel updater testlerinin yeni fonksiyon listesini tanımamasıydı.
+Tarihsel kurulum betikleri değiştirilmedi. Test uyarlamasında yeni handler ve GET dispatch,
+incelenmiş AST özetlerine ayrıca pinlendi; eski auth guard, yeni handler, dispatch ve bilinmeyen
+fonksiyon değişikliklerinin reddedildiği doğrulandı. Başarısız koşu başarılmış gibi gizlenmedi.
+
+**Bu kaynak müşteri Linux/Windows paketine teslim edilmedi.** Kabul edilmiş son sürümler
+Linux **0.14.0-dev.44**, Windows **df28f70c-104e-4d6d-972c-e311d38adde6**; bu adımda yeni
+canlı sağlık ölçümü yapılmadı. Müşteri AD/GPO/SYSVOL/servis/anahtar/trust ayarı değiştirilmedi;
+yeni tam veri yedeği alınmadı. Teknik testler ayrı fixture/CI ortamlarıdır.
+Ayrıntı **docs/STAGING_WRITE_ADMIN.md** ve
+**docs/checkpoints/2026-10-29-staging-write-admin-source.json**.
+
+**Sıradaki:** bounded Windows CLAIM/canlı AD-PDC-GPO/source adapter'ı ve protected yerel durable
+iş kaydı; kayıp yanıt/kesinti/journal uzlaştırma ve kısmi kurtarma; strict backup projection;
+sonra gerçek onay formu/create ve peer rotalarının açılması, imzalı müşteri teslimi ve gerçek
+gMSA/SMB kabulü. GPO aktivasyonu ve uç kabulü ayrıca açık kapılardır.
+512 hedef sözleşmesi değişmedi; 200 toplam ürün kotası değildir. 500/1000 teknik kabulü açık.
+Genel **54/94 tamamlanan,40 açık** ve **READY_FOR_FINAL_GUIDE=false / GUIDE_DELIVERED=false** korunur.
+
+### Kalan süre yeniden değerlendirildi
+
+PR119 sonrası tahmin bandı korunur: dar HTTP inceleme alt katmanı bitti, ancak yürütme/kurtarma,
+teslim ve müşteri kabulü kapanmadı; geçen takvim günü otomatik düşülmedi.
+Diğer iş paketlerinde yeni saha/erişim ölçümü yok; ayrıntılı işgünü ve bağımlılık tablosu
+**docs/reports/2026-10-29-process-forecast.md** içinde güncellendi.
+
+| Hedef | Kalan tahmin | Koşullu pencere |
+|---|---|---|
+| Yazma entegrasyonu ve kurtarma | **4–7 aktif iş günü** | Windows/kurtarma/teslim turlarına bağlı |
+| İlk küçük otomatik pilot | **2–3 hafta** | **12–19 Kasım 2026** |
+| 500/1000 teknik ölçek kapısı + tek hesap dahil temel ürün | **6–9 hafta** | **10–31 Aralık 2026** |
+| Yalnız temel sürüm seçilirse kılavuz dahil | **7–10 hafta** | **17 Aralık 2026–7 Ocak 2027** |
+| Tüm kayıtlı geliştirmeler ve nihai kılavuz | **13–19 hafta** | **28 Ocak–11 Mart 2027** |
+
+Temel aktif saha **20–30 saat** (yaklaşık6–10 ayrı test günü); tüm geliştirmelerle **30–45 saat**.
+Ek **7–14 takvim günü gözlem** ayrı tutulur ve geliştirmeyle örtüşebilir. Düzenli beş gün/hafta
+ortak çalışma, aynı gün operatör çıktısı ve hazır test erişimi varsayılır. Dış yedek hedefi,
+ayrı restore VM, üretici API'si ve ölçek uçları beklemelerinin son tarihi bilinmiyor.
+Bu tahmin taahhüt değildir; altyapı veya ciddi yeni bulguda yeniden hesaplanır.
+
+
 ## Yazma/geri alma görev protokolü kaynakta test edildi — HTTP/Windows entegrasyonu açık — 29 Ekim 2026
 
 **PR119** merge **0dab5f1c4e6e45487a98dfc3da5cd51b39dde05c**, test edilen head **4ddaa2dd31994c5be6ff0a2cf97a3a4413110820**.
