@@ -1,7 +1,7 @@
-"""Source-only filesystem write authorization ledger; no HTTP/worker registration.
+"""Filesystem write authorization ledger; no peer/execution adapter registration.
 
-The future administrator API must enforce both existing write permissions and
-session/Origin/CSRF checks. Actor UUIDs and acknowledgement text are not auth.
+The administrator review API enforces both existing write permissions and
+session/Origin/CSRF checks; HTTP create is closed. Actor UUIDs and ack are not auth.
 Peer possession proofs do not attest to filesystem effects. This ledger never
 enables GPO activation and never re-leases an uncertain write.
 """
@@ -63,7 +63,7 @@ def intent_id(scope, identity, operation, target):
 
 
 class StagingWriteJobs(ConnectorJobs):
-    """Internal trusted-caller service. Deliberately not installed in server.py."""
+    """Trusted-caller ledger. HTTP exposes only status/review, never execution."""
     def __init__(self, candidates, **kwargs):
         super().__init__(candidates.registry, **kwargs)
         self.candidates = candidates
@@ -379,3 +379,4 @@ class StagingWriteJobs(ConnectorJobs):
                               'authorization_issued': bool(j['authorization_id']),
                               'peer_reported_outcome': j['result']['outcome'] if j['result'] else None,
                               'customer_filesystem_attested': False} for j in reversed(ledger['jobs'])]}
+

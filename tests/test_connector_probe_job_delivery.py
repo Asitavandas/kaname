@@ -79,6 +79,12 @@ class ConnectorProbeDeliveryTests(unittest.TestCase):
   # keeps its old pin and is not used to install the current source.
   self.n['SERVER_PROTECTED']={k:v for k,v in self.n['SERVER_PROTECTED'].items() if k!='Handler.connector_peer'}
   self.n['SERVER_PROTECTED']={k:v for k,v in self.n['SERVER_PROTECTED'].items() if k not in {'Handler.connector_peer','Handler.deployment_candidate_admin','Handler.do_POST'}} # Reviewed combined dispatch only; guard/auth bodies remain pinned.
+  # Historical installers remain frozen and reject the new function by default.
+  with self.assertRaisesRegex(ValueError,'SERVER_FUNCTION_SET_CHANGED'):self.real_server_guard(raw)
+  self.n['SERVER_FUNCTIONS']=[*self.n['SERVER_FUNCTIONS'],'Handler.staging_write_admin']
+  self.n['SERVER_PROTECTED']['Handler.staging_write_admin']='b76772b9d4fdbd1f0829c31fa241dddff8ec1b57424e243e59bacfdb711a0332'
+  # Pin the reviewed GET dispatch too; do not relax authentication guards.
+  self.n['SERVER_PROTECTED']['Handler.get_response']='0ca6ca0f3a37ae7f600dff10163ca280bdece488cd653660dd1fcdbbd9b0d8a6'
   self.real_server_guard(raw)
   changed=raw.replace(b'def guard(self',b'def altered_guard(self',1)
   self.assertNotEqual(raw,changed)
@@ -90,6 +96,16 @@ class ConnectorProbeDeliveryTests(unittest.TestCase):
   handler=next(n for n in module.body if isinstance(n,ast.ClassDef) and n.name=='Handler')
   guard=next(n for n in handler.body if isinstance(n,ast.FunctionDef) and n.name=='guard')
   guard.body.insert(0,ast.Expr(value=ast.Constant(value='tampered protected guard')))
+  with self.assertRaisesRegex(ValueError,'PROTECTED_SERVER_FUNCTION_CHANGED'):self.real_server_guard(ast.unparse(ast.fix_missing_locations(module)))
+  module=ast.parse(raw)
+  handler=next(n for n in module.body if isinstance(n,ast.ClassDef) and n.name=='Handler')
+  review=next(n for n in handler.body if isinstance(n,ast.FunctionDef) and n.name=='staging_write_admin')
+  review.body.insert(0,ast.Expr(value=ast.Constant(value='tampered review gate')))
+  with self.assertRaisesRegex(ValueError,'PROTECTED_SERVER_FUNCTION_CHANGED'):self.real_server_guard(ast.unparse(ast.fix_missing_locations(module)))
+  module=ast.parse(raw)
+  handler=next(n for n in module.body if isinstance(n,ast.ClassDef) and n.name=='Handler')
+  response=next(n for n in handler.body if isinstance(n,ast.FunctionDef) and n.name=='get_response')
+  response.body.insert(0,ast.Expr(value=ast.Constant(value='tampered dispatch')))
   with self.assertRaisesRegex(ValueError,'PROTECTED_SERVER_FUNCTION_CHANGED'):self.real_server_guard(ast.unparse(ast.fix_missing_locations(module)))
 
 if __name__=='__main__':unittest.main()

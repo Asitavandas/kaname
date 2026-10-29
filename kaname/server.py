@@ -33,7 +33,7 @@ from .dashboard import summary as dashboard_summary
 from .resources import snapshot as resource_snapshot
 from .directory_sync import DirectorySync
 from .vault import VaultError
-from .admin import AdminStore, AdminError, COOKIE, TTL, RESOURCES, permits
+from .admin import AdminStore, AdminError, COOKIE, TTL, IDLE, RESOURCES, permits
 
 STATIC = Path(__file__).parent / 'static'
 ASSETS = {'/deployment.js': ('deployment.js','application/javascript'), '/user-enrollment.js': ('user-enrollment.js','application/javascript'), '/dashboard.js': ('dashboard.js','application/javascript'), '/device.js': ('device.js','application/javascript'), '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
@@ -377,6 +377,68 @@ class Handler(BaseHTTPRequestHandler):
         except ImportError:
             self.respond(503,{'error':'CONNECTOR_SERVICE_UNAVAILABLE'})
 
+    def staging_write_admin(self, *, write=False):
+        # Review/status only. No configuration switch can enable execution here.
+        if not self.guard(write=write, resource='certificates.authority'):
+            return
+        if not permits(self.actor, 'system.connectors', write):
+            self.respond(403, {'error': 'FORBIDDEN'}); return
+        if not self.server.tls:
+            self.respond(403, {'error': 'CONNECTOR_HTTPS_REQUIRED'}); return
+        if self.actor['maintenance']:
+            self.respond(403, {'error': 'CONNECTOR_PANEL_SESSION_REQUIRED'}); return
+        try:
+            from .deployment_candidates import DeploymentCandidates, CandidateError
+            from .connector_jobs import JobError
+            from .connector_registry import RegistryError
+            from .staging_write_jobs import StagingWriteJobs
+        except ImportError:
+            self.respond(503, {'error': 'CONNECTOR_SERVICE_UNAVAILABLE'}); return
+        try:
+            jobs = StagingWriteJobs(DeploymentCandidates(self.connector_services(), self.server.deployment))
+            if not write:
+                if self.path != '/api/deployment/staging-write':
+                    raise ValueError()
+                result = jobs.status()
+            else:
+                value = self.read_body()
+                with self.server.admin.connect() as adb:
+                    adb.execute('BEGIN')
+                    actor = self.server.admin.current_actor(adb, self.actor, 'certificates.authority')
+                    self.server.admin.current_actor(adb, self.actor, 'system.connectors')
+                    now = time.time()
+                    session = adb.execute('SELECT csrf FROM admin_sessions WHERE digest=? AND user_id=? '
+                        'AND user_version=? AND expires>? AND last_seen>?',
+                        (self.actor.get('session_digest', ''), actor['id'], actor['version'], now, now-IDLE)).fetchone()
+                    if not session or not hmac.compare_digest(session['csrf'].encode(), self.actor['csrf'].encode()):
+                        raise AdminError('UNAUTHORIZED')
+                    if self.path == '/api/deployment/staging-write/create':
+                        # Do not enqueue even a valid/replayed review. Windows
+                        # recovery and backup projection remain delivery gates.
+                        self.respond(409, {'error': 'STAGING_WRITE_EXECUTION_UNAVAILABLE',
+                                          'approval_enabled': False, 'can_apply_gpo': False})
+                        return
+                    result = jobs.review(value, actor['id'])
+                    result['review_only'] = True
+            result.update(approval_enabled=False, write_authorization_enabled=False,
+                          execution_adapter_available=False, can_apply_gpo=False)
+            self.respond(200, result)
+        except (CandidateError, RegistryError, JobError) as error:
+            self.respond(503 if error.code.endswith('STORE_INVALID') else
+                         409 if error.code.endswith(('CHANGED', 'STALE', 'CONFLICT', 'BUSY', 'EXPIRED', 'NOT_READY')) else
+                         400, {'error': error.code})
+        except ConflictError:
+            self.respond(409, {'error': 'REVISION_CONFLICT'})
+        except AdminError as error:
+            self.respond({'UNAUTHORIZED': 401, 'FORBIDDEN': 403, 'BODY_LIMIT': 413,
+                          'JSON_REQUIRED': 415}.get(error.code, 400), {'error': error.code})
+        except (ValueError, TypeError, KeyError):
+            self.respond(400, {'error': 'STAGING_WRITE_INPUT_INVALID'})
+        except sqlite3.Error as error:
+            self.store_error(error)
+        except ImportError:
+            self.respond(503, {'error': 'CONNECTOR_SERVICE_UNAVAILABLE'})
+
     def connector_peer(self):
         if (not self.server.tls or self.headers.get('Host') not in self.server.hosts or
             any(self.headers.get(h) is not None for h in ('Origin','Cookie','Authorization'))):
@@ -693,6 +755,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get('Host') not in self.server.hosts:
             self.respond(403, {'error': 'INVALID_HOST'})
             return
+        if urlsplit(self.path).path == '/api/deployment/staging-write':
+            self.staging_write_admin(); return
         if urlsplit(self.path).path == '/api/deployment/candidates':
             self.deployment_candidate_admin(); return
         if urlsplit(self.path).path == '/api/deployment/connector/jobs':
@@ -914,6 +978,8 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
+        if self.path in {'/api/deployment/staging-write/review', '/api/deployment/staging-write/create'}:
+            self.staging_write_admin(write=True); return
         if self.path in {'/api/deployment/candidates/preview','/api/deployment/candidates/record','/api/deployment/candidates/verify/preview','/api/deployment/candidates/verify/create','/api/deployment/candidates/scope/preview','/api/deployment/candidates/scope/create','/api/deployment/candidates/combined/preview','/api/deployment/candidates/combined/create','/api/deployment/candidates/combined-scope/preview','/api/deployment/candidates/combined-scope/create','/api/deployment/candidates/staging-preview/preview','/api/deployment/candidates/staging-preview/create'}:
             self.deployment_candidate_admin(write=True); return
         if self.path in {'/api/connector/v1/challenge','/api/connector/v1/health','/api/connector/v1/jobs/poll','/api/connector/v1/jobs/result','/api/connector/v1/candidates/poll','/api/connector/v1/candidates/result','/api/connector/v1/scope/poll','/api/connector/v1/scope/result','/api/connector/v1/combined/poll','/api/connector/v1/combined/result','/api/connector/v1/combined-scope/poll','/api/connector/v1/combined-scope/result','/api/connector/v1/staging-preview/poll','/api/connector/v1/staging-preview/result'}:
@@ -1122,3 +1188,4 @@ class Handler(BaseHTTPRequestHandler):
             self.store_error(error)
         except OSError:
             self.respond(503, {'error': 'STORE_UNAVAILABLE'})
+
