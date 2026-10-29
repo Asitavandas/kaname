@@ -1,0 +1,28 @@
+name: AuthWire isolated staging filesystem checks
+on:
+  pull_request:
+    paths:
+      - 'windows/connector/StagingFilesystem.ps1'
+      - 'windows/connector/CombinedStagingPreview.ps1'
+      - 'windows/connector/SysvolInventory.ps1'
+      - 'tools/staging_filesystem_windows_check.ps1'
+      - '.github/workflows/staging-filesystem.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'windows/connector/StagingFilesystem.ps1'
+      - 'tools/staging_filesystem_windows_check.ps1'
+      - '.github/workflows/staging-filesystem.yml'
+permissions:
+  contents: read
+jobs:
+  native-filesystem:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Stage and rollback only disposable synthetic SMB files
+        shell: powershell
+        run: tools/staging_filesystem_windows_check.ps1
