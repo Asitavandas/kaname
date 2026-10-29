@@ -63,6 +63,25 @@ try{
  Check ($saved.Phase -ceq 'offer_saved' -and -not $saved.FilesystemWriteEnabled -and -not $saved.CanApplyGpo) 'durable offer is not execution'
  $loaded=Read-AuthWireStagingWriteOffer $journal $offer.job_id $b $release
  Check ((Get-AuthWireWriteHash $loaded) -ceq (Get-AuthWireWriteHash $offer)) 'exact offer persisted'
+ Add-Type -TypeDefinition @'
+using System;
+using System.Threading;
+namespace AuthWire.PreclaimFixture {
+ public sealed class StoreHolderV1 : IDisposable {
+  public readonly ManualResetEvent Ready=new ManualResetEvent(false), Release=new ManualResetEvent(false);
+  public bool Held; readonly Thread thread;
+  public StoreHolderV1(){thread=new Thread(Run);thread.IsBackground=true;thread.Start();}
+  void Run(){try{using(var m=new Mutex(false,"Global\\AuthWireWritePreclaimStoreV1")){Held=m.WaitOne(1000);Ready.Set();if(Held){try{Release.WaitOne(5000);}finally{m.ReleaseMutex();}}}}finally{Ready.Set();}}
+  public void Dispose(){Release.Set();if(!thread.Join(6000))throw new InvalidOperationException("FIXTURE_MUTEX_THREAD_TIMEOUT");Ready.Dispose();Release.Dispose();}
+ }
+}
+'@
+ $holder=[AuthWire.PreclaimFixture.StoreHolderV1]::new()
+ try{
+  Check ($holder.Ready.WaitOne(2000) -and $holder.Held) 'independent thread holds machine-wide prepare mutex'
+  $code='';try{Save-AuthWireStagingWriteOffer $offer $b $release $request $journal|Out-Null}catch{$code=$_.Exception.Message}
+  Check ($code -ceq 'WRITE_LOCAL_STORE_BUSY') 'parallel prepare fails at store mutex before journal changes'
+ }finally{$holder.Dispose()}
  Reject {Save-AuthWireStagingWriteOffer $offer $b $release $request $journal} 'same job never recreated'
  $second=MakeOffer;Reject {Save-AuthWireStagingWriteOffer $second $b $release $request $journal} 'same GPO second job blocked'
  $rotated=@{};foreach($n in $b.Keys){$rotated[$n]=$b[$n]};$rotated.generation=2
@@ -113,6 +132,7 @@ try{
  $originalProof=${function:New-AuthWireStagingWriteProof}
  try{function New-AuthWireStagingWriteProof {throw 'SIMULATED_SIGNING_FAILURE'};Reject {New-AuthWireStagingWriteClaim $failedJournal $offer.job_id $b $release $rsa} 'signing failure refused'}finally{Set-Item -Path Function:New-AuthWireStagingWriteProof -Value $originalProof}
  Check (Test-Path -LiteralPath (Join-Path (Join-Path $failedJournal $offer.job_id) 'claim-started.json')) 'failed signing retains intent'
+ Check (-not (Test-Path -LiteralPath (Join-Path (Join-Path $failedJournal $offer.job_id) 'claim-proof.json'))) 'failed signing does not publish a proof'
  Reject {New-AuthWireStagingWriteClaim $failedJournal $offer.job_id $b $release $rsa} 'failed signing cannot be blindly retried'
  $fullJournal=Join-Path $root 'full-store';$null=New-Item -ItemType Directory -Path $fullJournal
  $ja=Get-Acl -LiteralPath $fullJournal;$ja.SetAccessRuleProtection($true,$true);Set-Acl -LiteralPath $fullJournal -AclObject $ja

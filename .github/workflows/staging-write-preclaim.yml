@@ -2,16 +2,24 @@ name: AuthWire isolated write preclaim checks
 on:
   pull_request:
     paths:
-      - 'windows/connector/StagingWritePreclaim.ps1'
-      - 'windows/connector/Read-AuthWireStagingWritePreflight.ps1'
+      - 'windows/connector/**'
+      - 'kaname/staging_write_jobs.py'
+      - 'kaname/staging_preview_jobs.py'
+      - 'kaname/connector_jobs.py'
+      - 'kaname/connector_registry.py'
+      - 'kaname/connector_channel.py'
       - 'tools/staging_write_preclaim_windows_check.ps1'
       - 'tools/staging_write_preclaim_wire_check.py'
       - '.github/workflows/staging-write-preclaim.yml'
   push:
     branches: [main]
     paths:
-      - 'windows/connector/StagingWritePreclaim.ps1'
-      - 'windows/connector/Read-AuthWireStagingWritePreflight.ps1'
+      - 'windows/connector/**'
+      - 'kaname/staging_write_jobs.py'
+      - 'kaname/staging_preview_jobs.py'
+      - 'kaname/connector_jobs.py'
+      - 'kaname/connector_registry.py'
+      - 'kaname/connector_channel.py'
       - 'tools/staging_write_preclaim_windows_check.ps1'
       - 'tools/staging_write_preclaim_wire_check.py'
       - '.github/workflows/staging-write-preclaim.yml'
