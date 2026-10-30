@@ -161,7 +161,7 @@ try{
  function Stage([string]$id,$proposal=$fresh,[string]$pin=$fresh.PreviewSha256,[string]$protectedId=$protected){
   try{Invoke-AuthWireStagingFilesystemStage -Target $t -PreviewRecord $proposal -ApprovedPreviewSha256 $pin -SourceRoot $candidate -GpoRoot $unc -JournalRoot $journalRoot -OperationId $id -ProtectedGpoId $protectedId}catch{Write-Host $_.ScriptStackTrace;throw}
  }
- function Rollback([string]$id,[string]$pin){Invoke-AuthWireStagingFilesystemRollback -GpoRoot $unc -JournalRoot $journalRoot -OperationId $id -ApprovedCompleteSha256 $pin}
+ function Rollback([string]$id,[string]$pin,[long]$deadline=([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+30)){Invoke-AuthWireStagingFilesystemRollback -GpoRoot $unc -JournalRoot $journalRoot -OperationId $id -ApprovedCompleteSha256 $pin -NotAfter $deadline}
  Reject {Stage ([guid]::NewGuid().ToString('D')) $fresh ('0'*64)} 'wrong approval hash refuses any write'
  Reject {Stage ([guid]::NewGuid().ToString('D')) $fresh $fresh.PreviewSha256 $t.gpo_id} 'protected GPO refuses write'
  $expired=New-AuthWireCombinedStagingPlanCore $t $ledger $before ('3'*64) ($now-100)
@@ -210,12 +210,100 @@ try{
  try{[IO.File]::Move($file,$moved);[IO.File]::WriteAllBytes($file,$saved);Set-Acl -LiteralPath $file -AclObject $savedAcl;Reject {Rollback $op $completePin} 'file identity replacement rejected'}finally{[IO.File]::Delete($file);[IO.File]::Move($moved,$file)}
  $verify=[AuthWire.Staging.TreeLeaseV1]::Tree($destination,$false)
  try{$restoredRows=Get-AuthWireStagingFilesystemRows $verify;Check ((Get-AuthWireStagingFilesystemDigest $restoredRows) -ceq $complete.tree_sha256) 'same-share fixture rename restores original file identity and ACL'}finally{$verify.Dispose()}
+ foreach($deadline in @(0,-1,([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-1),([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+60))){
+  Reject {Rollback $op $completePin $deadline} 'missing expired or unbounded rollback deadline refused'
+  Check ((Get-AuthWireSysvolInventory $unc).Sha256 -ceq $stagedHash) 'invalid deadline preserves complete staged tree'
+  Check (-not (Test-Path -LiteralPath (Join-Path (Join-Path $journalRoot $op) 'rollback-started.json'))) 'invalid deadline creates no deletion marker'
+ }
+ Reject {Invoke-AuthWireStagingFilesystemRollback -GpoRoot $unc -JournalRoot $journalRoot -OperationId $op -ApprovedCompleteSha256 $completePin} 'omitted deadline does not fall back to unbounded deletion'
+ $tick=[Diagnostics.Stopwatch]::GetTimestamp();$seconds=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$frequency=[Diagnostics.Stopwatch]::Frequency
+ Reject {[AuthWire.Staging.TreeLeaseV1]::AssertRollbackDeadline($seconds+10,$seconds,($tick-11*$frequency))} 'monotonic elapsed budget cannot restart on wall-clock setback'
+ Reject {[AuthWire.Staging.TreeLeaseV1]::AssertRollbackDeadline($seconds+10,$seconds,($tick+60*$frequency))} 'future monotonic start rejected'
+ Reject {[AuthWire.Staging.TreeLeaseV1]::AssertRollbackDeadline($seconds+70,$seconds+60,$tick)} 'wall-clock setback before start rejected'
+ Reject {[AuthWire.Staging.TreeLeaseV1]::AssertRollbackDeadline($seconds+10,$seconds,0)} 'missing monotonic start rejected'
+ # A read-only lease can never acquire delete authority through the new API.
+ $readOnly=[AuthWire.Staging.TreeLeaseV1]::Tree($destination,$false)
+ try{Reject {$readOnly.DeleteOwnedTreeBefore($seconds+30,$seconds,[Diagnostics.Stopwatch]::GetTimestamp())} 'non-delete lease refuses bounded deletion'}finally{$readOnly.Dispose()}
+ Check ((Get-AuthWireSysvolInventory $unc).Sha256 -ceq $stagedHash) 'lease rejection preserves staged tree'
  $rolled=Rollback $op $completePin
  Check ($rolled.Phase -ceq 'rolled_back' -and $rolled.BaselineRestored -and -not $rolled.CanApplyGpo) 'handle-based rollback succeeds'
  Check ((Get-AuthWireSysvolInventory $unc).Sha256 -ceq $before.Sha256) 'full original GPO bytes and ACL baseline restored'
  Reject {Rollback $op $completePin} 'rollback cannot replay'
  Check (Test-Path -LiteralPath $completePath) 'audit journal survives rollback'
  Check (Test-Path -LiteralPath (Join-Path (Join-Path $journalRoot $op) 'rollback-started.json')) 'rollback intent durably recorded before deletion'
+ $marker=Read-AuthWireStagingJournal (Join-Path (Join-Path $journalRoot $op) 'rollback-started.json')
+ Check ($marker.format -ceq 'AuthWireFilesystemRollbackIntentV2' -and $marker.expires_at-$marker.started_at -le 30 -and $marker.expires_at -gt $marker.started_at -and $marker.complete_sha256 -ceq $completePin) 'original bounded deadline and complete pin durably linked'
+ # Native production body plus a test-only delay AFTER the first actual delete.
+ # No fault/clock/deadline override is added to the product type. A distinct
+ # fixture namespace avoids replacing the production class used above.
+ $engineText=[IO.File]::ReadAllText((Join-Path $lib 'StagingFilesystem.ps1')).Replace("`r`n","`n")
+ $nativeStart=$engineText.IndexOf("using System;`n");$nativeEnd=$engineText.IndexOf("`n'@",$nativeStart)
+ Check ($nativeStart -ge 0 -and $nativeEnd -gt $nativeStart) 'native fixture derives exact current source'
+ $native=$engineText.Substring($nativeStart,$nativeEnd-$nativeStart).Replace('namespace AuthWire.Staging {','namespace AuthWire.RollbackDeadlineFixture {')
+ $needle='if(!SetFileInformationByHandle(e.H,4,ref d,1))NativeFail();e.H.Dispose();'
+ Check ($native.Split(@($needle),[StringSplitOptions]::None).Count -eq 2) 'single native deletion hook for delay fixture'
+ $native=$native.Replace($needle,($needle+'System.Threading.Thread.Sleep(3100);'))
+ Add-Type -TypeDefinition $native
+ $delayRoot=Join-Path $shareParent 'deadline-owned';$null=New-Item -ItemType Directory -Path $delayRoot
+ foreach($name in @('first.txt','second.txt','third.txt')){[IO.File]::WriteAllText((Join-Path $delayRoot $name),'synthetic')}
+ $delayUnc='\\localhost\'+$share+'\deadline-owned'
+ $delayed=[AuthWire.RollbackDeadlineFixture.TreeLeaseV1]::Tree($delayUnc,$true)
+ try{
+  $seconds=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$tick=[Diagnostics.Stopwatch]::GetTimestamp()
+  Reject {$delayed.DeleteOwnedTreeBefore($seconds+2,$seconds,$tick)} 'expiry during native deletion surfaces after first mutation'
+ }finally{$delayed.Dispose()}
+ Check (@(Get-ChildItem -LiteralPath $delayRoot -File).Count -eq 2) 'native deadline prevents every subsequent deletion'
+ Check (Test-Path -LiteralPath $delayRoot) 'partial native tree retained for review'
+ Remove-Item -LiteralPath $delayRoot -Recurse -Force
+ # Only disposable fixture state is cleaned below between independent cases.
+ # The production engine never retries, resets a marker or erases partial data.
+ $writerBody=${function:Write-AuthWireStagingJournal};$rowsBody=${function:Get-AuthWireStagingFilesystemRows};$inventoryBody=${function:Get-AuthWireSysvolInventory}
+ foreach($fault in @('before_marker','marker_flush','postcheck','completion_flush')){
+  $fresh=New-AuthWireCombinedStagingPlanCore $t $ledger $before ('3'*64) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
+  $faultOp=[guid]::NewGuid().ToString('D');$null=Stage $faultOp
+  $faultJournal=Join-Path $journalRoot $faultOp
+  $faultComplete=Get-AuthWireScopeDataHash (Read-AuthWireStagingJournal (Join-Path $faultJournal 'complete.json'))
+  $script:rollbackFault=$fault;$script:rollbackDelayUsed=$false;$script:rollbackFailureUsed=$false
+  function Get-AuthWireStagingFilesystemRows($Lease){
+   $r=& $rowsBody $Lease
+   if($script:rollbackFault -ceq 'before_marker' -and -not $script:rollbackDelayUsed){$script:rollbackDelayUsed=$true;Start-Sleep -Milliseconds 4100}
+   return $r
+  }
+  function Write-AuthWireStagingJournal([string]$Path,$Value){
+   $name=[IO.Path]::GetFileName($Path)
+   if($script:rollbackFault -ceq 'completion_flush' -and $name -ceq 'rolled-back.json'){$script:rollbackFailureUsed=$true;throw 'FIXTURE_ROLLBACK_COMPLETION_DISK_FAILURE'}
+   & $writerBody $Path $Value
+   if($script:rollbackFault -ceq 'marker_flush' -and $name -ceq 'rollback-started.json'){$script:rollbackDelayUsed=$true;Start-Sleep -Milliseconds 4100}
+  }
+  function Get-AuthWireSysvolInventory([string]$Path){
+   $r=& $inventoryBody $Path
+   if($script:rollbackFault -ceq 'postcheck' -and -not (Test-Path -LiteralPath $destination) -and -not $script:rollbackDelayUsed){$script:rollbackDelayUsed=$true;Start-Sleep -Milliseconds 4100}
+   return $r
+  }
+  try{
+   $deadline=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+3
+   if($fault -ceq 'completion_flush'){$deadline+=27}
+   Reject {Rollback $faultOp $faultComplete $deadline} ('bounded rollback '+$fault+' requires review')
+  }finally{
+   Set-Item Function:Write-AuthWireStagingJournal $writerBody
+   Set-Item Function:Get-AuthWireStagingFilesystemRows $rowsBody
+   Set-Item Function:Get-AuthWireSysvolInventory $inventoryBody
+  }
+  Check ($script:rollbackDelayUsed -or $script:rollbackFailureUsed) ('intended fault reached '+$fault)
+  $hasMarker=Test-Path -LiteralPath (Join-Path $faultJournal 'rollback-started.json')
+  Check ($hasMarker -eq ($fault -cne 'before_marker')) ('marker state preserved '+$fault)
+  Check (-not (Test-Path -LiteralPath (Join-Path $faultJournal 'rolled-back.json'))) ('no completed receipt after '+$fault)
+  Check (Test-Path -LiteralPath (Join-Path $faultJournal 'complete.json')) ('original ownership evidence retained '+$fault)
+  if($fault -cin @('before_marker','marker_flush')){
+   Check (Test-Path -LiteralPath $destination) ('deadline before delete preserves all files '+$fault)
+   $pinLease=[AuthWire.Staging.TreeLeaseV1]::Tree($destination,$false)
+   try{Check ((Get-AuthWireStagingFilesystemDigest (Get-AuthWireStagingFilesystemRows $pinLease)) -ceq (Read-AuthWireStagingJournal (Join-Path $faultJournal 'complete.json')).tree_sha256) ('exact ownership identities retained '+$fault)}finally{$pinLease.Dispose()}
+  }else{Check ((Get-AuthWireSysvolInventory $unc).Sha256 -ceq $before.Sha256) ('effects occurred but completion unconfirmed '+$fault)}
+  if($hasMarker){Reject {Rollback $faultOp $faultComplete} ('fresh deadline cannot replay incomplete '+$fault)}
+  if(Test-Path -LiteralPath $destination){Remove-Item -LiteralPath $destination -Recurse -Force}
+  Check ((Get-AuthWireSysvolInventory $unc).Sha256 -ceq $before.Sha256) ('isolated fixture cleanup preserves outside baseline '+$fault)
+ }
+ $fresh=New-AuthWireCombinedStagingPlanCore $t $ledger $before ('3'*64) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
  # An I/O failure while persisting completion must leave an explicit incomplete
  # transaction; production engine has no fault injection parameter.
  $writerBody=${function:Write-AuthWireStagingJournal}
@@ -226,7 +314,7 @@ try{
  Check (Test-Path -LiteralPath (Join-Path (Join-Path $journalRoot $op2) 'intent.json')) 'durable intent survives failure'
  Reject {Rollback $op2 $completePin} 'no completion means no guessed rollback ownership'
  Check (Test-Path -LiteralPath $destination) 'incomplete tree retained for review'
- Write-Host ('AUTHWIRE_STAGING_FILESYSTEM_WINDOWS_OK checks='+$checks+' smb_stage=true exact_rollback=true failure_requires_review=true customer_ad_tested=false live_writer_enabled=false')
+ Write-Host ('AUTHWIRE_STAGING_FILESYSTEM_WINDOWS_OK checks='+$checks+' smb_stage=true exact_rollback=true rollback_deadline_per_delete=true rollback_interruption_cases=4 native_partial_expiry=true failure_requires_review=true customer_ad_tested=false live_writer_enabled=false')
 }finally{
  if($share){Remove-SmbShare -Name $share -Force -ErrorAction SilentlyContinue}
  if($startedServer){Stop-Service LanmanServer -ErrorAction SilentlyContinue}
