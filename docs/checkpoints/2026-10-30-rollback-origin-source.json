@@ -1,0 +1,286 @@
+{
+  "format": "AuthWireRollbackOriginSourceCheckpointV1",
+  "date": "2026-10-30",
+  "timezone": "Europe/Istanbul",
+  "repository": "Asitavandas/kaname",
+  "pull_request": 128,
+  "base_commit": "6c13c16a876cb507c613f9317f589ffdf1bb16ae",
+  "tested_source_commit": "74899c872874b21edcc7cb57223e019cc2ab402e",
+  "merge_commit": "807348d87f09d87102c08298afab68ddb0269a8b",
+  "source_only": true,
+  "scope_added": false,
+  "customer_deployed": false,
+  "closed_subgate": "Read-only rollback readiness binds a distinct typed offer to an observed and accepted original stage plus exact current ownership/outside baseline",
+  "entry_points": [
+    "Read-AuthWireRollbackOrigin",
+    "Get-AuthWireRollbackDirectoryObservation",
+    "Get-AuthWireRollbackPreflight"
+  ],
+  "shared_verifier": "Read-AuthWireObservedStageBody in StagingWriteResult.ps1",
+  "required_origin": [
+    "fixed protected journal root",
+    "same binding scope/key generation",
+    "original signed claim proof/receipt",
+    "consumption and filesystem intent",
+    "launch and exact child identity",
+    "stage preflight and native complete ownership ledger",
+    "child result and parent observation",
+    "immutable staged outbox",
+    "matching accepted RESULT ACK",
+    "original GPO lock and inactive stage gate/PID"
+  ],
+  "current_reads": [
+    "non-admin authenticated service SID",
+    "existing public signed candidate/content validation",
+    "two AD/GPO scope observations matching approved hash",
+    "current PDC-derived original SYSVOL path",
+    "native read-only 23-row ownership lease",
+    "exact bytes hashes ACL file identities",
+    "unchanged outside baseline",
+    "revalidated original chain"
+  ],
+  "no_authority": {
+    "read_only": true,
+    "write_authorized": false,
+    "can_delete": false,
+    "can_apply_gpo": false,
+    "requires_separate_claim": true,
+    "witness_lifetime_seconds": 5,
+    "old_preview_or_grant_renewed": false
+  },
+  "bounds": {
+    "elapsed_rejection_seconds": 15,
+    "hard_ad_smb_cancellation": false,
+    "fixed_bounded_signed_rollback_reader_pending": true,
+    "live_observation_seconds": 5,
+    "observation_epoch": "before first live directory/tree read; UTC plus monotonic elapsed"
+  },
+  "fixture": {
+    "actual_original_stage_and_accepted_result": true,
+    "normal_and_lost_ack_origins_tested": 2,
+    "synthetic_rollback_offers": true,
+    "directory_content_and_positive_service_identity_observation_simulated": true,
+    "rollback_claim_sent": false,
+    "rollback_grant_issued": false,
+    "rollback_grant_consumed": false,
+    "rollback_files_deleted": false,
+    "original_journals_and_gpo_lock_preserved": true,
+    "customer_gmsa_ad_tested": false,
+    "slow_observation_refused_without_timestamp_refresh": true
+  },
+  "test_history": [
+    {
+      "commit": "079c1026c91b9898484e621c76620391373626e9",
+      "run_id": 41026083104,
+      "job_id": 123964408732,
+      "error": "WRITE_PREFLIGHT_STALE",
+      "phase": "New-AuthWireStagingWriteClaim",
+      "cause": "Fixture synthesized live context before durable offer setup; 5-second freshness expired before claim",
+      "fix": "Use actual fixed AllSigned preflight after offer setup, as in the real cycle. No saved authority/timestamp renewal or production deadline weakening."
+    },
+    {
+      "commit": "05ac696f0c0025ddbc18d3fb8c7eb8cd60e39620",
+      "rollback_run_id": 41026285364,
+      "rollback_job_id": 123965064733,
+      "rollback_checks": 250,
+      "passed": true,
+      "note": "Historical observed-stage verifier shared before final fixture-order fix."
+    }
+  ],
+  "previous_unknown_stage_failure_closed": false,
+  "previous_unknown_stage_failure_followup": "PR125/PR127 tanisiz farkli stage hatalarina bu turdaki pre-CLAIM fixture sebebi geriye donuk atanmaz; customer latency/refusal and recurrence root cause remain open",
+  "open": [
+    "fixed bounded AllSigned rollback reader",
+    "distinct rollback CLAIM transport/receipt and one-use consumption",
+    "bounded rollback child/parent observation/immutable RESULT",
+    "preauthorization refusal reporting",
+    "permanent idle/history/retention",
+    "reboot/lost-result/partial-journal reconciliation and separately approved unlock",
+    "strict backup projection/off-host boot restore",
+    "controlled signed delivery and actual gMSA/AD/domain-SYSVOL/endpoint acceptance",
+    "GPO activation",
+    "single account transition",
+    "user EAP-TLS acceptance",
+    "500/1000 technical scale"
+  ],
+  "customer_last_known": {
+    "linux_version": "0.14.0-dev.44",
+    "windows_release": "df28f70c-104e-4d6d-972c-e311d38adde6",
+    "fresh_live_read": false
+  },
+  "customer_changes": {
+    "linux": false,
+    "windows": false,
+    "ad_gpo": false,
+    "endpoint": false,
+    "services": false,
+    "key_acl": false,
+    "trust_store": false,
+    "backup_created": false,
+    "gpo_apply_enabled": false,
+    "write_routes_enabled": false
+  },
+  "forecast": {
+    "reassessed": true,
+    "previous_write_recovery_active_workdays": [
+      3,
+      6
+    ],
+    "remaining_write_recovery_active_workdays": [
+      3,
+      6
+    ],
+    "reason": "Origin/current-tree subgate advanced and one pre-CLAIM test-order failure separated, but distinct authorization/execution/result/recovery/customer delivery remain unmeasured. No automatic time subtraction.",
+    "small_pilot_weeks": [
+      2,
+      3
+    ],
+    "base_single_account_scale_weeks": [
+      6,
+      9
+    ],
+    "base_with_guide_weeks": [
+      7,
+      10
+    ],
+    "all_scope_with_guide_weeks": [
+      13,
+      19
+    ],
+    "operator_base_hours": [
+      20,
+      30
+    ],
+    "operator_all_hours": [
+      30,
+      45
+    ],
+    "additional_observation_calendar_days": [
+      7,
+      14
+    ],
+    "external_wait_end_unknown": true,
+    "macro_completed": 54,
+    "macro_open": 40
+  },
+  "guide": {
+    "READY_FOR_FINAL_GUIDE": false,
+    "GUIDE_DELIVERED": false
+  },
+  "source_git_blob_sha1": {
+    "windows/connector/StagingRollbackEvidence.ps1": "a90a292317963be085efb864a82dacf7aec5c2a6",
+    "windows/connector/StagingWriteResult.ps1": "30e6321baaf7aac6d361265af204810a0d39f773",
+    "tools/staging_rollback_evidence_fixture.ps1": "0e02f6ba5c93ffb749cbac7d4da6bcacbbcbe458",
+    "tools/staging_rollback_evidence_windows_check.py": "fbdfb30360a21861aad6ba3fb8860cc1d90ad4bd",
+    ".github/workflows/staging-rollback-evidence.yml": "366fe02499f400d8c9efa78e531d6fb915ec9a8c",
+    "tools/staging_write_execution_windows_check.ps1": "8a9f08285518344047749d8f24bb1f7d37f305ff",
+    "docs/STAGING_ROLLBACK_EVIDENCE.md": "a4b0e716bd0edc9d5ef519a0e11dc2440208980f"
+  },
+  "verification": {
+    "rollback_origin": {
+      "run_id": 41027340294,
+      "job_id": 123968469035,
+      "native_checks": 252,
+      "original_cycle_cases": 13,
+      "accepted_original_stage_origins": 2,
+      "synthetic_rollback_offer": true,
+      "current_directory_simulated": true,
+      "rollback_authorization_or_deletion_tested": false,
+      "preflight_fixture_ms": [
+        4820,
+        4591
+      ],
+      "passed": true
+    },
+    "stage_execution": {
+      "run_id": 41027340253,
+      "job_id": 123968468864,
+      "native_checks": 170,
+      "cases": 8,
+      "grants_seeded": true,
+      "passed": true
+    },
+    "cycle": {
+      "run_id": 41027340327,
+      "job_id": 123968469322,
+      "native_checks": 142,
+      "cases": 13,
+      "original_polls": 13,
+      "original_claims": 10,
+      "result_requests": 10,
+      "result_transitions": 9,
+      "passed": true
+    },
+    "preclaim_result": {
+      "run_id": 41027340227,
+      "job_id": 123968468483,
+      "native_checks": 372,
+      "python_rsa_checks": 18,
+      "passed": true
+    },
+    "foundation": {
+      "run_id": 41027340237,
+      "job_id": 123968468761,
+      "tests": 1123,
+      "skips": 28,
+      "seconds": 306.189,
+      "passed": true
+    },
+    "retry_network": {
+      "run_id": 41027340367,
+      "passed": true
+    },
+    "persistent_service": {
+      "run_id": 41027340301,
+      "job_id": 123968469178,
+      "passed": true,
+      "customer_gmsa_tested": false,
+      "native_checks": 85
+    },
+    "all_seven_workflows_passed": true,
+    "workflows": [
+      {
+        "name": "AuthWire bounded retry network probe checks",
+        "run_id": 41027340367,
+        "conclusion": "success",
+        "url": "https://github.com/Asitavandas/kaname/actions/runs/41027340367"
+      },
+      {
+        "name": "AuthWire isolated write preclaim checks",
+        "run_id": 41027340227,
+        "conclusion": "success",
+        "url": "https://github.com/Asitavandas/kaname/actions/runs/41027340227"
+      },
+      {
+        "name": "AuthWire isolated authorized stage execution",
+        "run_id": 41027340253,
+        "conclusion": "success",
+        "url": "https://github.com/Asitavandas/kaname/actions/runs/41027340253"
+      },
+      {
+        "name": "AuthWire isolated one-shot staging cycle",
+        "run_id": 41027340327,
+        "conclusion": "success",
+        "url": "https://github.com/Asitavandas/kaname/actions/runs/41027340327"
+      },
+      {
+        "name": "AuthWire isolated rollback origin evidence",
+        "run_id": 41027340294,
+        "conclusion": "success",
+        "url": "https://github.com/Asitavandas/kaname/actions/runs/41027340294"
+      },
+      {
+        "name": "KANAME foundation checks",
+        "run_id": 41027340237,
+        "conclusion": "success",
+        "url": "https://github.com/Asitavandas/kaname/actions/runs/41027340237"
+      },
+      {
+        "name": "AuthWire Windows connector bootstrap checks",
+        "run_id": 41027340301,
+        "conclusion": "success",
+        "url": "https://github.com/Asitavandas/kaname/actions/runs/41027340301"
+      }
+    ]
+  }
+}

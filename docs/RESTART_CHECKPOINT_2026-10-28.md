@@ -1,5 +1,101 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## Geri alma ön kontrolü özgün stage kanıtına bağlandı — 30 Ekim 2026
+
+**PR128**, test edilen kaynak **74899c872874b21edcc7cb57223e019cc2ab402e**, merge **807348d87f09d87102c08298afab68ddb0269a8b**.
+
+Yeni salt okunur guard, ayrı rollback teklifini tamamlanmış özgün stage işine bağlar.
+Sabit özel journal kökünden CLAIM kanıtı/receipt, tüketim, intent, launch/child,
+preflight, gerçek engine complete/23 satırlı ownership, child sonucu, parent gözlemi,
+immutable staged outbox ve kabul edilmiş tam ACK birlikte doğrulanır. Özgün GPO
+kilidi/mutex/gate korunur. Farklı binding nesli, hedef/preview bağı, eksik/inceleme
+sonucu veya eski rollback denemesi reddedilir. Eski release yalnız kendi tarihsel
+kanıtını okumak içindir; binding/key nesli kendiliğinden taşınmaz.
+
+Mevcut staged dosyalar read-only native handle'larla sabitlenip byte/hash/ACL ve
+volume-file kimlikleriyle özgün ownership kaydına eşleştirilir; dış GPO tabanı
+değişmemelidir. Servis kimliği + AD/PDC/owner/marker/link/settings/versiyon/ACL kapsamı
+iki kez yeniden gözlenir. PDC/yol farkı otomatik DFSR kimlik taşıması sayılmaz.
+Stage sonucunun tarihsel gözlem denetimi, outbox ve rollback için **tek ortak
+okuyucuya çıkarıldı**; aynı kontrollerin zamanla iki ayrı uygulamaya ayrılması önlendi.
+
+**Bu ön kontrol izin değildir:** read_only=true / write_authorized=false /
+can_delete=false / can_apply_gpo=false / requires_separate_claim=true.
+Beş saniyelik tazelik canlı dizin/ağaç okumalarından önce başlar; yavaş kontrolün
+bitişinde sıfırlanmaz. Yeni gözlem eski preview/grant tarihini yenilemez. 15 saniyeden geç
+dönen gözlem reddedilir; bu henüz AD/SMB çağrısını kesin sürede iptal eden reader
+süreci değildir. Ayrı rollback CLAIM/receipt/tüketim/sınırlı child/parent gözlemi/
+RESULT zinciri hâlâ açıktır. Silme, journal yazma, otomatik cleanup veya unlock açılmadı.
+
+**Doğrulama:** Yeni gerçek CNG/pinned TLS/SQLite/imzalı-child/SMB akışında **252
+native kontrol /13 temel senaryo** geçti. Normal ve kayıp ACK sonrası kabul edilmiş
+iki gerçek stage üzerinde origin/preflight ve ret vakaları çalıştı. Rollback
+teklifleri sentetik; AD/içerik ve pozitif servis kimliği gözlemleri açıkça shim'dir.
+**Rollback CLAIM/izin/tüketim/silme test edildi veya açıldı denmiyor.**
+Mevcut dosya byte/ACL/ADS/ek dosya, dış taban/PDC, eksik/değişmiş proof/outbox/ACK,
+review ve canlı gate retleri; eski journal/GPO kilidi ve preview zamanlarının
+korunması doğrulandı. Geciken gözleme bitişte yeni zaman verilmeyip ret üretildi.
+İki pozitif fixture ön kontrolü **4820 /4591 ms**; bunlar saha performans ölçümü değildir.
+Ayrı stage **170 kontrol /8 senaryo**, mevcut çevrim **142 kontrol /13 senaryo**,
+preclaim/RESULT **372 native +18 Python/RSA kontrolü** ile geçti. Genel koşu
+**1123 test /28 ortam atlaması /306.189 saniye**, kalıcı SCM/HTTPS **85 kontrol**
+ile başarılı; **yedi CI workflow'un tamamı geçti**. Native çağıran hosted Windows
+hesabıdır; müşteri gMSA/AD/domain-SYSVOL kabulü değildir. Yalnız fixture'ın kendi
+negatif kayıtları restore edilir; ürün recovery/reset/cleanup API'si yoktur.
+
+Bu turda yakalanan belirli fixture hatası **WRITE_PREFLIGHT_STALE** idi:
+**079c1026c91b9898484e621c76620391373626e9**, run **41026083104**, job **123964408732**.
+Stack, New-AuthWireStagingWriteClaim öncesinde, test hazırlığından önce sentezlenen
+gözlemin beş saniyelik tazelik sınırını aştığını gösterdi. Fixture artık offer
+kaydedildikten sonra gerçek akıştaki sabit AllSigned reader ile yeni gözlem alır.
+Saklanmış offer/preview/grant değiştirilmedi veya yenilenmedi; üretim sınırı uzatılmadı.
+Bu, PR125/PR127'de farklı aşamada tanısız kalmış eski hataların kök nedeni olarak
+atanmadı. Önceki hataların takibi ve gerçek müşteri latency/ret kabulü açık kalır.
+
+**Kaynak GitHub main'e kaydedildi; Linux/DC01'e kurulmadı.** Aktif package/worker,
+üretim peer-create rotaları ve GPO aktivasyonu açılmadı; müşteri AD/GPO/SYSVOL,
+servis/cihaz, mevcut key ACL/trust değiştirilmedi. Yeni tam veri yedeği alınmadı.
+Son bilinen canlı Linux **dev.44**, Windows **df28f70c**; yeni canlı ölçüm yok.
+Ayrıntı: **docs/STAGING_ROLLBACK_EVIDENCE.md** ve
+**docs/checkpoints/2026-10-30-rollback-origin-source.json**.
+
+**Yarım / test bekleyen:** sabit süreli AllSigned rollback reader + ayrı CLAIM
+taşıma/receipt/tek kullanımlık tüketim; bounded rollback child/parent/immutable
+RESULT; ret bildirimi, kalıcı idle/history/retention, reboot/kayıp sonuç/kısmi
+journal uzlaştırma ve ayrı unlock; strict backup projection/dış yedek/boot restore;
+imzalı kontrollü teslim ve gerçek gMSA/AD/domain-SYSVOL/endpoint kabulü. GPO
+aktivasyonu, tek hesap, kullanıcı EAP-TLS ve 500/1000 teknik ölçek ayrıca açıktır.
+Bunlar mevcut dağıtım/geri alma planının alt kapılarıdır; yeni ürün kapsamı eklenmedi.
+
+### Kalan süre yeniden değerlendirildi
+
+PR127 sonrası **3–6 aktif iş günü** yazma/kurtarma/teslim bandı yeniden değerlendirildi
+ve **korundu**. Özgün stage kanıtı ve mevcut ownership eşleme alt kapısı ilerledi;
+ayrı izin/yürütme/sonuç ve kalıcı kurtarma/müşteri teslim çevrimleri henüz kapanmadı.
+Test hazırlığına ait belirli stale-gözlem hatası ayrıldı; eski tanısız hata ve saha
+gecikme ölçümü açık olduğundan otomatik gün düşülmedi. Mimari bulgu çıkarsa önceki
+**2–5 ek iş günü / yeniden planlama** payı yeniden değerlendirilir. Diğer paketlerde
+yeni saha/erişim kanıtı yok; iş bazında süre ve bağımlılıkları yeniden değerlendirilip
+korundu.
+
+| Hedef | Kalan tahmin | 30 Ekim başlangıçlı koşullu pencere |
+|---|---|---|
+| Yazma / geri alma / kurtarma / kontrollü teslim | **3–6 aktif iş günü** | Ayrı izin, yürütme/sonuç, kurtarma ve gerçek kabul kapılarına bağlı |
+| İlk küçük otomatik pilot | **2–3 hafta** | **13–20 Kasım 2026** |
+| Tek hesap ve 500/1000 teknik ölçek dahil temel ürün | **6–9 hafta** | **11 Aralık 2026–1 Ocak 2027** |
+| Temel sürüm seçilirse kılavuz dahil | **7–10 hafta** | **18 Aralık 2026–8 Ocak 2027** |
+| Tüm kayıtlı geliştirmeler + nihai kılavuz | **13–19 hafta** | **29 Ocak–12 Mart 2027** |
+
+Aktif operatör katılımı temel kapsamda **20–30 saat**, tüm kapsamda **30–45 saat**;
+ek **7–14 takvim günü gözlem** ayrı. Düzenli 5 gün/hafta ortak çalışma, aynı gün
+operatör çıktısı ve hazır erişim varsayılır. Sohbet kapalıyken arka plan çalışma
+varsayılmaz. Dış yedek hedefi/restore VM/üretici API/ölçek uçları beklemelerinin bitişi
+bilinmiyor; CI süreleri saha performansı ve tahminler teslim taahhüdü değildir.
+**200 ürün kotası değildir**; tek görev 512 hedef sınırı ve 500/1000 teknik kabulü korunur.
+Makro **54/94 tamam,40 açık**; kaynak alt kapısı ürün kabulü sayılmadı.
+**READY_FOR_FINAL_GUIDE=false / GUIDE_DELIVERED=false** korunur; nihai ayrıntılı
+Türkçe Word/PDF kılavuz hedef işlevsel sürüm ve operatör kabulünden sonra hazırlanır.
+
 ## Geri alma çekirdeğinde süre ve kesinti koruması — 30 Ekim 2026
 
 **PR127**, test edilen kaynak **ee13731753448027a4ad65c1a74ab6b58c5fd12b**. Merge **18d3c07531a3b644a71e0bf82dcf1bda4c60698c**.
