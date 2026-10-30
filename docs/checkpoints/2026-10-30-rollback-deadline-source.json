@@ -1,0 +1,261 @@
+{
+  "format": "AuthWireRollbackDeadlineSourceCheckpointV1",
+  "date": "2026-10-30",
+  "timezone": "Europe/Istanbul",
+  "repository": "Asitavandas/kaname",
+  "pull_request": 127,
+  "base_commit": "a97b1424fccd4a08703baec353d4be2d06010068",
+  "tested_source_commit": "ee13731753448027a4ad65c1a74ab6b58c5fd12b",
+  "merge_commit": "18d3c07531a3b644a71e0bf82dcf1bda4c60698c",
+  "source_only": true,
+  "customer_deployed": false,
+  "closed_source_subgate": "Rollback engine requires bounded original deadline before and after each native deletion; interrupted start marker blocks replay",
+  "entry": {
+    "parameter": "NotAfter",
+    "omitted_or_nonpositive": "rejected",
+    "maximum_remaining_seconds": 30,
+    "clocks": [
+      "original UTC deadline",
+      "same-process monotonic elapsed"
+    ],
+    "native_unbounded_delete_removed": true
+  },
+  "checks": [
+    "after preparation",
+    "before and after start-marker CreateNew+Flush(true)",
+    "before and after each handle mutation",
+    "after deletion",
+    "after baseline inventory and around completion flush"
+  ],
+  "evidence": {
+    "start_format": "AuthWireFilesystemRollbackIntentV2",
+    "binds": [
+      "operation_id",
+      "complete_sha256",
+      "started_at",
+      "expires_at"
+    ],
+    "replay_after_start": "requires review even with a fresh deadline",
+    "automatic_cleanup": false,
+    "automatic_unlock": false
+  },
+  "native_fixture": {
+    "filesystem": "real disposable SMB/NTFS",
+    "customer_ad_tested": false,
+    "caller": "hosted Windows account",
+    "fault_parameters_in_product": false,
+    "production_native_body_copied_to_test_namespace": true,
+    "test_only_delay_after_first_delete": true,
+    "interruption_cases": [
+      "before_marker",
+      "marker_flush",
+      "postcheck",
+      "completion_flush"
+    ],
+    "verifies": [
+      "invalid or omitted deadline no mutation",
+      "UTC/monotonic bounds",
+      "read-only lease refuses deletion",
+      "partial native expiry prevents subsequent deletion",
+      "preserve ownership journals",
+      "no false completion on postcheck/disk failure",
+      "fresh deadline cannot replay start marker",
+      "outside baseline unchanged"
+    ]
+  },
+  "known_failure": {
+    "commit": "7488095037e3adec5fcc2834a5495b8befd787a1",
+    "run_id": 41022608849,
+    "job_id": 123953174014,
+    "assertion": "actual signed child stages without activation or artifact execution",
+    "launch_presence_recorded": false,
+    "root_cause": "unresolved; no clock/environment/change attribution",
+    "followup": "allowlisted fixture-only early refusal/existence/timing diagnostics added, delivery-time latency and root-cause tracking remain open",
+    "review_diagnostic_in_ci_log": false,
+    "review_file_presence": "unrecorded"
+  },
+  "open": [
+    "authenticated rollback original-stage receipt validation and distinct CLAIM",
+    "one-use rollback grant consumption",
+    "bounded signed rollback child and parent observation",
+    "immutable rollback RESULT integration",
+    "preauthorization refusal reporting",
+    "permanent idle/history and bounded retention",
+    "reboot/lost-result/partial-journal reconciliation and separately approved unlock",
+    "strict backup projection/off-host boot restore",
+    "controlled signed delivery and actual gMSA/AD/domain-SYSVOL acceptance",
+    "GPO activation and actual endpoint acceptance",
+    "single account transition",
+    "500/1000 device technical scale acceptance"
+  ],
+  "customer_last_known": {
+    "linux_version": "0.14.0-dev.44",
+    "windows_release": "df28f70c-104e-4d6d-972c-e311d38adde6",
+    "fresh_read": false
+  },
+  "customer_effects": {
+    "linux_changed": false,
+    "windows_changed": false,
+    "ad_gpo_changed": false,
+    "services_changed": false,
+    "key_acl_changed": false,
+    "trust_store_changed": false,
+    "backup_created": false,
+    "radius_restarted": false,
+    "write_routes_enabled": false,
+    "gpo_apply_enabled": false
+  },
+  "forecast": {
+    "reassessed": true,
+    "previous_write_recovery_days": [
+      3,
+      6
+    ],
+    "remaining_write_recovery_days": [
+      3,
+      6
+    ],
+    "reason": "Engine deadline subgate advanced; authenticated integration, recovery/worker/delivery gates unmeasured. Early-stage failure investigation retained within existing correction allowance; architectural finding may require 2–5 additional workdays or replanning.",
+    "small_pilot_weeks": [
+      2,
+      3
+    ],
+    "base_with_single_account_and_scale_weeks": [
+      6,
+      9
+    ],
+    "base_with_guide_weeks": [
+      7,
+      10
+    ],
+    "all_enhancements_with_guide_weeks": [
+      13,
+      19
+    ],
+    "active_operator_hours_base": [
+      20,
+      30
+    ],
+    "active_operator_hours_all": [
+      30,
+      45
+    ],
+    "additional_observation_calendar_days": [
+      7,
+      14
+    ],
+    "external_wait_end_unknown": true,
+    "macro_completed": 54,
+    "macro_open": 40
+  },
+  "guide": {
+    "READY_FOR_FINAL_GUIDE": false,
+    "GUIDE_DELIVERED": false
+  },
+  "verification": {
+    "native_filesystem": {
+      "run_id": 41022898954,
+      "job_id": 123954135635,
+      "checks": 139,
+      "passed": true
+    },
+    "stage_execution": {
+      "run_id": 41022898889,
+      "job_id": 123954135544,
+      "checks": 167,
+      "cases": 8,
+      "passed": true,
+      "grants_seeded": true
+    },
+    "combined_cycle": {
+      "run_id": 41022898851,
+      "job_id": 123954135617,
+      "checks": 139,
+      "cases": 13,
+      "original_polls": 13,
+      "original_claims": 10,
+      "result_requests": 10,
+      "result_transitions": 9,
+      "passed": true,
+      "queued_job_and_ad_context_seeded": true
+    },
+    "preclaim_result": {
+      "run_id": 41022898909,
+      "job_id": 123954135632,
+      "native_checks": 372,
+      "python_rsa_checks": 18,
+      "passed": true
+    },
+    "foundation": {
+      "run_id": 41022898860,
+      "job_id": 123954135556,
+      "tests": 1123,
+      "skips": 28,
+      "seconds": 224.616,
+      "passed": true
+    },
+    "retry_network": {
+      "run_id": 41022898876,
+      "job_id": 123954135508,
+      "passed": true
+    },
+    "service_bootstrap": {
+      "run_id": 41022899055,
+      "job_id": 123954136400,
+      "passed": true,
+      "checks": 85,
+      "customer_gmsa_tested": false
+    },
+    "all_seven_workflows_passed": true,
+    "workflow_runs": [
+      {
+        "name": "AuthWire bounded retry network probe checks",
+        "id": 41022898876,
+        "conclusion": "success",
+        "url": "https://github.com/Asitavandas/kaname/actions/runs/41022898876"
+      },
+      {
+        "name": "AuthWire isolated staging filesystem checks",
+        "id": 41022898954,
+        "conclusion": "success",
+        "url": "https://github.com/Asitavandas/kaname/actions/runs/41022898954"
+      },
+      {
+        "name": "AuthWire isolated write preclaim checks",
+        "id": 41022898909,
+        "conclusion": "success",
+        "url": "https://github.com/Asitavandas/kaname/actions/runs/41022898909"
+      },
+      {
+        "name": "AuthWire isolated authorized stage execution",
+        "id": 41022898889,
+        "conclusion": "success",
+        "url": "https://github.com/Asitavandas/kaname/actions/runs/41022898889"
+      },
+      {
+        "name": "AuthWire isolated one-shot staging cycle",
+        "id": 41022898851,
+        "conclusion": "success",
+        "url": "https://github.com/Asitavandas/kaname/actions/runs/41022898851"
+      },
+      {
+        "name": "KANAME foundation checks",
+        "id": 41022898860,
+        "conclusion": "success",
+        "url": "https://github.com/Asitavandas/kaname/actions/runs/41022898860"
+      },
+      {
+        "name": "AuthWire Windows connector bootstrap checks",
+        "id": 41022899055,
+        "conclusion": "success",
+        "url": "https://github.com/Asitavandas/kaname/actions/runs/41022899055"
+      }
+    ]
+  },
+  "source_git_blob_sha1": {
+    "windows/connector/StagingFilesystem.ps1": "c883d88309e095d64fb91290eb42a09f81503fad",
+    "tools/staging_filesystem_windows_check.ps1": "14a308bb45d47d47e7a9d6d79eb29727d4ef5116",
+    "docs/STAGING_FILESYSTEM.md": "a0f0033761fc6077360db0999bb82e5a8356befa",
+    "tools/staging_write_execution_windows_check.ps1": "6ff44b262ee7d531be7c49a071c0d577cca3b6ab"
+  }
+}
