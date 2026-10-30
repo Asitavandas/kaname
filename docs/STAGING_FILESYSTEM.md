@@ -34,6 +34,36 @@ silme başlamaz. Silme yalnız sabitlenmiş sahip olunan handle'lar üzerinden
 yapılır; recursive/pathname delete kullanılmaz. Başka dosya, stream veya izin
 farkında işlem durur. Kayıtlar geri alındıktan sonra da saklanır.
 
+### Geri alma süre kapısı — 30 Ekim 2026
+
+Geri alma çekirdeği her çağrıda pozitif `NotAfter` ister. Eksik/sıfır/geçmiş veya
+çağrı başlangıcından 30 saniyeden uzak sınır silme başlatmadan reddedilir. Bu değer
+yeni bir izin üretmez: gelecekteki kimliği doğrulanmış adapter özgün CLAIM bitişini
+aynen sağlamalıdır. Kaynakta bu adapter henüz yoktur; bu alt adım onu tamamlamaz.
+
+Hem UTC hem aynı süreçteki monoton sayaç denetlenir. Kontroller, hazırlık sonrası,
+`rollback-started.json` flush öncesi/sonrası, her tekil native handle silmesinden
+önce/sonra, taban envanteri ve sonuç flush çevresinde yapılır. Monoton süreyi
+yeniden başlatmak veya duvar saatini geri almak bütçeyi uzatamaz. Eski sınırsız
+`DeleteOwnedTree()` girişi kaldırıldı; native silme de son tarihi zorunlu tutar.
+V2 başlangıç kaydı özgün complete hash'ini, başlangıç ve bitiş zamanını saklar.
+
+Başlangıç kaydı yazılmışsa süre dolması, kısmi silme, postcheck veya tamamlanma
+flush hatası otomatik tekrar edilemez. Yeni bir son tarih de bu kaydı aşamaz.
+Yazılan journal ve kalan dosyalar inceleme için saklanır. Dosyalar silinmiş fakat
+sonuç doğrulanamamış olabilir; hata, sıfır etki veya başarı olarak yorumlanamaz.
+Bu bir SMB atomik işlem ya da kesin I/O iptal garantisi değildir: başlamış tekil
+uzak çağrı son tarihten sonra tamamlanabilir. Sınırlı child süreci, parent gözlemi,
+ayrı rollback onayı/tüketimi/RESULT ve yeniden başlatma uzlaştırması hâlâ gerekir.
+
+Windows testi özgün native gövdeyi ve gerçek geçici SMB/NTFS'yi kullanır. Dört
+ayrı kesinti (marker öncesi, marker flush sonrası, postcheck, completion flush),
+eksik/geçersiz süre, monoton/UTC sapması, read-only lease ve taze süreyle replay
+reddi sınanır. Native gövdenin yalnız test namespace'ine kopyasında ilk gerçek
+silmeden sonra gecikme eklenir; süre dolunca sonraki dosyalara dokunulmadığı
+gösterilir. Ürün koduna test gecikmesi/saat override'ı eklenmez. Bağımsız vakalar
+arasında yalnız fixture'ın oluşturduğu alan temizlenir; ürün cleanup API'si yoktur.
+
 ## Açık sınırlar
 
 - Hash parametresi kimlik doğrulama/operatör onayı değildir. Yetkili panel

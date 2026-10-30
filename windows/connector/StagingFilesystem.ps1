@@ -103,12 +103,31 @@ namespace AuthWire.Staging {
   }
   public void PinFile(string path){Open(path,"",false,false,false);}
   public static void CreateNewDirectory(string path){if(!CreateDirectory(path,IntPtr.Zero))NativeFail();}
-  public void DeleteOwnedTree(){
+  public static void AssertRollbackDeadline(long notAfter,long startedAt,long startedTicks){
+   // UTC bounds the original grant; monotonic time prevents a clock setback
+   // from restarting its budget. Zero/omitted/unbounded rollback is forbidden.
+   long now=DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+   long ticks=System.Diagnostics.Stopwatch.GetTimestamp();
+   if(startedAt<=0 || notAfter<=startedAt || notAfter-startedAt>30 ||
+      startedTicks<=0 || ticks<startedTicks || now<startedAt || now>=notAfter ||
+      (ticks-startedTicks)/(double)System.Diagnostics.Stopwatch.Frequency>=notAfter-startedAt)
+    Fail("STAGING_ROLLBACK_AUTHORIZATION_EXPIRED");
+  }
+  public void DeleteOwnedTreeBefore(long notAfter,long startedAt,long startedTicks){
    // All rows were compared with the complete ownership journal before this call.
    // No recursive delete or pathname delete is used. Added foreign children make
    // a directory delete fail; they are never traversed or removed.
+   AssertRollbackDeadline(notAfter,startedAt,startedTicks);
    var ordered=new List<Entry>(entries);ordered.Sort((a,b)=>{int x=b.R.Path.Length.CompareTo(a.R.Path.Length);return x!=0?x:StringComparer.Ordinal.Compare(b.R.Path,a.R.Path);});
-   foreach(var e in ordered){if(!e.Delete)Fail("STAGING_DELETE_LEASE_REQUIRED");var d=new Disposition{Delete=1};if(!SetFileInformationByHandle(e.H,4,ref d,1))NativeFail();e.H.Dispose();}
+   // Validate every lease BEFORE the first deletion, then stop initiating
+   // mutations as soon as either clock bound fails. An in-flight SMB operation
+   // may still finish later; this is not a hard I/O cancellation guarantee.
+   foreach(var e in ordered){if(!e.Delete)Fail("STAGING_DELETE_LEASE_REQUIRED");}
+   foreach(var e in ordered){
+    AssertRollbackDeadline(notAfter,startedAt,startedTicks);
+    var d=new Disposition{Delete=1};if(!SetFileInformationByHandle(e.H,4,ref d,1))NativeFail();e.H.Dispose();
+    AssertRollbackDeadline(notAfter,startedAt,startedTicks);
+   }
   }
   public void Dispose(){for(int i=entries.Count-1;i>=0;i--)entries[i].H.Dispose();entries.Clear();}
  }
@@ -229,8 +248,13 @@ function Invoke-AuthWireStagingFilesystemStage {
 }
 function Invoke-AuthWireStagingFilesystemRollback {
  [CmdletBinding()]
- param([string]$GpoRoot,[string]$JournalRoot,[string]$OperationId,[string]$ApprovedCompleteSha256)
+ param([string]$GpoRoot,[string]$JournalRoot,[string]$OperationId,[string]$ApprovedCompleteSha256,[long]$NotAfter)
+ # This trusted engine requires a positive original deadline on EVERY call.
+ # It does not mint/renew a grant or authenticate the caller. The separate
+ # rollback CLAIM/consumption/child/RESULT adapter is still unavailable.
+ $clockStart=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$startedTicks=[Diagnostics.Stopwatch]::GetTimestamp()
  Initialize-AuthWireStagingFilesystemTypes
+ [AuthWire.Staging.TreeLeaseV1]::AssertRollbackDeadline($NotAfter,$clockStart,$startedTicks)
  Assert-AuthWireCandidateGuid $OperationId
  Assert-AuthWireStagingJournalRoot $JournalRoot
  $pins=[AuthWire.Staging.TreeLeaseV1]::new();$owned=$null
@@ -252,10 +276,18 @@ function Invoke-AuthWireStagingFilesystemRollback {
   $owned=[AuthWire.Staging.TreeLeaseV1]::Tree(([IO.Path]::Combine($GpoRoot,$relative.Replace('/','\'))),$true)
   $rows=Get-AuthWireStagingFilesystemRows $owned
   if((Get-AuthWireStagingFilesystemDigest $rows) -cne $complete.tree_sha256){throw 'STAGING_ROLLBACK_DRIFT_REJECTED'}
-  Write-AuthWireStagingJournal (Join-Path $journal 'rollback-started.json') ([pscustomobject]@{format='AuthWireFilesystemRollbackIntentV1';operation_id=$OperationId;complete_sha256=$ApprovedCompleteSha256})
-  $owned.DeleteOwnedTree();$owned.Dispose();$owned=$null
+  [AuthWire.Staging.TreeLeaseV1]::AssertRollbackDeadline($NotAfter,$clockStart,$startedTicks)
+  Write-AuthWireStagingJournal (Join-Path $journal 'rollback-started.json') ([pscustomobject]@{format='AuthWireFilesystemRollbackIntentV2';operation_id=$OperationId;complete_sha256=$ApprovedCompleteSha256;started_at=$clockStart;expires_at=$NotAfter})
+  # Even a marker flush that consumes the remaining grant must not delete.
+  # Once written, this marker prevents every automatic replay, including an
+  # otherwise valid new deadline. Partial/expired outcomes require review.
+  [AuthWire.Staging.TreeLeaseV1]::AssertRollbackDeadline($NotAfter,$clockStart,$startedTicks)
+  $owned.DeleteOwnedTreeBefore($NotAfter,$clockStart,$startedTicks);$owned.Dispose();$owned=$null
+  [AuthWire.Staging.TreeLeaseV1]::AssertRollbackDeadline($NotAfter,$clockStart,$startedTicks)
   if((Get-AuthWireSysvolInventory $GpoRoot).Sha256 -cne $intent.baseline_sha256){throw 'STAGING_ROLLBACK_POSTCHECK_REQUIRES_REVIEW'}
+  [AuthWire.Staging.TreeLeaseV1]::AssertRollbackDeadline($NotAfter,$clockStart,$startedTicks)
   Write-AuthWireStagingJournal (Join-Path $journal 'rolled-back.json') ([pscustomobject]@{format='AuthWireFilesystemRollbackV1';operation_id=$OperationId;complete_sha256=$ApprovedCompleteSha256;baseline_restored=$true})
+  [AuthWire.Staging.TreeLeaseV1]::AssertRollbackDeadline($NotAfter,$clockStart,$startedTicks)
   return [pscustomobject]@{Phase='rolled_back';OperationId=$OperationId;BaselineRestored=$true;CanApplyGpo=$false}
  }finally{if($owned){$owned.Dispose()};$pins.Dispose()}
 }
