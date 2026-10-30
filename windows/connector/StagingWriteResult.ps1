@@ -45,13 +45,13 @@ function Read-AuthWireWriteResultOutbox([string]$JournalRoot,[string]$JobId,[has
   return $v
  }finally{$p.Dispose()}
 }
-function New-AuthWireWriteResultOutbox([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
+function Read-AuthWireObservedStageBody([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
+ # Same historical observation/completion checks as New-AuthWireWriteResultOutbox,
+ # without outbox creation, promotion, fresh timestamps or report-window renewal.
  $a=Read-AuthWireWriteAuthorizationEvidence $JournalRoot $JobId $Binding $Release $Key
- $lock=Enter-AuthWireWriteOutcomeLock $JobId;$p=[AuthWire.Staging.TreeLeaseV1]::new()
+ $p=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
-  $p.PinAncestors($JournalRoot);$job=Join-Path $JournalRoot $JobId;$p.PinAncestors($job)
-  Assert-AuthWireNoActiveStage $JournalRoot $JobId
-  if(Test-Path -LiteralPath (Join-Path $job 'result-outbox.json')){return (Read-AuthWireWriteResultOutbox $JournalRoot $JobId $Binding $Release $Key)}
+  $job=Join-Path $JournalRoot $JobId;$p.PinAncestors($JournalRoot);$p.PinAncestors($job)
   $o=$a.Offer;$now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
   $body=[pscustomobject][ordered]@{job_id=$JobId;lease_id=$o.lease_id;intent_sha256=$o.intent_sha256;target_sha256=(Get-AuthWireWriteHash $o.target);release_id=$Release;authorization_id=$a.Receipt.grant.authorization_id;checked_at=$now;outcome='requires_review';reason='OUTCOME_UNKNOWN';journal_sha256='';tree_sha256='';filesystem_effects='unconfirmed'}
   $observed=Join-Path $job 'execution-observed.json'
@@ -76,6 +76,23 @@ function New-AuthWireWriteResultOutbox([string]$JournalRoot,[string]$JobId,[hash
     $body.checked_at=$done.checked_at;$body.outcome='staged';$body.reason='OK';$body.journal_sha256=$complete.CompleteSha256;$body.tree_sha256=$complete.TreeSha256;$body.filesystem_effects='created_owned_directory'
    }finally{$inputPins.Dispose()}
   }
+  if($body.outcome -cne 'staged'){throw 'ROLLBACK_STAGE_OBSERVATION_REQUIRED'}
+  Assert-AuthWireFrozenWriteResult $body $a
+  return $body
+ }finally{$p.Dispose()}
+}
+
+function New-AuthWireWriteResultOutbox([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
+ $a=Read-AuthWireWriteAuthorizationEvidence $JournalRoot $JobId $Binding $Release $Key
+ $lock=Enter-AuthWireWriteOutcomeLock $JobId;$p=[AuthWire.Staging.TreeLeaseV1]::new()
+ try{
+  $p.PinAncestors($JournalRoot);$job=Join-Path $JournalRoot $JobId;$p.PinAncestors($job)
+  Assert-AuthWireNoActiveStage $JournalRoot $JobId
+  if(Test-Path -LiteralPath (Join-Path $job 'result-outbox.json')){return (Read-AuthWireWriteResultOutbox $JournalRoot $JobId $Binding $Release $Key)}
+  $o=$a.Offer;$now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+  $body=[pscustomobject][ordered]@{job_id=$JobId;lease_id=$o.lease_id;intent_sha256=$o.intent_sha256;target_sha256=(Get-AuthWireWriteHash $o.target);release_id=$Release;authorization_id=$a.Receipt.grant.authorization_id;checked_at=$now;outcome='requires_review';reason='OUTCOME_UNKNOWN';journal_sha256='';tree_sha256='';filesystem_effects='unconfirmed'}
+  $observed=Join-Path $job 'execution-observed.json'
+  if(Test-Path -LiteralPath $observed){$body=Read-AuthWireObservedStageBody $JournalRoot $JobId $Binding $Release $Key}
   Assert-AuthWireFrozenWriteResult $body $a
   if($now-$body.checked_at -gt 300 -or $now -gt $o.expires_at+300){throw 'WRITE_RESULT_REPORT_WINDOW_EXPIRED'}
   $v=[pscustomobject]@{format='AuthWireWriteResultOutboxV1';binding_scope=(Get-AuthWireJobScope $Binding);release_id=$Release;job_id=$JobId;authorization_sha256=$a.AuthorizationSha256;body_sha256=(Get-AuthWireWriteHash $body);body=$body}

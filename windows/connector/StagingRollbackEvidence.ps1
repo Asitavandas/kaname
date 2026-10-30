@@ -2,43 +2,6 @@
 # transport, cleanup, unlock or active worker/package registration.
 Set-StrictMode -Version 2
 
-function Read-AuthWireObservedStageBody([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
- # Same historical observation/completion checks as New-AuthWireWriteResultOutbox,
- # without outbox creation, promotion, fresh timestamps or report-window renewal.
- $a=Read-AuthWireWriteAuthorizationEvidence $JournalRoot $JobId $Binding $Release $Key
- $p=[AuthWire.Staging.TreeLeaseV1]::new()
- try{
-  $job=Join-Path $JournalRoot $JobId;$p.PinAncestors($JournalRoot);$p.PinAncestors($job)
-  $o=$a.Offer;$now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
-  $body=[pscustomobject][ordered]@{job_id=$JobId;lease_id=$o.lease_id;intent_sha256=$o.intent_sha256;target_sha256=(Get-AuthWireWriteHash $o.target);release_id=$Release;authorization_id=$a.Receipt.grant.authorization_id;checked_at=$now;outcome='requires_review';reason='OUTCOME_UNKNOWN';journal_sha256='';tree_sha256='';filesystem_effects='unconfirmed'}
-  $observed=Join-Path $job 'execution-observed.json'
-  if(Test-Path -LiteralPath $observed){
-   $s=Read-AuthWireAuthorizedStageIntentEvidence $JournalRoot $JobId $Binding $Release $Key
-   $inputPins=New-AuthWireStageInputPins $JournalRoot $JobId $s.Authorization.Offer
-   try{
-    $launch=Read-AuthWireStageLaunch $JournalRoot $JobId $s;$complete=Get-AuthWireStageCompletion $JournalRoot $JobId $s $launch $Binding
-    $p.PinFile($observed);$p.PinFile((Join-Path $job 'execution-complete.json'))
-    $ob=Read-AuthWireStagingJournal $observed;$done=Read-AuthWireStagingJournal (Join-Path $job 'execution-complete.json')
-    Assert-AuthWireCandidateFields $ob @('format','job_id','result_sha256','complete_sha256','observed_at')
-    Assert-AuthWireStageStrings $ob @('format','job_id','result_sha256','complete_sha256')
-    Assert-AuthWireCandidateFields $done @('format','job_id','filesystem_operation_id','execution_intent_sha256','authorization_sha256','launch_sha256','child_identity_sha256','stage_preflight_sha256','complete_sha256','tree_sha256','checked_at','file_count','staged','can_apply_gpo')
-    Assert-AuthWireStageStrings $done @('format','job_id','filesystem_operation_id','execution_intent_sha256','authorization_sha256','launch_sha256','child_identity_sha256','stage_preflight_sha256','complete_sha256','tree_sha256')
-    $identity=Read-AuthWireStageChildIdentity $JournalRoot $JobId $launch
-    if($ob.format -cne 'AuthWireStageObservedV1' -or $ob.job_id -cne $JobId -or $ob.result_sha256 -cne (Get-AuthWireWriteHash $done) -or $ob.complete_sha256 -cne $complete.CompleteSha256 -or
-       -not (Test-AuthWireWriteInteger $ob.observed_at) -or $ob.observed_at -gt $now -or $done.format -cne 'AuthWireAuthorizedStageResultV1' -or $done.job_id -cne $JobId -or $done.filesystem_operation_id -cne $s.Intent.filesystem_operation_id -or
-       $done.execution_intent_sha256 -cne $s.IntentSha256 -or $done.authorization_sha256 -cne $a.AuthorizationSha256 -or $done.launch_sha256 -cne (Get-AuthWireWriteHash $launch) -or $done.child_identity_sha256 -cne (Get-AuthWireWriteHash $identity) -or
-       $done.stage_preflight_sha256 -cne $complete.StagePreflightSha256 -or $done.complete_sha256 -cne $complete.CompleteSha256 -or $done.tree_sha256 -cne $complete.TreeSha256 -or
-       -not (Test-AuthWireWriteInteger $done.checked_at) -or $done.checked_at -lt $launch.started_at -or $done.checked_at -gt $ob.observed_at -or $done.checked_at -ge $a.Receipt.grant.expires_at -or
-       $done.file_count -isnot [int] -or $done.file_count -ne 20 -or $done.staged -isnot [bool] -or -not $done.staged -or $done.can_apply_gpo -isnot [bool] -or $done.can_apply_gpo){throw 'WRITE_RESULT_COMPLETION_REJECTED'}
-    $body.checked_at=$done.checked_at;$body.outcome='staged';$body.reason='OK';$body.journal_sha256=$complete.CompleteSha256;$body.tree_sha256=$complete.TreeSha256;$body.filesystem_effects='created_owned_directory'
-   }finally{$inputPins.Dispose()}
-  }
-  if($body.outcome -cne 'staged'){throw 'ROLLBACK_STAGE_OBSERVATION_REQUIRED'}
-  Assert-AuthWireFrozenWriteResult $body $a
-  return $body
- }finally{$p.Dispose()}
-}
-
 function Read-AuthWireRollbackOrigin($Offer,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
  Assert-AuthWireWriteOffer $Offer $Binding $Release $Offer.request_id
  if($Offer.operation -cne 'combined.filesystem.rollback.v1'){throw 'ROLLBACK_OPERATION_REQUIRED'}
