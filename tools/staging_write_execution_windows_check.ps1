@@ -18,7 +18,7 @@ try{
  $signer=New-SelfSignedCertificate -Type CodeSigningCert -Subject ('CN=AuthWire-Stage-Fixture-'+[guid]::NewGuid().ToString('N')) -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 3072 -KeyExportPolicy NonExportable -NotAfter (Get-Date).AddDays(1)
  $public=[Security.Cryptography.X509Certificates.X509Certificate2]::new($signer.Export([Security.Cryptography.X509Certificates.X509ContentType]::Cert))
  foreach($name in @('Root','TrustedPublisher')){$s=[Security.Cryptography.X509Certificates.X509Store]::new($name,'LocalMachine');try{$s.Open('ReadWrite');$s.Add($public)}finally{$s.Close()}}
- $files=@('Test-AuthWireDeploymentCandidate.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','ConnectorChannelTypes.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','StagingFilesystem.ps1','StagingWritePreclaim.ps1','StagingWriteTransport.ps1','StagingWriteConsumption.ps1','StagingWriteProcess.ps1','StagingWriteExecution.ps1','StagingWriteResult.ps1','StagingWriteCycle.ps1','Read-AuthWireStagingWritePreflight.ps1','Invoke-AuthWireStagingWriteChild.ps1')
+ $files=@('Test-AuthWireDeploymentCandidate.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','ConnectorChannelTypes.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','StagingFilesystem.ps1','StagingWritePreclaim.ps1','StagingWriteTransport.ps1','StagingWriteConsumption.ps1','StagingWriteProcess.ps1','StagingWriteExecution.ps1','StagingWriteResult.ps1','StagingWriteCycle.ps1','StagingRollbackEvidence.ps1','Read-AuthWireStagingWritePreflight.ps1','Invoke-AuthWireStagingWriteChild.ps1')
  foreach($name in $files){[IO.File]::WriteAllBytes((Join-Path $package $name),[IO.File]::ReadAllBytes((Join-Path $lib $name)))}
  # Test production namespace derivation BEFORE replacing only its environment.
  . (Join-Path $package 'Test-AuthWireDeploymentCandidate.ps1') -LibraryOnly
@@ -178,6 +178,7 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
     . (Join-Path $package 'StagingWriteCycle.ps1')
     Check ((Resume-AuthWireStagingWriteCycleResult $journal $b $release $rsa $url).ResultRecorded) 'result-only recovery after reload acknowledges unchanged body'
     Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $treeHash -and [IO.File]::ReadAllText($readsFile) -ceq $reads) 'result recovery never repeats live read or SMB write'
+    if($env:AUTHWIRE_ROLLBACK_EVIDENCE_CHECK -eq '1' -and $expected -ceq 'staged'){. (Join-Path $PSScriptRoot 'staging_rollback_evidence_fixture.ps1')}
    }
    Reject {Invoke-AuthWireStagingWriteCycle $journal $b $release $rsa $url} 'existing history refuses a second POLL before signing or network'
    Check (Test-Path -LiteralPath (Join-Path $gpo 'GPT.INI')) 'baseline remains after each real cycle'
@@ -262,7 +263,7 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
   Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $treeHash -and [IO.File]::ReadAllText($readFile) -ceq $readsBefore) 'result freeze changes no SMB state and performs no new AD observation'
   $outcomes+=,[pscustomobject]@{case=$case;seconds=[Math]::Round($watch.Elapsed.TotalSeconds,2);staged=($case -ceq 'success')}
  }
- foreach($name in @('ConnectorServicePackage.ps1','ConnectorServiceRuntime.ps1')){foreach($module in @('StagingWriteExecution','StagingWriteResult','StagingWriteCycle')){Check (-not ([IO.File]::ReadAllText((Join-Path $lib $name))).Contains($module)) 'execution and result adapters absent from active package/runtime'}}
+ foreach($name in @('ConnectorServicePackage.ps1','ConnectorServiceRuntime.ps1')){foreach($module in @('StagingWriteExecution','StagingWriteResult','StagingWriteCycle','StagingRollbackEvidence')){Check (-not ([IO.File]::ReadAllText((Join-Path $lib $name))).Contains($module)) 'execution and result adapters absent from active package/runtime'}}
  Check ((Get-Acl -LiteralPath $keyPath).Sddl -ceq $keyAcl) 'dedicated native key ACL preserved'
  $timer=[Diagnostics.Stopwatch]::StartNew();Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-1) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()) $timer} 'engine refuses expired authorization';Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+90) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+60) $timer} 'engine refuses clock rollback'
  # Real controller death: this independently tests the new kernel job runner,
