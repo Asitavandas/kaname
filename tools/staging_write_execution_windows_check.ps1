@@ -189,7 +189,12 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
    continue
   }
   $null=Save-AuthWireStagingWriteOffer $offer $b $release $request $journal
-  $job=Join-Path $journal $id;Write-AuthWireStagingJournal (Join-Path $job 'preflight.json') $live
+  $job=Join-Path $journal $id
+  # Observe AFTER durable offer setup, through the same fixed signed reader as
+  # the real cycle. A context synthesized before fixture preparation can expire
+  # during native/JIT/disk work; never refresh an already saved preview or grant.
+  $null=Invoke-AuthWireStagingWritePreflight $journal $id $b $release
+  $live=Read-AuthWireStagingJournal (Join-Path $job 'preflight.json')
   $proof=New-AuthWireStagingWriteClaim $journal $id $b $release $rsa
   $requestId=[Text.Encoding]::ASCII.GetString([Convert]::FromBase64String($proof.frame)).Split([char]10)[10]
   $sent=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$expiry=$sent+30

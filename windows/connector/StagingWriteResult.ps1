@@ -76,7 +76,7 @@ function Read-AuthWireObservedStageBody([string]$JournalRoot,[string]$JobId,[has
     $body.checked_at=$done.checked_at;$body.outcome='staged';$body.reason='OK';$body.journal_sha256=$complete.CompleteSha256;$body.tree_sha256=$complete.TreeSha256;$body.filesystem_effects='created_owned_directory'
    }finally{$inputPins.Dispose()}
   }
-  if($body.outcome -cne 'staged'){throw 'ROLLBACK_STAGE_OBSERVATION_REQUIRED'}
+  if($body.outcome -cne 'staged'){throw 'WRITE_STAGE_OBSERVATION_REQUIRED'}
   Assert-AuthWireFrozenWriteResult $body $a
   return $body
  }finally{$p.Dispose()}
