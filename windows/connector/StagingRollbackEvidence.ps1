@@ -71,6 +71,9 @@ function Get-AuthWireRollbackPreflight($Offer,[hashtable]$Binding,[string]$Relea
  # must not be passed to the low-level deletion engine as authorization.
  $clock=[Diagnostics.Stopwatch]::StartNew();$start=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
  $origin=Read-AuthWireRollbackOrigin $Offer $Binding $Release $Key
+ # Freshness begins BEFORE live directory/tree reads, never after the final
+ # history recheck. Slow validation must consume the observation's lifetime.
+ $observedAt=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$observationClock=[Diagnostics.Stopwatch]::StartNew()
  $directory=Get-AuthWireRollbackDirectoryObservation $Offer $Binding $Publisher $BaseUrl
  $expected=Get-AuthWireWriteGpoPath $directory.pdc $Offer.target.scope_target
  Assert-AuthWireCandidateGuid $directory.protected_gpo_id
@@ -93,9 +96,9 @@ function Get-AuthWireRollbackPreflight($Offer,[hashtable]$Binding,[string]$Relea
   $last=Read-AuthWireRollbackOrigin $Offer $Binding $Release $Key
   if($last.ChainSha256 -cne $origin.ChainSha256){throw 'ROLLBACK_STAGE_RESULT_CHANGED'}
   $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
-  if($now -lt $start -or $now -ge $Offer.expires_at -or $clock.Elapsed.TotalSeconds -ge 15){throw 'ROLLBACK_PREFLIGHT_EXPIRED'}
+  if($now -lt $start -or $now -lt $observedAt -or $now -ge $observedAt+5 -or $now -ge $Offer.expires_at -or $observationClock.Elapsed.TotalSeconds -ge 5 -or $clock.Elapsed.TotalSeconds -ge 15){throw 'ROLLBACK_PREFLIGHT_EXPIRED'}
   # This timestamp is a NEW observation, never an extension of the old preview
   # or grant. All old timestamps and the stage/GPO durable lock stay unchanged.
-  return [pscustomobject][ordered]@{format='AuthWireRollbackPreflightV1';job_id=$Offer.job_id;intent_sha256=$Offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $Offer.target);binding_scope=(Get-AuthWireJobScope $Binding);release_id=$Release;stage_job_id=$origin.StageJobId;stage_release_id=$origin.StageReleaseId;filesystem_operation_id=$origin.FilesystemOperationId;origin_chain_sha256=$origin.ChainSha256;complete_sha256=$Offer.target.stage_receipt.complete_journal_sha256;tree_sha256=$Offer.target.stage_receipt.staged_tree_sha256;directory_sha256=(Get-AuthWireWriteHash $directory);checked_at=$now;expires_at=([Math]::Min($now+5,$Offer.expires_at));read_only=$true;write_authorized=$false;can_delete=$false;can_apply_gpo=$false;requires_separate_claim=$true}
+  return [pscustomobject][ordered]@{format='AuthWireRollbackPreflightV1';job_id=$Offer.job_id;intent_sha256=$Offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $Offer.target);binding_scope=(Get-AuthWireJobScope $Binding);release_id=$Release;stage_job_id=$origin.StageJobId;stage_release_id=$origin.StageReleaseId;filesystem_operation_id=$origin.FilesystemOperationId;origin_chain_sha256=$origin.ChainSha256;complete_sha256=$Offer.target.stage_receipt.complete_journal_sha256;tree_sha256=$Offer.target.stage_receipt.staged_tree_sha256;directory_sha256=(Get-AuthWireWriteHash $directory);checked_at=$observedAt;expires_at=([long][Math]::Min(($observedAt+5),[long]$Offer.expires_at));read_only=$true;write_authorized=$false;can_delete=$false;can_apply_gpo=$false;requires_separate_claim=$true}
  }finally{if($tree){$tree.Dispose()};$p.Dispose()}
 }

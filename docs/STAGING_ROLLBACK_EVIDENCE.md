@@ -37,7 +37,9 @@ kayıp ACK veya önceki rollback başlangıcı/tamamlanması inceleme gerektirir
 Dönen beş saniyelik yeni gözlem bir **izin değildir**: read_only=true,
 write_authorized=false, can_delete=false, can_apply_gpo=false ve
 requires_separate_claim=true. Eski preview/grant son tarihi değiştirilmez.
-Yerel monoton/UTC kontrolü 15 saniyeden geç dönen gözlemi reddeder; bu henüz
+Tazelik ilk canlı dizin/ağaç okumasından önce başlar; son journal kontrolünün
+bitiminden yeniden başlatılmaz. Beş saniyesini tüketen canlı gözlem veya toplam
+15 saniyeden geç dönen kontrol reddedilir; bu henüz
 kesin bir AD/SMB I/O iptal sınırı değildir. Sabit AllSigned child ile parent'ın
 süreç bütçesi sonraki entegrasyon kapısıdır. Bu gözlem doğrudan düşük seviyeli
 rollback motoruna yetki olarak verilemez; her gerçek silme öncesi canlı kontrol

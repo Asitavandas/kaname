@@ -28,9 +28,10 @@ function RehashRollback($v){
  $frame='AuthWireStagingWriteIntentV1'+"`n"+(Get-AuthWireJobScope $b)+"`n"+$v.job_id+"`n"+$v.operation+"`n"+(Get-AuthWireWriteHash $v.target)+"`n"
  $v.intent_sha256=Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes($frame));return $v
 }
-$script:rollbackDirectoryDrift=$false;$script:rollbackDirectoryReads=0
+$script:rollbackDirectoryDrift=$false;$script:rollbackDirectoryReads=0;$script:rollbackDirectoryDelay=$false
 function Get-AuthWireRollbackDirectoryObservation($Offer,[hashtable]$Binding,[string]$Publisher,[string]$BaseUrl){
  $script:rollbackDirectoryReads++
+ if($script:rollbackDirectoryDelay){Start-Sleep -Milliseconds 5100}
  return [pscustomobject]@{pdc=$(if($script:rollbackDirectoryDrift){'dc02.lab.example'}else{'dc01.lab.example'});gpo_root=$gpo;protected_gpo_id=$stageIntent.live_context.protected_gpo_id;scope_sha256=$Offer.target.preview_record.Preview.scope_observations_sha256}
 }
 try{
@@ -41,6 +42,7 @@ try{
  Reject {Get-AuthWireRollbackDirectoryObservation $r $b $signer.Thumbprint $url} 'rollback refuses administrator as customer service identity'
  function Get-AuthWireRollbackDirectoryObservation($Offer,[hashtable]$Binding,[string]$Publisher,[string]$BaseUrl){
   $script:rollbackDirectoryReads++
+ if($script:rollbackDirectoryDelay){Start-Sleep -Milliseconds 5100}
   return [pscustomobject]@{pdc=$(if($script:rollbackDirectoryDrift){'dc02.lab.example'}else{'dc01.lab.example'});gpo_root=$gpo;protected_gpo_id=$stageIntent.live_context.protected_gpo_id;scope_sha256=$Offer.target.preview_record.Preview.scope_observations_sha256}
  }
  $rollbackWatch=[Diagnostics.Stopwatch]::StartNew();$w=Get-AuthWireRollbackPreflight $r $b $release $rsa $signer.Thumbprint $url;$rollbackWatch.Stop()
@@ -97,6 +99,11 @@ try{
  try{[IO.File]::WriteAllText($foreign,'outside');Reject {Get-AuthWireRollbackPreflight (NewRollbackOffer) $b $release $rsa $signer.Thumbprint $url} 'outside baseline drift blocks rollback preflight'}finally{[IO.File]::Delete($foreign)}
  $script:rollbackDirectoryDrift=$true
  try{Reject {Get-AuthWireRollbackPreflight (NewRollbackOffer) $b $release $rsa $signer.Thumbprint $url} 'PDC path drift cannot reuse original tree identity'}finally{$script:rollbackDirectoryDrift=$false}
+ $script:rollbackDirectoryDelay=$true
+ try{
+  $expired='';try{Get-AuthWireRollbackPreflight (NewRollbackOffer) $b $release $rsa $signer.Thumbprint $url|Out-Null}catch{$expired=$_.Exception.Message}
+  Check ($expired -ceq 'ROLLBACK_PREFLIGHT_EXPIRED') 'slow live observation is rejected instead of receiving a fresh end timestamp'
+ }finally{$script:rollbackDirectoryDelay=$false}
  # The stage mutex/gate are still honored; no new rollback lock replaces them.
  $launch=Read-AuthWireStagingJournal (Join-Path $stageJob 'stage-launch.json')
  $event=[Threading.EventWaitHandle]::new($false,[Threading.EventResetMode]::AutoReset,$launch.gate_name)
