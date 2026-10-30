@@ -204,6 +204,16 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
   try{$result=Invoke-AuthWireAuthorizedFilesystemStage $journal $id $b $release $rsa}catch{$failure=$_.Exception.Message};$watch.Stop()
   $destination=Join-Path $gpo $preview.Preview.relative_destination.Replace('/','\')
   if($case -ceq 'success'){
+   if($failure -cne ''){
+    # The production review diagnostic starts after the durable launch. Record
+    # only fixed error codes/existence/timing in this disposable CI fixture so
+    # an earlier refusal is distinguishable without raw exception/path output.
+    $known=@('WRITE_PREFLIGHT_STALE','WRITE_AUTHORIZATION_EXPIRED','WRITE_AUTHORIZATION_REJECTED','WRITE_EXECUTION_RECORD_REJECTED','WRITE_EXECUTION_SCOPE_CHANGED','WRITE_LOCAL_RECORD_CHANGED','WRITE_OUTCOME_BUSY','WRITE_OUTCOME_ABANDONED_REQUIRES_REVIEW','WRITE_EXECUTION_ALREADY_LAUNCHED_REQUIRES_REVIEW','WRITE_EXECUTION_RESULT_ALREADY_FROZEN','WRITE_EXECUTION_GATE_ALREADY_EXISTS','WRITE_EXECUTION_REQUIRES_REVIEW')
+    $safeCode=if($failure -cin $known){$failure}else{'UNCLASSIFIED'}
+    $intent=Read-AuthWireStagingJournal (Join-Path $job 'filesystem-intent.json')
+    $diagnostic=@{code=$safeCode;launch_present=(Test-Path -LiteralPath (Join-Path $job 'stage-launch.json'));review_present=(Test-Path -LiteralPath (Join-Path $job 'execution-requires-review.json'));live_age_seconds=([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-$intent.live_context.checked_at);grant_remaining_seconds=($intent.expires_at-[DateTimeOffset]::UtcNow.ToUnixTimeSeconds());elapsed_ms=$watch.ElapsedMilliseconds}
+    Write-Host ('STAGE_SAFE_ENTRY_DIAGNOSTIC '+($diagnostic|ConvertTo-Json -Compress))
+   }
    if($failure -cne '' -and (Test-Path -LiteralPath (Join-Path $job 'execution-requires-review.json'))){$review=Read-AuthWireStagingJournal (Join-Path $job 'execution-requires-review.json');Write-Host ('STAGE_SAFE_DIAGNOSTIC '+($review.diagnostic|ConvertTo-Json -Compress))}
    Check ($failure -ceq '' -and $result.FilesystemStaged -and -not $result.PeerResultSubmitted -and -not $result.CanApplyGpo -and -not $result.ArtifactExecuted) 'actual signed child stages without activation or artifact execution'
    Check (@(Get-ChildItem -LiteralPath $destination -Recurse -File).Count -eq 20) 'actual SMB contains twenty exact payload files'
