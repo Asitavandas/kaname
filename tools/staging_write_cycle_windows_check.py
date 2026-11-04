@@ -171,7 +171,10 @@ def main():
         try:
             subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-File',
                 str(Path(__file__).with_name('staging_write_execution_windows_check.ps1'))],
-                check=True, timeout=1100 if (execution_mode or lifecycle_mode) else 650, env=env)
+                # Nine independent rollback cases include real signed child/SMB
+                # setup and teardown. This is the outer fixture budget only;
+                # production HTTP/grant/reader/child deadlines stay unchanged.
+                check=True, timeout=1320 if execution_mode else (1100 if lifecycle_mode else 650), env=env)
             native = json.loads((root/'native-summary.json').read_text(encoding='utf-8-sig'))
             if lifecycle_mode:
                 assert len(native['outcomes']) == 8 and not metrics['errors']
