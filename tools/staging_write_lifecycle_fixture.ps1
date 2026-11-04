@@ -17,6 +17,7 @@ try{
   Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $lcBefore) 'stage result recovery performs no second SMB write'
  }else{
   [IO.File]::WriteAllText($lcMode,(@{stage_job_id=$id;job_id=$lcId;actor=[guid]::NewGuid().ToString('D');case=$case}|ConvertTo-Json -Compress))
+  Wait-AuthWireFixtureCore
   if($case -ceq 'lc_saved_grant'){
    # Shared production helpers build the actual poll/dispatch and actual core
    # CLAIM receipt. Stopping at this boundary simulates controller loss;

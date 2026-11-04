@@ -135,8 +135,7 @@ function Get-AuthWireRollbackCompletion([string]$Root,[string]$JobId,$State,$Lau
 # Fixture-only side channel: finish queue seeding before signing a real POLL.
 # No HTTP/grant/live-context deadline is extended and no request is retried.
 $script:FixtureProofBody=${function:New-AuthWireStagingWriteProof}
-function New-AuthWireStagingWriteProof([hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[ValidateSet('POLL','CLAIM','RESULT')][string]$Kind,[hashtable]$Payload){
- if($Kind -ceq 'POLL'){
+function Wait-AuthWireFixtureCore {
   $directory=$env:AUTHWIRE_WRITE_CYCLE_DIRECTORY;$token=[guid]::NewGuid().ToString('N')
   [IO.File]::WriteAllText((Join-Path $directory 'prepare-request.txt'),$token,[Text.Encoding]::ASCII)
   $watch=[Diagnostics.Stopwatch]::StartNew();$ready=$false
@@ -146,7 +145,9 @@ function New-AuthWireStagingWriteProof([hashtable]$Binding,[Security.Cryptograph
    Start-Sleep -Milliseconds 20
   }
   if(-not $ready){throw 'FIXTURE_PREPARE_TIMEOUT'}
- }
+}
+function New-AuthWireStagingWriteProof([hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[ValidateSet('POLL','CLAIM','RESULT')][string]$Kind,[hashtable]$Payload){
+ if($Kind -ceq 'POLL'){Wait-AuthWireFixtureCore}
  & $script:FixtureProofBody @PSBoundParameters
 }
 '@
@@ -271,6 +272,7 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
    # POLL, CLAIM, stage, RESULT and all replay gates are production bodies.
    $data=@{case=$case;binding=$b;public_key_pem=[AuthWire.Connector.ChannelTypesV1]::PublicPem($rsa);offer=$offer}
    [IO.File]::WriteAllText((Join-Path $flowDirectory 'input.json'),($data|ConvertTo-Json -Depth 15 -Compress),[Text.UTF8Encoding]::new($false))
+   Wait-AuthWireFixtureCore
    if($lifecycleMode -and $case -ceq 'lc_stage'){
     $watch=[Diagnostics.Stopwatch]::StartNew();$cycle=Invoke-AuthWireStagingWriteLifecycleStep $journal $b $release $rsa $url;$watch.Stop()
     if($cycle.Phase -cne 'result_recorded' -or $cycle.Outcome -cne 'staged'){Write-Host ('LIFECYCLE_SAFE_STAGE_DIAGNOSTIC '+($cycle|ConvertTo-Json -Compress))}
