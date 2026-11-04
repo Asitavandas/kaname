@@ -71,7 +71,10 @@ try{
    if($case -ceq 'rollback_expired'){Start-Sleep -Seconds 31}
    $rbUseFailure='';$rbUse=$null
    try{$rbUse=New-AuthWireRollbackFilesystemIntent $rbRoot $rbId $b $release $rsa}catch{$rbUseFailure=$_.Exception.Message}
-   if($case -ceq 'rollback_success'){
+   if($rollbackExecutionMode){
+    if($rbUseFailure){throw $rbUseFailure}
+    . (Join-Path $PSScriptRoot 'staging_rollback_execution_fixture.ps1')
+   }elseif($case -ceq 'rollback_success'){
     if($rbUseFailure){throw $rbUseFailure}
     Check ($rbUse.GrantConsumed -and -not $rbUse.RollbackExecuted -and -not $rbUse.CanDelete -and $rbUse.StageOperationId -ceq $rbStageIntent.filesystem_operation_id) 'one use binds original operation but never calls delete engine'
     $rbIntent=Read-AuthWireStagingJournal (Join-Path $rbJob 'rollback-filesystem-intent.json')
@@ -99,9 +102,9 @@ try{
  $rbFrame='AuthWireStagingWriteIntentV1'+[char]10+(Get-AuthWireJobScope $b)+[char]10+$rbSecond.job_id+[char]10+$rbSecond.operation+[char]10+(Get-AuthWireWriteHash $rbSecond.target)+[char]10
  $rbSecond.intent_sha256=Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes($rbFrame))
  Reject {Save-AuthWireRollbackOffer $rbSecond $b $release $rsa $rbSecond.request_id} 'new job ID cannot bypass same-original-stage reservation'
- Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $rbBefore) 'all rollback authorization paths preserve entire staged SMB tree and ACL'
+ if(-not $rollbackExecutionMode){Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $rbBefore) 'all rollback authorization paths preserve entire staged SMB tree and ACL'}
  Check ((Get-AuthWireCandidateHash ([IO.File]::ReadAllBytes($rbLock))) -ceq $rbLockHash) 'original durable GPO lock remains byte-identical'
  foreach($rbEntry in $rbOriginal.GetEnumerator()){Check ((Get-AuthWireCandidateHash ([IO.File]::ReadAllBytes($rbEntry.Key))) -ceq $rbEntry.Value) 'original stage authority observation and accepted result remain byte-identical'}
- Check (-not (Test-Path -LiteralPath (Join-Path $rbEngine 'rollback-started.json'))) 'no rollback engine or cleanup invoked'
+ if(-not $rollbackExecutionMode){Check (-not (Test-Path -LiteralPath (Join-Path $rbEngine 'rollback-started.json'))) 'no rollback engine or cleanup invoked'}
  Write-Host ('ROLLBACK_AUTHORIZATION_CASE_OK case='+$case+' control_ms='+$rbWatch.ElapsedMilliseconds+' original_stage_preserved=true files_deleted=false')
 }finally{[IO.File]::Delete($rbModePath)}

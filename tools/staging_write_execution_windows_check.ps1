@@ -8,6 +8,7 @@ $root=[IO.Path]::GetFullPath((Join-Path $env:TEMP ('aw-stage-execution-'+[guid]:
 $package=Join-Path $root 'signed-package';$share=$null;$startedServer=$false;$key=$null;$rsa=$null;$signer=$null;$public=$null
 $journal=$null;$candidateBase=$null;$oldModulePath=$env:PSModulePath;$script:checks=0
 $grantMode=$env:AUTHWIRE_ROLLBACK_AUTHORIZATION_CHECK -eq '1'
+$rollbackExecutionMode=$env:AUTHWIRE_ROLLBACK_EXECUTION_CHECK -eq '1'
 $flowDirectory=$env:AUTHWIRE_WRITE_CYCLE_DIRECTORY;$flowMode=[bool]$flowDirectory
 $webStore=$null;$webCert=$null;$webAdded=$false;$hostBytes=$null;$hosts=$null;$web=$null
 function Check($v,[string]$name){if(-not $v){throw ('EXECUTION_FIXTURE:'+ $name)};$script:checks++}
@@ -21,6 +22,7 @@ try{
  foreach($name in @('Root','TrustedPublisher')){$s=[Security.Cryptography.X509Certificates.X509Store]::new($name,'LocalMachine');try{$s.Open('ReadWrite');$s.Add($public)}finally{$s.Close()}}
  $files=@('Test-AuthWireDeploymentCandidate.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','ConnectorChannelTypes.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','StagingFilesystem.ps1','StagingWritePreclaim.ps1','StagingWriteTransport.ps1','StagingWriteConsumption.ps1','StagingWriteProcess.ps1','StagingWriteExecution.ps1','StagingWriteResult.ps1','StagingWriteCycle.ps1','StagingRollbackEvidence.ps1','StagingRollbackAuthorization.ps1','Read-AuthWireRollbackPreflight.ps1','Read-AuthWireStagingWritePreflight.ps1','Invoke-AuthWireStagingWriteChild.ps1')
  foreach($name in $files){[IO.File]::WriteAllBytes((Join-Path $package $name),[IO.File]::ReadAllBytes((Join-Path $lib $name)))}
+ if($rollbackExecutionMode){foreach($name in @('StagingRollbackExecution.ps1','StagingRollbackResult.ps1','Invoke-AuthWireRollbackChild.ps1')){$files+=,$name;[IO.File]::WriteAllBytes((Join-Path $package $name),[IO.File]::ReadAllBytes((Join-Path $lib $name)))}}
  # Test production namespace derivation BEFORE replacing only its environment.
  . (Join-Path $package 'Test-AuthWireDeploymentCandidate.ps1') -LibraryOnly
  . (Join-Path $package 'StagingWritePreclaim.ps1')
@@ -94,6 +96,36 @@ function Write-AuthWireStagingJournal([string]$Path,$Value){
 '@
   [IO.File]::AppendAllText((Join-Path $package 'StagingRollbackAuthorization.ps1'),$rollbackFault)
  }
+ if($rollbackExecutionMode){
+  $rollbackExecutionShim=@'
+# Fixture-only rollback faults in signed copies. Production has no overrides.
+$script:FixtureRollbackExecutionWriter=${function:Write-AuthWireStagingJournal}
+$script:FixtureRollbackEngine=${function:Invoke-AuthWireStagingFilesystemRollback}
+$script:FixtureRollbackCompletion=${function:Get-AuthWireRollbackCompletion}
+function Write-AuthWireStagingJournal([string]$Path,$Value){
+ $f=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'fixture.json') -Raw|ConvertFrom-Json;$n=[IO.Path]::GetFileName($Path)
+ if($f.rollback_case -ceq 'rb_execute_completion_disk' -and $n -ceq 'rolled-back.json'){throw 'FIXTURE_ROLLBACK_COMPLETION_DISK'}
+ if($f.rollback_case -ceq 'rb_execute_launch_disk' -and $n -ceq 'rollback-launch.json'){& $script:FixtureRollbackExecutionWriter $Path $Value;throw 'FIXTURE_ROLLBACK_LAUNCH_DISK'}
+ if($f.rollback_case -ceq 'rb_execute_identity' -and $n -ceq 'rollback-child.json'){$Value.process_id++}
+ & $script:FixtureRollbackExecutionWriter $Path $Value
+}
+function Invoke-AuthWireStagingFilesystemRollback {
+ param([string]$GpoRoot,[string]$JournalRoot,[string]$OperationId,[string]$ApprovedCompleteSha256,[long]$NotAfter)
+ $f=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'fixture.json') -Raw|ConvertFrom-Json
+ if($NotAfter -ne $f.rollback_expires_at){throw 'FIXTURE_ROLLBACK_GRANT_NOT_FORWARDED'}
+ if($f.rollback_case -ceq 'rb_execute_timeout'){Start-Sleep -Seconds 25}
+ $result=& $script:FixtureRollbackEngine @PSBoundParameters
+ if($f.rollback_case -ceq 'rb_execute_bad_result'){$result.Phase='wrong'}
+ return $result
+}
+function Get-AuthWireRollbackCompletion([string]$Root,[string]$JobId,$State,$Launch,[hashtable]$Binding,[bool]$ObserveBaseline=$false){
+ $f=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'fixture.json') -Raw|ConvertFrom-Json
+ if($ObserveBaseline -and $f.rollback_case -ceq 'rb_execute_parent_drift'){[IO.File]::WriteAllText((Join-Path $f.gpo_root 'User\foreign-after-child.txt'),'fixture foreign data must remain')}
+ & $script:FixtureRollbackCompletion @PSBoundParameters
+}
+'@
+  [IO.File]::AppendAllText((Join-Path $package 'StagingRollbackExecution.ps1'),$rollbackExecutionShim)
+ }
  if($flowMode){
   $flowShim=@'
 
@@ -119,7 +151,7 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
  $env:PSModulePath=$modules+';'+$oldModulePath
  foreach($name in $files){Check ((Set-AuthenticodeSignature -FilePath (Join-Path $package $name) -Certificate $signer -HashAlgorithm SHA256).Status -eq 'Valid') ('signed dependency '+$name)}
  . (Join-Path $package 'Test-AuthWireDeploymentCandidate.ps1') -LibraryOnly
- foreach($name in $files|Where-Object {$_ -cnotin @('Test-AuthWireDeploymentCandidate.ps1','Read-AuthWireStagingWritePreflight.ps1','Read-AuthWireRollbackPreflight.ps1','Invoke-AuthWireStagingWriteChild.ps1')}){. (Join-Path $package $name)}
+ foreach($name in $files|Where-Object {$_ -cnotin @('Test-AuthWireDeploymentCandidate.ps1','Read-AuthWireStagingWritePreflight.ps1','Read-AuthWireRollbackPreflight.ps1','Invoke-AuthWireStagingWriteChild.ps1','Invoke-AuthWireRollbackChild.ps1')}){. (Join-Path $package $name)}
  Initialize-AuthWireStagingFilesystemTypes;Initialize-AuthWireScopeProcess
  $sid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value;$domainSid=$sid.Substring(0,$sid.LastIndexOf('-'))
  $connector=[guid]::NewGuid().ToString('D');$release=[guid]::NewGuid().ToString('D')
@@ -153,6 +185,7 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
  $cases=@('success','drift','partial','bad_result','launch_disk','metadata_disk','identity','timeout')
  if($flowMode){$cases+=@('lost_ack','lost_grant','poll_lost','poll_bad','idle')}
  if($grantMode){$cases=@('rollback_success','rollback_lost_grant','rollback_bad_grant','rollback_receipt_disk','rollback_consume_disk','rollback_live_drift','rollback_expired','rollback_proof_disk')}
+ if($rollbackExecutionMode){$cases=@('rb_execute_success','rb_execute_lost_ack','rb_execute_drift','rb_execute_completion_disk','rb_execute_bad_result','rb_execute_parent_drift','rb_execute_launch_disk','rb_execute_identity','rb_execute_timeout')}
  foreach($case in $cases){
   $t=[pscustomobject][ordered]@{candidate_id=[guid]::NewGuid().ToString('D');network_candidate_id=[guid]::NewGuid().ToString('D');plan_id=[guid]::NewGuid().ToString('D');plan_version=1;gpo_id=[guid]::NewGuid().ToString('D');approval_sha256=('a'*64);network_manifest_sha256=('b'*64);manifest_sha256=('c'*64);draft_sha256=('d'*64);dependency_sha256=('e'*64);publisher_thumbprint=$signer.Thumbprint;machine_profile_id=[guid]::NewGuid().ToString('D');machine_profile_version=3;domain='lab.example';root_thumbprint=('f'*40);group_sid=($domainSid+'-1647');content_result_sha256=('2'*64);target_sids_sha256=('3'*64);target_count=1}
   $draft=[Text.Encoding]::ASCII.GetBytes('fixture never execute '+$case);$t.draft_sha256=Get-AuthWireCandidateHash $draft
@@ -173,7 +206,7 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
   $intentFrame='AuthWireStagingWriteIntentV1'+"`n"+$scope+"`n"+$id+"`ncombined.filesystem.stage.v1`n"+(Get-AuthWireWriteHash $target)+"`n"
   $offer=[pscustomobject]@{format=1;request_id=$request;scope_sha256=$scope;job_id=$id;operation='combined.filesystem.stage.v1';lease_id=('6'*64);intent_sha256=(Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes($intentFrame)));expires_at=$preview.Preview.expires_at;target=$target;write_authorized=$false;can_apply_gpo=$false}
   $live=[pscustomobject]@{format='AuthWireWriteLiveContextV1';job_id=$id;intent_sha256=$offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $target);source_root=$source;gpo_root=$gpo;protected_gpo_id=[guid]::NewGuid().ToString('D');pdc='dc01.lab.example';checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();can_apply_gpo=$false}
-  $fixture=[pscustomobject]@{case='prepare';requested_case=$(if($grantMode){'success'}else{$case});rollback_case=$case;rollback_drift=$false;gpo_id=$t.gpo_id;gpo_root=$gpo;live=$live;expires_at=0}
+  $fixture=[pscustomobject]@{case='prepare';requested_case=$(if($grantMode){'success'}else{$case});rollback_case=$case;rollback_drift=$false;rollback_expires_at=0;gpo_id=$t.gpo_id;gpo_root=$gpo;live=$live;expires_at=0}
   [IO.File]::WriteAllText((Join-Path $package 'fixture.json'),($fixture|ConvertTo-Json -Depth 12 -Compress))
   if($flowMode){
    # Only the queued job and AD/current-context lookup are seeded/stubbed.
@@ -296,7 +329,7 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
   Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $treeHash -and [IO.File]::ReadAllText($readFile) -ceq $readsBefore) 'result freeze changes no SMB state and performs no new AD observation'
   $outcomes+=,[pscustomobject]@{case=$case;seconds=[Math]::Round($watch.Elapsed.TotalSeconds,2);staged=($case -ceq 'success')}
  }
- foreach($name in @('ConnectorServicePackage.ps1','ConnectorServiceRuntime.ps1')){foreach($module in @('StagingWriteExecution','StagingWriteResult','StagingWriteCycle','StagingRollbackEvidence','StagingRollbackAuthorization','Read-AuthWireRollbackPreflight')){Check (-not ([IO.File]::ReadAllText((Join-Path $lib $name))).Contains($module)) 'execution and result adapters absent from active package/runtime'}}
+ foreach($name in @('ConnectorServicePackage.ps1','ConnectorServiceRuntime.ps1')){foreach($module in @('StagingWriteExecution','StagingWriteResult','StagingWriteCycle','StagingRollbackEvidence','StagingRollbackAuthorization','Read-AuthWireRollbackPreflight','StagingRollbackExecution','StagingRollbackResult','Invoke-AuthWireRollbackChild')){Check (-not ([IO.File]::ReadAllText((Join-Path $lib $name))).Contains($module)) 'execution and result adapters absent from active package/runtime'}}
  Check ((Get-Acl -LiteralPath $keyPath).Sddl -ceq $keyAcl) 'dedicated native key ACL preserved'
  $timer=[Diagnostics.Stopwatch]::StartNew();Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-1) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()) $timer} 'engine refuses expired authorization';Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+90) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+60) $timer} 'engine refuses clock rollback'
  # Real controller death: this independently tests the new kernel job runner,
