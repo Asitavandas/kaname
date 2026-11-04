@@ -1,0 +1,338 @@
+{
+  "format": "AuthWireSourceCheckpointV1",
+  "updated_local": "2026-11-04",
+  "timezone": "Europe/Istanbul",
+  "phase": "authenticated_rollback_execution_result_source_verified_not_delivered",
+  "pr": 130,
+  "pr_url": "https://github.com/Asitavandas/kaname/pull/130",
+  "base_before": "4067306e22e2c3859d7392edd9abb3f28e805e6e",
+  "tested_head": "bcea6b90319a5095c3fa7820533a5ab7792174a3",
+  "source_merge": "14c013fe989727560af525d51e08ed2a5a46b67f",
+  "source_fingerprints": [
+    {
+      "path": "windows/connector/StagingRollbackExecution.ps1",
+      "sha256": "7e07da7e049cb40f75f871e8d8807bd9815642565fab653082505dc65c65afe9",
+      "blob_sha": "751d1f53c6ef51c886504d836e74949746dfea3d"
+    },
+    {
+      "path": "windows/connector/StagingRollbackResult.ps1",
+      "sha256": "4f36935a632466225e6662dd645152e7fb567c5a98866f91287831b95cc530c3",
+      "blob_sha": "358185f762a506fb765ec8d58b294529471ed315"
+    },
+    {
+      "path": "windows/connector/Invoke-AuthWireRollbackChild.ps1",
+      "sha256": "d4bca65c3aa6bebaac401823eb84205d12687f2da402708c0976fc1c55f32e89",
+      "blob_sha": "f9e761d4ec9fe6adacf8641e464609f321a5e465"
+    },
+    {
+      "path": "windows/connector/StagingRollbackAuthorization.ps1",
+      "sha256": "600b95bb291795fef6a852790a74a96d0503d663597dfe2d5ae18311c3ddb4b8",
+      "blob_sha": "a2915637b201d50c0f5ceb327eda76e901dd105b"
+    },
+    {
+      "path": "windows/connector/StagingRollbackEvidence.ps1",
+      "sha256": "0ed09088b77d04ee95035fbeeb3456e85d229d5052a4cc0b8678bae874dbd7f9",
+      "blob_sha": "50653d38ba848d7e494dc9e0412b4b543132eeed"
+    },
+    {
+      "path": "tools/staging_write_execution_windows_check.ps1",
+      "sha256": "f15634999305d0f1a52086a40a6cdbd649a256eeb12fd5dc5ab7ed03dbed3f5c",
+      "blob_sha": "5dc3f71397d55325ccbef57988ad571c4028a44d"
+    },
+    {
+      "path": "tools/staging_write_cycle_windows_check.py",
+      "sha256": "3dc3d8bb4b6c617286d148fb3cf4f19ab396f9432cd35e249c6a62db400b05f2",
+      "blob_sha": "a4c24d71ee94d1324a5e37654316db27a699b1f0"
+    },
+    {
+      "path": "tools/staging_rollback_authorization_fixture.ps1",
+      "sha256": "c98273b1ba3a9b7a446f84de5dbabd0828ee116e5a5cb8eafd954e858e0249a1",
+      "blob_sha": "f6a9f5c8c7cbb16d54a661b8326b4e557f3348ab"
+    },
+    {
+      "path": "tools/staging_rollback_execution_fixture.ps1",
+      "sha256": "ff63b78e1e2bca6547114da8db98e0811a2cbb363648e9ef2e7d28f9c431a343",
+      "blob_sha": "ff15f6d2da54363f03c3b50414328250ad3e5838"
+    },
+    {
+      "path": "tools/staging_rollback_execution_windows_check.py",
+      "sha256": "d727b425c8a6c656b613690a04fcc01bfbc9f4fcf7afe8b984e11023f9458f46",
+      "blob_sha": "055359479bc32c3edc02c513e4d40a6b62929fce"
+    },
+    {
+      "path": ".github/workflows/staging-rollback-execution.yml",
+      "sha256": "ea47cf074a4741fd9c80b0dd23824359a65c378bdb0e28d8389cfc5d685e60d5",
+      "blob_sha": "052575263c7843d79d23a7c0da5a1f1e7de394b6"
+    },
+    {
+      "path": "docs/STAGING_ROLLBACK_EXECUTION.md",
+      "sha256": "73009d6636bcbcc2f42453bc5ae72b9d5da6eace9a2662fb6975fb234ed27ee8",
+      "blob_sha": "77de67c357d296aba6830acd2351da759351aa6b"
+    }
+  ],
+  "ci": [
+    {
+      "run_id": 41799145151,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41799145009,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41799145185,
+      "name": "AuthWire isolated rollback authorization",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41799145027,
+      "name": "AuthWire isolated rollback origin evidence",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41799145350,
+      "name": "AuthWire isolated one-shot staging cycle",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41799145051,
+      "name": "AuthWire isolated authorized stage execution",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41799145198,
+      "name": "AuthWire isolated write preclaim checks",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41799144980,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41799145445,
+      "name": "AuthWire isolated rollback execution and result",
+      "conclusion": "success"
+    }
+  ],
+  "tests": {
+    "rollback_execution": {
+      "native_checks": 559,
+      "cases": 9,
+      "actual_separate_core_review_create_poll_claim_result": true,
+      "original_accepted_stage_results": 9,
+      "rollback_claims": 9,
+      "rollback_result_requests": 10,
+      "rollback_result_transitions": 9,
+      "observed_successes": 2,
+      "unconfirmed_reviews": 7,
+      "actual_signed_child_smb_ntfs_deletion": true,
+      "customer_changed": false,
+      "positive_ad_content_service_identity_simulated": true,
+      "initial_stage_queues_seeded": true,
+      "child_parent_success_ms": [
+        12147,
+        12265
+      ],
+      "durable_full_rollback_poll_cycle_tested": false
+    },
+    "origin": {
+      "native_checks": 264,
+      "base_cases": 13,
+      "positive_preflight_ms": [
+        4613,
+        4614
+      ]
+    },
+    "stage": {
+      "checks": 182,
+      "cases": 8
+    },
+    "cycle": {
+      "checks": 154,
+      "cases": 13
+    },
+    "authorization": {
+      "native_checks": 413,
+      "cases": 8
+    },
+    "preclaim": {
+      "native_checks": 372,
+      "python_rsa_checks": 18
+    },
+    "foundation": {
+      "tests": 1123,
+      "skips": 28,
+      "seconds": 307.927
+    },
+    "permanent_service": {
+      "checks": 85,
+      "real_scm_https": true,
+      "customer_gmsa_tested": false
+    }
+  },
+  "failed_intermediate_runs": [
+    {
+      "head": "69bcc25c4d8bf16929199b3da39103966b73c431",
+      "run_id": 41798303273,
+      "job_id": 126467584387,
+      "error": "ROLLBACK_EXECUTION_REQUIRES_REVIEW",
+      "diagnostic": {
+        "parent_phase": "child_exit",
+        "child_phase": "unknown",
+        "timed_out": true,
+        "truncated": false,
+        "exit_code": 20,
+        "elapsed_ms": 6026,
+        "work_budget_ms": 6000
+      },
+      "observed": "Original grant left six-second child budget; no success observation/RESULT was reported. No conclusion of zero filesystem effects from timeout alone.",
+      "change": "Pin fixed authority before full validation and validate once during consumption. Authenticated child reuses only its already verified and still-pinned original origin for a separate fresh read-only AD/tree observation. Original expiry and all production time limits unchanged."
+    }
+  ],
+  "limits": {
+    "original_server_grant_seconds_max": 30,
+    "grant_deadline_renewed": false,
+    "live_freshness_seconds": 5,
+    "preclaim_reader_ms": 15000,
+    "post_consumption_reader_ms": 8000,
+    "child_budget_ms_max": 15000,
+    "child_budget_formula": "min(15000,(original_expires_at-now-2)*1000)",
+    "native_deadline_checked_each_delete": true,
+    "inflight_smb_cancellation_guaranteed": false,
+    "original_and_rollback_authority_pinned_before_validation": true,
+    "current_live_checks_still_required": true,
+    "pinned_origin_reuse_is_read_only_not_authorization": true,
+    "source_only_rollback_adapter_available": true,
+    "active_package_worker_enabled": false,
+    "production_peer_routes_enabled": false,
+    "can_apply_gpo": false,
+    "reset_cleanup_unlock_enabled": false
+  },
+  "customer_changes": {
+    "linux_installed": false,
+    "dc01_installed": false,
+    "ad_gpo_sysvol_changed": false,
+    "endpoints_services_changed": false,
+    "key_acl_trust_changed": false,
+    "radius_restarted": false,
+    "full_data_backup_created": false,
+    "secrets_exported": false
+  },
+  "last_known_live": {
+    "fresh_live_read_performed": false,
+    "linux_version": "0.14.0-dev.44",
+    "windows_release_id": "df28f70c-104e-4d6d-972c-e311d38adde6",
+    "readonly_preview_file_count": 20,
+    "readonly_preview_bytes": 102464
+  },
+  "last_known_backup": {
+    "created": "2026-10-28T07:28:35.438167+00:00",
+    "path": "/var/backups/authwire/scheduled/authwire-scheduled-20261028T072835Z-004fe2d609b1.tar.gz",
+    "sha256": "3c4b00b745063980c962f712a426a4ce2e845d62abb096ec2346941a5062c002",
+    "freshly_verified_this_turn": false,
+    "off_host_copy_verified": false,
+    "full_appliance_boot_restore_tested": false
+  },
+  "next_work": "Full durable rollback POLL/permanent worker lifecycle, refusal and idle/history/retention, reboot/lost-result/partial-journal reconciliation and separately approved unlock; then backup projection and controlled signed real customer delivery/acceptance.",
+  "open_work": [
+    "Durable full rollback POLL cycle and permanent worker",
+    "Refusal reporting, idle/history/retention",
+    "Reboot/lost result/partial journal reconciliation and separately approved unlock",
+    "Strict backup projection, off-host copy and boot restore",
+    "Controlled signed delivery and real gMSA/AD/domain-SYSVOL/endpoint acceptance",
+    "Earlier PR125/127/129 unresolved refusals and customer latency/refusal reliability",
+    "GPO activation",
+    "Single account transition",
+    "User EAP-TLS live acceptance",
+    "500/1000 technical scale including >512 target partition/merge/deduplication/recovery"
+  ],
+  "remaining_estimates": {
+    "anchor": "2026-11-04",
+    "write_recovery_controlled_delivery_active_workdays": [
+      3,
+      5
+    ],
+    "first_small_pilot_weeks": [
+      2,
+      3
+    ],
+    "first_small_pilot_window": [
+      "2026-11-18",
+      "2026-11-25"
+    ],
+    "base_weeks": [
+      6,
+      9
+    ],
+    "base_window": [
+      "2026-12-16",
+      "2027-01-06"
+    ],
+    "base_with_guide_weeks": [
+      7,
+      10
+    ],
+    "base_with_guide_window": [
+      "2026-12-23",
+      "2027-01-13"
+    ],
+    "full_scope_with_guide_weeks": [
+      13,
+      19
+    ],
+    "full_scope_with_guide_window": [
+      "2027-02-03",
+      "2027-03-17"
+    ],
+    "operator_base_hours": [
+      20,
+      30
+    ],
+    "operator_full_hours": [
+      30,
+      45
+    ],
+    "additional_observation_calendar_days": [
+      7,
+      14
+    ],
+    "architectural_replan_risk_additional_workdays": [
+      2,
+      5
+    ],
+    "assumptions": "Five shared working days/week, same-day operator evidence and access ready; no work while chat closed; external target/VM/API/endpoint waits excluded. Reassessed without automatic subtraction for this source subgate.",
+    "reassessment": "Upper bound reduced from 6 to 5 active workdays after source execution/parent/RESULT gate passed native tests; lower bound retained for independent durable lifecycle/recovery and customer delivery acceptance. Remaining package ranges and November 4 anchored calendar windows reassessed and retained; no automatic elapsed-day subtraction."
+  },
+  "macro": {
+    "completed": 54,
+    "total": 94,
+    "open": 40
+  },
+  "capacity": {
+    "two_hundred_is_product_quota": false,
+    "per_job_target_limit": 512,
+    "scale_acceptance_pending": [
+      500,
+      1000
+    ]
+  },
+  "guide": {
+    "READY_FOR_FINAL_GUIDE": false,
+    "GUIDE_DELIVERED": false,
+    "guide_created_this_turn": false,
+    "plan_unchanged": true
+  },
+  "prior_failure_tracking": {
+    "retained_checkpoints": [
+      "docs/checkpoints/2026-11-04-rollback-authorization-source.json",
+      "docs/checkpoints/2026-10-30-rollback-origin-source.json",
+      "docs/checkpoints/2026-10-30-rollback-deadline-source.json"
+    ],
+    "old_pr125_pr127_pr129_generic_causes_unresolved": true,
+    "green_runs_not_retrospective_cause_analysis": true,
+    "customer_latency_refusal_acceptance_pending": true
+  }
+}

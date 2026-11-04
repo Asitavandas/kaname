@@ -1,6 +1,6 @@
 # Geri alma ön kontrolü ve özgün stage kanıtı — yalnız kaynak
 
-4 Kasım 2026 (PR129 ile güncel; ilk guard PR128). `StagingRollbackEvidence.ps1`, rollback teklifinin tam olarak hangi
+4 Kasım 2026 (PR130 ile güncel; ilk guard PR128). `StagingRollbackEvidence.ps1`, rollback teklifinin tam olarak hangi
 başarılı stage işlemine bağlı olduğunu okur. Aktif pakete/worker'a eklenmez;
 üretim rotaları açılmaz. İzin göndermez/tüketmez, dosya silmez, journal yazmaz,
 GPO kilidi kaldırmaz. Bu alt kapı ayrı onaylı rollback adapter'ının tamamı değildir.
@@ -69,6 +69,11 @@ geçici kayıtlar negatif vakalar arasında restore edilir; ürün recovery API'
 PR129 ile ayrı sınırlı AllSigned reader/CLAIM/receipt/tek tüketim kaynakta testlidir;
 bu dosyanın guard'ı tek başına izin göndermez veya tüketmez. Tarihsel origin
 okuyucusu yalnız eski kanıtı doğrular; mevcut uygunluk kontrolü değildir.
-Açık: gerçek sınırlı rollback child/parent gözlemi, immutable rollback RESULT,
+PR130, ayrı kaynak bileşeninde sınırlı rollback child/parent gözlemi ve immutable
+RESULT bağlamasını testle ekler; bkz. [STAGING_ROLLBACK_EXECUTION.md](STAGING_ROLLBACK_EXECUTION.md).
+Tam ön kontrol hâlâ kendi origin zincirini pin altında doğrular. Authenticated
+child yalnız kendi tam doğruladığı ve hâlâ pin altında tuttuğu origin'i yeni
+salt okunur canlı gözlem için kullanabilir; bu gözlem tek başına izin değildir.
+Açık:
 kalıcı worker/kurtarma/retention, ayrı unlock, backup/restore ve gerçek müşteri
 least-privilege gMSA/AD/domain-SYSVOL/endpoint kabulü. Müşteri kurulumu yapılmadı.

@@ -69,8 +69,14 @@ false execution flags, original deadline, and stage/rollback record separation.
 Unsigned-reader and alternate-root refusals are included. All fault injection is
 in test-owned signed copies; no fault/time/path override is added to product code.
 
-Pending: actual bounded rollback child/parent observation/immutable RESULT;
-durable full rollback POLL cycle/worker; refusal reporting/reboot/lost-result and
+PR130 adds the source-only bounded rollback child/parent observation/immutable
+RESULT adapter; see [STAGING_ROLLBACK_EXECUTION.md](STAGING_ROLLBACK_EXECUTION.md).
+This authorization component still never deletes or activates GPOs itself.
+Consumption now pins all fixed rollback and original stage authority inputs
+before one full validation, keeping the same pins held through live observation.
+The grant deadline and five-second/15-second/eight-second limits are unchanged.
+
+Pending: durable full rollback POLL cycle/worker; refusal reporting/reboot/lost-result and
 partial-journal reconciliation; separately approved unlock/retention; strict backup
 projection/off-host restore; controlled delivery and real gMSA/AD/domain SYSVOL,
 latency/refusal and endpoint acceptance. An in-flight SMB operation can outlast its

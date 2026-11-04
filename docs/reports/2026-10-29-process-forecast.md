@@ -1,5 +1,93 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## Kontrollü geri alma ve doğrulanmış RESULT kaynakta tamamlandı — 4 Kasım 2026
+
+**PR130**, test edilen kaynak **bcea6b90319a5095c3fa7820533a5ab7792174a3**, merge **14c013fe989727560af525d51e08ed2a5a46b67f**.
+Teknik kapsam: **docs/STAGING_ROLLBACK_EXECUTION.md**.
+
+Ayrı CLAIM/receipt ve tek tüketimli intent artık sabit AllSigned çocuk sürece,
+tek açılış kaydına, PID + başlangıç zamanı + özel event kapısına bağlanır.
+Özgün stage kanıtı/GPO kilidi ve rollback authority kayıtları native pin'lerle
+korunur. Çocuk, doğrulanmış ve hâlâ sabit tutulan origin üzerinden yeni servis
+kimliği/AD/PDC/GPO kapsamı, ownership/ağaç ve dış taban kontrolü yapar; yalnız
+AuthWire'ın oluşturduğu tam sürüm klasörünü mevcut native motorla geri alır.
+Özgün sunucu grant son tarihi değişmez. Çocuk bütçesi min(15 saniye, kalan
+grant eksi 2 saniye); canlı tazelik 5 saniye, tüketim reader bütçesi 8 saniyedir.
+
+Parent yalnız çocuğun bildirimine güvenmez: gerçek PID/start ticks, stdout ile
+kaydedilmiş sonucun eşliği, gerçek engine başlangıç/tamamlanma hash'leri ve
+özgün doğrulanmış PDC/yoldaki tam GPO tabanını bağımsız denetler. Bu son taban
+okuması ayrı bir AD keşfi veya kesin SMB iptal süresi değildir.
+Eksik sonuç, timeout, yabancı veri, yanlış kimlik ve gözlenmemiş silme
+**requires_review / unconfirmed** kalır; dosyalar gerçekten silinmiş olsa da
+başarıya yükseltilmez. Otomatik devam/cleanup/unlock yoktur.
+
+Başarı RESULT'ı gerçek rollback journal'ına ve **silinen özgün ağacın** hash'ine
+bağlıdır. Immutable outbox zamanı/gövdesi korunur. Kayıp ACK sonrası yalnız aynı
+RESULT gövdesi yeni proof ile, iş başına en çok üç kalıcı denemeden biri olarak
+gönderilebilir; tekrar CLAIM/tüketim/canlı AD gözlemi/silme yapmaz. Yeniden hash'lenen
+değişmiş veya başarıya yükseltilmiş outbox, tam parent gözlem zincirinin yerine geçemez.
+Özgün GPO kilidi ve stage kayıtları tutulur; stage/rollback kayıtları karıştırılamaz.
+
+**Test kanıtı:** Yeni suite **559 native kontrol /9 senaryo** ile geçti: **9 ayrı gerçek core review/create/POLL/CLAIM/rollback/RESULT** zinciri, **2 gözlenmiş geri alma başarısı**, **7 belirsiz inceleme sonucu**, **10 RESULT isteği /9 geçiş**. Normal ve kayıp ACK yolu; PDC sapması, gerçek silme sonrası eksik native completion, bozuk engine sonucu, silme sonrası yabancı veri, launch kayıt hatası, yanlış child PID ve timeout sınandı. Yeniden hash'lenen veya başarıya yükseltilen outbox retleri, doğrudan child/parent replay retleri ve sonuç-only recovery'nin yeni AD/silme üretmemesi doğrulandı. Mevcut stage **182 /8**, çevrim **154 /13**, origin **264 /13**, izin/tüketim **413 /8**, preclaim/RESULT **372 native +18 Python/RSA** kontrolüyle geçti. Genel koşu **1123 test /28 ortam atlaması /307.927 saniye**; kalıcı imzalı SCM/HTTPS **85 kontrol** ile başarılı. **Dokuz CI workflow'un tamamı geçti.** Yeni suite'te normal/kayıp ACK child+parent ölçümleri **12147/12265 ms**; bunlar tüm ürün çevrimi veya saha performans garantisi değildir.
+Pozitif AD/içerik/servis kimliği gözlemleri ve başlangıç stage kuyrukları fixture
+yerine koymalarıdır; müşteri gMSA/AD/domain-SYSVOL veya endpoint kabulü değildir.
+Gerçek silmeler yalnız testin kendi geçici SMB/NTFS alanındadır.
+
+**Başarısız ara koşu korunur:** kaynak **69bcc25c4d8bf16929199b3da39103966b73c431**,
+run **41798303273**, job **126467584387**. Parent child_exit tanısı:
+timed_out=true, work_budget_ms=6000, elapsed_ms=6026, exit_code=20,
+child_phase=unknown. Kalan özgün izin bütçesi tükendi; gözlenmiş başarı/RESULT
+üretilmedi. Timeout'tan sıfır dosya etkisi sonucu çıkarılmadı.
+Tüketimde sabit dosyalar önce pin'lenip tek defa tam doğrulanacak şekilde
+düzenlendi. Çocuk, kendi tam doğrulamasından çıkan ve hâlâ pin altında olan
+origin'i yalnız yeni **salt okunur** canlı gözlem için tekrar kullanır;
+hash/önbellek kendi başına silme izni değildir. Hiçbir üretim süresi uzatılmadı.
+Bu bulgu, PR125/127'nin eski tanısız retlerini veya PR129'un genel
+TLS/reader retlerini geriye dönük açıklamaz; saha latency/ret güvenilirliği açıktır.
+
+**Kaynak teslimi ile canlı kurulum ayrıdır:** GitHub main'e kaydedildi.
+Kalıcı worker/paket ve üretim peer rotaları açılmadı; Linux/DC01'e kurulmadı.
+Müşteri servis/cihaz, AD/GPO/SYSVOL, key ACL/trust veya RADIUS değiştirilmedi.
+Yeni veri yedeği alınmadı. Son bilinen canlı Linux **dev.44**, Windows
+**df28f70c**; yeni canlı ölçüm yok. Son bilinen doğrulanmış aynı disk yedeği
+28 Ekim 2026 tarihlidir; dış kopya/boot restore kabulü açık.
+
+**Sıradaki kritik kapı:** tam ve kalıcı rollback POLL/worker yaşam döngüsü,
+ret bildirimi, idle/history/retention, reboot/kayıp sonuç/kısmi journal uzlaştırma
+ve ayrı onaylı unlock. Sonra strict backup projection, kontrollü imzalı teslim,
+gerçek gMSA/AD/domain-SYSVOL/endpoint ve gecikme/ret kabulü. GPO etkinleştirme,
+tek hesap geçişi, kullanıcı EAP-TLS ve 500/1000 teknik ölçek ayrıca açık.
+Bunlar mevcut dağıtım planının alt kapılarıdır; ürün kapsamı genişletilmedi.
+
+### Güncellenmiş kalan süreler
+
+Yazma/geri alma/kurtarma/kontrollü teslim bandı **3–6 → 3–5 aktif iş günü**
+olarak yeniden değerlendirildi: authenticated yürütme/parent/RESULT alt kapısı
+kaynakta testle kapandı. Kalıcı worker/kurtarma ve gerçek teslim kabulü bağımsız
+işler olduğu için alt sınır korundu; tamamlanan kaynak adımı ürün kabulü sayılmadı.
+Mimari bulguda **2–5 ek iş günü / yeniden planlama** payı ayrıca değerlendirilir.
+Diğer paketlerde yeni saha veya erişim kanıtı yok; süre ve ön koşullar gözden
+geçirilip korundu. Takvim başlangıcı **4 Kasım 2026**; sohbet kapalıyken çalışma
+ve geçen takvim günlerinden otomatik süre düşme varsayılmaz.
+
+| Hedef | Kalan tahmin | 4 Kasım başlangıçlı koşullu pencere |
+|---|---|---|
+| Yazma / geri alma / kurtarma / kontrollü teslim | **3–5 aktif iş günü** | Kalıcı lifecycle/recovery ve gerçek kabul kapılarına bağlı |
+| İlk küçük otomatik pilot | **2–3 hafta** | **18–25 Kasım 2026** |
+| Tek hesap ve 500/1000 teknik ölçek dahil temel ürün | **6–9 hafta** | **16 Aralık 2026–6 Ocak 2027** |
+| Temel sürüm seçilirse kılavuz dahil | **7–10 hafta** | **23 Aralık 2026–13 Ocak 2027** |
+| Tüm kayıtlı geliştirmeler + nihai kılavuz | **13–19 hafta** | **3 Şubat–17 Mart 2027** |
+
+Aktif operatör katılımı temel kapsamda **20–30 saat**, tüm kapsamda **30–45 saat**;
+ek **7–14 takvim günü gözlem** ayrı. Düzenli 5 gün/hafta ortak çalışma, aynı gün
+operatör çıktısı ve hazır erişim varsayılır. Dış yedek hedefi, restore VM, üretici
+API ve ölçek uçlarının belirsiz beklemeleri hariçtir; teslim taahhüdü değildir.
+**200 cihaz ürün kotası değildir**; tek görev 512 hedef sınırı ve 500/1000 ayrı
+teknik kabulü korunur. Makro **54/94 tamam,40 açık** değişmedi.
+**READY_FOR_FINAL_GUIDE=false / GUIDE_DELIVERED=false** korunur; hedef işlevsel
+ürün/operatör kabulü ve nihai kılavuz teslimi henüz tamamlanmış sayılmadı.
+
 ## Ayrı geri alma izni ve tek kullanımlık tüketim — 4 Kasım 2026
 
 **PR129**, test edilen kaynak **f8d12465041bf121c0578ead0f04a70d29fb87b8**, merge **58ac888019b19931bd5f746d9d29639e75784bb2**.
@@ -641,7 +729,7 @@ Kullanıcı sertifikalı erişim ve tek gMSA altında AD/Kerberos geçişi ayrı
 
 ## İş paketleri ve süreler
 
-**4 Kasım 2026 değerlendirmesi:** İş1 kaynakta izin/tüketim alt adımı kadar ilerledi; süre yürütme/sonuç/kurtarma/saha kabulü bağımlılıkları nedeniyle korundu. İş2–14 için yeni saha/erişim kanıtı yok; kapsam, süre ve ön koşullar yeniden gözden geçirilip korundu. Aşağıdaki iş bazlı tahminler, en üstteki güncel koşullu takvimle birlikte okunmalıdır.
+**4 Kasım 2026 PR130 değerlendirmesi:** İş1 kaynakta authenticated yürütme/parent/RESULT alt kapısına kadar ilerledi; 3–6 iş günü bandı 3–5 olarak güncellendi. Kalıcı worker/kurtarma/saha kabulü bağımlılıkları açık kaldı. İş2–14 için yeni saha/erişim kanıtı yok; kapsam, süre ve ön koşullar yeniden gözden geçirilip korundu. Aşağıdaki iş bazlı tahminler, en üstteki güncel koşullu takvimle birlikte okunmalıdır.
 
 İşgünü bir planlama birimidir; tek bir komutun çalışma süresi değildir.
 Geliştirme, teknik doğrulama, düzeltme ve kontrollü teslim çevrimini kapsar.
@@ -649,7 +737,7 @@ Saha sütunu operatörün aktif oturum zamanını gösterir; günlük çalışma
 
 | İş | Şu anki durum / kalan kapsam | Tahmini çalışma | Aktif saha oturumu | Ön koşul / kapanış |
 |---|---|---:|---:|---|
-| 1. Onaylı staging/geri alma görevi | Stage/RESULT ve rollback motor süre sınırı testli. PR129 ile ayrı bounded reader/CLAIM/receipt/tek tüketim kaynakta testli; özgün kanıtlar live kontrol boyunca pin/mutex altında. Bounded rollback child/parent/RESULT, kalıcı worker/ret/kurtarma/retention/unlock, backup ve müşteri teslimi açık; önceki tanısız retler ve saha latency kabulü açık. Canlı kapılar kapalı | 3–6 iş günü | 1–2 saat | Aynı gMSA ile gerçek yazma, tekrar/kesinti ve güvenli geri alma kanıtı |
+| 1. Onaylı staging/geri alma görevi | PR130 ile ayrı CLAIM/tüketim → bounded signed rollback child → parent baseline gözlemi → immutable RESULT/ACK recovery kaynakta testli. Kalıcı tam POLL/worker, ret/idle/history/retention, reboot/kısmi journal uzlaştırma, ayrı unlock, backup ve müşteri teslimi açık; eski retler ve saha latency kabulü açık. Canlı kapılar kapalı | 3–5 iş günü | 1–2 saat | Aynı gMSA ile gerçek yazma, tekrar/kesinti ve güvenli geri alma kanıtı |
 | 2. GPO etkinleştirme | Startup/uzantı/sürüm/link/çoğaltma ve kapsam koruması açık | 2–4 iş günü | 2–3 saat | İş1; ilk seçilmiş pilot PC'de doğal kurulum ve beklenen sertifika/ağ sonucu |
 | 3. Kullanıcı EAP-TLS | Sunucu/istemci/panel hazır. Gerçek kullanıcı deposu, Ethernet/Wi-Fi, kullanıcı VLAN ve kimlik geçişi kabulü açık | 2–4 iş günü | 2–4 saat | Kontrollü kullanıcı dağıtımı, en az iki farklı kullanıcıyla ret/izin ve yaşam döngüsü |
 | 4. Tek hesap standardı | gMSA Connector çalışıyor. AD katalog/canlı okuma ve Windows Kerberos acceptor taşınacak; eski bağımlılıklar kaldırılacak | 6–10 iş günü | 2–3 saat | Kimlik bütünlüğü, MIC/path/body/CSR bağı, replay/ret/kesinti testleri; eski hesapları ancak bağımlılık kanıtından sonra kaldırma |
