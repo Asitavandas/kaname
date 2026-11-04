@@ -199,6 +199,36 @@ class BackupUpgradeTests(unittest.TestCase):
         self.assertEqual('BACKUP_UPGRADE_ROLLED_BACK', result['event']); self.assert_old()
         upgrade.journal()
 
+    def test_evidence_write_failure_does_not_skip_rollback(self):
+        self.worker['capture'] = lambda *a: (_ for _ in ()).throw(ValueError('capture failed'))
+        real_record = upgrade.record
+        def failed(path, value):
+            if path.name == 'failure.json': raise OSError('disk full')
+            return real_record(path, value)
+        with patch.object(upgrade, 'record', side_effect=failed):
+            self.assertEqual('BACKUP_UPGRADE_ROLLED_BACK', self.run_upgrade()['event'])
+        self.assert_old()
+
+    def test_lock_is_released_before_timer_resume(self):
+        self.facts['authwire-backup.timer'].update(ActiveState='active', SubState='waiting')
+        real_command = self.command
+        def checked(*args):
+            if args[1] == 'start':
+                with upgrade.lock(upgrade.SCHEDULED / '.job.lock'), upgrade.lock(upgrade.UPDATE_LOCK):
+                    pass
+            return real_command(*args)
+        with patch.object(upgrade, 'command', side_effect=checked): self.run_upgrade()
+
+    def test_candidate_capture_and_restore_hold_both_exclusive_locks(self):
+        real_capture = self.capture
+        def checked(path, keep):
+            for lock in (upgrade.SCHEDULED / '.job.lock', upgrade.UPDATE_LOCK):
+                with self.assertRaises(BlockingIOError):
+                    with upgrade.lock(lock): pass
+            return real_capture(path, keep)
+        self.worker['capture'] = checked
+        self.run_upgrade()
+
     def test_restore_failure_rolls_back_and_restores_active_timer(self):
         self.facts['authwire-backup.timer'].update(ActiveState='active', SubState='waiting')
         self.checker['check'] = lambda *a: {'data_restore_exercised': False}

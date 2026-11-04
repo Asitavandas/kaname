@@ -244,16 +244,14 @@ def namespace(data, path):
 
 
 def live(worker):
-    paths = [Path('/etc/systemd/system') / name for name in worker['PRODUCT_UNITS']]
-    paths += [Path(name) for name in (
-        '/opt/authwire-radius/lib/rlm_python3.so', '/etc/kaname-lab/web.crt', '/etc/kaname-lab/web.key',
-        '/var/lib/kaname-lab/secret-store.key', '/var/lib/kaname-lab/radius/server.pem',
-        '/var/lib/kaname-lab/radius/server-key.pem', '/opt/authwire-service-control/broker.py',
-        '/opt/kaname-lab/source/kaname/device_client/AuthWire-Client.ps1',
-        '/opt/kaname-lab/source/kaname/device_client/Install-AuthWire.ps1')]
-    return {'files': {str(p): worker['digest'](p) for p in paths},
-            'business_state': {name: worker['db_fingerprint'](Path('/var/lib/kaname-lab') / name)
-                               for name in ('kaname.sqlite3', 'administrators.sqlite3')},
+    # Cover all application settings/state/source/runtime and systemd support,
+    # not just selected certificates. The deliberately exchanged worker root
+    # has a separate inode/hash identity guard. Reuse the worker's validated
+    # volatile-poll normalization; full DB bytes still remain in the archive.
+    items = [path for path in worker['roots']() if path != TARGET]
+    files, databases = worker['inventory'](items)
+    return {'files': files,
+            'business_state': {str(path): worker['db_fingerprint'](path) for path in databases},
             'pids': worker['pids']()}
 
 
