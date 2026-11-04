@@ -78,8 +78,8 @@ function Assert-AuthWireRollbackPreflightAt($Value,$Saved,[hashtable]$Binding,[s
     $v.binding_scope -cne (Get-AuthWireJobScope $Binding) -or $v.release_id -cne $Release -or $v.stage_job_id -cne $r.stage_job_id -or $v.stage_release_id -cne $r.stage_release_id -or
     $v.filesystem_operation_id -cne $r.stage_operation_id -or $v.origin_chain_sha256 -cne $r.origin_chain_sha256 -or $v.complete_sha256 -cne $o.target.stage_receipt.complete_journal_sha256 -or
     $v.tree_sha256 -cne $o.target.stage_receipt.staged_tree_sha256 -or -not (Test-AuthWireWriteHash $v.directory_sha256) -or
-    -not (Test-AuthWireWriteInteger $v.checked_at) -or -not (Test-AuthWireWriteInteger $v.expires_at) -or $v.expires_at -ne [Math]::Min(($v.checked_at+5),[long]$o.expires_at) -or
-    $v.checked_at -gt $ObservedAt -or $ObservedAt -ge $v.expires_at){throw 'ROLLBACK_PREFLIGHT_REJECTED'}
+    -not (Test-AuthWireWriteInteger $v.checked_at) -or -not (Test-AuthWireWriteInteger $v.expires_at) -or $v.expires_at -ne [Math]::Min(($v.checked_at+5),[long]$o.expires_at)){throw 'ROLLBACK_PREFLIGHT_REJECTED'}
+ if($v.checked_at -gt $ObservedAt -or $ObservedAt -ge $v.expires_at){throw 'ROLLBACK_PREFLIGHT_STALE'}
  foreach($n in @('read_only','requires_separate_claim')){if($v.$n -isnot [bool] -or -not $v.$n){throw 'ROLLBACK_PREFLIGHT_REJECTED'}}
  foreach($n in @('write_authorized','can_delete','can_apply_gpo')){if($v.$n -isnot [bool] -or $v.$n){throw 'ROLLBACK_PREFLIGHT_REJECTED'}}
 }

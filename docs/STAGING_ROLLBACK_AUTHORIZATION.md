@@ -21,7 +21,10 @@ this module's returned hash or stage operation ID is not execution authority.
    and expected key ACL are checked. AD/content/nonadmin service identity,
    original chain and current ownership/tree/outside baseline are rechecked.
    Whole reader work is limited to 15 seconds; five-second live freshness starts
-   **before** live observation, not after the historical traversal.
+   **before** live observation. The original authority/ACK chain is verified under
+   native file pins and the original-stage mutex before that live clock starts;
+   those exact pins remain held through both live observations. Current gate,
+   review and rollback-marker exclusions are checked again after observation.
 4. `rollback-claim-started.json` is flushed before proof construction. The existing
    wire CLAIM proof and strict RSA/key/binding validators are reused. A role-specific
    `rollback-claim-sent.json` is flushed before the existing pinned, normal-validation,

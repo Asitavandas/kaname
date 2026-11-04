@@ -27,6 +27,12 @@ try{
  Reject {Read-AuthWireStagingWriteOffer $rbRoot $rbId $b $release} 'stage reader rejects distinct rollback records'
  Reject {Read-AuthWireRollbackOffer $root $rbId $b $release} 'alternate root cannot hide original reservation'
  if($case -ceq 'rollback_success'){
+  $rbOrigin=Read-AuthWireRollbackOrigin $rbOffer $b $release $rsa
+  $rbPins=New-AuthWireRollbackOriginInputPins $rbRoot $rbOffer $rbOrigin
+  try{
+   Reject {[IO.File]::WriteAllText((Join-Path $rbStage 'claim-proof.json'),'changed')} 'held original authority pins forbid in-place edits'
+   Reject {[IO.File]::Delete((Join-Path $rbStage 'result-accepted.json'))} 'held accepted ACK pin forbids removal'
+  }finally{$rbPins.Dispose()}
   $rbReader=Join-Path $package 'Read-AuthWireRollbackPreflight.ps1';$rbReaderBytes=[IO.File]::ReadAllBytes($rbReader)
   try{
    [IO.File]::WriteAllText($rbReader,'throw ''unsigned fixture reader''')
@@ -46,7 +52,7 @@ try{
   $rbSendFailure='';$rbGrant=$null
   try{$rbGrant=Invoke-AuthWireRollbackClaimTransport $rbRoot $rbId $b $release $rsa $url}catch{$rbSendFailure=$_.Exception.Message}
   if(-not (Test-Path -LiteralPath (Join-Path $rbJob 'rollback-claim-sent.json'))){
-   $rbSafe=if($rbSendFailure -cin @('ROLLBACK_PREFLIGHT_REJECTED','WRITE_CLAIM_RECORD_REJECTED','WRITE_CLAIM_RECORD_STALE','WRITE_CLAIM_KEY_REJECTED','ROLLBACK_RECORD_CHANGED')){$rbSendFailure}else{'UNCLASSIFIED'}
+   $rbSafe=if($rbSendFailure -cin @('ROLLBACK_PREFLIGHT_REJECTED','ROLLBACK_PREFLIGHT_STALE','WRITE_CLAIM_RECORD_REJECTED','WRITE_CLAIM_RECORD_STALE','WRITE_CLAIM_KEY_REJECTED','ROLLBACK_RECORD_CHANGED')){$rbSendFailure}else{'UNCLASSIFIED'}
    $rbObserved=Read-AuthWireStagingJournal (Join-Path $rbJob 'rollback-preflight.json')
    Write-Host ('ROLLBACK_SAFE_SEND_DIAGNOSTIC '+(@{code=$rbSafe;observation_age_seconds=([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-$rbObserved.checked_at);control_elapsed_ms=$rbWatch.ElapsedMilliseconds}|ConvertTo-Json -Compress))
   }

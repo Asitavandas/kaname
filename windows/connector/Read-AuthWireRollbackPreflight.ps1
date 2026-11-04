@@ -25,7 +25,8 @@ try{
  $rsa=[Security.Cryptography.RSACng]::new($key)
  $keyPath=Join-Path (Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) 'Microsoft\Crypto\Keys') $key.UniqueName
  if(-not (Compare-AuthWireSigningKeyAcl $c.ExpectedKeySddl (Get-Acl -LiteralPath $keyPath).Sddl).AclEquivalent){throw 'WRITE_EXECUTION_KEY_ACL_REJECTED'}
- # Import happens only after private intent, binding and original claim validation.
+ # Only the fixed private offer/config have been read; the full original chain
+ # and current service/directory/tree eligibility are verified below.
  $script:AuthWireStageChildPhase='intent'
  # Existing channel key is opened only for public proof verification; no signing/export.
  $script:AuthWireStageChildPhase='modules'
