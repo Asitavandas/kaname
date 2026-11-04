@@ -61,9 +61,20 @@ def main():
         lock = threading.Lock()
         metrics = {'polls': {}, 'claims': {}, 'results': {}, 'bodies': {}, 'errors': []}
         original = store.snapshot(); original_audit = store.audit()
+        prepared_key = None
+        prepared_case = None
 
-        def setup_case():
-            data = json.loads((root/'input.json').read_text(encoding='utf-8-sig'))
+        def setup_case(allow_prepare=True):
+            nonlocal prepared_key, prepared_case
+            mode_file = root/'rollback-mode.json'
+            input_raw = (root/'input.json').read_bytes()
+            mode_raw = mode_file.read_bytes() if mode_file.exists() else b''
+            current_key = (input_raw, mode_raw)
+            if current_key == prepared_key:
+                return prepared_case
+            if not allow_prepare:
+                raise AssertionError('Fixture queue must be prepared before product HTTP')
+            data = json.loads(input_raw.decode('utf-8-sig'))
             native = dict(data['binding']); kid = native.pop('channel_key_sha256')
             binding = decode_binding(native | {'public_key_pem': data['public_key_pem']})
             assert binding.fields()[-1] == kid
@@ -86,9 +97,8 @@ def main():
                         'authorized_at': 0, 'authorized_until': 0,
                         'authorization_id': '', 'claim_sha256': '', 'result': None})
                     ops._save(db, SECTION, ledger)
-            mode_file = root/'rollback-mode.json'
             if grant_mode and mode_file.exists():
-                mode = json.loads(mode_file.read_text(encoding='utf-8-sig'))
+                mode = json.loads(mode_raw.decode('utf-8-sig'))
                 assert mode['stage_job_id'] == identity
                 target = offer['target']['scope_target']
                 def current_target(db, candidate_id):
@@ -105,10 +115,44 @@ def main():
                         'stage_job_id': identity, 'acknowledge': ACK[ROLLBACK]}
                     review = core.review(req, mode['actor'])
                     core.create(req | {'review_hash': review['review_hash']}, mode['actor'])
-                return data | {'case': mode['case']}, mode['job_id']
+                prepared_case = (data | {'case': mode['case']}, mode['job_id'])
+                prepared_key = current_key
+                return prepared_case
             # Before the mode file exists this is the original stage, even if
             # the outer case describes a later rollback transport failure.
-            return (data | {'case': 'success'} if grant_mode else data), identity
+            prepared_case = ((data | {'case': 'success'} if grant_mode else data), identity)
+            prepared_key = current_key
+            return prepared_case
+
+        # Queue creation/AD fixture registration is test setup, not POLL work.
+        # Finish it before creating the actual signed request. The handler still
+        # runs the unchanged production core inside its original HTTP deadline.
+        prepare_stop = threading.Event()
+        def prepare_cases():
+            seen = ''
+            while not prepare_stop.wait(0.02):
+                request_file = root/'prepare-request.txt'
+                if not request_file.exists():
+                    continue
+                try:
+                    token = request_file.read_text(encoding='ascii')
+                except OSError:
+                    continue
+                if len(token) != 32 or any(c not in '0123456789abcdef' for c in token) or token == seen:
+                    continue
+                try:
+                    with lock:
+                        setup_case()
+                    (root/'prepare-ready.tmp').write_text(token, encoding='ascii')
+                    (root/'prepare-ready.tmp').replace(root/'prepare-ready.txt')
+                    seen = token
+                except Exception as error:
+                    print('FIXTURE_PREPARE_FAILURE '+type(error).__name__, flush=True)
+                    (root/'prepare-failed.tmp').write_text(token, encoding='ascii')
+                    (root/'prepare-failed.tmp').replace(root/'prepare-failed.txt')
+                    seen = token
+        preparer = threading.Thread(target=prepare_cases, daemon=True)
+        preparer.start()
 
         class Handler(BaseHTTPRequestHandler):
             protocol_version = 'HTTP/1.1'
@@ -122,7 +166,7 @@ def main():
                     size = int(self.headers.get('Content-Length', '0')); assert 0 < size <= 4096
                     raw = self.rfile.read(size)
                     with lock:
-                        data, identity = setup_case()
+                        data, identity = setup_case(allow_prepare=False)
                         case = data['case']
                         if self.path == '/api/connector/v1/staging-write/poll':
                             metrics['polls'][identity] = metrics['polls'].get(identity, 0)+1
@@ -316,6 +360,7 @@ def main():
                 'errors': metrics['errors']}, sort_keys=True), flush=True)
             raise
         finally:
+            prepare_stop.set(); preparer.join(timeout=3)
             server.shutdown(); server.server_close(); thread.join(timeout=3)
 
 

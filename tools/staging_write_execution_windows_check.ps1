@@ -130,6 +130,27 @@ function Get-AuthWireRollbackCompletion([string]$Root,[string]$JobId,$State,$Lau
   [IO.File]::AppendAllText((Join-Path $package 'StagingRollbackExecution.ps1'),$rollbackExecutionShim)
  }
  if($flowMode){
+  $prepareShim=@'
+
+# Fixture-only side channel: finish queue seeding before signing a real POLL.
+# No HTTP/grant/live-context deadline is extended and no request is retried.
+$script:FixtureProofBody=${function:New-AuthWireStagingWriteProof}
+function New-AuthWireStagingWriteProof([hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[ValidateSet('POLL','CLAIM','RESULT')][string]$Kind,[hashtable]$Payload){
+ if($Kind -ceq 'POLL'){
+  $directory=$env:AUTHWIRE_WRITE_CYCLE_DIRECTORY;$token=[guid]::NewGuid().ToString('N')
+  [IO.File]::WriteAllText((Join-Path $directory 'prepare-request.txt'),$token,[Text.Encoding]::ASCII)
+  $watch=[Diagnostics.Stopwatch]::StartNew();$ready=$false
+  while($watch.Elapsed.TotalSeconds -lt 30){
+   $file=Join-Path $directory 'prepare-failed.txt';if((Test-Path -LiteralPath $file) -and [IO.File]::ReadAllText($file) -ceq $token){throw 'FIXTURE_PREPARE_FAILED'}
+   $file=Join-Path $directory 'prepare-ready.txt';if((Test-Path -LiteralPath $file) -and [IO.File]::ReadAllText($file) -ceq $token){$ready=$true;break}
+   Start-Sleep -Milliseconds 20
+  }
+  if(-not $ready){throw 'FIXTURE_PREPARE_TIMEOUT'}
+ }
+ & $script:FixtureProofBody @PSBoundParameters
+}
+'@
+  [IO.File]::AppendAllText((Join-Path $package 'StagingWritePreclaim.ps1'),$prepareShim)
   $flowShim=@'
 
 # Fixture-only switch to the requested stage fault AFTER real intent consumption.
