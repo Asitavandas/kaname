@@ -399,7 +399,34 @@ try{
  }finally{if(-not $controllerProcess.HasExited){Stop-Process -Id $controllerProcess.Id -Force};$controllerProcess.Dispose()}
  Write-Host ('AUTHWIRE_AUTHORIZED_STAGE_WINDOWS_OK checks='+$checks+' outcomes='+($outcomes|ConvertTo-Json -Compress)+' actual_smb=true seeded_grants='+(-not $flowMode)+' namespace_ad_content_simulated=true customer_changed=false')
  if($flowMode){[IO.File]::WriteAllText((Join-Path $flowDirectory 'native-summary.json'),(@{checks=$checks;outcomes=$outcomes}|ConvertTo-Json -Depth 6 -Compress),[Text.UTF8Encoding]::new($false))}
-}catch{Write-Host ('EXECUTION_FIXTURE_FAILURE checks='+$checks+' stack='+$_.ScriptStackTrace);throw}
+}catch{
+ $fixtureFailure=$_
+ # Test-owned failure evidence only. Never emit raw exception values, proofs,
+ # keys, URLs, paths, offered data or arbitrary JSON properties.
+ foreach($name in @('cycle-review.json','authorization.json','grant-consumed.json','stage-launch.json','execution-requires-review.json')){
+  try{
+   $file=Join-Path (Join-Path $journal $id) $name
+   if(-not (Test-Path -LiteralPath $file)){continue}
+   $value=Get-Content -LiteralPath $file -Raw|ConvertFrom-Json
+   $safe=[ordered]@{record=$name;observed_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()}
+   foreach($field in @('phase','checked_at','received_at','consumed_at','started_at','expires_at','work_budget_ms')){
+    $property=$value.PSObject.Properties[$field]
+    if($null -eq $property){continue};$v=$property.Value
+    if($v -is [int] -or $v -is [long] -or ($v -is [string] -and $v -cmatch '\A[A-Za-z_]{1,64}\z')){$safe[$field]=$v}
+   }
+   if($null -ne $value.PSObject.Properties['grant']){$safe['grant_expires_at']=[long]$value.grant.expires_at}
+   if($null -ne $value.PSObject.Properties['diagnostic']){
+    foreach($field in @('parent_phase','child_phase','exception_kind','timed_out','truncated','exit_code','elapsed_ms','work_budget_ms')){
+     $property=$value.diagnostic.PSObject.Properties[$field]
+     if($null -eq $property){continue};$v=$property.Value
+     if($null -eq $v -or $v -is [bool] -or $v -is [int] -or $v -is [long] -or ($v -is [string] -and $v -cmatch '\A[A-Za-z_]{1,64}\z')){$safe['diagnostic_'+$field]=$v}
+    }
+   }
+   Write-Host ('EXECUTION_FIXTURE_SAFE_RECORD '+($safe|ConvertTo-Json -Compress))
+  }catch{}
+ }
+ Write-Host ('EXECUTION_FIXTURE_FAILURE checks='+$checks+' stack='+$fixtureFailure.ScriptStackTrace);throw
+}
 finally{
  $env:PSModulePath=$oldModulePath
  if($hostBytes -and $hosts){[IO.File]::WriteAllBytes($hosts,$hostBytes)}
