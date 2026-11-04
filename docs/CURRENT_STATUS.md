@@ -1,5 +1,44 @@
 # AuthWire current work record
 
+## Dev.45 Linux teslim paketleri doğrulandı — 4 Kasım 2026
+
+**PR136**, test edilen kaynak **c5241e55c7728da239070bbe8f9c841043f54cde**; merge
+**965ac305d1a67e992f56246adecfdcedfde4d089**. Kaynak sürümü **0.14.0-dev.45** oldu.
+Panel için 296 kaynak dosyalı Linux paketi, ayrı yedek işçisi/yükseltici paketi,
+DELIVERY.json ve SHA256SUMS üretildi. Paketleyici exact Git HEAD'i, temiz
+checkout'u ve her dosyanın Git blob hash'ini doğrular; bilinmeyen kaynak/durum,
+anahtar/DB veya link varsa reddeder. Sürüm modülünü çalıştırmaz. Aynı kaynaktan
+iki bağımsız üretimin bütün çıktı byte'ları eşleşti; ZIP üye/CRC/byte doğrulaması
+geçti. Normal Linux ve yedek işçisi manifest şemaları korunur.
+
+**Doğrulama:** Aynı son kaynakta **yedi ilgili workflow başarılı**. Genel koşu
+**1171 test /57 ortam atlaması /307.810 saniye**; yeni paketleme/güncelleyici
+paketi **23 test**. Gerçek RADIUS protokol kabulü, cihaz kayıt fixture'ları,
+tarayıcı, Linux kaynak hazırlığı ve ağ namespace kabulü de başarılıdır.
+Mevcut Windows istemci byte'ları ve tarihsel kurucu pinleri değiştirilmedi.
+
+**Paketler:**
+https://github.com/Asitavandas/kaname/actions/runs/41895297932/artifacts/13354438976
+Yaklaşık 5 MB'lık CI artifact'ı 2027-02-02'ye kadar saklanır. Kesin ZIP ve iç
+manifest/yükseltici hash'leri ile artifact kimliği/son kullanımı
+**docs/checkpoints/2026-11-04-linux-dev45-delivery.json** kaydındadır. Saklama süresi sonrası
+aynı commit yeniden üretilebilir; yeni kaynak eski hash'lerle karıştırılmaz.
+Kullanım ve kapsam: **docs/LINUX_DELIVERY.md**.
+
+**Canlı Linux güncellenmedi.** Linux/DC01/AD/GPO/SYSVOL/endpoint/RADIUS,
+servis/anahtar izinleri ve canlı yedek değişmedi; taze canlı ölçüm yapılmadı.
+Son bilinen Linux dev.44 ve Windows df28f70c canlı kayıtları korunur.
+Repository private=false gözlendi; private/main gerektiren self-hosted staging
+kapıları bu teslim için etkin değildir. Bu CI fixture kabulü gerçek domain
+pilotunu, tam OS boot restore'u veya harici yedekten geri dönüşü kapatmaz.
+
+**Sıradaki işlem:** Canlı Linux'ta salt okunur ön kontrol: sürüm/sahiplik,
+Ubuntu/Python, HTTPS ve ürün PID'leri, varsa yedek işçisi release/timer,
+son kullanılabilir yedek ve boş alan. Ardından kontrollü kurulum ve son kabul.
+Plan: **docs/checkpoints/2026-11-04-linux-next-delivery-plan.md**.
+Makro **54/94 tamam,40 açık**, süre bantları ve **READY_FOR_FINAL_GUIDE=false /
+GUIDE_DELIVERED=false** korunur; geçen zamandan otomatik süre düşülmez.
+
 ## Ayrı yedek işçisi yükseltmesi kaynakta kabul edildi — 4 Kasım 2026
 
 **PR135**, test edilen kaynak **2cbd3771d8af81d12ed4230096bf33ba95d50206**.

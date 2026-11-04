@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "project": "AuthWire",
+  "date": "2026-11-04",
+  "timezone": "Europe/Istanbul",
+  "status": "PACKAGES_VERIFIED_LIVE_PREFLIGHT_PENDING",
+  "pull_request": 136,
+  "tested_source": "c5241e55c7728da239070bbe8f9c841043f54cde",
+  "merge_commit": "965ac305d1a67e992f56246adecfdcedfde4d089",
+  "delivery": {
+    "archive_bytes_verified": true,
+    "artifact": "authwire-linux-delivery-candidate",
+    "backup_upgrade_tool_sha256": "faacb7b1d9397c2fc838c64ffe3b982c97b21cf6954224b1885e22c1723e1d77",
+    "backup_worker_manifest_sha256": "6c7a376c830580d1da795e9fd03d0abb5bfd1a2962f113826b69f86ae63cbf45",
+    "full_appliance_boot_restore_tested": false,
+    "linux_source_manifest_sha256": "e5e417c9f2b78158cf0be0da103f4b567eb2a41b049bf00758073a6b5ae5c8dd",
+    "live_install_applied": false,
+    "packages": {
+      "AuthWire-0.14.0-dev.45-backup-worker.zip": "b19fa89af5c0f4203ce83abcf3e0f66cc717cad42095d64366d2c7cf7c6a4428",
+      "AuthWire-0.14.0-dev.45-linux-source.zip": "deb2480bfa456733b0c1983b951994b69f2f1360f78090fcc98bedc14f777cc9"
+    },
+    "required_os": "Ubuntu 24.04",
+    "source_commit": "c5241e55c7728da239070bbe8f9c841043f54cde",
+    "source_files": 296,
+    "version": "0.14.0-dev.45",
+    "windows_client_source_sha256": {
+      "AuthWire-Client.ps1": "bf5008d1f35b9d9514ad700b7b0c130e3dc92d002bcdb670a0b8d1fcbcae5e60",
+      "Install-AuthWire.ps1": "ab1a11c68381006173518df77deeb0d32fc56e0b28cc260c42b7378c624be14a"
+    }
+  },
+  "artifact": {
+    "run": 41895297932,
+    "id": 13354438976,
+    "name": "authwire-linux-c5241e55c7728da239070bbe8f9c841043f54cde",
+    "url": "https://github.com/Asitavandas/kaname/actions/runs/41895297932/artifacts/13354438976",
+    "bytes": 4957389,
+    "sha256": "f4734793ac4c775bf93bc0a915c13b0edf314fb2860194dfabd538d6ae8646a3",
+    "created_utc": "2026-11-04T19:16:21Z",
+    "expires_utc": "2027-02-02T19:16:11Z",
+    "download_reverified_locally": false
+  },
+  "validation": {
+    "workflows": [
+      {
+        "id": 41895297902,
+        "name": "AuthWire device enrollment pilot checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 41895297932,
+        "name": "AuthWire reproducible Linux delivery",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 41895298048,
+        "name": "AuthWire bounded retry network probe checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 41895297900,
+        "name": "KANAME real RADIUS protocol proof",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 41895297832,
+        "name": "KANAME browser checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 41895297811,
+        "name": "KANAME Linux source preparation",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 41895297866,
+        "name": "KANAME foundation checks",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "foundation": {
+      "tests": 1171,
+      "skipped": 57,
+      "seconds": 307.81
+    },
+    "packaging_and_updater_tests": 23,
+    "independent_identical_builds": 2,
+    "archive_crc_and_bytes_verified": true,
+    "source_git_blob_hashes_verified": true,
+    "windows_client_source_bytes_changed": false
+  },
+  "live": {
+    "linux_updated": false,
+    "dc01_changed": false,
+    "files_transferred": false,
+    "radius_started": false,
+    "backup_taken": false,
+    "live_state_remeasured": false,
+    "last_known_linux": "0.14.0-dev.44",
+    "last_known_windows_release": "df28f70c-104e-4d6d-972c-e311d38adde6",
+    "self_hosted_staging_gate": {
+      "repository_private": false,
+      "production_staging_requires_private": true
+    }
+  },
+  "next": {
+    "action": "Read-only live Linux preflight and existing backup verification",
+    "checks": [
+      "actual source/version and installation ownership",
+      "Ubuntu/Python layout and candidate imports",
+      "panel HTTPS and product service/PID state",
+      "backup worker release/timer/unit identity if installed",
+      "last usable backup age, manifest and availability",
+      "disk space and retained rollback/evidence capacity"
+    ],
+    "install_after_preflight": true,
+    "full_appliance_restore_acceptance": false
+  },
+  "macro": {
+    "done": 54,
+    "total": 94,
+    "open": 40,
+    "ready_for_final_guide": false,
+    "guide_delivered": false
+  }
+}
