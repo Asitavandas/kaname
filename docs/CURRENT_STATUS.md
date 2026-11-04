@@ -1,43 +1,77 @@
 # AuthWire current work record
 
-## Windows geçmiş arşivleme — 4 Kasım 2026 /taslak, son CI bekleniyor
+## Yerel Windows geçmiş arşivleme kaynakta tamamlandı — 4 Kasım 2026
 
-**PR134 taslak**, kaynak **81e99a70074fe5012e887218ddfeb81a6e957c27**. Kaynak kodu main'e
-birleştirilmedi; canlı kurulum yapılmadı. Teknik kapsam:
-**docs/STAGING_WRITE_HISTORY.md** (PR dalında).
+**PR134**, test edilen kaynak **53d35ab2867e684e6400d94f6b7eee5c6b88bfea**.
+Merge **77612e798361187bbdd6e554bb488364f197da45**. Teknik kapsam:
+**docs/STAGING_WRITE_HISTORY.md** ve **docs/STAGING_ROLLBACK_EXECUTION.md**.
 
-64 kabul edilmiş çevrimi byte'ları korunarak kopyalama/doğrulama, CNG imzalı
-arşiv ve daha sonraki adımda monoton 65. çevrime geçiş hazırlandı. İş/engine/GPO
-kilitleri ve immutable baseline korunur. Kısmi arşiv veya yabancı veri yeni
-POLL'u durdurur; otomatik reset/pruning/unlock yoktur. 64 aktif çevrim + en çok
-8 saklanan segment kaynak politikasıdır; cihaz kotası veya saha kabulü değildir.
+Tam gözlenmiş ve kabul edilmiş 64 çevrim, özgün byte'ları kopyalanıp bağımsız
+doğrulandıktan ve mevcut non-exportable CNG anahtarıyla imzalı arşiv
+oluşturulduktan sonra yerel aktif pencereden emekli edilebilir. Immutable
+baseline, özgün iş/engine/sonuç kayıtları ve GPO kilitleri korunur.
+Daha sonraki adım bütün arşiv zincirini doğrulayıp **65. çevrimden** devam eder.
+Arşivleme yeni POLL/CLAIM/RESULT, AD gözlemi veya yürütme yapmaz.
 
-**Önceki kaynak kanıtı:** ec959501'de yeni arşiv paketi **196 native kontrol /4
-senaryo** ile geçti: iki bağımsız gerçek CNG/NTFS arşivinde 128 çevrim, sonraki
-gerçek 65. çevrim POLL'u ve iki kesinti sınırı. 251 boş kayıt gerçek CNG imzalı
-ama sentetik metadata'dır; gerçek sunucu isteği/izin değildir.
-abd3cee2'de genel **1130 test /28 atlama /309.688 saniye**, lifecycle **200 /8**
-ve preclaim/izin/origin/dosya sistemi/tek çevrim paketleri geçti; standalone stage ilk CLAIM tazelik
-reddinden sonra aynı kaynakta bir sınırlı tekrarda geçti. İlk hata korunur;
-kesin gecikme nedeni açıklanmış sayılmaz.
+Politika **64 aktif çevrim + en çok 8 saklanan segment**, segment başına en çok
+16 MiB çevrim verisidir. Korunan kayıt taraması da 2048 dosya/32 MiB ile sınırlıdır.
+Bunlar yerel saklama sınırlarıdır; ürün cihaz kotası değildir. Eksik/belirsiz
+sonuç, değişmiş byte/imza, bilinmeyen kayıt, generation/sıra/replay sapması veya
+kısmi bakım yeni POLL'u durdurur. Otomatik oldest pruning, reset veya unlock yoktur.
+Kopyalama kesilirse özgün kayıtlar tutulur; retirement kesilirse doğrulanmış
+kopya ve yabancı veri korunur, commit oluşturulmaz. Uzlaştırma ayrı kapıdır.
 
-**Son düzeltme:** POLL sırasında yapılan fixture kuyruğu hazırlığı, ölçülen
-ürün isteği ve kalıcı başlangıç kaydından önceye alındı. Ardından fixture
-hazır dosyasındaki paylaşım yarışı, immutable nonce klasör işaretleriyle
-kaldırıldı; özgün proof helper korunur. Ürün HTTP/canlı tazelik/grant/reader
-bütçeleri gevşetilmedi. Son kaynakta 12 workflow **queued**; yeni arşiv işi için
-henüz runner atanmadı. Bu durum bir başarılı test veya tamamlanan kaynak kapısı
-olarak sayılmaz. Kanıt ve koşu kimlikleri:
+**Doğrulama:** Aynı son kaynakta **12 CI workflow'un tamamı başarılı**.
+Genel koşu **1130 test /28 ortam atlaması /290.620 saniye**.
+Yeni arşiv paketi **196 native kontrol /4 senaryo**: iki bağımsız 64'lük
+gerçek CNG/NTFS arşivinde 128 çevrim, sonraki gerçek 65. çevrim POLL'u,
+kopya kesintisi ve yabancı çocuk sırasında native retirement reddi.
+251 ek boş çevrim gerçek CNG imzalı **sentetik metadata**'dır; sunucu
+isteği/izin değildir. Gerçek iş çekirdeğinde 10 POLL / 5 CLAIM / 5 RESULT doğrulandı.
+
+Geri alma yürütme **572 /9**, lifecycle **200 /8**, stage **186 /8**,
+izin/tüketim **417 /8**, origin **268 /13**, tek çevrim **158 /13**,
+dosya sistemi **139**, preclaim **372** native kontrolle geçti.
+Mevcut gerçek imzalı düşük yetkili SCM/HTTPS paketi **85 kontrol** ile başarılı;
+yeni history/rollback SDK'sı aktif servise kaydedilmiş sayılmaz.
+Pozitif AD/içerik/servis kimliği gözlemleri fixture yerine koymalarıdır;
+müşteri gMSA/AD/domain-SYSVOL veya gerçek reboot kabulü değildir.
+
+İki çalışma sırası da düzeltildi. Yeni geri alma süreci, CNG anahtarı açılmadan
+ve AD modülleri alınmadan önce sabit özel root'taki PID/başlangıç ticks kaydıyla
+**yalnız ret amacıyla** karşılaştırılır. Eşleşme izin vermez; tam özgün izin/
+receipt/consumption/launch/event/identity zinciri etkiden önce yine doğrulanır.
+İmzalı tekrar başlatma testi özgün **8 saniye içinde identity fazında exit 20**
+gerektirir; timeout başarı sayılmaz. Yerel transport derlemesi de POLL başlangıç/
+imzalama kaydından önce biter. HTTP/canlı tazelik, grant, reader ve çocuk işlem
+sınırları gevşetilmedi.
+
+Ara hatalar silinmedi: fixture hazır dosyası paylaşım yarışı immutable nonce
+klasörleriyle düzeltildi; 8020ms replay timeout'u ve transport hazırlığının zaman
+penceresine girmesi ayrıca kaydedildi. Eski TLS/EOF ve bazı tazelik retlerinin
+kesin nedeni bütün ayrıntılarıyla açıklanmış sayılmaz; yeşil koşu bunları
+geriye dönük başarıya dönüştürmez. Kanıt:
 **docs/checkpoints/2026-11-04-write-history-source.json**.
 
-**Devam noktası:** Önce PR134'ün yukarıdaki son SHA'sındaki koşuları kontrol et,
-hataları incele ve düzelt; doğrulama tamamlanınca PR'ı değerlendir. Ardından
-kontrollü kısmi/belirsiz geçmiş uzlaştırması ve ayrı onaylı unlock, dış journal
-yedek/restore politikası, ön izin ret bildirimi, aktif scheduler/SCM ve gerçek
-teslim/kabul kapıları kalır. Linux/DC01, AD/GPO/SYSVOL, endpoint/RADIUS ve canlı
-anahtar/servis/yedek değişmedi. Son bilinen canlı Linux dev.44 / Windows df28f70c;
-bu tur yeni canlı ölçüm yok. **54/94 tamam,40 açık**, önceki süre aralıkları ve
-**READY_FOR_FINAL_GUIDE=false / GUIDE_DELIVERED=false** korunur.
+**Canlı kurulum yapılmadı.** Linux/DC01, AD/GPO/SYSVOL, endpoint/RADIUS,
+servis/key ACL/trust veya canlı yedek değişmedi. Son bilinen Linux dev.44 /
+Windows df28f70c kaydı korunur; bu tur yeni canlı ölçüm yok. Kullanıcı sırası:
+test → doğrulanmış kaynak → sürüm/paket + yedek/geri dönüş → kontrollü Linux
+güncellemesi. Yeni Linux paketi henüz oluşturulmadı.
+
+**Sıradaki teslim hazırlığı:** Panel güncelleyicisinden ayrı olan
+/opt/authwire-backup işçisinin sürüm yükseltme yolu da hazırlanmalı; mevcut
+kurucu farklı kurulu kaynak byte'larını değiştirmeyi reddeder. Ayrıntılı
+hazırlık: **docs/checkpoints/2026-11-04-linux-next-delivery-plan.md**.
+Kısmi/belirsiz Windows geçmiş uzlaştırması ve ayrı onaylı unlock, dış journal
+yedek/restore, ön izin ret bildirimi, aktif scheduler/SCM, imzalı müşteri teslimi
+ve gerçek gMSA/AD/endpoint/gecikme kabulü ayrıca açık.
+
+Bu kaynak alt adımı kapandı; ürün/saha kabulü kapanmadı. Makro
+**54/94 tamam,40 açık**, önceki **3–5 aktif iş günü** yazma/kurtarma/teslim bandı
+ve diğer süreler yeniden gözden geçirilerek korundu; geçen zamandan otomatik
+süre düşülmedi. Gecikme/ret/teslim bulgularında önceki 2–5 ek iş günü/yeniden
+planlama riski sürer. **READY_FOR_FINAL_GUIDE=false / GUIDE_DELIVERED=false**.
 
 ## Yazma/geri alma kuyruğu için yedek karşılaştırması — 4 Kasım 2026
 
@@ -2325,7 +2359,7 @@ Operatör **WINDOWS_SYSVOL_FULL_INVENTORY_READONLY v1** sonucunu paylaştı. DC0
 
 ## 🔴✓ SYSVOL alt ağaç envanteri ve DC01 salt okunur kontrol dosyası hazır — müşteri okuması bekleniyor — 27 Ekim 2026
 
-**PR103** birleştirildi. Test head **592a7aa8b4d59cfd354b0727ed0c6440c222904c**, merge **b45d9cb2332382a4723ce6553f472ea4be62e89e**. Önceki başarılı scope görevi yalnız kökü kontrol ediyordu. Yeni **SysvolInventory.ps1**, alt dizin yollarını, dosya ana veri akışı boyut/SHA256 ve standart owner/group/DACL SDDL verilerini de kaydeder. Kök dahil1024 girdi,16 derinlik, dosya16MiB/toplam32MiB sınırı; reparse takibi yok. Bilinmeyen alt dosya varsa boş dağıtım sınıflandırması false olur; hiçbir dosya silinmez veya sahiplenilmez. Bu transaction/SMB snapshot, alternatif NTFS stream/SACL/hardlink topolojisi taraması veya etkili yazma yetkisi kabulü değildir. Ayrıntı **SYSVOL_STAGING_PREPARATION.md**.
+**PR103** birleştirildi. Test head **592a7aa8b4d59cfd354b0727ed0c6440c222904c**, merge **b45d9cb2332382a4723ce6553f472ea4be62e89e**. Önceki başarılı scope görevi yalnız kökü kontrol ediyordu. Yeni **SysvolInventory.ps1**, alt dizin yollarını, dosya ana veri akışı boyut/SHA256 ve standart owner/group/DACL SDDL verilerini de kaydeder. Kök dahil1024 girdi,16 derinlik, dosya16 MiB/toplam32 MiB sınırı; reparse takibi yok. Bilinmeyen alt dosya varsa boş dağıtım sınıflandırması false olur; hiçbir dosya silinmez veya sahiplenilmez. Bu transaction/SMB snapshot, alternatif NTFS stream/SACL/hardlink topolojisi taraması veya etkili yazma yetkisi kabulü değildir. Ayrıntı **SYSVOL_STAGING_PREPARATION.md**.
 
 🔴✓ Son head üzerinde dört workflow başarılı. Native Windows **15 kontrol**: gerçek NTFS kararlı liste, alt dosya/içerik değişimi, junction reddi, dosya boyutu/derinlik sınırları, exact embedded source, GPO adı/marker/durum ve namespaced XML link/ayar/sürüm guard'ları. Mevcut genel kaynak, Connector/SCM/rollback/scope ve network probe kontrolleri geçti. CI verileri müşteri AD/SYSVOL kabulü sayılmaz.
 

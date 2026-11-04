@@ -1,17 +1,35 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
-## 4 Kasım 2026 — Windows arşivleme kaynak kapısı henüz açık
+## 4 Kasım 2026 — Yerel arşivleme doğrulandı, Linux teslim hazırlığı sırada
 
-PR134'te 64 çevrim sonrası kontrollü yerel arşivleme ve 65. çevrime devam
-hazırlandı; son kaynak **81e99a70074fe5012e887218ddfeb81a6e957c27** için 12 CI
-koşusu henüz kuyrukta. Önceki kaynağın 196 native arşiv kontrolü, son fixture
-düzeltmesinin testi yerine geçirilmez. Kaynak merge/kurulum veya saha kabulü
-tamamlandı sayılmaz. Ayrıntı: docs/checkpoints/2026-11-04-write-history-source.json.
+PR134 kaynak **53d35ab2867e684e6400d94f6b7eee5c6b88bfea**, merge
+**77612e798361187bbdd6e554bb488364f197da45**. Aynı kaynakta 12 workflow başarılı:
+genel 1130 test/28 atlama, history 196/4, geri alma 572/9 ve lifecycle 200/8.
+64 kabul edilmiş çevrimin imzalı yerel arşivi, sonraki 65. çevrime devam ve
+kesinti sınırları doğrulandı. 251 ek imzalı boş kayıt sentetik metadata'dır;
+gerçek reboot/gMSA/AD/endpoint kabulü değildir. Ayrıntılı kanıt:
+docs/checkpoints/2026-11-04-write-history-source.json.
 
-Makro **54/94 tamam,40 açık** ve aşağıdaki süre/operatör aralıkları korunur;
-geçen günden otomatik süre düşülmez. Dış yedek/restore, uzlaştırma/unlock,
-aktif worker, gerçek gMSA/AD/endpoint ve gecikme kabulü bağımsız kapılardır.
-Linux/DC01 ve canlı ortamda değişiklik yapılmadı.
+Kayıtlı süreç kimliğine göre erken replay reddi ve transport hazırlığının
+POLL zaman kaydından önce tamamlanması, süreler gevşetilmeden eklendi.
+Önceki TLS/tazelik hataları ve başarısız ara koşular korunur; son yeşil koşu
+bütün eski gecikmeleri açıklamış sayılmaz.
+
+Linux/DC01 veya canlı sistem değiştirilmedi; yeni Linux sürüm paketi henüz
+hazırlanmadı. Kullanıcı kontrollü sıra istedi: doğrulama → sürüm/paket →
+yedek/geri dönüş → Linux kurulumu ve sağlık/kabul. Panel güncelleyicisi
+/opt/authwire-backup işçisini değiştirmez; mevcut yedek kurucusu farklı kurulu
+kaynakta reddeder. Ayrı yükseltme yolu teslim hazırlığına dahildir.
+Plan: docs/checkpoints/2026-11-04-linux-next-delivery-plan.md.
+
+Makro **54/94 tamam,40 açık** kalır. Yazma/kurtarma/kontrollü teslim için
+**3–5 aktif iş günü**, ilk pilot **2–3 hafta**, temel ürün **6–9 hafta**,
+temel+kılavuz **7–10 hafta**, tüm kapsam+kılavuz **13–19 hafta** aralıkları
+gözden geçirilip korundu. Aşağıdaki 4 Kasım başlangıçlı koşullu tarih/operatör
+aralıkları değişmedi; geçen günden otomatik süre düşülmez. Uzlaştırma/unlock,
+ret bildirimi, aktif worker, dış yedek/restore ve gerçek müşteri kabulü ayrı
+kapılardır. Yeni gecikme/ret/teslim bulgularında önceki 2–5 ek iş günü/
+yeniden planlama riski sürer. GUIDE bayrakları false kalır.
 
 ## Kalıcı stage/geri alma döngüsü ve sonuç kurtarma — 4 Kasım 2026
 

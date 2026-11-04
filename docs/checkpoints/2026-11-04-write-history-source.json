@@ -3,8 +3,8 @@
   "date": "2026-11-04",
   "pull_request": 134,
   "source_baseline": "8a9e559fecb51d32206c3fb71ad28befcef116a0",
-  "source_commit": "81e99a70074fe5012e887218ddfeb81a6e957c27",
-  "validation_state": "pending_final_head_github_runner_assignment",
+  "source_commit": "53d35ab2867e684e6400d94f6b7eee5c6b88bfea",
+  "validation_state": "passed_all_12_final_source_workflows",
   "scope": "Trusted local governed lifecycle cycle archives and monotonic 64-to-65 continuation; no live delivery",
   "guards": {
     "active_cycles": 64,
@@ -73,6 +73,48 @@
       "run_id": 41859864577,
       "job_id": 126678369384,
       "diagnostic": "Both real archives succeeded, then synthetic idle filler hit a fixture readiness-file sharing IOException. Replaced mutable shared readiness files with immutable nonce directory markers and explicit pre-POLL preparation; original proof helper preserved."
+    },
+    {
+      "source": "81e99a70074fe5012e887218ddfeb81a6e957c27",
+      "run_id": 41862026245,
+      "job_id": 126686111438,
+      "diagnostic": "Initial POLL client WRITE_HTTPS_REJECTED and server response-write SSLEOFError. Exact cause not established."
+    },
+    {
+      "source": "81e99a70074fe5012e887218ddfeb81a6e957c27",
+      "run_id": 41862026207,
+      "job_id": 126686111387,
+      "diagnostic": "Direct signed rollback replay failed the original timeout/exit20 assertion at fixture line43; no distinguishing replay timing in this log."
+    },
+    {
+      "source": "88f019536d93f7b558f93049791e2fbed75a2164",
+      "run_id": 41866643936,
+      "job_id": 126702412432,
+      "diagnostic": "Direct replay in rb_execute_drift timed out at8020ms with exit_code=-1, before explicit rejection. First two actual rollback cases passed. Full origin rebuild preceded PID comparison; refusal-only entry guard added in44e4a785."
+    },
+    {
+      "source": "88f019536d93f7b558f93049791e2fbed75a2164",
+      "run_id": 41866644739,
+      "job_id": 126702413166,
+      "diagnostic": "Pre-network POLL time-bound rejection, zero POLL/CLAIM/RESULT. Exact timestamp delta not emitted. One bounded same-source retry requested; that attempt's final result not yet inspected."
+    },
+    {
+      "source": "44e4a785504b3f5c82a4ae9ff04e90a2710b1476",
+      "run_id": 41869183180,
+      "job_id": 126711245099,
+      "diagnostic": "First lifecycle POLL failed recorded receive-time bound despite HTTP reply preparation1703ms. Local C# transport type initialization was between saved send time and POST; moved before before-signing marker in53d35ab2."
+    },
+    {
+      "source": "44e4a785504b3f5c82a4ae9ff04e90a2710b1476",
+      "run_id": 41869183121,
+      "job_id": 126711247107,
+      "diagnostic": "First lifecycle transport rejected before server POLL count increased. Exact cause unresolved; archive and new rollback guard not reached."
+    },
+    {
+      "source": "44e4a785504b3f5c82a4ae9ff04e90a2710b1476",
+      "run_id": 41869182810,
+      "job_id": 126711247533,
+      "diagnostic": "Initial legacy stage reached grant but historical preflight-at-send validation rejected WRITE_PREFLIGHT_STALE before consumption; new rollback entry filter not reached."
     }
   ],
   "customer_changes": {
@@ -85,7 +127,8 @@
     "production_backup_created": false
   },
   "next_work": [
-    "Governed partial/unknown record reconciliation and separately approved unlock",
+    "Prepare versioned Linux delivery and separate backup-worker upgrade path with backup/rollback acceptance",
+    "Governed partial/unknown history reconciliation and separately approved unlock",
     "Windows off-host journal retention, backup/restore and actual reboot acceptance",
     "Preauthorization refusal reporting",
     "Active scheduler/SCM registration and controlled signed delivery",
@@ -103,79 +146,499 @@
   "estimates_changed": false,
   "final_head_workflows": [
     {
-      "id": 41862026156,
-      "name": "KANAME foundation checks",
-      "status": "queued",
-      "conclusion": null
-    },
-    {
-      "id": 41862026201,
-      "name": "AuthWire isolated governed write history",
-      "status": "queued",
-      "conclusion": null
-    },
-    {
-      "id": 41862026257,
-      "name": "AuthWire isolated durable write lifecycle",
-      "status": "queued",
-      "conclusion": null
-    },
-    {
-      "id": 41862026274,
-      "name": "AuthWire isolated staging filesystem checks",
-      "status": "queued",
-      "conclusion": null
-    },
-    {
-      "id": 41862026192,
-      "name": "AuthWire isolated rollback origin evidence",
-      "status": "queued",
-      "conclusion": null
-    },
-    {
-      "id": 41862026233,
+      "id": 41870453657,
       "name": "AuthWire bounded retry network probe checks",
-      "status": "queued",
-      "conclusion": null
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715766245,
+          "name": "isolated-kernel-timeout",
+          "conclusion": "success"
+        }
+      ]
     },
     {
-      "id": 41862026015,
+      "id": 41870453402,
       "name": "AuthWire isolated write preclaim checks",
-      "status": "queued",
-      "conclusion": null
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715764545,
+          "name": "native-preclaim",
+          "conclusion": "success"
+        }
+      ]
     },
     {
-      "id": 41862026200,
-      "name": "AuthWire isolated one-shot staging cycle",
-      "status": "queued",
-      "conclusion": null
-    },
-    {
-      "id": 41862026126,
-      "name": "AuthWire Windows connector bootstrap checks",
-      "status": "queued",
-      "conclusion": null
-    },
-    {
-      "id": 41862026207,
-      "name": "AuthWire isolated rollback execution and result",
-      "status": "queued",
-      "conclusion": null
-    },
-    {
-      "id": 41862026088,
+      "id": 41870453416,
       "name": "AuthWire isolated authorized stage execution",
-      "status": "queued",
-      "conclusion": null
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715764704,
+          "name": "native-execution",
+          "conclusion": "success"
+        }
+      ]
     },
     {
-      "id": 41862026245,
+      "id": 41870453401,
+      "name": "AuthWire isolated durable write lifecycle",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715763525,
+          "name": "native-write-lifecycle",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453531,
+      "name": "AuthWire isolated one-shot staging cycle",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715764490,
+          "name": "native-cycle",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453560,
+      "name": "AuthWire isolated staging filesystem checks",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715764663,
+          "name": "native-filesystem",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453488,
+      "name": "KANAME foundation checks",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715765029,
+          "name": "unit-and-boundaries",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453599,
+      "name": "AuthWire isolated rollback origin evidence",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715766514,
+          "name": "native-rollback-evidence",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453910,
       "name": "AuthWire isolated rollback authorization",
-      "status": "queued",
-      "conclusion": null
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715766609,
+          "name": "native-rollback-authorization",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453955,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715767241,
+          "name": "windows-scope",
+          "conclusion": "success"
+        },
+        {
+          "id": 126715767470,
+          "name": "windows-bootstrap",
+          "conclusion": "success"
+        },
+        {
+          "id": 126715767595,
+          "name": "windows-channel",
+          "conclusion": "success"
+        },
+        {
+          "id": 126715767737,
+          "name": "windows-service",
+          "conclusion": "success"
+        },
+        {
+          "id": 126715767890,
+          "name": "windows-scm-probe",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453644,
+      "name": "AuthWire isolated rollback execution and result",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715767067,
+          "name": "native-rollback-execution",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453558,
+      "name": "AuthWire isolated governed write history",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715764142,
+          "name": "native-history-archive",
+          "conclusion": "success"
+        }
+      ]
     }
   ],
-  "checked_at_utc": "2026-11-04T15:58:13Z",
-  "source_merged": false,
-  "current_blocker": "Final-head workflow runs remain queued; governed-history job 126686111162 has no assigned runner and no test steps. No final-head native pass is claimed."
+  "checked_at_utc": "2026-11-04T17:02:45.552Z",
+  "source_merged": true,
+  "current_blocker": null,
+  "fixes": [
+    {
+      "source": "81e99a70074fe5012e887218ddfeb81a6e957c27",
+      "change": "Immutable nonce directory fixture readiness markers; original proof helper preserved."
+    },
+    {
+      "source": "44e4a785504b3f5c82a4ae9ff04e90a2710b1476",
+      "change": "Refusal-only fixed-root PID/start-time entry filter before key opening and AD modules. Full authorization chain unchanged; replay fixture additionally requires identity-phase exit20 within8s."
+    },
+    {
+      "source": "53d35ab2867e684e6400d94f6b7eee5c6b88bfea",
+      "change": "Initialize local transport C# type before immutable before-signing POLL marker in both lifecycle and one-shot entry points; no deadline change."
+    }
+  ],
+  "linux_delivery_preparation": {
+    "live_inspected": false,
+    "installed_version_from_prior_record": "0.14.0-dev.44",
+    "panel_update_reviewed": true,
+    "panel_source_manifest_pin_required": true,
+    "panel_update_stopped_state_backup_and_code_rollback": true,
+    "panel_update_requires_configuration_and_administrator_preservation": true,
+    "backup_worker_is_separate_component": true,
+    "existing_backup_installer_rejects_changed_installed_worker_bytes": true,
+    "separate_backup_worker_delivery_must_be_planned": true,
+    "live_update_started": false
+  },
+  "user_sequence": "Wait for final source tests, evaluate/merge validated source, prepare versioned Linux payload and rollback/backup, then controlled live update and health verification. No rushed Linux installation.",
+  "merge_commit": "77612e798361187bbdd6e554bb488364f197da45",
+  "workflows": [
+    {
+      "id": 41870453657,
+      "name": "AuthWire bounded retry network probe checks",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715766245,
+          "name": "isolated-kernel-timeout",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453402,
+      "name": "AuthWire isolated write preclaim checks",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715764545,
+          "name": "native-preclaim",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453416,
+      "name": "AuthWire isolated authorized stage execution",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715764704,
+          "name": "native-execution",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453401,
+      "name": "AuthWire isolated durable write lifecycle",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715763525,
+          "name": "native-write-lifecycle",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453531,
+      "name": "AuthWire isolated one-shot staging cycle",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715764490,
+          "name": "native-cycle",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453560,
+      "name": "AuthWire isolated staging filesystem checks",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715764663,
+          "name": "native-filesystem",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453488,
+      "name": "KANAME foundation checks",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715765029,
+          "name": "unit-and-boundaries",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453599,
+      "name": "AuthWire isolated rollback origin evidence",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715766514,
+          "name": "native-rollback-evidence",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453910,
+      "name": "AuthWire isolated rollback authorization",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715766609,
+          "name": "native-rollback-authorization",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453955,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715767241,
+          "name": "windows-scope",
+          "conclusion": "success"
+        },
+        {
+          "id": 126715767470,
+          "name": "windows-bootstrap",
+          "conclusion": "success"
+        },
+        {
+          "id": 126715767595,
+          "name": "windows-channel",
+          "conclusion": "success"
+        },
+        {
+          "id": 126715767737,
+          "name": "windows-service",
+          "conclusion": "success"
+        },
+        {
+          "id": 126715767890,
+          "name": "windows-scm-probe",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453644,
+      "name": "AuthWire isolated rollback execution and result",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715767067,
+          "name": "native-rollback-execution",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 41870453558,
+      "name": "AuthWire isolated governed write history",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 126715764142,
+          "name": "native-history-archive",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "foundation": {
+    "tests": 1130,
+    "skipped": 28,
+    "seconds": 290.62
+  },
+  "history": {
+    "active_worker_registered": false,
+    "actual_core_poll_requests": 10,
+    "actual_machine_reboot_tested": false,
+    "archived_cycles": 128,
+    "cases": 4,
+    "claim_requests": 5,
+    "customer_changed": false,
+    "foreign_child_partial_retirement_requires_review": true,
+    "interrupted_copy_preserves_64_active_originals": true,
+    "native_checks": 196,
+    "positive_ad_content_service_identity_simulated": true,
+    "real_cng_ntfs_archives": 2,
+    "result_requests": 5,
+    "synthetic_signed_idle_records": 251
+  },
+  "rollback_execution": {
+    "actual_cng_tls_sqlite_signed_child_smb_delete": true,
+    "actual_separate_review_create_poll_claim_result": true,
+    "cases": 9,
+    "customer_changed": false,
+    "native_checks": 572,
+    "positive_ad_content_service_identity_simulated": true,
+    "production_routes_registered": false,
+    "rollback_claims": 9,
+    "rollback_result_requests": 10,
+    "rollback_result_transitions": 9,
+    "unconfirmed_review_results": 7,
+    "verified_rollback_successes": 2
+  },
+  "lifecycle": {
+    "active_worker_registered": false,
+    "actual_cng_tls_sqlite_signed_child_smb": true,
+    "actual_core_rollback_review_create": true,
+    "actual_machine_reboot_tested": false,
+    "cases": 8,
+    "claim_requests": 12,
+    "customer_changed": false,
+    "native_checks": 200,
+    "poll_requests": 16,
+    "positive_ad_content_service_identity_simulated": true,
+    "result_requests": 12,
+    "result_transitions": 11,
+    "saved_grant_restart_boundary_simulated": true
+  },
+  "existing_signed_service": {
+    "actual_https": true,
+    "ad_changed": false,
+    "automatic_outage_recovery": true,
+    "automatic_upgrade_rollback": true,
+    "candidate_channel_failed_upgrade_rollback": true,
+    "candidate_channel_required": true,
+    "checks": 85,
+    "combined_channel_failed_upgrade_rollback": true,
+    "combined_channel_required": true,
+    "combined_scope_channel_failed_upgrade_rollback": true,
+    "combined_scope_channel_required": true,
+    "crash_recovery": true,
+    "customer_gmsa_tested": false,
+    "explicit_upgrade_rollback": true,
+    "fresh_control_modes": [
+      "Inspect",
+      "Start",
+      "Start",
+      "Stop",
+      "Start",
+      "Remove"
+    ],
+    "fresh_public_control": true,
+    "gpo_changed": false,
+    "legacy_staged_upgrade": true,
+    "low_privilege_runtime": true,
+    "orphan_cleanup": true,
+    "real_signed_scm": true,
+    "release_id": "c0cc73d4-c388-4d9e-88b7-20f81a1d1c1c",
+    "scope_channel_failed_upgrade_rollback": true,
+    "scope_channel_required": true,
+    "staging_preview_channel_failed_upgrade_rollback": true,
+    "staging_preview_channel_required": true
+  },
+  "existing_regressions": {
+    "stage_native_checks": 186,
+    "rollback_authorization_native_checks": 417,
+    "origin_native_checks": 268,
+    "one_shot_native_checks": 158,
+    "filesystem_native_checks": 139,
+    "preclaim_native_checks": 372
+  },
+  "entry_filter": {
+    "refusal_only": true,
+    "fixed_private_root_required": true,
+    "pid_and_start_ticks": true,
+    "before_key_open_and_ad_import": true,
+    "matching_record_is_not_authority": true,
+    "full_authorization_checks_preserved": true,
+    "signed_replay_explicit_identity_phase_exit20_required": true,
+    "replay_budget_ms": 8000
+  },
+  "transport_startup": {
+    "csharp_initialization_before_before_signing_marker": true,
+    "proof_or_network_sent_by_initialization": false,
+    "deadlines_extended": false
+  },
+  "history_verification_note": "Two independent committed64-cycle archives in separate fixture roots; later actual slot65 POLL in both. Synthetic independently signed idle metadata is not server traffic. Interrupted second-segment copy/retirement remains uncommitted and blocks new POLL. No actual machine reboot or off-host restore.",
+  "observed_run_state_note": "Some run aggregates remained queued/in_progress while later downloaded logs already contained completed steps. Cause of summary propagation delay not established; no workflow cancellation was performed."
 }
