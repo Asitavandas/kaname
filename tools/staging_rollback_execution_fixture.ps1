@@ -39,7 +39,13 @@ $rxHash=(Get-AuthWireSysvolInventory $gpo).Sha256;$rxReadPath=Join-Path $package
 Reject {Invoke-AuthWireAuthorizedFilesystemRollback $rbRoot $rbId $b $release $rsa} 'parent replay refused before history or fresh observation'
 $rxExe=Join-Path ([Environment]::GetFolderPath('Windows')) 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $rxArgs='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+(Join-Path $package 'Invoke-AuthWireRollbackChild.ps1')+'" -JournalRoot "'+$rbRoot+'" -JobId '+$rbId+' -IntentSha256 '+$rbUse.FilesystemIntentSha256
-$rxReplay=[AuthWire.Connector.ScopeProcessV1]::Run($rxExe,$rxArgs,8000)
+$rxReplayWatch=[Diagnostics.Stopwatch]::StartNew()
+$rxReplay=[AuthWire.Connector.ScopeProcessV1]::Run($rxExe,$rxArgs,8000);$rxReplayWatch.Stop()
+if($rxReplay.TimedOut -or $rxReplay.ExitCode -ne 20){
+ # Fixed fixture case and bounded numeric/boolean metadata only. Never print
+ # child stdout/stderr, paths, proof material or credentials.
+ Write-Host ('ROLLBACK_REPLAY_SAFE_DIAGNOSTIC '+(@{case=$case;timed_out=[bool]$rxReplay.TimedOut;exit_code=[int]$rxReplay.ExitCode;elapsed_ms=$rxReplayWatch.ElapsedMilliseconds;expected_exit_code=20}|ConvertTo-Json -Compress))
+}
 Check (-not $rxReplay.TimedOut -and $rxReplay.ExitCode -eq 20) 'new direct signed child cannot reuse closed original gate or expired grant'
 Check ([IO.File]::ReadAllText($rxReadPath) -ceq $rxReads -and (Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $rxHash) 'replay creates no AD observation or SMB effect'
 $rxBox=New-AuthWireRollbackResultOutbox $rbRoot $rbId $b $release $rsa
@@ -66,3 +72,4 @@ Check ((Read-AuthWireRollbackResultOutbox $rbRoot $rbId $b $release $rsa).body_s
 Check ([IO.File]::ReadAllText($rxReadPath) -ceq $rxReads -and (Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $rxHash) 'result recovery performs no current AD check or deletion'
 Reject {Read-AuthWireWriteResultOutbox $rbRoot $rbId $b $release $rsa} 'rollback outbox cannot be reinterpreted as stage result'
 Write-Host ('ROLLBACK_EXECUTION_CASE_OK case='+$case+' child_parent_ms='+$rxWatch.ElapsedMilliseconds+' success='+$rxSuccess+' result_recovered=true customer_changed=false')
+
