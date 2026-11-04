@@ -97,5 +97,6 @@ try{
  $lcForeign=Join-Path $lcRoot 'foreign-root-record.txt'
  try{[IO.File]::WriteAllText($lcForeign,'fixture unknown data must not be deleted');Reject {Invoke-AuthWireStagingWriteLifecycleStep $lcRoot $b $release $rsa $url} 'unreferenced root record prevents poll and action';Check (Test-Path -LiteralPath $lcForeign) 'unknown history is preserved for explicit review'}finally{[IO.File]::Delete($lcForeign)}
  Check (Test-Path -LiteralPath (Join-Path $lcLife 'baseline.json')) 'durable header remains in original fixed private root'
+ if($env:AUTHWIRE_WRITE_HISTORY_CHECK -eq '1'){. (Join-Path $PSScriptRoot 'staging_write_history_fixture.ps1')}
  Write-Host ('WRITE_LIFECYCLE_CASE_OK case='+$case+' reload_record_boundary_simulated=true actual_machine_reboot=false customer_changed=false')
 }finally{if(-not $StageOnly){[IO.File]::Delete($lcMode)}}

@@ -37,6 +37,7 @@ def main():
     grant_mode = os.environ.get('AUTHWIRE_ROLLBACK_AUTHORIZATION_CHECK') == '1'
     execution_mode = os.environ.get('AUTHWIRE_ROLLBACK_EXECUTION_CHECK') == '1'
     lifecycle_mode = os.environ.get('AUTHWIRE_WRITE_LIFECYCLE_CHECK') == '1'
+    history_mode = os.environ.get('AUTHWIRE_WRITE_HISTORY_CHECK') == '1'
     with tempfile.TemporaryDirectory(prefix='aw-write-transport-') as temp:
         root = Path(temp); fqdn = 'aw-' + uuid.uuid4().hex + '.lab.example'
         private = rsa.generate_private_key(public_exponent=65537, key_size=3072)
@@ -176,6 +177,32 @@ def main():
                 # production HTTP/grant/reader/child deadlines stay unchanged.
                 check=True, timeout=1320 if execution_mode else (1100 if lifecycle_mode else 650), env=env)
             native = json.loads((root/'native-summary.json').read_text(encoding='utf-8-sig'))
+            if history_mode:
+                assert len(native['outcomes']) == 4 and not metrics['errors']
+                assert len(metrics['polls']) == 7 and sorted(metrics['polls'].values()) == [1]*5+[2, 3]
+                assert len(metrics['claims']) == 5 and set(metrics['claims'].values()) == {1}
+                assert len(metrics['results']) == 5 and set(metrics['results'].values()) == {1}
+                with store.connect() as db:
+                    jobs = core._read(db)['jobs']
+                assert len(jobs) == 6
+                assert sum(j['operation'] == STAGE and j['state'] == 'completed' for j in jobs) == 4
+                assert sum(j['operation'] == ROLLBACK and j['state'] == 'requires_review' for j in jobs) == 1
+                assert sum(j['operation'] == ROLLBACK and j['state'] == 'leased' for j in jobs) == 1
+                after = store.snapshot()
+                assert after['revision'] == original['revision']+12
+                assert len(store.audit()) == len(original_audit)+12
+                assert after['config'] == original['config'] and after['policies'] == original['policies']
+                print('AUTHWIRE_WRITE_HISTORY_WINDOWS_OK ' + json.dumps({
+                    'native_checks': native['checks'], 'cases': 4,
+                    'real_cng_ntfs_archives': 2, 'archived_cycles': 128,
+                    'synthetic_signed_idle_records': 251,
+                    'actual_core_poll_requests': 10, 'claim_requests': 5, 'result_requests': 5,
+                    'interrupted_copy_preserves_64_active_originals': True,
+                    'foreign_child_partial_retirement_requires_review': True,
+                    'positive_ad_content_service_identity_simulated': True,
+                    'actual_machine_reboot_tested': False,
+                    'active_worker_registered': False, 'customer_changed': False}, sort_keys=True))
+                return
             if lifecycle_mode:
                 assert len(native['outcomes']) == 8 and not metrics['errors']
                 assert len(metrics['polls']) == 15 and sorted(metrics['polls'].values()) == [1]*14+[2]

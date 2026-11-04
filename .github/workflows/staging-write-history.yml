@@ -1,0 +1,37 @@
+name: AuthWire isolated governed write history
+on:
+  pull_request:
+    paths:
+      - 'windows/connector/**'
+      - 'kaname/staging_write_jobs.py'
+      - 'tools/staging_write_cycle_windows_check.py'
+      - 'tools/staging_write_execution_windows_check.ps1'
+      - 'tools/staging_write_lifecycle_fixture.ps1'
+      - 'tools/staging_write_history*'
+      - '.github/workflows/staging-write-history.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'windows/connector/StagingWriteHistory.ps1'
+      - 'windows/connector/StagingWriteLifecycle.ps1'
+      - 'tools/staging_write_history*'
+      - '.github/workflows/staging-write-history.yml'
+permissions:
+  contents: read
+jobs:
+  native-history-archive:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - run: python -m pip install cryptography==46.0.0
+      - name: Review archive continuation and interrupted-copy barriers
+        shell: powershell
+        run: |
+          python tools/staging_write_history_windows_check.py
+          if($LASTEXITCODE -ne 0){throw 'Governed history fixture failed'}

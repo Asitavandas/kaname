@@ -51,11 +51,15 @@ extended or bypassed. The global connector cycle mutex serializes steps.
 Root names, job/engine record names, original-stage references and rollback
 markers must be explained by the baseline and saved cycles. Unknown data is
 kept, not deleted. A missing/changed header or generation change cannot adopt
-history or choose a new empty recovery root. The immutable journal is capped at
-**64 cycles**; a full journal returns maintenance-required before a new signature
-or request. This is a source storage limit, not a device quota. There is no
-automatic pruning, lock deletion, unlock, background retry or reboot repair API.
-It must be paired with approved retention/reconciliation before unattended
+history or choose a new empty recovery root. The active immutable journal is
+capped at **64 cycles**; a full window returns maintenance-required before a new
+signature or request. A separately reviewed local
+[history archive](STAGING_WRITE_HISTORY.md) can seal and retain a complete
+observed window before its local cycle originals retire. At most eight signed
+segments are retained, without oldest-archive deletion. Slots remain monotonic.
+These are storage bounds, not device quotas. There is no automatic pruning,
+lock deletion, unlock, background retry or reboot repair API. Off-host retention
+and governed interruption reconciliation remain required before unattended
 worker delivery. Existing per-job 512-target and root/job bounds remain intact.
 
 ## Disposable verification and remaining work

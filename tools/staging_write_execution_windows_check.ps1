@@ -10,6 +10,7 @@ $journal=$null;$candidateBase=$null;$oldModulePath=$env:PSModulePath;$script:che
 $grantMode=$env:AUTHWIRE_ROLLBACK_AUTHORIZATION_CHECK -eq '1'
 $rollbackExecutionMode=$env:AUTHWIRE_ROLLBACK_EXECUTION_CHECK -eq '1'
 $lifecycleMode=$env:AUTHWIRE_WRITE_LIFECYCLE_CHECK -eq '1'
+$historyMode=$env:AUTHWIRE_WRITE_HISTORY_CHECK -eq '1'
 $flowDirectory=$env:AUTHWIRE_WRITE_CYCLE_DIRECTORY;$flowMode=[bool]$flowDirectory
 $webStore=$null;$webCert=$null;$webAdded=$false;$hostBytes=$null;$hosts=$null;$web=$null
 function Check($v,[string]$name){if(-not $v){throw ('EXECUTION_FIXTURE:'+ $name)};$script:checks++}
@@ -24,7 +25,7 @@ try{
  $files=@('Test-AuthWireDeploymentCandidate.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','ConnectorChannelTypes.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','StagingFilesystem.ps1','StagingWritePreclaim.ps1','StagingWriteTransport.ps1','StagingWriteConsumption.ps1','StagingWriteProcess.ps1','StagingWriteExecution.ps1','StagingWriteResult.ps1','StagingWriteCycle.ps1','StagingRollbackEvidence.ps1','StagingRollbackAuthorization.ps1','Read-AuthWireRollbackPreflight.ps1','Read-AuthWireStagingWritePreflight.ps1','Invoke-AuthWireStagingWriteChild.ps1')
  foreach($name in $files){[IO.File]::WriteAllBytes((Join-Path $package $name),[IO.File]::ReadAllBytes((Join-Path $lib $name)))}
  if($rollbackExecutionMode -or $lifecycleMode){foreach($name in @('StagingRollbackExecution.ps1','StagingRollbackResult.ps1','Invoke-AuthWireRollbackChild.ps1')){$files+=,$name;[IO.File]::WriteAllBytes((Join-Path $package $name),[IO.File]::ReadAllBytes((Join-Path $lib $name)))}}
- if($lifecycleMode){foreach($name in @('StagingWritePollRecord.ps1','StagingWriteLifecycle.ps1')){$files+=,$name;[IO.File]::WriteAllBytes((Join-Path $package $name),[IO.File]::ReadAllBytes((Join-Path $lib $name)))}}
+ if($lifecycleMode){foreach($name in @('StagingWritePollRecord.ps1','StagingWriteHistory.ps1','StagingWriteLifecycle.ps1')){$files+=,$name;[IO.File]::WriteAllBytes((Join-Path $package $name),[IO.File]::ReadAllBytes((Join-Path $lib $name)))}}
  # Test production namespace derivation BEFORE replacing only its environment.
  . (Join-Path $package 'Test-AuthWireDeploymentCandidate.ps1') -LibraryOnly
  . (Join-Path $package 'StagingWritePreclaim.ps1')
@@ -203,6 +204,7 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
  if($grantMode){$cases=@('rollback_success','rollback_lost_grant','rollback_bad_grant','rollback_receipt_disk','rollback_consume_disk','rollback_live_drift','rollback_expired','rollback_proof_disk')}
  if($rollbackExecutionMode){$cases=@('rb_execute_success','rb_execute_lost_ack','rb_execute_drift','rb_execute_completion_disk','rb_execute_bad_result','rb_execute_parent_drift','rb_execute_launch_disk','rb_execute_identity','rb_execute_timeout')}
  if($lifecycleMode){$cases=@('lc_stage','lc_success','lc_lost_ack','lc_lost_claim','lc_lost_poll','lc_bad_poll','lc_idle','lc_saved_grant')}
+ if($historyMode){$cases=@('lc_stage','lc_idle','lc_lost_poll','lc_saved_grant')}
  foreach($case in $cases){
   $t=[pscustomobject][ordered]@{candidate_id=[guid]::NewGuid().ToString('D');network_candidate_id=[guid]::NewGuid().ToString('D');plan_id=[guid]::NewGuid().ToString('D');plan_version=1;gpo_id=[guid]::NewGuid().ToString('D');approval_sha256=('a'*64);network_manifest_sha256=('b'*64);manifest_sha256=('c'*64);draft_sha256=('d'*64);dependency_sha256=('e'*64);publisher_thumbprint=$signer.Thumbprint;machine_profile_id=[guid]::NewGuid().ToString('D');machine_profile_version=3;domain='lab.example';root_thumbprint=('f'*40);group_sid=($domainSid+'-1647');content_result_sha256=('2'*64);target_sids_sha256=('3'*64);target_count=1}
   $draft=[Text.Encoding]::ASCII.GetBytes('fixture never execute '+$case);$t.draft_sha256=Get-AuthWireCandidateHash $draft

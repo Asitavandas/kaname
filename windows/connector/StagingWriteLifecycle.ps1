@@ -2,6 +2,7 @@
 # Not registered with the permanent worker or production peer routes.
 # No unknown-state retry, cleanup, retention deletion, grant renewal or unlock.
 Set-StrictMode -Version 2
+. (Join-Path $PSScriptRoot 'StagingWriteHistory.ps1')
 
 function Get-AuthWireWriteLifecyclePath([string]$Root,[hashtable]$Binding){
  Assert-AuthWireStagingWriteJournalLocation $Root $Binding
@@ -76,16 +77,18 @@ function Assert-AuthWireLifecyclePollReplyAt($Value,[hashtable]$Binding,[string]
   if($Value.operation -cne '' -or $Value.lease_id -cne '' -or $Value.intent_sha256 -cne '' -or $null -ne $Value.target -or $Value.expires_at -isnot [int] -or $Value.expires_at -ne 0){throw 'LIFECYCLE_IDLE_REJECTED'}
  }else{Assert-AuthWireWriteOfferAt $Value $Binding $Release $Request $At}
 }
-function Get-AuthWireLifecycleSlots([string]$Life){
+function Get-AuthWireLifecycleSlots([string]$Life,[int]$ArchivedThrough=0){
+ if($ArchivedThrough -lt 0 -or $ArchivedThrough -gt 512 -or $ArchivedThrough%64 -ne 0){throw 'LIFECYCLE_ARCHIVE_BOUNDARY_REJECTED'}
  $slots=@();$items=@(Get-ChildItem -LiteralPath $Life -Force)
  foreach($i in $items){
   if($i.Name -ceq 'baseline.json' -and -not $i.PSIsContainer){continue}
+  if($i.Name -ceq 'history-archives' -and $i.PSIsContainer -and $ArchivedThrough -gt 0){continue}
   if(-not $i.PSIsContainer -or $i.Name -cnotmatch '\A[0-9]{6}\z'){throw 'LIFECYCLE_UNKNOWN_HISTORY'}
   $slots+=,$i.Name
  }
  if($slots.Count -gt 64){throw 'LIFECYCLE_HISTORY_LIMIT'}
  [Array]::Sort($slots,[StringComparer]::Ordinal)
- for($i=0;$i -lt $slots.Count;$i++){if($slots[$i] -cne ($i+1).ToString('D6')){throw 'LIFECYCLE_HISTORY_GAP'}}
+ for($i=0;$i -lt $slots.Count;$i++){if($slots[$i] -cne ($ArchivedThrough+$i+1).ToString('D6')){throw 'LIFECYCLE_HISTORY_GAP'}}
  return ,$slots
 }
 function Read-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key){
@@ -124,7 +127,7 @@ function Read-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bind
 }
 function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[string]$BaseUrl){
  Assert-AuthWireCandidateGuid $Release
- if($Slot -cnotmatch '\A[0-9]{6}\z' -or [int]$Slot -lt 1 -or [int]$Slot -gt 64){throw 'LIFECYCLE_SLOT_REJECTED'}
+ if($Slot -cnotmatch '\A[0-9]{6}\z' -or [int]$Slot -lt 1 -or [int]$Slot -gt 576){throw 'LIFECYCLE_SLOT_REJECTED'}
  $dir=Join-Path $Life $Slot;$p=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
   $p.PinAncestors($Life);[AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($dir);$p.PinAncestors($dir)
@@ -256,14 +259,8 @@ function Invoke-AuthWireStagingWriteLifecycleStep([string]$Root,[hashtable]$Bind
  $lock=Enter-AuthWireWriteCycleLock $Binding;$p=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
   $p.PinAncestors($Root);Initialize-AuthWireWriteLifecycle $Root $Binding $Key
-  $life=Get-AuthWireWriteLifecyclePath $Root $Binding;$baseline=Read-AuthWireLifecycleBaseline $Root $Binding $Key;$slots=Get-AuthWireLifecycleSlots $life;$states=@()
-  foreach($slot in $slots){$states+=,(Read-AuthWireLifecyclePoll $life $slot $Binding $Key)}
-  $requests=@{};$jobs=@{}
-  foreach($s in $states){if($null -ne $s.Offer){
-   if($requests.ContainsKey($s.Offer.request_id)){throw 'LIFECYCLE_DUPLICATE_POLL_HISTORY'};$requests[$s.Offer.request_id]=$true
-   if($s.Offer.job_id -cne ''){if($jobs.ContainsKey($s.Offer.job_id)){throw 'LIFECYCLE_DUPLICATE_JOB_HISTORY'};$jobs[$s.Offer.job_id]=$true}
-  }}
-  Assert-AuthWireLifecycleRootEntries $Root $baseline $states $Binding $Key
+  $history=Read-AuthWireLifecycleHistory $Root $Binding $Key
+  $life=$history.Life;$slots=$history.Slots;$states=$history.ActiveStates
   for($i=0;$i -lt $states.Count;$i++){
    $s=$states[$i];$dir=Join-Path $life $s.Slot
    if($s.Phase -cne 'reply_saved'){
@@ -283,7 +280,7 @@ function Invoke-AuthWireStagingWriteLifecycleStep([string]$Root,[hashtable]$Bind
   # Bounded immutable history. Maintenance is explicit, never automatic deletion
   # of poll/job/origin/GPO-lock records. Active worker delivery still gated on it.
   if($slots.Count -ge 64){return (Get-AuthWireLifecycleResult 'history_limit_requires_maintenance')}
-  $next=($slots.Count+1).ToString('D6')
+  $next=($history.ArchivedThrough+$slots.Count+1).ToString('D6')
   try{$s=New-AuthWireLifecyclePoll $life $next $Binding $Release $Key $BaseUrl}catch{
    $reason=if($_.Exception.Message -cmatch '\ALIFECYCLE_[A-Z_]{1,64}\z'){$_.Exception.Message}else{'POLL_OR_RECORD_ERROR'}
    return (Get-AuthWireLifecycleResult 'local_reconciliation_required' '' '' $false $reason)
