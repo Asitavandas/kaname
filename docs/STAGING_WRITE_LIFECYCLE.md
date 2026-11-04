@@ -70,8 +70,11 @@ fixture substitutes. The 64-cycle capacity records after two real idle polls
 are explicitly synthetic no-job metadata with independent real CNG signatures;
 no server requests or write grants are synthesized for that capacity check.
 
-Pending: active scheduler/SCM registration, safe idle/history retention and backup
-projection, preauthorization refusal reporting, governed partial/unknown-state
+Pending: active scheduler/SCM registration, safe idle/history retention and Windows journal backup/restore, preauthorization refusal reporting, governed partial/unknown-state
 reconciliation and unlock, actual reboot/off-host boot restore, controlled signed
 delivery and real gMSA/AD/domain-SYSVOL/endpoint/latency acceptance. This source
 step is not product-wide completion or operator acceptance.
+
+Linux write-ledger backup comparison source coverage is recorded in
+[STAGING_WRITE_BACKUP.md](STAGING_WRITE_BACKUP.md); Windows journal retention
+and restore remain independent delivery gates.

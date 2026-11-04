@@ -1,5 +1,49 @@
 # AuthWire current work record
 
+## Yazma/geri alma kuyruğu için yedek karşılaştırması — 4 Kasım 2026
+
+**PR133**, test edilen kaynak **5927bdf8ea60de1e64ad57417707a3577f76f9cc**.
+Merge **9365bea0aa52398f21c3c2c476e8d6daaacd6e6a**.
+Teknik kapsam: **docs/STAGING_WRITE_BACKUP.md**.
+
+Yeni ortak yazma/geri alma kuyruğunun yalnız doğrulanan geçici POLL metadata'sı
+yedek öncesi/kopya/sonrası iş verisi karşılaştırmasından çıkarılır. Sıralı iş
+listesinin bütün alanları, hedef/stage receipt/izin/CLAIM/sonuç ve bilinmeyen iş
+alanları korunur. İşler bu karşılaştırma için opaque veridir; bu bir yazma izni
+veya tam ledger semantik doğrulaması değildir. Bozuk/bilinmeyen envelope,
+yinelenen JSON anahtarı veya POLL ID'si, yanlış tür/UUID/boyut özgün ham
+karşılaştırmayı korur. SQLite yedeği özgün satırın tamamını, tekrar oynatma
+ID'leri ve last_poll dahil, aynen kopyalamaya devam eder.
+
+İlk genel CI koşusu eski dev.44 teslim kontrollerinde iki sürüm eşitliği
+uyumsuzluğu buldu. Eski kurulum betikleri/hash'leri değiştirilmedi; dev.44 worker
+tam özgün byte'ları ve eski teslim hash'iyle tarihsel test fixture'ına ayrıldı.
+Kontroller eski hash/normalizasyonu ve eski kurucunun yeni worker'ı reddetmesini
+doğrular. Başarısız ara koşu checkpoint'te korunur; yeni yeşil koşu eski hatayı
+yok saymak için kullanılmaz.
+
+**Doğrulama:** Yerelde 90 test geçti. Son kaynakta üç CI workflow'u başarılı:
+genel koşu **1130 test /28 ortam atlaması /310.007 saniye**; yedek paketi **54 test**
+ve gerçek hardened systemd/timer/fixture SQLite-PKI veri geri yükleme kontrolü;
+Windows'ta **28 Linux-only test beklenen biçimde atlandı** (native Windows yazma
+kabulü değildir). Ağ namespace kabulü de geçti. Ayrıntılar:
+**docs/checkpoints/2026-11-04-write-backup-source.json**.
+
+**Canlı kurulum yapılmadı.** Linux/DC01, AD/GPO/SYSVOL, endpoint/servis, key
+ACL/trust veya RADIUS değişmedi; yeni canlı yedek alınmadı. Son bilinen canlı
+Linux dev.44 / Windows df28f70c kaydı değişmedi; yeni canlı ölçüm yapılmadı.
+Linux varsayılan 14 başarılı arşiv saklama kuralı ve Windows 64 çevrimlik
+bakım sınırı korunur. Linux arşivinin Windows journal'ını içerdiği iddia edilmez.
+
+**Sıradaki kapı:** Windows idle/history retention ve journal yedek/restore
+politikası; ön izin ret bildirimi, kontrollü kısmi/belirsiz kayıt uzlaştırması ve
+ayrı onaylı unlock. Sonra aktif scheduler/SCM, kontrollü imzalı teslim ve gerçek
+gMSA/AD/domain-SYSVOL/endpoint/gecikme kabulü. Gerçek reboot, dış yedek/boot
+restore, GPO etkinleştirme, tek hesap, kullanıcı EAP-TLS ve 500/1000 teknik
+ölçek açık. Bu alt adım ürün/saha kabulü değildir. Makro **54/94 tamam,40 açık**,
+önceki süre aralıkları ve **READY_FOR_FINAL_GUIDE=false / GUIDE_DELIVERED=false**
+korunur.
+
 ## Kalıcı stage/geri alma döngüsü ve sonuç kurtarma — 4 Kasım 2026
 
 **PR132** (PR131'in aynı kaynak geçmişini sürdürür), test edilen kaynak **36f2e97e878cb77808f4bf6831bd1d6129eff831**,

@@ -1,0 +1,102 @@
+{
+  "format": 1,
+  "date": "2026-11-04",
+  "pull_request": 133,
+  "source_commit": "5927bdf8ea60de1e64ad57417707a3577f76f9cc",
+  "source_baseline": "be39cec23664b0f327c8fff1a63f9bf66deb1e48",
+  "scope": "Linux scheduled backup comparison for windows_staging_write_jobs, shared by stage and rollback; no Windows journal retention changes.",
+  "local_validation": {
+    "tests": 90,
+    "seconds": 14.623,
+    "changed_file_syntax_passed": true
+  },
+  "backup_acceptance": {
+    "tests": 54,
+    "seconds": 8.621,
+    "real_hardened_service": true,
+    "real_timer_trigger_verified": true,
+    "real_sqlite_and_fixture_pki_restore": true,
+    "foreign_uid_state_read": true,
+    "wal_snapshot_verified": true,
+    "failure_recorded": true,
+    "product_fixture_processes_preserved": true,
+    "customer_data_used": false
+  },
+  "windows_discovery": {
+    "tests": 28,
+    "skipped": 28,
+    "native_write_execution_tested_this_change": false
+  },
+  "guards": {
+    "comparison_only": true,
+    "full_original_database_rows_copied": true,
+    "all_ordered_job_fields_preserved": true,
+    "jobs_are_opaque_not_authorization_validation": true,
+    "duplicate_transport_ids_raw_fallback": true,
+    "windows_history_limit": 64,
+    "windows_journal_pruned": false,
+    "linux_default_successful_archive_keep": 14,
+    "historical_delivery_scripts_changed": false
+  },
+  "customer_changes": {
+    "linux_installed": false,
+    "dc01_installed": false,
+    "ad_gpo_sysvol_changed": false,
+    "endpoints_services_changed": false,
+    "key_acl_trust_changed": false,
+    "radius_changed": false,
+    "production_backup_created": false
+  },
+  "next_work": [
+    "Governed Windows idle/history retention and journal backup/restore policy",
+    "Preauthorization refusal reporting",
+    "Controlled partial/unknown record reconciliation and separately approved unlock",
+    "Active scheduler/SCM registration",
+    "Controlled signed delivery and real customer gMSA/AD/domain-SYSVOL/endpoint/latency acceptance",
+    "Actual reboot, off-host backup and boot restore"
+  ],
+  "macro": {
+    "completed": 54,
+    "total": 94,
+    "open": 40
+  },
+  "guide": {
+    "READY_FOR_FINAL_GUIDE": false,
+    "GUIDE_DELIVERED": false
+  },
+  "estimates_changed": false,
+  "failed_intermediate_runs": [
+    {
+      "source": "e4cdfacc7880e7f202c1853c0d4fe701db6555a3",
+      "run_id": 41839704248,
+      "tests": 1129,
+      "skipped": 28,
+      "failures": 2,
+      "diagnostic": "Historical dev44 delivery tests compared current source worker bytes/AST against the frozen release.",
+      "fix": "Keep installer pins unchanged; compare exact versioned worker fixture and verify rejection of current worker."
+    }
+  ],
+  "merge_commit": "9365bea0aa52398f21c3c2c476e8d6daaacd6e6a",
+  "foundation": {
+    "tests": 1130,
+    "skipped": 28,
+    "seconds": 310.007
+  },
+  "workflows": [
+    {
+      "id": 41840758424,
+      "name": "AuthWire private backup acceptance",
+      "conclusion": "success"
+    },
+    {
+      "id": 41840758108,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "id": 41840758320,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    }
+  ]
+}
