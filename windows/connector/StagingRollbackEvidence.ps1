@@ -83,13 +83,18 @@ function Get-AuthWireRollbackDirectoryObservation($Offer,[hashtable]$Binding,[st
  return [pscustomobject]@{pdc=$server;gpo_root=$root;protected_gpo_id=$a.protected_gpo_id;scope_sha256=$hash}
 }
 
-function New-AuthWireRollbackOriginInputPins([string]$Root,$Offer,$Origin){
+function New-AuthWireRollbackOriginInputPins([string]$Root,$Offer){
+ Assert-AuthWireCandidateGuid $Offer.target.stage_receipt.stage_job_id
  $p=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
-  $p.PinAncestors($Root);$job=Join-Path $Root $Origin.StageJobId;$p.PinAncestors($job)
+  $p.PinAncestors($Root);$job=Join-Path $Root $Offer.target.stage_receipt.stage_job_id;$p.PinAncestors($job)
   foreach($n in @('offer.json','preflight.json','claim-started.json','claim-proof.json','claim-sent.json','authorization.json','grant-consumed.json','filesystem-intent.json','stage-launch.json','stage-child.json','stage-preflight.json','execution-complete.json','execution-observed.json','result-outbox.json','result-accepted.json')){$p.PinFile((Join-Path $job $n))}
   $p.PinFile((Join-Path $Root ('gpo-'+$Offer.target.scope_target.gpo_id+'.json')))
-  $engine=Join-Path $Root $Origin.FilesystemOperationId;$p.PinAncestors($engine)
+  # GUID locator only; the full check independently derives the same operation
+  # from these immutable records. This early pin never grants authority.
+  $locator=Read-AuthWireStagingJournal (Join-Path $job 'filesystem-intent.json')
+  Assert-AuthWireCandidateGuid $locator.filesystem_operation_id
+  $engine=Join-Path $Root $locator.filesystem_operation_id;$p.PinAncestors($engine)
   foreach($n in @('intent.json','complete.json')){$p.PinFile((Join-Path $engine $n))}
   return $p
  }catch{$p.Dispose();throw}
@@ -99,17 +104,16 @@ function Get-AuthWireRollbackPreflight($Offer,[hashtable]$Binding,[string]$Relea
  # Trusted local read-only entry. It is NOT a grant or a filesystem intent and
  # must not be passed to the low-level deletion engine as authorization.
  $clock=[Diagnostics.Stopwatch]::StartNew();$start=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+ Assert-AuthWireWriteOffer $Offer $Binding $Release $Offer.request_id
+ if($Offer.operation -cne 'combined.filesystem.rollback.v1'){throw 'ROLLBACK_OPERATION_REQUIRED'}
  $originLock=Enter-AuthWireWriteOutcomeLock $Offer.target.stage_receipt.stage_job_id;$originPins=$null
  try{
+ $root=Get-AuthWireStagingWriteJournalRoot $Binding;Assert-AuthWireStagingWriteJournalLocation $root $Binding
+ # Pin the fixed original chain BEFORE validating it. Keep the exact verified
+ # bytes and original-stage mutex held through both live observations; do not
+ # waste their short lifetime repeating the entire historical traversal.
+ $originPins=New-AuthWireRollbackOriginInputPins $root $Offer
  $origin=Read-AuthWireRollbackOrigin $Offer $Binding $Release $Key
- $root=Get-AuthWireStagingWriteJournalRoot $Binding
- $originPins=New-AuthWireRollbackOriginInputPins $root $Offer $origin
- # Validate under pins BEFORE starting live freshness. Keep these same immutable
- # records and the original-stage mutex held throughout both live observations.
- # Repeating the complete historical traversal AFTER live reads wastes their
- # short lifetime; pinned bytes cannot be replaced in between instead.
- $verified=Read-AuthWireRollbackOrigin $Offer $Binding $Release $Key
- if($verified.ChainSha256 -cne $origin.ChainSha256){throw 'ROLLBACK_STAGE_RESULT_CHANGED'}
  # Freshness begins BEFORE live directory/tree reads, never after the final
  # history recheck. Slow validation must consume the observation's lifetime.
  $observedAt=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$observationClock=[Diagnostics.Stopwatch]::StartNew()

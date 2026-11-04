@@ -95,7 +95,8 @@ function Read-AuthWireRollbackPreflightProcess([string]$Root,[string]$JobId,[has
  $exe=Join-Path ([Environment]::GetFolderPath('Windows')) 'System32\WindowsPowerShell\v1.0\powershell.exe'
  $arguments='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$file+'" -JournalRoot "'+$Root.TrimEnd('\')+'" -JobId '+$JobId
  $r=[AuthWire.Connector.ScopeProcessV1]::Run($exe,$arguments,$budget)
- if($r.TimedOut -or $r.Truncated -or $r.ExitCode -ne 0){throw 'ROLLBACK_PREFLIGHT_FAILED'}
+ if($r.TimedOut){throw 'ROLLBACK_PREFLIGHT_TIMEOUT'}
+ if($r.Truncated -or $r.ExitCode -ne 0){throw 'ROLLBACK_PREFLIGHT_FAILED'}
  $v=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($r.Output))
  Assert-AuthWireRollbackPreflightAt $v $saved $Binding $Release ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
  if($v.checked_at -lt $now){throw 'ROLLBACK_PREFLIGHT_REJECTED'}

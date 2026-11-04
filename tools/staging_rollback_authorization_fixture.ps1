@@ -28,7 +28,7 @@ try{
  Reject {Read-AuthWireRollbackOffer $root $rbId $b $release} 'alternate root cannot hide original reservation'
  if($case -ceq 'rollback_success'){
   $rbOrigin=Read-AuthWireRollbackOrigin $rbOffer $b $release $rsa
-  $rbPins=New-AuthWireRollbackOriginInputPins $rbRoot $rbOffer $rbOrigin
+  $rbPins=New-AuthWireRollbackOriginInputPins $rbRoot $rbOffer
   try{
    Reject {[IO.File]::WriteAllText((Join-Path $rbStage 'claim-proof.json'),'changed')} 'held original authority pins forbid in-place edits'
    Reject {[IO.File]::Delete((Join-Path $rbStage 'result-accepted.json'))} 'held accepted ACK pin forbids removal'
