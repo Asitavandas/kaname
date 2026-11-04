@@ -126,7 +126,9 @@ def inventory(items):
 
 
 POLL_SECTIONS = frozenset(('windows_connector_probe_jobs', 'windows_candidate_verify_jobs',
-                           'windows_deployment_scope_jobs', 'windows_combined_verify_jobs', 'windows_combined_scope_jobs', 'windows_staging_preview_jobs'))
+                           'windows_deployment_scope_jobs', 'windows_combined_verify_jobs', 'windows_combined_scope_jobs', 'windows_staging_preview_jobs',
+                           'windows_staging_write_jobs'))
+LARGE_POLL_SECTIONS = frozenset(('windows_staging_preview_jobs', 'windows_staging_write_jobs'))
 
 
 def stable_runtime_payload(name, payload):
@@ -134,9 +136,11 @@ def stable_runtime_payload(name, payload):
 
     This projection affects comparison only. SQLite backup still copies the
     entire original row, including replay IDs and last_poll. Unknown/malformed
-    structures retain their exact original bytes in the stability guard.
+    envelopes/transport metadata retain their exact original bytes in the guard.
+    Jobs are opaque durable data: every field is retained, including unknown
+    fields. This comparison projection is not authorization or ledger validation.
     """
-    if name not in POLL_SECTIONS or type(payload) is not str or len(payload) > (1048576 if name == 'windows_staging_preview_jobs' else 100000):
+    if name not in POLL_SECTIONS or type(payload) is not str or len(payload) > (1048576 if name in LARGE_POLL_SECTIONS else 100000):
         return payload
     def unique(pairs):
         result = {}
@@ -158,9 +162,13 @@ def stable_runtime_payload(name, payload):
             return payload
         if type(v['polls']) is not list or len(v['polls']) > 128:
             return payload
+        poll_ids = set()
         for poll in v['polls']:
             if type(poll) is not dict or set(poll) != {'id','until'} or not hexdigest(poll['id']) or not number(poll['until']):
                 return payload
+            if poll['id'] in poll_ids:
+                return payload
+            poll_ids.add(poll['id'])
         last = v['last_poll']
         if last is not None:
             last_keys = {'scope', 'at'}
