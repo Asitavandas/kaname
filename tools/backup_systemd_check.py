@@ -80,7 +80,10 @@ def main():
         before = worker.pids()
         with tempfile.TemporaryDirectory(prefix='backup-package-') as tmp:
             stage = Path(tmp)
-            for name in installer.FILES: shutil.copy2(source / 'tools' / name, stage / name)
+            for name in installer.FILES:
+                original = (source / 'tests/fixtures/scheduled_backup_dev44.py'
+                            if name == 'scheduled_backup.py' else source / 'tools' / name)
+                shutil.copy2(original, stage / name)
             manifest = json.dumps({n: worker.digest(stage / n) for n in installer.FILES}).encode()
             (stage / 'manifest.json').write_bytes(manifest)
             expected = hashlib.sha256(manifest).hexdigest()
@@ -131,7 +134,8 @@ def main():
                 installed_release = worker.digest(installer.TARGET / 'release.json')
                 for name in installer.FILES:
                     data = (source / 'tools' / name).read_bytes()
-                    (upgrade_stage / name).write_bytes(data + ('\n# disposable upgrade fixture ' + str(timer_active) + '\n').encode())
+                    if timer_active: data += b'\n# disposable second-upgrade fixture\n'
+                    (upgrade_stage / name).write_bytes(data)
                 manifest = json.dumps({n: worker.digest(upgrade_stage / n) for n in installer.FILES}).encode()
                 (upgrade_stage / 'manifest.json').write_bytes(manifest)
                 package_pin = hashlib.sha256(manifest).hexdigest()
@@ -148,6 +152,16 @@ def main():
                 command('systemctl', 'start', installer.SERVICE.name)
                 record = json.loads(last_success.read_text())
                 assert record['event'] == 'BACKUP_SUCCESS' and worker.pids() == before
+            # A real maintenance capture followed by a pinned checker failure
+            # must restore only old source and preserve all scheduled records.
+            installed_release = worker.digest(installer.TARGET / 'release.json')
+            checker = upgrade_stage / 'offline_restore_check.py'
+            checker.write_bytes(checker.read_bytes() + b'\ndef check(*args):\n    raise ValueError("disposable restore refusal")\n')
+            manifest = json.dumps({n: worker.digest(upgrade_stage / n) for n in installer.FILES}).encode()
+            (upgrade_stage / 'manifest.json').write_bytes(manifest)
+            refused = upgrader.perform(upgrade_stage, hashlib.sha256(manifest).hexdigest(), installed_release, upgrader.ACK)
+            assert refused['event'] == 'BACKUP_UPGRADE_ROLLED_BACK'
+            assert worker.digest(installer.TARGET / 'release.json') == installed_release and worker.pids() == before
             upgrader.journal()
             latest = json.loads(Path('/var/backups/authwire/scheduled/last-run.json').read_text())
             assert latest['event'] == 'BACKUP_SUCCESS'
@@ -169,6 +183,8 @@ def main():
                               'real_sqlite_and_fixture_pki_restore': True, 'foreign_uid_state_read': True,
                               'wal_snapshot_verified': True, 'failure_recorded': True,
                               'atomic_upgrade_and_isolated_restore_verified': True,
+                              'frozen_dev44_worker_upgraded': True,
+                              'restore_failure_source_rollback_verified': True,
                               'upgraded_real_hardened_service_verified': True,
                               'active_and_inactive_timer_states_preserved': True,
                               'stopped_radius_preserved_during_upgrade': True,
