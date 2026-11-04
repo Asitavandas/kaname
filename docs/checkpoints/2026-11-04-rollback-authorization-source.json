@@ -1,0 +1,310 @@
+{
+  "format": "AuthWireSourceCheckpointV1",
+  "updated_local": "2026-11-04",
+  "timezone": "Europe/Istanbul",
+  "phase": "rollback_authorization_source_verified_not_delivered",
+  "pr": 129,
+  "pr_url": "https://github.com/Asitavandas/kaname/pull/129",
+  "base_before": "58b6fb669a43ebefb5da56418d7ed030385cefdf",
+  "tested_head": "f8d12465041bf121c0578ead0f04a70d29fb87b8",
+  "source_merge": "58ac888019b19931bd5f746d9d29639e75784bb2",
+  "source_fingerprints": [
+    {
+      "path": "windows/connector/StagingRollbackEvidence.ps1",
+      "sha256": "138709bdf9b5cfb70d86ae0e839a68cdd4267192e408c7b6f6836306b8708258",
+      "blob_sha": "358dd106b9e147459f102c9b37012d3a6f2d35cf"
+    },
+    {
+      "path": "windows/connector/StagingRollbackAuthorization.ps1",
+      "sha256": "7dfdf8a00a08d33c3df74565cd72b135c308349e4f485e41bd08e0a5595dd692",
+      "blob_sha": "f26364aa4e1a84773a8cb5193c01bfb9d42e18d4"
+    },
+    {
+      "path": "windows/connector/Read-AuthWireRollbackPreflight.ps1",
+      "sha256": "32b941ff04114ae11cd7545c68cbc54b61b6ac2d1e4dd6e2cab31d15cdbf0728",
+      "blob_sha": "3e154004d76eded7acfe029c34d24f07011ac138"
+    },
+    {
+      "path": "tools/staging_write_execution_windows_check.ps1",
+      "sha256": "3008055275de9651cfe589e897299ba2e551c844807979dd5af7bab6cff63663",
+      "blob_sha": "89024b989b64a4ed6ea96cd5131c19fb1ec5ad1c"
+    },
+    {
+      "path": "tools/staging_write_cycle_windows_check.py",
+      "sha256": "ccdad98f5aeed6ddaaec85f153000c103896494bb33b41800256a57a6fca83fd",
+      "blob_sha": "f2fce0e24835393fe51da8e5280105b053a442f4"
+    },
+    {
+      "path": "tools/staging_rollback_authorization_windows_check.py",
+      "sha256": "1b19d0b7e0cf8ff071a7999e2822a253ec2b15f4b43245fdff54b9814fb5897d",
+      "blob_sha": "7aa802d260d418e210b4b5884fdde73cf0d89fc5"
+    },
+    {
+      "path": "tools/staging_rollback_authorization_fixture.ps1",
+      "sha256": "082f93b99ae3631a50bd9cab89bb87d5509ed1092b8f5c443fa9f357b65ae001",
+      "blob_sha": "1e39ca89cde7d3338ab74dc7e5d5526e5f92772a"
+    },
+    {
+      "path": ".github/workflows/staging-rollback-authorization.yml",
+      "sha256": "8f1b8a4933a8c542d9a2528a7ffdf30a34a6489992289b4b9aaa5f1e4064ef4a",
+      "blob_sha": "f2c1bfef1f607286c1918e0fdf97fadaf1909176"
+    },
+    {
+      "path": "docs/STAGING_ROLLBACK_AUTHORIZATION.md",
+      "sha256": "fc784c4bdcbb3b99678cd9aa509d762295ea1fb77f67d1f35e62ce103fadee1c",
+      "blob_sha": "05c23b517d10260e0c2822d4495b8ee7104d51e1"
+    }
+  ],
+  "ci": [
+    {
+      "run_id": 41794281556,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41794281463,
+      "name": "AuthWire isolated write preclaim checks",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41794281504,
+      "name": "AuthWire isolated authorized stage execution",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41794281493,
+      "name": "AuthWire isolated one-shot staging cycle",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41794281455,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41794281506,
+      "name": "AuthWire isolated rollback origin evidence",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41794281644,
+      "name": "AuthWire isolated rollback authorization",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41794281545,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "conclusion": "success"
+    }
+  ],
+  "tests": {
+    "rollback_authorization": {
+      "native_checks": 407,
+      "cases": 8,
+      "original_accepted_stage_results": 8,
+      "rollback_claims": 7,
+      "rollback_results": 0,
+      "files_deleted": false,
+      "actual_cng_tls_sqlite_signed_reader_smb": true,
+      "actual_core_review_create_poll_claim": true,
+      "positive_ad_content_service_identity_simulated": true,
+      "initial_stage_queues_seeded": true,
+      "durable_full_rollback_poll_cycle_tested": false
+    },
+    "origin": {
+      "native_checks": 258,
+      "base_cases": 13,
+      "positive_preflight_ms": [
+        2664,
+        2610
+      ]
+    },
+    "stage": {
+      "checks": 176,
+      "cases": 8
+    },
+    "cycle": {
+      "checks": 148,
+      "cases": 13
+    },
+    "preclaim": {
+      "native_checks": 372,
+      "python_rsa_checks": 18
+    },
+    "foundation": {
+      "tests": 1123,
+      "skips": 28,
+      "seconds": 307.39
+    },
+    "permanent_service": {
+      "checks": 85,
+      "real_scm_https": true,
+      "customer_gmsa_tested": false
+    }
+  },
+  "failed_intermediate_runs": [
+    {
+      "head": "00ec81e25726bd3fb562bd543b957f50f0f82355",
+      "run": 41792620770,
+      "job": 126449290796,
+      "result": "No one-send record; original generic failure did not retain precise refusal cause."
+    },
+    {
+      "head": "1fa885dea5d84db5bf087557cddd8e5cf87e5186",
+      "run": 41792968256,
+      "job": 126450376662,
+      "result": "ROLLBACK_PREFLIGHT_REJECTED at InvokeRollbackPreflight before claim; original aggregate check did not distinguish age from field mismatch."
+    },
+    {
+      "head": "3ab6940890211bbc71e0580f7b1fa81c68aa844a",
+      "run": 41793361733,
+      "job": 126451623090,
+      "result": "Grant recorded; post-consumption fixed reader returned generic ROLLBACK_PREFLIGHT_FAILED. Old code did not distinguish timeout from child refusal."
+    },
+    {
+      "head": "9a3b45cd681fff7a4de3c4cfaf66c49f44b19a7a",
+      "run": 41793832081,
+      "job": 126453145766,
+      "result": "Positive rollback one-use passed; following original-stage grant intentionally dropped by incorrectly scoped fixture rollback_lost_grant case. Fixed fixture-only case isolation."
+    },
+    {
+      "head": "9a3b45cd681fff7a4de3c4cfaf66c49f44b19a7a",
+      "run": 41793832258,
+      "job": 126453146193,
+      "result": "Existing one-shot cycle initial POLL returned WRITE_HTTPS_REJECTED; no exact TLS/response/timeout category retained. Core counter diagnostics added; customer latency/refusal root cause remains open."
+    },
+    {
+      "head": "00ec81e25726bd3fb562bd543b957f50f0f82355",
+      "run": 41792620468,
+      "job": 126449289361,
+      "result": "Existing origin fixture first positive 8239ms; later ROLLBACK_PREFLIGHT_EXPIRED. Reworked GetRollbackPreflight validates entire original chain under held native pins/mutex before live observation, instead of re-traversal after live reads. Five-second and 15/8-second limits unchanged."
+    }
+  ],
+  "limits": {
+    "live_freshness_seconds": 5,
+    "preclaim_reader_ms": 15000,
+    "post_consumption_reader_ms": 8000,
+    "grant_deadline_renewed": false,
+    "authority_pinned_before_live_observation": true,
+    "stage_origin_mutex_held_during_live_observations": true,
+    "can_delete": false,
+    "can_apply_gpo": false,
+    "rollback_executor_enabled": false,
+    "active_package_worker_enabled": false,
+    "production_peer_routes_enabled": false,
+    "reset_cleanup_unlock_enabled": false
+  },
+  "customer_changes": {
+    "linux_installed": false,
+    "dc01_installed": false,
+    "ad_gpo_sysvol_changed": false,
+    "endpoints_services_changed": false,
+    "key_acl_trust_changed": false,
+    "radius_restarted": false,
+    "full_data_backup_created": false,
+    "secrets_exported": false
+  },
+  "last_known_live": {
+    "fresh_live_read_performed": false,
+    "linux_version": "0.14.0-dev.44",
+    "windows_release_id": "df28f70c-104e-4d6d-972c-e311d38adde6",
+    "readonly_preview_file_count": 20,
+    "readonly_preview_bytes": 102464
+  },
+  "last_known_backup": {
+    "created": "2026-10-28T07:28:35.438167+00:00",
+    "path": "/var/backups/authwire/scheduled/authwire-scheduled-20261028T072835Z-004fe2d609b1.tar.gz",
+    "sha256": "3c4b00b745063980c962f712a426a4ce2e845d62abb096ec2346941a5062c002",
+    "freshly_verified_this_turn": false,
+    "off_host_copy_verified": false,
+    "full_appliance_boot_restore_tested": false
+  },
+  "next_work": "Bounded signed rollback child, parent observation and immutable RESULT binding; no execution from current false-flag intent without renewed validation.",
+  "open_work": [
+    "Durable full rollback POLL cycle and permanent worker",
+    "Refusal reporting, idle/history/retention",
+    "Reboot/lost result/partial journal reconciliation and separately approved unlock",
+    "Strict backup projection, off-host copy and boot restore",
+    "Controlled signed delivery and real gMSA/AD/domain-SYSVOL/endpoint acceptance",
+    "Earlier PR125/127 unresolved failures and present intermediate generic refusals; customer latency/refusal reliability",
+    "GPO activation",
+    "Single account transition",
+    "User EAP-TLS live acceptance",
+    "500/1000 technical scale including >512 target partition/merge/deduplication/recovery"
+  ],
+  "remaining_estimates": {
+    "anchor": "2026-11-04",
+    "write_recovery_controlled_delivery_active_workdays": [
+      3,
+      6
+    ],
+    "first_small_pilot_weeks": [
+      2,
+      3
+    ],
+    "first_small_pilot_window": [
+      "2026-11-18",
+      "2026-11-25"
+    ],
+    "base_weeks": [
+      6,
+      9
+    ],
+    "base_window": [
+      "2026-12-16",
+      "2027-01-06"
+    ],
+    "base_with_guide_weeks": [
+      7,
+      10
+    ],
+    "base_with_guide_window": [
+      "2026-12-23",
+      "2027-01-13"
+    ],
+    "full_scope_with_guide_weeks": [
+      13,
+      19
+    ],
+    "full_scope_with_guide_window": [
+      "2027-02-03",
+      "2027-03-17"
+    ],
+    "operator_base_hours": [
+      20,
+      30
+    ],
+    "operator_full_hours": [
+      30,
+      45
+    ],
+    "additional_observation_calendar_days": [
+      7,
+      14
+    ],
+    "architectural_replan_risk_additional_workdays": [
+      2,
+      5
+    ],
+    "assumptions": "Five shared working days/week, same-day operator evidence and access ready; no work while chat closed; external target/VM/API/endpoint waits excluded. Reassessed without automatic subtraction for this source subgate."
+  },
+  "macro": {
+    "completed": 54,
+    "total": 94,
+    "open": 40
+  },
+  "capacity": {
+    "two_hundred_is_product_quota": false,
+    "per_job_target_limit": 512,
+    "scale_acceptance_pending": [
+      500,
+      1000
+    ]
+  },
+  "guide": {
+    "READY_FOR_FINAL_GUIDE": false,
+    "GUIDE_DELIVERED": false,
+    "guide_created_this_turn": false,
+    "plan_unchanged": true
+  }
+}

@@ -1,6 +1,6 @@
 # Geri alma ön kontrolü ve özgün stage kanıtı — yalnız kaynak
 
-30 Ekim 2026. `StagingRollbackEvidence.ps1`, rollback teklifinin tam olarak hangi
+4 Kasım 2026 (PR129 ile güncel; ilk guard PR128). `StagingRollbackEvidence.ps1`, rollback teklifinin tam olarak hangi
 başarılı stage işlemine bağlı olduğunu okur. Aktif pakete/worker'a eklenmez;
 üretim rotaları açılmaz. İzin göndermez/tüketmez, dosya silmez, journal yazmaz,
 GPO kilidi kaldırmaz. Bu alt kapı ayrı onaylı rollback adapter'ının tamamı değildir.
@@ -32,7 +32,10 @@ kayıp ACK veya önceki rollback başlangıcı/tamamlanması inceleme gerektirir
 - Gerçek staged ağacı read-only native handle'larla sabitler; 20 dosya/3 dizinin
   byte/hash/ACL/volume-file kimlikleri tam ownership kaydıyla eşleşir. ADS,
   hardlink/reparse ve ek dosya reddedilir; dış GPO tabanı değişmemelidir.
-- Sonra özgün sonuç zincirini yeniden kontrol eder. Kanıt değişirse durur.
+- Özgün authority/sonuç/ACK ve engine kayıtlarını native dosya pin'leri altında doğrular;
+  aynı pin'ler ve özgün stage mutex'i her iki canlı gözlem boyunca tutulur. Canlı
+  gözlemden sonra tarihsel zincir baştan taranmaz; sabit kayıtlar değiştirilemez.
+  Canlı gate/PID, review ve rollback marker retleri gözlem sonunda tekrar denetlenir.
 
 Dönen beş saniyelik yeni gözlem bir **izin değildir**: read_only=true,
 write_authorized=false, can_delete=false, can_apply_gpo=false ve
@@ -40,8 +43,10 @@ requires_separate_claim=true. Eski preview/grant son tarihi değiştirilmez.
 Tazelik ilk canlı dizin/ağaç okumasından önce başlar; son journal kontrolünün
 bitiminden yeniden başlatılmaz. Beş saniyesini tüketen canlı gözlem veya toplam
 15 saniyeden geç dönen kontrol reddedilir; bu henüz
-kesin bir AD/SMB I/O iptal sınırı değildir. Sabit AllSigned child ile parent'ın
-süreç bütçesi sonraki entegrasyon kapısıdır. Bu gözlem doğrudan düşük seviyeli
+kesin bir AD/SMB I/O iptal sınırı değildir. PR129'daki sabit AllSigned reader,
+CLAIM öncesi en çok 15 saniye; tüketim sonrası min(8 saniye, grant kalan süre eksi
+2 saniye) süreç bütçesi kullanır. Ayrı izin/tüketim bileşeni için
+[STAGING_ROLLBACK_AUTHORIZATION.md](STAGING_ROLLBACK_AUTHORIZATION.md) kaydına bakın. Bu gözlem doğrudan düşük seviyeli
 rollback motoruna yetki olarak verilemez; her gerçek silme öncesi canlı kontrol
 ayrı özgün rollback CLAIM/tek kullanımlık tüketimle bağlanmalıdır.
 
@@ -61,7 +66,9 @@ PDC sapmaları reddedilir. Özgün proof/result kayıtları ve GPO kilidi byte-b
 SYSVOL hash/ACL tabanı ve eski preview zamanları korunur. Yalnız testin oluşturduğu
 geçici kayıtlar negatif vakalar arasında restore edilir; ürün recovery API'si yoktur.
 
-Açık: sabit sınırlı AllSigned rollback reader, ayrı rollback CLAIM taşıma ve receipt,
-tek kullanımlık tüketim, sınırlı child/parent gözlemi, immutable rollback RESULT,
+PR129 ile ayrı sınırlı AllSigned reader/CLAIM/receipt/tek tüketim kaynakta testlidir;
+bu dosyanın guard'ı tek başına izin göndermez veya tüketmez. Tarihsel origin
+okuyucusu yalnız eski kanıtı doğrular; mevcut uygunluk kontrolü değildir.
+Açık: gerçek sınırlı rollback child/parent gözlemi, immutable rollback RESULT,
 kalıcı worker/kurtarma/retention, ayrı unlock, backup/restore ve gerçek müşteri
 least-privilege gMSA/AD/domain-SYSVOL/endpoint kabulü. Müşteri kurulumu yapılmadı.

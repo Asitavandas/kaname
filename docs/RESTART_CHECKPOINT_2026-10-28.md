@@ -1,5 +1,71 @@
 # AuthWire devam noktası — 28 Ekim 2026
 
+## Ayrı geri alma izni ve tek kullanımlık tüketim — 4 Kasım 2026
+
+**PR129**, test edilen kaynak **f8d12465041bf121c0578ead0f04a70d29fb87b8**, merge **58ac888019b19931bd5f746d9d29639e75784bb2**.
+Ayrıntı: **docs/STAGING_ROLLBACK_AUTHORIZATION.md**.
+
+Rollback artık kaynakta ayrı teklif/özgün stage rezervasyonu, sabit AllSigned
+salt okunur reader, tek gönderimli CLAIM, kalıcı receipt ve tek tüketimli intent
+zincirine sahiptir. Özgün stage işinin kabul edilmiş RESULT/ACK zinciri ve GPO
+kilidi korunur. Yeni iş kimliği önceki stage rezervasyonunu aşamaz. Yanıt kaybı,
+değişmiş izin veya kayıt hatası CLAIM'i yeniden göndermez; tüketim sonrası
+belirsizlik ikinci reader/tüketim başlatmaz. Tarihsel kanıt okumak mevcut yetki
+üretmez; özgün grant son tarihi yenilenmez.
+
+Reader süreç bütçesi CLAIM öncesi en çok 15 saniye, tüketim sonrası en çok
+min(8 saniye, özgün grant kalan süre eksi 2 saniye). Canlı tazelik hâlâ ilk
+gözlemden başlayan 5 saniyedir. Süreler fixture için uzatılmadı.
+**Silme yürütücüsü, rollback RESULT, kalıcı rollback worker veya üretim rotası
+açılmadı; can_delete=false / can_apply_gpo=false.** Bu intent ilerideki
+yürütücünün yeniden doğrulaması gereken kayıt olup tek başına silme yetkisi değildir.
+
+**Test kanıtı:** Yeni gerçek CNG/pinned TLS/SQLite/imzalı-reader/SMB fixture'ında **407 native kontrol /8 senaryo** geçti: sekiz özgün stage RESULT/ACK, ayrı gerçek core review/create/POLL ve **7 rollback CLAIM**, **0 rollback RESULT/silme**. Proof-disk vakası CLAIM göndermez. Normal yol, kayıp/değişmiş grant, receipt/proof/tüketim disk hataları, canlı PDC sapması ve süre dolması testli; unsigned reader, alternatif kök, sabit kanıt dosyalarına yazma/silme ve yeniden tüketim retleri doğrulandı. Önceki origin guard **258 kontrol /13 temel senaryo**, stage **176 /8**, çevrim **148 /13**, preclaim/RESULT **372 native +18 Python/RSA kontrolü** ile başarılı. Genel koşu **1123 test /28 ortam atlaması /307.390 saniye**. Kalıcı imzalı SCM/HTTPS servis regresyonu **85 kontrol** ile başarılı. Sekiz CI workflow'un tamamı geçti. Origin fixture yeni iki pozitif ölçümü **2664/2610 ms**; saha performans ölçümü veya kesin I/O iptal garantisi değildir.
+Pozitif AD/içerik/servis kimliği gözlemleri imzalı test shim'idir; çağıran hosted
+Windows hesabıdır. Gerçek müşteri gMSA/AD/domain-SYSVOL veya uç kabulü değildir.
+**Başarısız koşular saklandı:** önceki ara head'lerde ön kontrol ret/expiry, gönderim kaydı oluşmaması ve tüketim sonrası genel reader hatası görüldü. Ayrıntılı run/job/head listesi makine checkpoint'indedir. Eski genel hata kayıtları timeout ile child ret/kapsam farkını ayırmadığından bunlara geriye dönük kesin kök neden atanmadı. Yeni reader timeout'u ayrıca ayırt eder. Canlı gözlem sonrası tekrarlanan tarihsel tarama yerine aynı doğrulanmış kanıtlar native pin/mutex altında tutuldu; hiçbir süre sınırı uzatılmadı. Kesin saptanan fixture hatası, geri alma için tasarlanan kayıp-grant etkisinin sonraki özgün stage'e de uygulanmasıydı; test modları ayrıldı. Ayrıca **9a3b45c /run41793832258 /job126453146193** ilk POLL'de **WRITE_HTTPS_REJECTED** üretti; o kayıtta kesin TLS/yanıt/timeout ayrımı yoktu. Son head'in yeşil çevrimi bu eski ret nedenini açıklamaz; güvenilirlik ve müşteri latency/ret kabulü açık kalır.
+
+**Kaydedilen kaynak ile canlı kurulum ayrımı:** PR129 GitHub main'e kaydedildi.
+Linux/DC01'e kurulmadı; müşteri servis/cihaz, AD/GPO/SYSVOL, key ACL/trust ve RADIUS
+değişmedi. Yeni veri yedeği alınmadı. Son bilinen canlı Linux **dev.44**, Windows
+**df28f70c**; yeni canlı ölçüm yok. Son yerel yedek 28 Ekim 2026 tarihli doğrulanmış
+aynı disk yedeğidir; dış kopya ve boot restore kabulü açık.
+
+**Sıradaki somut iş:** sınırlı imzalı rollback child → parent gözlemi → immutable
+RESULT bağlaması. Ardından kalıcı tam rollback POLL/worker; ret bildirimi,
+idle/history/retention; reboot/kayıp sonuç/kısmi journal uzlaştırma ve ayrı unlock;
+strict backup projection, dış yedek/boot restore; kontrollü imzalı teslim ve gerçek
+gMSA/AD/domain-SYSVOL/endpoint kabulü. GPO aktivasyonu, tek hesap geçişi, kullanıcı
+EAP-TLS ve 500/1000 ölçek işleri ayrıca açık. Mevcut dağıtım planının alt adımlarıdır.
+
+### Kalan süre — yeniden değerlendirme
+
+İzin/tüketim alt kapısı testle ilerledi; yürütme/sonuç, kalıcı kurtarma ve gerçek
+teslim kabulü tamamlanmadığı için yazma/geri alma/kurtarma paketi **3–6 aktif iş günü**
+olarak korundu. Eski PR125/PR127 tanısız stage hatalarının kök neden takibi ve müşteri
+gecikme/ret güvenilirliği açık; PR128'in belirli fixture stale hatası bunların açıklaması
+sayılmadı. Mimari bulguda **2–5 ek iş günü / yeniden planlama** payı ayrıca değerlendirilir.
+Diğer paketlerde yeni saha/erişim kanıtı olmadığı için süreler korunup bağımlılıkları
+yeniden gözden geçirildi. Takvim pencereleri **4 Kasım 2026** başlangıcına taşındı;
+sohbet kapalıyken ilerleme varsayılmadı, geçen takvim günleri iş süresinden düşülmedi.
+
+| Hedef | Kalan tahmin | 4 Kasım başlangıçlı koşullu pencere |
+|---|---|---|
+| Yazma / geri alma / kurtarma / kontrollü teslim | **3–6 aktif iş günü** | Yürütme/sonuç, kalıcı recovery ve gerçek kabul kapılarına bağlı |
+| İlk küçük otomatik pilot | **2–3 hafta** | **18–25 Kasım 2026** |
+| Tek hesap ve 500/1000 teknik ölçek dahil temel ürün | **6–9 hafta** | **16 Aralık 2026–6 Ocak 2027** |
+| Temel sürüm seçilirse kılavuz dahil | **7–10 hafta** | **23 Aralık 2026–13 Ocak 2027** |
+| Tüm kayıtlı geliştirmeler + nihai kılavuz | **13–19 hafta** | **3 Şubat–17 Mart 2027** |
+
+Aktif operatör katılımı temel kapsamda **20–30 saat**, tüm kapsamda **30–45 saat**;
+ek **7–14 takvim günü gözlem** ayrı. Düzenli 5 gün/hafta ortak çalışma, aynı gün
+operatör çıktısı ve hazır erişim varsayılır. Dış yedek hedefi/restore VM/üretici API/
+ölçek uçlarının bilinmeyen beklemeleri hariç; tahminler teslim taahhüdü değildir.
+**200 toplam cihaz kotası değildir**; tek görev 512 hedef sınırı ve 500/1000 ayrı teknik
+kabulü korunur. Makro **54/94 tamam,40 açık** değişmedi; kaynak alt kapısı ürün kabulü
+sayılmaz. **READY_FOR_FINAL_GUIDE=false / GUIDE_DELIVERED=false** korunur; hedef
+işlevsel sürüm ve operatör kabulü henüz kaydedilmedi, nihai kılavuz hazırlanmadı.
+
 ## Geri alma ön kontrolü özgün stage kanıtına bağlandı — 30 Ekim 2026
 
 **PR128**, test edilen kaynak **74899c872874b21edcc7cb57223e019cc2ab402e**, merge **807348d87f09d87102c08298afab68ddb0269a8b**.
