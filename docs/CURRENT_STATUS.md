@@ -1,5 +1,42 @@
 # AuthWire current work record
 
+## Ayrı yedek işçisi yükseltmesi kaynakta kabul edildi — 4 Kasım 2026
+
+**PR135**, test edilen kaynak **2cbd3771d8af81d12ed4230096bf33ba95d50206**.
+Merge **5d4a4c3710594caadc81e33a3d4fbca384ed8aaa**. Yeni `tools/backup_upgrade.py`, panel
+kaynağından ayrı `/opt/authwire-backup` bileşenini dış hash pinleri ve mevcut
+job→update kilit sırasıyla yükseltir. Bilinen eski/yeni dizin atomik değiştirilir;
+eski kaynak ve özel bakım kanıtları tutulur. Normal scheduled run/retention
+çağrılmaz; mevcut arşivler, last-run/last-success, tüm ürün dosya/iş verisi ve
+PID'ler karşılaştırılır. Belirsiz kaynak/veri veya eksik terminal yeni işlemi
+durdurur; DB geri yüklenmez, yabancı içerik üstüne yazılmaz.
+
+**Doğrulama:** Aynı son kaynakta üç ilgili CI workflow'u başarılı. Genel koşu
+**1159 test /57 ortam atlaması /307.428 saniye**; yedek paketi **54 test +29 root
+kontrolü**. Gerçek hardened systemd/timer, dev.44 işçiden güncel koda yükseltme,
+şifreli fixture PKI veri restore'u, restore hatasında kod geri dönüşü,
+aktif/kapalı timer ve kapalı RADIUS korunması kabul edildi. Windows discovery
+ve ağ namespace kabulü de başarılı. Bu fixture kabulü müşteri gMSA/AD/SYSVOL,
+canlı Linux veya tam OS/harici yedekten boot restore kabulü değildir.
+
+Önceki kaynakta gerçek fixture manifesti sahiplik/izin korumasında reddedildi
+(run 41879204640); başarısız kayıt tutulur. Fixture dosyaları açık root:root
+0600 oluşturuldu, üretim kontrolü gevşetilmedi. Host ACL/umask kökeni ayrıca
+ölçülmüş sayılmaz. Yerel 83 testte bir kullanıcı namespace grup eşleme atlaması
+vardı; aynı ret kontrolü dahil **29 root testin tamamı hosted CI'da çalıştı**.
+Kanıt: **docs/checkpoints/2026-11-04-backup-worker-upgrade-source.json**.
+
+**Canlı işlem yapılmadı.** Linux/DC01/AD/GPO/SYSVOL/endpoint/RADIUS, güven/anahtar
+izinleri ve canlı yedek değişmedi. Son bilinen dev.44/df28f70c kaydı yeni canlı
+ölçüm değildir. Linux sürümü veya teslim paketi henüz atanmadı/oluşturulmadı.
+Sonraki kapı: doğrulanmış merge kaynağından Linux sürüm/paket hazırlığı; panel
+ve ayrı yedek işçisi paketlerinin pinlenmesi, ardından taze canlı ön kontrol
+ve kontrollü kurulum. Ayrıntı: **docs/checkpoints/2026-11-04-linux-next-delivery-plan.md**.
+
+Bu bir kaynak alt adımıdır. Makro **54/94 tamam,40 açık** ve önceki süre bantları
+korunur; geçen zamandan otomatik süre düşülmez. **READY_FOR_FINAL_GUIDE=false /
+GUIDE_DELIVERED=false**.
+
 ## Yerel Windows geçmiş arşivleme kaynakta tamamlandı — 4 Kasım 2026
 
 **PR134**, test edilen kaynak **53d35ab2867e684e6400d94f6b7eee5c6b88bfea**.

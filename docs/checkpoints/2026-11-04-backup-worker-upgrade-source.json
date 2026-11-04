@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "project": "AuthWire",
+  "date": "2026-11-04",
+  "status": "SOURCE_ACCEPTED_LIVE_DELIVERY_PENDING",
+  "pull_request": 135,
+  "tested_source": "2cbd3771d8af81d12ed4230096bf33ba95d50206",
+  "merge_commit": "5d4a4c3710594caadc81e33a3d4fbca384ed8aaa",
+  "validation": {
+    "foundation": {
+      "run": 41892776193,
+      "tests": 1159,
+      "skipped": 57,
+      "seconds": 307.428,
+      "conclusion": "success"
+    },
+    "backup": {
+      "run": 41892776372,
+      "unit_tests": 54,
+      "root_filesystem_tests": 29,
+      "conclusion": "success",
+      "real_hardened_service": true,
+      "real_timer_trigger": true,
+      "frozen_dev44_upgraded": true,
+      "isolated_fixture_pki_restore": true,
+      "restore_failure_source_rollback": true,
+      "active_and_inactive_timer_preserved": true,
+      "stopped_radius_preserved": true,
+      "foreign_uid_state_read": true,
+      "wal_snapshot": true,
+      "customer_data_used": false
+    },
+    "network": {
+      "run": 41892776226,
+      "conclusion": "success"
+    },
+    "local": {
+      "tests": 83,
+      "skipped": 1,
+      "reason": "Host user namespace does not map fixture group 65534; same check ran in hosted root CI"
+    }
+  },
+  "prior_failure": {
+    "tested_source": "1245250072d27b77dff774dd27936b2564467e15",
+    "run": 41879204640,
+    "phase": "real fixture candidate manifest protected-file guard",
+    "remediation": "Fixture package files explicitly root:root 0600; production upgrader guards unchanged",
+    "precise_host_acl_or_umask_origin_measured": false
+  },
+  "delivery": {
+    "linux_version_assigned": false,
+    "linux_source_package_created": false,
+    "live_linux_changed": false,
+    "live_dc01_changed": false,
+    "live_radius_started": false,
+    "live_backup_taken": false,
+    "live_state_remeasured": false,
+    "windows_release_changed": false,
+    "full_appliance_boot_restore_tested": false,
+    "off_host_restore_tested": false,
+    "next": "Assign Linux delivery version and produce verified panel-source and separate backup-worker packages"
+  },
+  "macro": {
+    "done": 54,
+    "total": 94,
+    "open": 40,
+    "ready_for_final_guide": false,
+    "guide_delivered": false
+  }
+}
+

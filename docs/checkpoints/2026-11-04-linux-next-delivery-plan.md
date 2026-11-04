@@ -6,6 +6,10 @@ yedek/geri dönüş → kontrollü Linux güncellemesi ve kabul.
 
 ## Kaynak ve kapsam
 
+- Ayrı yedek işçisi yükseltmesi PR135 ile kaynakta doğrulandı: `2cbd3771d8af81d12ed4230096bf33ba95d50206`.
+  Üç ilgili PR workflow'u başarılı; merge `5d4a4c3710594caadc81e33a3d4fbca384ed8aaa`.
+  Kanıt: `docs/checkpoints/2026-11-04-backup-worker-upgrade-source.json`.
+
 - PR134 son test kaynağı: `53d35ab2867e684e6400d94f6b7eee5c6b88bfea`.
 - PR134, aynı son kaynakta 12 workflow başarılı olduktan sonra
   `77612e798361187bbdd6e554bb488364f197da45` ile merge edildi.
@@ -43,10 +47,13 @@ güncellemesi bu çalışan bileşeni değiştirmez. Mevcut `tools/backup_instal
 yalnız tam aynı dosya/unit içeriğinde idempotenttir; kurulu işçi byte'ları yeni
 paketten farklıysa reddeder.
 
-Bu nedenle PR133'ün yedek karşılaştırma düzeltmesini bu bileşene taşımak için
-ayrı, doğrulanmış sürüm yükseltme yolu hazırlanmalıdır. Mevcut arşivler,
-başarılı/başarısız koşu kayıtları, timer durumu ve çalışan ürün süreçleri
-korunmalıdır. Bu yükseltme yolu henüz hazırlanmış veya uygulanmış sayılmaz.
+PR133'ün yedek karşılaştırma düzeltmesini bu bileşene taşımak için ayrı
+`tools/backup_upgrade.py` yolu PR135 ile hazırlandı ve kaynakta doğrulandı.
+Kurulu release ve aday manifest hash'leri, iş/güncelleme kilitleri, atomik
+kaynak değişimi, izole veri restore'u ve yalnız bilinen koda geri dönüş kabul
+edildi. Mevcut arşiv/koşu kayıtları, timer durumu ve kapalı RADIUS dahil ürün
+PID'leri gerçek disposable systemd ortamında korundu. Canlı kurulum yapılmadı.
+Sürüm/paket ataması, canlı ön ölçüm ve operatör teslimi hâlâ ayrı kapılardır.
 
 ## Canlı kabul kaydı
 

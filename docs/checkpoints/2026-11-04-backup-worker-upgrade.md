@@ -1,7 +1,10 @@
 # Ayrı yedek işçisi yükseltmesi — kaynak kabul kaydı
 
-Durum: **KAYNAK_TEST_ASAMASINDA**. Canlı Linux/DC01'e dosya aktarılmadı veya
-servis işlemi uygulanmadı. Linux sürümü ve teslim manifesti henüz atanmadı.
+Durum: **KAYNAK_KABUL_EDILDI_CANLI_TESLIM_BEKLIYOR**. PR135 son test kaynağı
+`2cbd3771d8af81d12ed4230096bf33ba95d50206`, merge
+`5d4a4c3710594caadc81e33a3d4fbca384ed8aaa`. Üç ilgili CI workflow'u başarılı.
+Canlı Linux/DC01'e dosya aktarılmadı veya servis işlemi uygulanmadı.
+Linux sürümü ve teslim manifesti henüz atanmadı.
 
 ## Neden ayrı bir yol gerekiyor?
 
@@ -50,8 +53,15 @@ Yerel root testleri gerçek dosyalar, flock ve atomik dizin değişimi üzerinde
 hata enjeksiyonu yapar; systemctl ve fixture bakım kontrolü bu testlerde
 taklittir. Ayrı GitHub-hosted Ubuntu 24.04 kabulü gerçek systemd, şifreli fixture
 PKI, aktif/kapalı timer ve kapalı RADIUS ile yükseltmeyi çalıştırır. Ardından
-yeni işçiyi gerçek kısıtlı backup.service üzerinden de çalıştırır. CI sonucu
-geldikten sonra kesin kaynak SHA'sıyla bu kayıt güncellenecektir.
+yeni işçiyi gerçek kısıtlı backup.service üzerinden de çalıştırır. Bu kabul son
+kaynakta başarılıdır: 54 hedef test +29 root kontrolü; genel koşu 1159 test,
+57 ortam atlaması, 307.428 saniye. Gerçek restore hatasında kod geri dönüşü de
+doğrulandı. Ayrıntı: `2026-11-04-backup-worker-upgrade-source.json`.
+
+Önceki gerçek fixture koşusu aday manifesti korumalı dosya kontrolünde reddetti.
+Fixture paket dosyaları artık açık root:root 0600 hazırlanır; üretim koruması
+değişmedi. Host ACL/umask kaynağı ayrıca ölçülmedi. Yerel 83 testteki bir grup
+eşleme atlaması hosted CI'da yaşanmadı; 29 root kontrolünün tamamı çalıştı.
 
 Bakım arşivinden izole veri geri yüklemesi tam makine boot restore'u, harici
 yedek kabulü veya canlı müşteri ortamı kabulü değildir. Tutulan bakım arşivi
