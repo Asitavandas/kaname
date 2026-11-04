@@ -1,0 +1,414 @@
+{
+  "format": "AuthWireSourceCheckpointV1",
+  "updated_local": "2026-11-04",
+  "timezone": "Europe/Istanbul",
+  "phase": "durable_write_lifecycle_step_source_verified_not_delivered",
+  "pr": 132,
+  "pr_url": "https://github.com/Asitavandas/kaname/pull/132",
+  "base_before": "a070aa5cbe05f166bf8b96af200e47a6f3c3a45a",
+  "tested_head": "36f2e97e878cb77808f4bf6831bd1d6129eff831",
+  "source_merge": "cba8c7b85482d2e328cf3084db9425fcd9945c6c",
+  "source_fingerprints": [
+    {
+      "path": "windows/connector/StagingWritePollRecord.ps1",
+      "sha256": "3299b7d751752d2a564a6aba536c6465722b69150263692f560dbb1558441882",
+      "blob_sha": "ebb97e0563ef6833d291c65e3664e92ab5e21a47"
+    },
+    {
+      "path": "windows/connector/StagingWriteLifecycle.ps1",
+      "sha256": "34823569ec8b8c39ec2358e56b2d9e52fa2af464e9935b03de6fd26da8c17202",
+      "blob_sha": "a56d60986f12fc95b81ffe9f078d25263a8fadc1"
+    },
+    {
+      "path": "tools/staging_write_execution_windows_check.ps1",
+      "sha256": "2e299f07ba13f5771ce26eaa6e1407bc645809f7afebcef03182da451b476f19",
+      "blob_sha": "03022d446ca69e0d663d93a5d5bc82715909ef43"
+    },
+    {
+      "path": "tools/staging_write_cycle_windows_check.py",
+      "sha256": "c34bf4761e04b3f35d1f7e81cce71be1f12ebeec6cec257c0289645c4c62e109",
+      "blob_sha": "465e4d06f32906a1851a5018e524d9d632909969"
+    },
+    {
+      "path": "tools/staging_write_lifecycle_fixture.ps1",
+      "sha256": "d86977f4cdf7ed0a9a07fedd53d1fc6322677ecb817c073f6d2f4a49d4634abe",
+      "blob_sha": "25f268c0b98cfaa85c4c30713ff75972549f8de4"
+    },
+    {
+      "path": "tools/staging_write_lifecycle_windows_check.py",
+      "sha256": "a26b9e6f9eb4695f3bdb8db5680e9d1aeed473e04668f1d2d4fd084597d549ee",
+      "blob_sha": "93928756efd568bdf4dd111866470afd7b26c71e"
+    },
+    {
+      "path": ".github/workflows/staging-write-lifecycle.yml",
+      "sha256": "1d7422bd99c3ab296ab1eebc308fe5d5c77581ea13b09de56c188edbabc3ded3",
+      "blob_sha": "2ea07a1a1c3b2c3b71949d19572f9711885ef1c8"
+    },
+    {
+      "path": "docs/STAGING_WRITE_LIFECYCLE.md",
+      "sha256": "2f3e00c036bfb3ebdd36000deac9b49bd3ad8c14d5df825cc861a33cc4323bf3",
+      "blob_sha": "d7f63c8c2ec040e1bfe1992b7024b03cef62020c"
+    }
+  ],
+  "ci": [
+    {
+      "run_id": 41829066046,
+      "name": "AuthWire isolated authorized stage execution",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41829066097,
+      "name": "AuthWire bounded retry network probe checks",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41829066203,
+      "name": "AuthWire isolated one-shot staging cycle",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41829066077,
+      "name": "AuthWire isolated write preclaim checks",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41829066109,
+      "name": "KANAME foundation checks",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41829066106,
+      "name": "AuthWire isolated rollback origin evidence",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41829066151,
+      "name": "AuthWire isolated rollback execution and result",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41829066090,
+      "name": "AuthWire isolated rollback authorization",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41829066042,
+      "name": "AuthWire isolated durable write lifecycle",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41829066133,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "conclusion": "success"
+    }
+  ],
+  "tests": {
+    "rollback_execution": {
+      "actual_cng_tls_sqlite_signed_child_smb_delete": true,
+      "actual_separate_review_create_poll_claim_result": true,
+      "cases": 9,
+      "customer_changed": false,
+      "native_checks": 563,
+      "positive_ad_content_service_identity_simulated": true,
+      "production_routes_registered": false,
+      "rollback_claims": 9,
+      "rollback_result_requests": 10,
+      "rollback_result_transitions": 9,
+      "unconfirmed_review_results": 7,
+      "verified_rollback_successes": 2,
+      "child_parent_success_ms": [
+        5850,
+        5438
+      ]
+    },
+    "authorization": {
+      "actual_cng_tls_sqlite_signed_reader_smb": true,
+      "actual_separate_review_create_poll_claim": true,
+      "cases": 8,
+      "customer_changed": false,
+      "files_deleted": false,
+      "native_checks": 417,
+      "positive_ad_content_service_identity_simulated": true,
+      "production_routes_registered": false,
+      "rollback_claims": 7,
+      "rollback_results": 0
+    },
+    "stage": {
+      "checks": 186,
+      "cases": 8
+    },
+    "cycle": {
+      "actual_cng_tls_sqlite_signed_child_smb": true,
+      "cases": 13,
+      "customer_changed": false,
+      "native_checks": 158,
+      "original_claims": 10,
+      "original_polls": 13,
+      "production_routes_registered": false,
+      "queued_jobs_and_ad_context_simulated": true,
+      "result_requests": 10,
+      "result_transitions": 9
+    },
+    "origin": {
+      "native_checks": 268,
+      "base_cases": 13,
+      "positive_preflight_ms": [
+        4686,
+        4613
+      ]
+    },
+    "preclaim": {
+      "native_checks": 372,
+      "python_rsa_checks": 18
+    },
+    "foundation": {
+      "tests": 1123,
+      "skips": 28,
+      "seconds": 303.481
+    },
+    "lifecycle": {
+      "active_worker_registered": false,
+      "actual_cng_tls_sqlite_signed_child_smb": true,
+      "actual_core_rollback_review_create": true,
+      "actual_machine_reboot_tested": false,
+      "cases": 8,
+      "claim_requests": 12,
+      "customer_changed": false,
+      "native_checks": 199,
+      "poll_requests": 16,
+      "positive_ad_content_service_identity_simulated": true,
+      "result_requests": 12,
+      "result_transitions": 11,
+      "saved_grant_restart_boundary_simulated": true,
+      "completed_stage_jobs": 8,
+      "rollback_jobs": 6,
+      "observed_rollback_successes": 2,
+      "unconfirmed_review_results": 1,
+      "authorized_without_receipt": 1,
+      "leased_unknown_poll_reply": 2,
+      "capacity_records_synthetic": 62,
+      "real_idle_polls": 2,
+      "max_fixture_http_ms": 2562,
+      "max_reply_bytes": 7209
+    },
+    "permanent_service": {
+      "checks": 85,
+      "real_scm_https": true,
+      "customer_gmsa_tested": false,
+      "write_lifecycle_registered": false
+    }
+  },
+  "failed_intermediate_runs": [
+    {
+      "head": "e674c42dcd59b66ed0deb7532bd18ea19f8021e8",
+      "run_id": 41805975348,
+      "phase": "pre_http",
+      "diagnostic": "First common-stage lifecycle case stopped with zero POLL/CLAIM/RESULT. No precise diagnostic from this run; later trace is not retroactive proof of its cause."
+    },
+    {
+      "head": "61bd6532002e6402795c581014280ebcf91405e1",
+      "run_id": 41806733664,
+      "phase": "pre_http",
+      "diagnostic": "local_reconciliation_required/POLL_OR_RECORD_ERROR, native checks 40, zero HTTP counts. Exact frame was obtained in the subsequent traced run."
+    },
+    {
+      "head": "26615c8b2fe6b7758167939da1de5a89ffc5dffe",
+      "run_id": 41807135406,
+      "job_id": 126496851488,
+      "phase": "pre_http",
+      "diagnostic": "Assert-AuthWireCandidateFields rejected in-memory hashtable in strict stored POLL validator; no HTTP was sent.",
+      "change": "Read the flushed proof through the existing strict journal parser before validation; production limits unchanged."
+    },
+    {
+      "head": "8e88027d33ad0ed07f148e3e1a05de856044d50a",
+      "run_id": 41809210823,
+      "phase": "poll_reply",
+      "diagnostic": "One POLL, zero CLAIM/RESULT; fixture observed TLS EOF while returning response. Precise cause unresolved; later measured replies do not explain this retrospectively."
+    },
+    {
+      "head": "847856377360c47641fe472679dc89de44fa60e4",
+      "run_id": 41809570030,
+      "phase": "legacy_stage_result",
+      "diagnostic": "WRITE_CYCLE_RESULT_REQUIRES_REVIEW after one POLL/CLAIM, no RESULT. Effects unconfirmed; raw exception not classified.",
+      "change": "Added bounded test-owned failure-record fields only. No production deadline or validation relaxed."
+    },
+    {
+      "head": "bfc7eb84e47c0d1698283d2629d40a4af90ed9f9",
+      "run_id": 41810981237,
+      "job_id": 126509862948,
+      "phase": "outer_fixture_timeout",
+      "diagnostic": "Eight of nine rollback cases completed; Python subprocess.TimeoutExpired at total 1100 seconds before the final case/summary. Not a per-operation production deadline, and no claim of full suite pass or final cleanup.",
+      "change": "Outer nine-case execution fixture budget 1320 seconds only; lifecycle 1100, other shared harness 650, workflow ceiling 25 minutes and every production budget unchanged."
+    },
+    {
+      "head": "26615c8b2fe6b7758167939da1de5a89ffc5dffe",
+      "run_id": 41807135401,
+      "job_id": 126496852566,
+      "phase": "rollback_consumption_reader",
+      "diagnostic": "ROLLBACK_PREFLIGHT_TIMEOUT at authorization fixture consumption; two POLL/two CLAIM/one original stage RESULT. No successful rollback observation; precise timing cause unresolved."
+    }
+  ],
+  "limits": {
+    "original_server_grant_seconds_max": 30,
+    "grant_deadline_renewed": false,
+    "live_freshness_seconds": 5,
+    "preclaim_reader_ms": 15000,
+    "post_consumption_reader_ms": 8000,
+    "child_budget_ms_max": 15000,
+    "child_budget_formula": "min(15000,(original_expires_at-now-2)*1000)",
+    "native_deadline_checked_each_delete": true,
+    "inflight_smb_cancellation_guaranteed": false,
+    "original_and_rollback_authority_pinned_before_validation": true,
+    "current_live_checks_still_required": true,
+    "pinned_origin_reuse_is_read_only_not_authorization": true,
+    "source_only_rollback_adapter_available": true,
+    "active_package_worker_enabled": false,
+    "production_peer_routes_enabled": false,
+    "can_apply_gpo": false,
+    "reset_cleanup_unlock_enabled": false,
+    "source_durable_step_available": true,
+    "active_perpetual_worker_available": false,
+    "immutable_cycles_max": 64,
+    "cycle_cap_is_device_quota": false,
+    "result_only_recovery": true,
+    "lost_poll_claim_retried": false,
+    "retention_pruning_enabled": false,
+    "automatic_reconciliation_unlock_enabled": false,
+    "fixture_execution_outer_seconds": 1320,
+    "fixture_lifecycle_outer_seconds": 1100,
+    "fixture_other_outer_seconds": 650,
+    "workflow_ceiling_minutes": 25
+  },
+  "customer_changes": {
+    "linux_installed": false,
+    "dc01_installed": false,
+    "ad_gpo_sysvol_changed": false,
+    "endpoints_services_changed": false,
+    "key_acl_trust_changed": false,
+    "radius_restarted": false,
+    "full_data_backup_created": false,
+    "secrets_exported": false
+  },
+  "last_known_live": {
+    "fresh_live_read_performed": false,
+    "linux_version": "0.14.0-dev.44",
+    "windows_release_id": "df28f70c-104e-4d6d-972c-e311d38adde6",
+    "readonly_preview_file_count": 20,
+    "readonly_preview_bytes": 102464
+  },
+  "last_known_backup": {
+    "created": "2026-10-28T07:28:35.438167+00:00",
+    "path": "/var/backups/authwire/scheduled/authwire-scheduled-20261028T072835Z-004fe2d609b1.tar.gz",
+    "sha256": "3c4b00b745063980c962f712a426a4ce2e845d62abb096ec2346941a5062c002",
+    "freshly_verified_this_turn": false,
+    "off_host_copy_verified": false,
+    "full_appliance_boot_restore_tested": false
+  },
+  "next_work": "Approved idle/history retention and backup projection, refusal reporting, governed partial/unknown-state reconciliation/unlock; then active scheduler/SCM and controlled signed real customer delivery/acceptance.",
+  "open_work": [
+    "Active permanent worker registration and bounded idle/history retention",
+    "Preauthorization refusal reporting",
+    "Governed partial/unknown-state reconciliation and separately approved unlock",
+    "Actual reboot, off-host copy and boot restore",
+    "Controlled signed delivery, real gMSA/AD/domain-SYSVOL/endpoint and latency/refusal acceptance",
+    "Earlier and current generic refusal/transport failures remain tracked",
+    "GPO activation",
+    "Single account transition",
+    "User EAP-TLS live acceptance",
+    "500/1000 technical scale including >512 target partition/merge/deduplication/recovery"
+  ],
+  "remaining_estimates": {
+    "anchor": "2026-11-04",
+    "write_recovery_controlled_delivery_active_workdays": [
+      3,
+      5
+    ],
+    "first_small_pilot_weeks": [
+      2,
+      3
+    ],
+    "first_small_pilot_window": [
+      "2026-11-18",
+      "2026-11-25"
+    ],
+    "base_weeks": [
+      6,
+      9
+    ],
+    "base_window": [
+      "2026-12-16",
+      "2027-01-06"
+    ],
+    "base_with_guide_weeks": [
+      7,
+      10
+    ],
+    "base_with_guide_window": [
+      "2026-12-23",
+      "2027-01-13"
+    ],
+    "full_scope_with_guide_weeks": [
+      13,
+      19
+    ],
+    "full_scope_with_guide_window": [
+      "2027-02-03",
+      "2027-03-17"
+    ],
+    "operator_base_hours": [
+      20,
+      30
+    ],
+    "operator_full_hours": [
+      30,
+      45
+    ],
+    "additional_observation_calendar_days": [
+      7,
+      14
+    ],
+    "architectural_replan_risk_additional_workdays": [
+      2,
+      5
+    ],
+    "assumptions": "Five shared working days/week, same-day operator evidence and access ready; no work while chat closed; external target/VM/API/endpoint waits excluded. Reassessed without automatic subtraction for this source subgate.",
+    "reassessment": "Durable common step and result-only record-boundary recovery close one source subgate after all final-head checks. Active worker, retention, refusal, governed reconciliation, actual reboot and customer delivery are independent gates. Ranges reassessed and retained without automatic elapsed-day subtraction; intermediate reliability failures remain explicit risk."
+  },
+  "macro": {
+    "completed": 54,
+    "total": 94,
+    "open": 40
+  },
+  "capacity": {
+    "two_hundred_is_product_quota": false,
+    "per_job_target_limit": 512,
+    "scale_acceptance_pending": [
+      500,
+      1000
+    ]
+  },
+  "guide": {
+    "READY_FOR_FINAL_GUIDE": false,
+    "GUIDE_DELIVERED": false,
+    "guide_created_this_turn": false,
+    "plan_unchanged": true
+  },
+  "prior_failure_tracking": {
+    "retained_checkpoints": [
+      "docs/checkpoints/2026-11-04-rollback-authorization-source.json",
+      "docs/checkpoints/2026-10-30-rollback-origin-source.json",
+      "docs/checkpoints/2026-10-30-rollback-deadline-source.json"
+    ],
+    "old_pr125_pr127_pr129_generic_causes_unresolved": true,
+    "green_runs_not_retrospective_cause_analysis": true,
+    "customer_latency_refusal_acceptance_pending": true,
+    "current_failures_retained": true,
+    "green_new_suite_not_retrospective_cause_analysis": true
+  },
+  "prior_pr": 131,
+  "pr_recovery": {
+    "superseded": 131,
+    "current": 132,
+    "reason": "Latest synchronized PR131 head retained unknown mergeability/no PR workflow cohort. Exact same source head was opened as PR132; no source guard was bypassed."
+  }
+}
