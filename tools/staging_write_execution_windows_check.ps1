@@ -9,6 +9,7 @@ $package=Join-Path $root 'signed-package';$share=$null;$startedServer=$false;$ke
 $journal=$null;$candidateBase=$null;$oldModulePath=$env:PSModulePath;$script:checks=0
 $grantMode=$env:AUTHWIRE_ROLLBACK_AUTHORIZATION_CHECK -eq '1'
 $rollbackExecutionMode=$env:AUTHWIRE_ROLLBACK_EXECUTION_CHECK -eq '1'
+$lifecycleMode=$env:AUTHWIRE_WRITE_LIFECYCLE_CHECK -eq '1'
 $flowDirectory=$env:AUTHWIRE_WRITE_CYCLE_DIRECTORY;$flowMode=[bool]$flowDirectory
 $webStore=$null;$webCert=$null;$webAdded=$false;$hostBytes=$null;$hosts=$null;$web=$null
 function Check($v,[string]$name){if(-not $v){throw ('EXECUTION_FIXTURE:'+ $name)};$script:checks++}
@@ -22,7 +23,8 @@ try{
  foreach($name in @('Root','TrustedPublisher')){$s=[Security.Cryptography.X509Certificates.X509Store]::new($name,'LocalMachine');try{$s.Open('ReadWrite');$s.Add($public)}finally{$s.Close()}}
  $files=@('Test-AuthWireDeploymentCandidate.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','ConnectorChannelTypes.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','StagingFilesystem.ps1','StagingWritePreclaim.ps1','StagingWriteTransport.ps1','StagingWriteConsumption.ps1','StagingWriteProcess.ps1','StagingWriteExecution.ps1','StagingWriteResult.ps1','StagingWriteCycle.ps1','StagingRollbackEvidence.ps1','StagingRollbackAuthorization.ps1','Read-AuthWireRollbackPreflight.ps1','Read-AuthWireStagingWritePreflight.ps1','Invoke-AuthWireStagingWriteChild.ps1')
  foreach($name in $files){[IO.File]::WriteAllBytes((Join-Path $package $name),[IO.File]::ReadAllBytes((Join-Path $lib $name)))}
- if($rollbackExecutionMode){foreach($name in @('StagingRollbackExecution.ps1','StagingRollbackResult.ps1','Invoke-AuthWireRollbackChild.ps1')){$files+=,$name;[IO.File]::WriteAllBytes((Join-Path $package $name),[IO.File]::ReadAllBytes((Join-Path $lib $name)))}}
+ if($rollbackExecutionMode -or $lifecycleMode){foreach($name in @('StagingRollbackExecution.ps1','StagingRollbackResult.ps1','Invoke-AuthWireRollbackChild.ps1')){$files+=,$name;[IO.File]::WriteAllBytes((Join-Path $package $name),[IO.File]::ReadAllBytes((Join-Path $lib $name)))}}
+ if($lifecycleMode){foreach($name in @('StagingWritePollRecord.ps1','StagingWriteLifecycle.ps1')){$files+=,$name;[IO.File]::WriteAllBytes((Join-Path $package $name),[IO.File]::ReadAllBytes((Join-Path $lib $name)))}}
  # Test production namespace derivation BEFORE replacing only its environment.
  . (Join-Path $package 'Test-AuthWireDeploymentCandidate.ps1') -LibraryOnly
  . (Join-Path $package 'StagingWritePreclaim.ps1')
@@ -142,6 +144,20 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
 '@
   [IO.File]::AppendAllText((Join-Path $package 'StagingWriteConsumption.ps1'),$flowShim)
  }
+
+ if($lifecycleMode){
+  $lifecycleTrace=@'
+# Fixture-only safe failure frames. No raw exception message/path/proof/key data.
+$script:FixtureLifecyclePollBody=${function:New-AuthWireLifecyclePoll}
+function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[string]$BaseUrl){
+ try{& $script:FixtureLifecyclePollBody @PSBoundParameters}catch{
+  $frames=@();foreach($line in $_.ScriptStackTrace.Split([char]10)){if($line -match '\Aat ([A-Za-z][A-Za-z0-9_-]*), .*: line ([0-9]+)'){$frames+=,[pscustomobject]@{function=$Matches[1];line=[int]$Matches[2]};if($frames.Count -ge 8){break}}}
+  Write-Host ('LIFECYCLE_SAFE_FAILURE_FRAMES '+(@{kind=$_.Exception.GetType().Name;frames=$frames}|ConvertTo-Json -Depth 4 -Compress));throw
+ }
+}
+'@
+  [IO.File]::AppendAllText((Join-Path $package 'StagingWriteLifecycle.ps1'),$lifecycleTrace)
+ }
  $modules=Join-Path $package 'fixture-modules';$null=New-Item -ItemType Directory -Path $modules
  foreach($name in @('ActiveDirectory','GroupPolicy')){
   $directory=Join-Path $modules $name;$null=New-Item -ItemType Directory -Path $directory
@@ -186,6 +202,7 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
  if($flowMode){$cases+=@('lost_ack','lost_grant','poll_lost','poll_bad','idle')}
  if($grantMode){$cases=@('rollback_success','rollback_lost_grant','rollback_bad_grant','rollback_receipt_disk','rollback_consume_disk','rollback_live_drift','rollback_expired','rollback_proof_disk')}
  if($rollbackExecutionMode){$cases=@('rb_execute_success','rb_execute_lost_ack','rb_execute_drift','rb_execute_completion_disk','rb_execute_bad_result','rb_execute_parent_drift','rb_execute_launch_disk','rb_execute_identity','rb_execute_timeout')}
+ if($lifecycleMode){$cases=@('lc_stage','lc_success','lc_lost_ack','lc_lost_claim','lc_lost_poll','lc_bad_poll','lc_idle','lc_saved_grant')}
  foreach($case in $cases){
   $t=[pscustomobject][ordered]@{candidate_id=[guid]::NewGuid().ToString('D');network_candidate_id=[guid]::NewGuid().ToString('D');plan_id=[guid]::NewGuid().ToString('D');plan_version=1;gpo_id=[guid]::NewGuid().ToString('D');approval_sha256=('a'*64);network_manifest_sha256=('b'*64);manifest_sha256=('c'*64);draft_sha256=('d'*64);dependency_sha256=('e'*64);publisher_thumbprint=$signer.Thumbprint;machine_profile_id=[guid]::NewGuid().ToString('D');machine_profile_version=3;domain='lab.example';root_thumbprint=('f'*40);group_sid=($domainSid+'-1647');content_result_sha256=('2'*64);target_sids_sha256=('3'*64);target_count=1}
   $draft=[Text.Encoding]::ASCII.GetBytes('fixture never execute '+$case);$t.draft_sha256=Get-AuthWireCandidateHash $draft
@@ -213,6 +230,14 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
    # POLL, CLAIM, stage, RESULT and all replay gates are production bodies.
    $data=@{case=$case;binding=$b;public_key_pem=[AuthWire.Connector.ChannelTypesV1]::PublicPem($rsa);offer=$offer}
    [IO.File]::WriteAllText((Join-Path $flowDirectory 'input.json'),($data|ConvertTo-Json -Depth 15 -Compress),[Text.UTF8Encoding]::new($false))
+   if($lifecycleMode -and $case -ceq 'lc_stage'){
+    $watch=[Diagnostics.Stopwatch]::StartNew();$cycle=Invoke-AuthWireStagingWriteLifecycleStep $journal $b $release $rsa $url;$watch.Stop()
+    if($cycle.Phase -cne 'result_recorded' -or $cycle.Outcome -cne 'staged'){Write-Host ('LIFECYCLE_SAFE_STAGE_DIAGNOSTIC '+($cycle|ConvertTo-Json -Compress))}
+    Check ($cycle.Phase -ceq 'result_recorded' -and $cycle.Outcome -ceq 'staged' -and $cycle.JobId -ceq $id) 'durable lifecycle dispatches real stage from initially empty fixed root'
+    . (Join-Path $PSScriptRoot 'staging_write_lifecycle_fixture.ps1') -StageOnly
+    $outcomes+=,[pscustomobject]@{case=$case;job_id=$id;phase=$cycle.Phase;outcome=$cycle.Outcome;seconds=[Math]::Round($watch.Elapsed.TotalSeconds,2)}
+    Remove-Item -LiteralPath $journal -Recurse -Force;PrivateRoot $journal;continue
+   }
    $watch=[Diagnostics.Stopwatch]::StartNew();$failure='';$cycle=$null
    try{$cycle=Invoke-AuthWireStagingWriteCycle $journal $b $release $rsa $url}catch{$failure=$_.Exception.Message};$watch.Stop()
    Check (Test-Path -LiteralPath (Join-Path $journal 'cycle-poll.json')) 'one-shot poll durable before transmission'
@@ -238,7 +263,8 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
     . (Join-Path $package 'StagingWriteCycle.ps1')
     Check ((Resume-AuthWireStagingWriteCycleResult $journal $b $release $rsa $url).ResultRecorded) 'result-only recovery after reload acknowledges unchanged body'
     Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $treeHash -and [IO.File]::ReadAllText($readsFile) -ceq $reads) 'result recovery never repeats live read or SMB write'
-    if($grantMode){. (Join-Path $PSScriptRoot 'staging_rollback_authorization_fixture.ps1')}
+    if($lifecycleMode){. (Join-Path $PSScriptRoot 'staging_write_lifecycle_fixture.ps1')}
+    elseif($grantMode){. (Join-Path $PSScriptRoot 'staging_rollback_authorization_fixture.ps1')}
     if($env:AUTHWIRE_ROLLBACK_EVIDENCE_CHECK -eq '1' -and $expected -ceq 'staged'){. (Join-Path $PSScriptRoot 'staging_rollback_evidence_fixture.ps1')}
    }
    Reject {Invoke-AuthWireStagingWriteCycle $journal $b $release $rsa $url} 'existing history refuses a second POLL before signing or network'
@@ -329,7 +355,7 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
   Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $treeHash -and [IO.File]::ReadAllText($readFile) -ceq $readsBefore) 'result freeze changes no SMB state and performs no new AD observation'
   $outcomes+=,[pscustomobject]@{case=$case;seconds=[Math]::Round($watch.Elapsed.TotalSeconds,2);staged=($case -ceq 'success')}
  }
- foreach($name in @('ConnectorServicePackage.ps1','ConnectorServiceRuntime.ps1')){foreach($module in @('StagingWriteExecution','StagingWriteResult','StagingWriteCycle','StagingRollbackEvidence','StagingRollbackAuthorization','Read-AuthWireRollbackPreflight','StagingRollbackExecution','StagingRollbackResult','Invoke-AuthWireRollbackChild')){Check (-not ([IO.File]::ReadAllText((Join-Path $lib $name))).Contains($module)) 'execution and result adapters absent from active package/runtime'}}
+ foreach($name in @('ConnectorServicePackage.ps1','ConnectorServiceRuntime.ps1')){foreach($module in @('StagingWriteExecution','StagingWriteResult','StagingWriteCycle','StagingRollbackEvidence','StagingRollbackAuthorization','Read-AuthWireRollbackPreflight','StagingRollbackExecution','StagingRollbackResult','Invoke-AuthWireRollbackChild','StagingWritePollRecord','StagingWriteLifecycle')){Check (-not ([IO.File]::ReadAllText((Join-Path $lib $name))).Contains($module)) 'execution and result adapters absent from active package/runtime'}}
  Check ((Get-Acl -LiteralPath $keyPath).Sddl -ceq $keyAcl) 'dedicated native key ACL preserved'
  $timer=[Diagnostics.Stopwatch]::StartNew();Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-1) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()) $timer} 'engine refuses expired authorization';Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+90) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+60) $timer} 'engine refuses clock rollback'
  # Real controller death: this independently tests the new kernel job runner,
@@ -373,7 +399,34 @@ try{
  }finally{if(-not $controllerProcess.HasExited){Stop-Process -Id $controllerProcess.Id -Force};$controllerProcess.Dispose()}
  Write-Host ('AUTHWIRE_AUTHORIZED_STAGE_WINDOWS_OK checks='+$checks+' outcomes='+($outcomes|ConvertTo-Json -Compress)+' actual_smb=true seeded_grants='+(-not $flowMode)+' namespace_ad_content_simulated=true customer_changed=false')
  if($flowMode){[IO.File]::WriteAllText((Join-Path $flowDirectory 'native-summary.json'),(@{checks=$checks;outcomes=$outcomes}|ConvertTo-Json -Depth 6 -Compress),[Text.UTF8Encoding]::new($false))}
-}catch{Write-Host ('EXECUTION_FIXTURE_FAILURE checks='+$checks+' stack='+$_.ScriptStackTrace);throw}
+}catch{
+ $fixtureFailure=$_
+ # Test-owned failure evidence only. Never emit raw exception values, proofs,
+ # keys, URLs, paths, offered data or arbitrary JSON properties.
+ foreach($name in @('cycle-review.json','authorization.json','grant-consumed.json','stage-launch.json','execution-requires-review.json')){
+  try{
+   $file=Join-Path (Join-Path $journal $id) $name
+   if(-not (Test-Path -LiteralPath $file)){continue}
+   $value=Get-Content -LiteralPath $file -Raw|ConvertFrom-Json
+   $safe=[ordered]@{record=$name;observed_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()}
+   foreach($field in @('phase','checked_at','received_at','consumed_at','started_at','expires_at','work_budget_ms')){
+    $property=$value.PSObject.Properties[$field]
+    if($null -eq $property){continue};$v=$property.Value
+    if($v -is [int] -or $v -is [long] -or ($v -is [string] -and $v -cmatch '\A[A-Za-z_]{1,64}\z')){$safe[$field]=$v}
+   }
+   if($null -ne $value.PSObject.Properties['grant']){$safe['grant_expires_at']=[long]$value.grant.expires_at}
+   if($null -ne $value.PSObject.Properties['diagnostic']){
+    foreach($field in @('parent_phase','child_phase','exception_kind','timed_out','truncated','exit_code','elapsed_ms','work_budget_ms')){
+     $property=$value.diagnostic.PSObject.Properties[$field]
+     if($null -eq $property){continue};$v=$property.Value
+     if($null -eq $v -or $v -is [bool] -or $v -is [int] -or $v -is [long] -or ($v -is [string] -and $v -cmatch '\A[A-Za-z_]{1,64}\z')){$safe['diagnostic_'+$field]=$v}
+    }
+   }
+   Write-Host ('EXECUTION_FIXTURE_SAFE_RECORD '+($safe|ConvertTo-Json -Compress))
+  }catch{}
+ }
+ Write-Host ('EXECUTION_FIXTURE_FAILURE checks='+$checks+' stack='+$fixtureFailure.ScriptStackTrace);throw
+}
 finally{
  $env:PSModulePath=$oldModulePath
  if($hostBytes -and $hosts){[IO.File]::WriteAllBytes($hosts,$hostBytes)}

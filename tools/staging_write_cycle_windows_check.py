@@ -36,6 +36,7 @@ def main():
         raise RuntimeError('Hosted Windows fixture only')
     grant_mode = os.environ.get('AUTHWIRE_ROLLBACK_AUTHORIZATION_CHECK') == '1'
     execution_mode = os.environ.get('AUTHWIRE_ROLLBACK_EXECUTION_CHECK') == '1'
+    lifecycle_mode = os.environ.get('AUTHWIRE_WRITE_LIFECYCLE_CHECK') == '1'
     with tempfile.TemporaryDirectory(prefix='aw-write-transport-') as temp:
         root = Path(temp); fqdn = 'aw-' + uuid.uuid4().hex + '.lab.example'
         private = rsa.generate_private_key(public_exponent=65537, key_size=3072)
@@ -95,7 +96,7 @@ def main():
                 core.previews = SimpleNamespace(_target=current_target)
                 with store.connect() as db:
                     ledger = core._read(db)
-                if not any(j['id'] == mode['job_id'] for j in ledger['jobs']):
+                if mode['case'] != 'lc_idle' and not any(j['id'] == mode['job_id'] for j in ledger['jobs']):
                     req = {'expected_revision': store.snapshot()['revision'],
                         'job_id': mode['job_id'], 'operation': ROLLBACK,
                         'candidate_id': target['candidate_id'],
@@ -115,6 +116,7 @@ def main():
                 pass
 
             def do_POST(self):
+                observed_start = time.monotonic()
                 try:
                     size = int(self.headers.get('Content-Length', '0')); assert 0 < size <= 4096
                     raw = self.rfile.read(size)
@@ -124,13 +126,13 @@ def main():
                         if self.path == '/api/connector/v1/staging-write/poll':
                             metrics['polls'][identity] = metrics['polls'].get(identity, 0)+1
                             reply = core.poll(raw)
-                            if case == 'poll_lost':
+                            if case in {'poll_lost', 'lc_lost_poll'}:
                                 self.close_connection = True; self.connection.shutdown(2); return
-                            if case == 'poll_bad': reply['request_id'] = '0'*64
+                            if case in {'poll_bad', 'lc_bad_poll'}: reply['request_id'] = '0'*64
                         elif self.path == '/api/connector/v1/staging-write/claim':
                             metrics['claims'][identity] = metrics['claims'].get(identity, 0)+1
                             reply = core.claim(raw)
-                            if case in {'lost_grant', 'rollback_lost_grant'}:
+                            if case in {'lost_grant', 'rollback_lost_grant', 'lc_lost_claim'}:
                                 self.close_connection = True; self.connection.shutdown(2); return
                             if case == 'rollback_bad_grant':
                                 reply['operation'] = STAGE
@@ -139,11 +141,16 @@ def main():
                             body = json.loads(base64.b64decode(json.loads(raw)['payload']))
                             metrics['bodies'].setdefault(identity, []).append(body)
                             reply = core.complete(raw)
-                            if case in {'lost_ack', 'rb_execute_lost_ack'} and metrics['results'][identity] == 1:
+                            if case in {'lost_ack', 'rb_execute_lost_ack', 'lc_lost_ack'} and metrics['results'][identity] == 1:
                                 self.close_connection = True; self.connection.shutdown(2); return
                         else:
                             raise AssertionError('Unexpected route')
                     body = json.dumps(reply, separators=(',', ':')).encode('ascii')
+                    if lifecycle_mode:
+                        print('LIFECYCLE_FIXTURE_HTTP_READY ' + json.dumps({
+                            'kind': self.path.rsplit('/', 1)[-1],
+                            'elapsed_ms': round((time.monotonic()-observed_start)*1000),
+                            'reply_bytes': len(body)}, sort_keys=True), flush=True)
                     self.send_response(200); self.send_header('Content-Type', 'application/json')
                     self.send_header('Content-Length', str(len(body))); self.send_header('Connection', 'close')
                     self.end_headers(); self.wfile.write(body); self.close_connection = True
@@ -164,8 +171,40 @@ def main():
         try:
             subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-File',
                 str(Path(__file__).with_name('staging_write_execution_windows_check.ps1'))],
-                check=True, timeout=1100 if execution_mode else 650, env=env)
+                # Nine independent rollback cases include real signed child/SMB
+                # setup and teardown. This is the outer fixture budget only;
+                # production HTTP/grant/reader/child deadlines stay unchanged.
+                check=True, timeout=1320 if execution_mode else (1100 if lifecycle_mode else 650), env=env)
             native = json.loads((root/'native-summary.json').read_text(encoding='utf-8-sig'))
+            if lifecycle_mode:
+                assert len(native['outcomes']) == 8 and not metrics['errors']
+                assert len(metrics['polls']) == 15 and sorted(metrics['polls'].values()) == [1]*14+[2]
+                assert len(metrics['claims']) == 12 and set(metrics['claims'].values()) == {1}
+                assert len(metrics['results']) == 11 and sorted(metrics['results'].values()) == [1]*10+[2]
+                assert all(all(b == bodies[0] for b in bodies) for bodies in metrics['bodies'].values())
+                with store.connect() as db:
+                    jobs = core._read(db)['jobs']
+                assert len(jobs) == 14
+                assert sum(j['operation'] == STAGE and j['state'] == 'completed' and j['result']['outcome'] == 'staged' for j in jobs) == 8
+                assert sum(j['operation'] == ROLLBACK and j['state'] == 'completed' and j['result']['outcome'] == 'rolled_back' for j in jobs) == 2
+                assert sum(j['operation'] == ROLLBACK and j['state'] == 'requires_review' for j in jobs) == 1
+                assert sum(j['operation'] == ROLLBACK and j['state'] == 'authorized' for j in jobs) == 1
+                assert sum(j['operation'] == ROLLBACK and j['state'] == 'leased' for j in jobs) == 2
+                after = store.snapshot()
+                assert len(store.audit()) == len(original_audit)+29
+                assert after['revision'] == original['revision']+29
+                assert after['config'] == original['config'] and after['policies'] == original['policies']
+                print('AUTHWIRE_WRITE_LIFECYCLE_WINDOWS_OK ' + json.dumps({
+                    'native_checks': native['checks'], 'cases': 8,
+                    'actual_cng_tls_sqlite_signed_child_smb': True,
+                    'poll_requests': 16, 'claim_requests': 12,
+                    'result_requests': 12, 'result_transitions': 11,
+                    'actual_core_rollback_review_create': True,
+                    'saved_grant_restart_boundary_simulated': True,
+                    'actual_machine_reboot_tested': False,
+                    'positive_ad_content_service_identity_simulated': True,
+                    'active_worker_registered': False, 'customer_changed': False}, sort_keys=True))
+                return
             if execution_mode:
                 assert len(native['outcomes']) == 9 and not metrics['errors']
                 assert len(metrics['polls']) == len(metrics['claims']) == len(metrics['results']) == 18
