@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "project": "AuthWire",
+  "date": "2026-11-04",
+  "timezone": "Europe/Istanbul",
+  "status": "LINUX_DEV45_LIVE_ACCEPTED",
+  "tested_source": "c5241e55c7728da239070bbe8f9c841043f54cde",
+  "source_delivery_pull_request": 136,
+  "source_manifest_sha256": "e5e417c9f2b78158cf0be0da103f4b567eb2a41b049bf00758073a6b5ae5c8dd",
+  "version_before": "0.14.0-dev.44",
+  "version_after": "0.14.0-dev.45",
+  "verification": {
+    "fresh_root_preflight_passed": true,
+    "all_296_installed_files_match": true,
+    "https_verified": true,
+    "configuration_preserved": true,
+    "administrators_preserved": true,
+    "radius_process_preserved": true,
+    "service_control_process_preserved": true,
+    "backup_worker_upgraded": true,
+    "backup_worker_release_sha256": "6c7a376c830580d1da795e9fd03d0abb5bfd1a2962f113826b69f86ae63cbf45",
+    "backup_timer_active_enabled": true,
+    "real_hardened_backup_service_success": true,
+    "fresh_backup_contains_version45": true,
+    "isolated_data_restore_verified": true,
+    "restore_checks_passed": 18,
+    "previous_source44_and_rollback_snapshot_retained": true,
+    "old_archive_preserved_before_configured_rotation": true
+  },
+  "scope": {
+    "windows_endpoint_changed": false,
+    "ad_gpo_sysvol_changed": false,
+    "radius_restarted": false,
+    "server_windows_installer_source_contains_reviewed_retry_deadline_rounding": true,
+    "active_windows_worker_remeasured": false,
+    "wired_client_authentication_retested": false,
+    "full_appliance_boot_restore_tested": false,
+    "off_host_restore_tested": false
+  },
+  "evidence": {
+    "detailed_operational_receipt": "Retained in the server's root-private delivery workspace",
+    "private_host_credentials_pids_and_backup_identifiers_included": false
+  },
+  "next": "Revalidate the wired EAP-TLS pilot before wireless; Windows active-worker/customer-domain acceptance remains separate",
+  "macro": {
+    "done": 54,
+    "total": 94,
+    "open": 40,
+    "ready_for_final_guide": false,
+    "guide_delivered": false
+  }
+}

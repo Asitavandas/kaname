@@ -1,7 +1,7 @@
 # Sonraki Linux teslimatı — hazırlık kaydı
 
-Durum: **PAKETLER_DOGRULANDI_CANLI_ON_KONTROL_BEKLIYOR**. Linux'a kurulum, dosya aktarımı veya servis işlemi
-başlatılmadı. Kullanıcı sırası: son kaynak doğrulaması → sürüm/paket hazırlığı →
+Durum: **LINUX_DEV45_KURULDU_KABUL_EDILDI**. Doğrulanmış paketler canlı Linux'a uygulanıp kurulum sonrası
+kaynak/HTTPS/ayar/yönetici, RADIUS PID ve taze yedek/veri restore kabulü tamamlandı. Kullanıcı sırası: son kaynak doğrulaması → sürüm/paket hazırlığı →
 yedek/geri dönüş → kontrollü Linux güncellemesi ve kabul.
 
 ## Kaynak ve kapsam
@@ -20,9 +20,10 @@ yedek/geri dönüş → kontrollü Linux güncellemesi ve kabul.
   ayrı yedek işçisi paketi iki bağımsız üretimde byte bazında aynı çıktı.
   Paket ve manifest SHA256'ları `docs/checkpoints/2026-11-04-linux-dev45-delivery.json`
   kaydındadır. İndirme: https://github.com/Asitavandas/kaname/actions/runs/41895297932/artifacts/13354438976
-  (2027-02-02 tarihine kadar). Yeni Linux sürümü canlıya uygulanmadı.
-- Son bilinen canlı Linux sürümü 0.14.0-dev.44'tür. Bu kayıtta canlı sürüm,
-  servis durumu, yedek tazeliği veya erişim yeniden ölçülmedi.
+  (2027-02-02 tarihine kadar). Yeni Linux sürümü kontrollü olarak canlıya uygulandı; kabul kaydı
+  `docs/checkpoints/2026-11-04-linux-dev45-live-acceptance.json` içindedir.
+- Güncel canlı Linux sürümü 0.14.0-dev.45'tir. Önceki dev.44 geri dönüş kodu ve
+  durum/ayar kopyaları korundu; taze canlı servis/HTTPS/yedek kabulü yapıldı.
 - Windows Connector'ın yeni history/rollback SDK'sı panel güncellemesiyle
   etkinleşmiş sayılmaz. Aktif worker, imzalı teslim ve gerçek kabul ayrı kapıdır.
 
@@ -57,8 +58,9 @@ PR133'ün yedek karşılaştırma düzeltmesini bu bileşene taşımak için ayr
 Kurulu release ve aday manifest hash'leri, iş/güncelleme kilitleri, atomik
 kaynak değişimi, izole veri restore'u ve yalnız bilinen koda geri dönüş kabul
 edildi. Mevcut arşiv/koşu kayıtları, timer durumu ve kapalı RADIUS dahil ürün
-PID'leri gerçek disposable systemd ortamında korundu. Canlı kurulum yapılmadı.
-Sürüm/paket ataması, canlı ön ölçüm ve operatör teslimi hâlâ ayrı kapılardır.
+PID'leri gerçek disposable systemd ortamında korundu. Aynı yedek işçisi yolu canlıda da
+başarıyla uygulandı; yeni sürümün gerçek hardened yedek hizmeti ve izole veri
+restore kabulü tamamlandı.
 
 ## Canlı kabul kaydı
 
@@ -70,12 +72,17 @@ Teslim sonrası sürüm/hash/HTTPS, ayar-yönetici-PKI korunması, RADIUS'un ön
 çalışma durumu ve varsa ayrı yedek işçisi sürümü doğrulanır. Windows gMSA/AD/
 domain-SYSVOL/endpoint, gerçek reboot ve dış restore kabulü ayrıca izlenir.
 
-## Sıradaki işlem — salt okunur canlı ön kontrol
+## Tamamlanan işlem — canlı ön kontrol ve kontrollü Linux kurulumu
 
-Gerçek Linux sürümü ve kurulum sahipliği, Ubuntu/Python düzeni, HTTPS, ürün
-servis/PID durumları, varsa ayrı yedek işçisi release/timer/unit kimliği,
-son kullanılabilir yedeğin tazeliği ve hash'i ile boş alan/geri dönüş kapasitesi
-taze ölçülecek. Bu kontrol servis başlatmaz/durdurmaz, RADIUS'u açmaz, AD/GPO'ya
-yazmaz ve paket kurmaz. Kontrollü kurulum bu gözlemlerden sonra uygulanır.
-Yeni aktarım/kurulum planında bu kayıttaki kesin aday hash'leri kullanılacak;
-main dalının daha sonraki byte'ları aynı paketmiş gibi kabul edilmeyecek.
+Gerçek sürüm/Ubuntu-Python, HTTPS, mevcut yedek hash/tazelik, paket hash'leri ve
+boş alan taze doğrulandı. Yedek işçisi önce, panel sonra güncellendi; RADIUS ve
+service-control PID'leri korundu. Manifestteki 296 kaynak dosyası aynı; yeni
+sürümün taze yedeği ve 18 izole veri restore kontrolü başarılı. Ayrıntı yukarıdaki
+canlı kabul kaydındadır. Tam OS boot restore ve harici yedekten kabul ayrı kalır.
+
+## Sıradaki işlem — kablolu pilot ve Windows teslim kapıları
+
+Gerçek Windows istemcisinin kablolu EAP-TLS sonucunu yeniden doğrula. Yeni
+Windows SDK'sı panel güncellemesiyle aktif worker'a kaydedilmiş sayılmaz;
+gMSA/AD/SYSVOL/endpoint ve imzalı Windows teslimi kendi kapılarında izlenir.
+Kablolu başarıdan önce kablosuz pilota geçilmez.

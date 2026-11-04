@@ -1,5 +1,45 @@
 # AuthWire current work record
 
+## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
+
+Doğrulanmış **c5241e55c7728da239070bbe8f9c841043f54cde** kaynağı,
+**0.14.0-dev.44 → 0.14.0-dev.45** olarak kontrollü uygulandı. Taze root ön
+kontrolünde HTTPS, mevcut yedek hash/tazelik, SQLite quick_check, paket pinleri
+ve boş alan geçti. CI'da doğrulanan iki paket sunucuda yeniden üretildi ve
+aynı SHA256'larla eşleşti; root'a özel hazırlık alanına alındı.
+
+Önce ayrı yedek işçisi yükseltildi. Canlı veriden bakım arşivi üretildi ve
+izole veri geri yüklemesi doğrulandı; scheduled arşiv/koşu kayıtları ve ürün
+PID'leri korunarak timer önceki aktif/enabled durumuna döndü. Ardından panel
+kendi güncelleyicisiyle yedek/kod geri dönüşü koruması altında yenilendi.
+**296 kurulu kaynak dosyasının tamamı paket manifestiyle aynı**; HTTPS dev.45
+sağlığı, ayarlar ve yöneticilerin korunması başarılı. RADIUS ve service-control
+süreçleri aynı PID ile çalıştı; RADIUS yeniden başlatılmadı veya unit'i değiştirilmedi.
+
+Yeni sürüm gerçek hardened backup.service üzerinden taze yedek aldı.
+Arşiv/SQLite/iş verisi/PID kontrolleri başarılı; arşivin dev.45 içerdiği ve
+ondan yapılan izole veri restore'unda **18 kontrolün tamamı** doğrulandı.
+Normal keep=14 saklama kuralının döndüreceği bir eski arşiv/sidecar, işlemden
+önce özel teslim alanına doğrulanmış kopyayla korundu. Önceki dev.44 kodu,
+ayar/durum kopyaları ve geri dönüş kanıtı tutuluyor.
+
+**Kapsam:** Windows cihazları ve AD/GPO/SYSVOL üzerinde işlem yapılmadı.
+Linux'ta sunulan Install-AuthWire.ps1 kaynağı, onaylı yeni paketteki retry
+StartBoundary yuvarlama/en az ileri zaman düzeltmesini içerir; Windows'ta
+çalıştırılmış veya GPO'ya dağıtılmış sayılmaz. Aktif Windows worker, gerçek
+istemciden kablolu 802.1X, domain/SYSVOL ve tam OS/harici yedekten boot restore
+kabulü bu Linux güncellemesiyle kapanmadı.
+
+Özet kanıt: **docs/checkpoints/2026-11-04-linux-dev45-live-acceptance.json**.
+Ayrıntılı operasyon kaydı sunucunun root'a özel teslim alanındadır; host erişim
+bilgileri ve canlı özel veriler bu repo kaydına alınmaz. Paket kaydı ve önceki
+CI kanıtları korunur. Sonraki adım **kablolu EAP-TLS pilotunu yeniden doğrulamak**;
+kablosuz aşama kablolu başarıdan sonra gelir.
+
+Linux teslim alt kapısı kapandı; ürün/saha kabulü tamamlanmadı. Makro
+**54/94 tamam,40 açık**, diğer süre bantları ve **READY_FOR_FINAL_GUIDE=false /
+GUIDE_DELIVERED=false** korunur; geçen zamandan otomatik süre düşülmez.
+
 ## Dev.45 Linux teslim paketleri doğrulandı — 4 Kasım 2026
 
 **PR136**, test edilen kaynak **c5241e55c7728da239070bbe8f9c841043f54cde**; merge
