@@ -17,6 +17,9 @@ with its original release under the same binding/key generation; no binding
 migration or renewed permission is inferred.
 
 Before signing, flush poll-started; before HTTP, flush proof and one-send marker.
+Local transport type initialization finishes before that before-signing marker,
+so runtime compilation cannot consume the original record/send freshness window.
+It creates no proof, grant or network request; all five-second checks remain.
 The stored POLL validator enforces the same nine binding fields, current service
 identity, named machine non-exportable signing-only channel key and exact RSA
 wire envelope. Historical reads use actual recorded send/receive times, never

@@ -59,12 +59,14 @@ function Invoke-AuthWireStagingWriteCycle([string]$JournalRoot,[hashtable]$Bindi
   # This is deliberately one controlled cycle, not an unattended idle loop.
   # Any prior record (even a lost/no-job poll) requires explicit reconciliation.
   if([IO.Directory]::GetFileSystemEntries($JournalRoot).Length -ne 0){throw 'WRITE_CYCLE_EXISTING_HISTORY_REQUIRES_REVIEW'}
+  # Finish local C# startup before creating/signing the durable POLL record.
+  # HTTP and freshness limits are unchanged.
+  Initialize-AuthWireWriteTransportTypes
   $proof=New-AuthWireStagingWriteProof $Binding $Key POLL @{capability='combined.filesystem.write.v1';release_id=$Release}
   $request=[Text.Encoding]::ASCII.GetString([Convert]::FromBase64String($proof.frame)).Split([char]10)[10]
   $record=[pscustomobject]@{format='AuthWireWriteCyclePollV1';binding_scope=(Get-AuthWireJobScope $Binding);release_id=$Release;request_id=$request;sent_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();proof=$proof}
   Write-AuthWireStagingJournal (Join-Path $JournalRoot 'cycle-poll.json') $record
   $p.PinFile((Join-Path $JournalRoot 'cycle-poll.json'))
-  Initialize-AuthWireWriteTransportTypes
   $raw=[AuthWire.Connector.WriteTransportV1]::Post($BaseUrl,$Binding.appliance_fqdn,$Binding.appliance_tls_sha256,'/api/connector/v1/staging-write/poll',(ConvertTo-AuthWireWriteJson $proof))
   $offer=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($raw));Assert-AuthWireWritePollReply $offer $Binding $Release $request
   if($offer.job_id -ceq ''){
@@ -95,3 +97,4 @@ function Invoke-AuthWireStagingWriteCycle([string]$JournalRoot,[hashtable]$Bindi
   return (Get-AuthWireWriteCycleResult $JournalRoot $offer.job_id $Binding $Release $Key $sent.ResultRecorded)
  }finally{$p.Dispose();$m.ReleaseMutex();$m.Dispose()}
 }
+

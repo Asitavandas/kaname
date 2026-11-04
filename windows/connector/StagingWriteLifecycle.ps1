@@ -128,6 +128,9 @@ function Read-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bind
 function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[string]$BaseUrl){
  Assert-AuthWireCandidateGuid $Release
  if($Slot -cnotmatch '\A[0-9]{6}\z' -or [int]$Slot -lt 1 -or [int]$Slot -gt 576){throw 'LIFECYCLE_SLOT_REJECTED'}
+ # Local runtime startup precedes the before-signing marker and the original
+ # five-second record/send bounds. Compilation grants or transmits nothing.
+ Initialize-AuthWireWriteTransportTypes
  $dir=Join-Path $Life $Slot;$p=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
   $p.PinAncestors($Life);[AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($dir);$p.PinAncestors($dir)
@@ -142,7 +145,6 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
   $sent=[pscustomobject]@{format='AuthWireLifecyclePollSentV1';request_id=$request;proof_sha256=(Get-AuthWireWriteHash $proof);sent_at=$sentAt}
   # Flush before HTTP. Missing response after a crash NEVER creates a new POLL.
   Write-AuthWireStagingJournal (Join-Path $dir 'poll-sent.json') $sent
-  Initialize-AuthWireWriteTransportTypes
   $raw=[AuthWire.Connector.WriteTransportV1]::Post($BaseUrl,$Binding.appliance_fqdn,$Binding.appliance_tls_sha256,'/api/connector/v1/staging-write/poll',(ConvertTo-AuthWireWriteJson $proof))
   $received=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$offer=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($raw))
   Assert-AuthWireLifecyclePollReplyAt $offer $Binding $Release $request $received
