@@ -43,6 +43,10 @@ controlled signed source installation, actual reboot, off-host boot restore,
 and real gMSA/AD/domain-SYSVOL/endpoint/latency acceptance. New source bytes do
 not update the already installed backup worker automatically. Historical pinned
 delivery scripts remain frozen; no new privileged delivery is enabled here.
+The dev.44 backup worker is kept as an exact historical test fixture with the
+original delivery SHA-256. Its installer tests verify that frozen bytes still
+match and that the historical installer rejects the new current worker. They
+do not require today's source to have identical normalization to an old release.
 
 ## Verification
 
