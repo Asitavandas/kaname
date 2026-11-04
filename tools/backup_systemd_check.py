@@ -29,6 +29,13 @@ def command(*args):
     return subprocess.run(list(args), check=True, text=True, capture_output=True, timeout=90)
 
 
+def private_package_file(path, data):
+    """Do not inherit hosted /opt default ACL masks for a trusted root stage."""
+    path.write_bytes(data)
+    os.chown(path, 0, 0)
+    path.chmod(0o600)
+
+
 def main():
     if os.geteuid() != 0 or os.environ.get('RUNNER_ENVIRONMENT') != 'github-hosted':
         raise ValueError('Disposable GitHub-hosted root fixture required')
@@ -135,9 +142,9 @@ def main():
                 for name in installer.FILES:
                     data = (source / 'tools' / name).read_bytes()
                     if timer_active: data += b'\n# disposable second-upgrade fixture\n'
-                    (upgrade_stage / name).write_bytes(data)
+                    private_package_file(upgrade_stage / name, data)
                 manifest = json.dumps({n: worker.digest(upgrade_stage / n) for n in installer.FILES}).encode()
-                (upgrade_stage / 'manifest.json').write_bytes(manifest)
+                private_package_file(upgrade_stage / 'manifest.json', manifest)
                 package_pin = hashlib.sha256(manifest).hexdigest()
                 reviewed = upgrader.perform(upgrade_stage, package_pin, installed_release, inspect=True)
                 assert reviewed['event'] == 'BACKUP_UPGRADE_REVIEW' and not reviewed['live_update_applied']
@@ -156,9 +163,9 @@ def main():
             # must restore only old source and preserve all scheduled records.
             installed_release = worker.digest(installer.TARGET / 'release.json')
             checker = upgrade_stage / 'offline_restore_check.py'
-            checker.write_bytes(checker.read_bytes() + b'\ndef check(*args):\n    raise ValueError("disposable restore refusal")\n')
+            private_package_file(checker, checker.read_bytes() + b'\ndef check(*args):\n    raise ValueError("disposable restore refusal")\n')
             manifest = json.dumps({n: worker.digest(upgrade_stage / n) for n in installer.FILES}).encode()
-            (upgrade_stage / 'manifest.json').write_bytes(manifest)
+            private_package_file(upgrade_stage / 'manifest.json', manifest)
             refused = upgrader.perform(upgrade_stage, hashlib.sha256(manifest).hexdigest(), installed_release, upgrader.ACK)
             assert refused['event'] == 'BACKUP_UPGRADE_ROLLED_BACK'
             assert worker.digest(installer.TARGET / 'release.json') == installed_release and worker.pids() == before

@@ -1,5 +1,6 @@
 """Root-only filesystem/lock/exchange fault injection; no real service operations."""
 import hashlib
+import errno
 import json
 import os
 from pathlib import Path
@@ -166,6 +167,21 @@ class BackupUpgradeTests(unittest.TestCase):
     def test_world_writable_installed_file_refused(self):
         (upgrade.TARGET / upgrade.FILES[0]).chmod(0o666)
         with self.assertRaises(upgrade.Refused): self.run_upgrade()
+
+    def test_group_writable_candidate_manifest_refused(self):
+        (self.stage / 'manifest.json').chmod(0o660)
+        with self.assertRaises(upgrade.Refused): self.run_upgrade()
+        self.assert_old()
+
+    def test_wrong_group_candidate_manifest_refused(self):
+        try:
+            os.chown(self.stage / 'manifest.json', 0, 65534)
+        except OSError as error:
+            if error.errno == errno.EINVAL:
+                self.skipTest('Host user namespace does not map fixture group 65534')
+            raise
+        with self.assertRaises(upgrade.Refused): self.run_upgrade()
+        self.assert_old()
 
     def test_duplicate_manifest_member_refused_even_with_matching_pin(self):
         data = b'{"scheduled_backup.py":"' + b'0' * 64 + b'","scheduled_backup.py":"' + b'0' * 64 + b'"}'
