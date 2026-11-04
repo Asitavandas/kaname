@@ -129,28 +129,20 @@ def main():
         # runs the unchanged production core inside its original HTTP deadline.
         prepare_stop = threading.Event()
         def prepare_cases():
-            seen = ''
+            seen = set()
             while not prepare_stop.wait(0.02):
-                request_file = root/'prepare-request.txt'
-                if not request_file.exists():
-                    continue
-                try:
-                    token = request_file.read_text(encoding='ascii')
-                except OSError:
-                    continue
-                if len(token) != 32 or any(c not in '0123456789abcdef' for c in token) or token == seen:
-                    continue
-                try:
-                    with lock:
-                        setup_case()
-                    (root/'prepare-ready.tmp').write_text(token, encoding='ascii')
-                    (root/'prepare-ready.tmp').replace(root/'prepare-ready.txt')
-                    seen = token
-                except Exception as error:
-                    print('FIXTURE_PREPARE_FAILURE '+type(error).__name__, flush=True)
-                    (root/'prepare-failed.tmp').write_text(token, encoding='ascii')
-                    (root/'prepare-failed.tmp').replace(root/'prepare-failed.txt')
-                    seen = token
+                for request in sorted(root.glob('prepare-request-*')):
+                    token = request.name.removeprefix('prepare-request-')
+                    if len(token) != 32 or any(c not in '0123456789abcdef' for c in token) or token in seen:
+                        continue
+                    try:
+                        with lock:
+                            setup_case()
+                        (root/('prepare-ready-'+token)).mkdir()
+                    except Exception as error:
+                        print('FIXTURE_PREPARE_FAILURE '+type(error).__name__, flush=True)
+                        (root/('prepare-failed-'+token)).mkdir()
+                    seen.add(token)
         preparer = threading.Thread(target=prepare_cases, daemon=True)
         preparer.start()
 

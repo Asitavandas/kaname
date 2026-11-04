@@ -17,6 +17,18 @@ function Check($v,[string]$name){if(-not $v){throw ('EXECUTION_FIXTURE:'+ $name)
 function Reject([scriptblock]$fn,[string]$name){$failed=$false;try{& $fn|Out-Null}catch{$failed=$true};Check $failed $name}
 function Clone($v){return ($v|ConvertTo-Json -Depth 15 -Compress|ConvertFrom-Json)}
 function PrivateRoot([string]$path){$null=New-Item -ItemType Directory -Path $path;$acl=[Security.AccessControl.DirectorySecurity]::new();$acl.SetSecurityDescriptorSddlForm('O:BAG:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)');Set-Acl -LiteralPath $path -AclObject $acl}
+function Wait-AuthWireFixtureCore {
+ # Test setup only; immutable directory markers avoid shared-file read races.
+ $directory=$env:AUTHWIRE_WRITE_CYCLE_DIRECTORY;$token=[guid]::NewGuid().ToString('N')
+ $null=[IO.Directory]::CreateDirectory((Join-Path $directory ('prepare-request-'+$token)))
+ $watch=[Diagnostics.Stopwatch]::StartNew();$ready=$false
+ while($watch.Elapsed.TotalSeconds -lt 30){
+  if(Test-Path -LiteralPath (Join-Path $directory ('prepare-failed-'+$token)) -PathType Container){throw 'FIXTURE_PREPARE_FAILED'}
+  if(Test-Path -LiteralPath (Join-Path $directory ('prepare-ready-'+$token)) -PathType Container){$ready=$true;break}
+  Start-Sleep -Milliseconds 20
+ }
+ if(-not $ready){throw 'FIXTURE_PREPARE_TIMEOUT'}
+}
 try{
  PrivateRoot $root;PrivateRoot $package
  $signer=New-SelfSignedCertificate -Type CodeSigningCert -Subject ('CN=AuthWire-Stage-Fixture-'+[guid]::NewGuid().ToString('N')) -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 3072 -KeyExportPolicy NonExportable -NotAfter (Get-Date).AddDays(1)
@@ -130,28 +142,6 @@ function Get-AuthWireRollbackCompletion([string]$Root,[string]$JobId,$State,$Lau
   [IO.File]::AppendAllText((Join-Path $package 'StagingRollbackExecution.ps1'),$rollbackExecutionShim)
  }
  if($flowMode){
-  $prepareShim=@'
-
-# Fixture-only side channel: finish queue seeding before signing a real POLL.
-# No HTTP/grant/live-context deadline is extended and no request is retried.
-$script:FixtureProofBody=${function:New-AuthWireStagingWriteProof}
-function Wait-AuthWireFixtureCore {
-  $directory=$env:AUTHWIRE_WRITE_CYCLE_DIRECTORY;$token=[guid]::NewGuid().ToString('N')
-  [IO.File]::WriteAllText((Join-Path $directory 'prepare-request.txt'),$token,[Text.Encoding]::ASCII)
-  $watch=[Diagnostics.Stopwatch]::StartNew();$ready=$false
-  while($watch.Elapsed.TotalSeconds -lt 30){
-   $file=Join-Path $directory 'prepare-failed.txt';if((Test-Path -LiteralPath $file) -and [IO.File]::ReadAllText($file) -ceq $token){throw 'FIXTURE_PREPARE_FAILED'}
-   $file=Join-Path $directory 'prepare-ready.txt';if((Test-Path -LiteralPath $file) -and [IO.File]::ReadAllText($file) -ceq $token){$ready=$true;break}
-   Start-Sleep -Milliseconds 20
-  }
-  if(-not $ready){throw 'FIXTURE_PREPARE_TIMEOUT'}
-}
-function New-AuthWireStagingWriteProof([hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[ValidateSet('POLL','CLAIM','RESULT')][string]$Kind,[hashtable]$Payload){
- if($Kind -ceq 'POLL'){Wait-AuthWireFixtureCore}
- & $script:FixtureProofBody @PSBoundParameters
-}
-'@
-  [IO.File]::AppendAllText((Join-Path $package 'StagingWritePreclaim.ps1'),$prepareShim)
   $flowShim=@'
 
 # Fixture-only switch to the requested stage fault AFTER real intent consumption.
