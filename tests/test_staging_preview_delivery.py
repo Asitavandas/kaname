@@ -9,6 +9,7 @@ import unittest
 ROOT=Path(__file__).resolve().parents[1]
 NEW=ROOT/'docs/checkpoints/2026-10-28-staging-preview-jobs-dev44-deploy.py'
 OLD=ROOT/'docs/checkpoints/2026-10-28-combined-scope-jobs-dev43-deploy.py'
+FROZEN_BACKUP=ROOT/'tests/fixtures/scheduled_backup_dev44.py'
 
 class StagingPreviewDeliveryTests(unittest.TestCase):
  @classmethod
@@ -50,10 +51,10 @@ class StagingPreviewDeliveryTests(unittest.TestCase):
    self.assertEqual(old[name],normalize(new[name]),name)
   self.assertEqual(old['preflight_import'],new['preflight_import'].replace('import kaname.staging_preview_jobs;',''))
 
- def test_same_normalization_as_the_installed_candidate_worker(self):
+ def test_frozen_dev44_normalization_matches_its_candidate_worker(self):
   def function(path,name):
    return next(ast.dump(n,include_attributes=False) for n in ast.parse(path.read_text()).body if isinstance(n,ast.FunctionDef) and n.name==name)
-  self.assertEqual(function(NEW,'stable_runtime_payload'),function(ROOT/'tools/scheduled_backup.py','stable_runtime_payload'))
+  self.assertEqual(function(NEW,'stable_runtime_payload'),function(FROZEN_BACKUP,'stable_runtime_payload'))
   self.assertEqual(self.old['POLL_SECTIONS']|{'windows_staging_preview_jobs'},self.new['POLL_SECTIONS'])
 
  def test_large_results_are_preserved_and_only_poll_metadata_is_ignored(self):
@@ -73,13 +74,21 @@ class StagingPreviewDeliveryTests(unittest.TestCase):
   self.assertEqual(raw,self.new['stable_runtime_payload']('windows_staging_preview_jobs',raw))
 
  def test_backup_candidate_and_restore_checker_are_pinned(self):
-  data=(ROOT/'tools/scheduled_backup.py').read_bytes()
+  data=FROZEN_BACKUP.read_bytes()
   self.assertEqual(hashlib.sha256(data).hexdigest(),self.new['BACKUP_NEW'])
   self.assertEqual(self.old['BACKUP_NEW'],self.new['BACKUP_OLD'])
   self.assertEqual(self.old['CHECKER'],self.new['CHECKER'])
   result=self.new['backup_candidate']({'tools/scheduled_backup.py':data})
   self.assertEqual(self.new['BACKUP_NEW'],json.loads(result['release.json'])['scheduled_backup.py'])
   with self.assertRaises(self.new['GuardError']):self.new['backup_candidate']({'tools/scheduled_backup.py':data+b'changed'})
+
+ def test_frozen_dev44_delivery_refuses_current_write_ledger_worker(self):
+  # The new comparison is source-only. A historical installer must not silently
+  # accept it by changing its old release hash or expanding its allowlist.
+  data=(ROOT/'tools/scheduled_backup.py').read_bytes()
+  self.assertNotEqual(self.new['BACKUP_NEW'],hashlib.sha256(data).hexdigest())
+  with self.assertRaises(self.new['GuardError']):
+   self.new['backup_candidate']({'tools/scheduled_backup.py':data})
 
  def test_import_does_not_run_delivery_and_manifest_is_pinned(self):
   self.assertEqual('preflight',self.new['PHASE']);self.assertIsNone(self.new['EVIDENCE'])

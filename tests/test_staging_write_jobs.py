@@ -451,12 +451,16 @@ class StagingWriteJobTests(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(1, len(self.jobs._read(db)['polls']))
 
-    def test_backup_does_not_ignore_new_write_ledger_without_reviewed_projection(self):
+    def test_backup_projects_only_write_poll_metadata_and_keeps_complete_jobs(self):
         from tools.scheduled_backup import stable_runtime_payload
         self.enqueue()
         with self.store.connect() as db:
             raw = db.execute('SELECT payload FROM runtime_settings WHERE name=?', (SECTION,)).fetchone()[0]
         value = json.loads(raw); value['polls'] = []; value['last_poll'] = None
+        self.assertEqual(stable_runtime_payload(SECTION, raw),
+                         stable_runtime_payload(SECTION, json.dumps(value)))
+        self.assertEqual(json.loads(raw)['jobs'],
+                         json.loads(stable_runtime_payload(SECTION, raw))['jobs'])
+        value['jobs'][0]['authorization_id'] = 'a' * 64
         self.assertNotEqual(stable_runtime_payload(SECTION, raw),
                             stable_runtime_payload(SECTION, json.dumps(value)))
-        # No source deployment until an explicit strict projection has been reviewed.
