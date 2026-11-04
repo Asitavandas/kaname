@@ -132,6 +132,9 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
   Write-AuthWireStagingJournal (Join-Path $dir 'poll-started.json') ([pscustomobject]@{format='AuthWireLifecyclePollStartedV1';binding_scope=(Get-AuthWireJobScope $Binding);release_id=$Release;slot=$Slot;started_at=$started})
   $proof=New-AuthWireStagingWriteProof $Binding $Key POLL @{capability='combined.filesystem.write.v1';release_id=$Release}
   Write-AuthWireStagingJournal (Join-Path $dir 'poll-proof.json') ([pscustomobject]@{format='AuthWireLifecyclePollProofV1';proof=$proof})
+  # Validate the flushed representation, using the same strict object parser
+  # as restart recovery; the signing helper returns an in-memory hashtable.
+  $proof=(Read-AuthWireStagingJournal (Join-Path $dir 'poll-proof.json')).proof
   $sentAt=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$request=Assert-AuthWireStoredWritePollAt $proof $Binding $Release $Key $started $sentAt
   $sent=[pscustomobject]@{format='AuthWireLifecyclePollSentV1';request_id=$request;proof_sha256=(Get-AuthWireWriteHash $proof);sent_at=$sentAt}
   # Flush before HTTP. Missing response after a crash NEVER creates a new POLL.
