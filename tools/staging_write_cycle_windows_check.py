@@ -103,7 +103,9 @@ def main():
                     review = core.review(req, mode['actor'])
                     core.create(req | {'review_hash': review['review_hash']}, mode['actor'])
                 return data | {'case': mode['case']}, mode['job_id']
-            return data, identity
+            # Before the mode file exists this is the original stage, even if
+            # the outer case describes a later rollback transport failure.
+            return (data | {'case': 'success'} if grant_mode else data), identity
 
         class Handler(BaseHTTPRequestHandler):
             protocol_version = 'HTTP/1.1'
@@ -212,6 +214,14 @@ def main():
                 'actual_cng_tls_sqlite_signed_child_smb': True,
                 'queued_jobs_and_ad_context_simulated': True,
                 'production_routes_registered': False, 'customer_changed': False}, sort_keys=True))
+        except subprocess.CalledProcessError:
+            # Safe fixture diagnostics only: no proof, URL, payload or key data.
+            print('AUTHWIRE_WRITE_CORE_FAILURE_COUNTS ' + json.dumps({
+                'polls': sum(metrics['polls'].values()),
+                'claims': sum(metrics['claims'].values()),
+                'results': sum(metrics['results'].values()),
+                'errors': metrics['errors']}, sort_keys=True), flush=True)
+            raise
         finally:
             server.shutdown(); server.server_close(); thread.join(timeout=3)
 
