@@ -1,5 +1,44 @@
 # AuthWire current work record
 
+## Windows geçmiş arşivleme — 4 Kasım 2026 /taslak, son CI bekleniyor
+
+**PR134 taslak**, kaynak **81e99a70074fe5012e887218ddfeb81a6e957c27**. Kaynak kodu main'e
+birleştirilmedi; canlı kurulum yapılmadı. Teknik kapsam:
+**docs/STAGING_WRITE_HISTORY.md** (PR dalında).
+
+64 kabul edilmiş çevrimi byte'ları korunarak kopyalama/doğrulama, CNG imzalı
+arşiv ve daha sonraki adımda monoton 65. çevrime geçiş hazırlandı. İş/engine/GPO
+kilitleri ve immutable baseline korunur. Kısmi arşiv veya yabancı veri yeni
+POLL'u durdurur; otomatik reset/pruning/unlock yoktur. 64 aktif çevrim + en çok
+8 saklanan segment kaynak politikasıdır; cihaz kotası veya saha kabulü değildir.
+
+**Önceki kaynak kanıtı:** ec959501'de yeni arşiv paketi **196 native kontrol /4
+senaryo** ile geçti: iki bağımsız gerçek CNG/NTFS arşivinde 128 çevrim, sonraki
+gerçek 65. çevrim POLL'u ve iki kesinti sınırı. 251 boş kayıt gerçek CNG imzalı
+ama sentetik metadata'dır; gerçek sunucu isteği/izin değildir.
+abd3cee2'de genel **1130 test /28 atlama /309.688 saniye**, lifecycle **200 /8**
+ve preclaim/izin/origin/dosya sistemi/tek çevrim paketleri geçti; standalone stage ilk CLAIM tazelik
+reddinden sonra aynı kaynakta bir sınırlı tekrarda geçti. İlk hata korunur;
+kesin gecikme nedeni açıklanmış sayılmaz.
+
+**Son düzeltme:** POLL sırasında yapılan fixture kuyruğu hazırlığı, ölçülen
+ürün isteği ve kalıcı başlangıç kaydından önceye alındı. Ardından fixture
+hazır dosyasındaki paylaşım yarışı, immutable nonce klasör işaretleriyle
+kaldırıldı; özgün proof helper korunur. Ürün HTTP/canlı tazelik/grant/reader
+bütçeleri gevşetilmedi. Son kaynakta 12 workflow **queued**; yeni arşiv işi için
+henüz runner atanmadı. Bu durum bir başarılı test veya tamamlanan kaynak kapısı
+olarak sayılmaz. Kanıt ve koşu kimlikleri:
+**docs/checkpoints/2026-11-04-write-history-source.json**.
+
+**Devam noktası:** Önce PR134'ün yukarıdaki son SHA'sındaki koşuları kontrol et,
+hataları incele ve düzelt; doğrulama tamamlanınca PR'ı değerlendir. Ardından
+kontrollü kısmi/belirsiz geçmiş uzlaştırması ve ayrı onaylı unlock, dış journal
+yedek/restore politikası, ön izin ret bildirimi, aktif scheduler/SCM ve gerçek
+teslim/kabul kapıları kalır. Linux/DC01, AD/GPO/SYSVOL, endpoint/RADIUS ve canlı
+anahtar/servis/yedek değişmedi. Son bilinen canlı Linux dev.44 / Windows df28f70c;
+bu tur yeni canlı ölçüm yok. **54/94 tamam,40 açık**, önceki süre aralıkları ve
+**READY_FOR_FINAL_GUIDE=false / GUIDE_DELIVERED=false** korunur.
+
 ## Yazma/geri alma kuyruğu için yedek karşılaştırması — 4 Kasım 2026
 
 **PR133**, test edilen kaynak **5927bdf8ea60de1e64ad57417707a3577f76f9cc**.

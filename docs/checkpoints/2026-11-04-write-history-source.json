@@ -1,0 +1,181 @@
+{
+  "format": 1,
+  "date": "2026-11-04",
+  "pull_request": 134,
+  "source_baseline": "8a9e559fecb51d32206c3fb71ad28befcef116a0",
+  "source_commit": "81e99a70074fe5012e887218ddfeb81a6e957c27",
+  "validation_state": "pending_final_head_github_runner_assignment",
+  "scope": "Trusted local governed lifecycle cycle archives and monotonic 64-to-65 continuation; no live delivery",
+  "guards": {
+    "active_cycles": 64,
+    "retained_segments": 8,
+    "maximum_archived_cycles": 512,
+    "per_segment_cycle_bytes": 16777216,
+    "protected_record_files": 2048,
+    "protected_record_bytes": 33554432,
+    "storage_bounds_not_device_quotas": true,
+    "local_review_seconds": 60,
+    "maximum_retirement_wall_monotonic_seconds": 30,
+    "original_job_engine_gpo_lock_records_preserved": true,
+    "baseline_not_replaced": true,
+    "original_cycle_bytes_copied": true,
+    "archive_sealed_with_nonexportable_cng_key": true,
+    "copy_verified_before_retirement": true,
+    "commit_flushed_last": true,
+    "automatic_prune_reset_cleanup_unlock": false,
+    "partial_maintenance_blocks_poll": true,
+    "archival_sends_network_request": false,
+    "production_deadlines_changed": false
+  },
+  "earlier_archival_verification": {
+    "source": "ec95950148f021455a46566fc6de5ba3699f0ed9",
+    "run_id": 41858716162,
+    "native_checks": 196,
+    "cases": 4,
+    "real_cng_ntfs_archives": 2,
+    "archived_cycles": 128,
+    "synthetic_signed_idle_records": 251,
+    "actual_core_poll_requests": 10,
+    "claim_requests": 5,
+    "result_requests": 5,
+    "actual_machine_reboot_tested": false,
+    "positive_ad_content_service_identity_simulated": true
+  },
+  "failed_intermediate_runs": [
+    {
+      "source": "9e62842d0c6e7e1b80eab1cb358abd01a5059a6c",
+      "run_id": 41857470266,
+      "diagnostic": "Initial stage returned requires_review before archival; exact cause not established."
+    },
+    {
+      "source": "9e62842d0c6e7e1b80eab1cb358abd01a5059a6c",
+      "run_id": 41857470057,
+      "diagnostic": "Fixture POLL response preparation took 5203ms, beyond the unchanged 5s product HTTP bound."
+    },
+    {
+      "source": "42c04d0eaaf5b0a65622ca533216550f48545f51",
+      "run_id": 41858429670,
+      "diagnostic": "Generated fixture diagnostic variable had unbraced hyphens; parser error fixed in ec959501 before core requests."
+    },
+    {
+      "source": "ec95950148f021455a46566fc6de5ba3699f0ed9",
+      "run_id": 41858715902,
+      "diagnostic": "Fixture POLL response preparation took 9672ms, beyond the unchanged 5s product bound. Queue preparation moved before POLL start/signing."
+    },
+    {
+      "source": "abd3cee2aa32a248aedfd0c030e04a2aeab3b282",
+      "run_id": 41859864387,
+      "job_id": 126678368842,
+      "diagnostic": "Standalone seeded stage refused WRITE_CLAIM_RECORD_STALE at historical claim receipt validation; original failure retained, one bounded same-source rerun passed. Precise delay cause remains open."
+    },
+    {
+      "source": "abd3cee2aa32a248aedfd0c030e04a2aeab3b282",
+      "run_id": 41859864577,
+      "job_id": 126678369384,
+      "diagnostic": "Both real archives succeeded, then synthetic idle filler hit a fixture readiness-file sharing IOException. Replaced mutable shared readiness files with immutable nonce directory markers and explicit pre-POLL preparation; original proof helper preserved."
+    }
+  ],
+  "customer_changes": {
+    "linux_installed": false,
+    "dc01_installed": false,
+    "ad_gpo_sysvol_changed": false,
+    "endpoints_services_changed": false,
+    "key_acl_trust_changed": false,
+    "radius_changed": false,
+    "production_backup_created": false
+  },
+  "next_work": [
+    "Governed partial/unknown record reconciliation and separately approved unlock",
+    "Windows off-host journal retention, backup/restore and actual reboot acceptance",
+    "Preauthorization refusal reporting",
+    "Active scheduler/SCM registration and controlled signed delivery",
+    "Real customer gMSA/AD/domain-SYSVOL/endpoint/latency acceptance"
+  ],
+  "macro": {
+    "completed": 54,
+    "total": 94,
+    "open": 40
+  },
+  "guide": {
+    "READY_FOR_FINAL_GUIDE": false,
+    "GUIDE_DELIVERED": false
+  },
+  "estimates_changed": false,
+  "final_head_workflows": [
+    {
+      "id": 41862026156,
+      "name": "KANAME foundation checks",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 41862026201,
+      "name": "AuthWire isolated governed write history",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 41862026257,
+      "name": "AuthWire isolated durable write lifecycle",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 41862026274,
+      "name": "AuthWire isolated staging filesystem checks",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 41862026192,
+      "name": "AuthWire isolated rollback origin evidence",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 41862026233,
+      "name": "AuthWire bounded retry network probe checks",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 41862026015,
+      "name": "AuthWire isolated write preclaim checks",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 41862026200,
+      "name": "AuthWire isolated one-shot staging cycle",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 41862026126,
+      "name": "AuthWire Windows connector bootstrap checks",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 41862026207,
+      "name": "AuthWire isolated rollback execution and result",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 41862026088,
+      "name": "AuthWire isolated authorized stage execution",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 41862026245,
+      "name": "AuthWire isolated rollback authorization",
+      "status": "queued",
+      "conclusion": null
+    }
+  ],
+  "checked_at_utc": "2026-11-04T15:58:13Z",
+  "source_merged": false,
+  "current_blocker": "Final-head workflow runs remain queued; governed-history job 126686111162 has no assigned runner and no test steps. No final-head native pass is claimed."
+}

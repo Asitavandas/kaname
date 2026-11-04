@@ -1,5 +1,18 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## 4 Kasım 2026 — Windows arşivleme kaynak kapısı henüz açık
+
+PR134'te 64 çevrim sonrası kontrollü yerel arşivleme ve 65. çevrime devam
+hazırlandı; son kaynak **81e99a70074fe5012e887218ddfeb81a6e957c27** için 12 CI
+koşusu henüz kuyrukta. Önceki kaynağın 196 native arşiv kontrolü, son fixture
+düzeltmesinin testi yerine geçirilmez. Kaynak merge/kurulum veya saha kabulü
+tamamlandı sayılmaz. Ayrıntı: docs/checkpoints/2026-11-04-write-history-source.json.
+
+Makro **54/94 tamam,40 açık** ve aşağıdaki süre/operatör aralıkları korunur;
+geçen günden otomatik süre düşülmez. Dış yedek/restore, uzlaştırma/unlock,
+aktif worker, gerçek gMSA/AD/endpoint ve gecikme kabulü bağımsız kapılardır.
+Linux/DC01 ve canlı ortamda değişiklik yapılmadı.
+
 ## Kalıcı stage/geri alma döngüsü ve sonuç kurtarma — 4 Kasım 2026
 
 **PR132** (PR131'in aynı kaynak geçmişini sürdürür), test edilen kaynak **36f2e97e878cb77808f4bf6831bd1d6129eff831**,
