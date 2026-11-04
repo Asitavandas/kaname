@@ -45,6 +45,11 @@ try{
   if($rbProofFailure){throw $rbProofFailure}
   $rbSendFailure='';$rbGrant=$null
   try{$rbGrant=Invoke-AuthWireRollbackClaimTransport $rbRoot $rbId $b $release $rsa $url}catch{$rbSendFailure=$_.Exception.Message}
+  if(-not (Test-Path -LiteralPath (Join-Path $rbJob 'rollback-claim-sent.json'))){
+   $rbSafe=if($rbSendFailure -cin @('ROLLBACK_PREFLIGHT_REJECTED','WRITE_CLAIM_RECORD_REJECTED','WRITE_CLAIM_RECORD_STALE','WRITE_CLAIM_KEY_REJECTED','ROLLBACK_RECORD_CHANGED')){$rbSendFailure}else{'UNCLASSIFIED'}
+   $rbObserved=Read-AuthWireStagingJournal (Join-Path $rbJob 'rollback-preflight.json')
+   Write-Host ('ROLLBACK_SAFE_SEND_DIAGNOSTIC '+(@{code=$rbSafe;observation_age_seconds=([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-$rbObserved.checked_at);control_elapsed_ms=$rbWatch.ElapsedMilliseconds}|ConvertTo-Json -Compress))
+  }
   Check (Test-Path -LiteralPath (Join-Path $rbJob 'rollback-claim-sent.json')) 'one-send record flushed before HTTPS'
   if($case -cin @('rollback_lost_grant','rollback_bad_grant','rollback_receipt_disk')){
    Check ($rbSendFailure -cne '' -and -not (Test-Path -LiteralPath (Join-Path $rbJob 'rollback-authorization.json'))) 'uncertain or altered grant creates no authorization receipt'
