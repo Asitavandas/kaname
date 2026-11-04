@@ -229,8 +229,8 @@ function Assert-AuthWireLifecycleDispatch([string]$Life,$State){
   if($v.format -cne 'AuthWireLifecycleDispatchV1' -or $v.job_id -cne $State.Offer.job_id -or $v.operation -cne $State.Offer.operation -or $v.response_sha256 -cne (Get-AuthWireWriteHash $State.Response) -or -not (Test-AuthWireWriteInteger $v.started_at) -or $v.started_at -lt $State.Response.received_at -or $v.started_at -ge $State.Offer.expires_at -or $v.started_at -gt [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()){throw 'LIFECYCLE_DISPATCH_REJECTED'}
  }finally{$p.Dispose()}
 }
-function Get-AuthWireLifecycleResult([string]$Phase,[string]$JobId='', [string]$Outcome='', [bool]$Recorded=$false){
- return [pscustomobject]@{Phase=$Phase;JobId=$JobId;Outcome=$Outcome;ResultRecorded=$Recorded;CanApplyGpo=$false;ArtifactExecuted=$false}
+function Get-AuthWireLifecycleResult([string]$Phase,[string]$JobId='', [string]$Outcome='', [bool]$Recorded=$false,[string]$Reason=''){
+ return [pscustomobject]@{Phase=$Phase;JobId=$JobId;Outcome=$Outcome;ResultRecorded=$Recorded;CanApplyGpo=$false;ArtifactExecuted=$false;Reason=$Reason}
 }
 function Resume-AuthWireLifecycleResult([string]$Root,[string]$Life,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[string]$BaseUrl){
  # No POLL, CLAIM, consumption, context reader or executor in this function.
@@ -281,7 +281,10 @@ function Invoke-AuthWireStagingWriteLifecycleStep([string]$Root,[hashtable]$Bind
   # of poll/job/origin/GPO-lock records. Active worker delivery still gated on it.
   if($slots.Count -ge 64){return (Get-AuthWireLifecycleResult 'history_limit_requires_maintenance')}
   $next=($slots.Count+1).ToString('D6')
-  try{$s=New-AuthWireLifecyclePoll $life $next $Binding $Release $Key $BaseUrl}catch{return (Get-AuthWireLifecycleResult 'local_reconciliation_required')}
+  try{$s=New-AuthWireLifecyclePoll $life $next $Binding $Release $Key $BaseUrl}catch{
+   $reason=if($_.Exception.Message -cmatch '\ALIFECYCLE_[A-Z_]{1,64}\z'){$_.Exception.Message}else{'POLL_OR_RECORD_ERROR'}
+   return (Get-AuthWireLifecycleResult 'local_reconciliation_required' '' '' $false $reason)
+  }
   if($s.Offer.job_id -ceq ''){$null=Complete-AuthWireLifecycleCycle $Root $life $s $Binding $Key;return (Get-AuthWireLifecycleResult 'no_job')}
   $o=$s.Offer;Assert-AuthWireWriteOffer $o $Binding $Release $o.request_id
   New-AuthWireLifecycleDispatch $life $s

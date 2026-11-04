@@ -218,6 +218,7 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
    [IO.File]::WriteAllText((Join-Path $flowDirectory 'input.json'),($data|ConvertTo-Json -Depth 15 -Compress),[Text.UTF8Encoding]::new($false))
    if($lifecycleMode -and $case -ceq 'lc_stage'){
     $watch=[Diagnostics.Stopwatch]::StartNew();$cycle=Invoke-AuthWireStagingWriteLifecycleStep $journal $b $release $rsa $url;$watch.Stop()
+    if($cycle.Phase -cne 'result_recorded' -or $cycle.Outcome -cne 'staged'){Write-Host ('LIFECYCLE_SAFE_STAGE_DIAGNOSTIC '+($cycle|ConvertTo-Json -Compress))}
     Check ($cycle.Phase -ceq 'result_recorded' -and $cycle.Outcome -ceq 'staged' -and $cycle.JobId -ceq $id) 'durable lifecycle dispatches real stage from initially empty fixed root'
     . (Join-Path $PSScriptRoot 'staging_write_lifecycle_fixture.ps1') -StageOnly
     $outcomes+=,[pscustomobject]@{case=$case;job_id=$id;phase=$cycle.Phase;outcome=$cycle.Outcome;seconds=[Math]::Round($watch.Elapsed.TotalSeconds,2)}
