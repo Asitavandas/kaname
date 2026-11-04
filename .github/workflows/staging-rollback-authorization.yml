@@ -1,0 +1,37 @@
+name: AuthWire isolated rollback authorization
+on:
+  pull_request:
+    paths:
+      - 'windows/connector/**'
+      - 'kaname/staging_write_jobs.py'
+      - 'tools/staging_write_cycle_windows_check.py'
+      - 'tools/staging_write_execution_windows_check.ps1'
+      - 'tools/staging_rollback_authorization*'
+      - '.github/workflows/staging-rollback-authorization.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'windows/connector/StagingRollback*'
+      - 'windows/connector/Read-AuthWireRollbackPreflight.ps1'
+      - 'tools/staging_rollback_authorization*'
+      - '.github/workflows/staging-rollback-authorization.yml'
+permissions:
+  contents: read
+jobs:
+  native-rollback-authorization:
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Tested fixture TLS dependency
+        run: python -m pip install cryptography==46.0.0
+      - name: Separate approval claim receipt and one-use intent without deletion
+        shell: powershell
+        run: |
+          python tools/staging_rollback_authorization_windows_check.py
+          if($LASTEXITCODE -ne 0){throw 'Rollback authorization fixture failed'}
