@@ -47,6 +47,9 @@ if($rxReplay.TimedOut -or $rxReplay.ExitCode -ne 20){
  Write-Host ('ROLLBACK_REPLAY_SAFE_DIAGNOSTIC '+(@{case=$case;timed_out=[bool]$rxReplay.TimedOut;exit_code=[int]$rxReplay.ExitCode;elapsed_ms=$rxReplayWatch.ElapsedMilliseconds;expected_exit_code=20}|ConvertTo-Json -Compress))
 }
 Check (-not $rxReplay.TimedOut -and $rxReplay.ExitCode -eq 20) 'new direct signed child cannot reuse closed original gate or expired grant'
+$rxReplayBody=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($rxReplay.Output))
+Assert-AuthWireCandidateFields $rxReplayBody @('error','phase','exception_kind')
+Check ($rxReplayBody.error -ceq 'ROLLBACK_EXECUTION_REQUIRES_REVIEW' -and $rxReplayBody.phase -ceq 'identity') 'new process replay is rejected at the entry identity filter before key or AD modules'
 Check ([IO.File]::ReadAllText($rxReadPath) -ceq $rxReads -and (Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $rxHash) 'replay creates no AD observation or SMB effect'
 $rxBox=New-AuthWireRollbackResultOutbox $rbRoot $rbId $b $release $rsa
 if($rxSuccess){Check ($rxBox.body.outcome -ceq 'rolled_back' -and $rxBox.body.journal_sha256 -ceq $rxResult.RollbackJournalSha256 -and $rxBox.body.tree_sha256 -ceq $rbOffer.target.stage_receipt.staged_tree_sha256) 'success RESULT binds actual rollback journal and ORIGINAL removed tree'}

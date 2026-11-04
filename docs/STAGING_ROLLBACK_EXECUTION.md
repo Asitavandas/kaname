@@ -19,6 +19,15 @@ There is no URL, executable, source or destination path in child arguments.
 The fixed package configuration opens only the existing non-exportable channel
 key for public proof verification, never the corporate code-signing private key.
 
+A refusal-only entry filter first compares the current PID and process start
+ticks with the bounded record in the fixed private journal root, under native
+file pins. A different process is rejected before key opening, AD-module import
+or rebuilding the original authority chain. Matching this local record grants
+no permission: the complete key/receipt/consumption/launch/event/identity chain
+above is still validated before every observation or filesystem effect. The
+real signed replay fixture requires exit20 at this entry identity phase within
+the existing eight-second process check; a timeout is still a test failure.
+
 Before the engine, the child rechecks current nonadmin service identity,
 signatures/content, AD/PDC/GPO scope, original ownership/tree/outside baseline and
 five-second live freshness against the original offer and consumption witness.
@@ -70,3 +79,4 @@ idle/history/retention; reboot/lost-result/partial-journal reconciliation and
 separately approved unlock; backup projection/off-host boot restore; controlled
 signed delivery and real service identity, AD/SYSVOL, latency and endpoint
 acceptance; GPO activation, single account, user EAP-TLS and 500/1000 scale.
+

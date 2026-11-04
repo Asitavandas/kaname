@@ -2,6 +2,25 @@
 # Existing false-flag consumption intent is evidence, not standalone delete authority.
 Set-StrictMode -Version 2
 
+function Assert-AuthWireRollbackEntryProcess([string]$Root,[string]$JobId,[hashtable]$Binding){
+ # Refusal-only startup filter, not authorization. A replay must not spend the
+ # bounded child lifetime rebuilding an old origin chain before rejecting its
+ # different PID/start time. The full key/receipt/launch/gate/identity checks in
+ # InvokeAuthorizedRollbackChild still precede every observation or effect.
+ Assert-AuthWireStagingWriteJournalLocation $Root $Binding;Assert-AuthWireCandidateGuid $JobId
+ $p=[AuthWire.Staging.TreeLeaseV1]::new();$process=$null
+ try{
+  $p.PinAncestors($Root);$job=Join-Path $Root $JobId;$p.PinAncestors($job)
+  $file=Join-Path $job 'rollback-child.json';$p.PinFile($file);$v=Read-AuthWireStagingJournal $file
+  Assert-AuthWireCandidateFields $v @('format','job_id','launch_sha256','process_id','process_started_ticks')
+  Assert-AuthWireStageStrings $v @('format','job_id','launch_sha256','process_started_ticks')
+  if($v.format -cne 'AuthWireRollbackChildIdentityV1' -or $v.job_id -cne $JobId -or -not (Test-AuthWireWriteHash $v.launch_sha256) -or
+     -not (Test-AuthWireWriteInteger $v.process_id) -or $v.process_started_ticks -cnotmatch '\A[1-9][0-9]{16,18}\z'){throw 'ROLLBACK_CHILD_IDENTITY_REJECTED'}
+  $process=[Diagnostics.Process]::GetCurrentProcess()
+  if($v.process_id -ne $PID -or $v.process_started_ticks -cne $process.StartTime.ToUniversalTime().Ticks.ToString([Globalization.CultureInfo]::InvariantCulture)){throw 'ROLLBACK_CHILD_IDENTITY_REJECTED'}
+ }finally{if($process){$process.Dispose()};$p.Dispose()}
+}
+
 function New-AuthWireRollbackExecutionInputPins([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release){
  Assert-AuthWireStagingWriteJournalLocation $Root $Binding;Assert-AuthWireCandidateGuid $JobId;Initialize-AuthWireStagingFilesystemTypes
  $p=[AuthWire.Staging.TreeLeaseV1]::new();$originPins=$null
@@ -203,3 +222,4 @@ function Invoke-AuthWireAuthorizedFilesystemRollback([string]$Root,[string]$JobI
   }
  }finally{if($gate){$gate.Dispose()};Close-AuthWireRollbackExecutionInputPins $pins;$decision.ReleaseMutex();$decision.Dispose()}
 }
+

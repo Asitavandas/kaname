@@ -20,6 +20,10 @@ try{
  Assert-AuthWireCandidateGuid $binding.connector_id
  $id=([guid]$binding.connector_id).ToString('N')
  if($c.ServiceName -cne ('AuthWireConnector-'+$id) -or $c.KeyName -cnotmatch ('\AAuthWire-Channel-'+$id+'-[0-9a-f]{32}\z')){throw 'WRITE_EXECUTION_CONFIG_REJECTED'}
+ # The parent's recorded process identity can reject a new replay immediately;
+ # a match grants nothing and the complete authority chain is still required.
+ $script:AuthWireRollbackChildPhase='identity'
+ Assert-AuthWireRollbackEntryProcess $JournalRoot $JobId $binding
  $script:AuthWireRollbackChildPhase='key'
  $key=[Security.Cryptography.CngKey]::Open($c.KeyName,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::MachineKey)
  $rsa=[Security.Cryptography.RSACng]::new($key)
@@ -39,3 +43,4 @@ try{
  [Console]::Out.WriteLine(([ordered]@{error='ROLLBACK_EXECUTION_REQUIRES_REVIEW';phase=$script:AuthWireRollbackChildPhase;exception_kind=$kind}|ConvertTo-Json -Compress))
  exit 20
 }finally{if($pin){$pin.Dispose()};if($rsa){$rsa.Dispose()};if($key){$key.Dispose()}}
+
