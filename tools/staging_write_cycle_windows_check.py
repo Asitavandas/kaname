@@ -35,6 +35,7 @@ def main():
     if os.name != 'nt' or os.environ.get('RUNNER_ENVIRONMENT') != 'github-hosted':
         raise RuntimeError('Hosted Windows fixture only')
     grant_mode = os.environ.get('AUTHWIRE_ROLLBACK_AUTHORIZATION_CHECK') == '1'
+    execution_mode = os.environ.get('AUTHWIRE_ROLLBACK_EXECUTION_CHECK') == '1'
     with tempfile.TemporaryDirectory(prefix='aw-write-transport-') as temp:
         root = Path(temp); fqdn = 'aw-' + uuid.uuid4().hex + '.lab.example'
         private = rsa.generate_private_key(public_exponent=65537, key_size=3072)
@@ -138,7 +139,7 @@ def main():
                             body = json.loads(base64.b64decode(json.loads(raw)['payload']))
                             metrics['bodies'].setdefault(identity, []).append(body)
                             reply = core.complete(raw)
-                            if case == 'lost_ack' and metrics['results'][identity] == 1:
+                            if case in {'lost_ack', 'rb_execute_lost_ack'} and metrics['results'][identity] == 1:
                                 self.close_connection = True; self.connection.shutdown(2); return
                         else:
                             raise AssertionError('Unexpected route')
@@ -163,8 +164,34 @@ def main():
         try:
             subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-File',
                 str(Path(__file__).with_name('staging_write_execution_windows_check.ps1'))],
-                check=True, timeout=650, env=env)
+                check=True, timeout=1100 if execution_mode else 650, env=env)
             native = json.loads((root/'native-summary.json').read_text(encoding='utf-8-sig'))
+            if execution_mode:
+                assert len(native['outcomes']) == 9 and not metrics['errors']
+                assert len(metrics['polls']) == len(metrics['claims']) == len(metrics['results']) == 18
+                assert set(metrics['polls'].values()) == set(metrics['claims'].values()) == {1}
+                assert sorted(metrics['results'].values()) == [1]*17+[2]
+                assert all(all(b == bodies[0] for b in bodies) for bodies in metrics['bodies'].values())
+                with store.connect() as db:
+                    jobs = core._read(db)['jobs']
+                assert len(jobs) == 18
+                assert sum(j['operation'] == STAGE and j['state'] == 'completed' and j['result']['outcome'] == 'staged' for j in jobs) == 9
+                assert sum(j['operation'] == ROLLBACK and j['state'] == 'completed' and j['result']['outcome'] == 'rolled_back' for j in jobs) == 2
+                assert sum(j['operation'] == ROLLBACK and j['state'] == 'requires_review' for j in jobs) == 7
+                after = store.snapshot()
+                assert len(store.audit()) == len(original_audit)+45
+                assert after['revision'] == original['revision']+45
+                assert after['config'] == original['config'] and after['policies'] == original['policies']
+                print('AUTHWIRE_ROLLBACK_EXECUTION_WINDOWS_OK ' + json.dumps({
+                    'native_checks': native['checks'], 'cases': 9,
+                    'actual_separate_review_create_poll_claim_result': True,
+                    'rollback_claims': 9, 'rollback_result_transitions': 9,
+                    'rollback_result_requests': 10, 'verified_rollback_successes': 2,
+                    'unconfirmed_review_results': 7,
+                    'actual_cng_tls_sqlite_signed_child_smb_delete': True,
+                    'positive_ad_content_service_identity_simulated': True,
+                    'production_routes_registered': False, 'customer_changed': False}, sort_keys=True))
+                return
             if grant_mode:
                 assert len(native['outcomes']) == 8 and not metrics['errors']
                 assert len(metrics['polls']) == 16 and set(metrics['polls'].values()) == {1}

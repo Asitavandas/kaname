@@ -100,20 +100,20 @@ function New-AuthWireRollbackOriginInputPins([string]$Root,$Offer){
  }catch{$p.Dispose();throw}
 }
 
-function Get-AuthWireRollbackPreflight($Offer,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[string]$Publisher,[string]$BaseUrl){
- # Trusted local read-only entry. It is NOT a grant or a filesystem intent and
- # must not be passed to the low-level deletion engine as authorization.
- $clock=[Diagnostics.Stopwatch]::StartNew();$start=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+function Get-AuthWireRollbackLivePreflight($Offer,[hashtable]$Binding,[string]$Release,[string]$Publisher,[string]$BaseUrl,$origin){
+ # Internal READ-ONLY live observation over an origin already verified under
+ # held native pins. This function cannot authorize, consume or delete anything.
  Assert-AuthWireWriteOffer $Offer $Binding $Release $Offer.request_id
- if($Offer.operation -cne 'combined.filesystem.rollback.v1'){throw 'ROLLBACK_OPERATION_REQUIRED'}
- $originLock=Enter-AuthWireWriteOutcomeLock $Offer.target.stage_receipt.stage_job_id;$originPins=$null
- try{
+ if($Offer.operation -cne 'combined.filesystem.rollback.v1' -or $origin.StageJobId -cne $Offer.target.stage_receipt.stage_job_id -or
+    (Get-AuthWireScopeDataHash $origin.Complete) -cne $Offer.target.stage_receipt.complete_journal_sha256 -or $origin.Complete.tree_sha256 -cne $Offer.target.stage_receipt.staged_tree_sha256){throw 'ROLLBACK_ORIGIN_CHANGED'}
  $root=Get-AuthWireStagingWriteJournalRoot $Binding;Assert-AuthWireStagingWriteJournalLocation $root $Binding
- # Pin the fixed original chain BEFORE validating it. Keep the exact verified
- # bytes and original-stage mutex held through both live observations; do not
- # waste their short lifetime repeating the entire historical traversal.
- $originPins=New-AuthWireRollbackOriginInputPins $root $Offer
- $origin=Read-AuthWireRollbackOrigin $Offer $Binding $Release $Key
+ $clock=[Diagnostics.Stopwatch]::StartNew();$start=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+ $decision=Enter-AuthWireWriteOutcomeLock $origin.StageJobId
+ try{
+  $stage=Join-Path $root $origin.StageJobId;$engine=Join-Path $root $origin.FilesystemOperationId
+  if(Test-Path -LiteralPath (Join-Path $stage 'execution-requires-review.json')){throw 'ROLLBACK_STAGE_REVIEW_REQUIRED'}
+  Assert-AuthWireNoActiveStage $root $origin.StageJobId
+  foreach($n in @('rollback-started.json','rolled-back.json')){if(Test-Path -LiteralPath (Join-Path $engine $n)){throw 'ROLLBACK_PREVIOUS_ATTEMPT_REQUIRES_REVIEW'}}
  # Freshness begins BEFORE live directory/tree reads, never after the final
  # history recheck. Slow validation must consume the observation's lifetime.
  $observedAt=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$observationClock=[Diagnostics.Stopwatch]::StartNew()
@@ -146,6 +146,25 @@ function Get-AuthWireRollbackPreflight($Offer,[hashtable]$Binding,[string]$Relea
   # or grant. All old timestamps and the stage/GPO durable lock stay unchanged.
   return [pscustomobject][ordered]@{format='AuthWireRollbackPreflightV1';job_id=$Offer.job_id;intent_sha256=$Offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $Offer.target);binding_scope=(Get-AuthWireJobScope $Binding);release_id=$Release;stage_job_id=$origin.StageJobId;stage_release_id=$origin.StageReleaseId;filesystem_operation_id=$origin.FilesystemOperationId;origin_chain_sha256=$origin.ChainSha256;complete_sha256=$Offer.target.stage_receipt.complete_journal_sha256;tree_sha256=$Offer.target.stage_receipt.staged_tree_sha256;directory_sha256=(Get-AuthWireWriteHash $directory);checked_at=$observedAt;expires_at=([long][Math]::Min(($observedAt+5),[long]$Offer.expires_at));read_only=$true;write_authorized=$false;can_delete=$false;can_apply_gpo=$false;requires_separate_claim=$true}
  }finally{if($tree){$tree.Dispose()};$p.Dispose()}
- }finally{if($originPins){$originPins.Dispose()};$originLock.ReleaseMutex();$originLock.Dispose()}
+ }finally{$decision.ReleaseMutex();$decision.Dispose()}
 }
 
+function Get-AuthWireRollbackPreflight($Offer,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[string]$Publisher,[string]$BaseUrl){
+ # Trusted local read-only entry. It is NOT a grant or a filesystem intent and
+ # must not be passed to the low-level deletion engine as authorization.
+ $clock=[Diagnostics.Stopwatch]::StartNew();$start=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+ Assert-AuthWireWriteOffer $Offer $Binding $Release $Offer.request_id
+ if($Offer.operation -cne 'combined.filesystem.rollback.v1'){throw 'ROLLBACK_OPERATION_REQUIRED'}
+ $originLock=Enter-AuthWireWriteOutcomeLock $Offer.target.stage_receipt.stage_job_id;$originPins=$null
+ try{
+ $root=Get-AuthWireStagingWriteJournalRoot $Binding;Assert-AuthWireStagingWriteJournalLocation $root $Binding
+ # Pin the fixed original chain BEFORE validating it. Keep the exact verified
+ # bytes and original-stage mutex held through both live observations; do not
+ # waste their short lifetime repeating the entire historical traversal.
+ $originPins=New-AuthWireRollbackOriginInputPins $root $Offer
+ $origin=Read-AuthWireRollbackOrigin $Offer $Binding $Release $Key
+ $result=Get-AuthWireRollbackLivePreflight $Offer $Binding $Release $Publisher $BaseUrl $origin
+ if($clock.Elapsed.TotalSeconds -ge 15 -or [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -lt $start){throw 'ROLLBACK_PREFLIGHT_EXPIRED'}
+ return $result
+ }finally{if($originPins){$originPins.Dispose()};$originLock.ReleaseMutex();$originLock.Dispose()}
+}
