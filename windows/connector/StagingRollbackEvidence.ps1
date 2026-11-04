@@ -4,6 +4,26 @@ Set-StrictMode -Version 2
 
 function Read-AuthWireRollbackOrigin($Offer,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
  Assert-AuthWireWriteOffer $Offer $Binding $Release $Offer.request_id
+ $id=$Offer.target.stage_receipt.stage_job_id;$root=Get-AuthWireStagingWriteJournalRoot $Binding
+ $lock=Enter-AuthWireWriteOutcomeLock $id
+ try{
+  $origin=Read-AuthWireRollbackOriginEvidenceAt $Offer $Binding $Release $Key ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
+  $p=[AuthWire.Staging.TreeLeaseV1]::new()
+  try{
+   $p.PinAncestors($root);$job=Join-Path $root $id;$p.PinAncestors($job)
+   $engine=Join-Path $root $origin.FilesystemOperationId;$p.PinAncestors($engine)
+   if(Test-Path -LiteralPath (Join-Path $job 'execution-requires-review.json')){throw 'ROLLBACK_STAGE_REVIEW_REQUIRED'}
+   Assert-AuthWireNoActiveStage $root $id
+   foreach($n in @('rollback-started.json','rolled-back.json')){if(Test-Path -LiteralPath (Join-Path $engine $n)){throw 'ROLLBACK_PREVIOUS_ATTEMPT_REQUIRES_REVIEW'}}
+   return $origin
+  }finally{$p.Dispose()}
+ }finally{$lock.ReleaseMutex();$lock.Dispose()}
+}
+
+# Historical proof only; this never establishes CURRENT eligibility or renews authority.
+function Read-AuthWireRollbackOriginEvidenceAt($Offer,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[long]$ObservedAt){
+ if(-not (Test-AuthWireWriteInteger $ObservedAt) -or $ObservedAt -gt [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()){throw 'ROLLBACK_HISTORY_TIME_REJECTED'}
+ Assert-AuthWireWriteOfferAt $Offer $Binding $Release $Offer.request_id $ObservedAt
  if($Offer.operation -cne 'combined.filesystem.rollback.v1'){throw 'ROLLBACK_OPERATION_REQUIRED'}
  $id=$Offer.target.stage_receipt.stage_job_id
  if($id -ceq $Offer.job_id){throw 'ROLLBACK_DISTINCT_JOB_REQUIRED'}
@@ -16,8 +36,6 @@ function Read-AuthWireRollbackOrigin($Offer,[hashtable]$Binding,[string]$Release
   # Hold the ENTIRE immutable authority/observation/result chain for this read.
   foreach($n in @('offer.json','preflight.json','claim-started.json','claim-proof.json','claim-sent.json','authorization.json','grant-consumed.json','filesystem-intent.json','stage-launch.json','stage-child.json','stage-preflight.json','execution-complete.json','execution-observed.json','result-outbox.json','result-accepted.json')){$p.PinFile((Join-Path $job $n))}
   $p.PinFile((Join-Path $root ('gpo-'+$Offer.target.scope_target.gpo_id+'.json')))
-  if(Test-Path -LiteralPath (Join-Path $job 'execution-requires-review.json')){throw 'ROLLBACK_STAGE_REVIEW_REQUIRED'}
-  Assert-AuthWireNoActiveStage $root $id
   $record=Read-AuthWireStagingJournal (Join-Path $job 'offer.json')
   Assert-AuthWireCandidateFields $record @('format','binding_scope','release_id','offer')
   Assert-AuthWireCandidateGuid $record.release_id
@@ -30,7 +48,6 @@ function Read-AuthWireRollbackOrigin($Offer,[hashtable]$Binding,[string]$Release
   }
   $op=$s.Intent.filesystem_operation_id;$engine=Join-Path $root $op;$p.PinAncestors($engine)
   foreach($n in @('intent.json','complete.json')){$p.PinFile((Join-Path $engine $n))}
-  foreach($n in @('rollback-started.json','rolled-back.json')){if(Test-Path -LiteralPath (Join-Path $engine $n)){throw 'ROLLBACK_PREVIOUS_ATTEMPT_REQUIRES_REVIEW'}}
   $observed=Read-AuthWireObservedStageBody $root $id $Binding $record.release_id $Key
   $outbox=Read-AuthWireWriteResultOutbox $root $id $Binding $record.release_id $Key
   if((Get-AuthWireWriteHash $observed) -cne $outbox.body_sha256 -or (Get-AuthWireWriteHash $outbox.body) -cne $outbox.body_sha256 -or
@@ -102,3 +119,4 @@ function Get-AuthWireRollbackPreflight($Offer,[hashtable]$Binding,[string]$Relea
   return [pscustomobject][ordered]@{format='AuthWireRollbackPreflightV1';job_id=$Offer.job_id;intent_sha256=$Offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $Offer.target);binding_scope=(Get-AuthWireJobScope $Binding);release_id=$Release;stage_job_id=$origin.StageJobId;stage_release_id=$origin.StageReleaseId;filesystem_operation_id=$origin.FilesystemOperationId;origin_chain_sha256=$origin.ChainSha256;complete_sha256=$Offer.target.stage_receipt.complete_journal_sha256;tree_sha256=$Offer.target.stage_receipt.staged_tree_sha256;directory_sha256=(Get-AuthWireWriteHash $directory);checked_at=$observedAt;expires_at=([long][Math]::Min(($observedAt+5),[long]$Offer.expires_at));read_only=$true;write_authorized=$false;can_delete=$false;can_apply_gpo=$false;requires_separate_claim=$true}
  }finally{if($tree){$tree.Dispose()};$p.Dispose()}
 }
+

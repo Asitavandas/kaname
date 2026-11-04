@@ -17,6 +17,7 @@ import tempfile
 import threading
 import time
 import uuid
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from cryptography import x509
@@ -26,13 +27,14 @@ from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 from kaname.connector_jobs import JobError
 from kaname.connector_registry import decode_binding
 from kaname.operations import Operations
-from kaname.staging_write_jobs import StagingWriteJobs, SECTION
+from kaname.staging_write_jobs import StagingWriteJobs, SECTION, STAGE, ROLLBACK, ACK
 from kaname.store import Store
 
 
 def main():
     if os.name != 'nt' or os.environ.get('RUNNER_ENVIRONMENT') != 'github-hosted':
         raise RuntimeError('Hosted Windows fixture only')
+    grant_mode = os.environ.get('AUTHWIRE_ROLLBACK_AUTHORIZATION_CHECK') == '1'
     with tempfile.TemporaryDirectory(prefix='aw-write-transport-') as temp:
         root = Path(temp); fqdn = 'aw-' + uuid.uuid4().hex + '.lab.example'
         private = rsa.generate_private_key(public_exponent=65537, key_size=3072)
@@ -63,7 +65,10 @@ def main():
             binding = decode_binding(native | {'public_key_pem': data['public_key_pem']})
             assert binding.fields()[-1] == kid
             core._binding = lambda db: binding
-            core._current = lambda db, ledger, job: True  # Explicit AD/current-target stub.
+            # Stage positive AD/current lookup is a stub; rollback uses the
+            # real original-result/current-target checks with only AD stubbed.
+            core._current = lambda db, ledger, job: (True if job['operation'] == STAGE
+                else StagingWriteJobs._current(core, db, ledger, job))
             offer = data['offer']; identity = offer['job_id']
             with store.connect() as db:
                 db.execute('BEGIN IMMEDIATE'); ledger = core._read(db)
@@ -78,6 +83,26 @@ def main():
                         'authorized_at': 0, 'authorized_until': 0,
                         'authorization_id': '', 'claim_sha256': '', 'result': None})
                     ops._save(db, SECTION, ledger)
+            mode_file = root/'rollback-mode.json'
+            if grant_mode and mode_file.exists():
+                mode = json.loads(mode_file.read_text(encoding='utf-8-sig'))
+                assert mode['stage_job_id'] == identity
+                target = offer['target']['scope_target']
+                def current_target(db, candidate_id):
+                    assert candidate_id == target['candidate_id']
+                    return target  # Explicit positive AD/candidate observation.
+                core.previews = SimpleNamespace(_target=current_target)
+                with store.connect() as db:
+                    ledger = core._read(db)
+                if not any(j['id'] == mode['job_id'] for j in ledger['jobs']):
+                    req = {'expected_revision': store.snapshot()['revision'],
+                        'job_id': mode['job_id'], 'operation': ROLLBACK,
+                        'candidate_id': target['candidate_id'],
+                        'staging_preview_sha256': offer['target']['preview_record']['PreviewSha256'],
+                        'stage_job_id': identity, 'acknowledge': ACK[ROLLBACK]}
+                    review = core.review(req, mode['actor'])
+                    core.create(req | {'review_hash': review['review_hash']}, mode['actor'])
+                return data | {'case': mode['case']}, mode['job_id']
             return data, identity
 
         class Handler(BaseHTTPRequestHandler):
@@ -102,8 +127,10 @@ def main():
                         elif self.path == '/api/connector/v1/staging-write/claim':
                             metrics['claims'][identity] = metrics['claims'].get(identity, 0)+1
                             reply = core.claim(raw)
-                            if case == 'lost_grant':
+                            if case in {'lost_grant', 'rollback_lost_grant'}:
                                 self.close_connection = True; self.connection.shutdown(2); return
+                            if case == 'rollback_bad_grant':
+                                reply['operation'] = STAGE
                         elif self.path == '/api/connector/v1/staging-write/result':
                             metrics['results'][identity] = metrics['results'].get(identity, 0)+1
                             body = json.loads(base64.b64decode(json.loads(raw)['payload']))
@@ -136,6 +163,30 @@ def main():
                 str(Path(__file__).with_name('staging_write_execution_windows_check.ps1'))],
                 check=True, timeout=650, env=env)
             native = json.loads((root/'native-summary.json').read_text(encoding='utf-8-sig'))
+            if grant_mode:
+                assert len(native['outcomes']) == 8 and not metrics['errors']
+                assert len(metrics['polls']) == 16 and set(metrics['polls'].values()) == {1}
+                assert len(metrics['claims']) == 15 and set(metrics['claims'].values()) == {1}
+                assert len(metrics['results']) == 8 and set(metrics['results'].values()) == {1}
+                with store.connect() as db:
+                    jobs = core._read(db)['jobs']
+                assert len(jobs) == 16
+                assert sum(j['operation'] == STAGE and j['state'] == 'completed' and j['result']['outcome'] == 'staged' for j in jobs) == 8
+                assert sum(j['operation'] == ROLLBACK and j['state'] == 'authorized' for j in jobs) == 7
+                assert sum(j['operation'] == ROLLBACK and j['state'] == 'leased' for j in jobs) == 1
+                assert len(store.audit()) == len(original_audit)+31
+                after = store.snapshot()
+                assert after['revision'] == original['revision']+31
+                assert after['config'] == original['config'] and after['policies'] == original['policies']
+                print('AUTHWIRE_ROLLBACK_AUTHORIZATION_WINDOWS_OK ' + json.dumps({
+                    'native_checks': native['checks'], 'cases': 8,
+                    'actual_separate_review_create_poll_claim': True,
+                    'rollback_claims': 7, 'rollback_results': 0,
+                    'actual_cng_tls_sqlite_signed_reader_smb': True,
+                    'positive_ad_content_service_identity_simulated': True,
+                    'files_deleted': False, 'production_routes_registered': False,
+                    'customer_changed': False}, sort_keys=True))
+                return
             assert len(native['outcomes']) == 13 and not metrics['errors']
             assert len(metrics['polls']) == 13 and set(metrics['polls'].values()) == {1}
             assert len(metrics['claims']) == 10 and set(metrics['claims'].values()) == {1}
@@ -167,3 +218,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
