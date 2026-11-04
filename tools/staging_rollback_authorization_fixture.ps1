@@ -13,6 +13,7 @@ $rbLock=Join-Path $rbRoot ('gpo-'+$t.gpo_id+'.json');$rbLockHash=Get-AuthWireCan
 $rbModePath=Join-Path $flowDirectory 'rollback-mode.json'
 $rbId=[guid]::NewGuid().ToString('D')
 [IO.File]::WriteAllText($rbModePath,(@{stage_job_id=$id;job_id=$rbId;actor=[guid]::NewGuid().ToString('D');case=$case}|ConvertTo-Json -Compress))
+Wait-AuthWireFixtureCore
 try{
  # Direct fixture POLL, not a product durable rollback cycle/worker.
  $rbPoll=New-AuthWireStagingWriteProof $b $rsa POLL @{capability='combined.filesystem.write.v1';release_id=$release}
@@ -108,3 +109,4 @@ try{
  if(-not $rollbackExecutionMode){Check (-not (Test-Path -LiteralPath (Join-Path $rbEngine 'rollback-started.json'))) 'no rollback engine or cleanup invoked'}
  Write-Host ('ROLLBACK_AUTHORIZATION_CASE_OK case='+$case+' control_ms='+$rbWatch.ElapsedMilliseconds+' original_stage_preserved=true files_deleted=false')
 }finally{[IO.File]::Delete($rbModePath)}
+

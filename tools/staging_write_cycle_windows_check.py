@@ -37,6 +37,7 @@ def main():
     grant_mode = os.environ.get('AUTHWIRE_ROLLBACK_AUTHORIZATION_CHECK') == '1'
     execution_mode = os.environ.get('AUTHWIRE_ROLLBACK_EXECUTION_CHECK') == '1'
     lifecycle_mode = os.environ.get('AUTHWIRE_WRITE_LIFECYCLE_CHECK') == '1'
+    history_mode = os.environ.get('AUTHWIRE_WRITE_HISTORY_CHECK') == '1'
     with tempfile.TemporaryDirectory(prefix='aw-write-transport-') as temp:
         root = Path(temp); fqdn = 'aw-' + uuid.uuid4().hex + '.lab.example'
         private = rsa.generate_private_key(public_exponent=65537, key_size=3072)
@@ -60,9 +61,20 @@ def main():
         lock = threading.Lock()
         metrics = {'polls': {}, 'claims': {}, 'results': {}, 'bodies': {}, 'errors': []}
         original = store.snapshot(); original_audit = store.audit()
+        prepared_key = None
+        prepared_case = None
 
-        def setup_case():
-            data = json.loads((root/'input.json').read_text(encoding='utf-8-sig'))
+        def setup_case(allow_prepare=True):
+            nonlocal prepared_key, prepared_case
+            mode_file = root/'rollback-mode.json'
+            input_raw = (root/'input.json').read_bytes()
+            mode_raw = mode_file.read_bytes() if mode_file.exists() else b''
+            current_key = (input_raw, mode_raw)
+            if current_key == prepared_key:
+                return prepared_case
+            if not allow_prepare:
+                raise AssertionError('Fixture queue must be prepared before product HTTP')
+            data = json.loads(input_raw.decode('utf-8-sig'))
             native = dict(data['binding']); kid = native.pop('channel_key_sha256')
             binding = decode_binding(native | {'public_key_pem': data['public_key_pem']})
             assert binding.fields()[-1] == kid
@@ -85,9 +97,8 @@ def main():
                         'authorized_at': 0, 'authorized_until': 0,
                         'authorization_id': '', 'claim_sha256': '', 'result': None})
                     ops._save(db, SECTION, ledger)
-            mode_file = root/'rollback-mode.json'
             if grant_mode and mode_file.exists():
-                mode = json.loads(mode_file.read_text(encoding='utf-8-sig'))
+                mode = json.loads(mode_raw.decode('utf-8-sig'))
                 assert mode['stage_job_id'] == identity
                 target = offer['target']['scope_target']
                 def current_target(db, candidate_id):
@@ -104,10 +115,36 @@ def main():
                         'stage_job_id': identity, 'acknowledge': ACK[ROLLBACK]}
                     review = core.review(req, mode['actor'])
                     core.create(req | {'review_hash': review['review_hash']}, mode['actor'])
-                return data | {'case': mode['case']}, mode['job_id']
+                prepared_case = (data | {'case': mode['case']}, mode['job_id'])
+                prepared_key = current_key
+                return prepared_case
             # Before the mode file exists this is the original stage, even if
             # the outer case describes a later rollback transport failure.
-            return (data | {'case': 'success'} if grant_mode else data), identity
+            prepared_case = ((data | {'case': 'success'} if grant_mode else data), identity)
+            prepared_key = current_key
+            return prepared_case
+
+        # Queue creation/AD fixture registration is test setup, not POLL work.
+        # Finish it before creating the actual signed request. The handler still
+        # runs the unchanged production core inside its original HTTP deadline.
+        prepare_stop = threading.Event()
+        def prepare_cases():
+            seen = set()
+            while not prepare_stop.wait(0.02):
+                for request in sorted(root.glob('prepare-request-*')):
+                    token = request.name.removeprefix('prepare-request-')
+                    if len(token) != 32 or any(c not in '0123456789abcdef' for c in token) or token in seen:
+                        continue
+                    try:
+                        with lock:
+                            setup_case()
+                        (root/('prepare-ready-'+token)).mkdir()
+                    except Exception as error:
+                        print('FIXTURE_PREPARE_FAILURE '+type(error).__name__, flush=True)
+                        (root/('prepare-failed-'+token)).mkdir()
+                    seen.add(token)
+        preparer = threading.Thread(target=prepare_cases, daemon=True)
+        preparer.start()
 
         class Handler(BaseHTTPRequestHandler):
             protocol_version = 'HTTP/1.1'
@@ -121,7 +158,7 @@ def main():
                     size = int(self.headers.get('Content-Length', '0')); assert 0 < size <= 4096
                     raw = self.rfile.read(size)
                     with lock:
-                        data, identity = setup_case()
+                        data, identity = setup_case(allow_prepare=False)
                         case = data['case']
                         if self.path == '/api/connector/v1/staging-write/poll':
                             metrics['polls'][identity] = metrics['polls'].get(identity, 0)+1
@@ -146,11 +183,10 @@ def main():
                         else:
                             raise AssertionError('Unexpected route')
                     body = json.dumps(reply, separators=(',', ':')).encode('ascii')
-                    if lifecycle_mode:
-                        print('LIFECYCLE_FIXTURE_HTTP_READY ' + json.dumps({
-                            'kind': self.path.rsplit('/', 1)[-1],
-                            'elapsed_ms': round((time.monotonic()-observed_start)*1000),
-                            'reply_bytes': len(body)}, sort_keys=True), flush=True)
+                    print('WRITE_FIXTURE_HTTP_READY ' + json.dumps({
+                        'kind': self.path.rsplit('/', 1)[-1],
+                        'elapsed_ms': round((time.monotonic()-observed_start)*1000),
+                        'reply_bytes': len(body)}, sort_keys=True), flush=True)
                     self.send_response(200); self.send_header('Content-Type', 'application/json')
                     self.send_header('Content-Length', str(len(body))); self.send_header('Connection', 'close')
                     self.end_headers(); self.wfile.write(body); self.close_connection = True
@@ -176,6 +212,32 @@ def main():
                 # production HTTP/grant/reader/child deadlines stay unchanged.
                 check=True, timeout=1320 if execution_mode else (1100 if lifecycle_mode else 650), env=env)
             native = json.loads((root/'native-summary.json').read_text(encoding='utf-8-sig'))
+            if history_mode:
+                assert len(native['outcomes']) == 4 and not metrics['errors']
+                assert len(metrics['polls']) == 7 and sorted(metrics['polls'].values()) == [1]*5+[2, 3]
+                assert len(metrics['claims']) == 5 and set(metrics['claims'].values()) == {1}
+                assert len(metrics['results']) == 5 and set(metrics['results'].values()) == {1}
+                with store.connect() as db:
+                    jobs = core._read(db)['jobs']
+                assert len(jobs) == 6
+                assert sum(j['operation'] == STAGE and j['state'] == 'completed' for j in jobs) == 4
+                assert sum(j['operation'] == ROLLBACK and j['state'] == 'requires_review' for j in jobs) == 1
+                assert sum(j['operation'] == ROLLBACK and j['state'] == 'leased' for j in jobs) == 1
+                after = store.snapshot()
+                assert after['revision'] == original['revision']+12
+                assert len(store.audit()) == len(original_audit)+12
+                assert after['config'] == original['config'] and after['policies'] == original['policies']
+                print('AUTHWIRE_WRITE_HISTORY_WINDOWS_OK ' + json.dumps({
+                    'native_checks': native['checks'], 'cases': 4,
+                    'real_cng_ntfs_archives': 2, 'archived_cycles': 128,
+                    'synthetic_signed_idle_records': 251,
+                    'actual_core_poll_requests': 10, 'claim_requests': 5, 'result_requests': 5,
+                    'interrupted_copy_preserves_64_active_originals': True,
+                    'foreign_child_partial_retirement_requires_review': True,
+                    'positive_ad_content_service_identity_simulated': True,
+                    'actual_machine_reboot_tested': False,
+                    'active_worker_registered': False, 'customer_changed': False}, sort_keys=True))
+                return
             if lifecycle_mode:
                 assert len(native['outcomes']) == 8 and not metrics['errors']
                 assert len(metrics['polls']) == 15 and sorted(metrics['polls'].values()) == [1]*14+[2]
@@ -289,6 +351,7 @@ def main():
                 'errors': metrics['errors']}, sort_keys=True), flush=True)
             raise
         finally:
+            prepare_stop.set(); preparer.join(timeout=3)
             server.shutdown(); server.server_close(); thread.join(timeout=3)
 
 

@@ -17,6 +17,7 @@ try{
   Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $lcBefore) 'stage result recovery performs no second SMB write'
  }else{
   [IO.File]::WriteAllText($lcMode,(@{stage_job_id=$id;job_id=$lcId;actor=[guid]::NewGuid().ToString('D');case=$case}|ConvertTo-Json -Compress))
+  Wait-AuthWireFixtureCore
   if($case -ceq 'lc_saved_grant'){
    # Shared production helpers build the actual poll/dispatch and actual core
    # CLAIM receipt. Stopping at this boundary simulates controller loss;
@@ -97,5 +98,6 @@ try{
  $lcForeign=Join-Path $lcRoot 'foreign-root-record.txt'
  try{[IO.File]::WriteAllText($lcForeign,'fixture unknown data must not be deleted');Reject {Invoke-AuthWireStagingWriteLifecycleStep $lcRoot $b $release $rsa $url} 'unreferenced root record prevents poll and action';Check (Test-Path -LiteralPath $lcForeign) 'unknown history is preserved for explicit review'}finally{[IO.File]::Delete($lcForeign)}
  Check (Test-Path -LiteralPath (Join-Path $lcLife 'baseline.json')) 'durable header remains in original fixed private root'
+ if($env:AUTHWIRE_WRITE_HISTORY_CHECK -eq '1'){. (Join-Path $PSScriptRoot 'staging_write_history_fixture.ps1')}
  Write-Host ('WRITE_LIFECYCLE_CASE_OK case='+$case+' reload_record_boundary_simulated=true actual_machine_reboot=false customer_changed=false')
 }finally{if(-not $StageOnly){[IO.File]::Delete($lcMode)}}

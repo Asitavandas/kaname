@@ -102,6 +102,27 @@ namespace AuthWire.Staging {
    var v=new TreeLeaseV1();try{v.Walk(path,"",delete,0);v.Rows.Sort((a,b)=>StringComparer.Ordinal.Compare(a.Path,b.Path));return v;}catch{v.Dispose();throw;}
   }
   public void PinFile(string path){Open(path,"",false,false,false);}
+  public void PinDirectory(string path){Open(path,"",true,false,false);NoStreams(path);}
+  // Read through the already held lease; no second pathname open can replace
+  // the bytes between reviewed ownership and a local history archive copy.
+  public byte[] ReadOwnedBytes(string relative){
+   foreach(var e in entries){
+    if(e.R.Path!=relative || e.R.Kind!="file")continue;
+    if(!e.Delete || e.R.Size<1 || e.R.Size>65536)Fail("STAGING_ARCHIVE_LEASE_REQUIRED");
+    var data=new byte[(int)e.R.Size];
+    using(var alias=new SafeFileHandle(e.H.DangerousGetHandle(),false))
+    using(var fs=new FileStream(alias,FileAccess.Read)){
+     fs.Position=0;int at=0;
+     while(at<data.Length){int n=fs.Read(data,at,data.Length-at);if(n==0)Fail("STAGING_ARCHIVE_READ_FAILED");at+=n;}
+     if(fs.ReadByte()!=-1)Fail("STAGING_ARCHIVE_READ_FAILED");
+    }
+    using(var sha=SHA256.Create()){
+     if(BitConverter.ToString(sha.ComputeHash(data)).Replace("-","").ToLowerInvariant()!=e.R.Sha256)Fail("STAGING_ARCHIVE_BYTES_CHANGED");
+    }
+    return data;
+   }
+   Fail("STAGING_ARCHIVE_FILE_REJECTED");return null;
+  }
   public static void CreateNewDirectory(string path){if(!CreateDirectory(path,IntPtr.Zero))NativeFail();}
   public static void AssertRollbackDeadline(long notAfter,long startedAt,long startedTicks){
    // UTC bounds the original grant; monotonic time prevents a clock setback
