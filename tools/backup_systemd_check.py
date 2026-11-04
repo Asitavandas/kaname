@@ -21,6 +21,7 @@ from kaname.pki import PKIService
 from tests.helpers import config
 from tests.test_pki import PASSWORD, csr
 from tools import backup_install as installer
+from tools import backup_upgrade as upgrader
 from tools import scheduled_backup as worker
 
 
@@ -28,12 +29,20 @@ def command(*args):
     return subprocess.run(list(args), check=True, text=True, capture_output=True, timeout=90)
 
 
+def private_package_file(path, data):
+    """Do not inherit hosted /opt default ACL masks for a trusted root stage."""
+    path.write_bytes(data)
+    os.chown(path, 0, 0)
+    path.chmod(0o600)
+
+
 def main():
     if os.geteuid() != 0 or os.environ.get('RUNNER_ENVIRONMENT') != 'github-hosted':
         raise ValueError('Disposable GitHub-hosted root fixture required')
     dirs = [Path('/etc/kaname-lab'), Path('/var/lib/kaname-lab'), Path('/opt/kaname-lab'),
             Path('/opt/authwire-radius'), Path('/opt/authwire-service-control'),
-            Path('/var/lib/authwire-service-control'), Path('/opt/authwire-backup'), Path('/var/backups/authwire')]
+            Path('/var/lib/authwire-service-control'), Path('/opt/authwire-backup'), Path('/var/backups/authwire'),
+            Path('/opt/authwire-backup-upgrades'), Path('/opt/authwire-backup-upgrade-package')]
     units = [Path('/etc/systemd/system') / name for name in worker.UNITS]
     extra = [Path('/run/kaname-lab-update.lock'), Path('/etc/tmpfiles.d/authwire-service-control.conf')]
     fixture_timer = Path('/etc/systemd/system/authwire-backup-fixture.timer')
@@ -78,7 +87,10 @@ def main():
         before = worker.pids()
         with tempfile.TemporaryDirectory(prefix='backup-package-') as tmp:
             stage = Path(tmp)
-            for name in installer.FILES: shutil.copy2(source / 'tools' / name, stage / name)
+            for name in installer.FILES:
+                original = (source / 'tests/fixtures/scheduled_backup_dev44.py'
+                            if name == 'scheduled_backup.py' else source / 'tools' / name)
+                shutil.copy2(original, stage / name)
             manifest = json.dumps({n: worker.digest(stage / n) for n in installer.FILES}).encode()
             (stage / 'manifest.json').write_bytes(manifest)
             expected = hashlib.sha256(manifest).hexdigest()
@@ -114,6 +126,50 @@ def main():
                     with sqlite3.connect(copied_db) as reader:
                         assert reader.execute('SELECT attempts FROM admin_login_rate').fetchone()[0] == 17
             finally: db.close()
+            # Exercise the separate source upgrader against real root paths,
+            # real systemd state and real encrypted fixture data. A deliberately
+            # stopped RADIUS must remain stopped throughout both upgrade modes.
+            command('systemctl', 'stop', 'authwire-radius.service')
+            stopped = worker.pids()
+            assert stopped['authwire-radius.service'] == '0'
+            assert all(stopped[n] == before[n] for n in before if n != 'authwire-radius.service')
+            before = stopped
+            upgrade_stage = Path('/opt/authwire-backup-upgrade-package')
+            upgrade_stage.mkdir(mode=0o700)
+            for timer_active in (False, True):
+                if timer_active: command('systemctl', 'start', installer.TIMER.name)
+                installed_release = worker.digest(installer.TARGET / 'release.json')
+                for name in installer.FILES:
+                    data = (source / 'tools' / name).read_bytes()
+                    if timer_active: data += b'\n# disposable second-upgrade fixture\n'
+                    private_package_file(upgrade_stage / name, data)
+                manifest = json.dumps({n: worker.digest(upgrade_stage / n) for n in installer.FILES}).encode()
+                private_package_file(upgrade_stage / 'manifest.json', manifest)
+                package_pin = hashlib.sha256(manifest).hexdigest()
+                reviewed = upgrader.perform(upgrade_stage, package_pin, installed_release, inspect=True)
+                assert reviewed['event'] == 'BACKUP_UPGRADE_REVIEW' and not reviewed['live_update_applied']
+                outcome = upgrader.perform(upgrade_stage, package_pin, installed_release, upgrader.ACK)
+                assert outcome['event'] == 'BACKUP_UPGRADE_SUCCESS' and outcome['timer_state_restored']
+                assert worker.pids() == before
+                active = command('systemctl', 'show', installer.TIMER.name, '--property=ActiveState', '--value').stdout.strip()
+                assert active == ('active' if timer_active else 'inactive')
+                command('systemctl', 'stop', installer.TIMER.name)
+                # Root maintenance capture is separate from this real hardened
+                # unit execution: the upgraded source must pass both.
+                command('systemctl', 'start', installer.SERVICE.name)
+                record = json.loads(last_success.read_text())
+                assert record['event'] == 'BACKUP_SUCCESS' and worker.pids() == before
+            # A real maintenance capture followed by a pinned checker failure
+            # must restore only old source and preserve all scheduled records.
+            installed_release = worker.digest(installer.TARGET / 'release.json')
+            checker = upgrade_stage / 'offline_restore_check.py'
+            private_package_file(checker, checker.read_bytes() + b'\ndef check(*args):\n    raise ValueError("disposable restore refusal")\n')
+            manifest = json.dumps({n: worker.digest(upgrade_stage / n) for n in installer.FILES}).encode()
+            private_package_file(upgrade_stage / 'manifest.json', manifest)
+            refused = upgrader.perform(upgrade_stage, hashlib.sha256(manifest).hexdigest(), installed_release, upgrader.ACK)
+            assert refused['event'] == 'BACKUP_UPGRADE_ROLLED_BACK'
+            assert worker.digest(installer.TARGET / 'release.json') == installed_release and worker.pids() == before
+            upgrader.journal()
             latest = json.loads(Path('/var/backups/authwire/scheduled/last-run.json').read_text())
             assert latest['event'] == 'BACKUP_SUCCESS'
             previous = Path('/var/backups/authwire/scheduled/last-success.json').read_bytes()
@@ -133,6 +189,12 @@ def main():
                               'real_timer_trigger_verified': True,
                               'real_sqlite_and_fixture_pki_restore': True, 'foreign_uid_state_read': True,
                               'wal_snapshot_verified': True, 'failure_recorded': True,
+                              'atomic_upgrade_and_isolated_restore_verified': True,
+                              'frozen_dev44_worker_upgraded': True,
+                              'restore_failure_source_rollback_verified': True,
+                              'upgraded_real_hardened_service_verified': True,
+                              'active_and_inactive_timer_states_preserved': True,
+                              'stopped_radius_preserved_during_upgrade': True,
                               'product_fixture_processes_preserved': True, 'customer_data_used': False}))
     finally:
         subprocess.run(['systemctl', 'stop', fixture_timer.name], capture_output=True, timeout=30)
@@ -146,3 +208,4 @@ def main():
 
 
 if __name__ == '__main__': main()
+
