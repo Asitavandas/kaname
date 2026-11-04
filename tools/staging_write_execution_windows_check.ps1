@@ -145,6 +145,19 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
   [IO.File]::AppendAllText((Join-Path $package 'StagingWriteConsumption.ps1'),$flowShim)
  }
 
+ if($lifecycleMode){
+  $lifecycleTrace=@'
+# Fixture-only safe failure frames. No raw exception message/path/proof/key data.
+$script:FixtureLifecyclePollBody=${function:New-AuthWireLifecyclePoll}
+function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[string]$BaseUrl){
+ try{& $script:FixtureLifecyclePollBody @PSBoundParameters}catch{
+  $frames=@();foreach($line in $_.ScriptStackTrace.Split([char]10)){if($line -match '\Aat ([A-Za-z][A-Za-z0-9_-]*), .*: line ([0-9]+)'){$frames+=,[pscustomobject]@{function=$Matches[1];line=[int]$Matches[2]};if($frames.Count -ge 8){break}}}
+  Write-Host ('LIFECYCLE_SAFE_FAILURE_FRAMES '+(@{kind=$_.Exception.GetType().Name;frames=$frames}|ConvertTo-Json -Depth 4 -Compress));throw
+ }
+}
+'@
+  [IO.File]::AppendAllText((Join-Path $package 'StagingWriteLifecycle.ps1'),$lifecycleTrace)
+ }
  $modules=Join-Path $package 'fixture-modules';$null=New-Item -ItemType Directory -Path $modules
  foreach($name in @('ActiveDirectory','GroupPolicy')){
   $directory=Join-Path $modules $name;$null=New-Item -ItemType Directory -Path $directory
