@@ -114,7 +114,10 @@ function Invoke-AuthWireAuthorizedRollbackChild([string]$Root,[string]$JobId,[st
   $start=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$clock=[Diagnostics.Stopwatch]::StartNew()
   Write-AuthWireStagingJournal (Join-Path $job 'rollback-entered.json') ([pscustomobject]@{format='AuthWireRollbackEnteredV1';job_id=$JobId;launch_sha256=(Get-AuthWireWriteHash $launch);child_identity_sha256=(Get-AuthWireWriteHash $identity);entered_at=$start})
   $script:AuthWireRollbackChildPhase='context'
-  $live=Get-AuthWireRollbackPreflight $s.Authorization.Offer $Binding $Release $Key $Publisher $BaseUrl
+  # Current receipt/consumption/original chain were fully verified above under
+  # pins still held here. Reuse that origin ONLY for a fresh read-only live check;
+  # do not re-traverse the immutable authority chain inside the same short grant.
+  $live=Get-AuthWireRollbackLivePreflight $s.Authorization.Offer $Binding $Release $Publisher $BaseUrl $s.Authorization.Origin
   Assert-AuthWireRollbackPreflightAt $live $s.Authorization $Binding $Release ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
   if($live.checked_at -lt $start -or $live.directory_sha256 -cne $s.ConsumptionPreflight.directory_sha256){throw 'ROLLBACK_EXECUTION_SCOPE_CHANGED'}
   Write-AuthWireStagingJournal (Join-Path $job 'rollback-execution-preflight.json') $live

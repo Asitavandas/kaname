@@ -25,7 +25,7 @@ try{
  $rsa=[Security.Cryptography.RSACng]::new($key)
  $keyPath=Join-Path (Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) 'Microsoft\Crypto\Keys') $key.UniqueName
  if(-not (Compare-AuthWireSigningKeyAcl $c.ExpectedKeySddl (Get-Acl -LiteralPath $keyPath).Sddl).AclEquivalent){throw 'WRITE_EXECUTION_KEY_ACL_REJECTED'}
- # Import happens only after private intent, binding and original claim validation.
+ # Fixed modules only; full intent/claim validation below precedes every effect.
  $script:AuthWireRollbackChildPhase='intent'
  # Full receipt/consumption validation occurs once under held input pins in
  # InvokeAuthorizedRollbackChild below; no write happens while importing modules.

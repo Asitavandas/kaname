@@ -149,6 +149,21 @@ function Read-AuthWireRollbackAuthorization([string]$Root,[string]$JobId,[hashta
  if([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -ge $a.Receipt.grant.expires_at){throw 'WRITE_AUTHORIZATION_EXPIRED'}
  return $a
 }
+function New-AuthWireRollbackAuthorizationInputPins([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release){
+ Assert-AuthWireStagingWriteJournalLocation $Root $Binding;Assert-AuthWireCandidateGuid $JobId;Initialize-AuthWireStagingFilesystemTypes
+ $p=[AuthWire.Staging.TreeLeaseV1]::new();$originPins=$null
+ try{
+  $p.PinAncestors($Root);$job=Join-Path $Root $JobId;$p.PinAncestors($job)
+  foreach($n in @('rollback-offer.json','rollback-preflight.json','rollback-claim-started.json','rollback-claim-proof.json','rollback-claim-sent.json','rollback-authorization.json')){$p.PinFile((Join-Path $job $n))}
+  $sent=Read-AuthWireStagingJournal (Join-Path $job 'rollback-claim-sent.json')
+  if(-not (Test-AuthWireWriteInteger $sent.sent_at)){throw 'ROLLBACK_AUTHORIZATION_REJECTED'}
+  $saved=Read-AuthWireRollbackOfferAt $Root $JobId $Binding $Release $sent.sent_at
+  $p.PinFile((Get-AuthWireRollbackReservationPath $Root $saved.Reservation.stage_job_id))
+  $p.PinFile((Join-Path $Root ('gpo-'+$saved.Offer.target.scope_target.gpo_id+'.json')))
+  $originPins=New-AuthWireRollbackOriginInputPins $Root $saved.Offer
+  return [pscustomobject]@{Inputs=$p;Origin=$originPins}
+ }catch{if($originPins){$originPins.Dispose()};$p.Dispose();throw}
+}
 function Read-AuthWireRollbackAuthorizationEvidence([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
  Assert-AuthWireStagingWriteJournalLocation $Root $Binding
  Assert-AuthWireCandidateGuid $JobId;Initialize-AuthWireStagingFilesystemTypes
@@ -205,10 +220,11 @@ function New-AuthWireRollbackFilesystemIntent([string]$Root,[string]$JobId,[hash
   $job=Join-Path $Root $JobId
   # Refuse replay before any key verification, reader process or network call.
   foreach($n in @('rollback-grant-consumed.json','rollback-filesystem-intent.json')){if(Test-Path -LiteralPath (Join-Path $job $n)){throw 'ROLLBACK_ALREADY_CONSUMED_REQUIRES_REVIEW'}}
+  # Pin known fixed authority files FIRST, then fully validate once under those
+  # same pins. An earlier unpinned validation followed by a second full traversal
+  # wastes the original grant without adding a different observation.
+  $p=New-AuthWireRollbackAuthorizationInputPins $Root $JobId $Binding $Release
   $a=Read-AuthWireRollbackAuthorization $Root $JobId $Binding $Release $Key
-  $p=New-AuthWireRollbackInputPins $Root $JobId $a @('rollback-preflight.json','rollback-claim-started.json','rollback-claim-proof.json','rollback-claim-sent.json','rollback-authorization.json')
-  $again=Read-AuthWireRollbackAuthorization $Root $JobId $Binding $Release $Key
-  if($again.AuthorizationSha256 -cne $a.AuthorizationSha256){throw 'ROLLBACK_RECORD_CHANGED'}
   $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$clock=[Diagnostics.Stopwatch]::StartNew();$expiry=$a.Receipt.grant.expires_at
   if($now -lt $a.Receipt.received_at -or $now -ge $expiry){throw 'ROLLBACK_AUTHORIZATION_EXPIRED'}
   $c=[pscustomobject]@{format='AuthWireRollbackGrantConsumedV1';binding_scope=(Get-AuthWireJobScope $Binding);release_id=$Release;job_id=$JobId;stage_job_id=$a.Reservation.stage_job_id;stage_operation_id=$a.Reservation.stage_operation_id;authorization_sha256=$a.AuthorizationSha256;origin_chain_sha256=$a.Reservation.origin_chain_sha256;consumed_at=$now;expires_at=$expiry}
@@ -219,13 +235,13 @@ function New-AuthWireRollbackFilesystemIntent([string]$Root,[string]$JobId,[hash
   Assert-AuthWireRollbackPreflightAt $live $a $Binding $Release ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
   if($live.checked_at -lt $now -or $live.directory_sha256 -cne $a.Preflight.directory_sha256 -or [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -lt $now -or
      [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -ge $expiry -or $clock.ElapsedMilliseconds -ge ($expiry-$now)*1000){throw 'ROLLBACK_INTENT_DEADLINE_OR_SCOPE_CHANGED'}
-  # Authority inputs remain pinned while the signed reader rechecks the entire
-  # origin chain twice. No third historical traversal refreshes live timestamps.
+  # Authority and original stage inputs stay pinned throughout the signed live
+  # reader. No repeated historical traversal refreshes live timestamps.
   Write-AuthWireStagingJournal (Join-Path $job 'rollback-consumption-preflight.json') $live
   $i=[pscustomobject]@{format='AuthWireRollbackFilesystemIntentV1';job_id=$JobId;binding_scope=$c.binding_scope;release_id=$Release;stage_job_id=$c.stage_job_id;stage_operation_id=$c.stage_operation_id;authorization_sha256=$a.AuthorizationSha256;consumption_sha256=(Get-AuthWireWriteHash $c);offer_sha256=$a.Receipt.offer_sha256;target_sha256=(Get-AuthWireWriteHash $a.Offer.target);origin_chain_sha256=$c.origin_chain_sha256;live_preflight_sha256=(Get-AuthWireWriteHash $live);expires_at=$expiry;can_delete=$false;can_apply_gpo=$false}
   Write-AuthWireStagingJournal (Join-Path $job 'rollback-filesystem-intent.json') $i
   $after=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
   if($after -lt $now -or $after -ge $expiry -or $clock.ElapsedMilliseconds -ge ($expiry-$now)*1000){throw 'ROLLBACK_AUTHORIZATION_EXPIRED'}
   return [pscustomobject]@{JobId=$JobId;Phase='rollback_intent_recorded';GrantConsumed=$true;FilesystemIntentSha256=(Get-AuthWireWriteHash $i);StageOperationId=$c.stage_operation_id;CanDelete=$false;CanApplyGpo=$false;RollbackExecuted=$false}
- }finally{if($p){$p.Dispose()};$lock.ReleaseMutex();$lock.Dispose()}
+ }finally{if($p){$p.Origin.Dispose();$p.Inputs.Dispose()};$lock.ReleaseMutex();$lock.Dispose()}
 }
