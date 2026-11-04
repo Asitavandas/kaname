@@ -144,6 +144,24 @@ function New-AuthWireAuthorizedFilesystemIntent([string]$JournalRoot,[string]$Jo
 }
 '@
   [IO.File]::AppendAllText((Join-Path $package 'StagingWriteConsumption.ps1'),$flowShim)
+  # Signed fixture copies emit bounded diagnostics before the cycle converts an
+  # exception into durable review. No raw exception or request data is emitted.
+  foreach($spec in @(@('StagingWriteExecution.ps1','Invoke-AuthWireAuthorizedFilesystemStage'),@('StagingWriteConsumption.ps1','New-AuthWireAuthorizedFilesystemIntent'),@('StagingWriteTransport.ps1','Invoke-AuthWireStagingWriteClaimTransport'))){
+   $fn=$spec[1];$withUrl=if($fn -ceq 'Invoke-AuthWireStagingWriteClaimTransport'){',[string]$BaseUrl'}else{''}
+   $trace=@'
+
+$script:FixtureTrace_FUNCTION_=${function:_FUNCTION_}
+function _FUNCTION_([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key_WITHURL_){
+ try{& $script:FixtureTrace_FUNCTION_ @PSBoundParameters}catch{
+  $frames=@();foreach($line in $_.ScriptStackTrace.Split([char]10)){if($line -match '\Aat ([A-Za-z][A-Za-z0-9_-]*), .*: line ([0-9]+)'){$frames+=,[pscustomobject]@{function=$Matches[1];line=[int]$Matches[2]};if($frames.Count -ge 8){break}}}
+  $code=if($_.Exception.Message -cmatch '\AWRITE_[A-Z_]{1,80}\z'){$_.Exception.Message}else{'UNCLASSIFIED'}
+  Write-Host ('FLOW_SAFE_FAILURE '+(@{function='_FUNCTION_';code=$code;kind=$_.Exception.GetType().Name;frames=$frames}|ConvertTo-Json -Depth 4 -Compress));throw
+ }
+}
+'@
+   $trace=$trace.Replace('_FUNCTION_',$fn).Replace('_WITHURL_',$withUrl)
+   [IO.File]::AppendAllText((Join-Path $package $spec[0]),$trace)
+  }
  }
 
  if($lifecycleMode){

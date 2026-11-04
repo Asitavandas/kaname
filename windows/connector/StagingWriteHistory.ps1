@@ -183,8 +183,8 @@ function Invoke-AuthWireWriteHistoryArchive([string]$Root,[hashtable]$Binding,[S
   if(-not (Test-Path -LiteralPath $area)){
    [AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($area)
    $identity=[Security.Principal.WindowsIdentity]::GetCurrent();try{$sid=$identity.User.Value}finally{$identity.Dispose()}
-   $acl=[Security.AccessControl.DirectorySecurity]::new()
-   $acl.SetSecurityDescriptorSddlForm(('O:'+ $sid +'G:'+ $sid +'D:P(A;OICI;FA;;;'+ $sid +')(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)'))
+   $acl=Get-Acl -LiteralPath $area
+   $acl.SetSecurityDescriptorSddlForm(('D:P(A;OICI;FA;;;'+ $sid +')(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)'),[Security.AccessControl.AccessControlSections]::Access)
    Set-Acl -LiteralPath $area -AclObject $acl -ErrorAction Stop
   }
   $state.Pins.PinAncestors($area);$state.Pins.PinDirectory($area);Assert-AuthWireStagingJournalRoot $area
