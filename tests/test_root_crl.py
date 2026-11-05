@@ -1,4 +1,5 @@
 import hashlib
+from contextlib import contextmanager
 import os
 from pathlib import Path
 import shutil
@@ -46,7 +47,13 @@ class RootCRLTests(unittest.TestCase):
         shutil.copyfile(Path(self.base.name) / 'kaname.sqlite3', self.path); self.path.chmod(0o600)
         self.service = RootCRLService(self.temp.name)
 
-    def db(self): return sqlite3.connect(self.path)
+    @contextmanager
+    def db(self):
+        db=sqlite3.connect(self.path)
+        try:
+            with db: yield db
+        finally:
+            db.close()
     def digest(self): return hashlib.sha256(self.path.read_bytes()).hexdigest()
     def refresh(self, **kw):
         return self.service.refresh(PASSWORD, self.fingerprint, now=self.now, **kw)
