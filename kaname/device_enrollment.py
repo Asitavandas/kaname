@@ -149,6 +149,8 @@ class DeviceEnrollment:
                     raise ValueError()
                 if not isinstance(cert.public_key(),rsa.RSAPublicKey) or cert.public_key().key_size != 3072 or not isinstance(cert.signature_hash_algorithm,hashes.SHA256):
                     raise ValueError()
+            from .root_crl import enforce_if_present
+            enforce_if_present(db, root, issuer, now)
             crl = x509.load_pem_x509_crl(authority[2])
             if not crl.is_signature_valid(issuer.public_key()) or crl.issuer != issuer.subject or crl.last_update_utc > now or crl.extensions.get_extension_for_class(x509.CRLNumber).value.crl_number != authority[3]:
                 raise ValueError()

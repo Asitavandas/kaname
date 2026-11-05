@@ -195,6 +195,8 @@ class PKIService:
                     raise PKIError('Invalid CA public key')
                 if not isinstance(cert.signature_hash_algorithm, hashes.SHA256):
                     raise PKIError('Invalid CA signature algorithm')
+            from .root_crl import enforce_if_present
+            enforce_if_present(db, root, issuer, now)
             crl = x509.load_pem_x509_crl(row[4])
             if not crl.is_signature_valid(issuer.public_key()) or crl.issuer != issuer.subject:
                 raise PKIError('Stored CRL signature is invalid')
