@@ -318,7 +318,12 @@ try{
  Check ($unpacked.Count -eq 24) 'New delivery contains nineteen fixed reviewed sources'
  # This is the immutable, hash-pinned historical 24-file UNC-fix delivery.
  # Changed generation files are verified against its own reviewed archive pins.
- foreach($f in $unpacked.Keys){if($f -cnotin @('ConnectorChannelTypes.ps1','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceUpgrade.ps1','Invoke-AuthWireScopeJob.ps1','New-AuthWireConnectorServicePackage.ps1','Update-AuthWireConnectorService.ps1')){Check ((Get-AuthWireDeliveryBodyHash ([IO.File]::ReadAllText((Join-Path $source $f)))) -ceq $reviewedSources[$f]) 'Unchanged historical source body remains identical'}}
+ $frozenCombined=@{'CombinedCandidateContent.ps1'='combined-public-content-dev45.ps1';'Invoke-AuthWireCombinedJob.ps1'='combined-job-dev45.ps1'}
+ foreach($f in $unpacked.Keys){
+  if($f -cin @('ConnectorChannelTypes.ps1','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceUpgrade.ps1','Invoke-AuthWireScopeJob.ps1','New-AuthWireConnectorServicePackage.ps1','Update-AuthWireConnectorService.ps1')){continue}
+  $expected=if($frozenCombined.ContainsKey($f)){Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'tests\fixtures') $frozenCombined[$f]}else{Join-Path $source $f}
+  Check ((Get-AuthWireDeliveryBodyHash ([IO.File]::ReadAllText($expected))) -ceq $reviewedSources[$f]) 'Unchanged historical source body remains identical'
+ }
  $nextDirectory=Join-Path $Directory 'candidate-worker-delivery';$upgradePaths+=$nextDirectory
  New-AuthWireSignedDelivery $unpacked $nextDirectory $publisher
  Assert-AuthWireSignedDelivery $nextDirectory $publisher.Thumbprint
