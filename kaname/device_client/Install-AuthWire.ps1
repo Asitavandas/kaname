@@ -131,9 +131,11 @@ function Set-AuthWireCrlTask([string]$Directory, [string]$crlTaskName='AuthWire 
     $existingCrl = Get-ScheduledTask -TaskName $crlTaskName -ErrorAction SilentlyContinue
     if($existingCrl -and ($existingCrl.Description -ne $crlDescription -or $existingCrl.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or @($existingCrl.Actions).Count -ne 1 -or $existingCrl.Actions[0].Execute -ine $crlExecutable -or $existingCrl.Actions[0].Arguments -cne $crlArguments)) { throw 'Unexpected existing AuthWire CRL task.' }
     $crlAction = New-ScheduledTaskAction -Execute $crlExecutable -Argument $crlArguments
+    $crlStartup = New-ScheduledTaskTrigger -AtStartup
+    $crlPrincipal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
     $crlPeriodic = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Hours 2)
     $crlSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 2) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 15)
-    $null = Register-ScheduledTask -TaskName $crlTaskName -Action $crlAction -Trigger @($startup,$crlPeriodic) -Principal $principal -Settings $crlSettings -Description $crlDescription -Force
+    $null = Register-ScheduledTask -TaskName $crlTaskName -Action $crlAction -Trigger @($crlStartup,$crlPeriodic) -Principal $crlPrincipal -Settings $crlSettings -Description $crlDescription -Force
     $crlScheduler = New-Object -ComObject 'Schedule.Service'; $crlScheduler.Connect()
     $crlScheduler.GetFolder('\').GetTask($crlTaskName).SetSecurityDescriptor('D:P(A;;GA;;;SY)(A;;GA;;;BA)',0)
     if($StartNow) { Start-ScheduledTask -TaskName $crlTaskName -ErrorAction Stop }

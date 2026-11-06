@@ -299,7 +299,7 @@ class DeviceTests(unittest.TestCase):
             self.assertIn(__import__('hashlib').sha256(archive.read('config.json')).hexdigest().encode(),installer)
             self.assertIn(b'modified after signing',installer)
             self.assertNotIn(b"New-CimInstance -Namespace 'Root/Microsoft/Windows/TaskScheduler'",installer)
-            self.assertEqual(5,installer.count(b'New-ScheduledTaskTrigger'))
+            self.assertEqual(6,installer.count(b'New-ScheduledTaskTrigger'))
             self.assertIn(b"Start-AuthWireEnrollmentForBoot 'AuthWire Certificate Enrollment'",installer)
             self.assertIn(b'LastBootUpTime',installer)
             self.assertIn(b"@('Running','Queued')",installer)
