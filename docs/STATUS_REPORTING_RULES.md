@@ -1,5 +1,19 @@
 # Güncel durum raporlama kuralları
 
+## Sonraki işi seçmeden önce zorunlu kabul kontrolü — 6 Kasım 2026
+
+Kullanıcının açık talebi: sıradaki işler güncel durum raporuna bakılarak planlanır.
+Önce raporun ilgili B/G maddesi, docs/TEST_ACCEPTANCE_INDEX.md ve özgün en son
+saha checkpoint'i karşılaştırılır. Gerekirse önceki sohbet kabul çıktısı okunur.
+Başarılı ve kapalı test yeni somut hata veya ilgili değişiklik olmadan tekrar
+önerilmez/çalıştırılmaz. Kaynak fixture, canlı teslim ve gerçek saha ayrı tutulur.
+Eski hazırlık notu sonraki başarılı kabulü geçersiz kılmaz. Kullanıcının
+misafir testi dışlaması ve Ethernet1 yönetim koruması devam eder.
+
+Her işlemden sonra yeni rapor üretilmez; kullanıcı istediğinde rapor hazırlanır.
+Operasyonel kabul dizini ve devam kaydı güncel tutulur. Yeni çökme bulgusu yoksa
+kapatılmış 5 Kasım olayı sıradaki iş olarak yeniden açılmaz.
+
 29 Ekim 2026 kullanıcı talebi. Bundan sonraki HER güncel durum raporu güncellemesinde süre tahmini de yeniden değerlendirilecek.
 
 Her raporda:

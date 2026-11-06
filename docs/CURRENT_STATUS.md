@@ -1,5 +1,36 @@
 # AuthWire current work record
 
+## Çökme maddesi kapandı; gerçek expiry kabulü doğal süre bekliyor — 6 Kasım 2026
+
+Kullanıcı talebiyle rapor, önceki sohbet ve özgün kabul kayıtları kontrol edildi.
+5 Kasım 17:04:45 UTC'deki dot3svc olayı tek çökmedir; dört olay kaydı aynı
+incident'e aittir. 5 Kasım toparlanmasından 6 Kasım 18:12 UTC kontrolüne kadar
+yeni Application/SCM çökmesi yok; günlükler dönemi kapsıyor, silinme kaydı yok.
+PID7700 çalışıyor. **Tekrarlamama maddesi kapalıdır**; yeni somut çökme olmadan
+inceleme tekrar açılmayacak. Bu karar özgün DLL nedeninin düzeltildiği iddiası değildir.
+Kanıt: **docs/checkpoints/2026-11-06-wired-crash-nonrecurrence-closure.json**.
+
+**Sonraki işler rapor ve docs/TEST_ACCEPTANCE_INDEX.md üzerinden seçilir.**
+Başarılı eski yenileme, boot, retry, guest veya olumsuz sertifika testleri
+yeniden kuyruğa alınmaz. Bu tercih docs/STATUS_REPORTING_RULES.md'ye kaydedildi.
+
+Rapor B06/page12 ve 21 Ekim kayıtları gerçek expired-pending uç kurtarmasını
+açık bırakır; geçmiş native/synthetic-Kerberos fixture yeniden çalıştırılmadı.
+Ayrı iki günlük pilot profili ve özel Windows test dizini hazırlandı.
+6 Kasım **18:05:20 UTC**'de gerçek SYSTEM/Kerberos/HTTPS ile tek sertifika
+üretildi, **kurulmadı**; ana 90 günlük profil ve mevcut cert/key korundu.
+NotAfter **8 Kasım18:05:20 UTC**; yalnız testin SYSTEM görevi
+**8 Kasım21:06:20 Türkiye /18:06:20 UTC** için Recover modunda hazırdır.
+Gerçek saatte süre dolumu ve istemcinin doğal retry deadline'ı beklenecek.
+Hazırlık başarıyla bitti; **saha kurtarması henüz geçmedi ve B06 kapanmadı**.
+
+Devam kanıtı: **docs/checkpoints/2026-11-06-natural-expiry-pilot-prepared.json**.
+Sonraki turda önce aynı seed-result/recovery-result ve görev okunur; Seed,
+yeni profil veya aynı fixture tekrarlanmaz. Test süresince bu test profili ve
+VV-Client01 AD kimliğini değiştiren işler seçilmez. Clock, Ethernet1, GPO,
+mevcut sertifika ve ürün servisleri değiştirilmedi; yeni rapor üretilmedi.
+
+
 ## CRL geçici taşıma hatası düzeltmesi canlıda kabul edildi — 6 Kasım 2026
 
 **0.14.0-dev.47**, test edilen kaynak **606019c24af357357367139b71e34c39ab20b3b2**.

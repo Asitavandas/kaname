@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "event": "AUTHWIRE_WIRED_CRASH_NONRECURRENCE_CLOSED",
+  "date": "2026-11-06",
+  "requested_acceptance": "Close the crash item if no recurrence after 5 November is found; otherwise continue investigating.",
+  "checked_utc": "2026-11-06T17:46:32.7926938Z",
+  "endpoint": "VV-Client01",
+  "status": "CLOSED_NO_RECURRENCE_OBSERVED",
+  "known_incident": {
+    "at": "2026-11-05T17:04:45.6442047Z",
+    "application_error_record": 27722,
+    "wer_records": [
+      27723,
+      27724
+    ],
+    "service_termination_record": 109486,
+    "report_id": "4a124fc7-084d-4541-bc61-30fd0fb6f79f",
+    "module": "dot3msm.dll",
+    "module_version": "10.0.19041.3636",
+    "exception": "0xc0000005",
+    "distinct_incidents": 1
+  },
+  "post_recovery_observation": {
+    "start": "2026-11-05T17:06:28Z",
+    "application_crash_or_wer_matches": 0,
+    "unexpected_service_terminations": 0,
+    "log_clears": 0,
+    "application_oldest_utc": "2025-01-28T13:29:37.0979213Z",
+    "system_oldest_utc": "2026-02-01T20:12:55.8355438Z",
+    "logs_cover_observed_window": true
+  },
+  "service": {
+    "state": "Running",
+    "pid": 7700,
+    "process_started_utc": "2026-11-05T21:07:40.1298690Z",
+    "observed_continuous_process_hours": 20.62
+  },
+  "decision": "The three crash-report event types and two WER entries belong to the same original incident, not repeats. The operational recurrence item is closed under the user's requested criterion. No crash reproduction, service restart, reboot or network test was performed. Reopen only with a new concrete incident.",
+  "root_cause_of_original_incident": "Not established; closure does not assert a DLL fix or permanent absence of future faults.",
+  "macro_count_changed": false,
+  "next_item_review": {
+    "report": "AuthWire_Durum_ve_Kalan_Isler_2026-11-05.pdf",
+    "report_version": "6",
+    "page": 12,
+    "code": "B06",
+    "status": "OPEN_REAL_EXPIRED_PENDING_ENDPOINT_ACCEPTANCE",
+    "previous_native_fixture_already_passed": true,
+    "synthetic_kerberos_fixture_not_repeated": true,
+    "actual_field_acceptance_not_found": true,
+    "source_evidence": "docs/checkpoints/2026-10-21-expired-recovery-native-recheck.json",
+    "real_normal_renewal_boot_retry_already_closed": true
+  }
+}
