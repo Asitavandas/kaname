@@ -33,9 +33,13 @@ class FragmentReceiver {
     const flags = data[0]; assert((flags & 0x3f) === 0, 'TLS reserved/start flags');
     let offset = 1;
     if (flags & 0x80) {
-      assert(this.expected === null && this.pending.length === 0 && data.length >= 5, 'TLS length overlap');
-      this.expected = data.readUInt32BE(1); offset = 5;
-      assert(this.expected > 0 && this.expected <= 65536, 'TLS flight bound');
+      assert(data.length >= 5, 'TLS length missing');
+      const declared = data.readUInt32BE(1); offset = 5;
+      assert(declared > 0 && declared <= 65536, 'TLS flight bound');
+      // FreeRADIUS include_length=yes repeats the SAME total in every
+      // fragment. Accept it without resetting the accumulated record.
+      if (this.expected !== null) assert.equal(declared, this.expected, 'TLS fragment total changed');
+      else { assert.equal(this.pending.length, 0, 'TLS length overlap'); this.expected = declared; }
     }
     const body = data.subarray(offset);
     assert(body.length > 0 || !(flags & 0xc0), 'Empty fragment');

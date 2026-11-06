@@ -17,8 +17,8 @@ function Management {
 function Services {@(Get-CimInstance Win32_Service -Filter "Name='dot3svc' OR Name='EapHost'"|Sort-Object Name|Select-Object Name,State,ProcessId)|ConvertTo-Json -Compress}
 function Restore {
  Exact-Adapter;Pinned $good '5F05463E7442C34DF5D7D38173B271A3436662A0224808CB06721A4EBA5DBD4D'
- $null=Lan @('lan','set','autoconfig','enabled=yes','interface=Ethernet0')
  $null=Lan @('lan','add','profile',('filename='+$good),'interface=Ethernet0')
+ $null=Lan @('lan','set','autoconfig','enabled=yes','interface=Ethernet0')
 }
 Exact-Adapter
 $sig=Get-AuthenticodeSignature -LiteralPath $PSCommandPath
@@ -109,15 +109,26 @@ try{
  $result.probe=$lines[0]|ConvertFrom-Json
  if($LASTEXITCODE -ne 0){throw 'Explicit certificate probe incomplete'}
 }catch{$result.error=$_.Exception.Message}finally{
- Restore;Start-Sleep -Seconds 65
+ # Let an aborted/negative custom session drain before native authentication.
+ # Avoid authenticating immediately and then forcing another exchange mid-drain.
+ Start-Sleep -Seconds 90
  $cursor=[long](Get-WinEvent -LogName 'Microsoft-Windows-Wired-AutoConfig/Operational' -MaxEvents 1).RecordId
- $null=Lan @('lan','reconnect','interface=Ethernet0')
+ Restore
  $watch=[Diagnostics.Stopwatch]::StartNew()
  do{
   $event=Get-WinEvent -LogName 'Microsoft-Windows-Wired-AutoConfig/Operational' -FilterXPath ('*[System[(EventRecordID > '+$cursor+') and (EventID=15505)]]') -MaxEvents 5 -ErrorAction SilentlyContinue|Where-Object {$_.ToXml() -match $guid}|Select-Object -First 1
   if($event){$result.restore_authenticated=$true;$result.restored_record_id=$event.RecordId;break}
   Start-Sleep -Milliseconds 750
  }while($watch.Elapsed.TotalSeconds -lt 35)
+ if(!$result.restore_authenticated){
+  $cursor=[long](Get-WinEvent -LogName 'Microsoft-Windows-Wired-AutoConfig/Operational' -MaxEvents 1).RecordId
+  $null=Lan @('lan','reconnect','interface=Ethernet0');$result.recovery_reauths=1;$watch.Restart()
+  do{
+   $event=Get-WinEvent -LogName 'Microsoft-Windows-Wired-AutoConfig/Operational' -FilterXPath ('*[System[(EventRecordID > '+$cursor+') and (EventID=15505)]]') -MaxEvents 5 -ErrorAction SilentlyContinue|Where-Object {$_.ToXml() -match $guid}|Select-Object -First 1
+   if($event){$result.restore_authenticated=$true;$result.restored_record_id=$event.RecordId;break}
+   Start-Sleep -Milliseconds 750
+  }while($watch.Elapsed.TotalSeconds -lt 35)
+ }
  $result.management_unchanged=((Management) -ceq $baseline);$result.services_unchanged=((Services) -ceq $services)
  $result.finished=[datetime]::UtcNow.ToString('o');$result.final_lan=Lan @('lan','show','interfaces')
  if($result.restore_authenticated){Unregister-ScheduledTask -TaskName $safety -Confirm:$false}

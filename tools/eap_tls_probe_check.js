@@ -33,7 +33,7 @@ uk=key();untrusted=cert(uk,'untrusted',name('untrusted'),uk,ca=True);save('untru
 for n in ('server','valid','expired','rogue'):
  k=key();other=n=='rogue';c=cert(k,n,untrusted.subject if other else root.subject,uk if other else rk,expired=n=='expired',server=n=='server');save(n,k,c)
 `;
-async function scenario(directory, name, wrongServer = false) {
+async function scenario(directory, name, wrongServer = false, repeatLength = true) {
   const read = n => fs.readFileSync(path.join(directory, n));
   let accepted = false, serverError = null;
   const server = tls.createServer({ cert: read('server.pem'), key: read('server-key.pem'), ca: read('root.pem'),
@@ -76,7 +76,11 @@ async function scenario(directory, name, wrongServer = false) {
       await delay(10);
       const flight = Buffer.concat(outgoing.splice(0));
       if (flight.length) {
-        const fragments = fragmentFlight(flight, 128);
+        const fragments = fragmentFlight(flight, 128).map((fragment, index) => {
+          if (!repeatLength || index === 0) return fragment;
+          const header = Buffer.alloc(5); header[0] = fragment[0] | 0x80;
+          header.writeUInt32BE(flight.length, 1); return Buffer.concat([header, fragment.subarray(1)]);
+        });
         for (let i = 0; i < fragments.length; i++) {
           const response = await request(13, fragments[i]);
           if (i < fragments.length - 1) assert.deepEqual(response.data, Buffer.from([0]));
@@ -101,7 +105,7 @@ async function scenario(directory, name, wrongServer = false) {
       }
     }
     assert(peer.facts.duplicates > 5 && clientFlights > 1);
-    return { case: wrongServer ? 'wrong-server-name' : name, server_accepted: accepted, server_error: serverError,
+    return { case: wrongServer ? 'wrong-server-name' : name, length_in_every_fragment: repeatLength, server_accepted: accepted, server_error: serverError,
       ...peer.facts };
   } finally { peer.close(); wire.destroy(); await new Promise(resolve => server.close(resolve)); }
 }
@@ -111,6 +115,7 @@ async function scenario(directory, name, wrongServer = false) {
     execFileSync(process.env.PYTHON || 'python', ['-c', fixtureSource, dir], { stdio: 'pipe' });
     const results = [];
     for (const name of ['valid', 'expired', 'rogue']) results.push(await scenario(dir, name));
+    results.push(await scenario(dir, 'valid', false, false));
     results.push(await scenario(dir, 'valid', true));
     // Explicitly reject malformed EAP lengths and fragment overlap/overflow.
     const peer = new EapTlsPeer({ identity: 'fixture' });
@@ -118,7 +123,10 @@ async function scenario(directory, name, wrongServer = false) {
     assert.throws(() => new FragmentReceiver().receive(Buffer.from([0x80, 0, 1, 0, 1])));
     const receiver = new FragmentReceiver();
     assert.equal(receiver.receive(Buffer.from([0xc0, 0, 0, 0, 2, 1])), null);
-    assert.throws(() => receiver.receive(Buffer.from([0x80, 0, 0, 0, 2, 2])));
+    assert.deepEqual(receiver.receive(Buffer.from([0x80, 0, 0, 0, 2, 2])), Buffer.from([1, 2]));
+    const inconsistent = new FragmentReceiver();
+    assert.equal(inconsistent.receive(Buffer.from([0xc0, 0, 0, 0, 3, 1])), null);
+    assert.throws(() => inconsistent.receive(Buffer.from([0x80, 0, 0, 0, 2, 2])));
     assert.equal(wiredFrame(1).subarray(0, 6).toString('hex'), '0180c2000003');
     assert.throws(() => wiredFrame(0, eap(1, 1, 13, Buffer.from([32]))));
     console.log(JSON.stringify({ event: 'AUTHWIRE_EAP_TLS_PROBE_TRANSPORT_CHECK', results }));
