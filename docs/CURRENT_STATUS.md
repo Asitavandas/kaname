@@ -1,5 +1,37 @@
 # AuthWire current work record
 
+## CRL geçici taşıma hatası düzeltmesi canlıda kabul edildi — 6 Kasım 2026
+
+**0.14.0-dev.47**, test edilen kaynak **606019c24af357357367139b71e34c39ab20b3b2**.
+Yakalanan CRL HTTPS hatasıyla aynı anda Windows DNS 1014 kaydı sunucu adı için
+yanıt zaman aşımı gösterdi. Görev geçmişinde uygulama hatalarından sonra
+yapılandırılmış ara yeniden çalıştırmalar gözlenmedi. İstemci artık yalnız
+seçilmiş geçici taşıma hatalarında en çok üç yeni GET dener; güven/TLS/protokol
+retleri tekrarlanmaz. HTTPS adı, zincir, iptal kontrolü ve pin korunur.
+Asıl DNS zaman aşımının ağ kökeninin kalıcı olarak düzeltildiği iddia edilmez.
+
+Son kaynakta **sekiz ilgili CI akışı başarılı**; genel koşu **1219 test,57
+ortam atlaması**. Windows'ta 14 taşıma hata senaryosu ve 17 CRL bütünlük/
+bellek deposu kontrolü geçti. Hata enjeksiyonu bellek fixture'ıdır; yeni kodla
+gerçek DNS kesintisi oluşturulmadı. Gerçek SYSTEM CRL görevi kurulum sonrası
+ve Linux güncellemesinden sonra sonuç0/current verdi.
+
+Linux dev.46→dev.47 yedek/geri dönüş korumasıyla uygulandı. CI ile aynı paket
+sunucuda yeniden üretildi; **324 kurulu dosya** manifestle eşleşti. HTTPS,
+ayar ve yöneticiler korundu. Panel kaynak teslimi için yeniden başladı;
+RADIUS **2868314** ve service-control **1069437** süreçleri aynı kaldı.
+
+VV-Client01'de yalnız imzalı CRL istemcisi değişti. Kurucu, mevcut CRL görevinin
+tam tanımı/PT2M sınırı, sertifika/özel anahtar, kayıt durumları ve Ethernet1
+başlangıç ayarları korundu. Son gerçek SYSTEM kontrolü **17:20:48 UTC**:
+kök CRL1,issuer CRL67,current,eklenen0. Geçici görevler temizlendi.
+AD/GPO/SYSVOL yayılımı yapılmadı; yeni rapor üretilmedi. Önceden geçen Windows
+yenileme/boot testleri yeniden yapılmadı; aşağıdaki kapalı kayıt korunur.
+
+Kanıt: **docs/checkpoints/2026-11-06-crl-transport-repair-live-acceptance.json**.
+Bu dar düzeltme tüm sertifika yaşam döngüsünü veya uzun süre kabulünü kapatmaz.
+
+
 ## Önceden geçen Windows yenileme ve boot testleri kapalı — 6 Kasım 2026
 
 19 Ekim ve güncel 5 Kasım raporları, önceki sohbet çıktıları ve özgün saha

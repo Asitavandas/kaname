@@ -1,0 +1,198 @@
+{
+  "schema": 1,
+  "event": "AUTHWIRE_CRL_TRANSPORT_REPAIR_LIVE_ACCEPTANCE",
+  "date": "2026-11-06",
+  "source_commit": "606019c24af357357367139b71e34c39ab20b3b2",
+  "source_tree": "123114efd3049e66bdb9f8c0b236fd64f312dafa",
+  "pull_request": 140,
+  "version": "0.14.0-dev.47",
+  "historical_windows_closures": "docs/checkpoints/2026-11-06-historical-windows-renewal-boot-closure.json",
+  "diagnosis": {
+    "observed_failure": {
+      "checked_at": "2026-11-06T16:36:14.9736422Z",
+      "phase": "HttpWebRequest.GetResponse",
+      "exception": "System.Net.WebException"
+    },
+    "correlated_dns_event": {
+      "provider": "Microsoft-Windows-DNS-Client",
+      "id": 1014,
+      "record_id": 109647,
+      "at": "2026-11-06T16:36:14.9738015Z",
+      "query": "kaname.vizyonveri.local",
+      "reason": "Configured DNS servers did not answer before timeout"
+    },
+    "scheduler_history": {
+      "failed_action_records": [
+        1126173,
+        1126366,
+        1126667
+      ],
+      "failed_action_result": "0x80070001",
+      "configured_restart_count": 3,
+      "configured_restart_interval": "PT15M",
+      "observed_intermediate_restart_runs": false
+    },
+    "scope_limit": "The captured failure is localized to DNS resolution. The underlying network cause of that DNS timeout and the exact causes of every earlier generic failure were not proven. No permanent DNS infrastructure repair is claimed."
+  },
+  "repair": {
+    "get_attempts_max": 3,
+    "fresh_request_each_attempt": true,
+    "request_timeout_ms": 15000,
+    "read_timeout_ms": 15000,
+    "retry_wait_seconds": 10,
+    "crl_jitter_max_seconds": 15,
+    "retryable": [
+      "NameResolutionFailure",
+      "ConnectFailure",
+      "Timeout",
+      "ReceiveFailure",
+      "ConnectionClosed",
+      "KeepAliveFailure"
+    ],
+    "not_retried": [
+      "TrustFailure",
+      "SecureChannelFailure",
+      "ProtocolError",
+      "ServerProtocolViolation",
+      "RequestCanceled",
+      "ProxyNameResolutionFailure"
+    ],
+    "normal_tls_name_chain_revocation_and_pin_required": true,
+    "failure_status_fixed_enum_and_attempts": true,
+    "system_dns_or_hosts_changed": false,
+    "enrollment_retry_or_keys_changed": false,
+    "installer_changed": false,
+    "crl_task_definition_changed": false,
+    "task_limit": "PT2M"
+  },
+  "verification": {
+    "ci": [
+      {
+        "id": 42258850000,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 42258849968,
+        "name": "AuthWire reproducible Linux delivery",
+        "conclusion": "success"
+      },
+      {
+        "id": 42258850041,
+        "name": "AuthWire public CRL distribution",
+        "conclusion": "success"
+      },
+      {
+        "id": 42258849972,
+        "name": "KANAME Linux source preparation",
+        "conclusion": "success"
+      },
+      {
+        "id": 42258850130,
+        "name": "AuthWire device enrollment pilot checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 42258850073,
+        "name": "KANAME browser checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 42258849954,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 42258850110,
+        "name": "KANAME real RADIUS protocol proof",
+        "conclusion": "success"
+      }
+    ],
+    "foundation": {
+      "tests": 1219,
+      "skipped": 57,
+      "seconds": 264.796,
+      "result": "OK"
+    },
+    "native_windows": {
+      "transport_cases": 14,
+      "crl_memory_store_checks": 17,
+      "faults_in_memory_only": true,
+      "real_dns_outage_injected_after_repair": false
+    },
+    "targeted_python_tests": 28,
+    "initial_failed_regression": "Two exact installer-template checks rejected a candidate that changed the CRL task time limit. Final source retains the original installer and task contract; targeted tests and the full independent suite passed. No template allowlist was widened."
+  },
+  "linux": {
+    "previous_version": "0.14.0-dev.46",
+    "updated_version": "0.14.0-dev.47",
+    "updated_at": "2026-11-06T17:17:42.631641Z",
+    "https_verified": true,
+    "backup_created": true,
+    "configuration_preserved": true,
+    "administrators_preserved": true,
+    "installed_files_match": 324,
+    "source_package_sha256": "6af9f59076174692a9e55d1b507a257cb58174edef571cc1b5dd07d26377914d",
+    "manifest_sha256": "a76e8a3353a24912d28564a543ffed8c6a2df395f51563a44ea6a98ea7ab6aa0",
+    "package_artifact_id": 13523807344,
+    "package_workflow": 42258849968,
+    "source_package_reproduced_and_matches_ci": true,
+    "radius_pid": 2868314,
+    "radius_process_preserved": true,
+    "service_control_pid": 1069437,
+    "panel_old_pid": 3133390,
+    "panel_new_pid": 3251006,
+    "panel_restart_for_source_upgrade": true,
+    "backup_worker_unchanged": true,
+    "last_backup_age_hours_at_preflight": 17.01,
+    "free_gib": 22.36,
+    "database_quick_checks": true
+  },
+  "windows": {
+    "endpoint": "VV-Client01",
+    "publisher": "6E74B513F766E01730719684A41B2664380CA68A",
+    "client_before_sha256": "F444A1C06D8E7F743CF6ABF2B759982E844A98B45710A0FFC0ADD952393F010B",
+    "client_after_sha256": "F11A857F727F8CC04D43583A3B0BF4532A1E864EAD74836370242A9682CAE60F",
+    "unsigned_body_sha256": "622b92e67efc4ba4465d8bff01f4b652708a2990f9687b0c9f9e4e1f41075287",
+    "unchanged_installer_sha256": "3C07A7EB3C8479748CDC8EB452D84AF0CA8706BEB120DF20606D7D3292BF1411",
+    "operator_script_sha256": "71785CF664EBE0C99FEF63FA12E9BB8587F85A98C21C72A6A632A52771F6BBB6",
+    "rollback_copy_retained": true,
+    "rolled_back": false,
+    "first_installed_system_success_at": "2026-11-06T17:15:54.8138973Z",
+    "final_system_success_at": "2026-11-06T17:20:48.1419501Z",
+    "final_check_after_linux_upgrade": true,
+    "task_result": 0,
+    "crl_state": "current",
+    "root_crl_number": 1,
+    "issuer_crl_number": 67,
+    "added": 0,
+    "root_next_update": "2026-12-05T16:53:46Z",
+    "issuer_next_update": "2026-11-07T06:07:33Z",
+    "management_baseline_unchanged": true,
+    "ethernet1_ipv4": "10.35.50.71/24",
+    "ethernet0_ipv4": "10.10.110.2/24",
+    "machine_thumbprint": "BD498F87BB886AE760B3FAC40AB7BB6D2AC3B987",
+    "machine_private_key_present": true,
+    "machine_online_chain_valid": true,
+    "identity_and_public_assets_unchanged": true,
+    "dot3svc_pid": 7700,
+    "eaphost_pid": 1588,
+    "services_unchanged": true,
+    "client_acl_private": true,
+    "ad_gpo_sysvol_rollout": false
+  },
+  "cleanup": {
+    "temporary_tasks_remaining": 0,
+    "owned_ssh_bridges_terminated": true,
+    "netsh_permission_remains_blocked": true,
+    "capi2_logging_enabled": false,
+    "existing_recovery_backups_preserved": true
+  },
+  "status": {
+    "bounded_transient_crl_transport_handling": "CLOSED",
+    "historical_renewal_and_basic_boot_tests": "CLOSED_ALREADY_PASSED_NO_RETEST",
+    "whole_certificate_lifecycle_or_long_duration_acceptance_closed": false,
+    "macro_completion_unchanged": "54/94",
+    "new_pdf_or_docx_report_generated": false
+  }
+}
