@@ -78,6 +78,31 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
         for field in ('authorization_id', 'lease_id', 'claim_sha256', 'public_key_pem'):
             self.assertNotIn(field, json.dumps(result))
 
+    def test_status_exposes_typed_refusal_reason_without_secrets_or_write_authority(self):
+        value = self.ready()
+        self.jobs.create(value | {'review_hash': self.jobs.review(value, self.actor)['review_hash']}, self.actor)
+        offer = self.jobs.poll(wf.StagingWriteJobTests.proof(self))
+        body = wf.StagingWriteJobTests.result(self, offer,
+            outcome='refused_before_authorization', reason='PREFLIGHT_FAILED',
+            filesystem_effects='none', journal_sha256='', tree_sha256='')
+        proof = wf.StagingWriteJobTests.proof(self, 'RESULT', body)
+        self.jobs.complete(proof)
+        before = self.ledger(); audit = self.store.audit()
+        code, result, _ = self.request('GET', ROOT, headers=self.headers)
+        self.assertEqual(200, code, result)
+        job = result['jobs'][0]
+        self.assertEqual('completed', job['state'])
+        self.assertEqual('refused_before_authorization', job['peer_reported_outcome'])
+        self.assertEqual('PREFLIGHT_FAILED', job['peer_reported_reason'])
+        self.assertEqual('none', job['peer_reported_filesystem_effects'])
+        self.assertEqual(body['checked_at'], job['peer_reported_checked_at'])
+        self.assertFalse(job['authorization_issued'])
+        self.assertFalse(job['customer_filesystem_attested'])
+        self.assertFalse(result['approval_enabled'])
+        self.assertEqual(before, self.ledger()); self.assertEqual(audit, self.store.audit())
+        for secret in (offer['lease_id'], offer['intent_sha256'], 'public_key_pem'):
+            self.assertNotIn(secret, json.dumps(result))
+
     def test_reader_can_only_read_both_permissions_and_session_required(self):
         self.assertEqual(401, self.request('GET', ROOT)[0])
         reader, _ = self.user('write-reader', {'certificates.authority':'read', 'system.connectors':'read'})

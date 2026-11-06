@@ -154,6 +154,25 @@ const assert = require('node:assert/strict');
   assert.match(await page.locator('#dep-candidate-list').textContent(),/Yetki verilmiş; dosya sonucu henüz doğrulanmadı/);
   assert.equal(await page.locator('#dep-candidate-list img').count(),0);
   assert.equal(await page.getByRole('button',{name:'Paket dosyalarını yaz',exact:true}).count(),0);
+  await page.evaluate(()=>{
+   window.writeStatus.jobs=[{id:'refused-job',operation:'combined.filesystem.stage.v1',state:'completed',authorization_issued:false,
+    peer_reported_outcome:'refused_before_authorization',peer_reported_reason:'PREFLIGHT_FAILED',peer_reported_filesystem_effects:'none'}];
+   return loadCandidateStatus();
+  });
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/Yetki verilmeden reddedildi/);
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/Yazma öncesi kontrol tamamlanamadı/);
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/Otomatik tekrar yapılmaz/);
+  for(const change of [{authorization_issued:true},{peer_reported_filesystem_effects:'unconfirmed'},
+   {peer_reported_reason:'<img src=x onerror=alert(1)>'},{peer_reported_reason:'__proto__'}]){
+   await page.evaluate(change=>{const j=window.writeStatus.jobs[0];window.savedRefusal={...j};Object.assign(j,change);return loadCandidateStatus();},change);
+   assert.match(await page.locator('#dep-candidate-list').textContent(),/Ret bildirimi tutarsız/);
+   assert.doesNotMatch(await page.locator('#dep-candidate-list').textContent(),/Connector bu işlem için dosya etkisi bildirmedi/);
+   assert.equal(await page.locator('#dep-candidate-list img').count(),0);
+   await page.evaluate(()=>window.writeStatus.jobs[0]=window.savedRefusal);
+  }
+  await page.evaluate(()=>{Object.assign(window.writeStatus.jobs[0],{state:'requires_review',authorization_issued:true,peer_reported_outcome:'requires_review',peer_reported_reason:'OUTCOME_UNKNOWN',peer_reported_filesystem_effects:'unconfirmed'});return loadCandidateStatus();});
+  assert.match(await page.locator('#dep-candidate-list').textContent(),/Dosya etkisi kesinleşmedi/);
+  assert.doesNotMatch(await page.locator('#dep-candidate-list').textContent(),/Yetki verilmeden reddedildi/);
   await page.evaluate(()=>{window.savedWriteJobs=window.writeStatus.jobs;window.writeStatus.jobs=[null];return loadCandidateStatus();});
   assert.match(await page.locator('#dep-candidate-list').textContent(),/İşlem durumu alınamadı/);
   await page.evaluate(()=>window.writeStatus.jobs=window.savedWriteJobs);

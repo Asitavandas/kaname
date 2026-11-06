@@ -38,6 +38,7 @@ def main():
     execution_mode = os.environ.get('AUTHWIRE_ROLLBACK_EXECUTION_CHECK') == '1'
     lifecycle_mode = os.environ.get('AUTHWIRE_WRITE_LIFECYCLE_CHECK') == '1'
     history_mode = os.environ.get('AUTHWIRE_WRITE_HISTORY_CHECK') == '1'
+    refusal_mode = os.environ.get('AUTHWIRE_WRITE_REFUSAL_CHECK') == '1'
     with tempfile.TemporaryDirectory(prefix='aw-write-transport-') as temp:
         root = Path(temp); fqdn = 'aw-' + uuid.uuid4().hex + '.lab.example'
         private = rsa.generate_private_key(public_exponent=65537, key_size=3072)
@@ -120,7 +121,8 @@ def main():
                 return prepared_case
             # Before the mode file exists this is the original stage, even if
             # the outer case describes a later rollback transport failure.
-            prepared_case = ((data | {'case': 'success'} if grant_mode else data), identity)
+            prepared_case = ((data | {'case': 'success'} if grant_mode and
+                (not refusal_mode or data['case'] == 'ref_rollback') else data), identity)
             prepared_key = current_key
             return prepared_case
 
@@ -169,7 +171,7 @@ def main():
                         elif self.path == '/api/connector/v1/staging-write/claim':
                             metrics['claims'][identity] = metrics['claims'].get(identity, 0)+1
                             reply = core.claim(raw)
-                            if case in {'lost_grant', 'rollback_lost_grant', 'lc_lost_claim'}:
+                            if case in {'lost_grant', 'rollback_lost_grant', 'lc_lost_claim', 'ref_claim'}:
                                 self.close_connection = True; self.connection.shutdown(2); return
                             if case == 'rollback_bad_grant':
                                 reply['operation'] = STAGE
@@ -178,8 +180,9 @@ def main():
                             body = json.loads(base64.b64decode(json.loads(raw)['payload']))
                             metrics['bodies'].setdefault(identity, []).append(body)
                             reply = core.complete(raw)
-                            if case in {'lost_ack', 'rb_execute_lost_ack', 'lc_lost_ack'} and metrics['results'][identity] == 1:
+                            if case in {'lost_ack', 'rb_execute_lost_ack', 'lc_lost_ack', 'ref_lost_ack'} and metrics['results'][identity] == 1:
                                 self.close_connection = True; self.connection.shutdown(2); return
+                            if case == 'ref_ack_limit': reply['request_id'] = '0'*64
                         else:
                             raise AssertionError('Unexpected route')
                     body = json.dumps(reply, separators=(',', ':')).encode('ascii')
@@ -212,6 +215,30 @@ def main():
                 # production HTTP/grant/reader/child deadlines stay unchanged.
                 check=True, timeout=1320 if execution_mode else (1100 if lifecycle_mode else 650), env=env)
             native = json.loads((root/'native-summary.json').read_text(encoding='utf-8-sig'))
+            if refusal_mode:
+                assert len(native['outcomes']) == 6 and not metrics['errors']
+                assert len(metrics['polls']) == 7 and set(metrics['polls'].values()) == {1}
+                assert len(metrics['claims']) == 2 and set(metrics['claims'].values()) == {1}
+                assert len(metrics['results']) == 5 and sorted(metrics['results'].values()) == [1, 1, 1, 2, 3]
+                assert all(all(b == bodies[0] for b in bodies) for bodies in metrics['bodies'].values())
+                with store.connect() as db: jobs = core._read(db)['jobs']
+                refusals = [j for j in jobs if j['result'] and j['result']['outcome'] == 'refused_before_authorization']
+                assert len(jobs) == 7 and len(refusals) == 4
+                assert all(j['authorization_id'] == '' and j['result']['filesystem_effects'] == 'none' for j in refusals)
+                assert sum(j['state'] == 'authorized' for j in jobs) == 1
+                assert sum(j['state'] == 'leased' for j in jobs) == 1
+                assert len(store.audit()) == len(original_audit)+8
+                after = store.snapshot()
+                assert after['revision'] == original['revision']+8
+                assert after['config'] == original['config'] and after['policies'] == original['policies']
+                print('AUTHWIRE_WRITE_REFUSAL_WINDOWS_OK ' + json.dumps({
+                    'native_checks': native['checks'], 'cases': 6, 'poll_requests': 7,
+                    'claim_requests': 2, 'result_requests': 8, 'refusal_transitions': 4,
+                    'real_cng_tls_sqlite': True, 'lost_ack_same_body_retry': True,
+                    'preflight_observation_failure_injected': True,
+                    'positive_ad_content_service_identity_simulated': True,
+                    'active_worker_registered': False, 'customer_changed': False}, sort_keys=True))
+                return
             if history_mode:
                 assert len(native['outcomes']) == 4 and not metrics['errors']
                 assert len(metrics['polls']) == 7 and sorted(metrics['polls'].values()) == [1]*5+[2, 3]

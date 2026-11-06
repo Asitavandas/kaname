@@ -136,8 +136,10 @@ function Assert-AuthWireWriteGrantAt($Value,$Offer,[string]$RequestId,[long]$Sen
 function Invoke-AuthWireStagingWriteClaimTransport([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[string]$BaseUrl){
  $offer=Read-AuthWireStagingWriteOffer $JournalRoot $JobId $Binding $Release
  Initialize-AuthWireWriteTransportTypes
+ $decision=Enter-AuthWireWritePreauthorizationLock $JobId
  $pin=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
+  Assert-AuthWireWriteNotRefused $JournalRoot $JobId
   $pin.PinAncestors($JournalRoot);$job=Join-Path $JournalRoot $JobId;$pin.PinAncestors($job)
   foreach($name in @('offer.json','preflight.json','claim-started.json','claim-proof.json')){$pin.PinFile((Join-Path $job $name))}
   $pin.PinFile((Join-Path $JournalRoot ('gpo-'+$offer.target.scope_target.gpo_id+'.json')))
@@ -162,5 +164,5 @@ function Invoke-AuthWireStagingWriteClaimTransport([string]$JournalRoot,[string]
   Assert-AuthWireWriteGrant $grant $offer $request $sentAt
   Write-AuthWireStagingJournal (Join-Path $job 'authorization.json') ([pscustomobject]@{format='AuthWireWriteAuthorizationReceiptV1';binding_scope=(Get-AuthWireJobScope $Binding);release_id=$Release;offer_sha256=(Get-AuthWireWriteHash $offer);preflight_sha256=(Get-AuthWireWriteHash $preflight);claim_proof_sha256=$proofHash;sent_at=$sentAt;received_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();grant=$grant})
   return [pscustomobject]@{JobId=$JobId;Phase='authorization_recorded';GrantRecorded=$true;FilesystemWriteEnabled=$false;CanApplyGpo=$false}
- }finally{$pin.Dispose()}
+ }finally{$pin.Dispose();$decision.ReleaseMutex();$decision.Dispose()}
 }

@@ -2,6 +2,16 @@
 # No network send, filesystem executor, recovery deletion or GPO activation here.
 Set-StrictMode -Version 2
 
+function Enter-AuthWireWritePreauthorizationLock([string]$JobId){
+ Assert-AuthWireCandidateGuid $JobId
+ $m=[Threading.Mutex]::new($false,('Global\AuthWireWritePreauthorization-'+([guid]$JobId).ToString('N')))
+ try{if(-not $m.WaitOne(0)){throw 'WRITE_PREAUTHORIZATION_BUSY'};return $m}catch [Threading.AbandonedMutexException]{$m.ReleaseMutex();$m.Dispose();throw 'WRITE_PREAUTHORIZATION_ABANDONED_REQUIRES_REVIEW'}catch{$m.Dispose();throw}
+}
+function Assert-AuthWireWriteNotRefused([string]$Root,[string]$JobId){
+ # A partial CreateNew outbox also blocks CLAIM. Never erase it to continue.
+ if(Test-Path -LiteralPath (Join-Path (Join-Path $Root $JobId) 'refusal-outbox.json')){throw 'WRITE_REFUSAL_ALREADY_FROZEN'}
+}
+
 function ConvertTo-AuthWireWriteJson($Value,[bool]$Sort=$true,[int]$Depth=0){
  if($Depth -gt 12){throw 'WRITE_JSON_DEPTH'}
  if($null -eq $Value){return 'null'}
@@ -240,8 +250,10 @@ function Invoke-AuthWireStagingWritePreflight([string]$JournalRoot,[string]$JobI
 }
 function New-AuthWireStagingWriteClaim([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
  $offer=Read-AuthWireStagingWriteOffer $JournalRoot $JobId $Binding $Release
+ $decision=Enter-AuthWireWritePreauthorizationLock $JobId
  $pin=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
+  Assert-AuthWireWriteNotRefused $JournalRoot $JobId
   $pin.PinAncestors($JournalRoot);$job=Join-Path $JournalRoot $JobId;$pin.PinAncestors($job)
   $file=Join-Path $job 'preflight.json';$pin.PinFile($file);$v=Read-AuthWireStagingJournal $file
   Assert-AuthWireWriteLiveContext $v $offer $Binding
@@ -253,5 +265,5 @@ function New-AuthWireStagingWriteClaim([string]$JournalRoot,[string]$JobId,[hash
   $proof=New-AuthWireStagingWriteProof $Binding $Key CLAIM $body
   Write-AuthWireStagingJournal (Join-Path $job 'claim-proof.json') ([pscustomobject]@{format='AuthWireWriteClaimProofV1';job_id=$JobId;proof=$proof})
   return $proof
- }finally{$pin.Dispose()}
+ }finally{$pin.Dispose();$decision.ReleaseMutex();$decision.Dispose()}
 }
