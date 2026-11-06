@@ -18,7 +18,8 @@ class CombinedDeliveryTests(unittest.TestCase):
   with zipfile.ZipFile(io.BytesIO(raw)) as z:
    self.assertEqual(set(z.namelist()),set(pins))
    for n,pin in pins.items():
-    expected=ROOT/('kaname/device_client' if n=='Install-AuthWire.ps1' else 'windows/connector')/n
+    # This fixed operator delivery and its admitted template stay frozen.
+    expected=(ROOT/'tests/fixtures/authwire-installer-dev45.ps1') if n=='Install-AuthWire.ps1' else (ROOT/'windows/connector'/n)
     self.assertEqual(z.read(n),expected.read_bytes().replace(b'\r\n',b'\n'))
     self.assertEqual(hashlib.sha256(z.read(n)).hexdigest(),pin)
  def test_product_never_uses_managed_ephemeral_marker_as_key_authority(self):

@@ -22,7 +22,7 @@ class CombinedReadonlySourceTests(unittest.TestCase):
  def test_template_is_exact_and_private_or_write_capabilities_absent(self):
   text=(ROOT/'windows/connector/Test-AuthWireCombinedContent.ps1').read_text()
   raw=base64.b64decode(re.search(r"FromBase64String\('([^']+)'\)",text).group(1),validate=True)
-  self.assertEqual(raw,(ROOT/'kaname/device_client/Install-AuthWire.ps1').read_bytes().replace(b'\r\n',b'\n'))
+  self.assertEqual(raw,(ROOT/'tests/fixtures/authwire-installer-dev45.ps1').read_bytes().replace(b'\r\n',b'\n'))
   for forbidden in ('GetRSAPrivateKey','Set-AuthenticodeSignature','Get-AuthWireNamedMachineKeyMetadata','Set-Acl','WriteAllBytes','New-Item','Directory]::Move','Get-AuthWireCandidateSigner'):
    self.assertNotIn(forbidden,text)
 
