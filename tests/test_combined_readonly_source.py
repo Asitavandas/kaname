@@ -36,6 +36,12 @@ class CombinedReadonlySourceTests(unittest.TestCase):
    for value in values:self.assertIn(hashlib.sha256(value).hexdigest(),template)
    self.assertIn('COMBINED_READONLY_TEMPLATE_REJECTED',template)
 
+ def test_service_probe_keeps_exact_current_verifier_body_pin(self):
+  verifier=(ROOT/'windows/connector/Test-AuthWireCombinedContent.ps1').read_bytes().replace(b'\r\n',b'\n').rstrip(b'\r\n')+b'\n'
+  service=(ROOT/'windows/connector/Test-AuthWireCombinedService.ps1').read_text()
+  self.assertIn(hashlib.sha256(verifier).hexdigest().upper(),service)
+  self.assertLess(len(verifier),131072)
+
  def test_fixed_runtime_delivery_contains_exact_reviewed_sources(self):
   text=(ROOT/'docs/checkpoints/2026-10-28-dc01-combined-runtime.ps1').read_text()
   raw=base64.b64decode(re.search(r"\$embedded='([^']+)'",text).group(1),validate=True)
@@ -46,5 +52,5 @@ class CombinedReadonlySourceTests(unittest.TestCase):
    self.assertEqual(set(z.namelist()),set(pins))
    for n,pin in pins.items():
     self.assertEqual(hashlib.sha256(z.read(n)).hexdigest(),pin)
-    expected=(ROOT/'tests/fixtures/combined-content-dev45.ps1') if n=='Test-AuthWireCombinedContent.ps1' else (ROOT/'windows/connector'/n)
+    expected=(ROOT/'tests/fixtures/combined-content-dev45.ps1') if n=='Test-AuthWireCombinedContent.ps1' else ((ROOT/'tests/fixtures/combined-service-dev45.ps1') if n=='Test-AuthWireCombinedService.ps1' else (ROOT/'windows/connector'/n))
     self.assertEqual(z.read(n),expected.read_bytes().replace(b'\r\n',b'\n'))

@@ -10,7 +10,7 @@ function Assert-AuthWireCandidateVerifierSource {
  $text=[IO.File]::ReadAllText($p);$body=($text -split '(?m)^# SIG # Begin signature block\r?$',2)[0]
  $bytes=[Text.UTF8Encoding]::new($false).GetBytes($body.Replace("`r`n","`n").TrimEnd([char[]]"`r`n")+"`n")
  $hash=[Security.Cryptography.SHA256]::Create()
- try{if(([BitConverter]::ToString($hash.ComputeHash($bytes))).Replace('-','') -cne '0361DC8E90B60A7D8115E845CFB5357943BA8232443CEC1B822C48AC48FCE0DC'){throw 'UNREVIEWED_VERIFIER_REJECTED'}}finally{$hash.Dispose()}
+ try{if(([BitConverter]::ToString($hash.ComputeHash($bytes))).Replace('-','') -cne '87F789321F8D24583364AD246DC582A222CBC1B3545D98A1DB61C33E2283B580'){throw 'UNREVIEWED_VERIFIER_REJECTED'}}finally{$hash.Dispose()}
  $sig=Get-AuthenticodeSignature -LiteralPath $p
  if($sig.Status.ToString() -cne 'Valid' -or $sig.SignerCertificate.Thumbprint -cne $script:CandidateProbePublisher){throw 'SIGNED_VERIFIER_REQUIRED'}
 }
