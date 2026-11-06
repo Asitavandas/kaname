@@ -1,3 +1,4 @@
+from .historical_sources import connector_source
 """Exact Windows delivery bytes and unchanged customer-host/signing guards."""
 import base64
 import hashlib
@@ -28,7 +29,7 @@ class StagingPreviewWorkerDeliveryTests(unittest.TestCase):
    self.assertEqual(28,len(z.namelist()));self.assertEqual(expected,set(z.namelist()))
    for name in expected:
     data=z.read(name);self.assertEqual(pins[name],hashlib.sha256(data).hexdigest())
-    source=(ROOT/'windows/connector'/name).read_text().replace('\r\n','\n').rstrip('\r\n')+'\n'
+    source=connector_source(ROOT,name).read_text().replace('\r\n','\n').rstrip('\r\n')+'\n'
     self.assertEqual(source.encode(),data,name)
 
  def test_only_release_pins_change_in_the_reviewed_customer_wrapper(self):
