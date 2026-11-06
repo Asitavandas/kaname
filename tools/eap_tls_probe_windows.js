@@ -17,11 +17,12 @@ const multicast = Buffer.from('0180c2000003', 'hex');
 const child = spawn('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',
   ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'AllSigned', '-File', path.join(directory, 'operator.ps1'), '-Mode', 'Link'],
   { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
-let settled = false, started = false, received = false, starts = 0, timer, deadline;
+let settled = false, started = false, received = false, starts = 0, timer, deadline, version = 1;
+const linkFacts = { transmitted: 0, observed_outgoing: 0, received_versions: [], last_request_type: null };
 function send(type, body = Buffer.alloc(0)) {
-  const frame = Buffer.alloc(18 + body.length);
+  const frame = Buffer.alloc(Math.max(60, 18 + body.length));
   (type === 1 ? multicast : nas).copy(frame, 0); client.copy(frame, 6);
-  frame.writeUInt16BE(0x888e, 12); frame[14] = 2; frame[15] = type;
+  frame.writeUInt16BE(0x888e, 12); frame[14] = version; frame[15] = type;
   frame.writeUInt16BE(body.length, 16); body.copy(frame, 18);
   assert(frame.length <= 1500); child.stdin.write(frame.toString('base64') + '\n');
 }
@@ -29,7 +30,7 @@ function finish(error) {
   if (settled) return; settled = true; clearInterval(timer); clearTimeout(deadline);
   peer.close(); child.stdin.end('STOP\n');
   const result = { event: 'AUTHWIRE_EXPLICIT_CERTIFICATE_EAP_PROBE', case: name, run_id: bundle.run_id,
-    started, eapol_starts: starts, utc: new Date().toISOString(), error: error ? String(error.message || error) : null, ...peer.facts };
+    started, eapol_starts: starts, link: linkFacts, utc: new Date().toISOString(), error: error ? String(error.message || error) : null, ...peer.facts };
   // No raw TLS, certificate keys, packet bodies, or credentials in output.
   console.log(JSON.stringify(result));
   process.exitCode = error || peer.facts.terminal !== 'failure' || !peer.facts.client_certificate_sent ? 2 : 0;
@@ -39,6 +40,7 @@ let queue = Promise.resolve();
 readline.createInterface({ input: child.stdout }).on('line', line => {
   queue = queue.then(async () => {
     if (settled) return;
+    if (line === 'AUTHWIRE_EAPOL_TX') { linkFacts.transmitted++; return; }
     if (line === 'AUTHWIRE_EAPOL_LINK_READY') {
       assert(!started); started = true;
       const start = () => { if (!received && starts < 5) { starts++; send(1); } };
@@ -46,9 +48,13 @@ readline.createInterface({ input: child.stdout }).on('line', line => {
     }
     assert(/^[A-Za-z0-9+/=]+$/.test(line) && line.length <= 9000, 'Link protocol output');
     const frame = Buffer.from(line, 'base64');
+    if (frame.length >= 18 && frame.subarray(6, 12).equals(client)) { linkFacts.observed_outgoing++; return; }
     if (frame.length < 22 || !frame.subarray(6, 12).equals(nas) || frame.readUInt16BE(12) !== 0x888e || frame[15] !== 0) return;
     if (!frame.subarray(0, 6).equals(client) && !frame.subarray(0, 6).equals(multicast)) return;
     const size = frame.readUInt16BE(16); assert(size >= 4 && size <= frame.length - 18);
+    assert([1, 2].includes(frame[14]), 'Unsupported EAPOL version'); version = frame[14];
+    if (!linkFacts.received_versions.includes(version)) linkFacts.received_versions.push(version);
+    linkFacts.last_request_type = frame.length >= 23 ? frame[22] : null;
     received = true;
     const response = await peer.request(frame.subarray(18, size + 18));
     if (response) send(0, response);

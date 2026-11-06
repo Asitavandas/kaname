@@ -44,11 +44,12 @@ public static class AuthWireEapLink {
  [DllImport(D,CallingConvention=CallingConvention.Cdecl)]static extern int pcap_sendpacket(IntPtr p,byte[] b,int n);
  [DllImport(D,CallingConvention=CallingConvention.Cdecl)]static extern void pcap_close(IntPtr p);
  public static bool ValidSend(byte[] b){
-  if(b.Length<18||b.Length>1500||b[12]!=0x88||b[13]!=0x8e||b[14]!=2)return false;
+  if(b.Length<60||b.Length>1500||b[12]!=0x88||b[13]!=0x8e||(b[14]!=1&&b[14]!=2))return false;
   if(BitConverter.ToString(b,6,6)!="00-50-56-9B-7D-E3")return false;
   string dst=BitConverter.ToString(b,0,6);
   if(dst!="64-E8-81-34-63-61" && dst!="01-80-C2-00-00-03")return false;
-  int n=(b[16]<<8)|b[17];if(n!=b.Length-18)return false;
+  int n=(b[16]<<8)|b[17];if(b.Length!=Math.Max(60,18+n))return false;
+  for(int i=18+n;i<b.Length;i++)if(b[i]!=0)return false;
   if(b[15]==1)return n==0 && dst=="01-80-C2-00-00-03";
   return b[15]==0 && n>=5 && b[18]==2 && ((b[20]<<8)|b[21])==n && (b[22]==1||b[22]==3||b[22]==13) && dst=="64-E8-81-34-63-61";
  }
@@ -66,7 +67,7 @@ public static class AuthWireEapLink {
     if(input.IsCompleted){string line=input.Result;if(line==null||line=="STOP")break;
      if(line.Length>2100)throw new Exception("Send size bound");byte[] frame=Convert.FromBase64String(line);
      if(!ValidSend(frame))throw new Exception("Only exact Ethernet0 EAP responses allowed");
-     if(pcap_sendpacket(p,frame,frame.Length)!=0)throw new Exception("EAP transmit failed");sent++;input=Task.Run(()=>Console.ReadLine());
+     if(pcap_sendpacket(p,frame,frame.Length)!=0)throw new Exception("EAP transmit failed");sent++;Console.WriteLine("AUTHWIRE_EAPOL_TX");input=Task.Run(()=>Console.ReadLine());
     }
     IntPtr hp,dp;int rc=pcap_next_ex(p,out hp,out dp);if(rc==0){Thread.Sleep(5);continue;}if(rc<0)throw new Exception("Capture failed");
     Header h=(Header)Marshal.PtrToStructure(hp,typeof(Header));if(h.caplen<18||h.caplen>8192)continue;
@@ -79,6 +80,10 @@ public static class AuthWireEapLink {
  if($Mode -eq 'Link'){[AuthWireEapLink]::Run();return}
  $bad=New-Object byte[] 64
  if([AuthWireEapLink]::ValidSend($bad)){throw 'Malformed frame accepted'}
+ $start=New-Object byte[] 60
+ [byte[]]$dst=1,128,194,0,0,3;[byte[]]$src=0,80,86,155,125,227
+ $dst.CopyTo($start,0);$src.CopyTo($start,6);$start[12]=136;$start[13]=142;$start[14]=1;$start[15]=1
+ if(![AuthWireEapLink]::ValidSend($start)){throw 'Bounded padded EAPOL start refused'}
  'AUTHWIRE_EXPLICIT_EAP_LINK_CHECK_OK';return
 }
 $baseline=(Get-Content (Join-Path $base 'management-before.json') -Raw|ConvertFrom-Json)|ConvertTo-Json -Depth 6 -Compress
