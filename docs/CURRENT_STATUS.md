@@ -1,5 +1,25 @@
 # AuthWire current work record
 
+## Önceden geçen Windows yenileme ve boot testleri kapalı — 6 Kasım 2026
+
+19 Ekim ve güncel 5 Kasım raporları, önceki sohbet çıktıları ve özgün saha
+checkpoint'leri karşılaştırıldı. **VV06 kontrollü sertifika/anahtar yenilemesi,
+yeni seriyle gerçek EAP erişimi ve eski sertifika/CNG anahtar temizliği kapalıdır.**
+19–21 Ekim doğal Windows açılışı ve başarılı SYSTEM görevi; 20 Ekim ağsız boot
+sonrası otomatik ağ dönüşü ve gerçek hata sonrası zamanlı otomatik retry de
+başarılı saha kayıtlarıyla kapalıdır. Bu testler yeniden yapılmayacak.
+
+Önceki devam yanıtındaki genel “Windows yenileme/reboot açık” ifadesi bu dar
+kabuller için düzeltilir. VV06'nın fiziksel Realtek kimliği mevcut VV-Client01
+sanal kart kimliğinden farklıdır; aynı makine varsayılmadı. Gerçek expired
+kimlikten kurtarma, VV-Client01'in 5 Kasım çökmesi sonrası kararlılık, merkezi
+Connector reboot ve uzun süre/ölçek işleri ayrı kalır. Eski başarılı boot'u
+görmezden gelerek yeni genel reboot kapısı eklenmez.
+
+Kanıt: **docs/checkpoints/2026-11-06-historical-windows-renewal-boot-closure.json**.
+Bu bir geçmiş kabul uzlaştırmasıdır; yeni saha testi veya rapor üretimi değildir.
+Mevcut B06 **4/5**, genel **54/94** sayımı ikinci kez artırılmadı.
+
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
 
 Doğrulanmış **c5241e55c7728da239070bbe8f9c841043f54cde** kaynağı,

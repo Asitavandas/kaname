@@ -198,6 +198,36 @@ function Move-AuthWireExpiredPending([string]$Directory, [string]$Stage, [string
     [IO.File]::Move($path,(Join-Path $archiveDirectory $archiveName))
     return $archiveName
 }
+function Get-AuthWireCrlTransportStatus([Exception]$Exception) {
+    for($depth=0;$Exception -and $depth -lt 8;$depth++) {
+        if($Exception -is [Net.WebException]) { return [string]$Exception.Status }
+        $Exception=$Exception.InnerException
+    }
+    return 'None'
+}
+function New-AuthWireCrlRequest([string]$Url) {
+    $request = [Net.HttpWebRequest]::Create($Url)
+    $request.Method = 'GET'; $request.AllowAutoRedirect = $false; $request.Proxy = $null
+    $request.Timeout = 15000; $request.ReadWriteTimeout = 15000
+    $request.ServerCertificateValidationCallback = [Delegate]::CreateDelegate([Net.Security.RemoteCertificateValidationCallback], [AuthWireTls].GetMethod('Validate'))
+    return $request
+}
+function Get-AuthWireCrlResponse([string]$Url) {
+    $script:AuthWireCrlTransportAttempts=0
+    $script:AuthWireCrlLastTransportStatus='None'
+    for($attempt=1;$attempt -le 3;$attempt++) {
+        $script:AuthWireCrlTransportAttempts=$attempt
+        # A failed HttpWebRequest is never reused. No IP fallback, redirect,
+        # trust bypass, enrollment retry or system DNS change is permitted.
+        $request=New-AuthWireCrlRequest $Url
+        try { return $request.GetResponse() } catch {
+            $status=Get-AuthWireCrlTransportStatus $_.Exception
+            $script:AuthWireCrlLastTransportStatus=$status
+            if($attempt -ge 3 -or $status -notin @('NameResolutionFailure','ConnectFailure','Timeout','ReceiveFailure','ConnectionClosed','KeepAliveFailure')) { throw }
+            Start-Sleep -Seconds 10
+        }
+    }
+}
 function Invoke-AuthWireCrlRefresh {
     $crlMutex = New-Object Threading.Mutex($false,'Global\AuthWire-CRL-Refresh')
     $locked = $false
@@ -208,11 +238,7 @@ function Invoke-AuthWireCrlRefresh {
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         [Net.ServicePointManager]::CheckCertificateRevocationList = $true
         [AuthWireTls]::Pin = $config.tls_sha256
-        $request = [Net.HttpWebRequest]::Create($config.url+'/api/public/crls')
-        $request.Method = 'GET'; $request.AllowAutoRedirect = $false; $request.Proxy = $null
-        $request.Timeout = 30000; $request.ReadWriteTimeout = 30000
-        $request.ServerCertificateValidationCallback = [Delegate]::CreateDelegate([Net.Security.RemoteCertificateValidationCallback], [AuthWireTls].GetMethod('Validate'))
-        $response = $request.GetResponse()
+        $response = Get-AuthWireCrlResponse ($config.url+'/api/public/crls')
         try {
             if($response.StatusCode -ne [Net.HttpStatusCode]::OK -or $response.ContentLength -gt 3145728 -or $response.ContentType -notmatch '^application/json(?:;|$)') { throw 'CRL response refused.' }
             $stream = $response.GetResponseStream(); $memory = New-Object IO.MemoryStream
@@ -259,7 +285,9 @@ function Invoke-AuthWireCrlRefresh {
     } catch {
         # No enrollment backoff, credentials, CA password or diagnostic payload
         # is written to this independent refresh status.
-        Write-AuthWireCrlState @{state='refresh_failed';checked_at=[DateTimeOffset]::UtcNow.ToString('o');error='CRL_REFRESH_FAILED'}
+        # Fixed enum/counter only: never expose exception messages, URLs,
+        # response bodies, credentials or enrollment state.
+        Write-AuthWireCrlState @{state='refresh_failed';checked_at=[DateTimeOffset]::UtcNow.ToString('o');error='CRL_REFRESH_FAILED';transport_status=(Get-AuthWireCrlTransportStatus $_.Exception);transport_attempts=[int]$script:AuthWireCrlTransportAttempts}
         throw 'AuthWire CRL refresh failed; existing revocation checks remain enforced.'
     } finally {
         if($locked) { $crlMutex.ReleaseMutex() }; $crlMutex.Dispose()

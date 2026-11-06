@@ -10,8 +10,12 @@ $Error.Clear()
 try{& $client -CrlOnly -NoJitter;$result.success=$true}catch{
  # Intentionally omit messages, response bodies, target objects and stack text.
  $result.errors=@($Error|Select-Object -First 4|ForEach-Object {
-  $e=$_.Exception
-  [ordered]@{type=$e.GetType().FullName;hresult=$e.HResult;line=$_.InvocationInfo.ScriptLineNumber;file=[IO.Path]::GetFileName($_.InvocationInfo.ScriptName);web_status=if($e -is [Net.WebException]){[string]$e.Status}else{$null};inner_type=if($e.InnerException){$e.InnerException.GetType().FullName}else{$null};inner_hresult=if($e.InnerException){$e.InnerException.HResult}else{$null}}
+  $e=$_.Exception;$nested=@()
+  for($depth=0;$e -and $depth -lt 6;$depth++){
+   $nested+=@{type=$e.GetType().FullName;hresult=$e.HResult;web_status=if($e -is [Net.WebException]){[string]$e.Status}else{$null};http_status=if($e -is [Net.WebException] -and $e.Response -is [Net.HttpWebResponse]){[int]$e.Response.StatusCode}else{$null};socket_error=if($e -is [Net.Sockets.SocketException]){[string]$e.SocketErrorCode}else{$null}}
+   $e=$e.InnerException
+  }
+  [ordered]@{line=$_.InvocationInfo.ScriptLineNumber;file=[IO.Path]::GetFileName($_.InvocationInfo.ScriptName);exceptions=$nested}
  })
 }
 $result.finished=[datetime]::UtcNow.ToString('o')
