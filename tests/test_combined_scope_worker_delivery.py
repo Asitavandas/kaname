@@ -30,7 +30,7 @@ class CombinedScopeWorkerDeliveryTests(unittest.TestCase):
    self.assertEqual(24,len(z.namelist()));self.assertEqual(expected,set(z.namelist()))
    for n in expected:
     data=z.read(n);self.assertEqual(pins[n],hashlib.sha256(data).hexdigest())
-    source=(ROOT/'windows/connector'/n).read_text().replace('\r\n','\n').rstrip('\r\n')+'\n'
+    source=((ROOT/'tests/fixtures/combined-job-dev45.ps1') if n=='Invoke-AuthWireCombinedJob.ps1' else ((ROOT/'tests/fixtures/combined-public-content-dev45.ps1') if n=='CombinedCandidateContent.ps1' else (ROOT/'windows/connector'/n))).read_text().replace('\r\n','\n').rstrip('\r\n')+'\n'
     # Immutable historical archive and per-file pins above remain exact.
     # Current source has a separately pinned staging-preview generation.
     if n not in {'ConnectorServicePackage.ps1', 'ConnectorServiceUpgrade.ps1', 'New-AuthWireConnectorServicePackage.ps1', 'Invoke-AuthWireScopeJob.ps1', 'ConnectorChannelTypes.ps1', 'CombinedDeploymentScope.ps1', 'Update-AuthWireConnectorService.ps1', 'ConnectorServiceRuntime.ps1'}:self.assertEqual(source.encode(),data)

@@ -104,7 +104,8 @@ function Test-AuthWireJobCombinedContent($Target,[hashtable]$Binding,[string]$Pu
     $result.PrivateKeyOpened -isnot [bool] -or $result.PrivateKeyOpened -or
     $result.ArtifactExecuted -isnot [bool] -or $result.ArtifactExecuted -or
     $result.CanApplyGpo -isnot [bool] -or $result.CanApplyGpo){throw 'COMBINED_JOB_CONTENT_REJECTED'}
- $templateHash=Get-AuthWireCandidateHash (Get-AuthWireCombinedReadonlyTemplate)
+ $templateHash=[string]$result.InstallerTemplateSha256
+ if($templateHash -cnotmatch '\A[0-9a-f]{64}\z' -or (Get-AuthWireCandidateHash (Get-AuthWireCombinedReadonlyTemplate $templateHash)) -cne $templateHash){throw 'COMBINED_JOB_TEMPLATE_REJECTED'}
  $root=Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) ('AuthWire-CombinedCandidates-'+([guid]$Binding.connector_id).ToString('N'))
  $path=Join-Path $root ($Target.plan_id+'-v'+$Target.plan_version+'-'+$Target.draft_sha256+'-'+$templateHash.Substring(0,16))
  Assert-AuthWireCandidateAcl $root $Binding.service_sid -Directory

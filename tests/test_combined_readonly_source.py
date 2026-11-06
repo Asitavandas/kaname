@@ -22,9 +22,19 @@ class CombinedReadonlySourceTests(unittest.TestCase):
  def test_template_is_exact_and_private_or_write_capabilities_absent(self):
   text=(ROOT/'windows/connector/Test-AuthWireCombinedContent.ps1').read_text()
   raw=base64.b64decode(re.search(r"FromBase64String\('([^']+)'\)",text).group(1),validate=True)
-  self.assertEqual(raw,(ROOT/'tests/fixtures/authwire-installer-dev45.ps1').read_bytes().replace(b'\r\n',b'\n'))
+  self.assertEqual(raw,(ROOT/'kaname/device_client/Install-AuthWire.ps1').read_bytes().replace(b'\r\n',b'\n'))
   for forbidden in ('GetRSAPrivateKey','Set-AuthenticodeSignature','Get-AuthWireNamedMachineKeyMetadata','Set-Acl','WriteAllBytes','New-Item','Directory]::Move','Get-AuthWireCandidateSigner'):
    self.assertNotIn(forbidden,text)
+
+ def test_current_and_legacy_installer_templates_are_explicit_and_identical_in_both_readers(self):
+  expected={(ROOT/'kaname/device_client/Install-AuthWire.ps1').read_bytes(),(ROOT/'tests/fixtures/authwire-installer-dev45.ps1').read_bytes()}
+  for name in ('Test-AuthWireCombinedContent.ps1','CombinedCandidateContent.ps1'):
+   source=(ROOT/'windows/connector'/name).read_text()
+   template=functions(source)['Get-AuthWireCombinedReadonlyTemplate']
+   values={base64.b64decode(x,validate=True) for x in re.findall(r"FromBase64String\('([^']+)'\)",template)}
+   self.assertEqual(expected,values)
+   for value in values:self.assertIn(hashlib.sha256(value).hexdigest(),template)
+   self.assertIn('COMBINED_READONLY_TEMPLATE_REJECTED',template)
 
  def test_fixed_runtime_delivery_contains_exact_reviewed_sources(self):
   text=(ROOT/'docs/checkpoints/2026-10-28-dc01-combined-runtime.ps1').read_text()
@@ -36,4 +46,5 @@ class CombinedReadonlySourceTests(unittest.TestCase):
    self.assertEqual(set(z.namelist()),set(pins))
    for n,pin in pins.items():
     self.assertEqual(hashlib.sha256(z.read(n)).hexdigest(),pin)
-    self.assertEqual(z.read(n),(ROOT/'windows/connector'/n).read_bytes().replace(b'\r\n',b'\n'))
+    expected=(ROOT/'tests/fixtures/combined-content-dev45.ps1') if n=='Test-AuthWireCombinedContent.ps1' else (ROOT/'windows/connector'/n)
+    self.assertEqual(z.read(n),expected.read_bytes().replace(b'\r\n',b'\n'))
