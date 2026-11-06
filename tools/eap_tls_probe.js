@@ -144,4 +144,15 @@ class EapTlsPeer {
   }
   close() { if (this.socket) this.socket.destroy(); if (this.pipe) this.pipe.destroy(); }
 }
-module.exports = { EapTlsPeer, TlsPipe, eap, parseEap, FragmentReceiver, fragmentFlight, CertificateObserver };
+function wiredFrame(type, body = Buffer.alloc(0), version = 1) {
+  assert([0, 1].includes(type) && [1, 2].includes(version), 'Bounded wired EAPOL mode');
+  if (type === 1) assert.equal(body.length, 0, 'EAPOL-Start payload');
+  else { const packet = parseEap(body); assert(packet.code === 2 && [1, 3, 13].includes(packet.type), 'Only supplicant responses'); }
+  const frame = Buffer.alloc(Math.max(60, 18 + body.length)); assert(frame.length <= 1500);
+  // Match the successful native Windows wired captures: ALL responses use PAE.
+  Buffer.from('0180c2000003', 'hex').copy(frame, 0);
+  Buffer.from('0050569b7de3', 'hex').copy(frame, 6);
+  frame.writeUInt16BE(0x888e, 12); frame[14] = version; frame[15] = type;
+  frame.writeUInt16BE(body.length, 16); body.copy(frame, 18); return frame;
+}
+module.exports = { EapTlsPeer, TlsPipe, eap, parseEap, FragmentReceiver, fragmentFlight, CertificateObserver, wiredFrame };

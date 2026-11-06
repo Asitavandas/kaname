@@ -1,5 +1,5 @@
 # Exact VV-Client01 pilot only. Sign with existing publisher before execution.
-param([ValidateSet('Check','Run','Link','Restore')][string]$Mode='Check',[ValidateSet('expired','wrong-issuer','control')][string]$Case='expired')
+param([ValidateSet('Check','Run','Link','Restore')][string]$Mode='Check',[ValidateSet('expired','wrong-issuer','control','transport')][string]$Case='transport')
 $ErrorActionPreference='Stop'
 $stage=$PSScriptRoot;$guid='2db4814e-faa5-4315-bdbd-eae3a90dbe1b';$publisher='6E74B513F766E01730719684A41B2664380CA68A'
 $base='C:\ProgramData\AuthWire-Pilot\20261105-3061f09f71e146c6a281fecce2ebd1ee'
@@ -47,11 +47,11 @@ public static class AuthWireEapLink {
   if(b.Length<60||b.Length>1500||b[12]!=0x88||b[13]!=0x8e||(b[14]!=1&&b[14]!=2))return false;
   if(BitConverter.ToString(b,6,6)!="00-50-56-9B-7D-E3")return false;
   string dst=BitConverter.ToString(b,0,6);
-  if(dst!="64-E8-81-34-63-61" && dst!="01-80-C2-00-00-03")return false;
+  if(dst!="01-80-C2-00-00-03")return false;
   int n=(b[16]<<8)|b[17];if(b.Length!=Math.Max(60,18+n))return false;
   for(int i=18+n;i<b.Length;i++)if(b[i]!=0)return false;
   if(b[15]==1)return n==0 && dst=="01-80-C2-00-00-03";
-  return b[15]==0 && n>=5 && b[18]==2 && ((b[20]<<8)|b[21])==n && (b[22]==1||b[22]==3||b[22]==13) && dst=="64-E8-81-34-63-61";
+  return b[15]==0 && n>=5 && b[18]==2 && ((b[20]<<8)|b[21])==n && (b[22]==1||b[22]==3||b[22]==13);
  }
  public static void Run(){
   SetDllDirectory(@"C:\Windows\System32\Npcap");StringBuilder err=new StringBuilder(512);
@@ -84,6 +84,10 @@ public static class AuthWireEapLink {
  [byte[]]$dst=1,128,194,0,0,3;[byte[]]$src=0,80,86,155,125,227
  $dst.CopyTo($start,0);$src.CopyTo($start,6);$start[12]=136;$start[13]=142;$start[14]=1;$start[15]=1
  if(![AuthWireEapLink]::ValidSend($start)){throw 'Bounded padded EAPOL start refused'}
+ $reply=[byte[]]$start.Clone();$reply[15]=0;$reply[17]=6;$reply[18]=2;$reply[19]=9;$reply[21]=6;$reply[22]=13
+ if(![AuthWireEapLink]::ValidSend($reply)){throw 'PAE multicast response refused'}
+ [byte[]]$unicast=100,232,129,52,99,97;$unicast.CopyTo($reply,0)
+ if([AuthWireEapLink]::ValidSend($reply)){throw 'Unicast response regression'}
  'AUTHWIRE_EXPLICIT_EAP_LINK_CHECK_OK';return
 }
 $baseline=(Get-Content (Join-Path $base 'management-before.json') -Raw|ConvertFrom-Json)|ConvertTo-Json -Depth 6 -Compress

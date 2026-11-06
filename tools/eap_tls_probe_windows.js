@@ -4,36 +4,43 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 const readline = require('node:readline');
 const assert = require('node:assert/strict');
-const { EapTlsPeer } = require('./eap_tls_probe');
+const crypto = require('node:crypto');
+const { EapTlsPeer, parseEap, wiredFrame } = require('./eap_tls_probe');
 const directory = __dirname;
-const name = process.argv[2]; assert(['expired', 'wrong-issuer', 'control'].includes(name));
-const bundle = JSON.parse(fs.readFileSync(path.join(directory, 'bundle.json')));
-assert.equal(bundle.schema, 1); assert.equal(bundle.servername, 'kaname.vizyonveri.local');
-const credential = bundle.cases[name]; assert(credential);
-const peer = new EapTlsPeer({ ...credential, ca: bundle.root, crl: bundle.crls,
-  servername: bundle.servername, identity: 'AuthWire-negative-' + name + '-' + bundle.run_id });
+const name = process.argv[2]; assert(['expired', 'wrong-issuer', 'control', 'transport'].includes(name));
+const config = JSON.parse(fs.readFileSync(path.join(directory, 'probe-config.json')));
+assert.equal(config.schema, 1); assert.equal(config.run_id, path.basename(directory));
+assert.equal(config.servername, 'kaname.vizyonveri.local');
+assert(typeof config.identity === 'string' && /^[A-Za-z0-9/-]{1,100}$/.test(config.identity));
+let bundle = null, credential = null;
+if (name !== 'transport') {
+  const data = fs.readFileSync(path.join(directory, 'bundle.json'));
+  assert.equal(crypto.createHash('sha256').update(data).digest('hex'), config.bundle_sha256, 'Private credential hash');
+  bundle = JSON.parse(data); assert.equal(bundle.run_id, config.run_id);
+  assert.equal(bundle.servername, config.servername); credential = bundle.cases[name]; assert(credential);
+}
+const peer = new EapTlsPeer(name === 'transport' ? { identity: config.identity } :
+  { ...credential, ca: bundle.root, crl: bundle.crls, servername: config.servername, identity: config.identity });
 const client = Buffer.from('0050569b7de3', 'hex'), nas = Buffer.from('64e881346361', 'hex');
 const multicast = Buffer.from('0180c2000003', 'hex');
 const child = spawn('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',
   ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'AllSigned', '-File', path.join(directory, 'operator.ps1'), '-Mode', 'Link'],
   { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
 let settled = false, started = false, received = false, starts = 0, timer, deadline, version = 1;
+let tlsStartReceived = false;
 const linkFacts = { transmitted: 0, observed_outgoing: 0, received_versions: [], last_request_type: null };
 function send(type, body = Buffer.alloc(0)) {
-  const frame = Buffer.alloc(Math.max(60, 18 + body.length));
-  (type === 1 ? multicast : nas).copy(frame, 0); client.copy(frame, 6);
-  frame.writeUInt16BE(0x888e, 12); frame[14] = version; frame[15] = type;
-  frame.writeUInt16BE(body.length, 16); body.copy(frame, 18);
-  assert(frame.length <= 1500); child.stdin.write(frame.toString('base64') + '\n');
+  const frame = wiredFrame(type, body, version); child.stdin.write(frame.toString('base64') + '\n');
 }
 function finish(error) {
   if (settled) return; settled = true; clearInterval(timer); clearTimeout(deadline);
   peer.close(); child.stdin.end('STOP\n');
-  const result = { event: 'AUTHWIRE_EXPLICIT_CERTIFICATE_EAP_PROBE', case: name, run_id: bundle.run_id,
-    started, eapol_starts: starts, link: linkFacts, utc: new Date().toISOString(), error: error ? String(error.message || error) : null, ...peer.facts };
+  const result = { event: 'AUTHWIRE_EXPLICIT_CERTIFICATE_EAP_PROBE', case: name, run_id: config.run_id,
+    started, eapol_starts: starts, tls_start_received: tlsStartReceived, link: linkFacts, utc: new Date().toISOString(), error: error ? String(error.message || error) : null, ...peer.facts };
   // No raw TLS, certificate keys, packet bodies, or credentials in output.
   console.log(JSON.stringify(result));
-  process.exitCode = error || peer.facts.terminal !== 'failure' || !peer.facts.client_certificate_sent ? 2 : 0;
+  const accepted = name === 'transport' ? tlsStartReceived : peer.facts.terminal === 'failure' && peer.facts.client_certificate_sent;
+  process.exitCode = !error && accepted ? 0 : 2;
   setTimeout(() => { if (child.exitCode === null) child.kill(); }, 1500).unref();
 }
 let queue = Promise.resolve();
@@ -56,7 +63,11 @@ readline.createInterface({ input: child.stdout }).on('line', line => {
     if (!linkFacts.received_versions.includes(version)) linkFacts.received_versions.push(version);
     linkFacts.last_request_type = frame.length >= 23 ? frame[22] : null;
     received = true;
-    const response = await peer.request(frame.subarray(18, size + 18));
+    const packet = frame.subarray(18, size + 18), parsed = parseEap(packet);
+    if (name === 'transport' && parsed.code === 1 && parsed.type === 13 && parsed.data.length === 1 && parsed.data[0] === 0x20) {
+      tlsStartReceived = true; finish(); return;
+    }
+    const response = await peer.request(packet);
     if (response) send(0, response);
     if (peer.facts.terminal) finish();
   }).catch(finish);

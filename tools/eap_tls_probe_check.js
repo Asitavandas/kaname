@@ -7,7 +7,7 @@ const path = require('node:path');
 const net = require('node:net');
 const tls = require('node:tls');
 const { execFileSync } = require('node:child_process');
-const { EapTlsPeer, eap, parseEap, FragmentReceiver, fragmentFlight } = require('./eap_tls_probe');
+const { EapTlsPeer, eap, parseEap, FragmentReceiver, fragmentFlight, wiredFrame } = require('./eap_tls_probe');
 const delay = ms => new Promise(r => setTimeout(r, ms));
 const fixtureSource = `
 import sys
@@ -50,7 +50,14 @@ async function scenario(directory, name, wrongServer = false) {
     const packet = eap(1, ++id % 256, type, body);
     const response = await peer.request(packet);
     const repeated = await peer.request(packet); assert.deepEqual(response, repeated, 'Replay response differs');
-    const result = parseEap(response); assert.equal(result.id, packet[1]); return result;
+    const frame = wiredFrame(0, response, 1);
+    // Independent native-capture regression: switch responses must use PAE,
+    // including Identity, TLS fragments, and empty TLS acknowledgements.
+    assert.equal(frame.subarray(0, 6).toString('hex'), '0180c2000003');
+    assert.equal(frame.subarray(6, 12).toString('hex'), '0050569b7de3');
+    assert.equal(frame.readUInt16BE(12), 0x888e); assert(frame.length >= 60);
+    const result = parseEap(frame.subarray(18, 18 + frame.readUInt16BE(16)));
+    assert.equal(result.id, packet[1]); return result;
   }
   async function transmitClient(first) {
     let response = first;
@@ -112,6 +119,8 @@ async function scenario(directory, name, wrongServer = false) {
     const receiver = new FragmentReceiver();
     assert.equal(receiver.receive(Buffer.from([0xc0, 0, 0, 0, 2, 1])), null);
     assert.throws(() => receiver.receive(Buffer.from([0x80, 0, 0, 0, 2, 2])));
+    assert.equal(wiredFrame(1).subarray(0, 6).toString('hex'), '0180c2000003');
+    assert.throws(() => wiredFrame(0, eap(1, 1, 13, Buffer.from([32]))));
     console.log(JSON.stringify({ event: 'AUTHWIRE_EAP_TLS_PROBE_TRANSPORT_CHECK', results }));
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
