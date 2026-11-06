@@ -20,7 +20,7 @@ class ExpiredRecoveryDeployTests(unittest.TestCase):
         self.ns['ROOT'] = self.root
         self.ns['trusted'] = lambda p: p.read_bytes()
         old_client = (repo / 'docs/checkpoints/2026-10-19-authwire-client-dev11.ps1').read_bytes()
-        new_client = (repo / 'kaname/device_client/AuthWire-Client.ps1').read_bytes()
+        new_client = (repo / 'tests/fixtures/authwire-client-dev12.ps1').read_bytes()
         # Frozen source admitted by this historical deployment guard.
         installer = (repo / 'docs/checkpoints/2026-10-19-authwire-installer-dev11.ps1').read_bytes()
         self.base = {'kaname/__init__.py': b'VERSION = "0.14.0-dev.11"\n',
@@ -94,7 +94,7 @@ class ExpiredRecoveryDeployTests(unittest.TestCase):
     def test_sysvol_payload_is_exact_reviewed_client_and_auditor(self):
         repo = Path(__file__).parents[1]
         helper = (repo / 'docs/checkpoints/2026-10-21-sysvol-client-update.ps1').read_text()
-        for name, path in [('awTemplate', 'kaname/device_client/AuthWire-Client.ps1'),
+        for name, path in [('awTemplate', 'tests/fixtures/authwire-client-dev12.ps1'),
                            ('awAudit', 'tools/AuthWire-GPO-Audit.ps1')]:
             match = re.search(r'\$script:' + name + r"=.*?FromBase64String\('([A-Za-z0-9+/=]+)'\)", helper)
             self.assertIsNotNone(match)

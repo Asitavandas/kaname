@@ -22,7 +22,7 @@ class PolicyToggleDeployTests(unittest.TestCase):
         self.base = {'kaname/__init__.py': b'VERSION = "0.14.0-dev.12"\n',
                      'kaname/static/app.js': b'accepted UI\n',
                      'kaname/radius_adapter.py': b'protected authorizer\n',
-                     'kaname/device_client/AuthWire-Client.ps1': (repo / 'kaname/device_client/AuthWire-Client.ps1').read_bytes(),
+                     'kaname/device_client/AuthWire-Client.ps1': (repo / 'tests/fixtures/authwire-client-dev12.ps1').read_bytes(),
                      'kaname/device_client/Install-AuthWire.ps1': installer}
         self.files = {**self.base, 'kaname/__init__.py': b'VERSION = "0.14.0-dev.13"\n',
                       'kaname/static/app.js': b'reviewed toggle UI\n'}
