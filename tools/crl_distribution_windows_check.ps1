@@ -7,7 +7,7 @@ foreach($path in @($ClientScript,$InstallerScript)) {
  $t=$null;$e=$null;$ast=[Management.Automation.Language.Parser]::ParseFile($path,[ref]$t,[ref]$e)
  if($e.Count) { throw ('PowerShell syntax rejected: '+$e[0].Message) }
  if($path -eq $ClientScript) {
-  $literal=$ast.Find({param($n) $n -is [Management.Automation.Language.StringConstantExpressionAst] -and $n.Value.StartsWith("using System;`n")},$true)
+  $literal=$ast.Find({param($n) $n -is [Management.Automation.Language.StringConstantExpressionAst] -and $n.Value.StartsWith("using System;")},$true)
   if(!$literal) { throw 'Native source missing' }; Add-Type -TypeDefinition $literal.Value
  }
 }
