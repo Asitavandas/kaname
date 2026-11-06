@@ -51,6 +51,13 @@ try{
  Check (-not $prepared.CanStage -and -not $prepared.CanApplyGpo -and -not $prepared.ArtifactExecuted -and -not $prepared.AdChanged -and -not $prepared.ServicesChanged) 'No apply, execution or infrastructure change claim'
  Check ((Get-AuthWireCombinedSignerSnapshot $cert $metadata.Native.KeyName $metadata.Native.UniqueName $metadata.KeySddl) -ceq $before) 'Native key, marker, certificate and ACL preserved'
  Check ((Get-FileHash -LiteralPath $draft -Algorithm SHA256).Hash.ToLowerInvariant() -ceq $pins.draft) 'Original input ZIP unchanged'
+ # Admit the still-supported historical installer without dropping new CRL templates.
+ $legacyParameters=$callParameters.Clone()
+ $legacyParameters.InstallerTemplatePath=Join-Path $FixtureDirectory 'legacy-installer.ps1'
+ [IO.File]::WriteAllText($legacyParameters.InstallerTemplatePath,[IO.File]::ReadAllText((Join-Path $PSScriptRoot '../tests/fixtures/authwire-installer-dev45.ps1')).Replace("`r`n","`n"),[Text.UTF8Encoding]::new($false))
+ $legacyParameters.ExpectedInstallerTemplateSha256='ab1a11c68381006173518df77deeb0d32fc56e0b28cc260c42b7378c624be14a'
+ $legacy=Invoke-AuthWireCombinedCandidate @legacyParameters -Mode Prepare
+ Check ($legacy.SignaturesVerified -eq 3) 'Legacy signed installer candidate preserved alongside current template'
  # Read-only verifier uses only public inputs; no signer access or signing API.
  Import-Functions (Join-Path $PSScriptRoot '../windows/connector/Test-AuthWireCombinedContent.ps1')
  $verifyParameters=@{ConnectorId=([guid]::ParseExact($parent.Substring($parent.Length-32),'N')).ToString('D');PlanId=$prepared.PlanId;PlanVersion=$prepared.PlanVersion;DraftSha256=$prepared.DraftSha256;ManifestSha256=$prepared.ManifestSha256;PublisherThumbprint=$cert.Thumbprint;ServiceSid=$callParameters.ServiceSid}
@@ -60,6 +67,11 @@ try{
   function global:Set-AuthenticodeSignature {throw 'SIGNING_FORBIDDEN'}
   $readonly=Test-AuthWireCombinedContent @verifyParameters
   Check ($readonly.ContentVerified -and $readonly.SignaturesVerified -eq 3 -and -not $readonly.PrivateKeyOpened -and -not $readonly.CanStage) 'Public-only verifier succeeds while private/signing functions are denied'
+  Check ($readonly.InstallerTemplateSha256 -ceq $templateHash) 'New template identity bound to verified manifest'
+  $legacyPins=$verifyParameters.Clone();$legacyPins.ManifestSha256=$legacy.ManifestSha256
+  $old=Test-AuthWireCombinedContent @legacyPins
+  Check ($old.ContentVerified -and $old.InstallerTemplateSha256 -ceq $legacyParameters.ExpectedInstallerTemplateSha256) 'Legacy and new candidates selected by exact signed manifest pin'
+  Reject {Get-AuthWireCombinedReadonlyTemplate ('0'*64)} 'Unreviewed installer template rejected'
   $badPin=$verifyParameters.Clone();$badPin.ManifestSha256='0'*64
   Reject {Test-AuthWireCombinedContent @badPin} 'Readonly wrong manifest pin rejected'
   Reject {Test-AuthWireServiceCombinedContent @verifyParameters} 'Administrator cannot claim service SID proof'

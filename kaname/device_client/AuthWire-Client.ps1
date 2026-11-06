@@ -1,6 +1,6 @@
 # AuthWire domain computer enrollment/renewal. Run as SYSTEM through GPO.
 # Sign this file with the enterprise Authenticode publisher before deployment.
-param([switch]$ValidateOnly, [switch]$NoJitter)
+param([switch]$ValidateOnly, [switch]$NoJitter, [switch]$CrlOnly)
 $ErrorActionPreference = 'Stop'
 Add-Type -TypeDefinition @'
 using System;
@@ -19,6 +19,118 @@ public static class AuthWireTls {
  public static bool Validate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors errors) {
   if(errors != SslPolicyErrors.None || certificate == null) return false;
   using(var h=SHA256.Create()) return BitConverter.ToString(h.ComputeHash(certificate.GetRawCertData())).Replace("-","").ToLowerInvariant()==Pin;
+ }
+}
+public static class AuthWireCrl {
+ [StructLayout(LayoutKind.Sequential)] struct Blob { public int size; public IntPtr data; }
+ [StructLayout(LayoutKind.Sequential)] struct Algorithm { public IntPtr oid; public Blob parameters; }
+ [StructLayout(LayoutKind.Sequential)] struct Context { public int encoding; public IntPtr encoded; public int length; public IntPtr info,store; }
+ [StructLayout(LayoutKind.Sequential)] struct Info { public int version; public Algorithm algorithm; public Blob issuer; public System.Runtime.InteropServices.ComTypes.FILETIME updated,next; public int count; public IntPtr entries; public int extensionCount; public IntPtr extensions; }
+ [StructLayout(LayoutKind.Sequential)] struct Entry { public Blob serial; public System.Runtime.InteropServices.ComTypes.FILETIME revoked; public int count; public IntPtr extensions; }
+ [StructLayout(LayoutKind.Sequential)] struct Extension { public IntPtr oid; public int critical; public Blob value; }
+ [DllImport("crypt32.dll",SetLastError=true)] static extern IntPtr CertCreateCRLContext(int encoding,byte[] data,int length);
+ [DllImport("crypt32.dll")] static extern bool CertFreeCRLContext(IntPtr context);
+ [DllImport("crypt32.dll",SetLastError=true)] static extern bool CryptVerifyCertificateSignatureEx(IntPtr provider,int encoding,int subjectType,IntPtr subject,int issuerType,IntPtr issuer,int flags,IntPtr extra);
+ [DllImport("crypt32.dll",SetLastError=true)] static extern IntPtr CertEnumCRLsInStore(IntPtr store,IntPtr previous);
+ [DllImport("crypt32.dll",SetLastError=true)] static extern bool CertAddCRLContextToStore(IntPtr store,IntPtr context,int disposition,IntPtr output);
+ sealed class Parsed {
+  public byte[] raw; public long number; public DateTime updated,next;
+  public System.Collections.Generic.Dictionary<string,string> entries = new System.Collections.Generic.Dictionary<string,string>();
+ }
+ public sealed class Result { public long RootNumber,IssuerNumber; public string RootNextUpdate,IssuerNextUpdate; public int Added; }
+ static void Require(bool condition) { if(!condition) throw new InvalidOperationException("CRL validation refused"); }
+ static byte[] Bytes(Blob b) { Require(b.size>=0 && b.size<=1048576); byte[] a=new byte[b.size]; if(a.Length>0) Marshal.Copy(b.data,a,0,a.Length); return a; }
+ static string Hex(byte[] a) { return BitConverter.ToString(a).Replace("-",""); }
+ static bool Equal(byte[] a,byte[] b) { return Hex(a)==Hex(b); }
+ static DateTime Time(System.Runtime.InteropServices.ComTypes.FILETIME t) { return DateTime.FromFileTimeUtc(((long)(uint)t.dwHighDateTime<<32)|(uint)t.dwLowDateTime); }
+ // Minimal canonical DER length reader for CRLNumber and AKI. Native crypt32
+ // verifies the signed object; these fields must have one unambiguous encoding.
+ static byte[] Der(byte[] input,byte tag) {
+  Require(input.Length>=2 && input[0]==tag); int n=input[1],offset=2;
+  if(n>=128) { int count=n&127; Require(count>0&&count<=3&&input.Length>=2+count&&input[2]!=0); n=0; for(int i=0;i<count;i++) n=(n<<8)|input[offset++]; Require(n>=128); }
+  Require(n==input.Length-offset); byte[] result=new byte[n]; Buffer.BlockCopy(input,offset,result,0,n); return result;
+ }
+ static long Number(byte[] der) { byte[] v=Der(der,2); Require(v.Length>0&&v.Length<=8&&(v[0]&128)==0&&(v.Length==1||v[0]!=0||(v[1]&128)!=0)); long n=0; foreach(byte b in v) n=(n<<8)|b; Require(n>0); return n; }
+ static string Serial(byte[] little) { Array.Reverse(little); return Hex(little).TrimStart('0'); }
+ static System.Collections.Generic.Dictionary<string,byte[]> Extensions(int count,IntPtr address,bool entry) {
+  Require(count>=0&&count<=32); var values=new System.Collections.Generic.Dictionary<string,byte[]>(); int size=Marshal.SizeOf(typeof(Extension));
+  for(int i=0;i<count;i++) {
+   Extension e=(Extension)Marshal.PtrToStructure(IntPtr.Add(address,i*size),typeof(Extension)); string oid=Marshal.PtrToStringAnsi(e.oid);
+   Require(e.critical==0&&!values.ContainsKey(oid));
+   Require(entry ? oid!="2.5.29.29" : oid!="2.5.29.27"&&oid!="2.5.29.28"&&oid!="2.5.29.46");
+   values.Add(oid,Bytes(e.value));
+  }
+  return values;
+ }
+ static Parsed Parse(byte[] data,X509Certificate2 signer,DateTime now,bool current) {
+  Require(data!=null&&data.Length>0&&data.Length<=1048576); Der(data,0x30);
+  IntPtr p=CertCreateCRLContext(1,data,data.Length); Require(p!=IntPtr.Zero);
+  try {
+   Context c=(Context)Marshal.PtrToStructure(p,typeof(Context)); Info v=(Info)Marshal.PtrToStructure(c.info,typeof(Info));
+   Require(Equal(Bytes(v.issuer),signer.SubjectName.RawData));
+   Require(CryptVerifyCertificateSignatureEx(IntPtr.Zero,1,3,p,2,signer.Handle,0,IntPtr.Zero));
+   Require(v.version==1&&Marshal.PtrToStringAnsi(v.algorithm.oid)=="1.2.840.113549.1.1.11");
+   var ext=Extensions(v.extensionCount,v.extensions,false); Require(ext.ContainsKey("2.5.29.20")&&ext.ContainsKey("2.5.29.35"));
+   var ski=(X509SubjectKeyIdentifierExtension)signer.Extensions["2.5.29.14"]; Require(ski!=null);
+   Require(Hex(Der(Der(ext["2.5.29.35"],0x30),0x80))==ski.SubjectKeyIdentifier);
+   Parsed parsed=new Parsed{raw=data,number=Number(ext["2.5.29.20"]),updated=Time(v.updated),next=Time(v.next)};
+   Require(parsed.updated<=now&&parsed.next>parsed.updated&&parsed.next<=signer.NotAfter.ToUniversalTime()&&(!current||now<parsed.next));
+   Require(v.count>=0&&v.count<=25000); int size=Marshal.SizeOf(typeof(Entry));
+   for(int i=0;i<v.count;i++) {
+    Entry e=(Entry)Marshal.PtrToStructure(IntPtr.Add(v.entries,i*size),typeof(Entry)); string serial=Serial(Bytes(e.serial)); DateTime date=Time(e.revoked);
+    Require(serial.Length>0&&!parsed.entries.ContainsKey(serial)&&date<=parsed.updated);
+    var entryExt=Extensions(e.count,e.extensions,true); var keys=new System.Collections.Generic.List<string>(entryExt.Keys); keys.Sort(StringComparer.Ordinal);
+    string record=date.Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    foreach(string oid in keys) record+="|"+oid+":"+Hex(entryExt[oid]); parsed.entries.Add(serial,record);
+   }
+   return parsed;
+  } finally { CertFreeCRLContext(p); }
+ }
+ static void Certificate(X509Certificate2 cert,X509Certificate2 signer,int depth,DateTime now) {
+  Require(cert.NotBefore.ToUniversalTime()<=now&&now<cert.NotAfter.ToUniversalTime());
+  Require(cert.SignatureAlgorithm.Value=="1.2.840.113549.1.1.11"&&Equal(cert.IssuerName.RawData,signer.SubjectName.RawData));
+  Require(CryptVerifyCertificateSignatureEx(IntPtr.Zero,1,2,cert.Handle,2,signer.Handle,0,IntPtr.Zero));
+  var bc=(X509BasicConstraintsExtension)cert.Extensions["2.5.29.19"]; var ku=(X509KeyUsageExtension)cert.Extensions["2.5.29.15"];
+  Require(bc!=null&&bc.Critical&&bc.CertificateAuthority&&bc.HasPathLengthConstraint&&bc.PathLengthConstraint==depth);
+  Require(ku!=null&&ku.Critical&&(ku.KeyUsages&(X509KeyUsageFlags.KeyCertSign|X509KeyUsageFlags.CrlSign))==(X509KeyUsageFlags.KeyCertSign|X509KeyUsageFlags.CrlSign));
+  using(RSA key=RSACertificateExtensions.GetRSAPublicKey(cert)) Require(key!=null&&key.KeySize==3072);
+ }
+ static void Advance(Parsed candidate,Parsed old) {
+  Require(candidate.number>=old.number&&candidate.updated>=old.updated&&candidate.next>=old.next);
+  if(candidate.number==old.number) Require(Equal(candidate.raw,old.raw));
+  foreach(var e in old.entries) Require(candidate.entries.ContainsKey(e.Key)&&candidate.entries[e.Key]==e.Value);
+ }
+ public static void ValidateAdvance(byte[] candidate,byte[] old,X509Certificate2 signer,DateTime now) { Advance(Parse(candidate,signer,now,true),Parse(old,signer,now,false)); }
+ static Parsed[] Pair(byte[] rootCrl,byte[] issuerCrl,X509Certificate2 root,X509Certificate2 issuer,DateTime now) {
+  Certificate(root,root,1,now); Certificate(issuer,root,0,now);
+  Parsed a=Parse(rootCrl,root,now,true),b=Parse(issuerCrl,issuer,now,true);
+  Require(!a.entries.ContainsKey(issuer.SerialNumber.TrimStart('0'))); return new[]{a,b};
+ }
+ static Result Metadata(Parsed[] pair,int added) { return new Result{RootNumber=pair[0].number,IssuerNumber=pair[1].number,RootNextUpdate=pair[0].next.ToString("o"),IssuerNextUpdate=pair[1].next.ToString("o"),Added=added}; }
+ public static Result ValidatePair(byte[] rootCrl,byte[] issuerCrl,X509Certificate2 root,X509Certificate2 issuer,DateTime now) { return Metadata(Pair(rootCrl,issuerCrl,root,issuer,now),0); }
+ public static Result ApplyToStore(byte[] rootCrl,byte[] issuerCrl,X509Certificate2 root,X509Certificate2 issuer,DateTime now,IntPtr store) {
+  Parsed[] pair=Pair(rootCrl,issuerCrl,root,issuer,now); X509Certificate2[] signers={root,issuer}; bool[] identical={false,false};
+  // Validate both candidates AND every authenticated predecessor before writes.
+  IntPtr p=IntPtr.Zero;
+  try {
+   while((p=CertEnumCRLsInStore(store,p))!=IntPtr.Zero) {
+    Context c=(Context)Marshal.PtrToStructure(p,typeof(Context)); Info v=(Info)Marshal.PtrToStructure(c.info,typeof(Info));
+    for(int i=0;i<2;i++) {
+     if(!Equal(Bytes(v.issuer),signers[i].SubjectName.RawData)||!CryptVerifyCertificateSignatureEx(IntPtr.Zero,1,3,p,2,signers[i].Handle,0,IntPtr.Zero)) continue;
+     Require(c.length>0&&c.length<=1048576); byte[] old=new byte[c.length]; Marshal.Copy(c.encoded,old,0,old.Length);
+     Advance(pair[i],Parse(old,signers[i],now,false)); if(Equal(pair[i].raw,old)) identical[i]=true;
+    }
+   }
+   // CRYPT_E_NOT_FOUND means normal end-of-enumeration; other errors fail closed.
+   Require(Marshal.GetLastWin32Error()==unchecked((int)0x80092004));
+  } finally { if(p!=IntPtr.Zero) CertFreeCRLContext(p); }
+  int added=0;
+  for(int i=0;i<2;i++) if(!identical[i]) {
+   p=CertCreateCRLContext(1,pair[i].raw,pair[i].raw.Length); Require(p!=IntPtr.Zero);
+   try { if(!CertAddCRLContextToStore(store,p,3,IntPtr.Zero)) throw new Win32Exception(Marshal.GetLastWin32Error()); added++; }
+   finally { CertFreeCRLContext(p); }
+  }
+  return Metadata(pair,added);
  }
 }
 public sealed class AuthWireSspi : IDisposable {
@@ -86,12 +198,88 @@ function Move-AuthWireExpiredPending([string]$Directory, [string]$Stage, [string
     [IO.File]::Move($path,(Join-Path $archiveDirectory $archiveName))
     return $archiveName
 }
+function Invoke-AuthWireCrlRefresh {
+    $crlMutex = New-Object Threading.Mutex($false,'Global\AuthWire-CRL-Refresh')
+    $locked = $false
+    try {
+        try { $locked = $crlMutex.WaitOne(0) } catch [Threading.AbandonedMutexException] { $locked = $true }
+        if(!$locked) { return }
+        if(!$NoJitter) { Start-Sleep -Seconds (Get-Random -Minimum 0 -Maximum 31) }
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        [Net.ServicePointManager]::CheckCertificateRevocationList = $true
+        [AuthWireTls]::Pin = $config.tls_sha256
+        $request = [Net.HttpWebRequest]::Create($config.url+'/api/public/crls')
+        $request.Method = 'GET'; $request.AllowAutoRedirect = $false; $request.Proxy = $null
+        $request.Timeout = 30000; $request.ReadWriteTimeout = 30000
+        $request.ServerCertificateValidationCallback = [Delegate]::CreateDelegate([Net.Security.RemoteCertificateValidationCallback], [AuthWireTls].GetMethod('Validate'))
+        $response = $request.GetResponse()
+        try {
+            if($response.StatusCode -ne [Net.HttpStatusCode]::OK -or $response.ContentLength -gt 3145728 -or $response.ContentType -notmatch '^application/json(?:;|$)') { throw 'CRL response refused.' }
+            $stream = $response.GetResponseStream(); $memory = New-Object IO.MemoryStream
+            try {
+                $buffer = New-Object byte[] 8192
+                while(($count = $stream.Read($buffer,0,$buffer.Length)) -gt 0) {
+                    if($memory.Length + $count -gt 3145728) { throw 'CRL response exceeds limit.' }
+                    $memory.Write($buffer,0,$count)
+                }
+                $bundle = (New-Object Text.UTF8Encoding($false,$true)).GetString($memory.ToArray()) | ConvertFrom-Json
+            } finally { $stream.Dispose(); $memory.Dispose() }
+        } finally { $response.Dispose() }
+        if($bundle.version -ne 1 -or @($bundle.PSObject.Properties).Count -ne 3 -or $bundle.root_crl -isnot [string] -or $bundle.issuer_crl -isnot [string]) { throw 'CRL format refused.' }
+        $rootBytes = [Convert]::FromBase64String($bundle.root_crl)
+        $issuerBytes = [Convert]::FromBase64String($bundle.issuer_crl)
+        $root = New-Object Security.Cryptography.X509Certificates.X509Certificate2((Join-Path $directory 'root-ca.pem'))
+        $issuer = New-Object Security.Cryptography.X509Certificates.X509Certificate2((Join-Path $directory 'issuer-ca.pem'))
+        $trust = New-Object Security.Cryptography.X509Certificates.X509Store('Root','LocalMachine')
+        $store = New-Object Security.Cryptography.X509Certificates.X509Store('CA','LocalMachine')
+        try {
+            $trust.Open('ReadOnly')
+            $anchors = @($trust.Certificates | Where-Object { $_.Thumbprint -eq $root.Thumbprint -and [Convert]::ToBase64String($_.RawData) -ceq [Convert]::ToBase64String($root.RawData) })
+            if($anchors.Count -ne 1) { throw 'Existing AuthWire root trust required.' }
+            $store.Open('ReadWrite')
+            $result = [AuthWireCrl]::ApplyToStore($rootBytes,$issuerBytes,$root,$issuer,[DateTime]::UtcNow,$store.StoreHandle)
+            $installedPath = Join-Path $directory 'installed.json'
+            if(Test-Path -LiteralPath $installedPath) {
+                $installed = Get-Content -LiteralPath $installedPath -Raw | ConvertFrom-Json
+                if($installed.thumbprint -notmatch '^[A-Fa-f0-9]{40}$') { throw 'Installed identity refused.' }
+                $leaf = Get-Item ('Cert:\LocalMachine\My\'+$installed.thumbprint) -ErrorAction Stop
+                $chain = New-Object Security.Cryptography.X509Certificates.X509Chain($true)
+                try {
+                    $chain.ChainPolicy.RevocationMode = [Security.Cryptography.X509Certificates.X509RevocationMode]::Online
+                    $chain.ChainPolicy.RevocationFlag = [Security.Cryptography.X509Certificates.X509RevocationFlag]::ExcludeRoot
+                    $chain.ChainPolicy.VerificationFlags = [Security.Cryptography.X509Certificates.X509VerificationFlags]::NoFlag
+                    $chain.ChainPolicy.UrlRetrievalTimeout = [TimeSpan]::FromSeconds(10)
+                    $null = $chain.ChainPolicy.ExtraStore.Add($issuer)
+                    $null = $chain.ChainPolicy.ApplicationPolicy.Add((New-Object Security.Cryptography.Oid('1.3.6.1.5.5.7.3.2')))
+                    if(!$leaf.HasPrivateKey -or !$chain.Build($leaf) -or $chain.ChainElements.Count -ne 3 -or $chain.ChainElements[1].Certificate.Thumbprint -ne $issuer.Thumbprint -or $chain.ChainElements[2].Certificate.Thumbprint -ne $root.Thumbprint) { throw 'Current machine revocation check failed.' }
+                } finally { $chain.Dispose() }
+            }
+            Write-AuthWireCrlState @{state='current';checked_at=[DateTimeOffset]::UtcNow.ToString('o');root_number=$result.RootNumber;issuer_number=$result.IssuerNumber;root_next_update=$result.RootNextUpdate;issuer_next_update=$result.IssuerNextUpdate;added=$result.Added}
+        } finally { $trust.Close(); $store.Close(); $root.Dispose(); $issuer.Dispose() }
+    } catch {
+        # No enrollment backoff, credentials, CA password or diagnostic payload
+        # is written to this independent refresh status.
+        Write-AuthWireCrlState @{state='refresh_failed';checked_at=[DateTimeOffset]::UtcNow.ToString('o');error='CRL_REFRESH_FAILED'}
+        throw 'AuthWire CRL refresh failed; existing revocation checks remain enforced.'
+    } finally {
+        if($locked) { $crlMutex.ReleaseMutex() }; $crlMutex.Dispose()
+    }
+}
+function Write-AuthWireCrlState($data) {
+    $target = Join-Path $directory 'crl-status.json'; $temporary = $target+'.tmp'
+    foreach($path in @($target,$temporary)) {
+        if((Test-Path -LiteralPath $path) -and ((Get-Item -LiteralPath $path).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'CRL state reparse point refused.' }
+    }
+    [IO.File]::WriteAllText($temporary,($data | ConvertTo-Json -Depth 4),(New-Object Text.UTF8Encoding($false)))
+    [AuthWireTls]::AtomicReplace($temporary,$target)
+}
 if ($ValidateOnly) { return }
 if ([Security.Principal.WindowsIdentity]::GetCurrent().User.Value -ne 'S-1-5-18') { throw 'AuthWire client must run as SYSTEM.' }
 $directory = $PSScriptRoot
 $config = Get-Content (Join-Path $directory 'config.json') -Raw | ConvertFrom-Json
 $uri = [Uri]$config.url
 if ($uri.Scheme -ne 'https' -or $uri.HostNameType -ne [UriHostNameType]::Dns -or $config.spn -cne ('HTTP/'+$uri.DnsSafeHost) -or $uri.AbsolutePath -ne '/' -or $uri.Query -or $uri.UserInfo) { throw 'Invalid AuthWire HTTPS/SPN configuration.' }
+if($CrlOnly) { Invoke-AuthWireCrlRefresh; return }
 $mutex = New-Object Threading.Mutex($false, 'Global\AuthWire-Certificate-Client')
 if (!$mutex.WaitOne(0)) { $mutex.Dispose(); return }
 $session = $null
