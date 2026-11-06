@@ -1,5 +1,88 @@
 # AuthWire current work record
 
+## Çökme maddesi kapandı; gerçek expiry kabulü doğal süre bekliyor — 6 Kasım 2026
+
+Kullanıcı talebiyle rapor, önceki sohbet ve özgün kabul kayıtları kontrol edildi.
+5 Kasım 17:04:45 UTC'deki dot3svc olayı tek çökmedir; dört olay kaydı aynı
+incident'e aittir. 5 Kasım toparlanmasından 6 Kasım 18:12 UTC kontrolüne kadar
+yeni Application/SCM çökmesi yok; günlükler dönemi kapsıyor, silinme kaydı yok.
+PID7700 çalışıyor. **Tekrarlamama maddesi kapalıdır**; yeni somut çökme olmadan
+inceleme tekrar açılmayacak. Bu karar özgün DLL nedeninin düzeltildiği iddiası değildir.
+Kanıt: **docs/checkpoints/2026-11-06-wired-crash-nonrecurrence-closure.json**.
+
+**Sonraki işler rapor ve docs/TEST_ACCEPTANCE_INDEX.md üzerinden seçilir.**
+Başarılı eski yenileme, boot, retry, guest veya olumsuz sertifika testleri
+yeniden kuyruğa alınmaz. Bu tercih docs/STATUS_REPORTING_RULES.md'ye kaydedildi.
+
+Rapor B06/page12 ve 21 Ekim kayıtları gerçek expired-pending uç kurtarmasını
+açık bırakır; geçmiş native/synthetic-Kerberos fixture yeniden çalıştırılmadı.
+Ayrı iki günlük pilot profili ve özel Windows test dizini hazırlandı.
+6 Kasım **18:05:20 UTC**'de gerçek SYSTEM/Kerberos/HTTPS ile tek sertifika
+üretildi, **kurulmadı**; ana 90 günlük profil ve mevcut cert/key korundu.
+NotAfter **8 Kasım18:05:20 UTC**; yalnız testin SYSTEM görevi
+**8 Kasım21:06:20 Türkiye /18:06:20 UTC** için Recover modunda hazırdır.
+Gerçek saatte süre dolumu ve istemcinin doğal retry deadline'ı beklenecek.
+Hazırlık başarıyla bitti; **saha kurtarması henüz geçmedi ve B06 kapanmadı**.
+
+Devam kanıtı: **docs/checkpoints/2026-11-06-natural-expiry-pilot-prepared.json**.
+Sonraki turda önce aynı seed-result/recovery-result ve görev okunur; Seed,
+yeni profil veya aynı fixture tekrarlanmaz. Test süresince bu test profili ve
+VV-Client01 AD kimliğini değiştiren işler seçilmez. Clock, Ethernet1, GPO,
+mevcut sertifika ve ürün servisleri değiştirilmedi; yeni rapor üretilmedi.
+
+
+## CRL geçici taşıma hatası düzeltmesi canlıda kabul edildi — 6 Kasım 2026
+
+**0.14.0-dev.47**, test edilen kaynak **606019c24af357357367139b71e34c39ab20b3b2**.
+Yakalanan CRL HTTPS hatasıyla aynı anda Windows DNS 1014 kaydı sunucu adı için
+yanıt zaman aşımı gösterdi. Görev geçmişinde uygulama hatalarından sonra
+yapılandırılmış ara yeniden çalıştırmalar gözlenmedi. İstemci artık yalnız
+seçilmiş geçici taşıma hatalarında en çok üç yeni GET dener; güven/TLS/protokol
+retleri tekrarlanmaz. HTTPS adı, zincir, iptal kontrolü ve pin korunur.
+Asıl DNS zaman aşımının ağ kökeninin kalıcı olarak düzeltildiği iddia edilmez.
+
+Son kaynakta **sekiz ilgili CI akışı başarılı**; genel koşu **1219 test,57
+ortam atlaması**. Windows'ta 14 taşıma hata senaryosu ve 17 CRL bütünlük/
+bellek deposu kontrolü geçti. Hata enjeksiyonu bellek fixture'ıdır; yeni kodla
+gerçek DNS kesintisi oluşturulmadı. Gerçek SYSTEM CRL görevi kurulum sonrası
+ve Linux güncellemesinden sonra sonuç0/current verdi.
+
+Linux dev.46→dev.47 yedek/geri dönüş korumasıyla uygulandı. CI ile aynı paket
+sunucuda yeniden üretildi; **324 kurulu dosya** manifestle eşleşti. HTTPS,
+ayar ve yöneticiler korundu. Panel kaynak teslimi için yeniden başladı;
+RADIUS **2868314** ve service-control **1069437** süreçleri aynı kaldı.
+
+VV-Client01'de yalnız imzalı CRL istemcisi değişti. Kurucu, mevcut CRL görevinin
+tam tanımı/PT2M sınırı, sertifika/özel anahtar, kayıt durumları ve Ethernet1
+başlangıç ayarları korundu. Son gerçek SYSTEM kontrolü **17:20:48 UTC**:
+kök CRL1,issuer CRL67,current,eklenen0. Geçici görevler temizlendi.
+AD/GPO/SYSVOL yayılımı yapılmadı; yeni rapor üretilmedi. Önceden geçen Windows
+yenileme/boot testleri yeniden yapılmadı; aşağıdaki kapalı kayıt korunur.
+
+Kanıt: **docs/checkpoints/2026-11-06-crl-transport-repair-live-acceptance.json**.
+Bu dar düzeltme tüm sertifika yaşam döngüsünü veya uzun süre kabulünü kapatmaz.
+
+
+## Önceden geçen Windows yenileme ve boot testleri kapalı — 6 Kasım 2026
+
+19 Ekim ve güncel 5 Kasım raporları, önceki sohbet çıktıları ve özgün saha
+checkpoint'leri karşılaştırıldı. **VV06 kontrollü sertifika/anahtar yenilemesi,
+yeni seriyle gerçek EAP erişimi ve eski sertifika/CNG anahtar temizliği kapalıdır.**
+19–21 Ekim doğal Windows açılışı ve başarılı SYSTEM görevi; 20 Ekim ağsız boot
+sonrası otomatik ağ dönüşü ve gerçek hata sonrası zamanlı otomatik retry de
+başarılı saha kayıtlarıyla kapalıdır. Bu testler yeniden yapılmayacak.
+
+Önceki devam yanıtındaki genel “Windows yenileme/reboot açık” ifadesi bu dar
+kabuller için düzeltilir. VV06'nın fiziksel Realtek kimliği mevcut VV-Client01
+sanal kart kimliğinden farklıdır; aynı makine varsayılmadı. Gerçek expired
+kimlikten kurtarma, VV-Client01'in 5 Kasım çökmesi sonrası kararlılık, merkezi
+Connector reboot ve uzun süre/ölçek işleri ayrı kalır. Eski başarılı boot'u
+görmezden gelerek yeni genel reboot kapısı eklenmez.
+
+Kanıt: **docs/checkpoints/2026-11-06-historical-windows-renewal-boot-closure.json**.
+Bu bir geçmiş kabul uzlaştırmasıdır; yeni saha testi veya rapor üretimi değildir.
+Mevcut B06 **4/5**, genel **54/94** sayımı ikinci kez artırılmadı.
+
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
 
 Doğrulanmış **c5241e55c7728da239070bbe8f9c841043f54cde** kaynağı,

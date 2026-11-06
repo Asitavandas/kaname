@@ -1,0 +1,144 @@
+{
+  "schema": 1,
+  "event": "AUTHWIRE_INVALID_CLIENT_PILOT_TRANSPORT_BLOCKED",
+  "date": "2026-11-06",
+  "scope": {
+    "live_linux_version": "0.14.0-dev.46",
+    "endpoint": "VV-Client01",
+    "test_interface": "Ethernet0",
+    "management_interface": "Ethernet1",
+    "guest_retest": false,
+    "operator_report_generated": false,
+    "completed_baseline_items": 54,
+    "baseline_items_total": 94
+  },
+  "diagnostic_source": {
+    "remote_commit": "4cd3f247b9b60eb6886a2a62b8f6a6db18a140ea",
+    "branch": "codex/eap-tls-invalid-client-pilot-20261106",
+    "existing_publisher": "6E74B513F766E01730719684A41B2664380CA68A",
+    "signed_operator_r2_sha256": "23A80F660A3B885E0835AC05D3666DCAC7DBE4028C869DC5011C30C779B9B300"
+  },
+  "transport_fixture": {
+    "completed": true,
+    "scope": "Disposable CA, real local mutual TLS, fragmented and duplicated EAP",
+    "cases": [
+      "valid certificate accepted",
+      "expired certificate sent and rejected CERT_HAS_EXPIRED",
+      "untrusted issuer certificate sent and rejected UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+      "wrong server name refused by client"
+    ]
+  },
+  "field_acceptance": {
+    "expired_client_certificate": false,
+    "wrong_client_issuer": false,
+    "reason": "Custom EAPOL peer did not progress beyond Identity; no client certificate was transmitted. This is not certificate-rejection acceptance.",
+    "control_attempts": 3,
+    "r2_link": {
+      "tx_api_successes": 3,
+      "local_outgoing_observations": 3,
+      "received_eapol_versions": [
+        1
+      ],
+      "eap_requests": 2,
+      "duplicate_requests": 1,
+      "last_request_type": 1,
+      "tls_started": false,
+      "certificate_sent": false
+    },
+    "changes_after_first_attempt": [
+      "minimum Ethernet frame padding",
+      "mirror observed authenticator EAPOL version",
+      "bounded link counters"
+    ],
+    "last_attempt_started_utc": "2026-11-06T13:13:15.4303348Z",
+    "last_custom_peer_closed_utc": "2026-11-06T13:15:05.969Z"
+  },
+  "server_observation": {
+    "capture_seconds": 180,
+    "records": 13,
+    "missing_kernel_timestamps": 0,
+    "radius_codes": {
+      "1": 6,
+      "2": 1,
+      "11": 6
+    },
+    "packets_before_custom_peer_closed": 0,
+    "first_packet_utc": "2026-11-06T13:15:06.348595161Z",
+    "scope": "Passive NAS 10.35.50.253 to/from RADIUS metadata only. The capture sees the subsequent normal Windows handshake. It does not identify which intermediate layer drops or ignores custom responses."
+  },
+  "preserved": {
+    "strict_lan_profile_sha256": "5F05463E7442C34DF5D7D38173B271A3436662A0224808CB06721A4EBA5DBD4D",
+    "machine_thumbprint": "BD498F87BB886AE760B3FAC40AB7BB6D2AC3B987",
+    "machine_serial": "5815c6397af55d7421155d9995fc8b99bb907be4",
+    "machine_private_key_present": true,
+    "online_chain_valid": true,
+    "management_unchanged": true,
+    "authentication_services_unchanged": true,
+    "dot3svc_pid": 7700,
+    "eaphost_pid": 1588,
+    "radius_pid": 2868314,
+    "panel_pid": 3133390,
+    "service_control_pid": 1069437,
+    "windows_restore_success_record_ids": [
+      352,
+      368,
+      384
+    ],
+    "server_normal_accept_event_ids": [
+      81,
+      82,
+      83,
+      84,
+      85,
+      86
+    ],
+    "vlan": 110,
+    "ethernet0_ipv4": "10.10.110.2/24",
+    "ethernet1_ipv4": "10.35.50.71/24",
+    "windows_trust_stores_changed": false,
+    "live_policy_changed": false,
+    "ad_changed": false,
+    "root_private_key_opened": false,
+    "issuer_private_key_exported": false,
+    "test_certificate_bindings_created": 0
+  },
+  "cleanup": {
+    "windows_and_linux_disposable_private_bundles_removed": true,
+    "safety_tasks_remaining": 0,
+    "capi2_logging_enabled": false,
+    "temporary_rdc_command_permission_restored_and_verified": true
+  },
+  "crl_refresh": {
+    "prior_failure": {
+      "task_last_run_utc": "2026-11-06T12:02:02Z",
+      "status_checked_utc": "2026-11-06T12:03:11.5459364Z",
+      "result": 1,
+      "error": "CRL_REFRESH_FAILED",
+      "preceded_invalid_client_tests": true
+    },
+    "readonly_transport_recheck": {
+      "utc": "2026-11-06T13:22:18.7830623Z",
+      "http": 200,
+      "tls_errors": "None",
+      "pin_matches": true,
+      "exact_payload_keys": [
+        "version",
+        "root_crl",
+        "issuer_crl"
+      ]
+    },
+    "existing_system_task_recheck": {
+      "last_run_utc": "2026-11-06T13:22:22Z",
+      "checked_utc": "2026-11-06T13:22:44.8954336Z",
+      "result": 0,
+      "state": "current",
+      "root_number": 1,
+      "issuer_number": 67,
+      "added": 0,
+      "next_run_utc": "2026-11-06T14:02:02Z"
+    },
+    "prior_failure_root_cause_resolved": false,
+    "client_sources_or_task_settings_changed": false
+  },
+  "next_gate": "Resolve or replace the custom test supplicant transport before attempting real expired/wrong-issuer field acceptance. Preserve existing passing native Windows evidence and do not repeat the guest tests. Do not retry the three failed control attempts without a changed hypothesis or new instrumentation."
+}

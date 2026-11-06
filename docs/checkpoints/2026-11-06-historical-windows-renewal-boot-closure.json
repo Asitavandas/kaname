@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "event": "AUTHWIRE_HISTORICAL_WINDOWS_ACCEPTANCE_RECONCILED",
+  "date": "2026-11-06",
+  "requested_action": "Read prior conversations and current reports, close already passed tests, and do not repeat them.",
+  "sources": {
+    "current_report": {
+      "library_file_id": "libfile_4096195b800c8191b6b139c7fcba0c79",
+      "name": "AuthWire_Durum_ve_Kalan_Isler_2026-11-05.pdf",
+      "version": "6",
+      "relevant_pages": [
+        10,
+        12
+      ]
+    },
+    "historical_report": {
+      "library_file_id": "libfile_1891bff59ea881918f5b8a00cf5e4fd7",
+      "name": "AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-19.pdf",
+      "relevant_pages": [
+        2,
+        5,
+        7,
+        13
+      ]
+    },
+    "prior_conversations_reviewed": true
+  },
+  "closed": [
+    {
+      "test": "Controlled machine certificate renewal and old identity retirement",
+      "status": "CLOSED_PREVIOUSLY_PASSED",
+      "computer": "VV06",
+      "accepted": "2026-10-19",
+      "new_serial": "5899e122009871b0d5536890bee81e4f0499e605",
+      "new_thumbprint": "4CFD8321AE08D6074B99AF5C194151AD5F99F454",
+      "previous_thumbprint": "68B32BBD470847950BAE5629B853739F819150B5",
+      "evidence": [
+        "Actual new certificate and new key; installed receipt and task result 0",
+        "Renewed serial observed in live RADIUS Access-Accept/POLICY_ALLOW with VLAN 110",
+        "SYSTEM old certificate absent, old CNG key absent, current key present"
+      ],
+      "source": "docs/CURRENT_STATUS.md sections dated 19 October; reports 19 October pages 2/5/13 and 5 November page 10",
+      "retest": false
+    },
+    {
+      "test": "Normal network-ready Windows boot, natural SYSTEM task and wired return",
+      "status": "CLOSED_PREVIOUSLY_PASSED",
+      "computer": "VV06",
+      "evidence_files": [
+        "docs/checkpoints/2026-10-19-vv06-dev10-boot-acceptance.json",
+        "docs/checkpoints/2026-10-20-vv06-dev11-boot-acceptance.json",
+        "docs/checkpoints/2026-10-21-vv06-dev12-copy-boot-accepted.json"
+      ],
+      "last_known_boot": "2026-10-21T18:14:12+03:00",
+      "natural_task_start": "2026-10-21T18:14:24+03:00",
+      "last_task_result": 0,
+      "wired_authentication": "succeeded",
+      "retest": false
+    },
+    {
+      "test": "Offline boot followed by automatic network return recovery",
+      "status": "CLOSED_PREVIOUSLY_PASSED",
+      "computer": "VV06",
+      "evidence_file": "docs/checkpoints/2026-10-20-vv06-offline-reconnect-acceptance.json",
+      "boot": "2026-10-20T17:08:48+03:00",
+      "natural_run": "2026-10-20T17:11:44+03:00",
+      "last_task_result": 0,
+      "retry_file_exists": false,
+      "wired_authentication": "succeeded",
+      "retest": false
+    },
+    {
+      "test": "Real failed enrollment followed by automatic deadline retry",
+      "status": "CLOSED_PREVIOUSLY_PASSED",
+      "computer": "VV06",
+      "evidence_file": "docs/checkpoints/2026-10-20-vv06-automatic-retry-recovery-acceptance.json",
+      "first_failed_run": "2026-10-20T17:37:00+03:00",
+      "retry_run": "2026-10-20T17:52:30+03:00",
+      "main_recovery_run": "2026-10-20T17:52:32+03:00",
+      "last_task_result": 0,
+      "manual_restart_after_failure": false,
+      "retest": false
+    }
+  ],
+  "scope_correction": "The previous broad statement that Windows renewal/reboot tests remain open is superseded for these already accepted scopes. VV06 is a distinct historical endpoint: its Realtek MAC/GUID differ from the current virtual VV-Client01; no alias equivalence is claimed.",
+  "still_separate": [
+    "Expired machine certificate recovery and remaining selection/cleanup variants",
+    "VV-Client01 stability after the 5 November dot3svc crash",
+    "Central Connector/gMSA reboot and lost-result recovery, which is not the endpoint enrollment boot test",
+    "Long-duration and scale acceptance"
+  ],
+  "macro_counts_changed": false,
+  "reason": "These historical successes are already represented by B06 4/5 and the fixed report baseline; auditing them is not new work completion credit.",
+  "no_report_regenerated": true
+}

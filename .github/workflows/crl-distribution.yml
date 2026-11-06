@@ -23,6 +23,9 @@ jobs:
       - name: Native signatures freshness rollback retention and memory store idempotence
         shell: powershell
         run: tools/crl_distribution_windows_check.ps1 -FixtureJson "$env:RUNNER_TEMP\crl-fixtures.json"
+      - name: Bounded transient transport retries and immediate TLS trust refusal
+        shell: powershell
+        run: tools/crl_distribution_transport_windows_check.ps1
       - name: Real signed SYSTEM refresh task and independent backoff
         shell: powershell
         run: tools/crl_distribution_task_windows_check.ps1
