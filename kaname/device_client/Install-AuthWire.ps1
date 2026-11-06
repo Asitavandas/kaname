@@ -134,9 +134,7 @@ function Set-AuthWireCrlTask([string]$Directory, [string]$crlTaskName='AuthWire 
     $crlStartup = New-ScheduledTaskTrigger -AtStartup
     $crlPrincipal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
     $crlPeriodic = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Hours 2)
-    # Three bounded GET attempts plus jitter, body read and online chain check
-    # fit inside this limit; application retry does not rely on scheduler restart.
-    $crlSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 3) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 15)
+    $crlSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 2) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 15)
     $null = Register-ScheduledTask -TaskName $crlTaskName -Action $crlAction -Trigger @($crlStartup,$crlPeriodic) -Principal $crlPrincipal -Settings $crlSettings -Description $crlDescription -Force
     $crlScheduler = New-Object -ComObject 'Schedule.Service'; $crlScheduler.Connect()
     $crlScheduler.GetFolder('\').GetTask($crlTaskName).SetSecurityDescriptor('D:P(A;;GA;;;SY)(A;;GA;;;BA)',0)

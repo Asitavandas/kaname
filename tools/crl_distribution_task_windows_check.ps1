@@ -34,7 +34,7 @@ if(!$RefreshCrl -or [Security.Principal.WindowsIdentity]::GetCurrent().User.Valu
  if((Get-FileHash (Join-Path $dir 'retry.json')).Hash -cne $retry) { throw 'Enrollment retry changed.' }
  [xml]$xml=Export-ScheduledTask $name
  $schedule=[ordered]@{interval=[string]$xml.Task.Triggers.TimeTrigger.Repetition.Interval;boot=@($task.Triggers|Where-Object {$_.CimClass.CimClassName -eq 'MSFT_TaskBootTrigger'}).Count;multiple=[string]$xml.Task.Settings.MultipleInstancesPolicy;limit=[string]$xml.Task.Settings.ExecutionTimeLimit;catch_up=[string]$xml.Task.Settings.StartWhenAvailable;network=[string]$xml.Task.Settings.RunOnlyIfNetworkAvailable}
- if([Xml.XmlConvert]::ToTimeSpan($schedule.interval) -ne [TimeSpan]::FromHours(2) -or $schedule.boot -ne 1 -or $schedule.multiple -cne 'IgnoreNew' -or [Xml.XmlConvert]::ToTimeSpan($schedule.limit) -ne [TimeSpan]::FromMinutes(3) -or $schedule.catch_up -cne 'true' -or $schedule.network -cne 'true') { $schedule|ConvertTo-Json -Compress|Write-Output;throw 'CRL schedule policy mismatch.' }
+ if([Xml.XmlConvert]::ToTimeSpan($schedule.interval) -ne [TimeSpan]::FromHours(2) -or $schedule.boot -ne 1 -or $schedule.multiple -cne 'IgnoreNew' -or [Xml.XmlConvert]::ToTimeSpan($schedule.limit) -ne [TimeSpan]::FromMinutes(2) -or $schedule.catch_up -cne 'true' -or $schedule.network -cne 'true') { $schedule|ConvertTo-Json -Compress|Write-Output;throw 'CRL schedule policy mismatch.' }
  Set-AuthWireCrlTask $dir $name
  $scheduler=New-Object -ComObject Schedule.Service;$scheduler.Connect()
  $sddl=$scheduler.GetFolder('\').GetTask($name).GetSecurityDescriptor(4)

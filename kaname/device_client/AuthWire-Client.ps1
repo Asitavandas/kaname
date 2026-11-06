@@ -234,7 +234,9 @@ function Invoke-AuthWireCrlRefresh {
     try {
         try { $locked = $crlMutex.WaitOne(0) } catch [Threading.AbandonedMutexException] { $locked = $true }
         if(!$locked) { return }
-        if(!$NoJitter) { Start-Sleep -Seconds (Get-Random -Minimum 0 -Maximum 31) }
+        # Keep the existing two-minute task limit: 3 x 15s GET, 2 x 10s
+        # retry delay, 15s body read, 10s online chain and at most 15s jitter.
+        if(!$NoJitter) { Start-Sleep -Seconds (Get-Random -Minimum 0 -Maximum 16) }
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         [Net.ServicePointManager]::CheckCertificateRevocationList = $true
         [AuthWireTls]::Pin = $config.tls_sha256
