@@ -64,8 +64,9 @@ readline.createInterface({ input: child.stdout }).on('line', line => {
     linkFacts.last_request_type = frame.length >= 23 ? frame[22] : null;
     received = true;
     const packet = frame.subarray(18, size + 18), parsed = parseEap(packet);
-    if (name === 'transport' && parsed.code === 1 && parsed.type === 13 && parsed.data.length === 1 && parsed.data[0] === 0x20) {
-      tlsStartReceived = true; finish(); return;
+    if (parsed.code === 1 && parsed.type === 13 && parsed.data.length === 1 && parsed.data[0] === 0x20) {
+      tlsStartReceived = true;
+      if (name === 'transport') { finish(); return; }
     }
     const response = await peer.request(packet);
     if (response) send(0, response);

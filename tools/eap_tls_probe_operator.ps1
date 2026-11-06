@@ -15,10 +15,15 @@ function Management {
  [ordered]@{Adapter=@(Get-NetAdapter -Name Ethernet1|Select-Object Name,InterfaceGuid,ifIndex,MacAddress);IPv4=@(Get-NetIPAddress -InterfaceAlias Ethernet1 -AddressFamily IPv4|Select-Object IPAddress,PrefixLength,SkipAsSource,PrefixOrigin,SuffixOrigin);IPInterface=@(Get-NetIPInterface -InterfaceAlias Ethernet1 -AddressFamily IPv4|Select-Object Dhcp,AutomaticMetric,InterfaceMetric);DNS=@(Get-DnsClientServerAddress -InterfaceAlias Ethernet1 -AddressFamily IPv4|Select-Object ServerAddresses);DefaultRoute=@(Get-NetRoute -InterfaceAlias Ethernet1 -DestinationPrefix '0.0.0.0/0'|Select-Object NextHop,RouteMetric)}|ConvertTo-Json -Depth 6 -Compress
 }
 function Services {@(Get-CimInstance Win32_Service -Filter "Name='dot3svc' OR Name='EapHost'"|Sort-Object Name|Select-Object Name,State,ProcessId)|ConvertTo-Json -Compress}
+function Save-Result {
+ $target=Join-Path $stage ($Case+'-result.json');$temporary=$target+'.tmp'
+ [IO.File]::WriteAllText($temporary,($result|ConvertTo-Json -Depth 7),(New-Object Text.UTF8Encoding($false)))
+ if(Test-Path -LiteralPath $target){[IO.File]::Replace($temporary,$target,[NullString]::Value)}else{[IO.File]::Move($temporary,$target)}
+}
 function Restore {
  Exact-Adapter;Pinned $good '5F05463E7442C34DF5D7D38173B271A3436662A0224808CB06721A4EBA5DBD4D'
- $null=Lan @('lan','add','profile',('filename='+$good),'interface=Ethernet0')
  $null=Lan @('lan','set','autoconfig','enabled=yes','interface=Ethernet0')
+ $null=Lan @('lan','add','profile',('filename='+$good),'interface=Ethernet0')
 }
 Exact-Adapter
 $sig=Get-AuthenticodeSignature -LiteralPath $PSCommandPath
@@ -109,6 +114,9 @@ try{
  $result.probe=$lines[0]|ConvertFrom-Json
  if($LASTEXITCODE -ne 0){throw 'Explicit certificate probe incomplete'}
 }catch{$result.error=$_.Exception.Message}finally{
+ # Persist the actual probe outcome even if a later restoration call fails.
+ Save-Result
+ try{
  # Let an aborted/negative custom session drain before native authentication.
  # Avoid authenticating immediately and then forcing another exchange mid-drain.
  Start-Sleep -Seconds 90
@@ -129,10 +137,11 @@ try{
    Start-Sleep -Milliseconds 750
   }while($watch.Elapsed.TotalSeconds -lt 35)
  }
+ }catch{$result.restore_error=$_.Exception.Message}
  $result.management_unchanged=((Management) -ceq $baseline);$result.services_unchanged=((Services) -ceq $services)
  $result.finished=[datetime]::UtcNow.ToString('o');$result.final_lan=Lan @('lan','show','interfaces')
  if($result.restore_authenticated){Unregister-ScheduledTask -TaskName $safety -Confirm:$false}
- [IO.File]::WriteAllText((Join-Path $stage ($Case+'-result.json')),($result|ConvertTo-Json -Depth 7),(New-Object Text.UTF8Encoding($false)))
+ Save-Result
  $result|ConvertTo-Json -Depth 7 -Compress
 }
 if($result.error -or !$result.restore_authenticated -or !$result.management_unchanged -or !$result.services_unchanged){exit 2}

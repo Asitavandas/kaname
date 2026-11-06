@@ -1,0 +1,172 @@
+{
+  "schema": 1,
+  "event": "AUTHWIRE_INVALID_CLIENT_TLS_FIELD_ACCEPTANCE",
+  "observed_utc": "2026-11-06T16:38:40Z",
+  "scope": {
+    "live_linux_version": "0.14.0-dev.46",
+    "endpoint": "VV-Client01",
+    "test_interface": "Ethernet0",
+    "management_interface": "Ethernet1",
+    "guest_retest": false,
+    "operator_report_generated": false,
+    "baseline_macro_unchanged": "54/94"
+  },
+  "field_acceptance": {
+    "expired_client_certificate": {
+      "passed": true,
+      "access_event_id": 94,
+      "at": "2026-11-06T13:47:54.959Z",
+      "response_code": 3,
+      "reason": "TLS_CERTIFICATE_EXPIRED",
+      "tls_verified": false,
+      "vlan": null,
+      "journal_openssl_error": 10,
+      "journal_cause": "certificate has expired",
+      "packet_eap_failure_at": "2026-11-06T13:47:54.992871835Z",
+      "test_leaf_serial": "68ff16e3a75b636bf9a30b67e2dc9849e145ed40",
+      "test_leaf_sha256": "4754f2b75ee9f0418ff69a5983b3509ac6182bd7f0f0de18888a123b940c93c8",
+      "test_leaf_not_after": "2026-11-06T13:29:49Z",
+      "client_result_preserved": false,
+      "evidence_limit": "Client result was lost when the prior restoration failed; server event, TLS journal and packet metadata establish the rejection. No preserved client certificate_sent flag is claimed.",
+      "repeated_after_success": false
+    },
+    "wrong_client_issuer": {
+      "passed": true,
+      "access_event_id": 96,
+      "at": "2026-11-06T16:35:28.734Z",
+      "response_code": 3,
+      "reason": "TLS_CERTIFICATE_UNTRUSTED",
+      "tls_verified": false,
+      "vlan": null,
+      "journal_openssl_error": 19,
+      "journal_cause": "self-signed certificate in certificate chain",
+      "journal_alert": "unknown CA",
+      "test_leaf_serial": "4bf471e54f708f15c42b054e9c05e2316e7e6cdb",
+      "test_leaf_sha256": "e33caddb68f9d73d2b240284344d89c51a84e342c4ce4416ae28cef5c8b9d3c5",
+      "test_leaf_not_after": "2026-11-06T16:47:18Z",
+      "certificate_current_at_rejection": true,
+      "client_certificate_sent": true,
+      "client_terminal": "failure",
+      "client_server_authorized": false,
+      "client_requests": 7,
+      "client_tx": 8,
+      "client_observed_outgoing": 8,
+      "diagnostic_caveat": "The executed CLI only set tls_start_received for the transport-only case. Its false value is not a claim that TLS did not start; the certificate_sent result and correlated server TLS rejection establish progress. Source now records TLS Start in credential cases too."
+    }
+  },
+  "transport": {
+    "pae_destination": "01:80:c2:00:00:03",
+    "native_response_observations": 112,
+    "observations_include_duplicates": true,
+    "repeated_same_fragment_length_accepted": true,
+    "changed_total_and_overflow_refused": true,
+    "local_tls_fixture_cases": 5,
+    "signed_operator_r4_sha256": "A1D39C978FF8EB6045B0F92F1192AD6AE6D75608D68AE862A828778F28898E2E",
+    "deployed_core_sha256": "e5e513d4378570bb89070460cecaa60b346bca61ad92b68e5995223db6b11633",
+    "deployed_cli_sha256": "dba1e223f650aff2bbc459a17436206616307be628667ed816589da062621a69",
+    "existing_publisher": "6E74B513F766E01730719684A41B2664380CA68A"
+  },
+  "captures": [
+    {
+      "name": "certificates-length-radius.jsonl",
+      "sha256": "e267c49be48203640573be6f1ef73f73e96312bf74baa00750fa7ee7b937e8f3",
+      "records": 14,
+      "scope": "Expired certificate exchange",
+      "missing_kernel_timestamps": 0
+    },
+    {
+      "name": "wrong-issuer-fresh-radius.jsonl",
+      "sha256": "6c5d74d166e2a4e3105abbf9dda8a8b99aed9b53e2d8e1a855c620f451c7703d",
+      "records": 29,
+      "scope": "Wrong issuer rejection and subsequent native Windows acceptance",
+      "missing_kernel_timestamps": 0,
+      "record_limit_reached": false
+    }
+  ],
+  "recovery": {
+    "prior_failure": "Importing the strict profile while Ethernet0 autoconfig was disabled failed. Ethernet1 remained available; Ethernet0 was manually restored before further testing.",
+    "fixed_order": "Enable Ethernet0 autoconfig, then import the pinned strict profile. Persist the probe outcome before restoration.",
+    "manual_native_success": {
+      "windows_record_id": 431,
+      "at": "2026-11-06T16:21:36.6947249Z",
+      "access_event_id": 95
+    },
+    "final_native_success": {
+      "windows_record_id": 443,
+      "access_event_id": 97,
+      "at": "2026-11-06T16:36:59.695Z",
+      "reason": "POLICY_ALLOW",
+      "tls_verified": true,
+      "vlan": 110,
+      "machine_serial": "5815c6397af55d7421155d9995fc8b99bb907be4",
+      "automatic_restore": true
+    },
+    "strict_profile_sha256": "5F05463E7442C34DF5D7D38173B271A3436662A0224808CB06721A4EBA5DBD4D",
+    "management_baseline_unchanged": true,
+    "windows_services_unchanged": true,
+    "dot3svc_pid": 7700,
+    "eaphost_pid": 1588,
+    "linux_services_active": true,
+    "radius_pid": 2868314,
+    "panel_pid": 3133390,
+    "service_control_pid": 1069437,
+    "machine_private_key_present": true,
+    "machine_online_chain_valid": true
+  },
+  "crl_refresh": {
+    "failure_reproduced_as_system": {
+      "started": "2026-11-06T16:36:02.5879245Z",
+      "finished": "2026-11-06T16:36:15.0361276Z",
+      "phase": "HttpWebRequest.GetResponse",
+      "installed_client_line": 215,
+      "inner_exception": "System.Net.WebException",
+      "web_status_preserved": false
+    },
+    "strict_system_https_recheck": {
+      "at": "2026-11-06T16:37:30.8856597Z",
+      "http": 200,
+      "tls_errors": "None",
+      "chain_status": [],
+      "pin_matches": true,
+      "content_type": "application/json; charset=utf-8",
+      "content_length": 1928,
+      "online_revocation_required": true
+    },
+    "existing_system_task_recheck": {
+      "checked_at": "2026-11-06T16:38:34.3389482Z",
+      "last_task_result": 0,
+      "state": "current",
+      "root_number": 1,
+      "issuer_number": 67,
+      "added": 0,
+      "issuer_next_update": "2026-11-07T06:07:33Z",
+      "root_next_update": "2026-12-05T16:53:46Z"
+    },
+    "root_cause_resolved": false,
+    "conclusion": "The failure is before CRL parsing/import, at HTTPS transport. Subsequent strict SYSTEM HTTPS and the original installed task passed. These successes do not establish why the intermittent failure occurred. No client code, trust, TLS checks, or existing task settings were relaxed or replaced."
+  },
+  "preserved": {
+    "windows_trust_stores_changed": false,
+    "production_machine_certificate_changed": false,
+    "live_policy_changed": false,
+    "ad_or_gpo_changed": false,
+    "test_certificate_bindings": 0,
+    "root_private_key_opened": false,
+    "issuer_private_key_exported": false,
+    "clock_changed": false,
+    "product_services_restarted": false
+  },
+  "cleanup": {
+    "disposable_private_bundles_removed_windows_and_linux": true,
+    "safety_tasks_remaining": 0,
+    "diagnostic_tasks_remaining": 0,
+    "capi2_logging_enabled": false,
+    "temporary_rdc_command_permission_restored": true
+  },
+  "still_open": [
+    "Native Windows expired-certificate selection and renewal lifecycle are not closed by the custom peer's server rejection.",
+    "Reboot/offline lifecycle acceptance remains separate.",
+    "Intermittent SYSTEM CRL HTTPS failure root cause remains unresolved."
+  ],
+  "next_gate": "Retain these two live server-rejection acceptances without repeating them. Investigate intermittent CRL HTTPS transport with nested WebException status/network evidence before declaring that issue fixed. Do not close whole B03/B04 or increment macro completion solely from these subtests."
+}
