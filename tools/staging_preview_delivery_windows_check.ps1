@@ -27,7 +27,13 @@ foreach($f in $newFunctions){Check ($oldFunctions.ContainsKey($f.Name) -and $old
 $reviewedSources=$new.Pins
 $unpacked=Read-AuthWireReviewedSourceBytes $new.Bytes $new.Hash
 Check ($unpacked.Count -eq 28) 'exact twenty-eight-file delivery'
-foreach($name in $unpacked.Keys){Check ((Get-AuthWireDeliveryBodyHash ([IO.File]::ReadAllText((Join-Path $source $name)))) -ceq $reviewedSources[$name]) 'every current reviewed source body matches'}
+# The fixed operator archives keep their admitted dev45 sources when the
+# current product advances. Their original archive and per-file pins stay exact.
+$frozenSources=@{'CombinedCandidateContent.ps1'='combined-public-content-dev45.ps1';'Invoke-AuthWireCombinedJob.ps1'='combined-job-dev45.ps1';'ConnectorServicePackage.ps1'='connector-package-dev45.ps1';'New-AuthWireConnectorServicePackage.ps1'='connector-builder-dev45.ps1';'Update-AuthWireConnectorService.ps1'='connector-updater-dev45.ps1'}
+foreach($name in $unpacked.Keys){
+ $expected=if($frozenSources.ContainsKey($name)){Join-Path (Join-Path $repo 'tests\fixtures') $frozenSources[$name]}else{Join-Path $source $name}
+ Check ((Get-AuthWireDeliveryBodyHash ([IO.File]::ReadAllText($expected))) -ceq $reviewedSources[$name]) 'every historical reviewed source body matches'
+}
 Reject {Read-AuthWireReviewedSourceBytes $new.Bytes ('0'*64)} 'incorrect archive digest refused'
 $work=Join-Path $env:TEMP ('aw-preview-delivery-'+[guid]::NewGuid().ToString('N'))
 $publisher=$null;$public=$null;$roots=$null;$publishers=$null;$keyName=$null;$keyRoot=$null;$packageRoot=$null;$candidateRoot=$null
