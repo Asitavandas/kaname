@@ -1,0 +1,25 @@
+name: AuthWire public CRL distribution
+on:
+  push:
+    paths: ['kaname/crl_distribution.py', 'kaname/root_crl.py', 'kaname/server.py', 'kaname/device_client/AuthWire-Client.ps1', 'kaname/device_client/Install-AuthWire.ps1', 'tools/crl_distribution*', 'tests/test_crl_distribution.py', '.github/workflows/crl-distribution.yml']
+  pull_request:
+    paths: ['kaname/crl_distribution.py', 'kaname/root_crl.py', 'kaname/server.py', 'kaname/device_client/AuthWire-Client.ps1', 'kaname/device_client/Install-AuthWire.ps1', 'tools/crl_distribution*', 'tests/test_crl_distribution.py', '.github/workflows/crl-distribution.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows-native-crls:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - run: python -m pip install cryptography==46.0.0
+      - name: Generate synthetic public lists
+        shell: powershell
+        run: python -m tools.crl_distribution_fixtures "$env:RUNNER_TEMP\crl-fixtures.json"
+      - name: Native signatures freshness rollback retention and memory store idempotence
+        shell: powershell
+        run: tools/crl_distribution_windows_check.ps1 -FixtureJson "$env:RUNNER_TEMP\crl-fixtures.json"

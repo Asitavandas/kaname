@@ -755,6 +755,22 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get('Host') not in self.server.hosts:
             self.respond(403, {'error': 'INVALID_HOST'})
             return
+        if urlsplit(self.path).path == '/api/public/crls':
+            # CRLs are signed public data. Machine refresh must not depend on
+            # an administrator session or expose the administrative CA API.
+            if not self.server.tls:
+                self.respond(403, {'error': 'HTTPS_REQUIRED'}); return
+            if self.path != '/api/public/crls':
+                self.respond(400, {'error': 'INVALID_INPUT'}); return
+            from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
+            from cryptography.x509 import ExtensionNotFound, DuplicateExtension
+            from .crl_distribution import public_crls
+            from .pki import PKIError
+            try:
+                self.respond(200, public_crls(self.server.store.root))
+            except (PKIError, ValueError, TypeError, InvalidSignature, UnsupportedAlgorithm, ExtensionNotFound, DuplicateExtension):
+                self.respond(503, {'error': 'CRL_UNAVAILABLE'})
+            return
         if urlsplit(self.path).path == '/api/deployment/staging-write':
             self.staging_write_admin(); return
         if urlsplit(self.path).path == '/api/deployment/candidates':

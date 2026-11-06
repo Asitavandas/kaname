@@ -1,5 +1,5 @@
 # Sign with enterprise Authenticode. Deploy once as computer startup via GPO.
-param([switch]$RunClient, [switch]$RetryCheck)
+param([switch]$RunClient, [switch]$RetryCheck, [switch]$RefreshCrl)
 $ErrorActionPreference = 'Stop'
 if ([Security.Principal.WindowsIdentity]::GetCurrent().User.Value -ne 'S-1-5-18') { throw 'AuthWire installation requires SYSTEM.' }
 $publisher = $null
@@ -121,10 +121,15 @@ function Invoke-AuthWireEnrollmentClient([string]$Directory, [string]$RetryTaskN
         $launcherMutex.Dispose()
     }
 }
-if($RunClient -or $RetryCheck) {
-    if($RunClient -and $RetryCheck) { throw 'Conflicting AuthWire launcher modes.' }
+if($RunClient -or $RetryCheck -or $RefreshCrl) {
+    if(([int]$RunClient.IsPresent + [int]$RetryCheck.IsPresent + [int]$RefreshCrl.IsPresent) -ne 1) { throw 'Conflicting AuthWire launcher modes.' }
     if([IO.Path]::GetFullPath($PSScriptRoot).TrimEnd('\') -ine [IO.Path]::GetFullPath($target).TrimEnd('\')) { throw 'AuthWire launcher requires the private installed directory.' }
     if((Get-Item -LiteralPath $target).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'AuthWire private directory reparse point refused.' }
+    if($RefreshCrl) {
+        $arguments = '-NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+(Join-Path $target 'AuthWire-Client.ps1')+'" -CrlOnly'
+        $child = Start-Process -FilePath "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -ArgumentList $arguments -WindowStyle Hidden -Wait -PassThru
+        $child.Refresh(); exit ([int]$child.ExitCode)
+    }
     if($RetryCheck) {
         Write-Output ('AuthWire retry: '+(Invoke-AuthWireRetryCheck $target 'AuthWire Certificate Enrollment' 'AuthWire Certificate Enrollment Retry'))
         exit 0
@@ -176,6 +181,22 @@ $startup = New-ScheduledTaskTrigger -AtStartup
 $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 10)
 $null = Register-ScheduledTask -TaskName 'AuthWire Certificate Enrollment' -Action $action -Trigger @($daily,$evening,$startup) -Principal $principal -Settings $settings -Force
+# CRL refresh does not inherit enrollment's retry deadline or request a key.
+# Startup/network catch-up plus two-hour repetition fits the issuer's 12-hour
+# server refresh window. The root CRL remains operator-signed on the appliance.
+$crlTaskName = 'AuthWire CRL Refresh'
+$crlDescription = 'AuthWire managed signed public CRL refresh'
+$crlArguments = '-NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+(Join-Path $target 'Install-AuthWire.ps1')+'" -RefreshCrl'
+$crlExecutable = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+$existingCrl = Get-ScheduledTask -TaskName $crlTaskName -ErrorAction SilentlyContinue
+if($existingCrl -and ($existingCrl.Description -ne $crlDescription -or $existingCrl.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or @($existingCrl.Actions).Count -ne 1 -or $existingCrl.Actions[0].Execute -ine $crlExecutable -or $existingCrl.Actions[0].Arguments -cne $crlArguments)) { throw 'Unexpected existing AuthWire CRL task.' }
+$crlAction = New-ScheduledTaskAction -Execute $crlExecutable -Argument $crlArguments
+$crlPeriodic = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Hours 2)
+$crlSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 2) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 15)
+$null = Register-ScheduledTask -TaskName $crlTaskName -Action $crlAction -Trigger @($startup,$crlPeriodic) -Principal $principal -Settings $crlSettings -Description $crlDescription -Force
+$crlScheduler = New-Object -ComObject 'Schedule.Service'; $crlScheduler.Connect()
+$crlScheduler.GetFolder('\').GetTask($crlTaskName).SetSecurityDescriptor('D:P(A;;GA;;;SY)(A;;GA;;;BA)',0)
+Start-ScheduledTask -TaskName $crlTaskName -ErrorAction Stop
 # Reapplication also repairs a pending deadline created by the older client.
 $pendingRetry = Read-AuthWireRetryDeadline $target
 if($pendingRetry) {
