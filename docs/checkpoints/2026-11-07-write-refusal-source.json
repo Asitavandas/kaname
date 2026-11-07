@@ -1,0 +1,234 @@
+{
+  "schema": 1,
+  "event": "AUTHWIRE_PREAUTHORIZATION_REFUSAL_SOURCE_ACCEPTED",
+  "date": "2026-11-07",
+  "status": "SOURCE_ACCEPTANCE_CLOSED_CUSTOMER_DELIVERY_OPEN",
+  "repository": "Asitavandas/kaname",
+  "pull_request": 141,
+  "source_commit": "d207b135d78f488de7a1caa6e2b352959da6a4ba",
+  "source_tree": "2107e7ff33e2daacff577cf198e3da9f3cb66dfa",
+  "report_basis": {
+    "file": "AuthWire_Durum_ve_Kalan_Isler_2026-11-05.pdf",
+    "version": "6",
+    "page": 17,
+    "items": [
+      "G01",
+      "A04"
+    ],
+    "next_work_rule": "Compare the report and latest acceptance index before choosing work; do not repeat passed pilot tests."
+  },
+  "behavior": {
+    "stage_and_rollback_preflight_refusal": true,
+    "reason": "PREFLIGHT_FAILED",
+    "original_lease_preserved": true,
+    "requires_saved_offer_and_dispatch": true,
+    "no_claim_or_unknown_job_history_required": true,
+    "claim_and_refusal_share_job_decision_mutex": true,
+    "partial_outbox_blocks_claim": true,
+    "immutable_body_and_original_checked_at": true,
+    "maximum_result_posts_per_call": 1,
+    "maximum_durable_result_attempts_per_job": 3,
+    "existing_https_name_chain_revocation_and_pin_preserved": true,
+    "matching_request_job_ack_required": true,
+    "lost_ack_same_body_idempotent": true,
+    "restart_does_not_create_refusal_or_claim": true,
+    "accepted_refusal_stops_new_polls": true,
+    "gpo_lock_and_rollback_reservation_retained": true,
+    "automatic_unlock": false,
+    "status_api_typed_reason_effect_and_time": true,
+    "panel_distinguishes_refusal_success_and_unknown": true,
+    "raw_peer_exception_or_proof_exposed": false
+  },
+  "validation": {
+    "local_python": {
+      "tests": 55,
+      "success": true
+    },
+    "foundation": {
+      "tests_run": 1220,
+      "environment_skips": 57,
+      "seconds": 319.154,
+      "run_id": 42272748709,
+      "job_id": 128081252090
+    },
+    "browser": {
+      "success": true,
+      "run_id": 42272748518,
+      "job_id": 128081251498,
+      "refusal_and_inconsistent_outcome_display_tested": true
+    },
+    "native_refusal": {
+      "run_id": 42272748878,
+      "job_id": 128330956919,
+      "successful_attempt": 2,
+      "checks": 134,
+      "cases": 6,
+      "poll_requests": 7,
+      "claim_requests": 2,
+      "result_requests": 8,
+      "refusal_transitions": 4,
+      "case_names": [
+        "ref_stage",
+        "ref_lost_ack",
+        "ref_ack_limit",
+        "ref_disk",
+        "ref_claim",
+        "ref_rollback"
+      ],
+      "actual_cng_tls_sqlite": true,
+      "preflight_failure_injected": true,
+      "positive_ad_content_service_identity_simulated": true
+    },
+    "native_lifecycle": {
+      "run_id": 42272748781,
+      "job_id": 128330959780,
+      "successful_attempt": 2,
+      "checks": 201,
+      "cases": 8,
+      "poll_requests": 16,
+      "claim_requests": 12,
+      "result_requests": 12,
+      "result_transitions": 11,
+      "saved_grant_restart_boundary_simulated": true,
+      "actual_machine_reboot_tested": false
+    },
+    "workflow_count": 18,
+    "all_workflows_successful": true,
+    "workflow_runs": [
+      {
+        "id": 42272749083,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748818,
+        "name": "AuthWire reproducible Linux delivery",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748937,
+        "name": "AuthWire private backup acceptance",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748613,
+        "name": "KANAME Linux source preparation",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748518,
+        "name": "KANAME browser checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748808,
+        "name": "AuthWire device enrollment pilot checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748759,
+        "name": "AuthWire isolated authorized stage execution",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748784,
+        "name": "AuthWire isolated write preclaim checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748582,
+        "name": "AuthWire isolated one-shot staging cycle",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748570,
+        "name": "AuthWire isolated rollback execution and result",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748857,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748727,
+        "name": "AuthWire isolated rollback origin evidence",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748633,
+        "name": "AuthWire isolated rollback authorization",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748548,
+        "name": "KANAME real RADIUS protocol proof",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748709,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748923,
+        "name": "AuthWire isolated governed write history",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748878,
+        "name": "AuthWire preauthorization refusal reporting",
+        "conclusion": "success"
+      },
+      {
+        "id": 42272748781,
+        "name": "AuthWire isolated durable write lifecycle",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "earlier_failures_preserved": [
+    {
+      "run_id": 42272748878,
+      "job_id": 128081252890,
+      "attempt": 1,
+      "observed": "Initial POLL response exceeded the unchanged local five-second record/send window before preflight. Zero CLAIM and RESULT requests; no false refusal acceptance.",
+      "root_cause_not_established": true
+    },
+    {
+      "run_id": 42272748781,
+      "job_id": 128081253101,
+      "attempt": 1,
+      "observed": "Saved-grant review RESULT handler took 6735 ms; client deadline expired and server write observed SSLEOFError. Immediate accepted-result assertion failed.",
+      "root_cause_not_established": true
+    }
+  ],
+  "retry_scope": "Only the two failed jobs were rerun, on exactly the same source. The 16 successful workflows were not manually rerun. Passing retries do not establish a permanent latency repair; production deadlines and test criteria were unchanged.",
+  "local_browser_limit": "Local Chromium could not create its process singleton socket under this environment. Hosted browser fixture passed; no local browser success is claimed.",
+  "not_performed": {
+    "linux_or_windows_customer_update": true,
+    "production_service_restart": true,
+    "customer_trust_or_key_acl_change": true,
+    "actual_customer_gmsa_test": true,
+    "natural_expiry_case_change_or_reseed": true,
+    "passed_renewal_boot_retry_field_or_retention_source_retest": true,
+    "new_pdf_or_docx_report": true,
+    "customer_ad_gpo_sysvol_or_endpoint_write": true
+  },
+  "remaining": [
+    "Governed reconciliation of partial or uncertain Windows job records",
+    "Separately approved unlock; no automatic deletion/reset",
+    "Windows journal off-host backup/restore",
+    "Active scheduler/SCM integration and controlled signed customer delivery",
+    "Actual gMSA/AD/domain-SYSVOL and endpoint acceptance"
+  ],
+  "independent_pending_field_test": {
+    "checkpoint": "docs/checkpoints/2026-11-06-natural-expiry-pilot-prepared.json",
+    "status": "WAITING_NATURAL_EXPIRY",
+    "planned_recovery_istanbul": "2026-11-08T21:06:20+03:00",
+    "reseed_forbidden": true,
+    "not_rechecked_on_endpoint_this_turn": true
+  },
+  "macro_count": "54/94 unchanged; this source gate does not close whole G01/A04 or B06",
+  "next_work": "Read the current report, TEST_ACCEPTANCE_INDEX and this checkpoint first. Next independent source item is read-only classification/review of uncertain Windows records; do not repeat completed refusal/retention or pilot tests without new evidence."
+}

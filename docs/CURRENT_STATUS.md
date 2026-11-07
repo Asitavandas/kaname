@@ -1,5 +1,53 @@
 # AuthWire current work record
 
+## Yetki öncesi ret bildirimi kaynakta kabul edildi — 7 Kasım 2026
+
+**PR141**, test edilen kaynak **d207b135d78f488de7a1caa6e2b352959da6a4ba**.
+Güncel raporun 17. sayfasındaki G01/A04 sırası ve kabul dizini kontrol edilerek
+bağımsız açık kaynak alt işi seçildi. Tamamlanan yenileme/boot/retry ve olumsuz
+sertifika saha kabulleri ile yerel geçmiş saklama kaynak kabulü tekrar açılmadı.
+
+Kalıcı stage/rollback lifecycle artık başarıyla saklanan offer'ın preflight
+hatasını, aynı işte CLAIM başlangıcı veya bilinmeyen kayıt yoksa,
+**refused_before_authorization / PREFLIGHT_FAILED** olarak bildirir.
+Özgün lease ve hata zamanı korunur. Ortak karar mutex'i, kısmi outbox dahil
+ret kararından sonra CLAIM üretimi/taşımasını engeller. Kayıp grant/receipt
+ve yetki sonrası belirsizlik hiçbir zaman “dosya etkisi yok” sonucuna çevrilmez.
+
+Dondurulan gövde mevcut RESULT kanalıyla çağrı başına tek, iş başına en çok üç
+kalıcı denemeyle gider. ACK kaybında aynı gövde korunur. Yeniden başlatma
+preflight/CLAIM/yazma/silme veya geç tarihli yeni ret üretmez. Kabul edilmiş ret
+yeni POLL'u durdurur; GPO kilidi ve rollback reservation korunur.
+Panel, sabit ret nedenini Türkçe açıklar; ret, başarı ve belirsiz dosya etkisi
+ayrı gösterilir. Yeni create/peer veya otomatik unlock yolu açılmadı.
+
+**Aynı kaynakta 18 CI workflow'u başarılı.** Genel koşu **1220 test /57 ortam
+atlaması /319.154s**; yeni native ret paketi **134 kontrol /6 senaryo**,
+mevcut lifecycle **201 /8**. Gerçek CNG/HTTPS/SQLite ve testin SMB alanı
+kullanıldı; preflight hatası ile olumlu AD/content/service gözlemleri fixture
+yerine koymalarıdır. Gerçek müşteri gMSA veya makine reboot kabulü değildir.
+Panelin tutarsız ret/XSS ve belirsiz sonuç kontrolleri hosted browser'da geçti.
+
+İlk ret koşusu POLL'un değişmeyen 5s penceresinde; ilk lifecycle koşusu 6735ms
+RESULT/EOF sırasında başarısızdı. **Yalnız iki başarısız job aynı kaynakla
+tekrarlandı**; 16 başarılı akış elle yeniden çalıştırılmadı. İlk hatalar kanıtta
+tutulur. Son yeşil koşu kalıcı gecikme onarımı/kök neden açıklaması sayılmaz;
+üretim süreleri ve test ölçütleri gevşetilmedi. Yerel Chromium socket kısıtı
+nedeniyle yerel browser başarısı iddia edilmez; hosted kabulü ayrıdır.
+
+Kaynak alt kapısı kapandı; **canlı Linux/DC01/Windows teslimi yapılmadı**.
+Ethernet1, mevcut sertifika, AD/GPO/SYSVOL ve ürün servislerine dokunulmadı.
+8 Kasım 21:06 Türkiye doğal expired-pending görevi değiştirilmedi/yeniden
+seed edilmedi; B06 hâlâ bekliyor. Bu tur endpoint'te taze sağlık ölçümü yok.
+
+Kanıt: **docs/checkpoints/2026-11-07-write-refusal-source.json**.
+Kapsam: **docs/STAGING_WRITE_REFUSAL.md**.
+**Sıradaki bağımsız kaynak işi:** belirsiz/yarım Windows görev kayıtlarının
+salt okunur sınıflandırılması ve kontrollü uzlaştırma incelemesi. Ayrı onaylı
+unlock, journal dış yedek/restore, aktif scheduler/SCM, imzalı müşteri teslimi
+ve gerçek AD/gMSA/endpoint kabulü ayrıca açık. Ret/retention işi tekrar edilmez.
+Genel **54/94** ve bütün G01/A04 kabulü değişmedi; yeni PDF/DOCX raporu yok.
+
 ## Çökme maddesi kapandı; gerçek expiry kabulü doğal süre bekliyor — 6 Kasım 2026
 
 Kullanıcı talebiyle rapor, önceki sohbet ve özgün kabul kayıtları kontrol edildi.

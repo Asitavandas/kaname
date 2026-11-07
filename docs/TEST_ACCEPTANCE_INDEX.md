@@ -14,6 +14,7 @@ daha sonraki başarılı kabulü yeniden açmaz. Bu kayıt yeni bir PDF raporu d
 | Güvenilmeyen issuer istemci sertifikasının RADIUS tarafından reddi | Kapalı | Aynı kayıt; event96 |
 | CRL geçici taşıma hatasında sınırlı tekrar ve canlı teslim | Kapalı | 6 Kasım crl-transport-repair-live-acceptance; dev.47 |
 | VV-Client01 5 Kasım çökmesi sonrası tekrarlamama | Kapalı | 6 Kasım wired-crash-nonrecurrence-closure; yeni olay yok |
+| G01/A04 yetki öncesi ret nedeninin bildirilmesi | Kaynak kabulü kapalı; canlı teslim açık | 7 Kasım write-refusal-source; PR141,18 CI akışı,134 native kontrol |
 | Misafir/VLAN yeniden testi | Tekrar yapılmayacak | Rapor ve kullanıcının açık dışlaması |
 | Gerçek expired-pending uç cihaz kurtarma | Doğal süre dolumu bekliyor | B06; 6 Kasım gerçek seed hazır, 8 Kasım21:06 Türkiye SYSTEM Recover görevi |
 
@@ -42,4 +43,14 @@ Aktif vaka: docs/checkpoints/2026-11-06-natural-expiry-pilot-prepared.json.
 Seed veya yeni test profili oluşturma tekrarlanmaz. Doğal süre dolumu gelmeden
 bu kabul bitmiş sayılmaz. Bu sırada aynı test profili veya VV-Client01 AD
 kimliğini değiştirmeyen, raporda açık başka işler seçilebilir.
+
+## Sıradaki bağımsız kaynak işi — 7 Kasım 2026
+
+G01/A04: belirsiz/yarım Windows görev kayıtlarının salt okunur sınıflandırılması
+ve kontrollü uzlaştırma incelemesi. Önce özgün offer/CLAIM/authorization/outbox/
+ACK ve filesystem kayıtları karşılaştırılacak; bilinmeyen sonuç tamamlandı veya
+etki yok diye yükseltilmeyecek. Ayrı onaylı unlock ve journal dış yedek/restore,
+aktif scheduler/SCM, kontrollü imzalı teslim ve gerçek gMSA/AD/endpoint kabulü
+açık kalır. Kaynak ret bildirimi ve yerel retention geliştirmesi tekrar yapılmaz.
+Özgün kanıt: docs/checkpoints/2026-11-07-write-refusal-source.json.
 
