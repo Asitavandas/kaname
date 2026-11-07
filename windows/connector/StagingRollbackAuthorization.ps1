@@ -110,21 +110,25 @@ function Invoke-AuthWireRollbackPreflight([string]$Root,[string]$JobId,[hashtabl
 }
 function New-AuthWireRollbackClaim([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
  $saved=Read-AuthWireRollbackOffer $Root $JobId $Binding $Release;$offer=$saved.Offer
- $p=New-AuthWireRollbackInputPins $Root $JobId $saved @('rollback-preflight.json')
+ $decision=Enter-AuthWireWritePreauthorizationLock $JobId;$p=$null
  try{
+  Assert-AuthWireWriteNotRefused $Root $JobId
+  $p=New-AuthWireRollbackInputPins $Root $JobId $saved @('rollback-preflight.json')
   $job=Join-Path $Root $JobId;$v=Read-AuthWireStagingJournal (Join-Path $job 'rollback-preflight.json')
   Assert-AuthWireRollbackPreflightAt $v $saved $Binding $Release ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
   Write-AuthWireStagingJournal (Join-Path $job 'rollback-claim-started.json') ([pscustomobject]@{format='AuthWireWriteClaimStartedV1';job_id=$JobId;intent_sha256=$offer.intent_sha256;checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()})
   $proof=New-AuthWireStagingWriteProof $Binding $Key CLAIM @{job_id=$JobId;lease_id=$offer.lease_id;intent_sha256=$offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $offer.target);release_id=$Release}
   Write-AuthWireStagingJournal (Join-Path $job 'rollback-claim-proof.json') ([pscustomobject]@{format='AuthWireWriteClaimProofV1';job_id=$JobId;proof=$proof})
   return $proof
- }finally{$p.Dispose()}
+ }finally{if($p){$p.Dispose()};$decision.ReleaseMutex();$decision.Dispose()}
 }
 function Invoke-AuthWireRollbackClaimTransport([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[string]$BaseUrl){
  $saved=Read-AuthWireRollbackOffer $Root $JobId $Binding $Release;$offer=$saved.Offer
  Initialize-AuthWireWriteTransportTypes
- $p=New-AuthWireRollbackInputPins $Root $JobId $saved @('rollback-preflight.json','rollback-claim-started.json','rollback-claim-proof.json')
+ $decision=Enter-AuthWireWritePreauthorizationLock $JobId;$p=$null
  try{
+  Assert-AuthWireWriteNotRefused $Root $JobId
+  $p=New-AuthWireRollbackInputPins $Root $JobId $saved @('rollback-preflight.json','rollback-claim-started.json','rollback-claim-proof.json')
   $again=Read-AuthWireRollbackOffer $Root $JobId $Binding $Release
   if((Get-AuthWireWriteHash $again) -cne (Get-AuthWireWriteHash $saved)){throw 'ROLLBACK_RECORD_CHANGED'}
   $job=Join-Path $Root $JobId;$v=Read-AuthWireStagingJournal (Join-Path $job 'rollback-preflight.json')
@@ -141,7 +145,7 @@ function Invoke-AuthWireRollbackClaimTransport([string]$Root,[string]$JobId,[has
   $grant=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($reply));Assert-AuthWireWriteGrant $grant $offer $request $sentAt
   Write-AuthWireStagingJournal (Join-Path $job 'rollback-authorization.json') ([pscustomobject]@{format='AuthWireRollbackAuthorizationReceiptV1';binding_scope=(Get-AuthWireJobScope $Binding);release_id=$Release;offer_sha256=(Get-AuthWireWriteHash $offer);preflight_sha256=(Get-AuthWireWriteHash $v);claim_proof_sha256=$hash;sent_at=$sentAt;received_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();grant=$grant})
   return [pscustomobject]@{JobId=$JobId;Phase='rollback_authorization_recorded';GrantRecorded=$true;CanDelete=$false;CanApplyGpo=$false}
- }finally{$p.Dispose()}
+ }finally{if($p){$p.Dispose()};$decision.ReleaseMutex();$decision.Dispose()}
 }
 
 function Read-AuthWireRollbackAuthorization([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){

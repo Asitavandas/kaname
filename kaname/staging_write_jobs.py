@@ -378,5 +378,8 @@ class StagingWriteJobs(ConnectorJobs):
                     'jobs': [{'id': j['id'], 'operation': j['operation'], 'state': self._state(j, scope, now),
                               'authorization_issued': bool(j['authorization_id']),
                               'peer_reported_outcome': j['result']['outcome'] if j['result'] else None,
+                              'peer_reported_reason': j['result']['reason'] if j['result'] else None,
+                              'peer_reported_filesystem_effects': j['result']['filesystem_effects'] if j['result'] else None,
+                              'peer_reported_checked_at': j['result']['checked_at'] if j['result'] else None,
                               'customer_filesystem_attested': False} for j in reversed(ledger['jobs'])]}
 

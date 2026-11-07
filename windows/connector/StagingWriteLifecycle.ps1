@@ -3,6 +3,7 @@
 # No unknown-state retry, cleanup, retention deletion, grant renewal or unlock.
 Set-StrictMode -Version 2
 . (Join-Path $PSScriptRoot 'StagingWriteHistory.ps1')
+. (Join-Path $PSScriptRoot 'StagingWriteRefusal.ps1')
 
 function Get-AuthWireWriteLifecyclePath([string]$Root,[hashtable]$Binding){
  Assert-AuthWireStagingWriteJournalLocation $Root $Binding
@@ -184,13 +185,20 @@ function Assert-AuthWireLifecycleRootEntries([string]$Root,$Baseline,[object[]]$
   }
   $jobNames=@('offer.json','preflight.json','claim-started.json','claim-proof.json','claim-sent.json','authorization.json','grant-consumed.json','filesystem-intent.json','stage-launch.json','stage-child.json','stage-entered.json','stage-preflight.json','execution-complete.json','execution-observed.json','execution-requires-review.json','cycle-review.json','result-outbox.json','result-accepted.json',
    'rollback-offer.json','rollback-preflight.json','rollback-claim-started.json','rollback-claim-proof.json','rollback-claim-sent.json','rollback-authorization.json','rollback-grant-consumed.json','rollback-filesystem-intent.json','rollback-consumption-preflight.json','rollback-launch.json','rollback-child.json','rollback-entered.json','rollback-execution-preflight.json','rollback-execution-complete.json','rollback-execution-observed.json','rollback-execution-requires-review.json','rollback-result-outbox.json','rollback-result-accepted.json')
-  foreach($n in 1..3){foreach($prefix in @('','rollback-')){foreach($kind in @('attempt','proof')){$jobNames+=,($prefix+'result-'+$kind+'-'+$n+'.json')}}}
+  $jobNames+=@('refusal-outbox.json','refusal-accepted.json')
+  foreach($n in 1..3){foreach($kind in @('attempt','proof')){$jobNames+=,('refusal-'+$kind+'-'+$n+'.json')};foreach($prefix in @('','rollback-')){foreach($kind in @('attempt','proof')){$jobNames+=,($prefix+'result-'+$kind+'-'+$n+'.json')}}}
   foreach($id in $jobs.Keys){$dir=Join-Path $Root $id;if(-not (Test-Path -LiteralPath $dir)){continue};foreach($i in Get-ChildItem -LiteralPath $dir -Force){if($i.PSIsContainer -or $i.Name -cnotin $jobNames){throw 'LIFECYCLE_UNKNOWN_JOB_RECORD'};$p.PinFile($i.FullName)}}
   foreach($id in $engines.Keys){$dir=Join-Path $Root $id;if(-not (Test-Path -LiteralPath $dir)){continue};foreach($i in Get-ChildItem -LiteralPath $dir -Force){if($i.PSIsContainer -or $i.Name -cnotin @('intent.json','complete.json','rollback-started.json','rolled-back.json') -or ($i.Name -cin @('rollback-started.json','rolled-back.json') -and -not $rollbackEngines.ContainsKey($id))){throw 'LIFECYCLE_UNKNOWN_ENGINE_RECORD'};$p.PinFile($i.FullName)}}
  }finally{$p.Dispose()}
 }
 function Get-AuthWireLifecycleOutcomeEvidence([string]$Root,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key){
  $o=$State.Offer;$release=$State.Started.release_id;$rollback=$o.operation -ceq 'combined.filesystem.rollback.v1'
+ if(Test-Path -LiteralPath (Join-Path (Join-Path $Root $o.job_id) 'refusal-outbox.json')){
+  $life=Get-AuthWireWriteLifecyclePath $Root $Binding
+  $box=Read-AuthWireWriteRefusalOutbox $Root $life $State $Binding $Key
+  $ack=Read-AuthWireWriteRefusalAccepted $Root $State $box
+  return [pscustomobject]@{Outcome=$box.body.outcome;BodySha256=$box.body_sha256;AckSha256=(Get-AuthWireWriteHash $ack)}
+ }
  if($rollback){$box=Read-AuthWireRollbackResultOutbox $Root $o.job_id $Binding $release $Key;$prefix='rollback-';$format='AuthWireRollbackResultAcceptedV1'}
  else{
   $box=Read-AuthWireWriteResultOutbox $Root $o.job_id $Binding $release $Key;$prefix='';$format='AuthWireWriteResultAcceptedV1'
@@ -244,6 +252,15 @@ function Resume-AuthWireLifecycleResult([string]$Root,[string]$Life,$State,[hash
  # No POLL, CLAIM, consumption, context reader or executor in this function.
  Assert-AuthWireLifecycleDispatch $Life $State
  $o=$State.Offer;$job=Join-Path $Root $o.job_id;$release=$State.Started.release_id;$rollback=$o.operation -ceq 'combined.filesystem.rollback.v1';$prefix=if($rollback){'rollback-'}else{''}
+ if(Test-Path -LiteralPath (Join-Path $job 'refusal-outbox.json')){
+  try{
+   Send-AuthWireWriteRefusal $Root $Life $State $Binding $Key $BaseUrl
+   $c=Complete-AuthWireLifecycleCycle $Root $Life $State $Binding $Key
+   return (Get-AuthWireLifecycleResult 'refused_before_authorization' $o.job_id $c.outcome $true 'PREFLIGHT_FAILED')
+  }catch{
+   return (Get-AuthWireLifecycleResult $(if(Test-Path -LiteralPath (Join-Path $job 'refusal-attempt-3.json')){'refusal_attempt_limit_requires_review'}else{'refusal_result_pending'}) $o.job_id)
+  }
+ }
  if(-not (Test-Path -LiteralPath (Join-Path $job ($prefix+'authorization.json')))){return (Get-AuthWireLifecycleResult 'local_reconciliation_required' $o.job_id)}
  if((Test-Path -LiteralPath (Join-Path $job ($prefix+'result-attempt-3.json'))) -and -not (Test-Path -LiteralPath (Join-Path $job ($prefix+'result-accepted.json')))){return (Get-AuthWireLifecycleResult 'result_attempt_limit_requires_review' $o.job_id)}
  try{
@@ -272,6 +289,7 @@ function Invoke-AuthWireStagingWriteLifecycleStep([string]$Root,[hashtable]$Bind
    if(Test-Path -LiteralPath (Join-Path $dir 'completion.json')){
     $done=Read-AuthWireLifecycleCompletion $Root $life $s $Binding $Key
     if($done.outcome -ceq 'requires_review'){if($i -ne $states.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'};return (Get-AuthWireLifecycleResult 'requires_review' $s.Offer.job_id $done.outcome $true)}
+    if($done.outcome -ceq 'refused_before_authorization'){if($i -ne $states.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'};return (Get-AuthWireLifecycleResult 'refused_before_authorization' $s.Offer.job_id $done.outcome $true 'PREFLIGHT_FAILED')}
     continue
    }
    if($i -ne $states.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'}
@@ -307,6 +325,11 @@ function Invoke-AuthWireStagingWriteLifecycleStep([string]$Root,[hashtable]$Bind
    }
   }catch [Management.Automation.PipelineStoppedException]{throw}catch{
    try{Write-AuthWireStagingJournal (Join-Path (Join-Path $life $next) 'dispatch-failed.json') ([pscustomobject]@{format='AuthWireLifecycleDispatchFailedV1';phase=$phase;reason='OUTCOME_REQUIRES_REVIEW';checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()})}catch{}
+   if($phase -ceq 'preflight'){
+    # A successfully persisted offer + no CLAIM/unknown history can freeze a
+    # truthful no-authorization refusal. Any IO/evidence failure stays review.
+    try{$null=New-AuthWireWriteRefusalOutbox $Root $life $s $Binding $Key}catch{}
+   }
   }
   return (Resume-AuthWireLifecycleResult $Root $life $s $Binding $Key $BaseUrl)
  }finally{$p.Dispose();$lock.ReleaseMutex();$lock.Dispose()}

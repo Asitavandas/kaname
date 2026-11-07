@@ -155,7 +155,20 @@ function renderStagingWriteStatus(box,status,existing=null){
   item.append(depNode('p','Windows yürütücüsü, kesinti kurtarması ve yedekleme kontrolleri tamamlandıktan sonra kontrollü onay açılacak.'));
   const states={queued:'Görev kayıtlı; yürütme yetkisi verilmedi.',leased:'Görev alındı; yürütme yetkisi verilmedi.',authorized:'Yetki verilmiş; dosya sonucu henüz doğrulanmadı.',requires_review:'Sonuç belirsiz; inceleme gerekiyor. İşlemi tekrar başlatmayın.',completed:'Connector sonuç bildirimi kayıtlı; bağımsız disk kabulü anlamına gelmez.',expired:'Süresi dolmuş; otomatik tekrar başlatılmaz.',obsolete:'Bağlantı kapsamı değişmiş; otomatik tekrar başlatılmaz.'};
   if(!status.jobs.length)item.append(depNode('p','Kayıtlı yazma/geri alma görevi yok.'));
-  for(const job of status.jobs){const operation=job.operation==='combined.filesystem.stage.v1'?'Dosya yazma':job.operation==='combined.filesystem.rollback.v1'?'Geri alma':'Bilinmeyen işlem';item.append(depNode('p',operation+' · '+String(job.id)+' · '+(states[job.state]||'Durum tanınmadı; inceleme gerekiyor.')));}
+  const refusalReasons={CONTENT_REJECTED:'Paketin imzası veya içeriği doğrulanamadı.',SCOPE_CHANGED:'AD veya GPO kapsamı değişti.',PREVIEW_EXPIRED:'Onaylanan önizlemenin süresi doldu.',PREFLIGHT_FAILED:'Yazma öncesi kontrol tamamlanamadı.',WRITER_UNAVAILABLE:'Windows yürütücüsü kullanılamıyor.'};
+  const reviewReasons={IO_FAILURE:'Dosya işlemi hatası.',JOURNAL_FAILURE:'İşlem kaydı hatası.',DRIFT:'Beklenen dosya veya ayar değişmiş.',WORKER_INTERRUPTED:'Windows yürütücüsü kesintiye uğradı.',OUTCOME_UNKNOWN:'İşlemin sonucu doğrulanamadı.',POSTCHECK_FAILED:'İşlem sonrası kontrol tamamlanamadı.'};
+  for(const job of status.jobs){
+   const operation=job.operation==='combined.filesystem.stage.v1'?'Dosya yazma':job.operation==='combined.filesystem.rollback.v1'?'Geri alma':'Bilinmeyen işlem';
+   let text=states[job.state]||'Durum tanınmadı; inceleme gerekiyor.';
+   if(job.peer_reported_outcome==='refused_before_authorization'){
+    text=job.state==='completed'&&job.authorization_issued===false&&job.peer_reported_filesystem_effects==='none'&&Object.hasOwn(refusalReasons,job.peer_reported_reason)
+     ?'Yetki verilmeden reddedildi. '+refusalReasons[job.peer_reported_reason]+' Connector bu işlem için dosya etkisi bildirmedi. Otomatik tekrar yapılmaz.'
+     :'Ret bildirimi tutarsız; inceleme gerekiyor. İşlemi tekrar başlatmayın.';
+   }else if(job.peer_reported_outcome==='requires_review'&&Object.hasOwn(reviewReasons,job.peer_reported_reason)){
+    text+=' '+reviewReasons[job.peer_reported_reason]+' Dosya etkisi kesinleşmedi.';
+   }
+   item.append(depNode('p',operation+' · '+String(job.id)+' · '+text));
+  }
  }
  box.append(item);return item;
 }
