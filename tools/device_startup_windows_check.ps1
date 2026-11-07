@@ -20,15 +20,27 @@ $created = $false
 function RunCount { if (Test-Path $marker) { return @(Get-Content $marker).Count }; return 0 }
 function WaitCompleted([datetime]$After) {
     $deadline = (Get-Date).AddSeconds(35)
+    $samples = @()
     do {
         Start-Sleep -Milliseconds 300
-        $info = Get-ScheduledTaskInfo -TaskName $taskName
+        # State/result are separate native reads. Reading result while Running
+        # then seeing Ready can turn SCHED_S_TASK_RUNNING into a false failure.
         $task = Get-ScheduledTask -TaskName $taskName
-        if ($info.LastRunTime -ge $After -and $task.State -eq 'Ready') {
-            if ($info.LastTaskResult -ne 0) { throw 'Fixture action failed.' }
-            return
+        if ($task.State -eq 'Ready') {
+            $info = Get-ScheduledTaskInfo -TaskName $taskName
+            $confirmed = Get-ScheduledTask -TaskName $taskName
+            $samples += ,@{state=[string]$task.State;confirmed_state=[string]$confirmed.State;last_result=[long]$info.LastTaskResult;last_run=$info.LastRunTime.ToUniversalTime().ToString('o')}
+            if ($samples.Count -gt 6) { $samples = @($samples | Select-Object -Last 6) }
+            if ($info.LastRunTime -ge $After -and $confirmed.State -eq 'Ready' -and $info.LastTaskResult -notin @(267008,267009)) {
+                if ($info.LastTaskResult -ne 0) {
+                    Write-Host ('AUTHWIRE_STARTUP_OBSERVATION_FAILURE '+(@{samples=$samples;marker_count=(RunCount)}|ConvertTo-Json -Depth 4 -Compress))
+                    throw ('Fixture action failed: '+$info.LastTaskResult)
+                }
+                return
+            }
         }
     } while ((Get-Date) -lt $deadline)
+    Write-Host ('AUTHWIRE_STARTUP_OBSERVATION_TIMEOUT '+(@{samples=$samples;marker_count=(RunCount)}|ConvertTo-Json -Depth 4 -Compress))
     throw ('Fixture never completed: ' + $task.State)
 }
 try {
@@ -63,14 +75,40 @@ try {
     if ((RunCount) -ne 2) { throw 'Expected one recovery action.' }
     if ((Start-AuthWireEnrollmentForBoot $taskName) -ne 'already_ran_this_boot' -or (RunCount) -ne 2) { throw 'Recovery was not idempotent.' }
 
+    # A real nonzero SYSTEM exit must still fail. The observer fix must not
+    # accept any nonzero exit as success or extend the original 35s budget.
+    $badEncoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes('Start-Sleep -Seconds 2; exit 7'))
+    $badAction = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -Argument "-NoProfile -NonInteractive -ExecutionPolicy AllSigned -EncodedCommand $badEncoded"
+    $null = Set-ScheduledTask -TaskName $taskName -Action $badAction
+    $badStarted = (Get-Date).AddSeconds(-1)
+    Start-ScheduledTask -TaskName $taskName
+    $badFailure = ''
+    try { WaitCompleted $badStarted } catch { $badFailure = $_.Exception.Message }
+    if ($badFailure -cne 'Fixture action failed: 7') { throw 'Nonzero native SYSTEM exit was not preserved.' }
+
+    # Controlled observation fixture: native Ready can precede a refreshed
+    # result property. Reproduce that ordering without changing any OS task.
+    $script:ObservationReads = 0
+    function Get-ScheduledTask { param([string]$TaskName) [pscustomobject]@{State='Ready'} }
+    function Get-ScheduledTaskInfo {
+        param([string]$TaskName)
+        $script:ObservationReads++
+        [pscustomobject]@{LastRunTime=Get-Date;LastTaskResult=$(if($script:ObservationReads -eq 1){267009}else{0})}
+    }
+    WaitCompleted (Get-Date).AddSeconds(-1)
+    if ($script:ObservationReads -ne 2) { throw 'Pending result was not observed again before success.' }
+    Remove-Item Function:\Get-ScheduledTaskInfo
+    Remove-Item Function:\Get-ScheduledTask
+
     # A queued task already has a pending run; exercise the no-extra-request guard.
     function Get-ScheduledTask { param([string]$TaskName) [pscustomobject]@{State='Queued'} }
     if ((Start-AuthWireEnrollmentForBoot $taskName) -ne 'already_pending') { throw 'Queued guard failed.' }
     Remove-Item Function:\Get-ScheduledTask
     Remove-Item Function:\Get-CimInstance
-    Write-Output ('AUTHWIRE_STARTUP_FIXTURE_OK ' + (@{real_task_scheduler=$true;real_system_actions=2;fresh_install=$true;running_not_duplicated=$true;already_ran_not_duplicated=$true;missed_boot_recovered_after_registration=$true;boot_boundary_simulated=$true;real_reboot_tested=$false;queued_guard_mocked=$true;customer_state_used=$false;enrollment_network_calls=0}|ConvertTo-Json -Compress))
+    Write-Output ('AUTHWIRE_STARTUP_FIXTURE_OK ' + (@{real_task_scheduler=$true;real_system_actions=3;successful_system_actions=2;native_exit_7_rejected=$true;stale_running_result_observation_simulated=$true;observation_budget_seconds=35;fresh_install=$true;running_not_duplicated=$true;already_ran_not_duplicated=$true;missed_boot_recovered_after_registration=$true;boot_boundary_simulated=$true;real_reboot_tested=$false;queued_guard_mocked=$true;customer_state_used=$false;enrollment_network_calls=0}|ConvertTo-Json -Compress))
 } finally {
     Remove-Item Function:\Get-ScheduledTask -ErrorAction SilentlyContinue
+    Remove-Item Function:\Get-ScheduledTaskInfo -ErrorAction SilentlyContinue
     Remove-Item Function:\Get-CimInstance -ErrorAction SilentlyContinue
     if ($created) {
         Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
