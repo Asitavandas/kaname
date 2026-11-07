@@ -1,0 +1,28 @@
+name: AuthWire native startup task observation
+on:
+  pull_request:
+    paths:
+      - 'tools/device_startup_windows_check.ps1'
+      - 'kaname/device_client/Install-AuthWire.ps1'
+      - '.github/workflows/startup-observation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/device_startup_windows_check.ps1'
+      - 'kaname/device_client/Install-AuthWire.ps1'
+      - '.github/workflows/startup-observation.yml'
+permissions:
+  contents: read
+jobs:
+  startup-observer:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Real SYSTEM outcomes and bounded race observation
+        shell: powershell
+        run: |
+          & .\tools\device_startup_windows_check.ps1
+          if($LASTEXITCODE -ne 0){throw 'Startup observation fixture failed'}
