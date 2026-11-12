@@ -95,6 +95,42 @@ class StagingWriteJobTests(unittest.TestCase):
         self.jobs.complete(self.proof('RESULT', result))
         return offer, authorization, result
 
+    def test_reconciliation_is_readonly_and_compares_full_result(self):
+        offer = self.offer()
+        authorization = self.authorize(offer)
+        body = self.result(offer, authorization)
+        evidence = {name: offer[name] for name in ('job_id', 'scope_sha256', 'intent_sha256')}
+        evidence.update(result_body_sha256='', accepted_ack=False)
+        with self.store.connect() as db:
+            before = self.jobs._read(db)
+        self.assertEqual('result_pending_on_both_sides', self.jobs.reconcile_readonly(evidence)['comparison'])
+        frozen = evidence | {'result_body_sha256': digest(body)}
+        self.assertEqual('server_result_missing', self.jobs.reconcile_readonly(frozen)['comparison'])
+        with self.store.connect() as db:
+            self.assertEqual(before, self.jobs._read(db))
+
+        self.jobs.complete(self.proof('RESULT', body))
+        with self.store.connect() as db:
+            before = self.jobs._read(db)
+        audit = self.store.audit()
+        cases = [
+            (evidence, 'local_result_missing'),
+            (frozen, 'result_matches_ack_missing'),
+            (frozen | {'accepted_ack': True}, 'result_matches'),
+            (frozen | {'result_body_sha256': digest(body | {'tree_sha256': '0' * 64})}, 'result_conflict'),
+            (frozen | {'scope_sha256': '0' * 64}, 'job_identity_conflict'),
+            (frozen | {'intent_sha256': '0' * 64}, 'job_identity_conflict'),
+            (frozen | {'job_id': str(uuid.uuid4())}, 'server_job_missing'),
+        ]
+        for local, expected in cases:
+            with self.subTest(expected=expected):
+                self.assertEqual(expected, self.jobs.reconcile_readonly(local)['comparison'])
+        with self.assertRaises(JobError):
+            self.jobs.reconcile_readonly(evidence | {'accepted_ack': True})
+        with self.store.connect() as db:
+            self.assertEqual(before, self.jobs._read(db))
+        self.assertEqual(audit, self.store.audit())
+
     def test_review_is_readonly_actor_bound_and_never_gpo_activation(self):
         self.jobs.poll(self.proof()); before = self.store.snapshot(); audit = self.store.audit()
         v = self.value(); a = self.jobs.review(v, self.actor)

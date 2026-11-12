@@ -267,6 +267,13 @@ def main():
                 return
             if lifecycle_mode:
                 assert len(native['outcomes']) == 8 and not metrics['errors']
+                comparisons = {'stage': ('result_matches', 'completed', 'staged'),
+                    'lost-ack': ('result_matches_ack_missing', 'completed', 'rolled_back'),
+                    'lost-claim': ('result_pending_on_both_sides', 'authorized', None)}
+                for name, (comparison, state, outcome) in comparisons.items():
+                    evidence = json.loads((root/f'reconcile-{name}.json').read_text(encoding='ascii'))
+                    assert core.reconcile_readonly(evidence) == {'comparison': comparison,
+                        'stored_state': state, 'server_outcome': outcome}
                 assert len(metrics['polls']) == 15 and sorted(metrics['polls'].values()) == [1]*14+[2]
                 assert len(metrics['claims']) == 12 and set(metrics['claims'].values()) == {1}
                 assert len(metrics['results']) == 11 and sorted(metrics['results'].values()) == [1]*10+[2]
@@ -288,6 +295,7 @@ def main():
                     'actual_cng_tls_sqlite_signed_child_smb': True,
                     'poll_requests': 16, 'claim_requests': 12,
                     'result_requests': 12, 'result_transitions': 11,
+                    'windows_server_readonly_comparisons': len(comparisons),
                     'actual_core_rollback_review_create': True,
                     'saved_grant_restart_boundary_simulated': True,
                     'actual_machine_reboot_tested': False,

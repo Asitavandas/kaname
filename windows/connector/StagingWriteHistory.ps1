@@ -158,7 +158,7 @@ function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding
  Assert-AuthWireStagingWriteJournalLocation $Root $Binding
  Initialize-AuthWireStagingFilesystemTypes
  $lock=Enter-AuthWireWriteCycleLock $Binding;$pins=[AuthWire.Staging.TreeLeaseV1]::new()
- $review=[pscustomobject]@{Phase='no_active_cycles';Slot='';JobId='';RecordedOutcome='';AcceptedAck=$false}
+ $review=[pscustomobject]@{Phase='no_active_cycles';Slot='';JobId='';RecordedOutcome='';AcceptedAck=$false;Evidence=$null}
  try{
   $pins.PinAncestors($Root)
   if(-not (Get-ChildItem -LiteralPath $Root -Force -ErrorAction Stop|Select-Object -First 1)){return $review}
@@ -166,16 +166,20 @@ function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding
   for($i=0;$i -lt $h.ActiveStates.Count;$i++){
    $state=$h.ActiveStates[$i];$dir=Join-Path $h.Life $state.Slot
    $pins.PinAncestors($dir)
-   $review.Slot=$state.Slot;$review.JobId='';$review.RecordedOutcome='';$review.AcceptedAck=$false
+   $review.Slot=$state.Slot;$review.JobId='';$review.RecordedOutcome='';$review.AcceptedAck=$false;$review.Evidence=$null
    if($state.Phase -cne 'reply_saved'){
     if($i -ne $h.ActiveStates.Count-1 -or (Test-Path -LiteralPath (Join-Path $dir 'completion.json'))){throw 'LIFECYCLE_PENDING_HISTORY_GAP'}
     $review.Phase=$state.Phase
     return $review
    }
    $review.JobId=$state.Offer.job_id
+   if($review.JobId -cne ''){
+    $review.Evidence=[pscustomobject]@{job_id=$review.JobId;scope_sha256=$state.Offer.scope_sha256;intent_sha256=$state.Offer.intent_sha256;result_body_sha256='';accepted_ack=$false}
+   }
    if(Test-Path -LiteralPath (Join-Path $dir 'completion.json')){
     $done=Read-AuthWireLifecycleCompletion $Root $h.Life $state $Binding $Key
     $review.Phase='completion_verified';$review.RecordedOutcome=$done.outcome;$review.AcceptedAck=$review.JobId -cne ''
+    if($review.Evidence){$review.Evidence.result_body_sha256=$done.result_body_sha256;$review.Evidence.accepted_ack=$true}
     if($done.outcome -cin @('requires_review','refused_before_authorization') -and $i -ne $h.ActiveStates.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'}
     continue
    }
@@ -193,10 +197,12 @@ function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding
    if(Test-Path -LiteralPath (Join-Path $job $ackFile)){
     $e=Get-AuthWireLifecycleOutcomeEvidence $Root $state $Binding $Key
     $review.Phase='accepted_ack_completion_missing';$review.RecordedOutcome=$e.Outcome;$review.AcceptedAck=$true
+    $review.Evidence.result_body_sha256=$e.BodySha256;$review.Evidence.accepted_ack=$true
    }elseif($refusal -or $resultPresent){
-    if($refusal){$null=Read-AuthWireWriteRefusalOutbox $Root $h.Life $state $Binding $Key}
-    elseif($rollback){$null=Read-AuthWireRollbackResultOutbox $Root $review.JobId $Binding $release $Key}
-    else{$null=Read-AuthWireWriteResultOutbox $Root $review.JobId $Binding $release $Key}
+    if($refusal){$box=Read-AuthWireWriteRefusalOutbox $Root $h.Life $state $Binding $Key}
+    elseif($rollback){$box=Read-AuthWireRollbackResultOutbox $Root $review.JobId $Binding $release $Key}
+    else{$box=Read-AuthWireWriteResultOutbox $Root $review.JobId $Binding $release $Key}
+    $review.Evidence.result_body_sha256=$box.body_sha256
     $review.Phase='outbox_without_accepted_ack'
    }elseif(Test-Path -LiteralPath (Join-Path $job ($prefix+'authorization.json'))){
     if($rollback){$null=Read-AuthWireRollbackAuthorizationEvidence $Root $review.JobId $Binding $release $Key}
@@ -209,7 +215,7 @@ function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding
   }
   return $review
  }catch{
-  return [pscustomobject]@{Phase='evidence_invalid_or_unavailable';Slot='';JobId='';RecordedOutcome='';AcceptedAck=$false}
+  return [pscustomobject]@{Phase='evidence_invalid_or_unavailable';Slot='';JobId='';RecordedOutcome='';AcceptedAck=$false;Evidence=$null}
  }finally{$pins.Dispose();$lock.ReleaseMutex();$lock.Dispose()}
 }
 
