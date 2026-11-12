@@ -459,7 +459,6 @@ class StagingWriteJobTests(unittest.TestCase):
     def test_internal_service_has_no_execution_or_general_command_entrypoint(self):
         from pathlib import Path
         server = Path(__file__).parents[1] / 'kaname' / 'server.py'
-        self.assertNotIn(POLL_PATH, server.read_text())
         self.assertNotIn(CLAIM_PATH, server.read_text())
         self.assertNotIn(RESULT_PATH, server.read_text())
         self.assertFalse(hasattr(self.jobs, 'execute'))

@@ -81,8 +81,10 @@ workers receive the SCM stop event and share the existing bounded stop window.
 The writer checks the fixed journal and service key and publishes its outcome
 to `state/write-scheduler.json`. It starts once per service start. A blocked
 writer leaves the read-only worker available. The durable journal governs what
-the next service start may do. The hosted SCM fixture uses a loopback HTTPS
-peer for authenticated no-job polling and reconciliation after an invalid reply.
+the next service start may do. The hosted SCM fixture uses the application
+handler in explicit loopback HTTPS probe mode. It verifies signed no-job polling
+and reconciliation after an invalid reply. The probe records replay protection
+while preserving the job queue and write-worker readiness record.
 
 The new hosted Windows fixture reuses actual CNG/TLS/SQLite/signed child/SMB SDKs.
 It exercises common stage dispatch, separate rollback, exact lost-ACK recovery,

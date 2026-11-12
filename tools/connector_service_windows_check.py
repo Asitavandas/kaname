@@ -38,33 +38,24 @@ def main():
         create_web_certificate(root,fqdn,'127.0.0.1')
         store=Store(root/'state');store.save(0,config={'appliance_fqdn':fqdn,'ad_domain':'lab.example','dc_ips':['127.0.0.2'],'radius_clients':[],'access_modes':['wired']})
         Operations(store);pki=PKIService(store.root).initialize(b'isolated-service-fixture-password')
-        server=DevelopmentServer(store.root,0,tls_cert=root/'web.crt',tls_key=root/'web.key',public_name=fqdn)
+        server=DevelopmentServer(store.root,0,tls_cert=root/'web.crt',tls_key=root/'web.key',
+                                 public_name=fqdn,staging_write_probe=write_only)
         base={'instance_id':pki['instance_id'],'connector_id':str(uuid.uuid4()),'host_guid':str(uuid.uuid4()),'appliance_fqdn':fqdn,'appliance_tls_sha256':x509.load_pem_x509_certificate(server.web_certificate).fingerprint(hashes.SHA256()).hex(),'port':server.server_port}
         (root/'base.json').write_text(json.dumps(base),encoding='ascii')
         original_scope_target=ScopeJobs._target
         original_combined_scope_target=CombinedScopeJobs._target
         original_staging_target=StagingPreviewJobs._target
         original=Handler.connector_peer
-        original_post=Handler.do_POST
+        original_respond=Handler.respond
         write_polls=[]
-        write_jobs=None
-        def fixture_post(handler):
-            if handler.path!=POLL_PATH:
-                return original_post(handler)
-            try:
-                size=int(handler.headers.get('Content-Length', '0'))
-                if not 0<size<=4096 or write_jobs is None:
-                    raise ValueError('Fixture not ready')
-                reply=write_jobs.poll(handler.rfile.read(size))
-                write_polls.append(reply['job_id'])
+        def observe_probe_reply(handler, code, value, *args, **kwargs):
+            if handler.server is server and handler.path==POLL_PATH and code==200:
+                write_polls.append(value['job_id'])
                 if (root/'write-reject').exists():
-                    reply['request_id']='0'*64
-                handler.respond(200,reply)
-            except Exception as exc:
-                print('WRITE_SCHEDULER_POLL_REJECTED '+type(exc).__name__,flush=True)
-                handler.respond(400,{'error':'FIXTURE_POLL_REJECTED'})
+                    value = value | {'request_id':'0'*64}
+            return original_respond(handler, code, value, *args, **kwargs)
         if write_only:
-            Handler.do_POST=fixture_post
+            Handler.respond=observe_probe_reply
         def fixture_peer(handler):
             if (root/'case.txt').exists() and ((root/'case.txt').read_text().strip()=='offline' or
                     ((root/'case.txt').read_text().strip()=='candidate-offline' and handler.path.startswith('/api/connector/v1/candidates/')) or
@@ -94,7 +85,6 @@ def main():
                 preview=registry.preview(intent)
                 registry.apply(intent|{'preview_hash':preview['preview_hash'],'confirmed_key_sha256':preview['after']['channel_key_sha256']},str(uuid.uuid4()))
                 if write_only:
-                    write_jobs=StagingWriteJobs(DeploymentCandidates(registry,server.deployment))
                     snapshot=store.snapshot()
                     (root/'paired').write_text('paired',encoding='ascii')
                     process.wait(timeout=230)
@@ -103,6 +93,11 @@ def main():
                     result=json.loads((root/'service-result.json').read_text(encoding='utf-8-sig'))
                     assert result['write_scheduler_scm'] and write_polls==['',''], write_polls
                     assert store.snapshot()==snapshot
+                    jobs=StagingWriteJobs(DeploymentCandidates(registry,server.deployment))
+                    with store.connect() as db:
+                        ledger=jobs._read(db)
+                    assert ledger['last_poll'] is None and ledger['jobs']==[]
+                    result['actual_server_probe']=True
                     print('AUTHWIRE_WRITE_SCHEDULER_SCM_OK '+json.dumps(result,sort_keys=True))
                     return
                 jobs=ConnectorJobs(registry)
@@ -244,6 +239,6 @@ def main():
             ScopeJobs._target=original_scope_target
             CombinedScopeJobs._target=original_combined_scope_target
             StagingPreviewJobs._target=original_staging_target
-            server.shutdown();server.server_close();thread.join();Handler.connector_peer=original;Handler.do_POST=original_post
+            server.shutdown();server.server_close();thread.join();Handler.connector_peer=original;Handler.respond=original_respond
 
 if __name__=='__main__':main()

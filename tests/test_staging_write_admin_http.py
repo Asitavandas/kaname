@@ -7,8 +7,9 @@ import uuid
 from unittest.mock import patch
 
 from kaname.connector_registry import digest
-from kaname.server import Handler
-from kaname.staging_write_jobs import StagingWriteJobs, SECTION, STAGE, ROLLBACK, ACK, RELEASE_APPROVAL
+from kaname.server import DevelopmentServer, Handler
+from kaname.staging_write_jobs import (StagingWriteJobs, SECTION, STAGE, ROLLBACK, ACK,
+                                     RELEASE_APPROVAL, POLL_PATH, CLAIM_PATH, RESULT_PATH)
 from . import test_staging_preview_jobs_http as hf
 from . import test_staging_write_jobs as wf
 
@@ -315,6 +316,38 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
                      '/api/connector/v1/staging-write/poll', '/api/connector/v1/staging-write/claim',
                      '/api/connector/v1/staging-write/result'):
             self.assertEqual(404, self.request('POST', path, {}, self.headers)[0])
+
+    def test_probe_requires_explicit_loopback_https(self):
+        for options in ({'staging_write_probe':True},
+                        {'staging_write_probe':True, 'listen':'192.0.2.1', 'tls_cert':'cert', 'tls_key':'key'},
+                        {'staging_write_probe':'true'}):
+            with self.assertRaisesRegex(ValueError, 'loopback HTTPS'):
+                DevelopmentServer(self.store.root, 0, **options)
+
+    def test_authenticated_probe_never_leases_a_queued_job(self):
+        value = self.ready()
+        self.jobs.create(value | {'review_hash': self.jobs.review(value, self.actor)['review_hash']}, self.actor)
+        with self.store.connect() as db:
+            before = self.jobs._read(db)
+        self.now = int(time.time())
+        proof = wf.StagingWriteJobTests.proof(self)
+        self.assertEqual(404, self.request('POST', POLL_PATH, {}, self.headers)[0])
+        with patch.object(self.server, 'staging_write_probe', True):
+            self.assertEqual(403, self.peer(POLL_PATH, proof, {'Cookie':'session=x'})[0])
+            wrong_key = wf.StagingWriteJobTests.proof(self, private=self.other)
+            self.assertEqual(403, self.peer(POLL_PATH, wrong_key)[0])
+            code, reply = self.peer(POLL_PATH, proof)
+            self.assertEqual(200, code, reply)
+            self.assertEqual(('', '', '', '', 0, None, False, False), tuple(reply[key] for key in
+                ('job_id', 'operation', 'lease_id', 'intent_sha256', 'expires_at', 'target', 'write_authorized', 'can_apply_gpo')))
+            self.assertEqual(403, self.peer(POLL_PATH, proof)[0])
+            for path in (CLAIM_PATH, RESULT_PATH, POLL_PATH+'?x=1'):
+                self.assertEqual(404, self.request('POST', path, {}, self.headers)[0])
+        with self.store.connect() as db:
+            after = self.jobs._read(db)
+        self.assertEqual(before['last_poll'], after['last_poll'])
+        self.assertEqual(before['jobs'], after['jobs'])
+        self.assertEqual('queued', after['jobs'][0]['state'])
 
     def test_json_limits_duplicate_keys_and_wrong_content_type(self):
         # Reject the declared oversized body before uploading it (TLS may close

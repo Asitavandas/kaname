@@ -19,8 +19,10 @@ paketine teslim edilmiş değildir. StagingFilesystem çağrısı ve canlı dosy
 - `POST /api/deployment/staging-write/create`: aynı güvenlik kapılarından sonra
   koşulsuz `409 STAGING_WRITE_EXECUTION_UNAVAILABLE`. Geçerli review hash'i veya
   tekrar istek dahi job oluşturmaz. Bunu açan environment/config/istek anahtarı yoktur.
-- Peer `staging-write/poll`, `claim`, `result` ve apply/execute uçları **kayıtlı değildir**.
-  İç protokol testleri bu sınıfı doğrudan çağırabilir; HTTP üzerinden yetki verilemez.
+- Varsayılan hizmette `staging-write/poll` kapalıdır. Yalıtılmış kabul için
+  loopback HTTPS sunucusu bu ucu açıkça etkinleştirebilir. İmzalı yoklama
+  yalnızca boş yanıt alır. Kuyruktaki işler ve yazıcı hazırlık kaydı korunur.
+  `claim`, `result` ve apply/execute uçları kayıtlı değildir.
 
 ## Uzlaştırma kararı
 

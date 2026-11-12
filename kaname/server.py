@@ -36,6 +36,7 @@ from .vault import VaultError
 from .admin import AdminStore, AdminError, COOKIE, TTL, IDLE, RESOURCES, permits
 
 STATIC = Path(__file__).parent / 'static'
+STAGING_WRITE_PROBE_PATH = '/api/connector/v1/staging-write/poll'
 ASSETS = {'/deployment.js': ('deployment.js','application/javascript'), '/user-enrollment.js': ('user-enrollment.js','application/javascript'), '/dashboard.js': ('dashboard.js','application/javascript'), '/device.js': ('device.js','application/javascript'), '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
           '/audit.js': ('audit.js','application/javascript'),
           '/access-events.js': ('access-events.js','application/javascript'),
@@ -66,12 +67,15 @@ def development_token(root):
 class DevelopmentServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, root, port=8765, token=None, *, listen='127.0.0.1', tls_cert=None, tls_key=None, public_name=None):
+    def __init__(self, root, port=8765, token=None, *, listen='127.0.0.1', tls_cert=None, tls_key=None,
+                 public_name=None, staging_write_probe=False):
         endpoint = ipaddress.ip_address(listen)
         if endpoint.version != 4 or endpoint.is_unspecified or endpoint.is_multicast:
             raise ValueError('An explicit unicast IPv4 listen address is required')
         if bool(tls_cert) != bool(tls_key) or (not endpoint.is_loopback and not tls_cert):
             raise ValueError('TLS certificate and key are required for LAN access')
+        if type(staging_write_probe) is not bool or (staging_write_probe and not (endpoint.is_loopback and tls_cert)):
+            raise ValueError('Staging write probe requires explicit opt-in on loopback HTTPS')
         if public_name:
             public_name = dns_name(public_name)
             if not tls_cert:
@@ -106,6 +110,7 @@ class DevelopmentServer(ThreadingHTTPServer):
         self.connector_peer_lock = threading.Lock()
         self.connector_peer_gate = threading.BoundedSemaphore(4)
         self.connector_peer_rates = {}
+        self.staging_write_probe = staging_write_probe
         self.users = None
         self.user_sessions = None
         self.user_init_lock = threading.Lock()
@@ -474,7 +479,11 @@ class Handler(BaseHTTPRequestHandler):
             raw = self.rfile.read(size); self.body_read = True
             if len(raw) != size: raise ValueError()
             registry = self.connector_services()
-            if self.path in {'/api/connector/v1/staging-preview/poll','/api/connector/v1/staging-preview/result'}:
+            if self.path == STAGING_WRITE_PROBE_PATH and self.server.staging_write_probe:
+                from .deployment_candidates import DeploymentCandidates
+                from .staging_write_jobs import StagingWriteJobs
+                result = StagingWriteJobs(DeploymentCandidates(registry, self.server.deployment)).probe(raw)
+            elif self.path in {'/api/connector/v1/staging-preview/poll','/api/connector/v1/staging-preview/result'}:
                 from .deployment_candidates import DeploymentCandidates
                 from .staging_preview_jobs import StagingPreviewJobs
                 jobs=StagingPreviewJobs(DeploymentCandidates(registry,self.server.deployment))
@@ -1006,6 +1015,8 @@ class Handler(BaseHTTPRequestHandler):
             self.staging_write_admin(write=True); return
         if self.path in {'/api/deployment/candidates/preview','/api/deployment/candidates/record','/api/deployment/candidates/verify/preview','/api/deployment/candidates/verify/create','/api/deployment/candidates/scope/preview','/api/deployment/candidates/scope/create','/api/deployment/candidates/combined/preview','/api/deployment/candidates/combined/create','/api/deployment/candidates/combined-scope/preview','/api/deployment/candidates/combined-scope/create','/api/deployment/candidates/staging-preview/preview','/api/deployment/candidates/staging-preview/create'}:
             self.deployment_candidate_admin(write=True); return
+        if self.path == STAGING_WRITE_PROBE_PATH and self.server.staging_write_probe:
+            self.connector_peer(); return
         if self.path in {'/api/connector/v1/challenge','/api/connector/v1/health','/api/connector/v1/jobs/poll','/api/connector/v1/jobs/result','/api/connector/v1/candidates/poll','/api/connector/v1/candidates/result','/api/connector/v1/scope/poll','/api/connector/v1/scope/result','/api/connector/v1/combined/poll','/api/connector/v1/combined/result','/api/connector/v1/combined-scope/poll','/api/connector/v1/combined-scope/result','/api/connector/v1/staging-preview/poll','/api/connector/v1/staging-preview/result'}:
             self.connector_peer(); return
         if self.path in {'/api/deployment/connector/jobs/preview', '/api/deployment/connector/jobs/create'}:
