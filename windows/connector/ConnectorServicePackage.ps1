@@ -51,6 +51,36 @@ function Set-AuthWireServiceAcl {
  $acl.SetSecurityDescriptorSddlForm(('O:BAG:BAD:P(A;'+$flags+';FA;;;SY)(A;'+$flags+';FA;;;BA)(A;'+$flags+';'+$rights+';;;'+$Sid+')'))
  Set-Acl -LiteralPath $Path -AclObject $acl
 }
+function Get-AuthWireConnectorWriteJournalReadiness {
+ param($Config)
+ $binding=$Config.Binding
+ $sid=$binding.service_sid
+ $path=Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) ('AuthWire-WriteJournal-'+([guid]$binding.connector_id).ToString('N'))
+ $result=[ordered]@{Event='WINDOWS_CONNECTOR_WRITE_JOURNAL_READINESS';ServiceName=$Config.ServiceName;ReleaseId=$Config.ReleaseId;JournalPath=$path;Ready=$false;Reason='journal_missing'}
+ Assert-AuthWireChannelPath $path
+ try{$item=Get-Item -LiteralPath $path -Force -ErrorAction Stop}
+ catch [Management.Automation.ItemNotFoundException]{return [pscustomobject]$result}
+ if(-not $item.PSIsContainer){$result.Reason='journal_not_directory';return [pscustomobject]$result}
+
+ $acl=Get-Acl -LiteralPath $path -ErrorAction Stop
+ $sidType=[Security.Principal.SecurityIdentifier]
+ $allowed=@($sid,'S-1-5-18','S-1-5-32-544')
+ $rules=@($acl.GetAccessRules($true,$true,$sidType))
+ if(-not $acl.AreAccessRulesProtected -or $acl.GetOwner($sidType).Value -cnotin $allowed -or
+    @($rules|Where-Object{$_.AccessControlType -ne 'Allow' -or $_.IdentityReference.Value -cnotin $allowed}).Count){
+  $result.Reason='journal_acl_rejected';return [pscustomobject]$result
+ }
+ $rights=0
+ foreach($rule in $rules){
+  if($rule.IdentityReference.Value -ceq $sid -and -not ($rule.PropagationFlags -band [Security.AccessControl.PropagationFlags]::InheritOnly)){
+   $rights=$rights -bor [int]$rule.FileSystemRights
+  }
+ }
+ $required=[int][Security.AccessControl.FileSystemRights]::Modify
+ if(($rights -band $required) -ne $required){$result.Reason='journal_service_access_missing';return [pscustomobject]$result}
+ $result.Ready=$true;$result.Reason='journal_acl_verified'
+ return [pscustomobject]$result
+}
 function Assert-AuthWireServiceConfig {
  param($Config)
  $fields=@('Version','ReleaseId','ServiceName','AccountName','PublisherThumbprint','BaseUrl','Binding','KeyName','ExpectedKeySddl','RootPath')
