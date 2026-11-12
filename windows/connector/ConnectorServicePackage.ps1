@@ -57,6 +57,9 @@ function Get-AuthWireConnectorWriteJournalReadiness {
  $sid=$binding.service_sid
  $path=Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) ('AuthWire-WriteJournal-'+([guid]$binding.connector_id).ToString('N'))
  $result=[ordered]@{Event='WINDOWS_CONNECTOR_WRITE_JOURNAL_READINESS';ServiceName=$Config.ServiceName;ReleaseId=$Config.ReleaseId;JournalPath=$path;Ready=$false;Reason='journal_missing'}
+ if($path -cnotmatch '\A[A-Za-z]:\\' -or $path -match ':.*:'){
+  $result.Reason='journal_path_rejected';return [pscustomobject]$result
+ }
  Assert-AuthWireChannelPath $path
  try{$item=Get-Item -LiteralPath $path -Force -ErrorAction Stop}
  catch [Management.Automation.ItemNotFoundException]{return [pscustomobject]$result}
