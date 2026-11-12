@@ -1,5 +1,5 @@
 param([Parameter(Mandatory=$true)][ValidateSet('Export','Restore')][string]$Mode,
-      [string]$ManifestSha256,[string]$ScopeSha256,[string]$TreeSha256,[string]$TarSha256)
+      [Alias('ManifestSha256')][string]$ExpectedManifestSha256,[string]$ScopeSha256,[string]$TreeSha256,[string]$TarSha256)
 $ErrorActionPreference='Stop'
 if($env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:GITHUB_ACTIONS -cne 'true'){throw 'Hosted Windows fixture required'}
 $lib=Join-Path (Split-Path $PSScriptRoot) 'windows\connector'
@@ -45,7 +45,8 @@ try{
   & tar.exe -cf $tar -C $backup .
   if($LASTEXITCODE -ne 0){throw 'Fixture archive creation failed'}
   @('manifest_sha256='+$export.ManifestSha256; 'scope_sha256='+(Get-AuthWireJobScope $binding);
-    'tree_sha256='+$export.TreeSha256; 'tar_sha256='+(Get-FileHash -LiteralPath $tar).Hash.ToLowerInvariant()) | Add-Content -LiteralPath $env:GITHUB_OUTPUT
+    'tree_sha256='+$export.TreeSha256; 'tar_sha256='+(Get-FileHash -LiteralPath $tar).Hash.ToLowerInvariant();
+    'artifact_name=authwire-synthetic-journal-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT) | Add-Content -LiteralPath $env:GITHUB_OUTPUT
   Write-Output 'AUTHWIRE_JOURNAL_BACKUP_EXPORT_OK synthetic=true'
  }else{
   if((Get-FileHash -LiteralPath $tar).Hash.ToLowerInvariant() -cne $TarSha256){throw 'Fixture transport archive changed'}
@@ -53,17 +54,17 @@ try{
   if($LASTEXITCODE -ne 0){throw 'Fixture archive extraction failed'}
   $dest=Join-Path $temp ('AuthWire-JournalRestore-'+[guid]::NewGuid().ToString('N'));New-FixturePrivateDirectory $dest
   Assert-FixtureRejection {Restore-AuthWireWriteJournalEvidence $backup $dest ('0'*64) $ScopeSha256} 'JOURNAL_BACKUP_MANIFEST_CHANGED'
-  Assert-FixtureRejection {Restore-AuthWireWriteJournalEvidence $backup $dest $ManifestSha256 ('0'*64)} 'JOURNAL_BACKUP_SCOPE_REJECTED'
+  Assert-FixtureRejection {Restore-AuthWireWriteJournalEvidence $backup $dest $ExpectedManifestSha256 ('0'*64)} 'JOURNAL_BACKUP_SCOPE_REJECTED'
   $record=Join-Path $backup 'data\write-lifecycle\000001\poll-sent.json';$old=[IO.File]::ReadAllBytes($record)
   try{
    [IO.File]::AppendAllText($record,' ')
-   Assert-FixtureRejection {Restore-AuthWireWriteJournalEvidence $backup $dest $ManifestSha256 $ScopeSha256} 'JOURNAL_BACKUP_TREE_CHANGED'
+   Assert-FixtureRejection {Restore-AuthWireWriteJournalEvidence $backup $dest $ExpectedManifestSha256 $ScopeSha256} 'JOURNAL_BACKUP_TREE_CHANGED'
   }finally{[IO.File]::WriteAllBytes($record,$old)}
   if(Get-ChildItem -LiteralPath $dest -Force){throw 'Invalid evidence wrote a destination file'}
-  $result=Restore-AuthWireWriteJournalEvidence $backup $dest $ManifestSha256 $ScopeSha256
+  $result=Restore-AuthWireWriteJournalEvidence $backup $dest $ExpectedManifestSha256 $ScopeSha256
   if(-not $result.Quarantined -or $result.TreeSha256 -cne $TreeSha256 -or $result.Files -ne 5 -or
      -not (Test-Path -LiteralPath (Join-Path $dest 'write-lifecycle\000002') -PathType Container)){throw 'Restored evidence does not match the source'}
-  Assert-FixtureRejection {Restore-AuthWireWriteJournalEvidence $backup $dest $ManifestSha256 $ScopeSha256} 'JOURNAL_BACKUP_DESTINATION_NOT_EMPTY'
+  Assert-FixtureRejection {Restore-AuthWireWriteJournalEvidence $backup $dest $ExpectedManifestSha256 $ScopeSha256} 'JOURNAL_BACKUP_DESTINATION_NOT_EMPTY'
   Write-Output 'AUTHWIRE_JOURNAL_BACKUP_RESTORE_OK synthetic=true quarantined=true files=5'
  }
 }finally{

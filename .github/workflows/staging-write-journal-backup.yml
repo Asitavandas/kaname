@@ -22,6 +22,7 @@ jobs:
       scope: ${{ steps.export.outputs.scope_sha256 }}
       tree: ${{ steps.export.outputs.tree_sha256 }}
       archive: ${{ steps.export.outputs.tar_sha256 }}
+      artifact_name: ${{ steps.export.outputs.artifact_name }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
@@ -31,7 +32,7 @@ jobs:
         run: '& .\tools\staging_write_journal_backup_windows_check.ps1 -Mode Export'
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: authwire-synthetic-journal-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ steps.export.outputs.artifact_name }}
           path: ${{ runner.temp }}/authwire-journal-fixture.tar
           if-no-files-found: error
           retention-days: 1
@@ -45,7 +46,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          name: authwire-synthetic-journal-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ needs.export-fixture.outputs.artifact_name }}
           path: ${{ runner.temp }}
       - shell: powershell
         env:
