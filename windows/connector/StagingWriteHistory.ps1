@@ -158,7 +158,7 @@ function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding
  Assert-AuthWireStagingWriteJournalLocation $Root $Binding
  Initialize-AuthWireStagingFilesystemTypes
  $lock=Enter-AuthWireWriteCycleLock $Binding;$pins=[AuthWire.Staging.TreeLeaseV1]::new()
- $review=[pscustomobject]@{Phase='no_active_cycles';Slot='';JobId='';RecordedOutcome='';AcceptedAck=$false;Evidence=$null}
+ $review=[pscustomobject]@{Phase='no_active_cycles';Slot='';JobId='';RecordedOutcome='';AcceptedAck=$false;Evidence=$null;StageLockReleaseEvidence=$null}
  try{
   $pins.PinAncestors($Root)
   if(-not (Get-ChildItem -LiteralPath $Root -Force -ErrorAction Stop|Select-Object -First 1)){return $review}
@@ -177,10 +177,24 @@ function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding
     $review.Evidence=[pscustomobject]@{job_id=$review.JobId;scope_sha256=$state.Offer.scope_sha256;intent_sha256=$state.Offer.intent_sha256;result_body_sha256='';accepted_ack=$false}
    }
    if(Test-Path -LiteralPath (Join-Path $dir 'completion.json')){
+    $completionPath=Join-Path $dir 'completion.json';$pins.PinFile($completionPath)
+    $stageLock=$null
+    if($state.Offer.operation -ceq 'combined.filesystem.stage.v1'){
+     $stageLock=Join-Path $Root ('gpo-'+$state.Offer.target.scope_target.gpo_id+'.json')
+     $pins.PinFile($stageLock)
+    }
     $done=Read-AuthWireLifecycleCompletion $Root $h.Life $state $Binding $Key
     $review.Phase='completion_verified';$review.RecordedOutcome=$done.outcome;$review.AcceptedAck=$review.JobId -cne ''
     if($review.Evidence){$review.Evidence.result_body_sha256=$done.result_body_sha256;$review.Evidence.accepted_ack=$true}
     if($done.outcome -cin @('requires_review','refused_before_authorization') -and $i -ne $h.ActiveStates.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'}
+    if($stageLock -and $done.outcome -ceq 'refused_before_authorization'){
+     $review.StageLockReleaseEvidence=[pscustomobject]@{
+      format='AuthWireRefusedStageLockEvidenceV1';slot=$state.Slot;gpo_id=$state.Offer.target.scope_target.gpo_id
+      job_id=$review.JobId;scope_sha256=$review.Evidence.scope_sha256;intent_sha256=$review.Evidence.intent_sha256
+      result_body_sha256=$done.result_body_sha256;accepted_ack_sha256=$done.ack_sha256
+      completion_sha256=(Get-AuthWireWriteHash $done);lock_sha256=(Get-AuthWireWriteHash (Read-AuthWireStagingJournal $stageLock))
+     }
+    }
     continue
    }
    if($i -ne $h.ActiveStates.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'}
@@ -215,7 +229,7 @@ function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding
   }
   return $review
  }catch{
-  return [pscustomobject]@{Phase='evidence_invalid_or_unavailable';Slot='';JobId='';RecordedOutcome='';AcceptedAck=$false;Evidence=$null}
+  return [pscustomobject]@{Phase='evidence_invalid_or_unavailable';Slot='';JobId='';RecordedOutcome='';AcceptedAck=$false;Evidence=$null;StageLockReleaseEvidence=$null}
  }finally{$pins.Dispose();$lock.ReleaseMutex();$lock.Dispose()}
 }
 

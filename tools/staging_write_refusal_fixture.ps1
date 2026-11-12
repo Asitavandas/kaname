@@ -26,9 +26,11 @@ try{
   Check (-not (Test-Path -LiteralPath $rfBox)) 'uncertain or unpersisted decision cannot claim no filesystem effects'
   . (Join-Path $package 'StagingWriteLifecycle.ps1')
   Check ((Invoke-AuthWireStagingWriteLifecycleStep $journal $b $release $rsa $url).Phase -ceq 'local_reconciliation_required') 'restart does not invent a late refusal or replay CLAIM'
+  Check ($null -eq (Get-AuthWireWriteReconciliationReview $journal $b $rsa).StageLockReleaseEvidence) 'ambiguous history does not produce lock release evidence'
  }else{
   if($case -cin @('ref_lost_ack','ref_ack_limit')){
    Check ($rfFirst.Phase -ceq 'refusal_result_pending' -and -not $rfFirst.ResultRecorded) 'lost or wrong ACK leaves immutable refusal pending'
+   Check ($null -eq (Get-AuthWireWriteReconciliationReview $journal $b $rsa).StageLockReleaseEvidence) 'missing ACK does not produce lock release evidence'
   }else{Check ($rfFirst.Phase -ceq 'refused_before_authorization' -and $rfFirst.ResultRecorded) 'preflight rejection reaches typed core result without CLAIM'}
   $rfState=Read-AuthWireLifecyclePoll $rfLife '000001' $b $rsa
   $rfBody=Read-AuthWireWriteRefusalOutbox $journal $rfLife $rfState $b $rsa
@@ -47,11 +49,39 @@ try{
   Check ((Get-AuthWireLifecycleSlots $rfLife).Count -eq 1) 'refusal remains a no-new-POLL barrier'
   # Claim helper guards are exercised before any preflight access or proof.
   if($case -ceq 'ref_rollback'){
+   Check ($null -eq (Get-AuthWireWriteReconciliationReview $journal $b $rsa).StageLockReleaseEvidence) 'rollback refusal does not produce stage lock release evidence'
    Reject {New-AuthWireRollbackClaim $journal $rfId $b $release $rsa} 'refusal blocks separate rollback CLAIM'
    Reject {Invoke-AuthWireRollbackClaimTransport $journal $rfId $b $release $rsa $url} 'refusal blocks rollback transport'
   }else{
    Reject {New-AuthWireStagingWriteClaim $journal $rfId $b $release $rsa} 'refusal blocks stage CLAIM'
    Reject {Invoke-AuthWireStagingWriteClaimTransport $journal $rfId $b $release $rsa $url} 'refusal blocks stage claim transport'
+  }
+  if($case -ceq 'ref_stage'){
+   $rfLock=Join-Path $journal ('gpo-'+$t.gpo_id+'.json')
+   $rfCompletion=Join-Path (Join-Path $rfLife '000001') 'completion.json'
+   $rfLockBytes=[IO.File]::ReadAllBytes($rfLock)
+   $rfCompletionBytes=[IO.File]::ReadAllBytes($rfCompletion)
+   $rfDone=Read-AuthWireStagingJournal $rfCompletion
+   $rfReview=Get-AuthWireWriteReconciliationReview $journal $b $rsa
+   $rfEvidence=$rfReview.StageLockReleaseEvidence
+   Check ($rfEvidence -and $rfEvidence.format -ceq 'AuthWireRefusedStageLockEvidenceV1' -and $rfEvidence.slot -ceq '000001' -and
+    $rfEvidence.gpo_id -ceq $t.gpo_id -and $rfEvidence.job_id -ceq $rfId -and $rfEvidence.scope_sha256 -ceq $rfState.Offer.scope_sha256 -and
+    $rfEvidence.intent_sha256 -ceq $rfState.Offer.intent_sha256 -and $rfEvidence.result_body_sha256 -ceq $rfHash -and
+    $rfEvidence.accepted_ack_sha256 -ceq $rfDone.ack_sha256 -and $rfEvidence.completion_sha256 -ceq (Get-AuthWireWriteHash $rfDone) -and
+    $rfEvidence.lock_sha256 -ceq (Get-AuthWireWriteHash (Read-AuthWireStagingJournal $rfLock))) 'verified refusal projects the original GPO lock and matching completion evidence'
+   Check ([Convert]::ToBase64String([IO.File]::ReadAllBytes($rfLock)) -ceq [Convert]::ToBase64String($rfLockBytes) -and
+    [Convert]::ToBase64String([IO.File]::ReadAllBytes($rfCompletion)) -ceq [Convert]::ToBase64String($rfCompletionBytes)) 'review preserves lock and completion bytes'
+   try{
+    $rfChanged=Read-AuthWireStagingJournal $rfLock;$rfChanged.intent_sha256='0'*64
+    [IO.File]::WriteAllText($rfLock,($rfChanged|ConvertTo-Json -Compress))
+    $rfInvalid=Get-AuthWireWriteReconciliationReview $journal $b $rsa
+    Check ($rfInvalid.Phase -ceq 'evidence_invalid_or_unavailable' -and $null -eq $rfInvalid.StageLockReleaseEvidence) 'mismatched lock never produces release evidence'
+   }finally{[IO.File]::WriteAllBytes($rfLock,$rfLockBytes)}
+   try{
+    [IO.File]::Delete($rfCompletion)
+    $rfPartial=Get-AuthWireWriteReconciliationReview $journal $b $rsa
+    Check ($rfPartial.Phase -ceq 'accepted_ack_completion_missing' -and $null -eq $rfPartial.StageLockReleaseEvidence) 'a valid ACK alone does not produce lock release evidence'
+   }finally{[IO.File]::WriteAllBytes($rfCompletion,$rfCompletionBytes)}
   }
   $rfBytes=[IO.File]::ReadAllBytes($rfBox)
   try{
