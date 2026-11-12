@@ -30,6 +30,23 @@ worker. A copied replay ledger is evidence, not permission to resume a write.
 
 ## Retention and delivery boundary
 
+`StagingWriteJournalBackup.ps1` adds a separate Windows evidence-copy path.
+Export uses the fixed connector journal and the existing lifecycle mutex. It
+copies original bytes and empty directories into a provisioned private local
+directory and writes the manifest last. Source records and the copy are checked
+again before publication. A separately stored manifest SHA-256 and connector
+scope digest are required for restore. The receiver validates the complete tree
+before copying it into a new private `AuthWire-JournalRestore-<id>` directory
+outside the active journal namespace. This evidence restore preserves bytes and
+directory structure. Live journal ACL migration and activation remain separate.
+
+The hosted fixture sends only generated journal records as an artifact from
+one Windows runner to a second runner. It checks transport integrity, an empty
+directory, refusal and lock bytes, pending records, and archive nesting. It
+also checks that changed bytes, a changed manifest, a wrong scope, or a reused
+destination are rejected. Real off-host storage, access controls, and recovery
+with a customer journal require separate field verification.
+
 No Windows lifecycle record, stage origin, engine record or GPO lock is pruned,
 renumbered or reset. The existing 64-cycle maintenance stop remains. Existing
 Linux archive retention remains the same (14 successful managed backups by
