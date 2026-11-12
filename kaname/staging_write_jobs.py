@@ -30,6 +30,7 @@ REFUSALS = {'CONTENT_REJECTED', 'SCOPE_CHANGED', 'PREVIEW_EXPIRED',
             'PREFLIGHT_FAILED', 'WRITER_UNAVAILABLE'}
 REVIEW_REASONS = {'IO_FAILURE', 'JOURNAL_FAILURE', 'DRIFT', 'WORKER_INTERRUPTED',
                   'OUTCOME_UNKNOWN', 'POSTCHECK_FAILED'}
+RELEASE_APPROVAL = 'approve_refused_stage_lock_release'
 
 
 def is_hash(value):
@@ -421,16 +422,47 @@ class StagingWriteJobs(ConnectorJobs):
                  'server_outcome': result['outcome'] if result else None}, job)
 
     def _validate_reconciliation_decision(self, value, actor, *, confirm=False):
-        fields = {'expected_revision', 'evidence', 'decision'}
+        required = {'expected_revision', 'evidence', 'decision'}
         if confirm:
-            fields.update({'review_hash', 'acknowledge'})
-        keys(value, fields, fields)
+            required.update({'review_hash', 'acknowledge'})
+        keys(value, required | {'reconciliation_receipt'}, required)
         self._validate_reconciliation_evidence(value['evidence'])
         require(guid(actor) and type(value['decision']) is str and
-                value['decision'] in {'keep_under_review', 'acknowledge_saved_result'} and
-                (not confirm or (is_hash(value['review_hash']) and
-                                 value['acknowledge'] == 'record_reconciliation_decision')),
+                value['decision'] in {'keep_under_review', 'acknowledge_saved_result', RELEASE_APPROVAL},
                 'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
+        release = value['decision'] == RELEASE_APPROVAL
+        acknowledgement = 'record_stage_lock_release_approval' if release else 'record_reconciliation_decision'
+        require(release == ('reconciliation_receipt' in value) and
+                (not confirm or (is_hash(value['review_hash']) and
+                                 value['acknowledge'] == acknowledgement)),
+                'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
+        if release:
+            receipt = value['reconciliation_receipt']
+            fields = {'revision', 'review_hash'}
+            keys(receipt, fields, fields)
+            require(type(receipt['revision']) is int and 1 <= receipt['revision'] < 2**53 and
+                    is_hash(receipt['review_hash']), 'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
+
+    @staticmethod
+    def _reconciliation_event(value, actor):
+        job_id = value['evidence']['job_id']
+        decision = value['decision']
+        request_hash = digest({'actor': actor, 'request': value})
+        return f'staging_write_reconciliation:{job_id}:{decision}:actor:{actor}:request:{request_hash}'
+
+    def _require_refused_stage_release(self, db, value, actor, comparison, job):
+        require(comparison['comparison'] == 'result_matches' and
+                comparison.get('stored_state') == 'completed' and
+                comparison.get('server_outcome') == 'refused_before_authorization' and
+                job['operation'] == STAGE and not job['authorization_id'] and
+                job['scope'] == scope_id(self._binding(db)), 'STAGING_WRITE_RELEASE_EVIDENCE_CONFLICT')
+        receipt = value['reconciliation_receipt']
+        prior = {'expected_revision': receipt['revision'] - 1, 'evidence': value['evidence'],
+                 'decision': 'acknowledge_saved_result', 'review_hash': receipt['review_hash'],
+                 'acknowledge': 'record_reconciliation_decision'}
+        require(db.execute('SELECT 1 FROM audit WHERE revision=? AND event=?',
+            (receipt['revision'], self._reconciliation_event(prior, actor))).fetchone(),
+            'STAGING_WRITE_RELEASE_RECONCILIATION_REQUIRED')
 
     def _reconciliation_decision_review(self, db, value, actor):
         revision = self.ops._revision(db, value['expected_revision'])
@@ -441,6 +473,10 @@ class StagingWriteJobs(ConnectorJobs):
                     comparison.get('stored_state') == 'completed', 'STAGING_WRITE_RECONCILIATION_CONFLICT')
         review = {'revision': revision, 'actor': actor, 'job_id': evidence['job_id'],
                   'decision': value['decision'], **comparison}
+        if value['decision'] == RELEASE_APPROVAL:
+            self._require_refused_stage_release(db, value, actor, comparison, job)
+            review.update(gpo_id=job['target']['scope_target']['gpo_id'],
+                          reconciliation_receipt=value['reconciliation_receipt'])
         review['review_hash'] = digest({'domain': 'AuthWireStagingWriteReconciliationV1',
             'review': review, 'evidence': evidence, 'stored_job_sha256': digest(job)})
         return review
@@ -455,13 +491,12 @@ class StagingWriteJobs(ConnectorJobs):
         self._validate_reconciliation_decision(value, actor, confirm=True)
         job_id = value['evidence']['job_id']
         decision = value['decision']
-        request_hash = digest({'actor': actor, 'request': value})
-        event = f'staging_write_reconciliation:{job_id}:{decision}:actor:{actor}:request:{request_hash}'
+        event = self._reconciliation_event(value, actor)
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             saved = db.execute('SELECT revision FROM audit WHERE event=? LIMIT 1', (event,)).fetchone()
             if saved is None:
-                input_value = {k: value[k] for k in ('expected_revision', 'evidence', 'decision')}
+                input_value = {k: v for k, v in value.items() if k not in {'review_hash', 'acknowledge'}}
                 review = self._reconciliation_decision_review(db, input_value, actor)
                 require(secrets.compare_digest(value['review_hash'], review['review_hash']),
                         'STAGING_WRITE_RECONCILIATION_REVIEW_CHANGED')

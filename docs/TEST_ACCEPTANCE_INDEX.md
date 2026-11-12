@@ -20,6 +20,7 @@ daha sonraki başarılı kabulü yeniden açmaz. Bu kayıt yeni bir PDF raporu d
 | G01/A04 belirsiz Windows görev kayıtlarının salt okunur sınıflandırması | Kaynak kabulü kapalı; canlı teslim açık | PR144, kaynak `f9e9ba5`; Windows yaşam döngüsü 8 senaryo / 219 kontrol ve günlük geçmişi 4 senaryo / 205 kontrol |
 | G01/A04 doğrulanmış Windows kanıtının sunucu görev kaydıyla salt okunur eşleştirilmesi | Kaynak kabulü kapalı; canlı teslim açık | PR145, kaynak `49737ba`; doğrulanmış ACK, kayıp ACK ve kayıp CLAIM için 3 gerçek Windows–SQLite karşılaştırması |
 | G01/A04 eksik veya çelişkili kayıtlarda operatör kararının kaydı | Kaynak kabulü kapalı; canlı teslim açık | PR146; gerçek HTTPS oturumu, eski kanıt ve aynı onayın tekrar denetimleri |
+| G01/A04 yetki öncesi reddedilen stage için ayrı kilit açma onayı | Kaynak kabulü kapalı | Sunucu sonucu, güncel Connector kapsamı ve aynı operatörün önceki uzlaştırma makbuzuna bağlı denetim kaydı. Gerçek HTTPS testinde doğrulandı. |
 | Misafir/VLAN yeniden testi | Tekrar yapılmayacak | Rapor ve kullanıcının açık dışlaması |
 | Windows başlangıç testinde görev sonucu gözlemi | Kaynak kabulü kapalı | PR142; 12 Kasım bağımsız Windows ve tam cihaz kayıt akışları başarılı |
 | Windows istemcisinin Türkçe ortamda sertifika hata kodunu okuması | Kaynak ve saha doğrulaması geçti | PR143; `tr-TR` ve `en-US` Windows regresyonu, sekiz başarılı CI akışı |
@@ -72,8 +73,9 @@ Doğrulanmış yerel kanıtın sunucu görev kaydıyla karşılaştırılması a
 CI ortamında geçti. Kayıp ACK durumunda eşleşen sunucu sonucu ile yerel onayın
 eksikliği birlikte görülebiliyor. Operatör, kaydı incelemede tutma veya
 eşleşen sunucu sonucunu gördüğünü kaydetme kararını güncel kanıta bağlı olarak
-onaylayabilir. Bu karar denetim geçmişine eklenir. Sıradaki açık iş onaylı
-kilit açmadır. Harici günlük yedeği ve geri yükleme, aktif scheduler/SCM,
-kontrollü imzalı teslim ve gerçek gMSA/AD/uç kabulü ayrıca açıktır.
+onaylayabilir. Yetki öncesi reddedilmiş stage için ayrı kilit açma onayı da
+denetim geçmişine eklenebilir. Sıradaki bağımlılık harici Windows günlük
+yedeği ve geri yükleme kanıtıdır. Windows'ta kilidi fiilen açma, aktif
+scheduler/SCM, kontrollü imzalı teslim ve gerçek gMSA/AD/uç kabulü açıktır.
 Önceki ret bildirimi kanıtı: docs/checkpoints/2026-11-07-write-refusal-source.json.
 
