@@ -1,4 +1,4 @@
-"""Filesystem write authorization ledger; no peer/execution adapter registration.
+"""Filesystem write authorization ledger and bounded no-job probe.
 
 The administrator review API enforces both existing write permissions and
 session/Origin/CSRF checks; HTTP create is closed. Actor UUIDs and ack are not auth.
@@ -64,7 +64,7 @@ def intent_id(scope, identity, operation, target):
 
 
 class StagingWriteJobs(ConnectorJobs):
-    """Trusted-caller ledger. HTTP exposes only status/review, never execution."""
+    """Trusted-caller ledger with an optional loopback transport probe."""
     def __init__(self, candidates, **kwargs):
         super().__init__(candidates.registry, **kwargs)
         self.candidates = candidates
@@ -299,6 +299,12 @@ class StagingWriteJobs(ConnectorJobs):
             return {'job_id': p['job_id'], 'recorded': True, 'state': 'queued', 'can_apply_gpo': False}
 
     def poll(self, raw):
+        return self._poll(raw, allow_lease=True)
+
+    def probe(self, raw):
+        return self._poll(raw, allow_lease=False)
+
+    def _poll(self, raw, *, allow_lease):
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE'); binding = self._binding(db); scope = scope_id(binding)
             request, identity, until, body = self._proof(raw, binding, 'POLL')
@@ -307,13 +313,15 @@ class StagingWriteJobs(ConnectorJobs):
             ledger['polls'] = [p for p in ledger['polls'] if now < p['until']]
             require(len(ledger['polls']) < 128 and all(p['id'] != identity for p in ledger['polls']), 'STAGING_WRITE_POLL_REPLAY')
             ledger['polls'].append({'id': identity, 'until': until})
-            ledger['last_poll'] = {'scope': scope, 'at': now, 'release_id': body['release_id']}
-            # Offer only once. Lost offer/lease never causes automatic re-leasing.
-            job = next((j for j in ledger['jobs'] if j['state'] == 'queued' and
-                self._state(j, scope, now) == 'queued' and j['target']['writer_release_id'] == body['release_id'] and
-                self._current(db, ledger, j)), None)
-            if job:
-                job.update(state='leased', lease_id=secrets.token_hex(32), lease_until=min(now + 90, job['deadline']))
+            job = None
+            if allow_lease:
+                ledger['last_poll'] = {'scope': scope, 'at': now, 'release_id': body['release_id']}
+                # Offer only once. Lost offer/lease never causes automatic re-leasing.
+                job = next((j for j in ledger['jobs'] if j['state'] == 'queued' and
+                    self._state(j, scope, now) == 'queued' and j['target']['writer_release_id'] == body['release_id'] and
+                    self._current(db, ledger, j)), None)
+                if job:
+                    job.update(state='leased', lease_id=secrets.token_hex(32), lease_until=min(now + 90, job['deadline']))
             self.ops._save(db, SECTION, ledger)
             return {'format': 1, 'request_id': request, 'scope_sha256': scope,
                     'job_id': job['id'] if job else '', 'operation': job['operation'] if job else '',

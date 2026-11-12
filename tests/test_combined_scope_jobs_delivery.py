@@ -7,6 +7,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from .historical_sources import SERVER_INIT_AST_SHA256
+
 SCRIPT=Path(__file__).resolve().parents[1]/'docs/checkpoints/2026-10-28-combined-scope-jobs-dev43-deploy.py'
 
 class CombinedScopeJobsDeliveryTests(unittest.TestCase):
@@ -93,6 +95,7 @@ class CombinedScopeJobsDeliveryTests(unittest.TestCase):
   # Current GET dispatch adds only the public, signed CRL route; historical
   # deployment guards and all authorization bodies remain frozen.
   self.n['SERVER_PROTECTED']['Handler.get_response']='ffa82699e5d0554940dc62f91822ee2966d62beccf673bc0c60d13b6cd6b9baa'
+  self.n['SERVER_PROTECTED']['DevelopmentServer.__init__']=SERVER_INIT_AST_SHA256
   self.real_server_guard(raw)
   changed=raw.replace(b'def guard(self',b'def altered_guard(self',1)
   self.assertNotEqual(raw,changed)
