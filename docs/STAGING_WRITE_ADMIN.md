@@ -22,6 +22,24 @@ paketine teslim edilmiş değildir. StagingFilesystem çağrısı ve canlı dosy
 - Peer `staging-write/poll`, `claim`, `result` ve apply/execute uçları **kayıtlı değildir**.
   İç protokol testleri bu sınıfı doğrudan çağırabilir; HTTP üzerinden yetki verilemez.
 
+## Uzlaştırma kararı
+
+`POST /api/deployment/staging-write/reconciliation/review` aynı yönetici
+oturumu ve iki yazma yetkisiyle `expected_revision`, Windows incelemesinden
+alınan `evidence` ve `decision` alanlarını kabul eder. `keep_under_review`
+eksik veya çelişkili kayıtlar için kullanılabilir. `acknowledge_saved_result`
+yalnız sunucudaki `completed` kaydının sonuç özeti kanıtla birebir eşleşirse
+kullanılabilir. Bu karar, Windows tarafında ACK eksikken de sunucuda saklanan
+sonucun görüldüğünü kaydeder. İletilen Windows kanıtı operatör girdisidir.
+
+`POST /api/deployment/staging-write/reconciliation/record` aynı alanlara
+`review_hash` ve `acknowledge: record_reconciliation_decision` eklenmesini
+ister. Sunucu revizyonu ve görev kaydını karar işleminde yeniden denetler.
+İnceleme özeti oturumdan alınan operatör kimliğine, karara ve iki taraftaki
+kayıtlara bağlıdır. Aynı isteğin tekrarı ilk denetim kaydının makbuzunu döndürür.
+Karar yalnız denetim geçmişine eklenir. Görev durumu, Windows günlüğü,
+kilitler ve dosya işlemleri bu iki çağrının kapsamı dışındadır.
+
 Yeni durum/review sonuçlarında `approval_enabled`, `write_authorization_enabled`,
 `execution_adapter_available`, `can_apply_gpo` daima false'tur. Review hash'i kullanıcı
 kimlik doğrulaması veya yürütme izni değildir. Core'un `read_only=false` alanı gelecekte

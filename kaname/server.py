@@ -378,7 +378,7 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(503,{'error':'CONNECTOR_SERVICE_UNAVAILABLE'})
 
     def staging_write_admin(self, *, write=False):
-        # Review/status only. No configuration switch can enable execution here.
+        # Operator decisions are audit records; this handler cannot execute jobs.
         if not self.guard(write=write, resource='certificates.authority'):
             return
         if not permits(self.actor, 'system.connectors', write):
@@ -418,8 +418,14 @@ class Handler(BaseHTTPRequestHandler):
                         self.respond(409, {'error': 'STAGING_WRITE_EXECUTION_UNAVAILABLE',
                                           'approval_enabled': False, 'can_apply_gpo': False})
                         return
-                    result = jobs.review(value, actor['id'])
-                    result['review_only'] = True
+                    if self.path == '/api/deployment/staging-write/reconciliation/record':
+                        result = jobs.record_reconciliation(value, actor['id'])
+                    else:
+                        if self.path == '/api/deployment/staging-write/reconciliation/review':
+                            result = jobs.review_reconciliation(value, actor['id'])
+                        else:
+                            result = jobs.review(value, actor['id'])
+                        result['review_only'] = True
             result.update(approval_enabled=False, write_authorization_enabled=False,
                           execution_adapter_available=False, can_apply_gpo=False)
             self.respond(200, result)
@@ -994,7 +1000,9 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(404, {'error': 'NOT_FOUND'})
 
     def do_POST(self):
-        if self.path in {'/api/deployment/staging-write/review', '/api/deployment/staging-write/create'}:
+        if self.path in {'/api/deployment/staging-write/review', '/api/deployment/staging-write/create',
+                         '/api/deployment/staging-write/reconciliation/review',
+                         '/api/deployment/staging-write/reconciliation/record'}:
             self.staging_write_admin(write=True); return
         if self.path in {'/api/deployment/candidates/preview','/api/deployment/candidates/record','/api/deployment/candidates/verify/preview','/api/deployment/candidates/verify/create','/api/deployment/candidates/scope/preview','/api/deployment/candidates/scope/create','/api/deployment/candidates/combined/preview','/api/deployment/candidates/combined/create','/api/deployment/candidates/combined-scope/preview','/api/deployment/candidates/combined-scope/create','/api/deployment/candidates/staging-preview/preview','/api/deployment/candidates/staging-preview/create'}:
             self.deployment_candidate_admin(write=True); return

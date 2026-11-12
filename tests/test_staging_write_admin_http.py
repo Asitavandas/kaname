@@ -6,12 +6,14 @@ import unittest
 import uuid
 from unittest.mock import patch
 
+from kaname.connector_registry import digest
 from kaname.server import Handler
 from kaname.staging_write_jobs import StagingWriteJobs, SECTION, STAGE, ROLLBACK, ACK
 from . import test_staging_preview_jobs_http as hf
 from . import test_staging_write_jobs as wf
 
 ROOT = '/api/deployment/staging-write'
+RECONCILE = ROOT + '/reconciliation'
 
 
 class StagingWriteAdminHTTPTests(unittest.TestCase):
@@ -52,6 +54,81 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
     def ledger(self):
         with self.store.connect() as db:
             return db.execute('SELECT payload FROM runtime_settings WHERE name=?', (SECTION,)).fetchall()
+
+    def reconciliation_case(self):
+        value = self.ready()
+        self.jobs.create(value | {'review_hash': self.jobs.review(value, self.actor)['review_hash']}, self.actor)
+        offer = self.jobs.poll(wf.StagingWriteJobTests.proof(self))
+        claim = wf.StagingWriteJobTests.claim_body(self, offer)
+        grant = self.jobs.claim(wf.StagingWriteJobTests.proof(self, 'CLAIM', claim))
+        body = wf.StagingWriteJobTests.result(self, offer, grant)
+        evidence = {name: offer[name] for name in ('job_id', 'scope_sha256', 'intent_sha256')}
+        evidence.update(result_body_sha256=digest(body), accepted_ack=False)
+        request = {'expected_revision': self.store.snapshot()['revision'], 'evidence': evidence,
+                   'decision': 'keep_under_review'}
+        return request, body
+
+    def test_reconciliation_requires_explicit_actor_bound_approval_and_preserves_job(self):
+        value, body = self.reconciliation_case()
+        before = self.ledger(); audit = self.store.audit()
+        code, review, _ = self.request('POST', RECONCILE+'/review', value, self.headers)
+        self.assertEqual(200, code, review)
+        self.assertEqual('server_result_missing', review['comparison'])
+        self.assertTrue(review['review_only'])
+        self.assertEqual(audit, self.store.audit())
+        approve = value | {'review_hash': review['review_hash'], 'acknowledge': 'record_reconciliation_decision'}
+        second, _ = self.user('reconcile-second', {'certificates.authority':'write', 'system.connectors':'write'})
+        self.assertEqual(409, self.request('POST', RECONCILE+'/record', approve, second)[0])
+        self.assertEqual(400, self.request('POST', RECONCILE+'/record', approve | {'acknowledge':''}, self.headers)[0])
+        for _ in range(2):
+            code, receipt, _ = self.request('POST', RECONCILE+'/record', approve, self.headers)
+            self.assertEqual(200, code, receipt)
+            self.assertTrue(receipt['decision_recorded'])
+            self.assertEqual(value['expected_revision']+1, receipt['revision'])
+            self.assertFalse(receipt['can_apply_gpo'])
+        self.assertEqual(before, self.ledger())
+        self.assertEqual(len(audit)+1, len(self.store.audit()))
+        self.assertIn(':keep_under_review:', self.store.audit()[0]['event'])
+        self.assertEqual('authorized', self.jobs.status()['jobs'][0]['state'])
+
+        self.jobs.complete(wf.StagingWriteJobTests.proof(self, 'RESULT', body))
+        value.update(expected_revision=self.store.snapshot()['revision'], decision='acknowledge_saved_result')
+        code, review, _ = self.request('POST', RECONCILE+'/review', value, self.headers)
+        self.assertEqual(200, code, review)
+        self.assertEqual('result_matches_ack_missing', review['comparison'])
+        before = self.ledger()
+        approve = value | {'review_hash': review['review_hash'], 'acknowledge': 'record_reconciliation_decision'}
+        code, receipt, _ = self.request('POST', RECONCILE+'/record', approve, self.headers)
+        self.assertEqual(200, code, receipt)
+        self.assertEqual(before, self.ledger())
+        self.assertEqual('completed', self.jobs.status()['jobs'][0]['state'])
+
+    def test_reconciliation_stale_or_conflicting_evidence_remains_in_review(self):
+        value, body = self.reconciliation_case()
+        self.assertEqual(409, self.request('POST', RECONCILE+'/review',
+            value | {'decision':'acknowledge_saved_result'}, self.headers)[0])
+        review = self.request('POST', RECONCILE+'/review', value, self.headers)[1]
+        self.jobs.complete(wf.StagingWriteJobTests.proof(self, 'RESULT', body))
+        audit = self.store.audit()
+        approve = value | {'review_hash': review['review_hash'], 'acknowledge': 'record_reconciliation_decision'}
+        self.assertEqual(409, self.request('POST', RECONCILE+'/record', approve, self.headers)[0])
+        changed = value | {'expected_revision': self.store.snapshot()['revision'],
+            'evidence': value['evidence'] | {'result_body_sha256':'0'*64}}
+        code, review, _ = self.request('POST', RECONCILE+'/review', changed, self.headers)
+        self.assertEqual(200, code, review)
+        self.assertEqual('result_conflict', review['comparison'])
+        self.assertEqual(409, self.request('POST', RECONCILE+'/review',
+            changed | {'decision':'acknowledge_saved_result'}, self.headers)[0])
+        self.assertEqual(audit, self.store.audit())
+
+    def test_reconciliation_rechecks_both_permissions_and_session(self):
+        for suffix in ('/review', '/record'):
+            self.assertEqual(401, self.request('POST', RECONCILE+suffix, {})[0])
+            self.assertEqual(403, self.request('POST', RECONCILE+suffix, {},
+                self.headers | {'X-Kaname-CSRF':'bad'})[0])
+            for grant in ('certificates.authority', 'system.connectors'):
+                headers, _ = self.user('reconcile-'+uuid.uuid4().hex[:8], {grant:'write'})
+                self.assertEqual(403, self.request('POST', RECONCILE+suffix, {}, headers)[0])
 
     def test_review_binds_real_actor_and_is_readonly_create_never_enqueues(self):
         value = self.ready(); before = self.ledger(); audit = self.store.audit()
