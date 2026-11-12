@@ -24,6 +24,7 @@ daha sonraki başarılı kabulü yeniden açmaz. Bu kayıt yeni bir PDF raporu d
 | G01/A04 Windows görev günlüğünü başka makineye yedekleme ve izole geri yükleme | Tamamlanmadı — açık | Kullanıcı kararı. PR148 / Windows CI 43243318698 yalnız sentetik kanıt. Gerçek günlük, yetkili harici hedef ve ayrı kurtarma ortamı bekleniyor. |
 | G01/A04 Windows yazma zamanlayıcısının durdurma ve görev geçişi kuralları | Kaynak testi geçti; aktif SCM entegrasyonu açık | PR149 / Windows CI 43246396307. Gerçek Windows bekleme olayı ve mutex; sentetik görev sonuçları. |
 | G01/A04 Windows görev günlüğü dizini ve hizmet hesabı izinleri | İmzalı yönetici aracı için kaynak ön kontrolü hazır; saha kabulü açık | `InspectWriteJournal`, doğrulanmış Connector paketinden günlük yolunu ve hizmet SID'sini alır. Aktif yazma zamanlayıcısı, gerçek harici yedek ve geri yükleme ayrı açık kalır. |
+| G01/A04 Yazma zamanlayıcısının SCM hizmetine bağlanması | Aday kaynakta bağlı; saha kabulü açık | Yazma işçisi ayrı imzalı süreç olarak SCM başlatma ve durdurma olaylarına bağlı. Yalıtılmış test üretim dışı HTTPS yoklaması kullanır. |
 | Misafir/VLAN yeniden testi | Tekrar yapılmayacak | Rapor ve kullanıcının açık dışlaması |
 | Windows başlangıç testinde görev sonucu gözlemi | Kaynak kabulü kapalı | PR142; 12 Kasım bağımsız Windows ve tam cihaz kayıt akışları başarılı |
 | Windows istemcisinin Türkçe ortamda sertifika hata kodunu okuması | Kaynak ve saha doğrulaması geçti | PR143; `tr-TR` ve `en-US` Windows regresyonu, sekiz başarılı CI akışı |

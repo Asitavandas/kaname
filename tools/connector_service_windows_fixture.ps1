@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$Directory)
+param([Parameter(Mandatory=$true)][string]$Directory,[switch]$WriteSchedulerOnly)
 $ErrorActionPreference='Stop';Set-StrictMode -Version 2
 if($env:RUNNER_ENVIRONMENT -ne 'github-hosted'){throw 'Hosted Windows fixture only'}
 $source=Join-Path $PSScriptRoot '..\windows\connector'
@@ -57,8 +57,11 @@ try{
  $root=Join-Path $env:ProgramW6432 ('AuthWire-Connector-'+$id)
  if(Test-Path -LiteralPath $root){$root=$null;throw 'Fixture package directory collision'}
  $config=@{Version=1;ReleaseId=[guid]::NewGuid().ToString('D');ServiceName=$name;AccountName=$credential.UserName;PublisherThumbprint=$publisher.Thumbprint;BaseUrl=('https://'+$b.appliance_fqdn+':'+$base.port+'/');Binding=$b;KeyName=$key;ExpectedKeySddl=$receipt.ExpectedKeySddl;RootPath=$root}|ConvertTo-Json -Depth 6|ConvertFrom-Json
+ if($WriteSchedulerOnly){$config|Add-Member -NotePropertyName WriteSchedulerEnabled -NotePropertyValue $true}
  $buildSource=Join-Path $Directory 'reviewed-source';$null=New-Item -ItemType Directory -Path $buildSource
- foreach($file in @('ConnectorServiceHost.cs','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Install-AuthWireConnectorService.ps1','New-AuthWireConnectorServicePackage.ps1','Initialize-AuthWireConnectorChannelKey.ps1','ConnectorChannelKey.ps1','ConnectorChannelTypes.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','Test-AuthWireDeploymentCandidate.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','Read-AuthWireDeploymentScope.ps1','ConnectorServiceUpgrade.ps1','Update-AuthWireConnectorService.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','Read-AuthWireCombinedDeploymentScope.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','Invoke-AuthWireStagingPreviewJob.ps1','Read-AuthWireCombinedStagingPreview.ps1')){
+ $sources=@('ConnectorServiceHost.cs','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Install-AuthWireConnectorService.ps1','New-AuthWireConnectorServicePackage.ps1','Initialize-AuthWireConnectorChannelKey.ps1','ConnectorServiceUpgrade.ps1','Update-AuthWireConnectorService.ps1')
+ $sources+=@(Get-AuthWireServicePayloadNames ([pscustomobject]@{WriteSchedulerEnabled=$true}))
+ foreach($file in $sources){
   $path=Join-Path $buildSource $file;Copy-Item -LiteralPath (Join-Path $source $file) -Destination $path
   if($file.EndsWith('.ps1')){$signed=Set-AuthenticodeSignature -FilePath $path -Certificate $publisher -HashAlgorithm SHA256;if($signed.Status.ToString() -ne 'Valid'){throw 'Fixture source signing failed'}}
  }
@@ -71,6 +74,55 @@ try{
   Check (-not (Test-Path -LiteralPath $root)) 'Rejected source produces no package'
  }finally{[IO.File]::WriteAllBytes($inputWorker,$inputBytes)}
  $package=& $builder -ConfigPath $configPath -PublisherThumbprint $publisher.Thumbprint|ConvertFrom-Json
+ $writeScript=Join-Path $root 'ConnectorWriteServiceRuntime.ps1'
+ Check ((Test-Path -LiteralPath $writeScript) -eq [bool]$WriteSchedulerOnly) 'Write payload follows the explicit signed configuration'
+ if($WriteSchedulerOnly){
+  $journalCandidate=Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) ('AuthWire-WriteJournal-'+$id)
+  if(Test-Path -LiteralPath $journalCandidate){throw 'Fixture journal directory collision'}
+  $binary='"'+(Join-Path $root 'AuthWireConnector.exe')+'"'
+  $null=New-Service -Name $name -BinaryPathName $binary -Credential $credential -StartupType Manual -Description (Get-AuthWireServiceMarker $config)
+  $statusPath=Join-Path $root 'state\status.json'
+  $writeStatusPath=Join-Path $root 'state\write-scheduler.json'
+  function Read-WriteStatus {
+   if(Test-Path -LiteralPath $writeStatusPath){try{return (Get-Content -LiteralPath $writeStatusPath -Raw|ConvertFrom-Json)}catch{}}
+   return $null
+  }
+  Write-AuthWireChannelReceipt -Path (Join-Path $Directory 'candidate.json') -Value $prepared.PairingCandidate
+  Wait-Until {Test-Path -LiteralPath (Join-Path $Directory 'paired')} 45 'Server pairing did not finish'
+  Start-Service -Name $name
+  Wait-Until {$w=Read-WriteStatus;return ($w -and $w.StopReason -ceq 'journal_unavailable')} 40 'Writer did not report the absent journal'
+  Wait-Until {$s=Read-Status;return ($s -and $s.Healthy)} 40 'Read-only health failed with an absent write journal'
+  $firstHealthPid=(Read-Status).WorkerPid
+  Check (-not (Test-Path -LiteralPath $journalCandidate)) 'Service does not initialize an absent journal directory'
+  Stop-Service -Name $name
+  $security=[Security.AccessControl.DirectorySecurity]::new()
+  $security.SetSecurityDescriptorSddlForm('O:BAG:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;0x1301bf;;;'+$sid+')')
+  $null=[IO.Directory]::CreateDirectory($journalCandidate,$security);$journalPath=$journalCandidate
+  $completed=Join-Path $journalPath 'write-lifecycle\000001\completion.json'
+  Start-Service -Name $name
+  Wait-Until {Test-Path -LiteralPath $completed} 50 'SCM writer did not durably complete an authenticated idle poll'
+  $w=Read-WriteStatus
+  Check ($w -and $w.State -ceq 'running' -and $w.ReleaseId -ceq $config.ReleaseId) 'Writer status identifies the signed release'
+  $workerPid=$w.WorkerPid
+  $worker=Get-CimInstance Win32_Process -Filter "ProcessId=$workerPid"
+  Check ($worker -and (Invoke-CimMethod -InputObject $worker -MethodName GetOwnerSid).Sid -ceq $sid) 'SCM writer runs under the bound service account'
+  Stop-Service -Name $name
+  $w=Read-WriteStatus
+  Check ($w -and $w.State -ceq 'stopped' -and $w.StopReason -ceq 'stop_requested' -and $w.LastPhase -ceq 'no_job' -and $w.Steps -eq 1) 'SCM stop interrupts the write cadence after its completed idle step'
+  Check (-not (Get-Process -Id $workerPid -ErrorAction SilentlyContinue)) 'SCM stop leaves no write child'
+  [IO.File]::WriteAllText((Join-Path $Directory 'write-reject'),'reject the next response')
+  Start-Service -Name $name
+  Wait-Until {$w=Read-WriteStatus;return ($w -and $w.State -ceq 'stopped' -and $w.StopReason -ceq 'lifecycle_requires_attention' -and $w.LastPhase -ceq 'local_reconciliation_required')} 50 'Unmatched reply did not stop the writer'
+  Wait-Until {$s=Read-Status;return ($s -and $s.Healthy -and $s.WorkerPid -ne $firstHealthPid -and (Get-Process -Id $s.WorkerPid -ErrorAction SilentlyContinue))} 40 'Read-only health stopped after write reconciliation'
+  Check ((Get-Service -Name $name).Status -eq 'Running') 'Writer attention does not stop the Connector service'
+  $previousWriterPid=(Read-WriteStatus).WorkerPid
+  Stop-Service -Name $name
+  Start-Service -Name $name
+  Wait-Until {$w=Read-WriteStatus;return ($w -and $w.WorkerPid -ne $workerPid -and $w.State -ceq 'stopped' -and $w.LastPhase -ceq 'local_reconciliation_required' -and $w.WorkerPid -ne $previousWriterPid)} 50 'SCM restart did not preserve the reconciliation barrier'
+  Stop-Service -Name $name
+  @{checks=$checks;release_id=$config.ReleaseId;write_scheduler_scm=$true}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Directory 'service-result.json') -Encoding UTF8
+  return
+ }
  Initialize-AuthWireChannelTypes
  Check (-not [AuthWire.Connector.ChannelTypesV1]::JobOffer('{"format":1,"format":1}')) 'Job reply parser refuses duplicate JSON fields'
  Check (-not [AuthWire.Connector.ChannelTypesV1]::JobOffer('{"command":"powershell.exe","payload":{"x":1}}')) 'Job reply parser refuses arbitrary commands and nested payloads'
@@ -342,7 +394,7 @@ try{
  # Changed generation files are verified against its own reviewed archive pins.
  $frozenCombined=@{'CombinedCandidateContent.ps1'='combined-public-content-dev45.ps1';'Invoke-AuthWireCombinedJob.ps1'='combined-job-dev45.ps1'}
  foreach($f in $unpacked.Keys){
-  if($f -cin @('ConnectorChannelTypes.ps1','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceUpgrade.ps1','Install-AuthWireConnectorService.ps1','Invoke-AuthWireScopeJob.ps1','New-AuthWireConnectorServicePackage.ps1','Update-AuthWireConnectorService.ps1')){continue}
+  if($f -cin @('ConnectorChannelTypes.ps1','ConnectorServiceHost.cs','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceUpgrade.ps1','Install-AuthWireConnectorService.ps1','Invoke-AuthWireScopeJob.ps1','New-AuthWireConnectorServicePackage.ps1','Update-AuthWireConnectorService.ps1')){continue}
   $expected=if($frozenCombined.ContainsKey($f)){Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'tests\fixtures') $frozenCombined[$f]}else{Join-Path $source $f}
   Check ((Get-AuthWireDeliveryBodyHash ([IO.File]::ReadAllText($expected))) -ceq $reviewedSources[$f]) 'Unchanged historical source body remains identical'
  }

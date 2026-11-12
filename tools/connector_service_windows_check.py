@@ -22,6 +22,7 @@ from kaname.candidate_jobs import CandidateJobs
 from kaname.combined_jobs import CombinedJobs
 from kaname.combined_scope_jobs import CombinedScopeJobs
 from kaname.staging_preview_jobs import StagingPreviewJobs
+from kaname.staging_write_jobs import POLL_PATH, StagingWriteJobs
 from tests.test_combined_candidate_registration import combined_receipt
 from kaname.scope_jobs import ScopeJobs,target_sids_hash
 from kaname.deployment_candidates import DeploymentCandidates
@@ -31,6 +32,7 @@ from tools.linux_initialize import create_web_certificate
 
 def main():
     if os.name!='nt' or os.environ.get('RUNNER_ENVIRONMENT')!='github-hosted':raise RuntimeError('Hosted fixture only')
+    write_only = '--write-scheduler-only' in sys.argv[1:]
     with tempfile.TemporaryDirectory(prefix='authwire-scm-health-') as temp:
         root=Path(temp);fqdn='aw-'+uuid.uuid4().hex+'.lab.example'
         create_web_certificate(root,fqdn,'127.0.0.1')
@@ -43,6 +45,26 @@ def main():
         original_combined_scope_target=CombinedScopeJobs._target
         original_staging_target=StagingPreviewJobs._target
         original=Handler.connector_peer
+        original_post=Handler.do_POST
+        write_polls=[]
+        write_jobs=None
+        def fixture_post(handler):
+            if handler.path!=POLL_PATH:
+                return original_post(handler)
+            try:
+                size=int(handler.headers.get('Content-Length', '0'))
+                if not 0<size<=4096 or write_jobs is None:
+                    raise ValueError('Fixture not ready')
+                reply=write_jobs.poll(handler.rfile.read(size))
+                write_polls.append(reply['job_id'])
+                if (root/'write-reject').exists():
+                    reply['request_id']='0'*64
+                handler.respond(200,reply)
+            except Exception as exc:
+                print('WRITE_SCHEDULER_POLL_REJECTED '+type(exc).__name__,flush=True)
+                handler.respond(400,{'error':'FIXTURE_POLL_REJECTED'})
+        if write_only:
+            Handler.do_POST=fixture_post
         def fixture_peer(handler):
             if (root/'case.txt').exists() and ((root/'case.txt').read_text().strip()=='offline' or
                     ((root/'case.txt').read_text().strip()=='candidate-offline' and handler.path.startswith('/api/connector/v1/candidates/')) or
@@ -58,7 +80,10 @@ def main():
         process=None
         try:
             with (root/'fixture.log').open('w',encoding='utf-8') as output:
-                process=subprocess.Popen(['powershell.exe','-NoProfile','-NonInteractive','-File',str(Path(__file__).with_name('connector_service_windows_fixture.ps1')),'-Directory',str(root)],env=env,stdout=output,stderr=subprocess.STDOUT)
+                command=['powershell.exe','-NoProfile','-NonInteractive','-File',str(Path(__file__).with_name('connector_service_windows_fixture.ps1')),'-Directory',str(root)]
+                if write_only:
+                    command.append('-WriteSchedulerOnly')
+                process=subprocess.Popen(command,env=env,stdout=output,stderr=subprocess.STDOUT)
                 end=time.monotonic()+90
                 while not (root/'candidate.json').exists():
                     if process.poll() is not None or time.monotonic()>=end:raise RuntimeError('Service fixture preparation failed')
@@ -68,6 +93,18 @@ def main():
                 intent={'expected_revision':store.snapshot()['revision'],'operation':'pair','candidate':candidate}
                 preview=registry.preview(intent)
                 registry.apply(intent|{'preview_hash':preview['preview_hash'],'confirmed_key_sha256':preview['after']['channel_key_sha256']},str(uuid.uuid4()))
+                if write_only:
+                    write_jobs=StagingWriteJobs(DeploymentCandidates(registry,server.deployment))
+                    snapshot=store.snapshot()
+                    (root/'paired').write_text('paired',encoding='ascii')
+                    process.wait(timeout=230)
+                    if process.returncode:
+                        raise RuntimeError('Native write service fixture failed')
+                    result=json.loads((root/'service-result.json').read_text(encoding='utf-8-sig'))
+                    assert result['write_scheduler_scm'] and write_polls==['',''], write_polls
+                    assert store.snapshot()==snapshot
+                    print('AUTHWIRE_WRITE_SCHEDULER_SCM_OK '+json.dumps(result,sort_keys=True))
+                    return
                 jobs=ConnectorJobs(registry)
                 probe={'expected_revision':store.snapshot()['revision'],'job_id':str(uuid.uuid4()),'operation':OPERATION}
                 prepared=jobs.preview(probe)
@@ -207,6 +244,6 @@ def main():
             ScopeJobs._target=original_scope_target
             CombinedScopeJobs._target=original_combined_scope_target
             StagingPreviewJobs._target=original_staging_target
-            server.shutdown();server.server_close();thread.join();Handler.connector_peer=original
+            server.shutdown();server.server_close();thread.join();Handler.connector_peer=original;Handler.do_POST=original_post
 
 if __name__=='__main__':main()

@@ -19,6 +19,16 @@ PAYLOAD=['ConnectorServiceRuntime.ps1','Compare-AuthWireSigningKeyAcl.ps1',
          'CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1',
          'CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','Read-AuthWireCombinedDeploymentScope.ps1']
 PAYLOAD += ['SysvolInventory.ps1', 'CombinedStagingPreview.ps1', 'Invoke-AuthWireStagingPreviewJob.ps1', 'Read-AuthWireCombinedStagingPreview.ps1']
+PAYLOAD += [
+    'ConnectorWriteServiceRuntime.ps1', 'StagingFilesystem.ps1', 'StagingWritePreclaim.ps1',
+    'StagingWriteTransport.ps1', 'StagingWriteConsumption.ps1', 'StagingWriteProcess.ps1',
+    'StagingWriteExecution.ps1', 'StagingWriteResult.ps1', 'StagingWriteCycle.ps1',
+    'StagingRollbackEvidence.ps1', 'StagingRollbackAuthorization.ps1', 'StagingRollbackExecution.ps1',
+    'StagingRollbackResult.ps1', 'StagingWritePollRecord.ps1', 'StagingWriteHistory.ps1',
+    'StagingWriteRefusal.ps1', 'StagingWriteLifecycle.ps1', 'StagingWriteScheduler.ps1',
+    'Read-AuthWireStagingWritePreflight.ps1', 'Read-AuthWireRollbackPreflight.ps1',
+    'Invoke-AuthWireStagingWriteChild.ps1', 'Invoke-AuthWireRollbackChild.ps1',
+]
 ALL=PAYLOAD+['ConnectorServicePackage.ps1','ConnectorServiceControl.ps1',
              'Install-AuthWireConnectorService.ps1','Initialize-AuthWireConnectorChannelKey.ps1']
 

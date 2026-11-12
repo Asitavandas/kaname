@@ -1,9 +1,9 @@
 # Durable stage/rollback lifecycle step and result-only recovery
 
-Source-only trusted local SDK. It is not registered in the permanent service,
-package, operator panel or production peer routes. This is a durable **step** for
-the future scheduler, not a delivered perpetual idle loop. Retention, refusal
-reporting, governed reconciliation/unlock and customer delivery remain gates.
+The durable stage/rollback step is consumed by an optional signed Connector
+service worker. The ordinary package starts only the read-only worker. Production
+write peer routing, governed reconciliation/unlock and customer delivery remain
+open.
 
 ## Records and dispatch
 
@@ -72,10 +72,17 @@ lifecycle step. It serializes the scheduler per connector, waits a monotonic
 interval after a verified idle or accepted stage/rollback result, and checks
 the host stop event and process exit before each step. Pending results,
 refusals, reconciliation barriers, malformed results and failures stop the
-loop. An in-flight operation uses the existing lifecycle bounds. This module
-does not register a service or attach to the installed read-only Connector.
-The hosted scheduler fixture uses native Windows events and mutexes with
-synthetic lifecycle outcomes. Active SCM wiring remains a separate gate.
+loop. An in-flight operation uses the existing lifecycle bounds.
+
+A reviewed package built with Boolean `WriteSchedulerEnabled` set to true
+includes the fixed writer scripts in the signed manifest. The service host puts
+the writer in its existing Windows job object before signaling it to start. Both
+workers receive the SCM stop event and share the existing bounded stop window.
+The writer checks the fixed journal and service key and publishes its outcome
+to `state/write-scheduler.json`. It starts once per service start. A blocked
+writer leaves the read-only worker available. The durable journal governs what
+the next service start may do. The hosted SCM fixture uses a loopback HTTPS
+peer for authenticated no-job polling and reconciliation after an invalid reply.
 
 The new hosted Windows fixture reuses actual CNG/TLS/SQLite/signed child/SMB SDKs.
 It exercises common stage dispatch, separate rollback, exact lost-ACK recovery,
@@ -87,7 +94,7 @@ fixture substitutes. The 64-cycle capacity records after two real idle polls
 are explicitly synthetic no-job metadata with independent real CNG signatures;
 no server requests or write grants are synthesized for that capacity check.
 
-Pending: active scheduler/SCM registration, safe idle/history retention and Windows journal backup/restore, preauthorization refusal reporting, governed partial/unknown-state
+Pending: signed field delivery, Windows journal backup/restore, governed partial/unknown-state
 reconciliation and unlock, actual reboot/off-host boot restore, controlled signed
 delivery and real gMSA/AD/domain-SYSVOL/endpoint/latency acceptance. This source
 step is not product-wide completion or operator acceptance.

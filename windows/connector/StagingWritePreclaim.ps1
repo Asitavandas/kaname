@@ -2,6 +2,15 @@
 # No network send, filesystem executor, recovery deletion or GPO activation here.
 Set-StrictMode -Version 2
 
+function Assert-AuthWireWriteServiceConfigFields($Config){
+ $fields=@('Version','ReleaseId','ServiceName','AccountName','PublisherThumbprint','BaseUrl','Binding','KeyName','ExpectedKeySddl','RootPath')
+ if($Config.PSObject.Properties['WriteSchedulerEnabled']){
+  if($Config.WriteSchedulerEnabled -isnot [bool]){throw 'CONNECTOR_CONFIG_REJECTED'}
+  $fields+='WriteSchedulerEnabled'
+ }
+ Assert-AuthWireCandidateFields $Config $fields
+}
+
 function Enter-AuthWireWritePreauthorizationLock([string]$JobId){
  Assert-AuthWireCandidateGuid $JobId
  $m=[Threading.Mutex]::new($false,('Global\AuthWireWritePreauthorization-'+([guid]$JobId).ToString('N')))
