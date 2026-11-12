@@ -385,6 +385,13 @@ class StagingWriteJobs(ConnectorJobs):
 
     def reconcile_readonly(self, evidence):
         """Compare a trusted local Windows review projection with saved ledger data."""
+        self._validate_reconciliation_evidence(evidence)
+        with self.store.connect() as db:
+            db.execute('BEGIN')
+            return self._compare_reconciliation(db, evidence)[0]
+
+    @staticmethod
+    def _validate_reconciliation_evidence(evidence):
         fields = {'job_id', 'scope_sha256', 'intent_sha256', 'result_body_sha256', 'accepted_ack'}
         keys(evidence, fields, fields)
         local_hash = evidence['result_body_sha256']
@@ -393,13 +400,14 @@ class StagingWriteJobs(ConnectorJobs):
                 is_hash(evidence['intent_sha256']) and (local_hash == '' or is_hash(local_hash)) and
                 type(accepted_ack) is bool and (not accepted_ack or local_hash != ''),
                 'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
-        with self.store.connect() as db:
-            db.execute('BEGIN')
-            job = next((j for j in self._read(db)['jobs'] if j['id'] == evidence['job_id']), None)
+
+    def _compare_reconciliation(self, db, evidence):
+        job = next((j for j in self._read(db)['jobs'] if j['id'] == evidence['job_id']), None)
         if job is None:
-            return {'comparison': 'server_job_missing'}
+            return {'comparison': 'server_job_missing'}, job
         if job['scope'] != evidence['scope_sha256'] or job['intent_sha256'] != evidence['intent_sha256']:
-            return {'comparison': 'job_identity_conflict'}
+            return {'comparison': 'job_identity_conflict'}, job
+        local_hash = evidence['result_body_sha256']
         result = job['result']
         if result is None:
             comparison = 'server_result_missing' if local_hash else 'result_pending_on_both_sides'
@@ -408,7 +416,58 @@ class StagingWriteJobs(ConnectorJobs):
         elif digest(result) != local_hash:
             comparison = 'result_conflict'
         else:
-            comparison = 'result_matches' if accepted_ack else 'result_matches_ack_missing'
-        return {'comparison': comparison, 'stored_state': job['state'],
-                'server_outcome': result['outcome'] if result else None}
+            comparison = 'result_matches' if evidence['accepted_ack'] else 'result_matches_ack_missing'
+        return ({'comparison': comparison, 'stored_state': job['state'],
+                 'server_outcome': result['outcome'] if result else None}, job)
+
+    def _validate_reconciliation_decision(self, value, actor, *, confirm=False):
+        fields = {'expected_revision', 'evidence', 'decision'}
+        if confirm:
+            fields.update({'review_hash', 'acknowledge'})
+        keys(value, fields, fields)
+        self._validate_reconciliation_evidence(value['evidence'])
+        require(guid(actor) and type(value['decision']) is str and
+                value['decision'] in {'keep_under_review', 'acknowledge_saved_result'} and
+                (not confirm or (is_hash(value['review_hash']) and
+                                 value['acknowledge'] == 'record_reconciliation_decision')),
+                'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
+
+    def _reconciliation_decision_review(self, db, value, actor):
+        revision = self.ops._revision(db, value['expected_revision'])
+        evidence = value['evidence']
+        comparison, job = self._compare_reconciliation(db, evidence)
+        if value['decision'] == 'acknowledge_saved_result':
+            require(comparison['comparison'] in {'result_matches', 'result_matches_ack_missing'} and
+                    comparison.get('stored_state') == 'completed', 'STAGING_WRITE_RECONCILIATION_CONFLICT')
+        review = {'revision': revision, 'actor': actor, 'job_id': evidence['job_id'],
+                  'decision': value['decision'], **comparison}
+        review['review_hash'] = digest({'domain': 'AuthWireStagingWriteReconciliationV1',
+            'review': review, 'evidence': evidence, 'stored_job_sha256': digest(job)})
+        return review
+
+    def review_reconciliation(self, value, actor):
+        self._validate_reconciliation_decision(value, actor)
+        with self.store.connect() as db:
+            db.execute('BEGIN')
+            return self._reconciliation_decision_review(db, value, actor)
+
+    def record_reconciliation(self, value, actor):
+        self._validate_reconciliation_decision(value, actor, confirm=True)
+        job_id = value['evidence']['job_id']
+        decision = value['decision']
+        request_hash = digest({'actor': actor, 'request': value})
+        event = f'staging_write_reconciliation:{job_id}:{decision}:actor:{actor}:request:{request_hash}'
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            saved = db.execute('SELECT revision FROM audit WHERE event=? LIMIT 1', (event,)).fetchone()
+            if saved is None:
+                input_value = {k: value[k] for k in ('expected_revision', 'evidence', 'decision')}
+                review = self._reconciliation_decision_review(db, input_value, actor)
+                require(secrets.compare_digest(value['review_hash'], review['review_hash']),
+                        'STAGING_WRITE_RECONCILIATION_REVIEW_CHANGED')
+                self.ops._audit(db, event, review['revision'])
+                revision = review['revision'] + 1
+            else:
+                revision = saved[0]
+        return {'job_id': job_id, 'decision': decision, 'decision_recorded': True, 'revision': revision}
 
