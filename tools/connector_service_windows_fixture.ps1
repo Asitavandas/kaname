@@ -21,7 +21,7 @@ function Invoke-FreshPublicControl([string]$Mode){
  return $result
 }
 $user=$null;$sid=$null;$key=$null;$root=$null;$keyRoot=$null;$name=$null;$publisher=$null;$public=$null;$web=$null;$roots=$null;$publishers=$null;$hostBytes=$null;$rightsAdded=$false;$secret=$null
-$upgradePaths=@()
+$upgradePaths=@();$journalPath=$null
 $hosts=Join-Path $env:SystemRoot 'System32\drivers\etc\hosts'
 try{
  # The fixture owns a new, temporary local user; no AD/gMSA credential is used.
@@ -83,6 +83,28 @@ try{
  Check ($adminAcl.AreAccessRulesProtected -and $adminRules.Count -eq 2 -and @($adminRules|Where-Object{$_.IdentityReference.Value -notin @('S-1-5-18','S-1-5-32-544')}).Count -eq 0) 'Administrative control code stays inaccessible to the service account'
  $inspect=Invoke-FreshPublicControl Inspect
  Check ($inspect.Mode -eq 'Inspect' -and -not $inspect.ServiceInstalled -and -not $inspect.ServiceCreated) 'Default signed public installer inspection performs no service or AD write'
+ $path=Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) ('AuthWire-WriteJournal-'+$id)
+ if(Test-Path -LiteralPath $path){throw 'Fixture write journal directory collision'}
+ $journalArgs=@{Mode='InspectWriteJournal';ConnectorId=[guid]$base.connector_id;PublisherThumbprint=$publisher.Thumbprint}
+ $missing=& $adminTool @journalArgs|ConvertFrom-Json
+ Check ($missing.Event -ceq 'WINDOWS_CONNECTOR_WRITE_JOURNAL_READINESS' -and $missing.ServiceName -ceq $name -and $missing.ReleaseId -ceq $config.ReleaseId -and
+  $missing.JournalPath -ceq $path -and -not $missing.Ready -and $missing.Reason -ceq 'journal_missing' -and -not (Test-Path -LiteralPath $path)) 'Signed journal inspection reports a missing fixed directory without creating it'
+ $security=[Security.AccessControl.DirectorySecurity]::new()
+ $baseSddl='O:BAG:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)'
+ $security.SetSecurityDescriptorSddlForm($baseSddl+'(A;OICI;FR;;;'+$sid+')')
+ $null=[IO.Directory]::CreateDirectory($path,$security);$journalPath=$path
+ $readonly=& $adminTool @journalArgs|ConvertFrom-Json
+ Check (-not $readonly.Ready -and $readonly.Reason -ceq 'journal_service_access_missing') 'Journal inspection identifies insufficient access for the bound service SID'
+ Set-AuthWireServiceAcl $journalPath $sid -Directory -Writable
+ $sentinel=Join-Path $journalPath 'fixture.txt';[IO.File]::WriteAllText($sentinel,'existing journal content')
+ $beforeAcl=(Get-Acl -LiteralPath $journalPath).Sddl
+ $ready=& $adminTool @journalArgs|ConvertFrom-Json
+ Check ($ready.Ready -and $ready.Reason -ceq 'journal_acl_verified' -and (Get-Acl -LiteralPath $journalPath).Sddl -ceq $beforeAcl -and
+  [IO.File]::ReadAllText($sentinel) -ceq 'existing journal content') 'Journal inspection accepts a private directory and preserves its ACL and contents'
+ $security.SetSecurityDescriptorSddlForm($beforeAcl+'(A;;FR;;;BU)')
+ Set-Acl -LiteralPath $journalPath -AclObject $security
+ $untrusted=& $adminTool @journalArgs|ConvertFrom-Json
+ Check (-not $untrusted.Ready -and $untrusted.Reason -ceq 'journal_acl_rejected') 'Journal inspection rejects an unrelated identity on the directory ACL'
  $rejected=$false
  try{$null=& $adminTool -Mode Install -ConnectorId ([guid]$base.connector_id) -PublisherThumbprint $publisher.Thumbprint}catch{$rejected=$_.Exception.Message -like '*CONNECTOR_EXISTING_GMSA_REQUIRED*'}
  Check $rejected 'Public installation refuses the fixture local account before any AD or service mutation'
@@ -320,7 +342,7 @@ try{
  # Changed generation files are verified against its own reviewed archive pins.
  $frozenCombined=@{'CombinedCandidateContent.ps1'='combined-public-content-dev45.ps1';'Invoke-AuthWireCombinedJob.ps1'='combined-job-dev45.ps1'}
  foreach($f in $unpacked.Keys){
-  if($f -cin @('ConnectorChannelTypes.ps1','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceUpgrade.ps1','Invoke-AuthWireScopeJob.ps1','New-AuthWireConnectorServicePackage.ps1','Update-AuthWireConnectorService.ps1')){continue}
+  if($f -cin @('ConnectorChannelTypes.ps1','ConnectorServiceRuntime.ps1','ConnectorServicePackage.ps1','ConnectorServiceUpgrade.ps1','Install-AuthWireConnectorService.ps1','Invoke-AuthWireScopeJob.ps1','New-AuthWireConnectorServicePackage.ps1','Update-AuthWireConnectorService.ps1')){continue}
   $expected=if($frozenCombined.ContainsKey($f)){Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'tests\fixtures') $frozenCombined[$f]}else{Join-Path $source $f}
   Check ((Get-AuthWireDeliveryBodyHash ([IO.File]::ReadAllText($expected))) -ceq $reviewedSources[$f]) 'Unchanged historical source body remains identical'
  }
@@ -341,7 +363,7 @@ try{
  if($user -and (Get-LocalUser -Name $user -ErrorAction SilentlyContinue)){Remove-LocalUser -Name $user}
  if(-not $key -and $keyRoot -and (Test-Path -LiteralPath (Join-Path $keyRoot 'channel-key.json'))){$key=(Get-Content -LiteralPath (Join-Path $keyRoot 'channel-key.json') -Raw|ConvertFrom-Json).KeyName;if($key -cnotmatch ('\AAuthWire-Channel-'+$id+'-[0-9a-f]{32}\z')){throw 'Fixture key cleanup scope mismatch'}}
  if($key -and [Security.Cryptography.CngKey]::Exists($key,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::MachineKey)){$k=[Security.Cryptography.CngKey]::Open($key,[Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider,[Security.Cryptography.CngKeyOpenOptions]::MachineKey);$k.Delete();$k.Dispose()}
- foreach($path in (@($root,$keyRoot)+$upgradePaths)){if($path -and (Test-Path -LiteralPath $path)){Assert-AuthWireChannelPath $path;Remove-Item -LiteralPath $path -Recurse -Force}}
+ foreach($path in (@($root,$keyRoot,$journalPath)+$upgradePaths)){if($path -and (Test-Path -LiteralPath $path)){Assert-AuthWireChannelPath $path;Remove-Item -LiteralPath $path -Recurse -Force}}
  if($hostBytes){[IO.File]::WriteAllBytes($hosts,$hostBytes)}
  if($publishers){if($public){$publishers.Remove($public)};$publishers.Dispose()}
  if($roots){if($public){$roots.Remove($public)};if($web){$roots.Remove($web)};$roots.Dispose()}

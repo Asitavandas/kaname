@@ -1,6 +1,6 @@
 #Requires -Version 5.1
 [CmdletBinding()]
-param([ValidateSet('Inspect','Install','Start','Stop','Remove')][string]$Mode='Inspect',
+param([ValidateSet('Inspect','InspectWriteJournal','Install','Start','Stop','Remove')][string]$Mode='Inspect',
  [Parameter(Mandatory=$true)][guid]$ConnectorId,
  [Parameter(Mandatory=$true)][ValidatePattern('^[0-9A-F]{40}$')][string]$PublisherThumbprint,
  [string]$BootstrapPath,[string]$BootstrapPublisherThumbprint,
@@ -14,6 +14,11 @@ foreach($f in @('ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Con
 $root=Join-Path $env:ProgramW6432 ('AuthWire-Connector-'+$ConnectorId.ToString('N'))
 $c=Get-AuthWireServicePackage $root $PublisherThumbprint
 if($c.Binding.connector_id -cne $ConnectorId.ToString('D')){throw 'CONNECTOR_ID_MISMATCH'}
+if($Mode -eq 'InspectWriteJournal'){
+ Assert-AuthWireServiceAdmin
+ Get-AuthWireConnectorWriteJournalReadiness $c|ConvertTo-Json -Depth 4
+ return
+}
 if($Mode -eq 'Install'){
  if($c.AccountName -notmatch '\\([A-Za-z0-9][A-Za-z0-9-]{0,14})\$\z'){throw 'CONNECTOR_EXISTING_GMSA_REQUIRED'}
  $account=$Matches[1]
