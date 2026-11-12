@@ -10,6 +10,9 @@ try{
   # Loss after accepted RESULT but before completion flush: only reconstruct
   # the owned bookkeeping boundary. No product reset/delete API is exercised.
   [IO.File]::Delete((Join-Path (Join-Path $lcLife '000001') 'completion.json'))
+  $lcReview=Get-AuthWireWriteReconciliationReview $lcRoot $b $rsa
+  Check ($lcReview.Phase -ceq 'accepted_ack_completion_missing' -and $lcReview.AcceptedAck -and $lcReview.RecordedOutcome -ceq 'staged') 'read-only review verifies the saved stage ACK without creating completion'
+  Check (-not (Test-Path -LiteralPath (Join-Path (Join-Path $lcLife '000001') 'completion.json'))) 'review leaves missing completion untouched'
   . (Join-Path $package 'StagingWriteLifecycle.ps1')
   $lcRecovered=Invoke-AuthWireStagingWriteLifecycleStep $lcRoot $b $release $rsa $url
   Check ($lcRecovered.Phase -ceq 'result_recorded' -and $lcRecovered.Outcome -ceq 'staged') 'accepted stage recovery completes only immutable result bookkeeping'
@@ -34,6 +37,8 @@ try{
     $null=Invoke-AuthWireRollbackClaimTransport $lcRoot $lcId $b $release $rsa $url
    }finally{$lcLock.ReleaseMutex();$lcLock.Dispose()}
    Check (-not (Test-Path -LiteralPath (Join-Path (Join-Path $lcRoot $lcId) 'rollback-grant-consumed.json'))) 'saved real grant boundary contains no consumption'
+   $lcReview=Get-AuthWireWriteReconciliationReview $lcRoot $b $rsa
+   Check ($lcReview.Phase -ceq 'authorization_without_frozen_outcome' -and -not $lcReview.AcceptedAck -and $lcReview.RecordedOutcome -ceq '') 'authorization alone does not establish filesystem outcome'
   }
   $lcFirst=Invoke-AuthWireStagingWriteLifecycleStep $lcRoot $b $release $rsa $url
   if($case -cin @('lc_success','lc_lost_ack')){
@@ -42,6 +47,13 @@ try{
    $lcJob=$lcId;$lcBodyFile=Join-Path (Join-Path $lcRoot $lcId) 'rollback-result-outbox.json';$lcBody=(Read-AuthWireStagingJournal $lcBodyFile).body_sha256
    $lcReadFile=Join-Path $package ('rollback-reads-'+$lcId+'.txt');$lcReads=[IO.File]::ReadAllText($lcReadFile)
    if($case -ceq 'lc_success'){[IO.File]::Delete((Join-Path (Join-Path $lcLife '000001') 'completion.json'))}
+   $lcReview=Get-AuthWireWriteReconciliationReview $lcRoot $b $rsa
+   if($case -ceq 'lc_lost_ack'){
+    Check ($lcReview.Phase -ceq 'outbox_without_accepted_ack' -and -not $lcReview.AcceptedAck -and $lcReview.RecordedOutcome -ceq '') 'lost ACK remains unknown even with a valid frozen rollback result'
+   }else{
+    Check ($lcReview.Phase -ceq 'accepted_ack_completion_missing' -and $lcReview.AcceptedAck -and $lcReview.RecordedOutcome -ceq 'rolled_back') 'read-only review verifies the saved rollback ACK'
+   }
+   Check (-not (Test-Path -LiteralPath (Join-Path (Join-Path $lcLife '000001') 'completion.json'))) 'review neither resends RESULT nor restores completion'
    . (Join-Path $package 'StagingWriteLifecycle.ps1')
    $lcRecovered=Invoke-AuthWireStagingWriteLifecycleStep $lcRoot $b $release $rsa $url
    Check ($lcRecovered.Phase -ceq 'result_recorded' -and $lcRecovered.Outcome -ceq 'rolled_back') 'restart step resumes only frozen rollback RESULT or accepted bookkeeping'
@@ -86,6 +98,9 @@ try{
    Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $lcBefore) 'saved-grant recovery leaves original staged data unchanged'
   }else{
    Check ($lcFirst.Phase -ceq 'local_reconciliation_required') 'lost CLAIM or uncertain POLL cannot be retried automatically'
+   $lcReview=Get-AuthWireWriteReconciliationReview $lcRoot $b $rsa
+   $lcExpected=if($case -ceq 'lc_lost_claim'){'claim_outcome_unknown'}else{'poll_outcome_unknown'}
+   Check ($lcReview.Phase -ceq $lcExpected -and -not $lcReview.AcceptedAck -and $lcReview.RecordedOutcome -ceq '') 'uncertain transport gets no accepted outcome'
    . (Join-Path $package 'StagingWriteLifecycle.ps1')
    Check ((Invoke-AuthWireStagingWriteLifecycleStep $lcRoot $b $release $rsa $url).Phase -ceq 'local_reconciliation_required') 'restart preserves uncertain request instead of sending another request'
    Check ((Get-AuthWireLifecycleSlots $lcLife).Count -eq 1) 'uncertain request never opens a new cycle slot'
@@ -96,7 +111,13 @@ try{
  $lcWrong=@{};foreach($lcName in $b.Keys){$lcWrong[$lcName]=$b[$lcName]};$lcWrong.generation++
  Reject {Invoke-AuthWireStagingWriteLifecycleStep $lcRoot $lcWrong $release $rsa $url} 'binding generation change cannot adopt existing lifecycle history'
  $lcForeign=Join-Path $lcRoot 'foreign-root-record.txt'
- try{[IO.File]::WriteAllText($lcForeign,'fixture unknown data must not be deleted');Reject {Invoke-AuthWireStagingWriteLifecycleStep $lcRoot $b $release $rsa $url} 'unreferenced root record prevents poll and action';Check (Test-Path -LiteralPath $lcForeign) 'unknown history is preserved for explicit review'}finally{[IO.File]::Delete($lcForeign)}
+ try{
+  [IO.File]::WriteAllText($lcForeign,'fixture unknown data must not be deleted')
+  $lcReview=Get-AuthWireWriteReconciliationReview $lcRoot $b $rsa
+  Check ($lcReview.Phase -ceq 'evidence_invalid_or_unavailable' -and -not $lcReview.AcceptedAck) 'unreferenced record cannot become verified evidence'
+  Reject {Invoke-AuthWireStagingWriteLifecycleStep $lcRoot $b $release $rsa $url} 'unreferenced root record prevents poll and action'
+  Check (Test-Path -LiteralPath $lcForeign) 'unknown history is preserved for explicit review'
+ }finally{[IO.File]::Delete($lcForeign)}
  Check (Test-Path -LiteralPath (Join-Path $lcLife 'baseline.json')) 'durable header remains in original fixed private root'
  if($env:AUTHWIRE_WRITE_HISTORY_CHECK -eq '1'){. (Join-Path $PSScriptRoot 'staging_write_history_fixture.ps1')}
  Write-Host ('WRITE_LIFECYCLE_CASE_OK case='+$case+' reload_record_boundary_simulated=true actual_machine_reboot=false customer_changed=false')
