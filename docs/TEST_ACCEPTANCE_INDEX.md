@@ -17,6 +17,7 @@ daha sonraki başarılı kabulü yeniden açmaz. Bu kayıt yeni bir PDF raporu d
 | CRL geçici taşıma hatasında sınırlı tekrar ve canlı teslim | Kapalı | 6 Kasım crl-transport-repair-live-acceptance; dev.47 |
 | VV-Client01 5 Kasım çökmesi sonrası tekrarlamama | Kapalı | 6 Kasım wired-crash-nonrecurrence-closure; yeni olay yok |
 | G01/A04 yetki öncesi ret nedeninin bildirilmesi | Kaynak kabulü kapalı; canlı teslim açık | 7 Kasım write-refusal-source; PR141,18 CI akışı,134 native kontrol |
+| G01/A04 belirsiz Windows görev kayıtlarının salt okunur sınıflandırması | Kaynak kabulü kapalı; canlı teslim açık | PR144, kaynak `f9e9ba5`; Windows yaşam döngüsü 8 senaryo / 219 kontrol ve günlük geçmişi 4 senaryo / 205 kontrol |
 | Misafir/VLAN yeniden testi | Tekrar yapılmayacak | Rapor ve kullanıcının açık dışlaması |
 | Windows başlangıç testinde görev sonucu gözlemi | Kaynak kabulü kapalı | PR142; 12 Kasım bağımsız Windows ve tam cihaz kayıt akışları başarılı |
 | Windows istemcisinin Türkçe ortamda sertifika hata kodunu okuması | Kaynak ve saha doğrulaması geçti | PR143; `tr-TR` ve `en-US` Windows regresyonu, sekiz başarılı CI akışı |
@@ -63,13 +64,13 @@ senaryoları önceki kablolu kabulde tamamlandı. Gerçek kullanıcı EAP-TLS i�
 ayrı test kullanıcıları ve kablosuz uç gerekir. Diğer testler 12 Kasım durum
 raporunun açık saha kabulü listesinden bağımlılıklarıyla izlenir.
 
-## Sıradaki bağımsız kaynak işi — 12 Kasım 2026
+## G01/A04 devamı — 12 Kasım 2026
 
-G01/A04: belirsiz/yarım Windows görev kayıtlarının salt okunur sınıflandırılması
-ve kontrollü uzlaştırma incelemesi. Önce özgün offer/CLAIM/authorization/outbox/
-ACK ve filesystem kayıtları karşılaştırılacak; bilinmeyen sonuç tamamlandı veya
-etki yok diye yükseltilmeyecek. Ayrı onaylı unlock ve journal dış yedek/restore,
-aktif scheduler/SCM, kontrollü imzalı teslim ve gerçek gMSA/AD/endpoint kabulü
-açık kalır. Kaynak ret bildirimi ve yerel retention geliştirmesi tekrar yapılmaz.
-Özgün kanıt: docs/checkpoints/2026-11-07-write-refusal-source.json.
+Sıradaki kaynak işi, doğrulanmış yerel kanıtı sunucu görev kaydıyla
+karşılaştıran kontrollü uzlaştırma adımıdır. DC01 envanterinde yazma günlüğü
+bulunmadığı için sınıflandırma ayrı Windows CI ortamında doğrulandı.
+Eksik ACK veya sonuç, tamamlanma ya da etki yokluğu olarak kabul edilmez.
+Onaylı kilit açma, harici günlük yedeği ve geri yükleme, aktif scheduler/SCM,
+kontrollü imzalı teslim ve gerçek gMSA/AD/uç kabulü açık kalır.
+Önceki ret bildirimi kanıtı: docs/checkpoints/2026-11-07-write-refusal-source.json.
 
