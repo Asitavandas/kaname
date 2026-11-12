@@ -8,6 +8,8 @@ import unittest
 import uuid
 import zipfile
 
+from .historical_sources import connector_source
+
 ROOT=Path(__file__).resolve().parents[1]
 ENTRY=ROOT/'docs/checkpoints/2026-10-27-dc01-scope-worker-upgrade.ps1'
 
@@ -30,7 +32,7 @@ class ScopeWorkerDeliveryTests(unittest.TestCase):
    self.assertEqual(19,len(z.namelist()));self.assertEqual(expected,set(z.namelist()))
    for n in expected:
     data=z.read(n);self.assertEqual(pins[n],hashlib.sha256(data).hexdigest())
-    source=(ROOT/'windows/connector'/n).read_text().replace('\r\n','\n').rstrip('\r\n')+'\n'
+    source=connector_source(ROOT,n).read_text().replace('\r\n','\n').rstrip('\r\n')+'\n'
     # Immutable historical archive and per-file pins above remain exact.
     # Current source has a separately pinned staging-preview generation.
     if n not in {'ConnectorServicePackage.ps1', 'ConnectorServiceUpgrade.ps1', 'New-AuthWireConnectorServicePackage.ps1', 'Invoke-AuthWireScopeJob.ps1', 'ConnectorChannelTypes.ps1', 'Update-AuthWireConnectorService.ps1', 'ConnectorServiceRuntime.ps1'}:self.assertEqual(source.encode(),data)
