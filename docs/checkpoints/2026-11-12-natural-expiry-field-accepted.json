@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "event": "AUTHWIRE_REAL_NATURAL_EXPIRED_PENDING_FIELD_ACCEPTED",
+  "date": "2026-11-12",
+  "endpoint": "VV-Client01",
+  "report_gate": "B06 actual expired-pending recovery",
+  "acceptance": "closed",
+  "scope": "Enterprise-signed isolated pilot, existing naturally expired CSR, real SYSTEM, AD/Kerberos and HTTPS.",
+  "old_case": {
+    "attempts": 8,
+    "status": "BLOCKED_REQUIRES_REVIEW",
+    "historical_issue_responses_identified": false,
+    "original_evidence_retained": true
+  },
+  "source": {
+    "pr": 143,
+    "sha": "bf4bbf9199629e237e84a9c18639292130f82468",
+    "cause": "Case-insensitive ASCII range validation on tr-TR discarded the uppercase I in DEVICE_CERTIFICATE_EXPIRED.",
+    "windows_http_regression": {
+      "tr_TR": true,
+      "en_US": true
+    },
+    "ci_workflow": 43217706812,
+    "passed_workflows": 8,
+    "signed_client_sha256": "dd6def822d9b6806ebef8d786bbebde3555308e73e57d103f8a08637ce9e2d50",
+    "signed_operator_sha256": "4122ad38ff779cf7089a81441a3351f7f9b81af4b69db1accafbdac29347ee41"
+  },
+  "field": {
+    "attempts": 2,
+    "rejected_utc": "2026-11-12T12:28:45.9683220+00:00",
+    "error_code": "DEVICE_CERTIFICATE_EXPIRED",
+    "original_bytes_archived": true,
+    "old_key_retained_until_recovery": true,
+    "client_retry_due_utc": "2026-11-12T12:45:45.9526980+00:00",
+    "retry_started_utc": "2026-11-12T12:45:49.3765973Z",
+    "completed_utc": "2026-11-12T12:45:52.6575036Z",
+    "new_serial": "25c6d57484492eb39fb021c53669b663d4ae7299",
+    "real_kerberos_and_https": true,
+    "online_chain_valid": true,
+    "installation_receipt": true,
+    "radius_selected_leaf_measured": false
+  },
+  "post_verification": {
+    "state": "RECOVERED_AND_DISPOSABLE_KEYS_CLEANED",
+    "new_test_cert_absent": true,
+    "new_test_key_absent": true,
+    "old_test_key_absent": true,
+    "main_key_present": true,
+    "main_installed_unchanged": true,
+    "old_pending_preserved": true,
+    "new_pending_absent": true,
+    "new_retry_absent": true,
+    "new_task_absent": true,
+    "old_task_state": "Disabled",
+    "ethernet1": "Up"
+  },
+  "limits": {
+    "live_linux_and_main_windows_package_updated": false,
+    "main_ad_gpo_changed": false,
+    "macro_completion_unchanged": "54/94",
+    "entire_B06_closed": false
+  },
+  "next": "B02 deleted test identity and isolated directory interruption/recovery, then other open field tests before remaining delivery items."
+}
