@@ -67,6 +67,16 @@ worker delivery. Existing per-job 512-target and root/job bounds remain intact.
 
 ## Disposable verification and remaining work
 
+`StagingWriteScheduler.ps1` provides a source-level loop around the existing
+lifecycle step. It serializes the scheduler per connector, waits a monotonic
+interval after a verified idle or accepted stage/rollback result, and checks
+the host stop event and process exit before each step. Pending results,
+refusals, reconciliation barriers, malformed results and failures stop the
+loop. An in-flight operation uses the existing lifecycle bounds. This module
+does not register a service or attach to the installed read-only Connector.
+The hosted scheduler fixture uses native Windows events and mutexes with
+synthetic lifecycle outcomes. Active SCM wiring remains a separate gate.
+
 The new hosted Windows fixture reuses actual CNG/TLS/SQLite/signed child/SMB SDKs.
 It exercises common stage dispatch, separate rollback, exact lost-ACK recovery,
 lost POLL, changed reply, lost issued grant, repeated idle polls and a real saved
