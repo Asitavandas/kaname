@@ -21,7 +21,7 @@ daha sonraki başarılı kabulü yeniden açmaz. Bu kayıt yeni bir PDF raporu d
 | G01/A04 doğrulanmış Windows kanıtının sunucu görev kaydıyla salt okunur eşleştirilmesi | Kaynak kabulü kapalı; canlı teslim açık | PR145, kaynak `49737ba`; doğrulanmış ACK, kayıp ACK ve kayıp CLAIM için 3 gerçek Windows–SQLite karşılaştırması |
 | G01/A04 eksik veya çelişkili kayıtlarda operatör kararının kaydı | Kaynak kabulü kapalı; canlı teslim açık | PR146; gerçek HTTPS oturumu, eski kanıt ve aynı onayın tekrar denetimleri |
 | G01/A04 yetki öncesi reddedilen stage için ayrı kilit açma onayı | Kaynak kabulü kapalı | Sunucu sonucu, güncel Connector kapsamı ve aynı operatörün önceki uzlaştırma makbuzuna bağlı denetim kaydı. Gerçek HTTPS testinde doğrulandı. |
-| G01/A04 Windows görev günlüğünü başka makineye yedekleme ve izole geri yükleme | Sentetik teknik kabul kapalı; saha kabulü açık | PR148, Windows CI 43243318698. Beş dosya ve boş dizin iki ayrı Windows ortamı arasında doğrulandı. |
+| G01/A04 Windows görev günlüğünü başka makineye yedekleme ve izole geri yükleme | Tamamlanmadı — açık | Kullanıcı kararı. PR148 / Windows CI 43243318698 yalnız sentetik kanıt. Gerçek günlük, yetkili harici hedef ve ayrı kurtarma ortamı bekleniyor. |
 | Misafir/VLAN yeniden testi | Tekrar yapılmayacak | Rapor ve kullanıcının açık dışlaması |
 | Windows başlangıç testinde görev sonucu gözlemi | Kaynak kabulü kapalı | PR142; 12 Kasım bağımsız Windows ve tam cihaz kayıt akışları başarılı |
 | Windows istemcisinin Türkçe ortamda sertifika hata kodunu okuması | Kaynak ve saha doğrulaması geçti | PR143; `tr-TR` ve `en-US` Windows regresyonu, sekiz başarılı CI akışı |
@@ -76,8 +76,8 @@ eksikliği birlikte görülebiliyor. Operatör, kaydı incelemede tutma veya
 eşleşen sunucu sonucunu gördüğünü kaydetme kararını güncel kanıta bağlı olarak
 onaylayabilir. Yetki öncesi reddedilmiş stage için ayrı kilit açma onayı da
 denetim geçmişine eklenebilir. Harici günlük yedeği ve izole geri yükleme
-yolu sentetik Windows CI ortamında geçti. Saha için gerçek Windows günlüğü,
-yetkili harici hedef ve ayrı kurtarma ortamında doğrulama gerekiyor.
+adımı tamamlanmadı ve açık. Sentetik CI kanıtı kayıtta duruyor. Saha için
+gerçek Windows günlüğü, yetkili harici hedef ve ayrı kurtarma ortamı gerekiyor.
 Windows'ta kilidi fiilen açma, aktif scheduler/SCM, kontrollü imzalı teslim
 ve gerçek gMSA/AD/uç kabulü açıktır.
 Önceki ret bildirimi kanıtı: docs/checkpoints/2026-11-07-write-refusal-source.json.
