@@ -19,7 +19,7 @@ PAYLOAD=['ConnectorServiceRuntime.ps1','Compare-AuthWireSigningKeyAcl.ps1',
          'CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1',
          'CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','Read-AuthWireCombinedDeploymentScope.ps1']
 PAYLOAD += ['SysvolInventory.ps1', 'CombinedStagingPreview.ps1', 'Invoke-AuthWireStagingPreviewJob.ps1', 'Read-AuthWireCombinedStagingPreview.ps1']
-PAYLOAD += [
+WRITE_PAYLOAD = [
     'ConnectorWriteServiceRuntime.ps1', 'StagingFilesystem.ps1', 'StagingWritePreclaim.ps1',
     'StagingWriteTransport.ps1', 'StagingWriteConsumption.ps1', 'StagingWriteProcess.ps1',
     'StagingWriteExecution.ps1', 'StagingWriteResult.ps1', 'StagingWriteCycle.ps1',
@@ -29,8 +29,9 @@ PAYLOAD += [
     'Read-AuthWireStagingWritePreflight.ps1', 'Read-AuthWireRollbackPreflight.ps1',
     'Invoke-AuthWireStagingWriteChild.ps1', 'Invoke-AuthWireRollbackChild.ps1',
 ]
-ALL=PAYLOAD+['ConnectorServicePackage.ps1','ConnectorServiceControl.ps1',
-             'Install-AuthWireConnectorService.ps1','Initialize-AuthWireConnectorChannelKey.ps1']
+ADMIN_TOOLS = ['ConnectorServicePackage.ps1','ConnectorServiceControl.ps1',
+               'Install-AuthWireConnectorService.ps1','Initialize-AuthWireConnectorChannelKey.ps1']
+ALL = PAYLOAD + ADMIN_TOOLS
 
 def digest(name):
     text=(ROOT/name).read_text(encoding='utf-8-sig')
@@ -52,12 +53,12 @@ def main():
     args=parser.parse_args()
     replace_block(ROOT/'ConnectorServicePackage.ps1',
                   r'function Get-AuthWireReviewedPayloadHashes \{\s*@\{.*?\n\s*\}\s*\}',
-                  'function Get-AuthWireReviewedPayloadHashes {\n @{',PAYLOAD,args.update,footer='\n }\n}')
+                  'function Get-AuthWireReviewedPayloadHashes {\n @{',PAYLOAD+WRITE_PAYLOAD,args.update,footer='\n }\n}')
     replace_block(ROOT/'New-AuthWireConnectorServicePackage.ps1',
-                  r'\$reviewed=@\{.*?\n\}', '$reviewed=@{',ALL,args.update)
+                  r'\$reviewed=@\{.*?\n\}', '$reviewed=@{',PAYLOAD+WRITE_PAYLOAD+ADMIN_TOOLS,args.update)
     replace_block(ROOT/'Update-AuthWireConnectorService.ps1',
                   r'\$reviewed=@\{.*?\n\}', '$reviewed=@{',
-                  ALL+['ConnectorServiceUpgrade.ps1'],args.update)
+                  PAYLOAD+WRITE_PAYLOAD+ADMIN_TOOLS+['ConnectorServiceUpgrade.ps1'],args.update)
     print('AUTHWIRE_REVIEWED_SERVICE_SOURCE_HASHES_OK')
 
 if __name__=='__main__':main()
