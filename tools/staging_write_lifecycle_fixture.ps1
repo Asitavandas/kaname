@@ -13,6 +13,7 @@ try{
   $lcReview=Get-AuthWireWriteReconciliationReview $lcRoot $b $rsa
   Check ($lcReview.Phase -ceq 'accepted_ack_completion_missing' -and $lcReview.AcceptedAck -and $lcReview.RecordedOutcome -ceq 'staged') 'read-only review verifies the saved stage ACK without creating completion'
   Check (-not (Test-Path -LiteralPath (Join-Path (Join-Path $lcLife '000001') 'completion.json'))) 'review leaves missing completion untouched'
+  [IO.File]::WriteAllText((Join-Path $flowDirectory 'reconcile-stage.json'),(ConvertTo-AuthWireWriteJson $lcReview.Evidence))
   . (Join-Path $package 'StagingWriteLifecycle.ps1')
   $lcRecovered=Invoke-AuthWireStagingWriteLifecycleStep $lcRoot $b $release $rsa $url
   Check ($lcRecovered.Phase -ceq 'result_recorded' -and $lcRecovered.Outcome -ceq 'staged') 'accepted stage recovery completes only immutable result bookkeeping'
@@ -50,6 +51,7 @@ try{
    $lcReview=Get-AuthWireWriteReconciliationReview $lcRoot $b $rsa
    if($case -ceq 'lc_lost_ack'){
     Check ($lcReview.Phase -ceq 'outbox_without_accepted_ack' -and -not $lcReview.AcceptedAck -and $lcReview.RecordedOutcome -ceq '') 'lost ACK remains unknown even with a valid frozen rollback result'
+    [IO.File]::WriteAllText((Join-Path $flowDirectory 'reconcile-lost-ack.json'),(ConvertTo-AuthWireWriteJson $lcReview.Evidence))
    }else{
     Check ($lcReview.Phase -ceq 'accepted_ack_completion_missing' -and $lcReview.AcceptedAck -and $lcReview.RecordedOutcome -ceq 'rolled_back') 'read-only review verifies the saved rollback ACK'
    }
@@ -101,6 +103,7 @@ try{
    $lcReview=Get-AuthWireWriteReconciliationReview $lcRoot $b $rsa
    $lcExpected=if($case -ceq 'lc_lost_claim'){'claim_outcome_unknown'}else{'poll_outcome_unknown'}
    Check ($lcReview.Phase -ceq $lcExpected -and -not $lcReview.AcceptedAck -and $lcReview.RecordedOutcome -ceq '') 'uncertain transport gets no accepted outcome'
+   if($case -ceq 'lc_lost_claim'){[IO.File]::WriteAllText((Join-Path $flowDirectory 'reconcile-lost-claim.json'),(ConvertTo-AuthWireWriteJson $lcReview.Evidence))}
    . (Join-Path $package 'StagingWriteLifecycle.ps1')
    Check ((Invoke-AuthWireStagingWriteLifecycleStep $lcRoot $b $release $rsa $url).Phase -ceq 'local_reconciliation_required') 'restart preserves uncertain request instead of sending another request'
    Check ((Get-AuthWireLifecycleSlots $lcLife).Count -eq 1) 'uncertain request never opens a new cycle slot'

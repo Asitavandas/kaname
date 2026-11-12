@@ -383,3 +383,32 @@ class StagingWriteJobs(ConnectorJobs):
                               'peer_reported_checked_at': j['result']['checked_at'] if j['result'] else None,
                               'customer_filesystem_attested': False} for j in reversed(ledger['jobs'])]}
 
+    def reconcile_readonly(self, evidence):
+        """Compare a trusted local Windows review projection with saved ledger data."""
+        fields = {'job_id', 'scope_sha256', 'intent_sha256', 'result_body_sha256', 'accepted_ack'}
+        keys(evidence, fields, fields)
+        local_hash = evidence['result_body_sha256']
+        accepted_ack = evidence['accepted_ack']
+        require(guid(evidence['job_id']) and is_hash(evidence['scope_sha256']) and
+                is_hash(evidence['intent_sha256']) and (local_hash == '' or is_hash(local_hash)) and
+                type(accepted_ack) is bool and (not accepted_ack or local_hash != ''),
+                'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
+        with self.store.connect() as db:
+            db.execute('BEGIN')
+            job = next((j for j in self._read(db)['jobs'] if j['id'] == evidence['job_id']), None)
+        if job is None:
+            return {'comparison': 'server_job_missing'}
+        if job['scope'] != evidence['scope_sha256'] or job['intent_sha256'] != evidence['intent_sha256']:
+            return {'comparison': 'job_identity_conflict'}
+        result = job['result']
+        if result is None:
+            comparison = 'server_result_missing' if local_hash else 'result_pending_on_both_sides'
+        elif not local_hash:
+            comparison = 'local_result_missing'
+        elif digest(result) != local_hash:
+            comparison = 'result_conflict'
+        else:
+            comparison = 'result_matches' if accepted_ack else 'result_matches_ack_missing'
+        return {'comparison': comparison, 'stored_state': job['state'],
+                'server_outcome': result['outcome'] if result else None}
+

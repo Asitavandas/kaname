@@ -13,6 +13,16 @@ appears only after the existing completion or ACK readers validate it. The
 reported outcome describes saved local evidence. The function creates no
 records, sends no requests, and grants no permission to unlock or apply GPO.
 
+For a verified saved offer the review also returns `Evidence`, a bounded
+projection of the job ID, connector scope digest, intent digest, validated
+result-body digest (when available), and whether the local ACK was verified.
+`StagingWriteJobs.reconcile_readonly` accepts this projection from trusted
+operator code and compares it with one SQLite read snapshot. Matching result
+bytes and a missing local ACK are reported explicitly. Missing and mismatched
+records do not resolve the job. The stored state and reported outcome describe
+ledger evidence and cannot attest to the current filesystem or authorize action.
+The comparison has no HTTP route, retry, ACK reconstruction, or unlock effect.
+
 ## Review and storage policy
 
 The fixed private write root and immutable binding-scoped baseline remain
