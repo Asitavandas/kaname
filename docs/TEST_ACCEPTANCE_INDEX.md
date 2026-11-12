@@ -22,6 +22,7 @@ daha sonraki başarılı kabulü yeniden açmaz. Bu kayıt yeni bir PDF raporu d
 | G01/A04 eksik veya çelişkili kayıtlarda operatör kararının kaydı | Kaynak kabulü kapalı; canlı teslim açık | PR146; gerçek HTTPS oturumu, eski kanıt ve aynı onayın tekrar denetimleri |
 | G01/A04 yetki öncesi reddedilen stage için ayrı kilit açma onayı | Kaynak kabulü kapalı | Sunucu sonucu, güncel Connector kapsamı ve aynı operatörün önceki uzlaştırma makbuzuna bağlı denetim kaydı. Gerçek HTTPS testinde doğrulandı. |
 | G01/A04 Windows görev günlüğünü başka makineye yedekleme ve izole geri yükleme | Tamamlanmadı — açık | Kullanıcı kararı. PR148 / Windows CI 43243318698 yalnız sentetik kanıt. Gerçek günlük, yetkili harici hedef ve ayrı kurtarma ortamı bekleniyor. |
+| G01/A04 Windows yazma zamanlayıcısının durdurma ve görev geçişi kuralları | Kaynak testi geçti; aktif SCM entegrasyonu açık | PR149 / Windows CI 43246396307. Gerçek Windows bekleme olayı ve mutex; sentetik görev sonuçları. |
 | Misafir/VLAN yeniden testi | Tekrar yapılmayacak | Rapor ve kullanıcının açık dışlaması |
 | Windows başlangıç testinde görev sonucu gözlemi | Kaynak kabulü kapalı | PR142; 12 Kasım bağımsız Windows ve tam cihaz kayıt akışları başarılı |
 | Windows istemcisinin Türkçe ortamda sertifika hata kodunu okuması | Kaynak ve saha doğrulaması geçti | PR143; `tr-TR` ve `en-US` Windows regresyonu, sekiz başarılı CI akışı |
@@ -78,7 +79,9 @@ onaylayabilir. Yetki öncesi reddedilmiş stage için ayrı kilit açma onayı d
 denetim geçmişine eklenebilir. Harici günlük yedeği ve izole geri yükleme
 adımı tamamlanmadı ve açık. Sentetik CI kanıtı kayıtta duruyor. Saha için
 gerçek Windows günlüğü, yetkili harici hedef ve ayrı kurtarma ortamı gerekiyor.
-Windows'ta kilidi fiilen açma, aktif scheduler/SCM, kontrollü imzalı teslim
-ve gerçek gMSA/AD/uç kabulü açıktır.
+Yazma zamanlayıcısının bekleme, durdurma ve belirsiz sonuçta durma kuralları
+kaynak testinde geçti. Windows'ta kilidi fiilen açma, yazma zamanlayıcısını
+aktif SCM servisine bağlama, kontrollü imzalı teslim ve gerçek gMSA/AD/uç
+kabulü açıktır.
 Önceki ret bildirimi kanıtı: docs/checkpoints/2026-11-07-write-refusal-source.json.
 
