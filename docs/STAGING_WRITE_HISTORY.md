@@ -16,7 +16,12 @@ records, sends no requests, and grants no permission to unlock or apply GPO.
 For a verified saved offer the review also returns `Evidence`, a bounded
 projection of the job ID, connector scope digest, intent digest, validated
 result-body digest (when available), and whether the local ACK was verified.
-`StagingWriteJobs.reconcile_readonly` accepts this projection from trusted
+The review also projects `StageLockReleaseEvidence` for a completed stage
+refusal with a verified local ACK. The projection binds the job and GPO to
+the existing lock, result, ACK and completion digests. Pending, inconsistent
+and rollback outcomes have no such projection. This evidence can support a
+separate approval and is read-only.
+`StagingWriteJobs.reconcile_readonly` accepts the `Evidence` projection from trusted
 operator code and compares it with one SQLite read snapshot. Matching result
 bytes and a missing local ACK are reported explicitly. Missing and mismatched
 records do not resolve the job. The stored state and reported outcome describe

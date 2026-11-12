@@ -21,7 +21,8 @@ daha sonraki başarılı kabulü yeniden açmaz. Bu kayıt yeni bir PDF raporu d
 | G01/A04 doğrulanmış Windows kanıtının sunucu görev kaydıyla salt okunur eşleştirilmesi | Kaynak kabulü kapalı; canlı teslim açık | PR145, kaynak `49737ba`; doğrulanmış ACK, kayıp ACK ve kayıp CLAIM için 3 gerçek Windows–SQLite karşılaştırması |
 | G01/A04 eksik veya çelişkili kayıtlarda operatör kararının kaydı | Kaynak kabulü kapalı; canlı teslim açık | PR146; gerçek HTTPS oturumu, eski kanıt ve aynı onayın tekrar denetimleri |
 | G01/A04 yetki öncesi reddedilen stage için ayrı kilit açma onayı | Kaynak kabulü kapalı | Sunucu sonucu, güncel Connector kapsamı ve aynı operatörün önceki uzlaştırma makbuzuna bağlı denetim kaydı. Gerçek HTTPS testinde doğrulandı. |
-| G01/A04 Windows görev günlüğünü başka makineye yedekleme ve izole geri yükleme | Tamamlanmadı — açık | Kullanıcı kararı. PR148 / Windows CI 43243318698 yalnız sentetik kanıt. Gerçek günlük, yetkili harici hedef ve ayrı kurtarma ortamı bekleniyor. |
+| G01/A04 yetki öncesi reddedilen stage için yerel kilit kanıtı | Yalıtılmış kabul geçti; fiilî kilit açma açık | PR153, Windows testi 131454642854. Altı senaryo ve 143 kontrol geçti. Geçerli ret kanıtı, değişmiş kilit, eksik tamamlanma kaydı ve eksik ACK doğrulandı. |
+| G01/A04 Windows görev günlüğünü başka makineye yedekleme ve izole geri yükleme | Tamamlanmadı — ortam bekliyor | 12 Kasım kullanıcı kararı. Kullanıcı, yetkili harici hedef ve ayrı Windows kurtarma ortamı hazır olduğunda haber verecek. PR148 / Windows CI 43243318698 sentetik doğrulama kaydıdır. |
 | G01/A04 Windows yazma zamanlayıcısının durdurma ve görev geçişi kuralları | Kaynak testi geçti; aktif SCM entegrasyonu açık | PR149 / Windows CI 43246396307. Gerçek Windows bekleme olayı ve mutex; sentetik görev sonuçları. |
 | G01/A04 Windows görev günlüğü dizini ve hizmet hesabı izinleri | İmzalı yönetici aracı için kaynak ön kontrolü hazır; saha kabulü açık | `InspectWriteJournal`, doğrulanmış Connector paketinden günlük yolunu ve hizmet SID'sini alır. Aktif yazma zamanlayıcısı, gerçek harici yedek ve geri yükleme ayrı açık kalır. |
 | G01/A04 Yazma zamanlayıcısının SCM hizmetine bağlanması | Yalıtılmış Windows kabulü geçti; saha kabulü açık | PR151, Windows SCM/HTTPS testi 131428249646. İmzalı yazma süreci, SCM durdurma ve hatalı yanıt sonrası yeniden başlatma doğrulandı. |
@@ -80,8 +81,8 @@ eksikliği birlikte görülebiliyor. Operatör, kaydı incelemede tutma veya
 eşleşen sunucu sonucunu gördüğünü kaydetme kararını güncel kanıta bağlı olarak
 onaylayabilir. Yetki öncesi reddedilmiş stage için ayrı kilit açma onayı da
 denetim geçmişine eklenebilir. Harici günlük yedeği ve izole geri yükleme
-adımı tamamlanmadı ve açık. Sentetik CI kanıtı kayıtta duruyor. Saha için
-gerçek Windows günlüğü, yetkili harici hedef ve ayrı kurtarma ortamı gerekiyor.
+adımı tamamlanmadı. Yetkili harici hedef ve ayrı Windows kurtarma ortamı
+hazır olduğunda kullanıcı haber verecek. Sentetik CI sonucu kayıtlıdır.
 Yazma zamanlayıcısının bekleme, durdurma ve belirsiz sonuçta durma kuralları
 kaynak testinde geçti. Yazma zamanlayıcısı yalıtılmış SCM hizmetinde doğrulandı.
 Windows'ta kilidi fiilen açma, kontrollü imzalı teslim ve gerçek gMSA/AD/uç kabulü açıktır.
