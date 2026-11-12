@@ -1,8 +1,11 @@
-"""Sources admitted by immutable dev45 operator deliveries, before CRL refresh.
+"""Source references for immutable operator delivery tests.
 
 Historical archive/file pins stay exact when the current product advances.
 Current service source pin validation is independent of these fixtures.
 """
+# Current reviewed initializer for tests which compare against historical guards.
+SERVER_INIT_AST_SHA256 = '8298adcc18bd0358c8412111376d52f57a722a9a394a4d63440e9219ece5767f'
+
 FROZEN = {
     'ConnectorServiceHost.cs': 'connector-host-dev45.cs',
     'Install-AuthWireConnectorService.ps1': 'connector-installer-dev45.ps1',
