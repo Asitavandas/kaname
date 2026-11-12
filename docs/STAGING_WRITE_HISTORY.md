@@ -4,6 +4,15 @@ Source-only trusted local SDK. The continuous worker, installer, panel and peer
 routes do not expose the new review or archival operation. This is bounded local
 history maintenance, not customer delivery, an off-host backup or boot restore.
 
+`Get-AuthWireWriteReconciliationReview` inspects the fixed private journal
+under the same cycle mutex. It distinguishes incomplete POLL or CLAIM records,
+an authorization with no frozen outcome, a frozen outbox awaiting a verified
+ACK, and a verified ACK with missing local completion. Invalid, inconsistent
+or unreadable history returns `evidence_invalid_or_unavailable`. An outcome
+appears only after the existing completion or ACK readers validate it. The
+reported outcome describes saved local evidence. The function creates no
+records, sends no requests, and grants no permission to unlock or apply GPO.
+
 ## Review and storage policy
 
 The fixed private write root and immutable binding-scoped baseline remain

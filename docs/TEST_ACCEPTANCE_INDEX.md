@@ -11,6 +11,7 @@ daha sonraki başarılı kabulü yeniden açmaz. Bu kayıt yeni bir PDF raporu d
 | Ağsız boot sonrası otomatik dönüş | Kapalı | 20 Ekim VV06 offline-reconnect-acceptance |
 | Gerçek hata sonrası zamanlı otomatik retry | Kapalı | 20 Ekim VV06 automatic-retry-recovery-acceptance |
 | VV06 pilot gruptan çıkarma ve AD hesabını devre dışı bırakma sonrası ret ve geri dönüş | Kapalı | 14 Ekim ve önceki kablolu kayıtlar; CURRENT_STATUS.md, VV06 saha kanıtı |
+| B02 silinmiş AD bilgisayar hesabı ve AD erişilemezliği sonrası geri dönüş | Açık, ortam bekliyor | 12 Kasım kullanıcı kararı. Ayrı Windows test kimliği ve yalıtılmış AD kesinti ortamı hazır olduğunda devam edilir. |
 | Süresi dolmuş istemci sertifikasının RADIUS tarafından reddi | Kapalı | 6 Kasım invalid-client-tls-acceptance; event94 |
 | Güvenilmeyen issuer istemci sertifikasının RADIUS tarafından reddi | Kapalı | Aynı kayıt; event96 |
 | CRL geçici taşıma hatasında sınırlı tekrar ve canlı teslim | Kapalı | 6 Kasım crl-transport-repair-live-acceptance; dev.47 |
@@ -62,7 +63,7 @@ senaryoları önceki kablolu kabulde tamamlandı. Gerçek kullanıcı EAP-TLS i�
 ayrı test kullanıcıları ve kablosuz uç gerekir. Diğer testler 12 Kasım durum
 raporunun açık saha kabulü listesinden bağımlılıklarıyla izlenir.
 
-## Sıradaki bağımsız kaynak işi — 7 Kasım 2026
+## Sıradaki bağımsız kaynak işi — 12 Kasım 2026
 
 G01/A04: belirsiz/yarım Windows görev kayıtlarının salt okunur sınıflandırılması
 ve kontrollü uzlaştırma incelemesi. Önce özgün offer/CLAIM/authorization/outbox/
