@@ -23,6 +23,4 @@ jobs:
           persist-credentials: false
       - name: Real SYSTEM outcomes and bounded race observation
         shell: powershell
-        run: |
-          & .\tools\device_startup_windows_check.ps1
-          if($LASTEXITCODE -ne 0){throw 'Startup observation fixture failed'}
+        run: '& .\tools\device_startup_windows_check.ps1'
