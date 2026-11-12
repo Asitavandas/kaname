@@ -1,6 +1,6 @@
 # AuthWire kabul kayıtları ve sıradaki iş seçimi
 
-6 Kasım 2026. Sonraki iş seçilirken önce güncel durum raporu, bu dizin ve
+12 Kasım 2026. Sonraki iş seçilirken önce güncel durum raporu, bu dizin ve
 kanıt checkpoint'i okunur. Eski bir hazırlık notundaki "bekliyor" ifadesi,
 daha sonraki başarılı kabulü yeniden açmaz. Bu kayıt yeni bir PDF raporu değildir.
 
@@ -10,20 +10,23 @@ daha sonraki başarılı kabulü yeniden açmaz. Bu kayıt yeni bir PDF raporu d
 | Normal boot ve doğal SYSTEM görev/bağlantı | Kapalı | 19–21 Ekim VV06; aynı checkpoint |
 | Ağsız boot sonrası otomatik dönüş | Kapalı | 20 Ekim VV06 offline-reconnect-acceptance |
 | Gerçek hata sonrası zamanlı otomatik retry | Kapalı | 20 Ekim VV06 automatic-retry-recovery-acceptance |
+| VV06 pilot gruptan çıkarma ve AD hesabını devre dışı bırakma sonrası ret ve geri dönüş | Kapalı | 14 Ekim ve önceki kablolu kayıtlar; CURRENT_STATUS.md, VV06 saha kanıtı |
 | Süresi dolmuş istemci sertifikasının RADIUS tarafından reddi | Kapalı | 6 Kasım invalid-client-tls-acceptance; event94 |
 | Güvenilmeyen issuer istemci sertifikasının RADIUS tarafından reddi | Kapalı | Aynı kayıt; event96 |
 | CRL geçici taşıma hatasında sınırlı tekrar ve canlı teslim | Kapalı | 6 Kasım crl-transport-repair-live-acceptance; dev.47 |
 | VV-Client01 5 Kasım çökmesi sonrası tekrarlamama | Kapalı | 6 Kasım wired-crash-nonrecurrence-closure; yeni olay yok |
 | G01/A04 yetki öncesi ret nedeninin bildirilmesi | Kaynak kabulü kapalı; canlı teslim açık | 7 Kasım write-refusal-source; PR141,18 CI akışı,134 native kontrol |
 | Misafir/VLAN yeniden testi | Tekrar yapılmayacak | Rapor ve kullanıcının açık dışlaması |
-| Gerçek expired-pending uç cihaz kurtarma | Doğal süre dolumu bekliyor | B06; 6 Kasım gerçek seed hazır, 8 Kasım21:06 Türkiye SYSTEM Recover görevi |
+| Windows başlangıç testinde görev sonucu gözlemi | Kaynak kabulü kapalı | PR142; 12 Kasım bağımsız Windows ve tam cihaz kayıt akışları başarılı |
+| Windows istemcisinin Türkçe ortamda sertifika hata kodunu okuması | Kaynak ve saha doğrulaması geçti | PR143; `tr-TR` ve `en-US` Windows regresyonu, sekiz başarılı CI akışı |
+| Gerçek expired-pending uç cihaz kurtarma | Kapalı | B06; 12 Kasım VV-Client01 gerçek Kerberos/HTTPS, arşiv, doğal retry, kurulum makbuzu ve temizlik |
 
 Dosya adları docs/checkpoints altında tarihli tam adlarıyla bulunur.
 Kapalı dar kabuller, yeni somut hata veya ilgili değişiklik olmadığı sürece
 test kuyruğuna tekrar eklenmez. Yeni sürüm için gereken dar teslim doğrulaması
 yenileme/reboot testinin baştan yapılması olarak sayılmaz.
 
-## Sıradaki açık kabul
+## Gerçek bekleyen istek kurtarmasının saha kabulü
 
 Gerçek expired-pending kayıtta, doğal süre dolumundan sonra aynı eski CSR'nin
 sunucudan DEVICE_CERTIFICATE_EXPIRED alması; production Windows istemcisinin
@@ -38,11 +41,26 @@ makine sertifikası/anahtarı, ana kayıt görevi, Ethernet1 ve sistem saati kor
 Geçmiş sertifikayı veya üretim DB tarihini değiştirerek saha başarısı üretilmez.
 Hazırlık veya fixture kabulü, bitmiş gerçek saha kurtarması olarak işaretlenmez.
 
-Aktif vaka: docs/checkpoints/2026-11-06-natural-expiry-pilot-prepared.json.
-Önce aynı seed-result.json/recovery-result.json ve sahipli görev kontrol edilir.
-Seed veya yeni test profili oluşturma tekrarlanmaz. Doğal süre dolumu gelmeden
-bu kabul bitmiş sayılmaz. Bu sırada aynı test profili veya VV-Client01 AD
-kimliğini değiştirmeyen, raporda açık başka işler seçilebilir.
+Hazırlık kaydı: docs/checkpoints/2026-11-06-natural-expiry-pilot-prepared.json.
+8–9 Kasım arasındaki sekiz deneme sonunda bekleyen istek arşivlenmedi ve
+yeni kurulum kaydı oluşmadı. Linux günlüklerinde bu isteklere bağlanabilen
+sertifika verme yanıtı bulunamadı. Ayrı yerel HTTP testinde `tr-TR` altında
+istemcinin ASCII büyük harfli hata kodunu elediği gösterildi. Aynı yanıt,
+büyük/küçük harfe duyarlı doğrulama ile `tr-TR` ve `en-US` altında okundu.
+12 Kasımda kurumsal yayıncı ile imzalanmış istemci, ayrı test durum dizininde
+aynı doğal olarak süresi dolmuş CSR ile gerçek Kerberos/HTTPS üzerinden geçti.
+Bekleyen istek aynen arşivlendi. İstemcinin belirlediği zamanda yeni CNG
+anahtarı ve sertifika, çevrimiçi zincir ve kurulum makbuzu doğrulandı. Test
+anahtarları ve sertifikası temizlendi. Ana cihaz kimliği, Ethernet1 ve eski
+vaka kayıtları korundu. Kanıt: docs/checkpoints/2026-11-12-natural-expiry-field-accepted.json.
+
+## Sıradaki saha kabulleri
+
+B02 için silinmiş ayrı test hesabı ve yalıtılmış AD erişilemezliği/geri dönüşü
+açık. VV06 pilot grup üyeliğini kaldırma/geri ekleme ve hesabı kapatma/açma
+senaryoları önceki kablolu kabulde tamamlandı. Gerçek kullanıcı EAP-TLS için
+ayrı test kullanıcıları ve kablosuz uç gerekir. Diğer testler 12 Kasım durum
+raporunun açık saha kabulü listesinden bağımlılıklarıyla izlenir.
 
 ## Sıradaki bağımsız kaynak işi — 7 Kasım 2026
 
