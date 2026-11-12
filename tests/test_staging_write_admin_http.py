@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from kaname.connector_registry import digest
 from kaname.server import Handler
-from kaname.staging_write_jobs import StagingWriteJobs, SECTION, STAGE, ROLLBACK, ACK
+from kaname.staging_write_jobs import StagingWriteJobs, SECTION, STAGE, ROLLBACK, ACK, RELEASE_APPROVAL
 from . import test_staging_preview_jobs_http as hf
 from . import test_staging_write_jobs as wf
 
@@ -129,6 +129,50 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
             for grant in ('certificates.authority', 'system.connectors'):
                 headers, _ = self.user('reconcile-'+uuid.uuid4().hex[:8], {grant:'write'})
                 self.assertEqual(403, self.request('POST', RECONCILE+suffix, {}, headers)[0])
+
+    def test_stage_lock_release_approval_requires_audited_refusal_and_exact_evidence(self):
+        value = self.ready()
+        self.jobs.create(value | {'review_hash': self.jobs.review(value, self.actor)['review_hash']}, self.actor)
+        offer = self.jobs.poll(wf.StagingWriteJobTests.proof(self))
+        body = wf.StagingWriteJobTests.result(self, offer, outcome='refused_before_authorization',
+            reason='PREFLIGHT_FAILED', filesystem_effects='none', journal_sha256='', tree_sha256='')
+        self.jobs.complete(wf.StagingWriteJobTests.proof(self, 'RESULT', body))
+        evidence = {name: offer[name] for name in ('job_id', 'scope_sha256', 'intent_sha256')}
+        evidence.update(result_body_sha256=digest(body), accepted_ack=True)
+        revision = self.store.snapshot()['revision']
+        prior = {'expected_revision': revision, 'evidence': evidence, 'decision': 'acknowledge_saved_result'}
+        code, review, _ = self.request('POST', RECONCILE+'/review', prior, self.headers)
+        self.assertEqual(200, code, review)
+        release = prior | {'decision': RELEASE_APPROVAL,
+            'reconciliation_receipt': {'revision': revision+1, 'review_hash': review['review_hash']}}
+        self.assertEqual(400, self.request('POST', RECONCILE+'/review', release, self.headers)[0])
+        code, receipt, _ = self.request('POST', RECONCILE+'/record', prior | {
+            'review_hash': review['review_hash'], 'acknowledge': 'record_reconciliation_decision'}, self.headers)
+        self.assertEqual(200, code, receipt)
+        release['expected_revision'] = receipt['revision']
+        for changed in (
+            release | {'evidence': evidence | {'accepted_ack': False}},
+            release | {'evidence': evidence | {'result_body_sha256': '0'*64}},
+        ):
+            self.assertEqual(409, self.request('POST', RECONCILE+'/review', changed, self.headers)[0])
+        second, _ = self.user('release-second', {'certificates.authority':'write', 'system.connectors':'write'})
+        self.assertEqual(400, self.request('POST', RECONCILE+'/review', release, second)[0])
+        code, review, _ = self.request('POST', RECONCILE+'/review', release, self.headers)
+        self.assertEqual(200, code, review)
+        self.assertEqual(offer['target']['scope_target']['gpo_id'], review['gpo_id'])
+        approval = release | {'review_hash': review['review_hash'],
+                              'acknowledge': 'record_stage_lock_release_approval'}
+        self.assertEqual(400, self.request('POST', RECONCILE+'/record',
+            approval | {'acknowledge': 'record_reconciliation_decision'}, self.headers)[0])
+        before = self.ledger(); audit = self.store.audit()
+        for _ in range(2):
+            code, recorded, _ = self.request('POST', RECONCILE+'/record', approval, self.headers)
+            self.assertEqual(200, code, recorded)
+            self.assertEqual(RELEASE_APPROVAL, recorded['decision'])
+            self.assertEqual(receipt['revision']+1, recorded['revision'])
+            self.assertFalse(recorded['can_apply_gpo'])
+        self.assertEqual(before, self.ledger())
+        self.assertEqual(len(audit)+1, len(self.store.audit()))
 
     def test_review_binds_real_actor_and_is_readonly_create_never_enqueues(self):
         value = self.ready(); before = self.ledger(); audit = self.store.audit()

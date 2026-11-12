@@ -40,6 +40,16 @@ kayıtlara bağlıdır. Aynı isteğin tekrarı ilk denetim kaydının makbuzunu
 Karar yalnız denetim geçmişine eklenir. Görev durumu, Windows günlüğü,
 kilitler ve dosya işlemleri bu iki çağrının kapsamı dışındadır.
 
+`approve_refused_stage_lock_release` ayrı bir denetim kararıdır. Yalnız
+yetki verilmeden reddedilmiş stage görevi, güncel Connector kapsamı, eşleşen
+sonuç özeti ve Windows'ta doğrulandığı bildirilen ACK ile incelenebilir.
+`reconciliation_receipt` önceki `acknowledge_saved_result` kararının
+`revision` ve `review_hash` alanlarını içerir. Sunucu aynı operatör ve aynı
+kanıt için önceki kararı denetim kaydından doğrular. Kaydetme isteği ayrıca
+`acknowledge: record_stage_lock_release_approval` gerektirir. Makbuz bir
+Windows yürütme yetkisi değildir. Günlük geri yükleme kanıtı ve kilidi
+güvenli biçimde açan Windows uygulaması ayrı kabul adımlarıdır.
+
 Yeni durum/review sonuçlarında `approval_enabled`, `write_authorization_enabled`,
 `execution_adapter_available`, `can_apply_gpo` daima false'tur. Review hash'i kullanıcı
 kimlik doğrulaması veya yürütme izni değildir. Core'un `read_only=false` alanı gelecekte
