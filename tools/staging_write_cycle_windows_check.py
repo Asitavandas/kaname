@@ -27,7 +27,7 @@ from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 from kaname.connector_jobs import JobError
 from kaname.connector_registry import decode_binding
 from kaname.operations import Operations
-from kaname.staging_write_jobs import StagingWriteJobs, SECTION, STAGE, ROLLBACK, ACK
+from kaname.staging_write_jobs import StagingWriteJobs, SECTION, STAGE, ROLLBACK, ACK, RELEASE_APPROVAL
 from kaname.store import Store
 
 
@@ -231,10 +231,30 @@ def main():
                 after = store.snapshot()
                 assert after['revision'] == original['revision']+8
                 assert after['config'] == original['config'] and after['policies'] == original['policies']
+                # Consume the Windows review projection as emitted. The paired
+                # fixture ledger and prior refusal RESULT are the real core data.
+                projection = json.loads((root/'stage-lock-evidence.json').read_text(encoding='utf-8-sig'))
+                actor = str(uuid.uuid4())
+                request = {'expected_revision': after['revision'], 'evidence': projection['evidence'],
+                           'decision': 'acknowledge_saved_result'}
+                review = core.review_reconciliation(request, actor)
+                receipt = core.record_reconciliation(request | {'review_hash': review['review_hash'],
+                    'acknowledge': 'record_reconciliation_decision'}, actor)
+                release = request | {'expected_revision': receipt['revision'], 'decision': RELEASE_APPROVAL,
+                    'reconciliation_receipt': {'revision': receipt['revision'], 'review_hash': review['review_hash']},
+                    'stage_lock_evidence': projection['stage_lock_evidence']}
+                approval = core.review_reconciliation(release, actor)
+                recorded = core.record_reconciliation(release | {'review_hash': approval['review_hash'],
+                    'acknowledge': 'record_stage_lock_release_approval'}, actor)
+                assert recorded['stage_lock_evidence_sha256'] == projection['stage_lock_evidence_sha256']
+                assert recorded['revision'] == after['revision']+2 and len(store.audit()) == len(original_audit)+10
+                with store.connect() as db:
+                    assert core._read(db)['jobs'] == jobs
                 print('AUTHWIRE_WRITE_REFUSAL_WINDOWS_OK ' + json.dumps({
                     'native_checks': native['checks'], 'cases': 6, 'poll_requests': 7,
                     'claim_requests': 2, 'result_requests': 8, 'refusal_transitions': 4,
                     'real_cng_tls_sqlite': True, 'lost_ack_same_body_retry': True,
+                    'windows_lock_evidence_bound_to_server_approval': True,
                     'preflight_observation_failure_injected': True,
                     'positive_ad_content_service_identity_simulated': True,
                     'active_worker_registered': False, 'customer_changed': False}, sort_keys=True))

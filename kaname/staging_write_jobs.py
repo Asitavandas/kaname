@@ -433,14 +433,14 @@ class StagingWriteJobs(ConnectorJobs):
         required = {'expected_revision', 'evidence', 'decision'}
         if confirm:
             required.update({'review_hash', 'acknowledge'})
-        keys(value, required | {'reconciliation_receipt'}, required)
+        keys(value, required | {'reconciliation_receipt', 'stage_lock_evidence'}, required)
         self._validate_reconciliation_evidence(value['evidence'])
         require(guid(actor) and type(value['decision']) is str and
                 value['decision'] in {'keep_under_review', 'acknowledge_saved_result', RELEASE_APPROVAL},
                 'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
         release = value['decision'] == RELEASE_APPROVAL
         acknowledgement = 'record_stage_lock_release_approval' if release else 'record_reconciliation_decision'
-        require(release == ('reconciliation_receipt' in value) and
+        require(release == ('reconciliation_receipt' in value) == ('stage_lock_evidence' in value) and
                 (not confirm or (is_hash(value['review_hash']) and
                                  value['acknowledge'] == acknowledgement)),
                 'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
@@ -450,6 +450,16 @@ class StagingWriteJobs(ConnectorJobs):
             keys(receipt, fields, fields)
             require(type(receipt['revision']) is int and 1 <= receipt['revision'] < 2**53 and
                     is_hash(receipt['review_hash']), 'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
+            lock = value['stage_lock_evidence']
+            hashes = {'scope_sha256', 'intent_sha256', 'result_body_sha256', 'accepted_ack_sha256',
+                      'completion_sha256', 'lock_sha256'}
+            fields = hashes | {'format', 'slot', 'gpo_id', 'job_id'}
+            keys(lock, fields, fields)
+            slot = lock['slot']
+            require(lock['format'] == 'AuthWireRefusedStageLockEvidenceV1' and
+                    type(slot) is str and len(slot) == 6 and slot.isascii() and slot.isdecimal() and slot != '000000' and
+                    guid(lock['gpo_id']) and guid(lock['job_id']) and all(is_hash(lock[field]) for field in hashes),
+                    'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
 
     @staticmethod
     def _reconciliation_event(value, actor):
@@ -464,6 +474,13 @@ class StagingWriteJobs(ConnectorJobs):
                 comparison.get('server_outcome') == 'refused_before_authorization' and
                 job['operation'] == STAGE and not job['authorization_id'] and
                 job['scope'] == scope_id(self._binding(db)), 'STAGING_WRITE_RELEASE_EVIDENCE_CONFLICT')
+        lock = value['stage_lock_evidence']
+        evidence = value['evidence']
+        expected_lock = {'format': 'AuthWireWriteGpoLockV1', 'job_id': job['id'], 'intent_sha256': job['intent_sha256']}
+        require(lock['gpo_id'] == job['target']['scope_target']['gpo_id'] and
+                all(lock[field] == evidence[field] for field in
+                    ('job_id', 'scope_sha256', 'intent_sha256', 'result_body_sha256')) and
+                lock['lock_sha256'] == digest(expected_lock), 'STAGING_WRITE_RELEASE_EVIDENCE_CONFLICT')
         receipt = value['reconciliation_receipt']
         prior = {'expected_revision': receipt['revision'] - 1, 'evidence': value['evidence'],
                  'decision': 'acknowledge_saved_result', 'review_hash': receipt['review_hash'],
@@ -484,6 +501,7 @@ class StagingWriteJobs(ConnectorJobs):
         if value['decision'] == RELEASE_APPROVAL:
             self._require_refused_stage_release(db, value, actor, comparison, job)
             review.update(gpo_id=job['target']['scope_target']['gpo_id'],
+                          stage_lock_evidence_sha256=digest(value['stage_lock_evidence']),
                           reconciliation_receipt=value['reconciliation_receipt'])
         review['review_hash'] = digest({'domain': 'AuthWireStagingWriteReconciliationV1',
             'review': review, 'evidence': evidence, 'stored_job_sha256': digest(job)})
@@ -512,5 +530,8 @@ class StagingWriteJobs(ConnectorJobs):
                 revision = review['revision'] + 1
             else:
                 revision = saved[0]
-        return {'job_id': job_id, 'decision': decision, 'decision_recorded': True, 'revision': revision}
+        result = {'job_id': job_id, 'decision': decision, 'decision_recorded': True, 'revision': revision}
+        if decision == RELEASE_APPROVAL:
+            result['stage_lock_evidence_sha256'] = digest(value['stage_lock_evidence'])
+        return result
 
