@@ -38,6 +38,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install cryptography==46.0.0
+      - name: Windows HTTP enrollment error handling
+        run: '& .\tools\device_http_windows_check.ps1'
       - name: Native CNG initial enrollment and certificate renewal
         run: |
           & .\tools\device_windows_smoke.ps1

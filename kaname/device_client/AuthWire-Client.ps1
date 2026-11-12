@@ -340,7 +340,8 @@ function Post-Json($path, $data) {
                 try {
                     $body = $reader.ReadToEnd() | ConvertFrom-Json
                     $errorCode = [string]$body.error
-                    if($errorCode -and $errorCode.Length -le 64 -and $errorCode -notmatch '[^A-Z0-9_]') { $script:serverError = $errorCode }
+                    # Protocol codes use ASCII uppercase even under cultures such as tr-TR.
+                    if($errorCode -and $errorCode.Length -le 64 -and $errorCode -cnotmatch '[^A-Z0-9_]') { $script:serverError = $errorCode }
                 } finally { $reader.Dispose() }
             } catch {}
             finally { $webResponse.Dispose() }

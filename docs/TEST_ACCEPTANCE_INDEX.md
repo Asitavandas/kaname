@@ -1,6 +1,6 @@
 # AuthWire kabul kayıtları ve sıradaki iş seçimi
 
-6 Kasım 2026. Sonraki iş seçilirken önce güncel durum raporu, bu dizin ve
+12 Kasım 2026. Sonraki iş seçilirken önce güncel durum raporu, bu dizin ve
 kanıt checkpoint'i okunur. Eski bir hazırlık notundaki "bekliyor" ifadesi,
 daha sonraki başarılı kabulü yeniden açmaz. Bu kayıt yeni bir PDF raporu değildir.
 
@@ -16,7 +16,9 @@ daha sonraki başarılı kabulü yeniden açmaz. Bu kayıt yeni bir PDF raporu d
 | VV-Client01 5 Kasım çökmesi sonrası tekrarlamama | Kapalı | 6 Kasım wired-crash-nonrecurrence-closure; yeni olay yok |
 | G01/A04 yetki öncesi ret nedeninin bildirilmesi | Kaynak kabulü kapalı; canlı teslim açık | 7 Kasım write-refusal-source; PR141,18 CI akışı,134 native kontrol |
 | Misafir/VLAN yeniden testi | Tekrar yapılmayacak | Rapor ve kullanıcının açık dışlaması |
-| Gerçek expired-pending uç cihaz kurtarma | Doğal süre dolumu bekliyor | B06; 6 Kasım gerçek seed hazır, 8 Kasım21:06 Türkiye SYSTEM Recover görevi |
+| Windows başlangıç testinde görev sonucu gözlemi | Kaynak kabulü kapalı | PR142; 12 Kasım bağımsız Windows ve tam cihaz kayıt akışları başarılı |
+| Windows istemcisinin Türkçe ortamda sertifika hata kodunu okuması | Yerel regresyon geçti | VV-Client01 Windows PowerShell; 403 hata kodu `tr-TR` ve `en-US` altında doğrulandı |
+| Gerçek expired-pending uç cihaz kurtarma | Saha kabulü açık | B06; 8–9 Kasım sekiz deneme başarısız, görev devre dışı, imzalı dar saha doğrulaması bekliyor |
 
 Dosya adları docs/checkpoints altında tarihli tam adlarıyla bulunur.
 Kapalı dar kabuller, yeni somut hata veya ilgili değişiklik olmadığı sürece
@@ -38,11 +40,15 @@ makine sertifikası/anahtarı, ana kayıt görevi, Ethernet1 ve sistem saati kor
 Geçmiş sertifikayı veya üretim DB tarihini değiştirerek saha başarısı üretilmez.
 Hazırlık veya fixture kabulü, bitmiş gerçek saha kurtarması olarak işaretlenmez.
 
-Aktif vaka: docs/checkpoints/2026-11-06-natural-expiry-pilot-prepared.json.
-Önce aynı seed-result.json/recovery-result.json ve sahipli görev kontrol edilir.
-Seed veya yeni test profili oluşturma tekrarlanmaz. Doğal süre dolumu gelmeden
-bu kabul bitmiş sayılmaz. Bu sırada aynı test profili veya VV-Client01 AD
-kimliğini değiştirmeyen, raporda açık başka işler seçilebilir.
+Hazırlık kaydı: docs/checkpoints/2026-11-06-natural-expiry-pilot-prepared.json.
+8–9 Kasım arasındaki sekiz deneme sonunda bekleyen istek arşivlenmedi ve
+yeni kurulum kaydı oluşmadı. Linux günlüklerinde bu isteklere bağlanabilen
+sertifika verme yanıtı bulunamadı. Ayrı yerel HTTP testinde `tr-TR` altında
+istemcinin ASCII büyük harfli hata kodunu elediği gösterildi. Aynı yanıt,
+büyük/küçük harfe duyarlı doğrulama ile `tr-TR` ve `en-US` altında okundu.
+Eski vaka kayıtları ve devre dışı görevi korundu. Bir sonraki saha doğrulaması,
+kurumsal yayıncı ile imzalanmış istemci ve aynı süresi dolmuş CSR ile ayrı
+test durum dizininde gerçek Kerberos/HTTPS üzerinden yapılabilir.
 
 ## Sıradaki bağımsız kaynak işi — 7 Kasım 2026
 
