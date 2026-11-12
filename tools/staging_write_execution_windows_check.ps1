@@ -396,7 +396,15 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
   Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $treeHash -and [IO.File]::ReadAllText($readFile) -ceq $readsBefore) 'result freeze changes no SMB state and performs no new AD observation'
   $outcomes+=,[pscustomobject]@{case=$case;seconds=[Math]::Round($watch.Elapsed.TotalSeconds,2);staged=($case -ceq 'success')}
  }
- foreach($name in @('ConnectorServicePackage.ps1','ConnectorServiceRuntime.ps1')){foreach($module in @('StagingWriteExecution','StagingWriteResult','StagingWriteCycle','StagingRollbackEvidence','StagingRollbackAuthorization','Read-AuthWireRollbackPreflight','StagingRollbackExecution','StagingRollbackResult','Invoke-AuthWireRollbackChild','StagingWritePollRecord','StagingWriteLifecycle')){Check (-not ([IO.File]::ReadAllText((Join-Path $lib $name))).Contains($module)) 'execution and result adapters absent from active package/runtime'}}
+ . (Join-Path $lib 'ConnectorServicePackage.ps1')
+ $defaultPayload=@(Get-AuthWireServicePayloadNames ([pscustomobject]@{}))
+ $disabledPayload=@(Get-AuthWireServicePayloadNames ([pscustomobject]@{WriteSchedulerEnabled=$false}))
+ $enabledPayload=@(Get-AuthWireServicePayloadNames ([pscustomobject]@{WriteSchedulerEnabled=$true}))
+ $healthRuntime=[IO.File]::ReadAllText((Join-Path $lib 'ConnectorServiceRuntime.ps1'))
+ foreach($module in @('StagingWriteExecution','StagingWriteResult','StagingWriteCycle','StagingRollbackEvidence','StagingRollbackAuthorization','Read-AuthWireRollbackPreflight','StagingRollbackExecution','StagingRollbackResult','Invoke-AuthWireRollbackChild','StagingWritePollRecord','StagingWriteLifecycle')){
+  Check (($module+'.ps1') -cnotin $defaultPayload -and ($module+'.ps1') -cnotin $disabledPayload -and -not $healthRuntime.Contains($module)) 'write adapters absent from default/disabled package and read-only worker'
+  Check (($module+'.ps1') -cin $enabledPayload) 'write adapters included in explicitly enabled package'
+ }
  Check ((Get-Acl -LiteralPath $keyPath).Sddl -ceq $keyAcl) 'dedicated native key ACL preserved'
  $timer=[Diagnostics.Stopwatch]::StartNew();Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-1) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()) $timer} 'engine refuses expired authorization';Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+90) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+60) $timer} 'engine refuses clock rollback'
  # Real controller death: this independently tests the new kernel job runner,

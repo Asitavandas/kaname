@@ -24,6 +24,7 @@ daha sonraki başarılı kabulü yeniden açmaz. Bu kayıt yeni bir PDF raporu d
 | G01/A04 Windows görev günlüğünü başka makineye yedekleme ve izole geri yükleme | Tamamlanmadı — açık | Kullanıcı kararı. PR148 / Windows CI 43243318698 yalnız sentetik kanıt. Gerçek günlük, yetkili harici hedef ve ayrı kurtarma ortamı bekleniyor. |
 | G01/A04 Windows yazma zamanlayıcısının durdurma ve görev geçişi kuralları | Kaynak testi geçti; aktif SCM entegrasyonu açık | PR149 / Windows CI 43246396307. Gerçek Windows bekleme olayı ve mutex; sentetik görev sonuçları. |
 | G01/A04 Windows görev günlüğü dizini ve hizmet hesabı izinleri | İmzalı yönetici aracı için kaynak ön kontrolü hazır; saha kabulü açık | `InspectWriteJournal`, doğrulanmış Connector paketinden günlük yolunu ve hizmet SID'sini alır. Aktif yazma zamanlayıcısı, gerçek harici yedek ve geri yükleme ayrı açık kalır. |
+| G01/A04 Yazma zamanlayıcısının SCM hizmetine bağlanması | Yalıtılmış Windows kabulü geçti; saha kabulü açık | PR151, Windows SCM/HTTPS testi 131428249646. İmzalı yazma süreci, SCM durdurma ve hatalı yanıt sonrası yeniden başlatma doğrulandı. |
 | Misafir/VLAN yeniden testi | Tekrar yapılmayacak | Rapor ve kullanıcının açık dışlaması |
 | Windows başlangıç testinde görev sonucu gözlemi | Kaynak kabulü kapalı | PR142; 12 Kasım bağımsız Windows ve tam cihaz kayıt akışları başarılı |
 | Windows istemcisinin Türkçe ortamda sertifika hata kodunu okuması | Kaynak ve saha doğrulaması geçti | PR143; `tr-TR` ve `en-US` Windows regresyonu, sekiz başarılı CI akışı |
@@ -81,8 +82,7 @@ denetim geçmişine eklenebilir. Harici günlük yedeği ve izole geri yükleme
 adımı tamamlanmadı ve açık. Sentetik CI kanıtı kayıtta duruyor. Saha için
 gerçek Windows günlüğü, yetkili harici hedef ve ayrı kurtarma ortamı gerekiyor.
 Yazma zamanlayıcısının bekleme, durdurma ve belirsiz sonuçta durma kuralları
-kaynak testinde geçti. Windows'ta kilidi fiilen açma, yazma zamanlayıcısını
-aktif SCM servisine bağlama, kontrollü imzalı teslim ve gerçek gMSA/AD/uç
-kabulü açıktır.
+kaynak testinde geçti. Yazma zamanlayıcısı yalıtılmış SCM hizmetinde doğrulandı.
+Windows'ta kilidi fiilen açma, kontrollü imzalı teslim ve gerçek gMSA/AD/uç kabulü açıktır.
 Önceki ret bildirimi kanıtı: docs/checkpoints/2026-11-07-write-refusal-source.json.
 

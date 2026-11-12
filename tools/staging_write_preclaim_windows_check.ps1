@@ -358,7 +358,15 @@ namespace AuthWire.PreclaimFixture {
  $gpoAfter=Get-AuthWireSysvolInventory $gpoRoot
  Check ($gpoAfter.Sha256 -ceq $inventory.Sha256) 'no GPO tree bytes or ACL changed'
  Check (@(Get-ChildItem -LiteralPath (Join-Path $gpoRoot 'Machine') -Force).Count -eq 0) 'no package staged or executed'
- foreach($name in @('ConnectorServicePackage.ps1','ConnectorServiceRuntime.ps1')){foreach($module in @('StagingWritePreclaim','StagingWriteTransport','StagingWriteConsumption','StagingWriteResult')){Check (-not ([IO.File]::ReadAllText((Join-Path $lib $name))).Contains($module)) 'new source SDK not registered in active package/runtime'}}
+ . (Join-Path $lib 'ConnectorServicePackage.ps1')
+ $defaultPayload=@(Get-AuthWireServicePayloadNames ([pscustomobject]@{}))
+ $disabledPayload=@(Get-AuthWireServicePayloadNames ([pscustomobject]@{WriteSchedulerEnabled=$false}))
+ $enabledPayload=@(Get-AuthWireServicePayloadNames ([pscustomobject]@{WriteSchedulerEnabled=$true}))
+ $healthRuntime=[IO.File]::ReadAllText((Join-Path $lib 'ConnectorServiceRuntime.ps1'))
+ foreach($module in @('StagingWritePreclaim','StagingWriteTransport','StagingWriteConsumption','StagingWriteResult')){
+  Check (($module+'.ps1') -cnotin $defaultPayload -and ($module+'.ps1') -cnotin $disabledPayload -and -not $healthRuntime.Contains($module)) 'preclaim adapters absent from default/disabled package and read-only worker'
+  Check (($module+'.ps1') -cin $enabledPayload) 'preclaim adapters included in explicitly enabled package'
+ }
  Initialize-AuthWireChannelTypes
  if($env:AUTHWIRE_WRITE_WIRE_OUTPUT){$wire=[ordered]@{binding=$b;public_key_pem=[AuthWire.Connector.ChannelTypesV1]::PublicPem($rsa);target=$target;target_sha256=(Get-AuthWireWriteHash $target);offer=$offer;proofs=@(@{kind='POLL';proof=$poll},@{kind='CLAIM';proof=$proof},@{kind='RESULT';proof=$result})};[IO.File]::WriteAllText($env:AUTHWIRE_WRITE_WIRE_OUTPUT,($wire|ConvertTo-Json -Depth 15 -Compress),[Text.UTF8Encoding]::new($false))}
  # Genuine fixed AllSigned child: use only a disposable signed package with an

@@ -12,7 +12,7 @@ try{
  $script:AuthWireStageChildPhase='config'
  $file=Join-Path $PSScriptRoot 'service.json';$pin.PinFile($file)
  $c=ConvertFrom-AuthWireCandidateJson (Read-AuthWireCandidateBytes $file 16384)
- Assert-AuthWireCandidateFields $c @('Version','ReleaseId','ServiceName','AccountName','PublisherThumbprint','BaseUrl','Binding','KeyName','ExpectedKeySddl','RootPath')
+ Assert-AuthWireWriteServiceConfigFields $c
  Assert-AuthWireStageStrings $c @('ReleaseId','ServiceName','AccountName','PublisherThumbprint','BaseUrl','KeyName','ExpectedKeySddl','RootPath')
  if($c.Version -isnot [int] -or $c.Version -ne 1 -or $c.RootPath -cne $PSScriptRoot -or $c.PublisherThumbprint -cnotmatch '\A[0-9A-F]{40}\z'){throw 'WRITE_EXECUTION_CONFIG_REJECTED'}
  $binding=@{};foreach($p in $c.Binding.PSObject.Properties){$binding[$p.Name]=$p.Value}

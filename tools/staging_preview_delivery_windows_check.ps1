@@ -30,6 +30,8 @@ Check ($unpacked.Count -eq 28) 'exact twenty-eight-file delivery'
 # The fixed operator archives keep their admitted dev45 sources when the
 # current product advances. Their original archive and per-file pins stay exact.
 $frozenSources=@{'CombinedCandidateContent.ps1'='combined-public-content-dev45.ps1';'Invoke-AuthWireCombinedJob.ps1'='combined-job-dev45.ps1';'ConnectorServicePackage.ps1'='connector-package-dev45.ps1';'New-AuthWireConnectorServicePackage.ps1'='connector-builder-dev45.ps1';'Update-AuthWireConnectorService.ps1'='connector-updater-dev45.ps1'}
+$frozenSources['ConnectorServiceHost.cs']='connector-host-dev45.cs'
+$frozenSources['Install-AuthWireConnectorService.ps1']='connector-installer-dev45.ps1'
 foreach($name in $unpacked.Keys){
  $expected=if($frozenSources.ContainsKey($name)){Join-Path (Join-Path $repo 'tests\fixtures') $frozenSources[$name]}else{Join-Path $source $name}
  Check ((Get-AuthWireDeliveryBodyHash ([IO.File]::ReadAllText($expected))) -ceq $reviewedSources[$name]) 'every historical reviewed source body matches'

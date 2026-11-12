@@ -41,9 +41,9 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
         offer = self.create(); result = self.result(offer)
         self.assertEqual(200, self.peer(RESULT_PATH, self.proof('RESULT', result))[0])
         self.preview_result = result
-        self.jobs = StagingWriteJobs(self.engine)
         self.release = str(uuid.uuid4())
         self.now = int(time.time())
+        self.jobs = StagingWriteJobs(self.engine, wall_clock=lambda: self.now)
         # Internal signed fixture readiness only: there is no HTTP write poll.
         self.jobs.poll(wf.StagingWriteJobTests.proof(self))
         return {'expected_revision': self.store.snapshot()['revision'], 'job_id': str(uuid.uuid4()),

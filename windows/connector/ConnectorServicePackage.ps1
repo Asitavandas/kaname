@@ -8,7 +8,7 @@ function Get-AuthWireReviewedPayloadHashes {
  'ConnectorChannelKey.ps1'='D6F0D2CEBDE20B9016AC8BC1C1CDE566245A722AE447164FE55C946CFAD43BD6'
  'New-AuthWireConnectorHealthProof.ps1'='E8E369DCD0B60375EA2ADB672F904DDA217D22DB3BAB5A9B4981607E24958940'
  'Invoke-AuthWireConnectorHealth.ps1'='1A58B86580FF123D2CD253B774F015A9BBA747E5B072346786D6C133BED2122D'
- 'ConnectorServiceHost.cs'='14E2246637793391937D16E8FB73218E237E9A57F26B7210B560F9A1C9F8082F'
+ 'ConnectorServiceHost.cs'='B8023A8055E237143E80F12063DF9AC322918696E6A72B11F497EA22ECFB8E3F'
  'Invoke-AuthWireConnectorProbeJob.ps1'='D032EB81410B2914EB72D9D70AD7A742773AFCBFE8D536B820D81D1C8B9D85B6'
  'Invoke-AuthWireCandidateJob.ps1'='8252BC3048D823DF34183B49C87BEC7667908A06176CCE4F5EF65140190F3CDD'
  'Test-AuthWireDeploymentCandidate.ps1'='24D3868C7D9D1B9747535092B2F3234FE8A18BF9D6EB5DEB1A36780E894C8829'
@@ -24,6 +24,28 @@ function Get-AuthWireReviewedPayloadHashes {
  'CombinedStagingPreview.ps1'='B141175A0B16B1B2B5687DA4A515D24EEA2B8DAAB5D11106F9382B5D514281B9'
  'Invoke-AuthWireStagingPreviewJob.ps1'='949D805820F9C19AA2B42FF15C0CF1AF0D3D472A0D1E9984FF86E4C061C623A7'
  'Read-AuthWireCombinedStagingPreview.ps1'='2BE2E3CB48C3D10B2AB033F9952D846655271EA1E62487188186B938E449D534'
+ 'ConnectorWriteServiceRuntime.ps1'='2F4A3AD0F4E5B75B64A6CCE8B0DE32CF0A8D25CA468471D046D7B68844089BEA'
+ 'StagingFilesystem.ps1'='D45CFC86D4508737D951AE68C2D54C5446B678BEBD3A88FD946FF7180A6A54AC'
+ 'StagingWritePreclaim.ps1'='CFF553BB69C170CB9B39A8A476B2193743ED86B537C28BEEE38BE242B7537C4D'
+ 'StagingWriteTransport.ps1'='1FB72C2D75677A5A3FB6085FC4B5EB6B5BBF711AD193C143643D6629A52D1693'
+ 'StagingWriteConsumption.ps1'='F66733483B40424E82823B71D558B527FFD5350302359C560159F7B7AD139182'
+ 'StagingWriteProcess.ps1'='D5812DD81979E04F1BB4041CF0279021649346F0B53BC8E18015DDF3320B800A'
+ 'StagingWriteExecution.ps1'='D1B90C9682E2AA66B7AABD4882CA5734FC5AF7949B425E3F8F8E77F3A269AA66'
+ 'StagingWriteResult.ps1'='43D0AD067FEB756ABE7D42786CC42B902F36E78BA437B35EE25111EF3BE62260'
+ 'StagingWriteCycle.ps1'='BB47EEB8C2EC4C1AC51177FBED1FDE210C019EB96B4E1B50ABEAF493939EF082'
+ 'StagingRollbackEvidence.ps1'='0ED09088B77D04EE95035FBEEB3456E85D229D5052A4CC0B8678BAE874DBD7F9'
+ 'StagingRollbackAuthorization.ps1'='3695001CD68BB00B49F8F6950A76E901C2B1ABBC4EAA5162D6C4EF4A1EBFD439'
+ 'StagingRollbackExecution.ps1'='53C06F6F85A3EB217344A15433F5710A34341D084CC933F96FE789C65F043BDA'
+ 'StagingRollbackResult.ps1'='4F36935A632466225E6662DD645152E7FB567C5A98866F91287831B95CC530C3'
+ 'StagingWritePollRecord.ps1'='3299B7D751752D2A564A6ABA536C6465722B69150263692F560DBB1558441882'
+ 'StagingWriteHistory.ps1'='37169C6BAB59D48A9806DDAA84979A8CF1DF901583D0CD53AE139D6D5DBD9F88'
+ 'StagingWriteRefusal.ps1'='072381971B10396015D2F94EEADDEFE75E256F7881063BBCEA2CCA2BEC0311D7'
+ 'StagingWriteLifecycle.ps1'='685F94E38ABA7A8DDE4E4221DEE62765809FD8F4AFE7BA7EDA4E0608587DA4D8'
+ 'StagingWriteScheduler.ps1'='A45C8E00767CABD53854D85AA071465F227074F354C234B0F1A0B5E291D65853'
+ 'Read-AuthWireStagingWritePreflight.ps1'='5DBCDCA4A92CB819BBE08BC23AB228EF657F9E4C9052A99BBA2FA0C5E0D12349'
+ 'Read-AuthWireRollbackPreflight.ps1'='F61CD09323E0A0AB7437406B69C6C98CE640BF57D52B639D3FE04934098C9603'
+ 'Invoke-AuthWireStagingWriteChild.ps1'='FCD6000D4D2BD8B3DC35637D9EAD532A66D65ADF461315D71864DEABCDC53477'
+ 'Invoke-AuthWireRollbackChild.ps1'='7EC17843C66957CAC8BE8571675E8B952B9955F5E6509EBD5BB905294E0AE7B1'
  }
 }
 function Get-AuthWireSourceBody {
@@ -38,7 +60,17 @@ function Get-AuthWireSourceDigest {
  finally{$sha.Dispose()}
 }
 function Get-AuthWireServicePayloadNames {
+ param($Config)
  @('ConnectorServiceRuntime.ps1','Compare-AuthWireSigningKeyAcl.ps1','ConnectorChannelTypes.ps1','ConnectorChannelKey.ps1','New-AuthWireConnectorHealthProof.ps1','Invoke-AuthWireConnectorHealth.ps1','Invoke-AuthWireConnectorProbeJob.ps1','Invoke-AuthWireCandidateJob.ps1','Test-AuthWireDeploymentCandidate.ps1','DeploymentScope.ps1','Invoke-AuthWireScopeJob.ps1','Read-AuthWireDeploymentScope.ps1','CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1','CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','Read-AuthWireCombinedDeploymentScope.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','Invoke-AuthWireStagingPreviewJob.ps1','Read-AuthWireCombinedStagingPreview.ps1')
+ if($Config.PSObject.Properties['WriteSchedulerEnabled'] -and $Config.WriteSchedulerEnabled){Get-AuthWireServiceWritePayloadNames}
+}
+function Get-AuthWireServiceWritePayloadNames {
+ @('ConnectorWriteServiceRuntime.ps1','StagingFilesystem.ps1','StagingWritePreclaim.ps1','StagingWriteTransport.ps1',
+   'StagingWriteConsumption.ps1','StagingWriteProcess.ps1','StagingWriteExecution.ps1','StagingWriteResult.ps1',
+   'StagingWriteCycle.ps1','StagingRollbackEvidence.ps1','StagingRollbackAuthorization.ps1','StagingRollbackExecution.ps1',
+   'StagingRollbackResult.ps1','StagingWritePollRecord.ps1','StagingWriteHistory.ps1','StagingWriteRefusal.ps1',
+   'StagingWriteLifecycle.ps1','StagingWriteScheduler.ps1','Read-AuthWireStagingWritePreflight.ps1',
+   'Read-AuthWireRollbackPreflight.ps1','Invoke-AuthWireStagingWriteChild.ps1','Invoke-AuthWireRollbackChild.ps1')
 }
 function Assert-AuthWireServiceAdmin {
  $i=[Security.Principal.WindowsIdentity]::GetCurrent()
@@ -87,6 +119,10 @@ function Get-AuthWireConnectorWriteJournalReadiness {
 function Assert-AuthWireServiceConfig {
  param($Config)
  $fields=@('Version','ReleaseId','ServiceName','AccountName','PublisherThumbprint','BaseUrl','Binding','KeyName','ExpectedKeySddl','RootPath')
+ if($Config.PSObject.Properties['WriteSchedulerEnabled']){
+  if($Config.PSObject.Properties['WriteSchedulerEnabled'].Name -cne 'WriteSchedulerEnabled' -or $Config.WriteSchedulerEnabled -isnot [bool]){throw 'CONNECTOR_CONFIG_REJECTED'}
+  $fields+= 'WriteSchedulerEnabled'
+ }
  if(@($Config.PSObject.Properties).Count -ne $fields.Count -or @($Config.PSObject.Properties.Name|Where-Object{$_ -notin $fields}).Count -or $Config.Version -isnot [int] -or $Config.Version -ne 1){throw 'CONNECTOR_CONFIG_REJECTED'}
  $id=[guid]::Empty
  if(-not [guid]::TryParseExact($Config.ReleaseId,'D',[ref]$id) -or $id -eq [guid]::Empty){throw 'CONNECTOR_CONFIG_REJECTED'}
@@ -136,7 +172,7 @@ function New-AuthWireServicePackageCore {
  Set-AuthWireServiceAcl $json $sid
  $hashes=@('service.json')
  $reviewed=Get-AuthWireReviewedPayloadHashes
- foreach($file in (Get-AuthWireServicePayloadNames)){
+ foreach($file in (Get-AuthWireServicePayloadNames $Config)){
   $inputPath=Join-Path $SourceDirectory $file;Assert-AuthWireChannelPath $inputPath
   $path=Join-Path $root $file;Copy-Item -LiteralPath $inputPath -Destination $path
   if((Get-AuthWireSourceDigest ([IO.File]::ReadAllText($path))) -cne $reviewed[$file]){throw 'CONNECTOR_UNREVIEWED_SOURCE_REJECTED'}
@@ -148,7 +184,8 @@ function New-AuthWireServicePackageCore {
  $sourcePath=Join-Path $SourceDirectory 'ConnectorServiceHost.cs';Assert-AuthWireChannelPath $sourcePath
  $raw=[IO.File]::ReadAllText($sourcePath)
  if((Get-AuthWireSourceDigest $raw) -cne $reviewed['ConnectorServiceHost.cs']){throw 'CONNECTOR_UNREVIEWED_SOURCE_REJECTED'}
- $code=$raw.Replace('@@NAME@@',$Config.ServiceName).Replace('@@SID@@',$sid).Replace('@@ROOT@@',$Config.RootPath).Replace('@@HASHES@@',$hashLines)
+ $writeScheduler=if($Config.PSObject.Properties['WriteSchedulerEnabled'] -and $Config.WriteSchedulerEnabled){'enabled'}else{'disabled'}
+ $code=$raw.Replace('@@NAME@@',$Config.ServiceName).Replace('@@SID@@',$sid).Replace('@@ROOT@@',$Config.RootPath).Replace('@@HASHES@@',$hashLines).Replace('@@WRITE_SCHEDULER@@',$writeScheduler)
  $exe=Join-Path $root 'AuthWireConnector.exe'
  Add-Type -AssemblyName Microsoft.CSharp
  $compiler=[Microsoft.CSharp.CSharpCodeProvider]::new()
@@ -193,7 +230,7 @@ function Get-AuthWireServicePackage {
  $scopeLegacy=$combinedLegacy -and -not $m.Files.PSObject.Properties['Invoke-AuthWireScopeJob.ps1']
  $probeLegacy=$scopeLegacy -and -not $m.Files.PSObject.Properties['Invoke-AuthWireCandidateJob.ps1']
  $legacy=$probeLegacy -and -not $m.Files.PSObject.Properties['Invoke-AuthWireConnectorProbeJob.ps1']
- $payload=@(Get-AuthWireServicePayloadNames)
+ $payload=@(Get-AuthWireServicePayloadNames $c)
  if($stagingLegacy){$payload=@($payload|Where-Object{$_ -cnotin @('SysvolInventory.ps1','CombinedStagingPreview.ps1','Invoke-AuthWireStagingPreviewJob.ps1','Read-AuthWireCombinedStagingPreview.ps1')})}
  if($combinedScopeLegacy){$payload=@($payload|Where-Object{$_ -cnotin @('CombinedDeploymentScope.ps1','Invoke-AuthWireCombinedScopeJob.ps1','Read-AuthWireCombinedDeploymentScope.ps1','SysvolInventory.ps1','CombinedStagingPreview.ps1','Invoke-AuthWireStagingPreviewJob.ps1','Read-AuthWireCombinedStagingPreview.ps1')})}
  if($combinedLegacy){$payload=@($payload|Where-Object{$_ -cnotin @('CombinedCandidateContent.ps1','Invoke-AuthWireCombinedJob.ps1')})}

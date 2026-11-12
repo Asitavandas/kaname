@@ -17,7 +17,8 @@ namespace AuthWire.Connector {
   static readonly Dictionary<string,string> Files = new Dictionary<string,string> {
 @@HASHES@@
   };
-  Process worker; Thread watcher; EventWaitHandle stop; Mutex single;
+  const string WriteScheduler = "@@WRITE_SCHEDULER@@";
+  Process worker, writeWorker; Thread watcher; EventWaitHandle stop, writeReady; Mutex single;
   IntPtr job=IntPtr.Zero;
   [StructLayout(LayoutKind.Sequential)]struct BasicLimits {
    public long ProcessTime,JobTime;public uint Flags;public UIntPtr MinWork,MaxWork;
@@ -65,6 +66,12 @@ namespace AuthWire.Connector {
       throw new InvalidOperationException("CONNECTOR_PACKAGE_HASH_REJECTED");
    }
   }
+  Process StartWorker(ProcessStartInfo info) {
+   var process=Process.Start(info);
+   if(AssignProcessToJobObject(job,process.Handle))return process;
+   try{if(!process.HasExited)process.Kill();}finally{process.Dispose();}
+   throw new InvalidOperationException("CONNECTOR_JOB_ASSIGN_FAILED");
+  }
   protected override void OnStart(string[] args) {
    if(args.Length!=0||!Environment.Is64BitProcess)throw new InvalidOperationException("CONNECTOR_START_ARGUMENTS_REJECTED");
    using(var identity=WindowsIdentity.GetCurrent()) {
@@ -87,7 +94,9 @@ namespace AuthWire.Connector {
    PathGuard(powershell);
    var info=new ProcessStartInfo(powershell);
    var self=Process.GetCurrentProcess();
-   info.Arguments="-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File \""+Path.Combine(Root,"ConnectorServiceRuntime.ps1")+"\" -StopEventName \""+eventName+"\" -HostPid "+self.Id+" -HostStartedTicks "+self.StartTime.ToUniversalTime().Ticks;
+   const string scriptArgs="-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File ";
+   string hostArgs=" -StopEventName \""+eventName+"\" -HostPid "+self.Id+" -HostStartedTicks "+self.StartTime.ToUniversalTime().Ticks;
+   info.Arguments=scriptArgs+"\""+Path.Combine(Root,"ConnectorServiceRuntime.ps1")+"\""+hostArgs;
    info.WorkingDirectory=Root;info.UseShellExecute=false;info.CreateNoWindow=true;
    info.EnvironmentVariables["PSModulePath"]=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),@"System32\WindowsPowerShell\v1.0\Modules");
    job=CreateJobObjectW(IntPtr.Zero,null);
@@ -97,10 +106,22 @@ namespace AuthWire.Connector {
     CloseHandle(job);job=IntPtr.Zero;throw new InvalidOperationException("CONNECTOR_JOB_LIMIT_FAILED");
    }
    try{
-    worker=Process.Start(info);
-    if(!AssignProcessToJobObject(job,worker.Handle))throw new InvalidOperationException("CONNECTOR_JOB_ASSIGN_FAILED");
+    worker=StartWorker(info);
+    if(WriteScheduler=="enabled"){
+     string writeEvent=eventName+"-Write";
+     writeReady=new EventWaitHandle(false,EventResetMode.ManualReset,writeEvent,out created,eventAcl);
+     if(!created)throw new InvalidOperationException("CONNECTOR_WRITE_EVENT_COLLISION");
+     info.Arguments=scriptArgs+"\""+Path.Combine(Root,"ConnectorWriteServiceRuntime.ps1")+"\""+hostArgs+
+      " -StartEventName \""+writeEvent+"\"";
+     writeWorker=StartWorker(info);
+     writeReady.Set();
+    }
    }catch{
-    if(worker!=null&&!worker.HasExited)worker.Kill();CloseHandle(job);job=IntPtr.Zero;throw;
+    CloseHandle(job);job=IntPtr.Zero;
+    if(worker!=null)worker.Dispose();
+    if(writeWorker!=null)writeWorker.Dispose();
+    if(writeReady!=null)writeReady.Dispose();
+    throw;
    }
    watcher=new Thread(delegate(){
     try{worker.WaitForExit();}catch{}finally{if(!stopping)Environment.Exit(20);}
@@ -109,13 +130,17 @@ namespace AuthWire.Connector {
   protected override void OnStop() {
    stopping=true;RequestAdditionalTime(25000);
    try{
+    var wait=Stopwatch.StartNew();
     if(stop!=null)stop.Set();
     if(worker!=null)worker.WaitForExit(20000);
+    if(writeWorker!=null)writeWorker.WaitForExit(Math.Max(0,20000-(int)wait.ElapsedMilliseconds));
    }finally{
     // Kernel-enforced cleanup also covers a blocked worker or its compiler child.
     if(job!=IntPtr.Zero){CloseHandle(job);job=IntPtr.Zero;}
     if(watcher!=null)watcher.Join(3000);
     if(worker!=null){worker.Dispose();worker=null;}
+    if(writeWorker!=null){writeWorker.Dispose();writeWorker=null;}
+    if(writeReady!=null){writeReady.Dispose();writeReady=null;}
     if(stop!=null){stop.Dispose();stop=null;}
     if(single!=null){single.Dispose();single=null;}
    }
