@@ -71,6 +71,8 @@ try{
     $rfEvidence.lock_sha256 -ceq (Get-AuthWireWriteHash (Read-AuthWireStagingJournal $rfLock))) 'verified refusal projects the original GPO lock and matching completion evidence'
    Check ([Convert]::ToBase64String([IO.File]::ReadAllBytes($rfLock)) -ceq [Convert]::ToBase64String($rfLockBytes) -and
     [Convert]::ToBase64String([IO.File]::ReadAllBytes($rfCompletion)) -ceq [Convert]::ToBase64String($rfCompletionBytes)) 'review preserves lock and completion bytes'
+   $rfProjection=@{evidence=$rfReview.Evidence;stage_lock_evidence=$rfEvidence;stage_lock_evidence_sha256=(Get-AuthWireWriteHash $rfEvidence)}
+   [IO.File]::WriteAllText((Join-Path $flowDirectory 'stage-lock-evidence.json'),($rfProjection|ConvertTo-Json -Depth 6 -Compress))
    try{
     $rfChanged=Read-AuthWireStagingJournal $rfLock;$rfChanged.intent_sha256='0'*64
     [IO.File]::WriteAllText($rfLock,($rfChanged|ConvertTo-Json -Compress))

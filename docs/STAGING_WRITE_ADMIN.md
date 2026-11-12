@@ -47,10 +47,14 @@ yetki verilmeden reddedilmiş stage görevi, güncel Connector kapsamı, eşleş
 sonuç özeti ve Windows'ta doğrulandığı bildirilen ACK ile incelenebilir.
 `reconciliation_receipt` önceki `acknowledge_saved_result` kararının
 `revision` ve `review_hash` alanlarını içerir. Sunucu aynı operatör ve aynı
-kanıt için önceki kararı denetim kaydından doğrular. Kaydetme isteği ayrıca
-`acknowledge: record_stage_lock_release_approval` gerektirir. Makbuz bir
-Windows yürütme yetkisi değildir. Günlük geri yükleme kanıtı ve kilidi
-güvenli biçimde açan Windows uygulaması ayrı kabul adımlarıdır.
+kanıt için önceki kararı denetim kaydından doğrular. İstek ayrıca Windows
+incelemesinin `StageLockReleaseEvidence` nesnesini `stage_lock_evidence`
+alanında ister. Sunucu iş, GPO, Connector kapsamı, niyet, sonuç ve beklenen
+kilit özetini eşler. Yerel ACK ve tamamlanma özetlerini aynı onaya bağlar.
+İnceleme ve kaydetme `stage_lock_evidence_sha256` döndürür. Kaydetme isteği
+`acknowledge: record_stage_lock_release_approval` gerektirir. Onay denetim
+kaydına eklenir. Yerel kayıtların tekrar doğrulanması, günlük geri yükleme
+ve fiilî kilit açma ayrı kabul adımlarıdır.
 
 Yeni durum/review sonuçlarında `approval_enabled`, `write_authorization_enabled`,
 `execution_adapter_available`, `can_apply_gpo` daima false'tur. Review hash'i kullanıcı

@@ -140,20 +140,36 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
         self.jobs.complete(wf.StagingWriteJobTests.proof(self, 'RESULT', body))
         evidence = {name: offer[name] for name in ('job_id', 'scope_sha256', 'intent_sha256')}
         evidence.update(result_body_sha256=digest(body), accepted_ack=True)
+        lock = {name: evidence[name] for name in ('job_id', 'scope_sha256', 'intent_sha256', 'result_body_sha256')}
+        lock.update(format='AuthWireRefusedStageLockEvidenceV1', slot='000001',
+            gpo_id=offer['target']['scope_target']['gpo_id'], accepted_ack_sha256='a'*64, completion_sha256='b'*64,
+            lock_sha256=digest({'format': 'AuthWireWriteGpoLockV1', 'job_id': offer['job_id'],
+                                'intent_sha256': offer['intent_sha256']}))
         revision = self.store.snapshot()['revision']
         prior = {'expected_revision': revision, 'evidence': evidence, 'decision': 'acknowledge_saved_result'}
         code, review, _ = self.request('POST', RECONCILE+'/review', prior, self.headers)
         self.assertEqual(200, code, review)
         release = prior | {'decision': RELEASE_APPROVAL,
+            'stage_lock_evidence': lock,
             'reconciliation_receipt': {'revision': revision+1, 'review_hash': review['review_hash']}}
         self.assertEqual(400, self.request('POST', RECONCILE+'/review', release, self.headers)[0])
         code, receipt, _ = self.request('POST', RECONCILE+'/record', prior | {
             'review_hash': review['review_hash'], 'acknowledge': 'record_reconciliation_decision'}, self.headers)
         self.assertEqual(200, code, receipt)
         release['expected_revision'] = receipt['revision']
+        for invalid in (
+            {key: field for key, field in release.items() if key != 'stage_lock_evidence'},
+            release | {'stage_lock_evidence': lock | {'slot': '000000'}},
+            release | {'stage_lock_evidence': lock | {'accepted_ack_sha256': 'bad'}},
+            prior | {'stage_lock_evidence': lock},
+        ):
+            self.assertEqual(400, self.request('POST', RECONCILE+'/review', invalid, self.headers)[0])
         for changed in (
             release | {'evidence': evidence | {'accepted_ack': False}},
             release | {'evidence': evidence | {'result_body_sha256': '0'*64}},
+            release | {'stage_lock_evidence': lock | {'gpo_id': str(uuid.uuid4())}},
+            release | {'stage_lock_evidence': lock | {'scope_sha256': '0'*64}},
+            release | {'stage_lock_evidence': lock | {'lock_sha256': '0'*64}},
         ):
             self.assertEqual(409, self.request('POST', RECONCILE+'/review', changed, self.headers)[0])
         second, _ = self.user('release-second', {'certificates.authority':'write', 'system.connectors':'write'})
@@ -161,16 +177,23 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
         code, review, _ = self.request('POST', RECONCILE+'/review', release, self.headers)
         self.assertEqual(200, code, review)
         self.assertEqual(offer['target']['scope_target']['gpo_id'], review['gpo_id'])
+        self.assertEqual(digest(lock), review['stage_lock_evidence_sha256'])
         approval = release | {'review_hash': review['review_hash'],
                               'acknowledge': 'record_stage_lock_release_approval'}
         self.assertEqual(400, self.request('POST', RECONCILE+'/record',
             approval | {'acknowledge': 'record_reconciliation_decision'}, self.headers)[0])
         before = self.ledger(); audit = self.store.audit()
+        for field in ('accepted_ack_sha256', 'completion_sha256'):
+            code, error, _ = self.request('POST', RECONCILE+'/record',
+                approval | {'stage_lock_evidence': lock | {field: '0'*64}}, self.headers)
+            self.assertEqual((409, 'STAGING_WRITE_RECONCILIATION_REVIEW_CHANGED'), (code, error['error']))
+        self.assertEqual(audit, self.store.audit())
         for _ in range(2):
             code, recorded, _ = self.request('POST', RECONCILE+'/record', approval, self.headers)
             self.assertEqual(200, code, recorded)
             self.assertEqual(RELEASE_APPROVAL, recorded['decision'])
             self.assertEqual(receipt['revision']+1, recorded['revision'])
+            self.assertEqual(digest(lock), recorded['stage_lock_evidence_sha256'])
             self.assertFalse(recorded['can_apply_gpo'])
         self.assertEqual(before, self.ledger())
         self.assertEqual(len(audit)+1, len(self.store.audit()))
