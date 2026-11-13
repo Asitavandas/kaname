@@ -2,12 +2,16 @@
 
 ## 13 Kasım AuthWire pilot saha durumu
 
+**Güncel teyitli sayım:** 94 alt işin 55'i tamam (%58,5), 39'u açık. Temel ürün 45/59, yedi geliştirme paketi 10/35. 12 Kasım sayımından bu yana B07'nin son alt işi kapandı. Diğer kısmi kabuller için ek puan verilmedi.
+
 - **B07 tamamlandı (5/5).** RADIUS beklenmedik süreç kaybından 5,9 saniyede otomatik toparlandı. Ardından VV-Client01 makine EAP-TLS doğrulaması, VLAN 110 ve Accounting doğrulandı. Panelden Durdur, Başlat ve Yeniden başlat ayrı ayrı geçti.
 - **Sunucu güç işlemleri tamamlandı.** Panelden yeniden başlatma (denetim #3981) ve panelden kapatma sonrası ESXi Power On (denetim #3983) yeni Linux açılış kimlikleriyle doğrulandı. HTTPS, UDP 1812/1813, servis kontrolü, yedekleme ve CRL zamanlayıcıları geri geldi. Linux uzaktan yönetim erişimi doğrulandı.
 - **B11 kısmi saha kabulü.** Gerçek switch Start/Stop, canlı tanılama sayaçları, yerel arşiv önizlemesi ve izole veri geri yükleme geçti. VV-SW, `Acct-Interim-Interval=60` içeren Access-Accept sonrası 142 saniyede Interim-Update göndermedi ve Start içinde Class döndürmedi. İki saha kabulü uygun NAS veya yapılandırma değişikliği bekliyor. Saklama süresi ve zamanlanmış temizlik açık.
 - **Takipte.** B09 uzun süreli kablolu kararlılık, AD'den silinmiş bilgisayar ve AD erişim kesintisi, DC01 üzerinde gerçek Connector/GPO kabulü, kullanıcı sertifikalı EAP-TLS ve harici yedekten ayrı kurtarma ortamına geri yükleme açık.
 
 - **B09 ilk gözlem.** 13 Kasım'da VV-Client01 için sekiz EAP-TLS kabulü kaydedildi. Tümü VLAN 110 ve TLS doğrulamasıyla sonuçlandı. 23:21–23:22 arasında yedi örnekte iki Windows arayüzü açık, panel HTTPS 200 ve iki RADIUS dinleyicisi etkin kaldı. Yeni kablolu doğrulama olayı görülmedi. Uzun süreli kararlılık kabulü açık.
+
+- **B09 açılış sonrası kontrol.** 23:15 açılışından 23:25 kontrolüne kadar RADIUS günlüğünde bir hazır olayı, sıfır hata veya yeniden başlatma görüldü. Yeni EAP-TLS kararı ve Windows Wired AutoConfig olayı oluşmadı. VV-Client01 Ethernet0 (`10.10.110.2`) üzerinden VLAN 110 ağ geçidine sekiz isteğin tamamı ulaştı. Ethernet1 ve panel HTTPS erişimi doğrulandı. Açılıştan sonra yeni kablolu EAP-TLS ve uzun süreli kararlılık kabulü açık.
 
 Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
 
