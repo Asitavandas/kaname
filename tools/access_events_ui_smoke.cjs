@@ -17,6 +17,14 @@ for n in range(205):
  append(s.store.root,event(n,**change))
 radius_accounting.initialize(s.store.root)
 radius_accounting.ingest(s.store.root,packet('192.0.2.2','0x'+'c0'*16,'Start','<fixture-session>') + (('Class',class_attribute(event(204)['event_id'])),))
+runtime=s.store.root/'fixture-runtime'
+runtime.mkdir(mode=0o700)
+status=runtime/radius_accounting.STATUS_FILE
+status.write_text('{"enabled":true,"at":"2026-11-13T16:00:00.000Z","committed":1,"duplicates":2,"failed":3,"last_error_code":"STORAGE_BUSY"}')
+status.chmod(0o600)
+from functools import partial
+from kaname import server
+server.session_history=partial(radius_accounting.session_history,runtime=runtime)
 print(s.server_port,flush=True)
 s.serve_forever()`;
  const child=spawn(python,['-u','-c',script,temp],{cwd:root,stdio:['ignore','pipe','pipe']});let browser;
@@ -33,6 +41,7 @@ s.serve_forever()`;
   await page.locator('#accounting-list tr').waitFor();
   assert.match(await page.locator('#accounting-list').textContent(),/<fixture-session>.*Stop bekleniyor/);
   assert.match(await page.locator('#accounting-list').textContent(),/Kabul .*Policy: -fixture.*VLAN: 110/);
+  assert.match(await page.locator('#accounting-runtime').textContent(),/kaydedilen: 1 · Tekrar: 2 · Yazılamayan: 3 · Son hata: Veritabanı meşgul/);
   assert.equal(await page.locator('#accounting-next').isDisabled(),true);
   await page.locator('#accounting-sessions summary').click();
   const ids=await page.evaluate(()=>accessPage.events.map(e=>e.id));assert.equal(ids[0],205);

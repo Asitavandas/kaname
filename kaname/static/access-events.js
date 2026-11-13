@@ -79,6 +79,7 @@ function resetAccountingSessions(){
   $('accounting-sessions').open = false;
   $('accounting-list').replaceChildren();
   $('accounting-feedback').textContent = '';
+  $('accounting-runtime').textContent = '';
   accountingControls();
 }
 
@@ -104,6 +105,17 @@ function renderAccountingSessions(page){
       auditText('td', (session.input_bytes ?? '—') + ' / ' + (session.output_bytes ?? '—')), access);
     body.append(row);
   }
+  const status = page.runtime;
+  const errors = {ACCOUNTING_STORAGE_UNAVAILABLE:'Accounting veritabanı açılamadı',
+    UNSAFE_STORAGE:'Depolama yolu veya izinleri geçersiz', CAPACITY_REACHED:'Kayıt kapasitesi doldu',
+    LOW_DISK_SPACE:'Disk alanı yetersiz', STORAGE_BUSY:'Veritabanı meşgul',
+    STORAGE_ERROR:'Kayıt yazılamadı', INVALID_ACCOUNTING_PACKET:'Accounting paketi işlenemedi'};
+  const warning = errors[status?.last_error_code];
+  $('accounting-runtime').textContent = !status ? 'Accounting hizmet durumu alınamadı.' :
+    !status.enabled ? 'Accounting başlatılamadı. ' + (warning ?? '') :
+    'Son durum: ' + auditTime(status.at) + (status.committed == null ? '' :
+      ' · Bu çalıştırmada kaydedilen: ' + status.committed + ' · Tekrar: ' + status.duplicates +
+      ' · Yazılamayan: ' + status.failed) + (warning ? ' · Son hata: ' + warning : '');
   $('accounting-feedback').textContent = !page.initialized ? 'Accounting kaydı henüz başlatılmamış.' :
     !page.sessions.length ? 'Accounting oturumu bulunamadı.' :
     page.sessions.length + ' oturum gösteriliyor.';

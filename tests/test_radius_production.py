@@ -217,6 +217,11 @@ class RuntimeTests(unittest.TestCase):
         self.assertFalse(generated['accounting_events_enabled'])
         self.assertEqual('ACCOUNTING_STORAGE_UNAVAILABLE', generated['accounting_events_error'])
         self.assertFalse((failed / 'mods-enabled/accounting-events').exists())
+        from kaname.radius_accounting import runtime_status
+        self.assertFalse(runtime_status(failed)['enabled'])
+        self.assertEqual('ACCOUNTING_STORAGE_UNAVAILABLE', runtime_status(failed)['last_error_code'])
+        self.assertTrue(runtime_status(runtime)['enabled'])
+
         self.assertNotIn('private detail', str(generated))
 
     def test_native_accounting_callback_persists_and_deduplicates_on_loopback(self):
@@ -335,6 +340,12 @@ class RuntimeTests(unittest.TestCase):
             db.execute('BEGIN IMMEDIATE')
             self.assertFalse(exchange(blocked, '127.0.0.1', secret_a, accept=False))
             self.assertEqual(5, db.execute('SELECT count(*) FROM accounting_events').fetchone()[0])
+        from kaname.radius_accounting import runtime_status
+        status = runtime_status(runtime)
+        self.assertEqual('STORAGE_BUSY', status['last_error_code'])
+        self.assertEqual(1, status['failed'])
+        self.assertEqual(5, status['committed'])
+        self.assertEqual(1, status['duplicates'])
         exchange(blocked, '127.0.0.1', secret_a)
         with sqlite3.connect(database) as db:
             self.assertEqual(1, db.execute(

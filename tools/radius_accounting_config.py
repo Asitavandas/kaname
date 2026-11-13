@@ -4,11 +4,12 @@
 SOURCE = 'AuthWire-Accounting-Source'
 VECTOR = 'AuthWire-Accounting-Vector'
 STATE = 'AuthWire-Accounting-State'
+RUNTIME = 'AuthWire-Accounting-Runtime'
 
 
 def dictionary():
     return ''.join(f'ATTRIBUTE {name} {code} string\n'
-                   for code, name in enumerate((SOURCE, VECTOR, STATE), 3003))
+                   for code, name in ((3003, SOURCE), (3004, VECTOR), (3005, STATE), (3007, RUNTIME)))
 
 
 def module(source, dependencies):
@@ -23,7 +24,7 @@ def module(source, dependencies):
 '''
 
 
-def augment_site(site, listen_ip, accounting_port, state):
+def augment_site(site, listen_ip, accounting_port, state, runtime=None):
     needle = ' authenticate {\n  eap\n }\n'
     if site.count(needle) != 1:
         raise ValueError('Unexpected AuthWire RADIUS authentication template')
@@ -37,12 +38,13 @@ def augment_site(site, listen_ip, accounting_port, state):
     if site.count(marker) != 1:
         raise ValueError('Unexpected AuthWire RADIUS listener template')
     site = site.replace(marker, listener + ' authorize {\n', 1)
+    runtime_value = f'   {RUNTIME} := "{runtime}"\n' if runtime is not None else ''
     section = f""" accounting {{
   update control {{
    {SOURCE} := "%{{Packet-Src-IP-Address}}"
    {VECTOR} := "%{{Packet-Authentication-Vector}}"
    {STATE} := "{state}"
-  }}
+{runtime_value}  }}
   authwire_accounting
  }}
 """

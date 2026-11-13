@@ -8,6 +8,7 @@ from contextlib import closing
 from datetime import datetime, timezone
 import hashlib
 import ipaddress
+import json
 import os
 from pathlib import Path
 import re
@@ -16,7 +17,7 @@ import sqlite3
 import stat
 import time
 
-from .audit import AuditQueryLimit, LIMIT, number
+from .audit import AuditQueryLimit, LIMIT, instant, number
 from .radius_events import access_accepts, class_event_id
 
 MAX_BYTES = 64 * 1024 * 1024
@@ -268,7 +269,42 @@ def ingest(state, pairs):
             raise AccountingStorageError('CAPACITY_REACHED') from None
         raise AccountingStorageError('STORAGE_ERROR') from None
     return True
-def session_history(state, query):
+
+
+STATUS_FILE = 'accounting-status.json'
+STATUS_CODES = frozenset({'ACCOUNTING_STORAGE_UNAVAILABLE', 'UNSAFE_STORAGE', 'CAPACITY_REACHED',
+                          'LOW_DISK_SPACE', 'STORAGE_BUSY', 'STORAGE_ERROR', 'INVALID_ACCOUNTING_PACKET'})
+
+
+def runtime_status(runtime):
+    if runtime is None:
+        return None
+    root = Path(runtime)
+    path = root / STATUS_FILE
+    try:
+        _private(root, directory=True)
+        _private(path)
+        with path.open('rb') as handle:
+            raw = handle.read(2049)
+        if len(raw) > 2048:
+            return None
+        data = json.loads(raw)
+        if (type(data) is not dict or type(data.get('enabled')) is not bool
+                or type(data.get('at')) is not str or not instant(data['at'])):
+            return None
+        result = {key: data[key] for key in ('enabled', 'at')}
+        for key in ('committed', 'duplicates', 'failed'):
+            value = data.get(key)
+            if type(value) is int and 0 <= value <= 2**63-1:
+                result[key] = value
+        if type(data.get('last_error_code')) is str and data['last_error_code'] in STATUS_CODES:
+            result['last_error_code'] = data['last_error_code']
+        return result
+    except (OSError, ValueError, TypeError, OverflowError, AccountingStorageError):
+        return None
+
+
+def session_history(state, query, *, runtime=Path('/run/authwire-radius')):
     """Read a bounded page of NAS-reported sessions without creating storage."""
     if set(query) - {'before', 'watermark'} or any(len(values) != 1 for values in query.values()):
         raise ValueError('Invalid accounting session query')
@@ -276,7 +312,7 @@ def session_history(state, query):
     watermark = number(query['watermark'][0], zero=True) if 'watermark' in query else None
     root, path = paths(state)
     empty = {'initialized': False, 'sessions': [], 'watermark': '0',
-             'has_more': False, 'next_before': None}
+             'has_more': False, 'next_before': None, 'runtime': runtime_status(runtime)}
     if not root.exists() and not root.is_symlink():
         return empty
     _private(root, directory=True)
@@ -317,4 +353,5 @@ def session_history(state, query):
         session['access_decision'] = (decision if decision and decision['nas_ip'] == session['nas_ip']
                                       and decision['at'] <= session['started_at'] else None)
     return {'initialized': True, 'sessions': sessions, 'watermark': str(high),
-            'has_more': more, 'next_before': sessions[-1]['id'] if more else None}
+            'has_more': more, 'next_before': sessions[-1]['id'] if more else None,
+            'runtime': empty['runtime']}

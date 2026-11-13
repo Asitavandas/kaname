@@ -91,3 +91,13 @@ recognition is limited to records still in the active database. Freed SQLite
 pages can be reused for new records. Run the command during low traffic because
 the archive and cleanup hold a SQLite write reservation. There is no default
 site retention period or scheduled deletion.
+
+
+## Accounting runtime diagnostics
+
+The Accounting session API includes the latest validated runtime snapshot,
+and the access history panel shows persisted, duplicate and failed callback
+counts and the last known error. Counters are process-local observations
+sampled as Accounting requests arrive. They reset when RADIUS restarts and do
+not measure packets discarded before the callback. Failure to publish the
+snapshot does not change the Accounting response or the persistence decision.

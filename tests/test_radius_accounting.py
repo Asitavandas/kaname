@@ -104,6 +104,33 @@ class RadiusAccountingTests(unittest.TestCase):
                     packet('127.0.0.2', '0x' + '52' * 16, 'Interim-Update'))))
 
 
+    def test_runtime_counters_report_storage_failure_without_exposing_details(self):
+        from kaname import radius_accounting as store, radius_accounting_observer as observer
+
+        runtime = self.state / 'runtime'
+        runtime.mkdir(mode=0o700)
+        radiusd = SimpleNamespace(RLM_MODULE_OK=2, RLM_MODULE_FAIL=3,
+                                  L_WARN=4, radlog=lambda *args: None)
+        packet = {'request': (('Acct-Status-Type', 'Start'), ('Acct-Session-Id', 'status-fixture')),
+                  'config': (('AuthWire-Accounting-Source', '127.0.0.2'),
+                             ('AuthWire-Accounting-Vector', '0x' + '41' * 16),
+                             ('AuthWire-Accounting-State', str(self.state)),
+                             ('AuthWire-Accounting-Runtime', str(runtime)))}
+        with patch.dict('sys.modules', {'radiusd': radiusd}), \
+                patch.object(observer, '_counts', {'committed': 0, 'duplicates': 0, 'failed': 0}), \
+                patch.object(observer, '_last_status', float('-inf')), \
+                patch.object(observer, '_last_error', None):
+            self.assertEqual(2, observer.accounting(packet))
+            self.assertEqual(2, observer.accounting(packet))
+            with patch.object(store, 'ingest', side_effect=AccountingStorageError('STORAGE_BUSY')):
+                self.assertEqual(3, observer.accounting(packet))
+        status = store.session_history(self.state, {}, runtime=runtime)['runtime']
+        self.assertEqual([1, 1, 1], [status[k] for k in ('committed', 'duplicates', 'failed')])
+        self.assertEqual('STORAGE_BUSY', status['last_error_code'])
+        self.assertEqual(0o600, (runtime / store.STATUS_FILE).stat().st_mode & 0o777)
+        (runtime / store.STATUS_FILE).chmod(0o644)
+        self.assertIsNone(store.runtime_status(runtime))
+
     def test_correlation_requires_one_echo_from_the_same_nas_and_a_prior_accept(self):
         from kaname import radius_accounting as accounting, radius_events as events
         from tests.test_radius_events import event

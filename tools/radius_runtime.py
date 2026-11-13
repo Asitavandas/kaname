@@ -147,12 +147,16 @@ def generate(output, prefix, state=STATE, listen_ip='127.0.0.1', *, access_event
     accounting_enabled = False
     accounting_error = None
     if accounting_events:
-        from kaname.radius_accounting import initialize as initialize_accounting
+        from kaname.radius_accounting import STATUS_FILE, initialize as initialize_accounting
+        from kaname.radius_events import utc
+        import json
         try:
             initialize_accounting(state)
             accounting_enabled = True
         except Exception:
             accounting_error = 'ACCOUNTING_STORAGE_UNAVAILABLE'
+        private_file(output / STATUS_FILE, json.dumps({'enabled': accounting_enabled, 'at': utc(),
+                     'last_error_code': accounting_error}))
     from tools import radius_events_config as event_config
     from tools import radius_accounting_config
     private_file(output / 'dictionary', '$INCLUDE ' + str(dictionary) + '\n' +
@@ -272,7 +276,7 @@ server authwire-cert-check {{
         site = event_config.augment_site(site, accounting_link=accounting_enabled)
         site = site.replace('  authwire_authorize\n', '  authwire_authorize\n' + event_config.context_copy())
     if accounting_enabled:
-        site = radius_accounting_config.augment_site(site, listen_ip, network['accounting_port'], state)
+        site = radius_accounting_config.augment_site(site, listen_ip, network['accounting_port'], state, output)
     private_file(sites / 'authwire', site)
     return {'generated': True, 'authentication_port': auth_port, 'clients': len(clients),
             'accounting_enabled': accounting_enabled, 'fqdn': fqdn, 'listen_ip': listen_ip,
