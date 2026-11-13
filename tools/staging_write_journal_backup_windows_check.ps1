@@ -52,11 +52,11 @@ try{
   if(Get-ChildItem -LiteralPath $backup -Force){throw 'Rejected ACL wrote a backup file'}
   Set-FixturePrivateDirectoryAcl $backup
   $export=Export-AuthWireWriteJournalBackup $source $binding $backup
-  if($export.Files -ne 5){throw 'Unexpected export file count'}
+  if($export.Files -ne 5 -or $export.ScopeSha256 -cne (Get-AuthWireJobScope $binding)){throw 'Unexpected export receipt'}
   Assert-FixtureRejection {Export-AuthWireWriteJournalBackup $source $binding $backup} 'JOURNAL_BACKUP_DESTINATION_NOT_EMPTY'
   & tar.exe -cf $tar -C $backup .
   if($LASTEXITCODE -ne 0){throw 'Fixture archive creation failed'}
-  @('manifest_sha256='+$export.ManifestSha256; 'scope_sha256='+(Get-AuthWireJobScope $binding);
+  @('manifest_sha256='+$export.ManifestSha256; 'scope_sha256='+$export.ScopeSha256;
     'tree_sha256='+$export.TreeSha256; 'tar_sha256='+(Get-FileHash -LiteralPath $tar).Hash.ToLowerInvariant();
     'artifact_name=authwire-synthetic-journal-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT) | Add-Content -LiteralPath $env:GITHUB_OUTPUT
   Write-Output 'AUTHWIRE_JOURNAL_BACKUP_EXPORT_OK synthetic=true'
