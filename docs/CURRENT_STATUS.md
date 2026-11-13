@@ -28,6 +28,8 @@
 
 - **A03 imzalı kullanıcı paketi (14 Kasım).** Canlı pilot profilinin ZIP'i panel API'sinden indirildi. Profil, HTTPS adı, Kerberos SPN, yedi dosya özeti ve iki betiğin varlık pinleri doğrulandı. İki PowerShell betiği DC01'de VV-Client01'in zaten güvendiği kurum yayıncısıyla imzalandı. VV-Client01 üzerinde iki Authenticode imzası geçerli ve AllSigned ValidateOnly başarılı. İmzalı paket yönetici yazma yetkili bir ProgramData klasöründe hazır. İlk test hesabının etkileşimli oturumu, CurrentUser sertifika kurulumu ve Ethernet0 kablolu EAP-TLS kabulü bekliyor.
 
+- **A03 ilk gerçek kullanıcı sertifikası (14 Kasım).** VV-Client01'de ilk onaylı AD kullanıcısının etkileşimli oturumunda imzalı kurulum çalıştı. İlk sertifika istemcisi PowerShell Set-Acl sağlayıcısında SeSecurityPrivilege hatası verdi. Aynı sahip ve korumalı erişim kurallarıyla Directory.SetAccessControl kullanan, kurum imzalı pilot adayda standart kullanıcı görevi çıkış 0 verdi. Windows installed durumu ve sunucudaki kurulum makbuzu eşleşti. Mevcut görevin kısa kullanıcı adı biçiminden kaynaklanan yeniden kurulum denetimi için PR #161'de ayrıca düzeltme var, imzalı yeniden kurulum kabulü bekliyor. Yeni RADIUS kullanıcı kararı oluşmadı. Ethernet0 kullanıcı EAP-TLS ve hedef VLAN ayrı saha kabulü.
+
 Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
 
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
