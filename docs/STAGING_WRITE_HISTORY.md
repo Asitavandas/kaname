@@ -21,6 +21,12 @@ refusal with a verified local ACK. The projection binds the job and GPO to
 the existing lock, result, ACK and completion digests. Pending, inconsistent
 and rollback outcomes have no such projection. This evidence can support a
 separate approval and is read-only.
+
+`Test-AuthWireStageLockApprovalEvidence` compares the authenticated API
+response supplied by the operator with the expected receipt revision and a
+fresh Windows journal review. The response is a read-only comparison. Live
+delivery, off-host restore acceptance and actual lock release remain open.
+
 `StagingWriteJobs.reconcile_readonly` accepts the `Evidence` projection from trusted
 operator code and compares it with one SQLite read snapshot. Matching result
 bytes and a missing local ACK are reported explicitly. Missing and mismatched
