@@ -1,6 +1,6 @@
-# B11 Accounting isolated native acceptance — 13 November 2026
+# B11 Accounting isolated native and source acceptance — 13 November 2026
 
-## Scope
+## Prior isolated native protocol result
 
 A temporary FreeRADIUS instance was started from the installed native RADIUS
 binary under a private temporary directory. It listened on an ephemeral UDP
@@ -11,60 +11,52 @@ No live AuthWire, RADIUS, NAS, switch, policy, database, or service setting was
 changed.
 
 The production `authwire-radius.service` PID was captured before and after the
-exercise and remained unchanged.
+exercise and remained unchanged. The final result was seven authenticated
+responses and seven detail records; Start, Interim-Update, Stop, cross-NAS
+session separation, Stop without Start, Interim after Stop, and rejection of
+unknown NAS/invalid secret were observed.
 
-## Observed native result
+The repeated Interim-Update produced two identical native detail records. The
+detail receiver did not provide application idempotency.
 
-The final run returned:
+## Source-only accounting ingest
 
-```json
-{
-  "authenticated_responses": 7,
-  "detail_records": 7,
-  "distinct_nas_same_session": true,
-  "identical_interim_records": 2,
-  "interim_after_stop_observed": true,
-  "invalid_secret_and_unknown_nas_rejected": true,
-  "loopback_only": true,
-  "stop_without_start_observed": true
-}
-```
-
-The isolated native listener accepted and logged Start, Interim-Update, and
-Stop requests. It kept the same Acct-Session-Id from two different configured
-NAS addresses distinct. It also logged a Stop without a preceding Start and
-an Interim-Update arriving after Stop, without creating an access-accept
-decision. Invalid-secret and unknown-NAS requests received no accepted
-response.
-
-The repeated Interim-Update produced two identical detail records. The native
-detail receiver does not provide the required idempotent application ingest.
-
-## Source-only persistence step
-
-Added `kaname/radius_accounting.py` with a separate private SQLite event and
+Added `kaname/radius_accounting.py`, a separate private SQLite event and
 session store. It scopes sessions by NAS source IP plus Acct-Session-Id,
-deduplicates retransmissions by NAS source plus Request Authenticator, preserves
-counter values when a later packet omits them, records orphan Stop/Interim
-events without inventing a session, and combines octet/gigaword counters.
-The parser accepts only server-supplied packet attributes and does not persist
-User-Name or other unverified identity claims.
+deduplicates packet retries by NAS source plus Request Authenticator, preserves
+existing counters when a later packet omits them, records orphan Stop/Interim
+events without inventing sessions, and combines octet/gigaword counters. The
+parser uses server-supplied packet attributes and does not persist User-Name or
+unverified identity claims.
 
-Added `tests/test_radius_accounting.py`. The focused isolated run passed all
-five tests: Start/Interim/Stop persistence, retransmission deduplication,
-cross-NAS separation, orphan event handling, gigaword counters, and malformed
-input rejection.
+Added `kaname/radius_accounting_observer.py` and
+`tools/radius_accounting_config.py`. Runtime generation remains opt-in via
+`--accounting-events`; it prepares the private store and generates the native
+FreeRADIUS Accounting callback. The callback acknowledges only after a durable
+insert or recognized retry. Validation/storage failures return failure so the
+NAS can retry. The production service was not restarted and the feature flag
+was not enabled live.
+
+## Verification
+
+Seven focused Accounting tests passed on the Linux host, covering:
+Start/Interim/Stop persistence, deduplication, NAS scoping, orphan events,
+gigaword counters, invalid input, callback acknowledgment, and storage failure.
+The opt-in runtime setup/failure-isolation test passed. The generated production
+FreeRADIUS configuration, with Accounting enabled, passed native `radiusd -XC`
+parsing against the installed pinned runtime. CI is running separately on the
+draft PR.
 
 ## Acceptance boundary and next work
 
-This source module is not yet connected to the production FreeRADIUS accounting
-callback, service-start database initialization, AuthWire API/UI/CSV, or access
-decision correlation. No service package was built or deployed. Retention,
-archive, cleanup, and real pilot NAS acceptance remain open. No B11 completion
-point is claimed.
+No packet has yet been sent through the generated application callback into
+this SQLite store under the native listener. There is no AuthWire API/UI/CSV,
+access-decision/session correlation, retention/archive/cleanup acceptance, or
+real pilot NAS end-to-end result. No service package was built or deployed.
+No B11 completion point is claimed.
 
-Next, wire this store to an authenticated native Accounting callback and
-startup preparation, then add an isolated native-to-application/database
-acceptance. Keep the live NAS and RADIUS configuration unchanged until that
-source path passes. Then verify one separately authorized real pilot NAS
-session end to end and continue with correlation and retention/archive/cleanup.
+Next, extend the isolated native protocol exercise to invoke the generated
+callback and read back persisted session/event rows, including a duplicate
+retry and storage failure. Keep live NAS and RADIUS settings unchanged until
+that source acceptance passes. Then verify a separately authorized real pilot
+NAS session end to end and continue with correlation and retention/archive/cleanup.
