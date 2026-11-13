@@ -17,6 +17,9 @@
 
 - **B12 harici kurtarma hazırlığı.** 03:17'deki son planlı arşiv Accounting etkinleşmeden önce alındığı için Accounting veritabanını içermiyor. 23:38'de mevcut yedek işçisiyle ayrı, root erişimli yerel kurtarma kopyası oluşturuldu. Beş SQLite veritabanı, Accounting ve erişim kayıtları, SHA-256 ve servis süreçlerinin korunduğu doğrulandı. Planlı yedekler ve saklama ayarı değiştirilmedi. Sunucu dışına aktarım ve ayrı VM'de geri yükleme/açılış, yetkili hedef ve kurtarma ortamı bekliyor.
 
+- **B03 açılış sonrası CRL işletimi.** Linux'ta issuer CRL #82 imzası ve issuer zinciri doğrulandı. Açılıştan sonraki 28 senkron çalışması başarılıydı. CRL numarası aynı kaldı ve RADIUS yeniden başlamadı. VV-Client01'de SYSTEM görevi 23:02'de sonuç 0 ile tamamlandı. Durum dosyası kök CRL #1 ve issuer CRL #82 için `current` gösterdi. Bu aralıkta yeni CRL yayını görülmedi. CA geçişi ve kod imzalama yenilemesi açık.
+- **B06 eski saha görevi.** PR #143 kapsamındaki süresi dolmuş bekleyen istek kurtarması doğrulandı. 8–10 Kasım vakasına ait `AuthWire-Expiry-Natural-7249ec821a0d4c97` görevi VV-Client01'de devre dışı durumda duruyor. Eski görevin temizliği ayrı takipte.
+
 Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
 
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
