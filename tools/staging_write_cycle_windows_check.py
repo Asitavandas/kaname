@@ -130,9 +130,42 @@ def main():
         # Finish it before creating the actual signed request. The handler still
         # runs the unchanged production core inside its original HTTP deadline.
         prepare_stop = threading.Event()
+
+        def verify_refused_stage():
+            projection = json.loads((root/'stage-lock-evidence.json').read_text(encoding='utf-8-sig'))
+            actor = str(uuid.uuid4())
+            request = {'expected_revision': store.snapshot()['revision'], 'evidence': projection['evidence'],
+                       'decision': 'acknowledge_saved_result'}
+            review = core.review_reconciliation(request, actor)
+            receipt = core.record_reconciliation(request | {'review_hash': review['review_hash'],
+                'acknowledge': 'record_reconciliation_decision'}, actor)
+            release = request | {'expected_revision': receipt['revision'], 'decision': RELEASE_APPROVAL,
+                'reconciliation_receipt': {'revision': receipt['revision'], 'review_hash': review['review_hash']},
+                'stage_lock_evidence': projection['stage_lock_evidence']}
+            approval = core.review_reconciliation(release, actor)
+            approved_request = release | {'review_hash': approval['review_hash'],
+                'acknowledge': 'record_stage_lock_release_approval'}
+            recorded = core.record_reconciliation(approved_request, actor)
+            (root/'stage-lock-receipt.json').write_text(json.dumps(recorded), encoding='ascii')
+            verified = core.verify_stage_lock_release_approval(
+                {'approval': approved_request, 'approval_revision': recorded['revision']}, actor)
+            assert verified['stage_lock_evidence_sha256'] == projection['stage_lock_evidence_sha256']
+            reply = verified | {'review_only': True, 'approval_enabled': False, 'write_authorization_enabled': False,
+                                'execution_adapter_available': False, 'can_apply_gpo': False}
+            (root/'stage-lock-verification.tmp').write_text(json.dumps(reply), encoding='ascii')
+            (root/'stage-lock-verification.tmp').rename(root/'stage-lock-verification.json')
+
         def prepare_cases():
             seen = set()
             while not prepare_stop.wait(0.02):
+                if refusal_mode and 'stage-lock-review' not in seen and (root/'stage-lock-review').is_dir():
+                    seen.add('stage-lock-review')
+                    try:
+                        with lock:
+                            verify_refused_stage()
+                    except Exception as error:
+                        print('FIXTURE_STAGE_LOCK_VERIFICATION_FAILED '+type(error).__name__, flush=True)
+                        (root/'stage-lock-verification-failed').mkdir()
                 for request in sorted(root.glob('prepare-request-*')):
                     token = request.name.removeprefix('prepare-request-')
                     if len(token) != 32 or any(c not in '0123456789abcdef' for c in token) or token in seen:
@@ -227,39 +260,18 @@ def main():
                 assert all(j['authorization_id'] == '' and j['result']['filesystem_effects'] == 'none' for j in refusals)
                 assert sum(j['state'] == 'authorized' for j in jobs) == 1
                 assert sum(j['state'] == 'leased' for j in jobs) == 1
-                assert len(store.audit()) == len(original_audit)+8
+                assert len(store.audit()) == len(original_audit)+10
                 after = store.snapshot()
-                assert after['revision'] == original['revision']+8
+                assert after['revision'] == original['revision']+10
                 assert after['config'] == original['config'] and after['policies'] == original['policies']
-                # Consume the Windows review projection as emitted. The paired
-                # fixture ledger and prior refusal RESULT are the real core data.
-                projection = json.loads((root/'stage-lock-evidence.json').read_text(encoding='utf-8-sig'))
-                actor = str(uuid.uuid4())
-                request = {'expected_revision': after['revision'], 'evidence': projection['evidence'],
-                           'decision': 'acknowledge_saved_result'}
-                review = core.review_reconciliation(request, actor)
-                receipt = core.record_reconciliation(request | {'review_hash': review['review_hash'],
-                    'acknowledge': 'record_reconciliation_decision'}, actor)
-                release = request | {'expected_revision': receipt['revision'], 'decision': RELEASE_APPROVAL,
-                    'reconciliation_receipt': {'revision': receipt['revision'], 'review_hash': review['review_hash']},
-                    'stage_lock_evidence': projection['stage_lock_evidence']}
-                approval = core.review_reconciliation(release, actor)
-                approved_request = release | {'review_hash': approval['review_hash'],
-                    'acknowledge': 'record_stage_lock_release_approval'}
-                recorded = core.record_reconciliation(approved_request, actor)
-                assert recorded['stage_lock_evidence_sha256'] == projection['stage_lock_evidence_sha256']
-                verified = core.verify_stage_lock_release_approval(
-                    {'approval': approved_request, 'approval_revision': recorded['revision']}, actor)
-                assert verified['approval_verified'] and verified['stage_lock_evidence_sha256'] == projection['stage_lock_evidence_sha256']
-                assert recorded['revision'] == after['revision']+2 and len(store.audit()) == len(original_audit)+10
-                with store.connect() as db:
-                    assert core._read(db)['jobs'] == jobs
+                assert (root/'stage-lock-verification.json').is_file()
                 print('AUTHWIRE_WRITE_REFUSAL_WINDOWS_OK ' + json.dumps({
                     'native_checks': native['checks'], 'cases': 6, 'poll_requests': 7,
                     'claim_requests': 2, 'result_requests': 8, 'refusal_transitions': 4,
                     'real_cng_tls_sqlite': True, 'lost_ack_same_body_retry': True,
                     'windows_lock_evidence_bound_to_server_approval': True,
                     'recorded_lock_approval_reverified': True,
+                    'windows_compared_server_approval_with_current_local_evidence': True,
                     'preflight_observation_failure_injected': True,
                     'positive_ad_content_service_identity_simulated': True,
                     'active_worker_registered': False, 'customer_changed': False}, sort_keys=True))

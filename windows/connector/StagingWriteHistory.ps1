@@ -233,6 +233,39 @@ function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding
  }finally{$pins.Dispose();$lock.ReleaseMutex();$lock.Dispose()}
 }
 
+function Test-AuthWireStageLockApprovalEvidence {
+ param([string]$Root,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,
+       $VerificationResponse,[long]$ExpectedApprovalRevision)
+ # Compare a response obtained by the operator over the authenticated API.
+ # This local comparison is not an execution grant.
+ $reply=$VerificationResponse
+ $fields=@('job_id','gpo_id','decision','approval_revision','approval_verified',
+  'stage_lock_evidence_sha256','review_only','approval_enabled','write_authorization_enabled',
+  'execution_adapter_available','can_apply_gpo')
+ Assert-AuthWireCandidateFields $reply $fields
+ if(($reply.approval_revision -isnot [int] -and $reply.approval_revision -isnot [long]) -or
+    $ExpectedApprovalRevision -lt 1 -or $ExpectedApprovalRevision -ge 9007199254740992L -or
+    $reply.approval_revision -ne $ExpectedApprovalRevision -or
+    $reply.decision -isnot [string] -or $reply.decision -cne 'approve_refused_stage_lock_release' -or
+    -not (Test-AuthWireWriteHash $reply.stage_lock_evidence_sha256)){
+  throw 'WRITE_LOCK_APPROVAL_RESPONSE_REJECTED'
+ }
+ foreach($name in @('approval_verified','review_only')){
+  if($reply.$name -isnot [bool] -or -not $reply.$name){throw 'WRITE_LOCK_APPROVAL_RESPONSE_REJECTED'}
+ }
+ foreach($name in @('approval_enabled','write_authorization_enabled','execution_adapter_available','can_apply_gpo')){
+  if($reply.$name -isnot [bool] -or $reply.$name){throw 'WRITE_LOCK_APPROVAL_RESPONSE_REJECTED'}
+ }
+ Assert-AuthWireCandidateGuid $reply.job_id
+ Assert-AuthWireCandidateGuid $reply.gpo_id
+ $review=Get-AuthWireWriteReconciliationReview $Root $Binding $Key
+ $local=$review.StageLockReleaseEvidence
+ if($null -eq $local -or $local.job_id -cne $reply.job_id -or $local.gpo_id -cne $reply.gpo_id -or
+    (Get-AuthWireWriteHash $local) -cne $reply.stage_lock_evidence_sha256){throw 'WRITE_LOCK_APPROVAL_LOCAL_EVIDENCE_CHANGED'}
+ return [pscustomobject]@{JobId=$local.job_id;GpoId=$local.gpo_id;ApprovalRevision=$ExpectedApprovalRevision;
+  LocalEvidenceMatches=$true;CanApplyGpo=$false}
+}
+
 function Write-AuthWireHistoryBytes([string]$Path,[byte[]]$Bytes){
  $s=[IO.File]::Open($Path,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
  try{$s.Write($Bytes,0,$Bytes.Length);$s.Flush($true)}finally{$s.Dispose()}

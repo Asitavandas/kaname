@@ -73,16 +73,32 @@ try{
     [Convert]::ToBase64String([IO.File]::ReadAllBytes($rfCompletion)) -ceq [Convert]::ToBase64String($rfCompletionBytes)) 'review preserves lock and completion bytes'
    $rfProjection=@{evidence=$rfReview.Evidence;stage_lock_evidence=$rfEvidence;stage_lock_evidence_sha256=(Get-AuthWireWriteHash $rfEvidence)}
    [IO.File]::WriteAllText((Join-Path $flowDirectory 'stage-lock-evidence.json'),($rfProjection|ConvertTo-Json -Depth 6 -Compress))
+   $null=[IO.Directory]::CreateDirectory((Join-Path $flowDirectory 'stage-lock-review'))
+   $rfReplyFile=Join-Path $flowDirectory 'stage-lock-verification.json'
+   $rfFailed=Join-Path $flowDirectory 'stage-lock-verification-failed'
+   $rfTimer=[Diagnostics.Stopwatch]::StartNew()
+   while(-not [IO.File]::Exists($rfReplyFile) -and -not [IO.Directory]::Exists($rfFailed) -and $rfTimer.ElapsedMilliseconds -lt 15000){Start-Sleep -Milliseconds 25}
+   Check ([IO.File]::Exists($rfReplyFile)) 'server rechecks the exact recorded approval'
+   $rfReply=Read-AuthWireStagingJournal $rfReplyFile
+   $rfReceipt=Read-AuthWireStagingJournal (Join-Path $flowDirectory 'stage-lock-receipt.json')
+   $rfMatch=Test-AuthWireStageLockApprovalEvidence $journal $b $rsa $rfReply $rfReceipt.revision
+   Check ($rfMatch.LocalEvidenceMatches -and $rfMatch.JobId -ceq $rfId -and -not $rfMatch.CanApplyGpo) 'Windows matches the server response to current local evidence'
+   Reject {Test-AuthWireStageLockApprovalEvidence $journal $b $rsa $rfReply ($rfReceipt.revision+1)} 'Windows rejects a different approval revision'
+   $rfReply.can_apply_gpo=$true
+   Reject {Test-AuthWireStageLockApprovalEvidence $journal $b $rsa $rfReply $rfReceipt.revision} 'Windows rejects unexpected permission to apply GPO'
+   $rfReply.can_apply_gpo=$false
    try{
     $rfChanged=Read-AuthWireStagingJournal $rfLock;$rfChanged.intent_sha256='0'*64
     [IO.File]::WriteAllText($rfLock,($rfChanged|ConvertTo-Json -Compress))
     $rfInvalid=Get-AuthWireWriteReconciliationReview $journal $b $rsa
     Check ($rfInvalid.Phase -ceq 'evidence_invalid_or_unavailable' -and $null -eq $rfInvalid.StageLockReleaseEvidence) 'mismatched lock never produces release evidence'
+    Reject {Test-AuthWireStageLockApprovalEvidence $journal $b $rsa $rfReply $rfReceipt.revision} 'Windows refuses a previously verified response after local lock drift'
    }finally{[IO.File]::WriteAllBytes($rfLock,$rfLockBytes)}
    try{
     [IO.File]::Delete($rfCompletion)
     $rfPartial=Get-AuthWireWriteReconciliationReview $journal $b $rsa
     Check ($rfPartial.Phase -ceq 'accepted_ack_completion_missing' -and $null -eq $rfPartial.StageLockReleaseEvidence) 'a valid ACK alone does not produce lock release evidence'
+    Reject {Test-AuthWireStageLockApprovalEvidence $journal $b $rsa $rfReply $rfReceipt.revision} 'Windows refuses a previously verified response without its local completion'
    }finally{[IO.File]::WriteAllBytes($rfCompletion,$rfCompletionBytes)}
   }
   $rfBytes=[IO.File]::ReadAllBytes($rfBox)
