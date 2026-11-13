@@ -193,15 +193,42 @@ class RuntimeTests(unittest.TestCase):
         self.assertFalse((failed / 'mods-enabled/access-events').exists())
         self.assertNotIn('private disk detail', (failed / 'observer-status.json').read_text())
 
+    def test_accounting_events_are_opt_in_and_fail_closed_on_storage_setup(self):
+        generated = generate(self.runtime, self.prefix, self.state)
+        self.assertFalse(generated['accounting_events_enabled'])
+        self.assertFalse((self.state / 'radius-accounting').exists())
+        runtime = self.root / 'accounting-runtime'; runtime.mkdir(mode=0o700)
+        generated = generate(runtime, self.prefix, self.state, accounting_events=True)
+        self.assertTrue(generated['accounting_events_enabled'])
+        db = self.state / 'radius-accounting/accounting.sqlite3'
+        self.assertTrue(db.is_file())
+        self.assertEqual(0, db.stat().st_mode & 0o077)
+        self.assertIn('accounting {\n  authwire_accounting\n }',
+                      (runtime / 'sites-enabled/authwire').read_text())
+        self.assertIn('func_accounting = accounting',
+                      (runtime / 'mods-enabled/accounting-events').read_text())
+        failed = self.root / 'accounting-failed'; failed.mkdir(mode=0o700)
+        with patch('kaname.radius_accounting.initialize', side_effect=OSError('private detail')):
+            generated = generate(failed, self.prefix, self.state, accounting_events=True)
+        self.assertFalse(generated['accounting_events_enabled'])
+        self.assertEqual('ACCOUNTING_STORAGE_UNAVAILABLE', generated['accounting_events_error'])
+        self.assertFalse((failed / 'mods-enabled/accounting-events').exists())
+        self.assertNotIn('private detail', str(generated))
+
     def test_native_freeradius_accepts_generated_production_config_when_prefix_is_supplied(self):
         prefix = os.environ.get('AUTHWIRE_RADIUS_PREFIX')
         if not prefix:
             self.skipTest('Pinned FreeRADIUS prefix not supplied')
-        for enabled in (False, True):
-            with self.subTest(access_events=enabled):
-                runtime = self.root / ('native-runtime-' + str(enabled)); runtime.mkdir(mode=0o700)
-                generated = generate(runtime, Path(prefix), self.state, access_events=enabled)
-                self.assertEqual(enabled, generated['access_events_enabled'])
+        for access_enabled in (False, True):
+            for accounting_enabled in (False, True):
+                with self.subTest(access_events=access_enabled, accounting_events=accounting_enabled):
+                    runtime = self.root / ('native-runtime-' + str(access_enabled) + '-' + str(accounting_enabled))
+                    runtime.mkdir(mode=0o700)
+                    generated = generate(runtime, Path(prefix), self.state,
+                                         access_events=access_enabled,
+                                         accounting_events=accounting_enabled)
+                    self.assertEqual(access_enabled, generated['access_events_enabled'])
+                    self.assertEqual(accounting_enabled, generated['accounting_events_enabled'])
                 env = dict(os.environ); env['LD_LIBRARY_PATH'] = str(Path(prefix) / 'lib')
                 result = subprocess.run(
                     [str(Path(prefix) / 'sbin/radiusd'), '-XC', '-D', str(Path(prefix) / 'share/freeradius'), '-d', str(runtime)],
@@ -260,4 +287,3 @@ class RuntimeTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
