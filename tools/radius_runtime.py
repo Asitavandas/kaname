@@ -269,12 +269,13 @@ server authwire-cert-check {{
         site = event_config.augment_site(site)
         site = site.replace('  authwire_authorize\n', '  authwire_authorize\n' + event_config.context_copy())
     if accounting_enabled:
-        site = radius_accounting_config.augment_site(site)
+        site = radius_accounting_config.augment_site(site, listen_ip, network['accounting_port'])
     private_file(sites / 'authwire', site)
     return {'generated': True, 'authentication_port': auth_port, 'clients': len(clients),
             'accounting_enabled': accounting_enabled, 'fqdn': fqdn, 'listen_ip': listen_ip,
             'access_events_enabled': events_enabled, 'access_events_error': events_error,
-            'accounting_events_enabled': accounting_enabled, 'accounting_events_error': accounting_error}
+            'accounting_events_enabled': accounting_enabled, 'accounting_events_error': accounting_error,
+            'accounting_port': network['accounting_port'] if accounting_enabled else None}
 
 
 def main():
