@@ -7,6 +7,8 @@
 - **B11 kısmi saha kabulü.** Gerçek switch Start/Stop, canlı tanılama sayaçları, yerel arşiv önizlemesi ve izole veri geri yükleme geçti. VV-SW, `Acct-Interim-Interval=60` içeren Access-Accept sonrası 142 saniyede Interim-Update göndermedi ve Start içinde Class döndürmedi. İki saha kabulü uygun NAS veya yapılandırma değişikliği bekliyor. Saklama süresi ve zamanlanmış temizlik açık.
 - **Takipte.** B09 uzun süreli kablolu kararlılık, AD'den silinmiş bilgisayar ve AD erişim kesintisi, DC01 üzerinde gerçek Connector/GPO kabulü, kullanıcı sertifikalı EAP-TLS ve harici yedekten ayrı kurtarma ortamına geri yükleme açık.
 
+- **B09 ilk gözlem.** 13 Kasım'da VV-Client01 için sekiz EAP-TLS kabulü kaydedildi. Tümü VLAN 110 ve TLS doğrulamasıyla sonuçlandı. 23:21–23:22 arasında yedi örnekte iki Windows arayüzü açık, panel HTTPS 200 ve iki RADIUS dinleyicisi etkin kaldı. Yeni kablolu doğrulama olayı görülmedi. Uzun süreli kararlılık kabulü açık.
+
 Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
 
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
