@@ -11,10 +11,10 @@ No live AuthWire, RADIUS, NAS, switch, policy, database, or service setting was
 changed.
 
 The production `authwire-radius.service` PID was captured before and after the
-exercise and remained unchanged. The final result was seven authenticated
-responses and seven detail records; Start, Interim-Update, Stop, cross-NAS
-session separation, Stop without Start, Interim after Stop, and rejection of
-unknown NAS/invalid secret were observed.
+exercise and remained unchanged. Seven authenticated responses and seven
+detail records were observed. Start, Interim-Update, Stop, cross-NAS session
+separation, Stop without Start, Interim after Stop, and rejection of unknown
+NAS/invalid secret were covered.
 
 The repeated Interim-Update produced two identical native detail records. The
 detail receiver did not provide application idempotency.
@@ -31,32 +31,30 @@ unverified identity claims.
 
 Added `kaname/radius_accounting_observer.py` and
 `tools/radius_accounting_config.py`. Runtime generation remains opt-in via
-`--accounting-events`; it prepares the private store and generates the native
-FreeRADIUS Accounting callback. The callback acknowledges only after a durable
-insert or recognized retry. Validation/storage failures return failure so the
-NAS can retry. The production service was not restarted and the feature flag
-was not enabled live.
+`--accounting-events`; only that flag prepares the private store, adds a
+loopback-or-configured Accounting listener, and generates the native callback.
+The callback acknowledges only after a durable insert or recognized retry.
+Validation/storage failures return failure so the NAS can retry. The live
+service was not restarted and the feature flag was not enabled live.
 
 ## Verification
 
-Seven focused Accounting tests passed on the Linux host, covering:
-Start/Interim/Stop persistence, deduplication, NAS scoping, orphan events,
-gigaword counters, invalid input, callback acknowledgment, and storage failure.
-The opt-in runtime setup/failure-isolation test passed. The generated production
-FreeRADIUS configuration, with Accounting enabled, passed native `radiusd -XC`
-parsing against the installed pinned runtime. CI is running separately on the
-draft PR.
+Nine focused unit/runtime checks ran: seven passed, one passed native config
+parsing against the installed FreeRADIUS binary, and one native packet-to-DB
+test was skipped because this host blocks the ptrace capability FreeRADIUS
+requires to run as an isolated listener. No result is claimed for sending a
+packet through the native callback into SQLite on this host. The exact skip is
+environmental; the test remains in the PR for a runner that can execute it.
+The overall PR CI is separate and was still running at this checkpoint.
 
 ## Acceptance boundary and next work
 
-No packet has yet been sent through the generated application callback into
-this SQLite store under the native listener. There is no AuthWire API/UI/CSV,
-access-decision/session correlation, retention/archive/cleanup acceptance, or
-real pilot NAS end-to-end result. No service package was built or deployed.
-No B11 completion point is claimed.
+There is no AuthWire API/UI/CSV, access-decision/session correlation,
+retention/archive/cleanup acceptance, or real pilot NAS end-to-end result. No
+service package was built or deployed. No B11 completion point is claimed.
 
-Next, extend the isolated native protocol exercise to invoke the generated
-callback and read back persisted session/event rows, including a duplicate
-retry and storage failure. Keep live NAS and RADIUS settings unchanged until
-that source acceptance passes. Then verify a separately authorized real pilot
-NAS session end to end and continue with correlation and retention/archive/cleanup.
+Next, obtain native callback packet-to-database readback acceptance on a
+runner that permits the isolated listener, including retransmission and
+storage failure. Then continue with AuthWire query/API/UI and correlation,
+followed by retention/archive/cleanup. Keep live NAS and RADIUS settings
+unchanged until source acceptance passes; the real pilot NAS test remains later.
