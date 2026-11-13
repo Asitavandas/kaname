@@ -128,8 +128,8 @@ async function loadAccountingSessions(next = false){
   }
 }
 
-$('accounting-sessions').addEventListener('toggle',()=>{
+document.getElementById('accounting-sessions').addEventListener('toggle',()=>{
   if($('accounting-sessions').open && !accountingPage)run(()=>loadAccountingSessions());
 });
-$('accounting-refresh').addEventListener('click',()=>run(()=>loadAccountingSessions()));
-$('accounting-next').addEventListener('click',()=>run(()=>loadAccountingSessions(true)));
+document.getElementById('accounting-refresh').addEventListener('click',()=>run(()=>loadAccountingSessions()));
+document.getElementById('accounting-next').addEventListener('click',()=>run(()=>loadAccountingSessions(true)));
