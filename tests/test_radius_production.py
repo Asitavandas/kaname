@@ -1,6 +1,10 @@
 """Production RADIUS adapter/runtime boundaries; no LAN listener is started."""
+import hashlib
 import json
 import os
+import socket
+import sqlite3
+import struct
 import subprocess
 import tempfile
 import types
@@ -193,15 +197,175 @@ class RuntimeTests(unittest.TestCase):
         self.assertFalse((failed / 'mods-enabled/access-events').exists())
         self.assertNotIn('private disk detail', (failed / 'observer-status.json').read_text())
 
+    def test_accounting_events_are_opt_in_and_fail_closed_on_storage_setup(self):
+        generated = generate(self.runtime, self.prefix, self.state)
+        self.assertFalse(generated['accounting_events_enabled'])
+        self.assertFalse((self.state / 'radius-accounting').exists())
+        runtime = self.root / 'accounting-runtime'; runtime.mkdir(mode=0o700)
+        generated = generate(runtime, self.prefix, self.state, accounting_events=True)
+        self.assertTrue(generated['accounting_events_enabled'])
+        db = self.state / 'radius-accounting/accounting.sqlite3'
+        self.assertTrue(db.is_file())
+        self.assertEqual(0, db.stat().st_mode & 0o077)
+        self.assertIn('  authwire_accounting\n }',
+                      (runtime / 'sites-enabled/authwire').read_text())
+        self.assertIn('func_accounting = accounting',
+                      (runtime / 'mods-enabled/accounting-events').read_text())
+        failed = self.root / 'accounting-failed'; failed.mkdir(mode=0o700)
+        with patch('kaname.radius_accounting.initialize', side_effect=OSError('private detail')):
+            generated = generate(failed, self.prefix, self.state, accounting_events=True)
+        self.assertFalse(generated['accounting_events_enabled'])
+        self.assertEqual('ACCOUNTING_STORAGE_UNAVAILABLE', generated['accounting_events_error'])
+        self.assertFalse((failed / 'mods-enabled/accounting-events').exists())
+        from kaname.radius_accounting import runtime_status
+        self.assertFalse(runtime_status(failed)['enabled'])
+        self.assertEqual('ACCOUNTING_STORAGE_UNAVAILABLE', runtime_status(failed)['last_error_code'])
+        self.assertTrue(runtime_status(runtime)['enabled'])
+
+        self.assertNotIn('private detail', str(generated))
+
+    def test_native_accounting_callback_persists_and_deduplicates_on_loopback(self):
+        prefix = os.environ.get('AUTHWIRE_RADIUS_PREFIX')
+        if not prefix:
+            self.skipTest('Pinned FreeRADIUS prefix not supplied')
+
+        def free_port():
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+                probe.bind(('127.0.0.1', 0))
+                return probe.getsockname()[1]
+
+        auth_port, acct_port = free_port(), free_port()
+        while acct_port == auth_port:
+            acct_port = free_port()
+        selected = network()
+        selected['authentication_port'] = auth_port
+        selected['accounting_port'] = acct_port
+        snapshot = self.store.snapshot()
+        self.ops.save_network(snapshot['revision'], selected)
+
+        runtime = self.root / 'native-accounting'; runtime.mkdir(mode=0o700)
+        generated = generate(runtime, Path(prefix), self.state, '127.0.0.1',
+                             accounting_events=True)
+        self.assertTrue(generated['accounting_events_enabled'])
+        secret_a, secret_b = 'isolated-secret-a', 'isolated-secret-b'
+        (runtime / 'clients.conf').write_text(
+            'client fixture_a {\n ipaddr = 127.0.0.1\n secret = ' + secret_a +
+            '\n require_message_authenticator = no\n limit_proxy_state = yes\n}\n'
+            'client fixture_b {\n ipaddr = 127.0.0.2\n secret = ' + secret_b +
+            '\n require_message_authenticator = no\n limit_proxy_state = yes\n}\n')
+        env = dict(os.environ)
+        env['LD_LIBRARY_PATH'] = str(Path(prefix) / 'lib')
+        parsed = subprocess.run(
+            [str(Path(prefix) / 'sbin/radiusd'), '-XC', '-D',
+             str(Path(prefix) / 'share/freeradius'), '-d', str(runtime)],
+            env=env, capture_output=True, text=True, timeout=20)
+        if parsed.returncode != 0:
+            safe = '\n'.join(line for line in (parsed.stdout + parsed.stderr).splitlines()
+                               if 'secret' not in line.lower() and 'password' not in line.lower())
+            self.fail('Isolated Accounting config parse failed: ' + safe[-2000:])
+        from tools.radius_lab import wait_ready
+        log = runtime / 'listener.log'
+        with log.open('wb') as output:
+            process = subprocess.Popen(
+                [str(Path(prefix) / 'sbin/radiusd'), '-f', '-l', 'stdout', '-D',
+                 str(Path(prefix) / 'share/freeradius'), '-d', str(runtime)],
+                env=env, stdout=output, stderr=subprocess.STDOUT)
+
+        def stop_listener():
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=3)
+
+        self.addCleanup(stop_listener)
+        wait_ready(process, log)
+
+        def attr(code, value):
+            if isinstance(value, int):
+                value = struct.pack('!I', value)
+            return bytes((code, len(value) + 2)) + value
+
+        def request(identifier, status, session, seconds=0, input_octets=0, secret=secret_a):
+            attributes = (attr(40, status) + attr(44, session.encode()) +
+                          attr(46, seconds) + attr(42, input_octets))
+            header = struct.pack('!BBH', 4, identifier, 20 + len(attributes))
+            authenticator = hashlib.md5(header + (b'\0' * 16) + attributes +
+                                         secret.encode()).digest()
+            return header + authenticator + attributes
+
+        def exchange(packet, source, secret, accept=True):
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client:
+                client.settimeout(0.6)
+                client.bind((source, 0))
+                client.sendto(packet, ('127.0.0.1', acct_port))
+                try:
+                    response, _ = client.recvfrom(4096)
+                except socket.timeout:
+                    if accept:
+                        self.fail('Native Accounting callback did not acknowledge persisted request')
+                    return False
+            if not accept:
+                self.fail('Native Accounting callback acknowledged failed storage')
+            self.assertGreaterEqual(len(response), 20)
+            code, ident, length = struct.unpack('!BBH', response[:4])
+            self.assertEqual((5, packet[1], len(response)), (code, ident, length))
+            expected = hashlib.md5(response[:4] + packet[4:20] +
+                                   response[20:] + secret.encode()).digest()
+            self.assertEqual(expected, response[4:20])
+            return True
+
+        start = request(1, 1, 'same-session')
+        exchange(start, '127.0.0.1', secret_a)
+        exchange(start, '127.0.0.1', secret_a)  # exact retry, new source port
+        exchange(request(2, 3, 'same-session', 60, 20), '127.0.0.1', secret_a)
+        exchange(request(3, 2, 'same-session', 90, 30), '127.0.0.1', secret_a)
+        exchange(request(4, 1, 'same-session', secret=secret_b), '127.0.0.2', secret_b)
+        exchange(request(5, 2, 'stop-only', 1), '127.0.0.1', secret_a)
+
+        database = self.state / 'radius-accounting/accounting.sqlite3'
+        with sqlite3.connect(database) as db:
+            events = db.execute('SELECT status,orphan FROM accounting_events ORDER BY id').fetchall()
+            sessions = db.execute('SELECT nas_ip,session_id,stopped_at FROM accounting_sessions ORDER BY id').fetchall()
+        self.assertEqual([('Start', 0), ('Interim-Update', 0), ('Stop', 0),
+                          ('Start', 0), ('Stop', 1)], events)
+        self.assertEqual(2, len(sessions))
+        self.assertEqual({'127.0.0.1', '127.0.0.2'}, {row[0] for row in sessions})
+        self.assertIsNotNone(sessions[0][2])
+
+        blocked = request(6, 1, 'storage-retry')
+        with sqlite3.connect(database) as db:
+            db.execute('BEGIN IMMEDIATE')
+            self.assertFalse(exchange(blocked, '127.0.0.1', secret_a, accept=False))
+            self.assertEqual(5, db.execute('SELECT count(*) FROM accounting_events').fetchone()[0])
+        from kaname.radius_accounting import runtime_status
+        status = runtime_status(runtime)
+        self.assertEqual('STORAGE_BUSY', status['last_error_code'])
+        self.assertEqual(1, status['failed'])
+        self.assertEqual(5, status['committed'])
+        self.assertEqual(1, status['duplicates'])
+        exchange(blocked, '127.0.0.1', secret_a)
+        with sqlite3.connect(database) as db:
+            self.assertEqual(1, db.execute(
+                'SELECT count(*) FROM accounting_events WHERE session_id=?',
+                ('storage-retry',)).fetchone()[0])
+
     def test_native_freeradius_accepts_generated_production_config_when_prefix_is_supplied(self):
         prefix = os.environ.get('AUTHWIRE_RADIUS_PREFIX')
         if not prefix:
             self.skipTest('Pinned FreeRADIUS prefix not supplied')
-        for enabled in (False, True):
-            with self.subTest(access_events=enabled):
-                runtime = self.root / ('native-runtime-' + str(enabled)); runtime.mkdir(mode=0o700)
-                generated = generate(runtime, Path(prefix), self.state, access_events=enabled)
-                self.assertEqual(enabled, generated['access_events_enabled'])
+        for access_enabled in (False, True):
+            for accounting_enabled in (False, True):
+                with self.subTest(access_events=access_enabled, accounting_events=accounting_enabled):
+                    runtime = self.root / ('native-runtime-' + str(access_enabled) + '-' + str(accounting_enabled))
+                    runtime.mkdir(mode=0o700)
+                    generated = generate(runtime, Path(prefix), self.state,
+                                         access_events=access_enabled,
+                                         accounting_events=accounting_enabled)
+                    self.assertEqual(access_enabled, generated['access_events_enabled'])
+                    self.assertEqual(accounting_enabled, generated['accounting_events_enabled'])
                 env = dict(os.environ); env['LD_LIBRARY_PATH'] = str(Path(prefix) / 'lib')
                 result = subprocess.run(
                     [str(Path(prefix) / 'sbin/radiusd'), '-XC', '-D', str(Path(prefix) / 'share/freeradius'), '-d', str(runtime)],
@@ -260,4 +424,3 @@ class RuntimeTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

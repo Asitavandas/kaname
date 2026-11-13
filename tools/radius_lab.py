@@ -154,7 +154,7 @@ def fixture(info):
                                'enabled': True, 'security_group_sids': [GROUP]}}}
 
 
-def configuration(root, prefix, port, secret, *, access_events=False):
+def configuration(root, prefix, port, secret, *, access_events=False, accounting_port=None):
     libraries = list(prefix.rglob('rlm_python3.so'))
     if len(libraries) != 1:
         raise RuntimeError('Pinned build must include exactly one rlm_python3 module')
@@ -300,9 +300,21 @@ server kaname-cert-check {{
         script = shim / 'kaname_lab_module.py'
         script.write_text(script.read_text().replace(repr(str(root)) + ')', repr(str(root)) + ', observe=True)'))
         site = sites / 'kaname'
-        text = event_config.augment_site(site.read_text())
+        text = event_config.augment_site(site.read_text(), accounting_link=accounting_port is not None)
         text = text.replace('  kaname_lab\n', '  kaname_lab\n' + event_config.context_copy())
         site.write_text(text)
+    if accounting_port is not None:
+        from kaname.radius_accounting import initialize as initialize_accounting
+        from tools import radius_accounting_config
+        initialize_accounting(root / 'state')
+        dictionary = root / 'dictionary'
+        dictionary.write_text(dictionary.read_text() + radius_accounting_config.dictionary())
+        private_file(mods / 'accounting-events', radius_accounting_config.module(
+            repo, Path(cryptography.__file__).resolve().parent.parent))
+        site = sites / 'kaname'
+        site.write_text(radius_accounting_config.augment_site(
+            site.read_text(),
+            '127.0.0.1', accounting_port, root / 'state'))
 
 
 def radius_attrs(packet):
@@ -364,6 +376,7 @@ class Relay:
         self.requests = {}
         self.client = None
         self.last_request = None
+        self.last_classes = ()
         self.socket.settimeout(0.1)
         self.thread = threading.Thread(target=self.run, daemon=True)
         self.thread.start()
@@ -378,6 +391,7 @@ class Relay:
                 return
             try:
                 if peer == self.target:
+                    self.last_classes = tuple(value for kind, value, _ in radius_attrs(packet) if kind == 25)
                     self.facts.append(response_fact(packet, self.requests[packet[1]], self.secret))
                     self.socket.sendto(packet, self.client)
                 else:
@@ -444,7 +458,7 @@ def eap_case(root, relay, secret, name, cert='computer', *, expected=2, reason=N
             raise AssertionError(name + ': supplicant did not confirm success')
         if finals[-1]['vlan'] != {64: 13, 65: 6, 81: str(expected_vlan)}:
             raise AssertionError(name + ': VLAN response did not match policy')
-    elif result.returncode == 0 or any(f['code'] == 2 or f['vlan'] for f in facts):
+    elif result.returncode == 0 or relay.last_classes or any(f['code'] == 2 or f['vlan'] for f in facts):
         raise AssertionError(name + ': rejected session had success/VLAN attributes')
     if not any(f['code'] == 11 for f in facts):
         raise AssertionError(name + ': no actual Access-Challenge exchange')
@@ -506,7 +520,15 @@ def run_lab(prefix, *, debug=False, access_events=False):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
             probe.bind(('127.0.0.1', 0))
             port = probe.getsockname()[1]
-        configuration(root, prefix, port, secret, access_events=access_events)
+        accounting_port = None
+        if access_events:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+                probe.bind(('127.0.0.1', 0))
+                accounting_port = probe.getsockname()[1]
+            if accounting_port == port:
+                raise RuntimeError('Isolated authentication and accounting ports must differ')
+        configuration(root, prefix, port, secret, access_events=access_events,
+                      accounting_port=accounting_port)
         log = root / 'private-debug.log'
         process = None
         relay = None
@@ -576,6 +598,30 @@ def run_lab(prefix, *, debug=False, access_events=False):
                 case('valid-computer', expected=2, reason='POLICY_ALLOW')
                 if access_events:
                     from kaname.radius_events import history as event_history
+                    from kaname.radius_accounting import session_history
+                    from kaname.radius_events import CLASS_PREFIX
+                    accept = event_history(root / 'state', {})['events'][0]
+                    if relay.last_classes != (CLASS_PREFIX + bytes.fromhex(accept['event_id']),):
+                        raise AssertionError('Access-Accept did not carry its committed event ID')
+                    session = b'authwire-class-roundtrip'
+                    attrs = bytes((40, 6)) + struct.pack('!I', 1)
+                    attrs += bytes((44, 2 + len(session))) + session
+                    token = relay.last_classes[0]
+                    attrs += bytes((25, 2 + len(token))) + token
+                    header = struct.pack('!BBH', 4, 1, 20 + len(attrs))
+                    vector = hashlib.md5(header + bytes(16) + attrs + secret.encode()).digest()
+                    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as nas:
+                        nas.settimeout(2)
+                        nas.connect(('127.0.0.1', accounting_port))
+                        nas.send(header + vector + attrs)
+                        response = nas.recv(4096)
+                    expected = hashlib.md5(response[:4] + vector + response[20:] + secret.encode()).digest()
+                    if response[:2] != bytes((5, 1)) or not hmac.compare_digest(expected, response[4:20]):
+                        raise AssertionError('Invalid Accounting-Response')
+                    sessions = session_history(root / 'state', {})['sessions']
+                    if len(sessions) != 1 or (sessions[0]['access_decision'] or {}).get('event_id') != accept['event_id']:
+                        raise AssertionError('Accounting session did not resolve the Access-Accept')
+                    facts.append({'case': 'accounting-class-roundtrip', 'passed': True})
                     before_records = event_history(root / 'state', {})['storage']['records']
                     before_replies = len(relay.facts)
                     relay.socket.sendto(relay.last_request, relay.target)

@@ -29,6 +29,7 @@ from .deployment import Deployment, DeploymentError
 from .services import Services, ServiceError, validate as validate_service_action
 from .audit import history as audit_history, AuditQueryLimit
 from .radius_events import history as access_history, EventStorageError
+from .radius_accounting import session_history, AccountingStorageError
 from .dashboard import summary as dashboard_summary
 from .resources import snapshot as resource_snapshot
 from .directory_sync import DirectorySync
@@ -905,6 +906,15 @@ class Handler(BaseHTTPRequestHandler):
             except (ValueError, TypeError, OverflowError): self.respond(400, {'error': 'INVALID_INPUT'})
             except AuditQueryLimit: self.respond(503, {'error': 'AUDIT_QUERY_LIMIT'})
             except (EventStorageError, OSError): self.respond(503, {'error': 'ACCESS_HISTORY_UNAVAILABLE'})
+            except sqlite3.Error as error: self.store_error(error)
+        elif urlsplit(self.path).path == '/api/radius/accounting/sessions' and self.guard(resource='audit.events'):
+            try:
+                if len(self.path) > 2048: raise ValueError()
+                query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                self.respond(200, session_history(self.server.store.root, query))
+            except (ValueError, TypeError, OverflowError): self.respond(400, {'error': 'INVALID_INPUT'})
+            except AuditQueryLimit: self.respond(503, {'error': 'AUDIT_QUERY_LIMIT'})
+            except (AccountingStorageError, EventStorageError, OSError): self.respond(503, {'error': 'ACCOUNTING_HISTORY_UNAVAILABLE'})
             except sqlite3.Error as error: self.store_error(error)
         elif urlsplit(self.path).path == '/api/audit/history' and self.guard(resource='audit.events'):
             try:

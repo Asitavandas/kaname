@@ -105,3 +105,25 @@ kopyası tek başına erişim geçmişi restore kabulü sayılmaz.
 Canlı operatör ekran/CSV ve gerçek VV06/AP/switch olay eşleştirmesi ayrı kabul
 kapılarıdır. Bunlar olmadan bu alt işin saha kabulü tamamlandı denmez. B11
 accounting, tam korelasyon, dış arşiv/saklama/temizlik kapsamı açık kalır.
+
+## B11 Accounting için ilk kabul kapsamı
+
+13 Kasım 2026 salt okunur ölçümünde canlı AuthWire RADIUS yalnız UDP 1812
+dinliyordu. Erişim veritabanı bütünlük kontrolünden geçti. 97 karar kaydı
+bulundu (73 kabul, 24 ret). Son karar 6 Kasım 16:36:59 UTC. Çalışan RADIUS
+sürecinin durum dosyasında gözlemci etkin görünüyordu. Dosyada paket işleme
+sayaçları henüz yoktu ve servis günlüğünde kayıt düşürme uyarısı bulunmadı.
+Bu ölçümden sonraki uç trafiğinin hacmi veya kayıt kapsamı çıkarılamaz.
+
+İlk Accounting protokol kabulü, ayrı bir RADIUS örneğinde Start,
+Interim-Update ve Stop mesajlarının bilinen bir test NAS'ından alınmasını
+kapsar. Aynı NAS ve `Acct-Session-Id` oturum içinde eşleşmeli. Başka bir
+NAS'ın aynı oturum kimliği ayrı kalmalı. Tekrar gönderimler tek işleme
+karşılık gelmeli. Start olmadan gelen Stop veya sırası değişen bir Interim
+mesajı, hayali bir erişim kabulü üretmeden izlenebilmeli. Kimliği doğrulanmamış
+NAS isteği oturum kaydı oluşturmamalı.
+
+Erişim kararı ile accounting oturumu ayrı kanıtlardır. Güvenilir bir ortak
+kimlik doğrulandığında ilişki kurulabilir. NAS IP, MAC veya yakın zaman tek
+başına kesin eşleşme için yeterli değildir. Accounting kabulü için gerçek
+pilot NAS, ayrı test oturumu ve bu paketten alınan olaylar gerekir.

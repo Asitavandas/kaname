@@ -259,3 +259,40 @@ def history(state, query, *, runtime=Path('/run/authwire-radius')):
     base['storage'].update(records=n, database_bytes=path.stat().st_size,
                            capacity_reached=high >= MAX_RECORDS or path.stat().st_size >= MAX_BYTES)
     return base
+
+
+CLASS_PREFIX = b'authwire-v1:'
+
+
+def class_attribute(event_id):
+    return '0x' + (CLASS_PREFIX + bytes.fromhex(event_id)).hex()
+
+
+def class_event_id(pairs):
+    # Class is an octet attribute. Ignore foreign values and ambiguous echoes.
+    prefix = '0x' + CLASS_PREFIX.hex()
+    candidates = [value for name, value in pairs if name == 'Class'
+                  and isinstance(value, str) and value.lower().startswith(prefix)]
+    if len(candidates) == 1 and re.fullmatch(prefix + r'[0-9a-f]{64}', candidates[0].lower()):
+        return candidates[0][len(prefix):].lower()
+    return None
+
+
+def access_accepts(state, event_ids):
+    """Return a projection of committed Access-Accept rows for one session page."""
+    if not event_ids:
+        return {}
+    root, path = paths(state)
+    if not root.exists() and not root.is_symlink():
+        return {}
+    _private(root, directory=True)
+    if not path.exists() and not path.is_symlink():
+        return {}
+    _private(path)
+    columns = ('event_id', 'nas_ip', 'at', 'policy_id', 'vlan')
+    placeholders = ','.join('?' for _ in event_ids)
+    with closing(sqlite3.connect(path.as_uri() + '?mode=ro', uri=True, timeout=0.25)) as db:
+        rows = db.execute(
+            'SELECT ' + ','.join(columns) + ' FROM access_events WHERE response_code=2 '
+            f'AND event_id IN ({placeholders})', tuple(event_ids)).fetchall()
+    return {row[0]: dict(zip(columns, row)) for row in rows}

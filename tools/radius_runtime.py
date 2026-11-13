@@ -56,8 +56,8 @@ def _server_material(state, fqdn):
     return key_path.read_bytes(), cert_path.read_bytes()
 
 
-def generate(output, prefix, state=STATE, listen_ip='127.0.0.1', *, access_events=False):
-    output, prefix, state = Path(output), Path(prefix), Path(state)
+def generate(output, prefix, state=STATE, listen_ip='127.0.0.1', *, access_events=False, accounting_events=False):
+    output, prefix, state = Path(output), Path(prefix), Path(state).absolute()
     listen = ipaddress.ip_address(listen_ip)
     if listen.version != 4 or listen.is_unspecified or listen.is_multicast:
         raise ValueError('A specific unicast IPv4 RADIUS listen address is required')
@@ -127,6 +127,8 @@ def generate(output, prefix, state=STATE, listen_ip='127.0.0.1', *, access_event
             raise ValueError('RADIUS runtime path contains unsafe characters')
     prefix_text = str(prefix)
     module_dir = str(modules[0].parent)
+    if accounting_events and not re.fullmatch(r'[A-Za-z0-9_./-]+', str(state)):
+        raise ValueError('RADIUS accounting state path contains unsafe characters')
     # Opt-in only. A failed history startup must not disable EAP-TLS.
     events_enabled = False
     events_error = None
@@ -142,9 +144,24 @@ def generate(output, prefix, state=STATE, listen_ip='127.0.0.1', *, access_event
         private_file(output / 'observer-status.json', json.dumps({
             'requested': True, 'enabled': events_enabled, 'at': utc(),
             **({'last_error_code': events_error} if events_error else {})}))
+    accounting_enabled = False
+    accounting_error = None
+    if accounting_events:
+        from kaname.radius_accounting import STATUS_FILE, initialize as initialize_accounting
+        from kaname.radius_events import utc
+        import json
+        try:
+            initialize_accounting(state)
+            accounting_enabled = True
+        except Exception:
+            accounting_error = 'ACCOUNTING_STORAGE_UNAVAILABLE'
+        private_file(output / STATUS_FILE, json.dumps({'enabled': accounting_enabled, 'at': utc(),
+                     'last_error_code': accounting_error}))
     from tools import radius_events_config as event_config
+    from tools import radius_accounting_config
     private_file(output / 'dictionary', '$INCLUDE ' + str(dictionary) + '\n' +
-                 (event_config.dictionary() if events_enabled else ''))
+                 (event_config.dictionary() if events_enabled else '') +
+                 (radius_accounting_config.dictionary() if accounting_enabled else ''))
     private_file(output / 'radiusd.conf', f'''prefix = {prefix_text}
 name = authwire-radius
 raddbdir = {output}
@@ -222,6 +239,8 @@ $INCLUDE sites-enabled/
 ''')
     if events_enabled:
         private_file(mods / 'access-events', event_config.module(source, dependencies))
+    if accounting_enabled:
+        private_file(mods / 'accounting-events', radius_accounting_config.module(source, dependencies))
     private_file(mods / 'reject', 'always reject {\n rcode = reject\n}\n')
 
     auth_port = network['authentication_port']
@@ -254,12 +273,16 @@ server authwire-cert-check {{
 }}
 '''
     if events_enabled:
-        site = event_config.augment_site(site)
+        site = event_config.augment_site(site, accounting_link=accounting_enabled)
         site = site.replace('  authwire_authorize\n', '  authwire_authorize\n' + event_config.context_copy())
+    if accounting_enabled:
+        site = radius_accounting_config.augment_site(site, listen_ip, network['accounting_port'], state, output)
     private_file(sites / 'authwire', site)
     return {'generated': True, 'authentication_port': auth_port, 'clients': len(clients),
-            'accounting_enabled': False, 'fqdn': fqdn, 'listen_ip': listen_ip,
-            'access_events_enabled': events_enabled, 'access_events_error': events_error}
+            'accounting_enabled': accounting_enabled, 'fqdn': fqdn, 'listen_ip': listen_ip,
+            'access_events_enabled': events_enabled, 'access_events_error': events_error,
+            'accounting_events_enabled': accounting_enabled, 'accounting_events_error': accounting_error,
+            'accounting_port': network['accounting_port'] if accounting_enabled else None}
 
 
 def main():
@@ -269,10 +292,11 @@ def main():
     parser.add_argument('--state-dir', default=str(STATE))
     parser.add_argument('--listen-ip', required=True)
     parser.add_argument('--access-events', action='store_true', help='Opt in to bounded final-response history')
+    parser.add_argument('--accounting-events', action='store_true', help='Opt in to authenticated Accounting session history')
     args = parser.parse_args()
-    print(generate(args.output, args.prefix, args.state_dir, args.listen_ip, access_events=args.access_events))
+    print(generate(args.output, args.prefix, args.state_dir, args.listen_ip,
+                   access_events=args.access_events, accounting_events=args.accounting_events))
 
 
 if __name__ == '__main__':
     main()
-

@@ -216,5 +216,36 @@ class EventHTTPTests(unittest.TestCase):
         self.assertEqual(400, self.request('/api/radius/events?result=bad')[0])
         self.assertEqual(400, self.request('/api/radius/events?nas=192.0.2.2&nas=192.0.2.2')[0])
 
+    def test_accounting_session_read_is_guarded_and_does_not_create_storage(self):
+        from kaname import radius_accounting as accounting
+        from tests.test_radius_accounting import packet
+
+        route = '/api/radius/accounting/sessions'
+        self.assertEqual(401, self.request(route, False)[0])
+        self.assertEqual(400, self.request(route + '?before=1&before=2')[0])
+        root = self.server.store.root
+        folder, _ = accounting.paths(root)
+        code, data, _ = self.request(route)
+        self.assertEqual(200, code)
+        self.assertFalse(data['initialized'])
+        self.assertFalse(folder.exists())
+
+        accounting.initialize(root)
+        for n in range(102):
+            accounting.ingest(root, packet('192.0.2.2', f'0x{n:032x}', 'Start', f'session-{n}'))
+        accounting.ingest(root, packet('192.0.2.2', f'0x{102:032x}', 'Stop', 'orphan-stop'))
+        code, data, headers = self.request(route)
+        self.assertEqual(200, code)
+        self.assertEqual('no-store', headers['Cache-Control'])
+        self.assertEqual(list(range(102, 2, -1)), [int(row['id']) for row in data['sessions']])
+        self.assertTrue(data['has_more'])
+        self.assertNotIn('event_key', data['sessions'][0])
+        accounting.ingest(root, packet('192.0.2.2', f'0x{103:032x}', 'Start', 'new-session'))
+        _, tail, _ = self.request(route + '?before=' + data['next_before'] +
+                                  '&watermark=' + data['watermark'])
+        self.assertEqual(['2', '1'], [row['id'] for row in tail['sessions']])
+        self.assertEqual(data['watermark'], tail['watermark'])
+        self.assertFalse(tail['has_more'])
+
 
 if __name__ == '__main__': unittest.main()
