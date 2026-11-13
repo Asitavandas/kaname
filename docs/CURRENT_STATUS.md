@@ -13,6 +13,8 @@
 
 - **B09 açılış sonrası kontrol.** 23:15 açılışından 23:25 kontrolüne kadar RADIUS günlüğünde bir hazır olayı, sıfır hata veya yeniden başlatma görüldü. Yeni EAP-TLS kararı ve Windows Wired AutoConfig olayı oluşmadı. VV-Client01 Ethernet0 (`10.10.110.2`) üzerinden VLAN 110 ağ geçidine sekiz isteğin tamamı ulaştı. Ethernet1 ve panel HTTPS erişimi doğrulandı. Port 6 açıldıktan sonra 23:27:56'da yeni makine EAP-TLS doğrulaması geçti. Access-Accept #106, Windows olayı 15505 ve VLAN 110 aynı denemede doğrulandı. Accounting Stop #14 ve Start #15 kaydedildi. RADIUS süreci yeniden başlamadı. Uzun süreli kararlılık kabulü açık.
 
+- **B09 kararlılık izlemesi.** Port 6 açıkken mevcut oturum #8 üzerinde 23:30–23:32 arasında iki dakikalık ölçüm tamamlandı. Dokuz örnekte Ethernet0 ve Ethernet1 açık, VLAN 110 ağ geçidi erişilebilir, panel HTTPS 200 ve RADIUS UDP 1812/1813 etkin kaldı. RADIUS yeniden başlamadı, Windows'ta yeni kablolu doğrulama olayı oluşmadı. 23:33'te aynı oturum için 30 dakikalık ölçüm başlatıldı. Sonuç bekleniyor.
+
 Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
 
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
