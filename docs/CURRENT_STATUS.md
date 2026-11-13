@@ -24,6 +24,8 @@
 
 - **A03 kullanıcı EAP-TLS saha ön kontrolü (14 Kasım).** Canlı dev.48'de kullanıcı kayıt profili, kullanıcı sertifikası verilme/kurulum kaydı ve kullanıcı kimliğiyle RADIUS kararı bulunmadı. Eşitlenen AD kataloğunda pilot adıyla yalnız AuthWire-Pilot-Computers görüldü. VV-Client01 domain üyesi, Ethernet0 ve yönetim Ethernet1 açık. Kontrolü çalıştıran oturumda kullanıcı istemci sertifikası ve uçta AuthWire kullanıcı görevi yok. Önceki izole native kullanıcı/bilgisayar EAP-TLS ve VLAN kanıtı geçerli. İlk gerçek adım, AD'de yalnızca iki belirlenmiş test hesabını kapsayan pilot kullanıcı grubu ve kullanıcı profiliyle Ethernet0 üzerinden kullanıcı sertifikası, Access-Accept ve hedef VLAN doğrulaması. Wi-Fi kabulü için uygun uç ayrıca gerekli.
 
+- **A03 AD pilot grubu doğrulandı.** DC01 üzerinde mevcut bilgisayar pilot grubuyla aynı OU içinde `AuthWire-Pilot-Users` global güvenlik grubu oluşturuldu. Yazılabilir DC'de yeniden okuyarak yalnız iki onaylı ve etkin test hesabının doğrudan üye olduğunu doğruladık. Sonraki adım AuthWire dizin eşitlemesi ve bu gruba bağlı kullanıcı sertifika profili. Kullanıcı sertifikası verilmesi, kablolu kullanıcı EAP-TLS ve hedef VLAN saha kabulü açık.
+
 Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
 
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
