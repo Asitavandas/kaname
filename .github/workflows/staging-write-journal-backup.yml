@@ -2,12 +2,14 @@ name: AuthWire Windows journal off-host restore fixture
 on:
   pull_request:
     paths:
+      - 'windows/connector/StagingFilesystem.ps1'
       - 'windows/connector/StagingWriteJournalBackup.ps1'
       - 'tools/staging_write_journal_backup_windows_check.ps1'
       - '.github/workflows/staging-write-journal-backup.yml'
   push:
     branches: [main]
     paths:
+      - 'windows/connector/StagingFilesystem.ps1'
       - 'windows/connector/StagingWriteJournalBackup.ps1'
       - 'tools/staging_write_journal_backup_windows_check.ps1'
       - '.github/workflows/staging-write-journal-backup.yml'

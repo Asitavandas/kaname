@@ -33,7 +33,10 @@ worker. A copied replay ledger is evidence, not permission to resume a write.
 `StagingWriteJournalBackup.ps1` adds a separate Windows evidence-copy path.
 Export uses the fixed connector journal and the existing lifecycle mutex. It
 copies original bytes and empty directories into a provisioned private local
-directory and writes the manifest last. Source records and the copy are checked
+directory and writes the manifest last. For an administrator export, use the
+binding from the verified Connector package. The source ACL may include that
+binding's service SID. The private backup and restore directories still reject
+an unrelated service SID. Source records and the copy are checked
 again before publication. A separately stored manifest SHA-256 and connector
 scope digest are required for restore. The receiver validates the complete tree
 before copying it into a new private `AuthWire-JournalRestore-<id>` directory
