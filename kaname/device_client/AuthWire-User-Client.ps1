@@ -100,7 +100,7 @@ function Initialize-AuthWireUserDirectory([string]$Directory,[string]$Profile,[s
     foreach($principal in @($Sid,'S-1-5-18','S-1-5-32-544')) {
         $acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule((New-Object Security.Principal.SecurityIdentifier($principal)),'FullControl','ContainerInherit,ObjectInherit','None','Allow')))
     }
-    Set-Acl -LiteralPath $Directory -AclObject $acl
+    [IO.Directory]::SetAccessControl($Directory, $acl)
 }
 function Get-AuthWireUserHash([byte[]]$Bytes) {
     $hash=[Security.Cryptography.SHA256]::Create()
