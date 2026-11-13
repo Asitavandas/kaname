@@ -13,7 +13,7 @@ changed.
 The production `authwire-radius.service` PID was captured before and after the
 exercise and remained unchanged.
 
-## Observed result
+## Observed native result
 
 The final run returned:
 
@@ -37,23 +37,34 @@ an Interim-Update arriving after Stop, without creating an access-accept
 decision. Invalid-secret and unknown-NAS requests received no accepted
 response.
 
-## Acceptance boundary
+The repeated Interim-Update produced two identical detail records. The native
+detail receiver does not provide the required idempotent application ingest.
 
-This proves protocol reception and native detail logging in an isolated
-FreeRADIUS instance. It does not prove AuthWire application persistence,
-deduplication, access-decision/session correlation, retention, archive,
-cleanup, UI/CSV visibility, or operation with the real pilot NAS.
+## Source-only persistence step
 
-The repeated Interim-Update produced two identical detail records. Therefore
-single-processing/idempotent accounting on retransmission is still open; the
-native detail receiver itself does not satisfy that criterion. No B11
-completion point is claimed.
+Added `kaname/radius_accounting.py` with a separate private SQLite event and
+session store. It scopes sessions by NAS source IP plus Acct-Session-Id,
+deduplicates retransmissions by NAS source plus Request Authenticator, preserves
+counter values when a later packet omits them, records orphan Stop/Interim
+events without inventing a session, and combines octet/gigaword counters.
+The parser accepts only server-supplied packet attributes and does not persist
+User-Name or other unverified identity claims.
 
-## Next B11 work
+Added `tests/test_radius_accounting.py`. The focused isolated run passed all
+five tests: Start/Interim/Stop persistence, retransmission deduplication,
+cross-NAS separation, orphan event handling, gigaword counters, and malformed
+input rejection.
 
-Implement or identify the AuthWire accounting ingestion path in a source-only
-change, then validate deduplication and session lifecycle in an isolated
-application/database fixture. Preserve the current live NAS and RADIUS
-configuration. After source acceptance, use a separately approved real pilot
-NAS session to verify Start/Interim/Stop end to end, followed by session
-correlation and retention/archive/cleanup acceptance.
+## Acceptance boundary and next work
+
+This source module is not yet connected to the production FreeRADIUS accounting
+callback, service-start database initialization, AuthWire API/UI/CSV, or access
+decision correlation. No service package was built or deployed. Retention,
+archive, cleanup, and real pilot NAS acceptance remain open. No B11 completion
+point is claimed.
+
+Next, wire this store to an authenticated native Accounting callback and
+startup preparation, then add an isolated native-to-application/database
+acceptance. Keep the live NAS and RADIUS configuration unchanged until that
+source path passes. Then verify one separately authorized real pilot NAS
+session end to end and continue with correlation and retention/archive/cleanup.
