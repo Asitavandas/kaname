@@ -11,7 +11,7 @@
 
 - **B09 ilk gözlem.** 13 Kasım'da VV-Client01 için sekiz EAP-TLS kabulü kaydedildi. Tümü VLAN 110 ve TLS doğrulamasıyla sonuçlandı. 23:21–23:22 arasında yedi örnekte iki Windows arayüzü açık, panel HTTPS 200 ve iki RADIUS dinleyicisi etkin kaldı. Yeni kablolu doğrulama olayı görülmedi. Uzun süreli kararlılık kabulü açık.
 
-- **B09 açılış sonrası kontrol.** 23:15 açılışından 23:25 kontrolüne kadar RADIUS günlüğünde bir hazır olayı, sıfır hata veya yeniden başlatma görüldü. Yeni EAP-TLS kararı ve Windows Wired AutoConfig olayı oluşmadı. VV-Client01 Ethernet0 (`10.10.110.2`) üzerinden VLAN 110 ağ geçidine sekiz isteğin tamamı ulaştı. Ethernet1 ve panel HTTPS erişimi doğrulandı. Açılıştan sonra yeni kablolu EAP-TLS ve uzun süreli kararlılık kabulü açık.
+- **B09 açılış sonrası kontrol.** 23:15 açılışından 23:25 kontrolüne kadar RADIUS günlüğünde bir hazır olayı, sıfır hata veya yeniden başlatma görüldü. Yeni EAP-TLS kararı ve Windows Wired AutoConfig olayı oluşmadı. VV-Client01 Ethernet0 (`10.10.110.2`) üzerinden VLAN 110 ağ geçidine sekiz isteğin tamamı ulaştı. Ethernet1 ve panel HTTPS erişimi doğrulandı. Port 6 açıldıktan sonra 23:27:56'da yeni makine EAP-TLS doğrulaması geçti. Access-Accept #106, Windows olayı 15505 ve VLAN 110 aynı denemede doğrulandı. Accounting Stop #14 ve Start #15 kaydedildi. RADIUS süreci yeniden başlamadı. Uzun süreli kararlılık kabulü açık.
 
 Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
 
