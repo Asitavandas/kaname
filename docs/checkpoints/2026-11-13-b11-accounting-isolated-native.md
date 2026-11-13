@@ -65,3 +65,29 @@ The panel shows the matched decision time, policy and VLAN. The native lab
 exercises the Class round trip on loopback. Retention/archive/cleanup and the
 real pilot NAS test remain open. This loopback test did not deploy or
 activate Accounting in the live service. No B11 completion point is claimed.
+
+## Accounting retention
+
+From the AuthWire source directory, run the maintenance command as the
+service account. Set the retention period in days according to the site's
+policy. Example preview for 90 days:
+
+```bash
+python -m kaname.radius_accounting_maintenance --keep-days 90
+```
+
+Use the same arguments with `--apply --archive-dir /path/to/private/archive`
+to archive and remove eligible records. The archive directory must exist,
+be private to the service account, and be outside application state.
+Each run that removes records saves a complete pre-cleanup Accounting SQLite
+snapshot, verifies its integrity, and returns its SHA-256. A snapshot can
+contain active sessions and other records outside the cleanup window, so it
+has the same sensitivity as the source database. Archive lifetime and external
+backup are managed by the operator.
+
+Cleanup preserves sessions still awaiting Stop and their events. It removes
+closed sessions older than the cutoff and old orphan events. Exact packet retry
+recognition is limited to records still in the active database. Freed SQLite
+pages can be reused for new records. Run the command during low traffic because
+the archive and cleanup hold a SQLite write reservation. There is no default
+site retention period or scheduled deletion.

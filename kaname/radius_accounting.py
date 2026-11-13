@@ -192,7 +192,7 @@ def ingest(state, pairs):
     root, path = paths(state)
     _private(root, directory=True)
     _private(path)
-    if path.stat().st_size >= MAX_BYTES:
+    if path.stat().st_size > MAX_BYTES:
         raise AccountingStorageError('CAPACITY_REACHED')
     if shutil.disk_usage(root).free < MIN_FREE_BYTES:
         raise AccountingStorageError('LOW_DISK_SPACE')
@@ -200,7 +200,8 @@ def ingest(state, pairs):
         with closing(sqlite3.connect(path.as_uri() + '?mode=rw', uri=True,
                                      timeout=BUSY_SECONDS)) as db:
             db.execute('PRAGMA synchronous=FULL')
-            db.execute('PRAGMA max_page_count=' + str(MAX_BYTES // 4096))
+            page_size = db.execute('PRAGMA page_size').fetchone()[0]
+            db.execute('PRAGMA max_page_count=' + str(MAX_BYTES // page_size))
             db.execute('BEGIN IMMEDIATE')
             if db.execute('SELECT 1 FROM accounting_events WHERE event_key=?',
                           (event['event_key'],)).fetchone():
