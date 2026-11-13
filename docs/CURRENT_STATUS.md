@@ -22,6 +22,8 @@
 
 - **B04 kesilen yanıt sonrası eşzamanlı tekrar.** Canlıda kurulu dev.48 kaynaklarıyla ayrı geçici veritabanında üç tur tamamlandı. Her turda ilk sertifika ve kurulum makbuzu yanıtları kullanılmadan bırakıldı. Yeni servis nesnelerinde dört eşzamanlı issue ve dört eşzamanlı receipt tekrarı aynı sonuçları verdi. Her turda bir sertifika, bir installed kaydı, sıfır ek makbuz denetimi ve temiz SQLite bütünlük/yabancı anahtar kontrolü doğrulandı. Odaklı Linux koşusunda 45 test geçti, 7 test ortam nedeniyle atlandı. Gerçek Windows ağ kesintisi ve saha yük kabulü açık.
 
+- **A03 kullanıcı EAP-TLS saha ön kontrolü (14 Kasım).** Canlı dev.48'de kullanıcı kayıt profili, kullanıcı sertifikası verilme/kurulum kaydı ve kullanıcı kimliğiyle RADIUS kararı bulunmadı. Eşitlenen AD kataloğunda pilot adıyla yalnız AuthWire-Pilot-Computers görüldü. VV-Client01 domain üyesi, Ethernet0 ve yönetim Ethernet1 açık. Kontrolü çalıştıran oturumda kullanıcı istemci sertifikası ve uçta AuthWire kullanıcı görevi yok. Önceki izole native kullanıcı/bilgisayar EAP-TLS ve VLAN kanıtı geçerli. İlk gerçek adım, AD'de yalnızca iki belirlenmiş test hesabını kapsayan pilot kullanıcı grubu ve kullanıcı profiliyle Ethernet0 üzerinden kullanıcı sertifikası, Access-Accept ve hedef VLAN doğrulaması. Wi-Fi kabulü için uygun uç ayrıca gerekli.
+
 Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
 
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
