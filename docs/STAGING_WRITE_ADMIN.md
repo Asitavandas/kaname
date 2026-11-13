@@ -56,6 +56,14 @@ kilit özetini eşler. Yerel ACK ve tamamlanma özetlerini aynı onaya bağlar.
 kaydına eklenir. Yerel kayıtların tekrar doğrulanması, günlük geri yükleme
 ve fiilî kilit açma ayrı kabul adımlarıdır.
 
+`POST /api/deployment/staging-write/reconciliation/verify-lock-release`
+aynı iki yetki, geçerli operatör oturumu ve CSRF ile kaydedilen onay isteğini
+`approval`, makbuz revizyonunu `approval_revision` alanında kabul eder.
+Sunucu onayı denetim geçmişinde aynı operatör ve aynı içerikle bulur, güncel
+Connector kapsamını, kayıtlı ret sonucunu ve GPO üzerindeki diğer işleri
+tek SQLite okuma işleminde yeniden denetler. Başarılı yanıt `approval_verified`
+ve kanıt özetini içerir. Doğrulama yalnızca okuma yapar.
+
 Yeni durum/review sonuçlarında `approval_enabled`, `write_authorization_enabled`,
 `execution_adapter_available`, `can_apply_gpo` daima false'tur. Review hash'i kullanıcı
 kimlik doğrulaması veya yürütme izni değildir. Core'un `read_only=false` alanı gelecekte

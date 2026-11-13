@@ -244,9 +244,13 @@ def main():
                     'reconciliation_receipt': {'revision': receipt['revision'], 'review_hash': review['review_hash']},
                     'stage_lock_evidence': projection['stage_lock_evidence']}
                 approval = core.review_reconciliation(release, actor)
-                recorded = core.record_reconciliation(release | {'review_hash': approval['review_hash'],
-                    'acknowledge': 'record_stage_lock_release_approval'}, actor)
+                approved_request = release | {'review_hash': approval['review_hash'],
+                    'acknowledge': 'record_stage_lock_release_approval'}
+                recorded = core.record_reconciliation(approved_request, actor)
                 assert recorded['stage_lock_evidence_sha256'] == projection['stage_lock_evidence_sha256']
+                verified = core.verify_stage_lock_release_approval(
+                    {'approval': approved_request, 'approval_revision': recorded['revision']}, actor)
+                assert verified['approval_verified'] and verified['stage_lock_evidence_sha256'] == projection['stage_lock_evidence_sha256']
                 assert recorded['revision'] == after['revision']+2 and len(store.audit()) == len(original_audit)+10
                 with store.connect() as db:
                     assert core._read(db)['jobs'] == jobs
@@ -255,6 +259,7 @@ def main():
                     'claim_requests': 2, 'result_requests': 8, 'refusal_transitions': 4,
                     'real_cng_tls_sqlite': True, 'lost_ack_same_body_retry': True,
                     'windows_lock_evidence_bound_to_server_approval': True,
+                    'recorded_lock_approval_reverified': True,
                     'preflight_observation_failure_injected': True,
                     'positive_ad_content_service_identity_simulated': True,
                     'active_worker_registered': False, 'customer_changed': False}, sort_keys=True))
