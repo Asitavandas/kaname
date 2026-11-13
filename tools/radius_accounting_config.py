@@ -1,6 +1,16 @@
 """Opt-in native FreeRADIUS Accounting callback configuration."""
 
 
+SOURCE = 'AuthWire-Accounting-Source'
+VECTOR = 'AuthWire-Accounting-Vector'
+STATE = 'AuthWire-Accounting-State'
+
+
+def dictionary():
+    return ''.join(f'ATTRIBUTE {name} {code} string\n'
+                   for code, name in enumerate((SOURCE, VECTOR, STATE), 3003))
+
+
 def module(source, dependencies):
     return f'''python3 authwire_accounting {{
  python_path = "{source}:{dependencies}"
@@ -13,7 +23,7 @@ def module(source, dependencies):
 '''
 
 
-def augment_site(site, listen_ip, accounting_port):
+def augment_site(site, listen_ip, accounting_port, state):
     marker = 'server authwire-radius {\n'
     if site.count(marker) != 1:
         raise ValueError('Unexpected AuthWire RADIUS server template')
@@ -30,4 +40,13 @@ def augment_site(site, listen_ip, accounting_port):
     if site.count(marker) != 1:
         raise ValueError('Unexpected AuthWire RADIUS listener template')
     site = site.replace(marker, listener + ' authorize {\n', 1)
-    return site.replace(needle, needle + ' accounting {\n  authwire_accounting\n }\n', 1)
+    section = f""" accounting {{
+  update control {{
+   {SOURCE} := "%{{Packet-Src-IP-Address}}"
+   {VECTOR} := "%{{Packet-Authentication-Vector}}"
+   {STATE} := "{state}"
+  }}
+  authwire_accounting
+ }}
+"""
+    return site.replace(needle, needle + section, 1)

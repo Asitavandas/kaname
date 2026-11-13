@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 from pathlib import Path
 
-from kaname.radius_accounting import initialize, ingest, paths, parse
+from kaname.radius_accounting import AccountingStorageError, initialize, ingest, paths, parse
 
 
 def packet(nas, vector, status, session='shared-session', **extra):
@@ -87,14 +87,21 @@ class RadiusAccountingTests(unittest.TestCase):
         radiusd = SimpleNamespace(RLM_MODULE_OK=2, RLM_MODULE_FAIL=3,
                                   L_WARN=4, radlog=lambda *args: None)
         start = packet('127.0.0.2', '0x' + '51' * 16, 'Start')
+        def callback_args(packet):
+            return {'request': packet[2:], 'config': (
+                ('AuthWire-Accounting-Source', packet[0][1]),
+                ('AuthWire-Accounting-Vector', packet[1][1]),
+                ('AuthWire-Accounting-State', str(self.state)),
+            )}
+
         with patch.dict('sys.modules', {'radiusd': radiusd}):
-            self.assertEqual(2, observer.accounting(start, state=self.state))
-            self.assertEqual(2, observer.accounting(start, state=self.state))
+            self.assertEqual(2, observer.accounting(callback_args(start)))
+            self.assertEqual(2, observer.accounting(callback_args(start)))
+            self.assertEqual(3, observer.accounting({'request': start}))
             with patch('kaname.radius_accounting.ingest',
-                       side_effect=__import__('kaname.radius_accounting',
-                                              fromlist=['AccountingStorageError']).AccountingStorageError('STORAGE_BUSY')):
-                self.assertEqual(3, observer.accounting(
-                    packet('127.0.0.2', '0x' + '52' * 16, 'Interim-Update'), state=self.state))
+                       side_effect=AccountingStorageError('STORAGE_BUSY')):
+                self.assertEqual(3, observer.accounting(callback_args(
+                    packet('127.0.0.2', '0x' + '52' * 16, 'Interim-Update'))))
 
     def test_untrusted_or_malformed_packets_reject(self):
         bad = (

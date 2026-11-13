@@ -22,18 +22,26 @@ def _warning(radiusd, code):
                        ' process_drop_count=' + str(_failed))
 
 
-def accounting(pairs, *, state='/var/lib/kaname-lab'):
+def accounting(values):
     """Ack only after durable insert or an idempotently recognized retry."""
     import radiusd
     try:
-        radius_accounting.ingest(state, pairs)
+        control = values.get('config')
+        request = tuple((name, value) for name, value in values.get('request', ())
+                        if name.split(':', 1)[0] not in
+                        {'Packet-Src-IP-Address', 'Packet-Authentication-Vector'})
+        state = radius_accounting._values(control, 'AuthWire-Accounting-State', required=True)
+        source = radius_accounting._values(control, 'AuthWire-Accounting-Source', required=True)
+        vector = radius_accounting._values(control, 'AuthWire-Accounting-Vector', required=True)
+        radius_accounting.ingest(state, request + (
+            ('Packet-Src-IP-Address', source), ('Packet-Authentication-Vector', vector)))
         return radiusd.RLM_MODULE_OK
     except radius_accounting.AccountingStorageError as error:
         code = str(error)
         if code not in {'UNSAFE_STORAGE', 'CAPACITY_REACHED', 'LOW_DISK_SPACE',
                         'STORAGE_BUSY', 'STORAGE_ERROR'}:
             code = 'STORAGE_ERROR'
-    except (ValueError, TypeError, OSError):
+    except (AttributeError, ValueError, TypeError, OSError):
         code = 'INVALID_ACCOUNTING_PACKET'
     try:
         _warning(radiusd, code)

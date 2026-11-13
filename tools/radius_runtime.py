@@ -57,7 +57,7 @@ def _server_material(state, fqdn):
 
 
 def generate(output, prefix, state=STATE, listen_ip='127.0.0.1', *, access_events=False, accounting_events=False):
-    output, prefix, state = Path(output), Path(prefix), Path(state)
+    output, prefix, state = Path(output), Path(prefix), Path(state).absolute()
     listen = ipaddress.ip_address(listen_ip)
     if listen.version != 4 or listen.is_unspecified or listen.is_multicast:
         raise ValueError('A specific unicast IPv4 RADIUS listen address is required')
@@ -127,6 +127,8 @@ def generate(output, prefix, state=STATE, listen_ip='127.0.0.1', *, access_event
             raise ValueError('RADIUS runtime path contains unsafe characters')
     prefix_text = str(prefix)
     module_dir = str(modules[0].parent)
+    if accounting_events and not re.fullmatch(r'[A-Za-z0-9_./-]+', str(state)):
+        raise ValueError('RADIUS accounting state path contains unsafe characters')
     # Opt-in only. A failed history startup must not disable EAP-TLS.
     events_enabled = False
     events_error = None
@@ -154,7 +156,8 @@ def generate(output, prefix, state=STATE, listen_ip='127.0.0.1', *, access_event
     from tools import radius_events_config as event_config
     from tools import radius_accounting_config
     private_file(output / 'dictionary', '$INCLUDE ' + str(dictionary) + '\n' +
-                 (event_config.dictionary() if events_enabled else ''))
+                 (event_config.dictionary() if events_enabled else '') +
+                 (radius_accounting_config.dictionary() if accounting_enabled else ''))
     private_file(output / 'radiusd.conf', f'''prefix = {prefix_text}
 name = authwire-radius
 raddbdir = {output}
@@ -269,7 +272,7 @@ server authwire-cert-check {{
         site = event_config.augment_site(site)
         site = site.replace('  authwire_authorize\n', '  authwire_authorize\n' + event_config.context_copy())
     if accounting_enabled:
-        site = radius_accounting_config.augment_site(site, listen_ip, network['accounting_port'])
+        site = radius_accounting_config.augment_site(site, listen_ip, network['accounting_port'], state)
     private_file(sites / 'authwire', site)
     return {'generated': True, 'authentication_port': auth_port, 'clients': len(clients),
             'accounting_enabled': accounting_enabled, 'fqdn': fqdn, 'listen_ip': listen_ip,

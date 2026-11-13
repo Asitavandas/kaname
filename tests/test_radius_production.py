@@ -6,7 +6,6 @@ import socket
 import sqlite3
 import struct
 import subprocess
-import time
 import tempfile
 import types
 import unittest
@@ -208,7 +207,7 @@ class RuntimeTests(unittest.TestCase):
         db = self.state / 'radius-accounting/accounting.sqlite3'
         self.assertTrue(db.is_file())
         self.assertEqual(0, db.stat().st_mode & 0o077)
-        self.assertIn('accounting {\n  authwire_accounting\n }',
+        self.assertIn('  authwire_accounting\n }',
                       (runtime / 'sites-enabled/authwire').read_text())
         self.assertIn('func_accounting = accounting',
                       (runtime / 'mods-enabled/accounting-events').read_text())
@@ -259,11 +258,25 @@ class RuntimeTests(unittest.TestCase):
             safe = '\n'.join(line for line in (parsed.stdout + parsed.stderr).splitlines()
                                if 'secret' not in line.lower() and 'password' not in line.lower())
             self.fail('Isolated Accounting config parse failed: ' + safe[-2000:])
-        process = subprocess.Popen(
-            [str(Path(prefix) / 'sbin/radiusd'), '-f', '-s', '-D',
-             str(Path(prefix) / 'share/freeradius'), '-d', str(runtime)],
-            env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        self.addCleanup(lambda: process.poll() is None and process.terminate())
+        from tools.radius_lab import wait_ready
+        log = runtime / 'listener.log'
+        with log.open('wb') as output:
+            process = subprocess.Popen(
+                [str(Path(prefix) / 'sbin/radiusd'), '-f', '-l', 'stdout', '-D',
+                 str(Path(prefix) / 'share/freeradius'), '-d', str(runtime)],
+                env=env, stdout=output, stderr=subprocess.STDOUT)
+
+        def stop_listener():
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=3)
+
+        self.addCleanup(stop_listener)
+        wait_ready(process, log)
 
         def attr(code, value):
             if isinstance(value, int):
@@ -299,36 +312,13 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(expected, response[4:20])
             return True
 
-        def send_with_ready_retry(packet, source, secret):
-            deadline = time.monotonic() + 15
-            while True:
-                try:
-                    return exchange(packet, source, secret)
-                except AssertionError as error:
-                    if time.monotonic() >= deadline or process.poll() is not None:
-                        if process.poll() is None:
-                            process.terminate()
-                        output = process.communicate(timeout=3)[0]
-                        safe = '\n'.join(line for line in output.splitlines()
-                                           if 'secret' not in line.lower() and 'password' not in line.lower())
-                        if 'Getting debug state failed: ptrace capability not set' in safe:
-                            self.skipTest('Host blocks ptrace required by the native FreeRADIUS runtime')
-                        raise AssertionError(str(error) + '\nNative listener output:\n' + safe[-3000:])
-                    time.sleep(0.1)
-
         start = request(1, 1, 'same-session')
-        send_with_ready_retry(start, '127.0.0.1', secret_a)
+        exchange(start, '127.0.0.1', secret_a)
         exchange(start, '127.0.0.1', secret_a)  # exact retry, new source port
-        send_with_ready_retry(request(2, 3, 'same-session', 60, 20),
-                              '127.0.0.1', secret_a)
-        send_with_ready_retry(request(3, 2, 'same-session', 90, 30),
-                              '127.0.0.1', secret_a)
-        # A second NAS may reuse the same Acct-Session-Id without merging.
-        send_with_ready_retry(request(4, 1, 'same-session', secret=secret_b),
-                              '127.0.0.2', secret_b)
-        # Orphan Stop is logged as an event, never as a fabricated session.
-        send_with_ready_retry(request(5, 2, 'stop-only', 1),
-                              '127.0.0.1', secret_a)
+        exchange(request(2, 3, 'same-session', 60, 20), '127.0.0.1', secret_a)
+        exchange(request(3, 2, 'same-session', 90, 30), '127.0.0.1', secret_a)
+        exchange(request(4, 1, 'same-session', secret=secret_b), '127.0.0.2', secret_b)
+        exchange(request(5, 2, 'stop-only', 1), '127.0.0.1', secret_a)
 
         database = self.state / 'radius-accounting/accounting.sqlite3'
         with sqlite3.connect(database) as db:
@@ -339,6 +329,17 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(2, len(sessions))
         self.assertEqual({'127.0.0.1', '127.0.0.2'}, {row[0] for row in sessions})
         self.assertIsNotNone(sessions[0][2])
+
+        blocked = request(6, 1, 'storage-retry')
+        with sqlite3.connect(database) as db:
+            db.execute('BEGIN IMMEDIATE')
+            self.assertFalse(exchange(blocked, '127.0.0.1', secret_a, accept=False))
+            self.assertEqual(5, db.execute('SELECT count(*) FROM accounting_events').fetchone()[0])
+        exchange(blocked, '127.0.0.1', secret_a)
+        with sqlite3.connect(database) as db:
+            self.assertEqual(1, db.execute(
+                'SELECT count(*) FROM accounting_events WHERE session_id=?',
+                ('storage-retry',)).fetchone()[0])
 
     def test_native_freeradius_accepts_generated_production_config_when_prefix_is_supplied(self):
         prefix = os.environ.get('AUTHWIRE_RADIUS_PREFIX')

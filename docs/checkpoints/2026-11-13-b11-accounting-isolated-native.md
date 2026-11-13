@@ -39,22 +39,22 @@ service was not restarted and the feature flag was not enabled live.
 
 ## Verification
 
-Nine focused unit/runtime checks ran: seven passed, one passed native config
-parsing against the installed FreeRADIUS binary, and one native packet-to-DB
-test was skipped because this host blocks the ptrace capability FreeRADIUS
-requires to run as an isolated listener. No result is claimed for sending a
-packet through the native callback into SQLite on this host. The exact skip is
-environmental; the test remains in the PR for a runner that can execute it.
-The overall PR CI is separate and was still running at this checkpoint.
+On the pilot Linux host, nine focused tests passed without skips against
+the installed FreeRADIUS binary and temporary fixture state. The loopback
+listener sent authenticated Accounting responses for Start, Interim-Update
+and Stop. SQLite contained one event for the exact duplicate, separate
+sessions for the two NAS sources, and an orphan Stop with no invented
+session. While an independent SQLite write transaction held the database
+lock, no Accounting response or event was produced. The same packet was
+acknowledged and persisted once after releasing the lock.
 
-## Acceptance boundary and next work
+The generated configuration now supplies packet metadata and the state
+directory through FreeRADIUS control attributes. The callback consumes the
+native attribute dictionary and reads those values from its control list.
+The test uses the repository's existing native listener readiness check.
 
-There is no AuthWire API/UI/CSV, access-decision/session correlation,
-retention/archive/cleanup acceptance, or real pilot NAS end-to-end result. No
-service package was built or deployed. No B11 completion point is claimed.
+## Remaining acceptance
 
-Next, obtain native callback packet-to-database readback acceptance on a
-runner that permits the isolated listener, including retransmission and
-storage failure. Then continue with AuthWire query/API/UI and correlation,
-followed by retention/archive/cleanup. Keep live NAS and RADIUS settings
-unchanged until source acceptance passes; the real pilot NAS test remains later.
+AuthWire query/API/UI, access decision correlation, retention/archive/cleanup
+and the real pilot NAS test remain open. This loopback test did not deploy or
+activate Accounting in the live service. No B11 completion point is claimed.
