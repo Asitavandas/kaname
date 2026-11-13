@@ -26,6 +26,8 @@
 
 - **A03 AD pilot grubu doğrulandı.** DC01 üzerinde mevcut bilgisayar pilot grubuyla aynı OU içinde `AuthWire-Pilot-Users` global güvenlik grubu oluşturuldu. Yazılabilir DC'de yeniden okuyarak yalnız iki onaylı ve etkin test hesabının doğrudan üye olduğunu doğruladık. 14 Kasım 00:26 Türkiye saati eşitlemesinde AuthWire kataloğu grubu güvenlik grubu olarak, yalnızca iki etkin doğrudan üye ve sıfır çözümlenemeyen üyeyle doğruladı. Bu gruba bağlı `AuthWire Pilot - Kullanıcı` sertifika profili panel API'sinden oluşturuldu ve yeniden okunarak doğrulandı. Kayıt ve yenileme etkin, geçerlilik 90 gün ve yenileme süresi bitişten 30 gün önce. Kullanıcı sertifikası verilmesi, kablolu kullanıcı EAP-TLS ve hedef VLAN saha kabulü açık.
 
+- **A03 imzalı kullanıcı paketi (14 Kasım).** Canlı pilot profilinin ZIP'i panel API'sinden indirildi. Profil, HTTPS adı, Kerberos SPN, yedi dosya özeti ve iki betiğin varlık pinleri doğrulandı. İki PowerShell betiği DC01'de VV-Client01'in zaten güvendiği kurum yayıncısıyla imzalandı. VV-Client01 üzerinde iki Authenticode imzası geçerli ve AllSigned ValidateOnly başarılı. İmzalı paket yönetici yazma yetkili bir ProgramData klasöründe hazır. İlk test hesabının etkileşimli oturumu, CurrentUser sertifika kurulumu ve Ethernet0 kablolu EAP-TLS kabulü bekliyor.
+
 Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
 
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
