@@ -43,6 +43,25 @@ before copying it into a new private `AuthWire-JournalRestore-<id>` directory
 outside the active journal namespace. This evidence restore preserves bytes and
 directory structure. Live journal ACL migration and activation remain separate.
 
+## Field evidence recovery
+
+1. On the Connector host, use the verified installed package to identify the
+   Connector binding and fixed journal. Confirm the journal exists and has
+   evidence before exporting with the reviewed Windows backup tool. Use an
+   empty, private local directory outside the active journal namespace.
+2. Keep the export receipt in a separate trusted record. It contains the
+   manifest SHA-256, Connector scope SHA-256, tree SHA-256, and file count.
+   Take the expected hashes for the recovery from this record.
+3. Copy the complete backup envelope, including empty directories, through the
+   approved off-host storage. Bring the copy to the separate Windows recovery
+   machine in a private local directory. Provision a different empty, private
+   directory named `AuthWire-JournalRestore-<32 lowercase hex characters>`.
+4. Verify the copy with `Restore-AuthWireWriteJournalEvidence`, using the
+   expected manifest and scope hashes from the receipt. Confirm `Quarantined`
+   is true and the returned tree hash and file count match the receipt. Record
+   the source, off-host target and recovery machine in the acceptance evidence.
+   Keep the recovered directory outside the live Connector journal.
+
 The hosted fixture sends only generated journal records as an artifact from
 one Windows runner to a second runner. It checks transport integrity, an empty
 directory, refusal and lock bytes, pending records, and archive nesting. It

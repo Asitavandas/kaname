@@ -82,7 +82,7 @@ function Export-AuthWireWriteJournalBackup([string]$Root,[hashtable]$Binding,[st
   $manifest=[pscustomobject][ordered]@{format='AuthWireWriteJournalBackupV1';scope_sha256=(Get-AuthWireJobScope $Binding);tree_sha256=$inventory.TreeSha256;files=$inventory.Files;bytes=$inventory.Bytes}
   $bytes=[Text.UTF8Encoding]::new($false,$true).GetBytes(($manifest|ConvertTo-Json -Compress))
   Write-AuthWireHistoryBytes (Join-Path $Backup 'manifest.json') $bytes
-  return [pscustomobject]@{ManifestSha256=(Get-AuthWireJobHash $bytes);TreeSha256=$inventory.TreeSha256;Files=$inventory.Files}
+  return [pscustomobject]@{ManifestSha256=(Get-AuthWireJobHash $bytes);ScopeSha256=$manifest.scope_sha256;TreeSha256=$inventory.TreeSha256;Files=$inventory.Files}
  }finally{$target.Dispose();$source.Dispose();$lock.ReleaseMutex();$lock.Dispose()}
 }
 
