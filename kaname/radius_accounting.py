@@ -14,6 +14,9 @@ import re
 import shutil
 import sqlite3
 import stat
+import time
+
+from .audit import AuditQueryLimit, LIMIT, number
 
 MAX_BYTES = 64 * 1024 * 1024
 MAX_RECORDS = 200_000
@@ -258,3 +261,45 @@ def ingest(state, pairs):
             raise AccountingStorageError('CAPACITY_REACHED') from None
         raise AccountingStorageError('STORAGE_ERROR') from None
     return True
+def session_history(state, query):
+    """Read a bounded page of NAS-reported sessions without creating storage."""
+    if set(query) - {'before', 'watermark'} or any(len(values) != 1 for values in query.values()):
+        raise ValueError('Invalid accounting session query')
+    before = number(query['before'][0]) if 'before' in query else None
+    watermark = number(query['watermark'][0], zero=True) if 'watermark' in query else None
+    root, path = paths(state)
+    empty = {'initialized': False, 'sessions': [], 'watermark': '0',
+             'has_more': False, 'next_before': None}
+    if not root.exists() and not root.is_symlink():
+        return empty
+    _private(root, directory=True)
+    if not path.exists() and not path.is_symlink():
+        return empty
+    _private(path)
+
+    with closing(sqlite3.connect(path.as_uri() + '?mode=ro', uri=True, timeout=0.25)) as db:
+        db.row_factory = sqlite3.Row
+        deadline = time.monotonic() + 2
+        db.set_progress_handler(lambda: int(time.monotonic() >= deadline), 1000)
+        try:
+            db.execute('BEGIN')
+            high = db.execute('SELECT coalesce(max(id), 0) FROM accounting_sessions').fetchone()[0]
+            high = high if watermark is None else min(watermark, high)
+            filters, args = 'id <= ?', [high]
+            if before is not None:
+                filters += ' AND id < ?'
+                args.append(before)
+            rows = db.execute(
+                'SELECT CAST(id AS TEXT) AS id, nas_ip, session_id, started_at, last_at, '
+                'stopped_at, session_time, CAST(input_bytes AS TEXT) AS input_bytes, '
+                'CAST(output_bytes AS TEXT) AS output_bytes, calling_station, nas_port '
+                'FROM accounting_sessions WHERE ' + filters + ' ORDER BY accounting_sessions.id DESC LIMIT ?',
+                (*args, LIMIT + 1)).fetchall()
+        except sqlite3.OperationalError as error:
+            if getattr(error, 'sqlite_errorcode', None) == sqlite3.SQLITE_INTERRUPT:
+                raise AuditQueryLimit() from None
+            raise
+    more = len(rows) > LIMIT
+    sessions = [dict(row) for row in rows[:LIMIT]]
+    return {'initialized': True, 'sessions': sessions, 'watermark': str(high),
+            'has_more': more, 'next_before': sessions[-1]['id'] if more else None}

@@ -8,11 +8,15 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.joi
 from kaname.server import DevelopmentServer
 from kaname.radius_events import initialize,append
 from tests.test_radius_events import event
+from kaname import radius_accounting
+from tests.test_radius_accounting import packet
 s=DevelopmentServer(sys.argv[1],0)
 initialize(s.store.root)
 for n in range(205):
  change=dict(policy_id='-fixture') if n%2==0 else dict(response_code=3,reason='TLS_CERTIFICATE_REVOKED',reason_source='native_category',policy_id=None,vlan=None,tls_verified=False,certificate_serial=None,object_guid=None,identity_kind=None)
  append(s.store.root,event(n,**change))
+radius_accounting.initialize(s.store.root)
+radius_accounting.ingest(s.store.root,packet('192.0.2.2','0x'+'c0'*16,'Start','<fixture-session>'))
 print(s.server_port,flush=True)
 s.serve_forever()`;
  const child=spawn(python,['-u','-c',script,temp],{cwd:root,stdio:['ignore','pipe','pipe']});let browser;
@@ -25,6 +29,11 @@ s.serve_forever()`;
   async function login(p,name='admin',password='Kaname'){await p.goto('http://127.0.0.1:'+port);await p.locator('#login-user').fill(name);await p.locator('#login-password').fill(password);await p.locator('#unlock').click();await p.locator('#workspace').waitFor({state:'visible'});}
   async function apply(){await page.locator('#access-apply').click();await page.waitForFunction(()=>!accessLoading&&accessPage&&accessLoadedKey===accessKey());}
   await login(page);await require('./ui_navigation.cjs').navigate(page,'access-events');await page.waitForFunction(()=>accessPage?.events.length===100);
+  await page.locator('#accounting-sessions summary').click();
+  await page.locator('#accounting-list tr').waitFor();
+  assert.match(await page.locator('#accounting-list').textContent(),/<fixture-session>.*Stop bekleniyor/);
+  assert.equal(await page.locator('#accounting-next').isDisabled(),true);
+  await page.locator('#accounting-sessions summary').click();
   const ids=await page.evaluate(()=>accessPage.events.map(e=>e.id));assert.equal(ids[0],205);
   await page.locator('#access-next').click();await page.waitForFunction(()=>!accessLoading&&accessPage?.events[0]?.id===105);ids.push(...await page.evaluate(()=>accessPage.events.map(e=>e.id)));
   await page.locator('#access-next').click();await page.waitForFunction(()=>!accessLoading&&accessPage?.events[0]?.id===5);ids.push(...await page.evaluate(()=>accessPage.events.map(e=>e.id)));
@@ -43,6 +52,7 @@ s.serve_forever()`;
   const deniedContext=await browser.newContext(),denied=await deniedContext.newPage();await login(denied,'no-history','fixture-history-password-42');
   assert.equal(await denied.locator('[data-view="access-events"]').isVisible(),false);
   assert.equal(await denied.evaluate(async()=>{const r=await fetch('/api/radius/events');return r.status;}),403);
+  assert.equal(await denied.evaluate(async()=>{const r=await fetch('/api/radius/accounting/sessions');return r.status;}),403);
   await page.route('**/api/radius/events*',r=>r.fulfill({status:503,json:{error:'ACCESS_HISTORY_UNAVAILABLE'}}));
   await page.locator('#access-apply').click();await page.waitForFunction(()=>!accessLoading&&document.getElementById('access-feedback').textContent.includes('alınamadı'));
   assert.equal(await page.locator('#workspace').isVisible(),true);assert.equal(await page.locator('#access-list tr').count(),100);await page.unroute('**/api/radius/events*');

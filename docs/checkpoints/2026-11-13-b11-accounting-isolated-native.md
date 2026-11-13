@@ -55,6 +55,8 @@ The test uses the repository's existing native listener readiness check.
 
 ## Remaining acceptance
 
-AuthWire query/API/UI, access decision correlation, retention/archive/cleanup
-and the real pilot NAS test remain open. This loopback test did not deploy or
+The panel now lists NAS-reported Accounting sessions under Access records.
+The read-only session API uses the audit-events permission and bounded
+pagination. Access decision correlation, retention/archive/cleanup and the
+real pilot NAS test remain open. This loopback test did not deploy or
 activate Accounting in the live service. No B11 completion point is claimed.

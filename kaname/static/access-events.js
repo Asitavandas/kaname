@@ -1,4 +1,5 @@
 'use strict';
+let accountingPage = null, accountingLoading = false, accountingRequest = 0;
 let accessDashboardRange=null;
 let accessPage=null,accessLoadedKey='',accessLoading=false,accessRequest=0;
 const accessReasons={POLICY_ALLOW:'Policy izin verdi',POLICY_DENY:'Policy reddetti',POLICY_CONFLICT:'Policy çakışması',NO_MATCHING_POLICY:'Eşleşen policy yok',ACCOUNT_DISABLED:'AD hesabı devre dışı',ACCOUNT_NOT_FOUND:'AD hesabı bulunamadı',DIRECTORY_UNAVAILABLE:'AD bilgisi alınamadı',DOMAIN_DEVICE_REQUIRED:'Domain bilgisayarı gerekiyor',CERTIFICATE_UNBOUND:'Sertifika kayıtlı kimliğe bağlı değil',CERTIFICATE_INACTIVE:'Sertifika kaydı etkin değil',CERTIFICATE_BINDING_CHANGED:'Sertifika kaydı değişti',TLS_CERTIFICATE_REVOKED:'İptal edilmiş sertifika',TLS_CERTIFICATE_EXPIRED:'Sertifikanın süresi dolmuş',TLS_CERTIFICATE_UNTRUSTED:'Sertifika zincirine güvenilmiyor',TLS_CERTIFICATE_PURPOSE:'Sertifika kullanım amacı uygun değil',TLS_CERTIFICATE_VERIFY_FAILED:'Sertifika doğrulanamadı',NON_EAP_REQUEST:'EAP içermeyen istek',NATIVE_ACCESS_ACCEPT:'Sunucu kabul yanıtı seçti',NATIVE_ACCESS_REJECT:'Sunucu ret yanıtı seçti; ayrıntı belirlenemedi',NATIVE_REJECT_AFTER_POLICY_ALLOW:'Policy izninden sonra EAP/TLS reddi'};
@@ -13,8 +14,12 @@ function accessFilters(){
 }
 function accessKey(){try{return JSON.stringify(accessFilters());}catch(_){return '';}}
 function accessControls(){const fresh=!!accessPage&&accessLoadedKey===accessKey(),allowed=can('audit.events');for(const id of ['access-apply','access-reset'])$(id).disabled=!allowed||accessLoading;$('access-next').disabled=!allowed||accessLoading||!fresh||!accessPage?.has_more;$('access-export').disabled=!allowed||accessLoading||!fresh||!accessPage?.events.length;}
-function resetAccessEvents(){accessDashboardRange=null;accessRequest++;accessPage=null;accessLoadedKey='';accessLoading=false;$('access-filters').reset();for(const id of ['access-list','access-feedback','access-storage','access-observer'])$(id).replaceChildren();accessControls();}
-function accessPermissions(){if(!can('audit.events')&&accessPage)resetAccessEvents();accessControls();}
+function resetAccessEvents(){resetAccountingSessions();accessDashboardRange=null;accessRequest++;accessPage=null;accessLoadedKey='';accessLoading=false;$('access-filters').reset();for(const id of ['access-list','access-feedback','access-storage','access-observer'])$(id).replaceChildren();accessControls();}
+function accessPermissions(){
+  if(!can('audit.events'))resetAccessEvents();
+  accessControls();
+  accountingControls();
+}
 function renderAccessEvents(){
   const parent=$('access-list');parent.replaceChildren();
   for(const e of accessPage.events){
@@ -59,3 +64,72 @@ document.getElementById('access-next').addEventListener('click',()=>run(()=>load
 document.getElementById('access-reset').addEventListener('click',()=>{if(accessLoading)return;accessDashboardRange=null;$('access-filters').reset();run(()=>loadAccessEvents());});
 document.getElementById('access-export').addEventListener('click',exportAccessEvents);
 for(const id of ['access-from','access-to','access-result','access-nas','access-reason','access-query'])document.getElementById(id).addEventListener('input',()=>{accessDashboardRange=null;$('access-feedback').textContent='Filtreler değişti. Uygula ile yeniden arayın.';accessControls();});
+
+
+function accountingControls(){
+  const allowed = can('audit.events') && !accountingLoading;
+  $('accounting-refresh').disabled = !allowed;
+  $('accounting-next').disabled = !allowed || !accountingPage?.has_more;
+}
+
+function resetAccountingSessions(){
+  accountingRequest++;
+  accountingPage = null;
+  accountingLoading = false;
+  $('accounting-sessions').open = false;
+  $('accounting-list').replaceChildren();
+  $('accounting-feedback').textContent = '';
+  accountingControls();
+}
+
+function renderAccountingSessions(page){
+  const body = $('accounting-list');
+  body.replaceChildren();
+  for(const session of page.sessions){
+    const row = document.createElement('tr');
+    const nas = auditText('td', session.nas_ip);
+    if(session.nas_port)nas.append(auditText('small', 'Port ' + session.nas_port));
+    if(session.calling_station)nas.append(auditText('small', session.calling_station));
+    row.append(auditText('td', session.session_id), nas,
+      auditText('td', auditTime(session.started_at)), auditText('td', auditTime(session.last_at)),
+      auditText('td', session.stopped_at ? auditTime(session.stopped_at) : 'Stop bekleniyor'),
+      auditText('td', session.session_time ?? '—'),
+      auditText('td', (session.input_bytes ?? '—') + ' / ' + (session.output_bytes ?? '—')));
+    body.append(row);
+  }
+  $('accounting-feedback').textContent = !page.initialized ? 'Accounting kaydı henüz başlatılmamış.' :
+    !page.sessions.length ? 'Accounting oturumu bulunamadı.' :
+    page.sessions.length + ' oturum gösteriliyor.';
+}
+
+async function loadAccountingSessions(next = false){
+  if(!can('audit.events') || accountingLoading || (next && !accountingPage?.has_more))return;
+  const request = ++accountingRequest, generation = authGeneration;
+  const active = () => request === accountingRequest && generation === authGeneration && can('audit.events');
+  const query = next ? '?' + new URLSearchParams({
+    before:accountingPage.next_before, watermark:accountingPage.watermark}) : '';
+  accountingLoading = true;
+  accountingControls();
+  $('accounting-feedback').textContent = 'Accounting oturumları okunuyor…';
+  try{
+    const page = await api('/api/radius/accounting/sessions' + query);
+    if(!active())return;
+    accountingPage = page;
+    renderAccountingSessions(page);
+  }catch(error){
+    if(active() && error.code !== 'SESSION_CHANGED'){
+      $('accounting-feedback').textContent = 'Accounting oturumları alınamadı. Yeniden deneyin.';
+    }
+  }finally{
+    if(active()){
+      accountingLoading = false;
+      accountingControls();
+    }
+  }
+}
+
+$('accounting-sessions').addEventListener('toggle',()=>{
+  if($('accounting-sessions').open && !accountingPage)run(()=>loadAccountingSessions());
+});
+$('accounting-refresh').addEventListener('click',()=>run(()=>loadAccountingSessions()));
+$('accounting-next').addEventListener('click',()=>run(()=>loadAccountingSessions(true)));
