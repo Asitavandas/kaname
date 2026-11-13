@@ -270,12 +270,12 @@ class RuntimeTests(unittest.TestCase):
                 value = struct.pack('!I', value)
             return bytes((code, len(value) + 2)) + value
 
-        def request(identifier, status, session, seconds=0, input_octets=0):
+        def request(identifier, status, session, seconds=0, input_octets=0, secret=secret_a):
             attributes = (attr(40, status) + attr(44, session.encode()) +
                           attr(46, seconds) + attr(42, input_octets))
             header = struct.pack('!BBH', 4, identifier, 20 + len(attributes))
             authenticator = hashlib.md5(header + (b'\0' * 16) + attributes +
-                                         secret_a.encode()).digest()
+                                         secret.encode()).digest()
             return header + authenticator + attributes
 
         def exchange(packet, source, secret, accept=True):
@@ -324,7 +324,7 @@ class RuntimeTests(unittest.TestCase):
         send_with_ready_retry(request(3, 2, 'same-session', 90, 30),
                               '127.0.0.1', secret_a)
         # A second NAS may reuse the same Acct-Session-Id without merging.
-        send_with_ready_retry(request(4, 1, 'same-session'),
+        send_with_ready_retry(request(4, 1, 'same-session', secret=secret_b),
                               '127.0.0.2', secret_b)
         # Orphan Stop is logged as an event, never as a fabricated session.
         send_with_ready_retry(request(5, 2, 'stop-only', 1),
