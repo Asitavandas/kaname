@@ -1,4 +1,4 @@
-"""Opt-in native observer. Observation never returns reply/Auth-Type changes."""
+"""Opt-in native observer with optional Accounting correlation on Access-Accept."""
 import base64
 from contextlib import closing, contextmanager
 import hashlib
@@ -16,11 +16,12 @@ from . import radius_adapter
 from .policy import Decision
 from .radius import CertificateReference, freeradius_result, serial_number
 from .radius_registry import CertificateRegistry
-from .radius_events import append, packet_key, utc, REASONS, EventStorageError, _private, BUSY_SECONDS
+from .radius_events import append, class_attribute, packet_key, utc, REASONS, EventStorageError, _private, BUSY_SECONDS
 
 CONTEXT = 'AuthWire-Event-Context'
 REQUEST_KEY = 'AuthWire-Request-Key'
 FINAL_CODE = 'AuthWire-Final-Code'
+ACCOUNTING_LINK = 'AuthWire-Accounting-Link'
 CAPTURE_RUN = uuid.uuid4().hex
 _lock = threading.Lock()
 _failed = 0
@@ -194,10 +195,13 @@ def _status(outcome, error_code, runtime):
 def post_auth(values, *, state=radius_adapter.STATE, runtime=Path('/run/authwire-radius')):
     import radiusd
     outcome, code = 'dropped', None
+    class_reply = ()
     try:
         event = build_event(values)
         if event is None: return radiusd.RLM_MODULE_NOOP
         outcome = 'committed' if append(state, event) else 'duplicates'
+        if event['response_code'] == 2 and scalar(values.get('config'), ACCOUNTING_LINK) == '1':
+            class_reply = (('Class', '+=', class_attribute(event['event_id'])),)
     except Exception as error:
         code = str(error) if isinstance(error, EventStorageError) else 'OBSERVER_ERROR'
         if code not in {'UNSAFE_STORAGE', 'CAPACITY_REACHED', 'LOW_DISK_SPACE', 'STORAGE_BUSY', 'STORAGE_ERROR'}:
@@ -206,5 +210,7 @@ def post_auth(values, *, state=radius_adapter.STATE, runtime=Path('/run/authwire
         except Exception: pass
     try: _status(outcome, code, runtime)
     except Exception: pass
-    # Returning only NOOP cannot add/remove reply attributes or change Auth-Type.
+    if class_reply:
+        # Preserve the native decision and all existing reply attributes.
+        return radiusd.RLM_MODULE_OK, class_reply, ()
     return radiusd.RLM_MODULE_NOOP

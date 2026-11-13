@@ -103,6 +103,52 @@ class RadiusAccountingTests(unittest.TestCase):
                 self.assertEqual(3, observer.accounting(callback_args(
                     packet('127.0.0.2', '0x' + '52' * 16, 'Interim-Update'))))
 
+
+    def test_correlation_requires_one_echo_from_the_same_nas_and_a_prior_accept(self):
+        from kaname import radius_accounting as accounting, radius_events as events
+        from tests.test_radius_events import event
+
+        events.initialize(self.state)
+        accept = event(nas_ip='127.0.0.2')
+        reject = event(2, nas_ip='127.0.0.2', response_code=3, vlan=None, reason='POLICY_DENY')
+        future = event(3, nas_ip='127.0.0.2', at='9999-01-01T00:00:00.000Z')
+        for decision in (accept, reject, future):
+            events.append(self.state, decision)
+        token = events.class_attribute(accept['event_id'])
+        for n, nas, classes in (
+            (1, '127.0.0.2', (token, '0x666f726569676e')),
+            (2, '127.0.0.3', (token,)),
+            (3, '127.0.0.2', (token, token)),
+            (4, '127.0.0.2', (events.class_attribute(reject['event_id']),)),
+            (5, '127.0.0.2', (events.class_attribute(future['event_id']),)),
+            (6, '127.0.0.2', (events.class_attribute('0' * 64),)),
+            (7, '127.0.0.2', ()),
+        ):
+            pairs = packet(nas, f'0x{n:032x}', 'Start', f'session-{n}')
+            accounting.ingest(self.state, pairs + tuple(('Class', value) for value in classes))
+        accounting.ingest(self.state, packet('127.0.0.2', '0x' + '08' * 16, 'Interim-Update',
+                                             'session-7') + (('Class', token),))
+        rows = {row['session_id']: row['access_decision']
+                for row in accounting.session_history(self.state, {})['sessions']}
+        self.assertEqual({f'session-{i}' for i in range(1, 8)}, set(rows))
+        self.assertEqual(accept['event_id'], rows.pop('session-1')['event_id'])
+        self.assertTrue(all(decision is None for decision in rows.values()))
+
+    def test_existing_sessions_survive_schema_upgrade_without_backfill(self):
+        from kaname import radius_accounting as accounting
+
+        accounting.ingest(self.state, packet('127.0.0.2', '0x' + '01' * 16, 'Start'))
+        _, path = accounting.paths(self.state)
+        with sqlite3.connect(path) as db:
+            db.execute('ALTER TABLE accounting_sessions DROP COLUMN access_event_id')
+            db.execute('PRAGMA user_version=1')
+        self.assertIsNone(accounting.session_history(self.state, {})['sessions'][0]['access_decision'])
+        accounting.initialize(self.state)
+        accounting.initialize(self.state)
+        row = accounting.session_history(self.state, {})['sessions'][0]
+        self.assertEqual('shared-session', row['session_id'])
+        self.assertIsNone(row['access_decision'])
+
     def test_untrusted_or_malformed_packets_reject(self):
         bad = (
             packet('127.0.0.2', 'not-an-authenticator', 'Start'),

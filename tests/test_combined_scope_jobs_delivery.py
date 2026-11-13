@@ -92,9 +92,9 @@ class CombinedScopeJobsDeliveryTests(unittest.TestCase):
   self.n['SERVER_FUNCTIONS']=[*self.n['SERVER_FUNCTIONS'],'Handler.staging_write_admin']
   self.n['SERVER_PROTECTED']['Handler.staging_write_admin']='5ccd8b0f56fd12f3ae424b00511d1213ca927fef110cabc74455fcc19ec1afaa'
   # Pin the reviewed GET dispatch too; do not relax authentication guards.
-  # Current GET dispatch adds only the public, signed CRL route; historical
+  # Current GET dispatch includes the signed CRL route and the audit-guarded Accounting route; historical
   # deployment guards and all authorization bodies remain frozen.
-  self.n['SERVER_PROTECTED']['Handler.get_response']='ffa82699e5d0554940dc62f91822ee2966d62beccf673bc0c60d13b6cd6b9baa'
+  self.n['SERVER_PROTECTED']['Handler.get_response']='d52376586ee90a9425351db51c7f9f978ea6036123413731d0449edb5a685a18'
   self.n['SERVER_PROTECTED']['DevelopmentServer.__init__']=SERVER_INIT_AST_SHA256
   self.real_server_guard(raw)
   changed=raw.replace(b'def guard(self',b'def altered_guard(self',1)

@@ -914,7 +914,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(200, session_history(self.server.store.root, query))
             except (ValueError, TypeError, OverflowError): self.respond(400, {'error': 'INVALID_INPUT'})
             except AuditQueryLimit: self.respond(503, {'error': 'AUDIT_QUERY_LIMIT'})
-            except (AccountingStorageError, OSError): self.respond(503, {'error': 'ACCOUNTING_HISTORY_UNAVAILABLE'})
+            except (AccountingStorageError, EventStorageError, OSError): self.respond(503, {'error': 'ACCOUNTING_HISTORY_UNAVAILABLE'})
             except sqlite3.Error as error: self.store_error(error)
         elif urlsplit(self.path).path == '/api/audit/history' and self.guard(resource='audit.events'):
             try:

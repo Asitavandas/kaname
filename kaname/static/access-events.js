@@ -90,11 +90,18 @@ function renderAccountingSessions(page){
     const nas = auditText('td', session.nas_ip);
     if(session.nas_port)nas.append(auditText('small', 'Port ' + session.nas_port));
     if(session.calling_station)nas.append(auditText('small', session.calling_station));
+    const decision = session.access_decision;
+    const access = auditText('td', decision ? 'Kabul (Access-Accept)' : 'Eşleşme yok');
+    if(decision){
+      access.append(auditText('small', auditTime(decision.at)));
+      if(decision.policy_id)access.append(auditText('small', 'Policy: ' + decision.policy_id));
+      if(decision.vlan != null)access.append(auditText('small', 'VLAN: ' + decision.vlan));
+    }
     row.append(auditText('td', session.session_id), nas,
       auditText('td', auditTime(session.started_at)), auditText('td', auditTime(session.last_at)),
       auditText('td', session.stopped_at ? auditTime(session.stopped_at) : 'Stop bekleniyor'),
       auditText('td', session.session_time ?? '—'),
-      auditText('td', (session.input_bytes ?? '—') + ' / ' + (session.output_bytes ?? '—')));
+      auditText('td', (session.input_bytes ?? '—') + ' / ' + (session.output_bytes ?? '—')), access);
     body.append(row);
   }
   $('accounting-feedback').textContent = !page.initialized ? 'Accounting kaydı henüz başlatılmamış.' :

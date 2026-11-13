@@ -1,11 +1,12 @@
 """Literal opt-in native observer configuration, shared by runtime and lab."""
-from kaname.radius_observer import CONTEXT, REQUEST_KEY, FINAL_CODE
+from kaname.radius_observer import ACCOUNTING_LINK, CONTEXT, REQUEST_KEY, FINAL_CODE
 
 
 def dictionary():
     return (f'ATTRIBUTE {CONTEXT} 3000 string\n'
             f'ATTRIBUTE {REQUEST_KEY} 3001 string\n'
-            f'ATTRIBUTE {FINAL_CODE} 3002 integer\n')
+            f'ATTRIBUTE {FINAL_CODE} 3002 integer\n'
+            f'ATTRIBUTE {ACCOUNTING_LINK} 3006 integer\n')
 
 
 def module(source, dependencies, *, module_name='kaname.radius_observer'):
@@ -20,7 +21,8 @@ def module(source, dependencies, *, module_name='kaname.radius_observer'):
 '''
 
 
-def augment_site(site):
+def augment_site(site, *, accounting_link=False):
+    link = f"   {ACCOUNTING_LINK} := 1\n" if accounting_link else ""
     # Materialize virtual packet metadata before any early authorize reject.
     # All custom attributes live in control/session-state, never a wire reply.
     site = site.replace(' authorize {\n', f''' authorize {{
@@ -34,7 +36,7 @@ def augment_site(site):
  post-auth {{
   update control {{
    {FINAL_CODE} := 2
-  }}
+{link}  }}
   authwire_access_events
   Post-Auth-Type REJECT {{
    update control {{

@@ -17,6 +17,7 @@ import stat
 import time
 
 from .audit import AuditQueryLimit, LIMIT, number
+from .radius_events import access_accepts, class_event_id
 
 MAX_BYTES = 64 * 1024 * 1024
 MAX_RECORDS = 200_000
@@ -62,7 +63,7 @@ def initialize(state):
     _private(path)
     with closing(sqlite3.connect(path, timeout=1)) as db:
         version = db.execute('PRAGMA user_version').fetchone()[0]
-        if version not in (0, 1):
+        if version not in (0, 1, 2):
             raise AccountingStorageError('STORAGE_ERROR')
         db.executescript("""
             PRAGMA journal_mode=DELETE;
@@ -99,8 +100,12 @@ def initialize(state):
                 ON accounting_events(nas_ip, session_id, id);
             CREATE INDEX IF NOT EXISTS accounting_sessions_lookup
                 ON accounting_sessions(nas_ip, session_id, id);
-            PRAGMA user_version=1;
         """)
+        db.execute('BEGIN IMMEDIATE')
+        if 'access_event_id' not in {row[1] for row in db.execute('PRAGMA table_info(accounting_sessions)')}:
+            db.execute('ALTER TABLE accounting_sessions ADD COLUMN access_event_id TEXT')
+        db.execute('PRAGMA user_version=2')
+        db.commit()
     return path
 
 
@@ -173,7 +178,8 @@ def parse(pairs):
     return {'event_key': event_key, 'nas_ip': nas, 'session_id': session, 'status': status,
             'received_at': received_at, 'session_time': session_time,
             'input_bytes': input_bytes, 'output_bytes': output_bytes,
-            'calling_station': station, 'nas_port': port}
+            'calling_station': station, 'nas_port': port,
+            'access_event_id': class_event_id(pairs)}
 
 
 def ingest(state, pairs):
@@ -213,11 +219,11 @@ def ingest(state, pairs):
                 if session_row is None or session_row[1] is not None:
                     cursor = db.execute(
                         'INSERT INTO accounting_sessions(nas_ip,session_id,started_at,last_at,'
-                        'session_time,input_bytes,output_bytes,calling_station,nas_port) '
-                        'VALUES(?,?,?,?,?,?,?,?,?)',
+                        'session_time,input_bytes,output_bytes,calling_station,nas_port,access_event_id) '
+                        'VALUES(?,?,?,?,?,?,?,?,?,?)',
                         (event['nas_ip'], event['session_id'], event['received_at'],
                          event['received_at'], event['session_time'], event['input_bytes'],
-                         event['output_bytes'], event['calling_station'], event['nas_port']))
+                         event['output_bytes'], event['calling_station'], event['nas_port'], event['access_event_id']))
                     session_row = (cursor.lastrowid, None)
             else:
                 session_row = db.execute(
@@ -289,11 +295,13 @@ def session_history(state, query):
             if before is not None:
                 filters += ' AND id < ?'
                 args.append(before)
+            version = db.execute('PRAGMA user_version').fetchone()[0]
+            link_column = 'access_event_id' if version == 2 else 'NULL'
             rows = db.execute(
                 'SELECT CAST(id AS TEXT) AS id, nas_ip, session_id, started_at, last_at, '
                 'stopped_at, session_time, CAST(input_bytes AS TEXT) AS input_bytes, '
                 'CAST(output_bytes AS TEXT) AS output_bytes, calling_station, nas_port '
-                'FROM accounting_sessions WHERE ' + filters + ' ORDER BY accounting_sessions.id DESC LIMIT ?',
+                f', {link_column} AS access_event_id FROM accounting_sessions WHERE ' + filters + ' ORDER BY accounting_sessions.id DESC LIMIT ?',
                 (*args, LIMIT + 1)).fetchall()
         except sqlite3.OperationalError as error:
             if getattr(error, 'sqlite_errorcode', None) == sqlite3.SQLITE_INTERRUPT:
@@ -301,5 +309,11 @@ def session_history(state, query):
             raise
     more = len(rows) > LIMIT
     sessions = [dict(row) for row in rows[:LIMIT]]
+    keys = [row.pop('access_event_id') for row in sessions]
+    decisions = access_accepts(state, {key for key in keys if key})
+    for session, key in zip(sessions, keys):
+        decision = decisions.get(key)
+        session['access_decision'] = (decision if decision and decision['nas_ip'] == session['nas_ip']
+                                      and decision['at'] <= session['started_at'] else None)
     return {'initialized': True, 'sessions': sessions, 'watermark': str(high),
             'has_more': more, 'next_before': sessions[-1]['id'] if more else None}

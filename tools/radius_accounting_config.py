@@ -24,9 +24,6 @@ def module(source, dependencies):
 
 
 def augment_site(site, listen_ip, accounting_port, state):
-    marker = 'server authwire-radius {\n'
-    if site.count(marker) != 1:
-        raise ValueError('Unexpected AuthWire RADIUS server template')
     needle = ' authenticate {\n  eap\n }\n'
     if site.count(needle) != 1:
         raise ValueError('Unexpected AuthWire RADIUS authentication template')
