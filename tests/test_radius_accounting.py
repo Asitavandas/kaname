@@ -2,6 +2,8 @@
 import sqlite3
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 from pathlib import Path
 
 from kaname.radius_accounting import initialize, ingest, paths, parse
@@ -79,6 +81,20 @@ class RadiusAccountingTests(unittest.TestCase):
         event = parse(packet('127.0.0.2', '0x' + '31' * 16, 'Interim-Update',
                              **{'Acct-Input-Octets': '5', 'Acct-Input-Gigawords': '2'}))
         self.assertEqual(event['input_bytes'], 2 * 2**32 + 5)
+
+    def test_native_callback_acks_only_persisted_or_duplicate_packets(self):
+        from kaname import radius_accounting_observer as observer
+        radiusd = SimpleNamespace(RLM_MODULE_OK=2, RLM_MODULE_FAIL=3,
+                                  L_WARN=4, radlog=lambda *args: None)
+        start = packet('127.0.0.2', '0x' + '51' * 16, 'Start')
+        with patch.dict('sys.modules', {'radiusd': radiusd}):
+            self.assertEqual(2, observer.accounting(start, state=self.state))
+            self.assertEqual(2, observer.accounting(start, state=self.state))
+            with patch('kaname.radius_accounting.ingest',
+                       side_effect=__import__('kaname.radius_accounting',
+                                              fromlist=['AccountingStorageError']).AccountingStorageError('STORAGE_BUSY')):
+                self.assertEqual(3, observer.accounting(
+                    packet('127.0.0.2', '0x' + '52' * 16, 'Interim-Update'), state=self.state))
 
     def test_untrusted_or_malformed_packets_reject(self):
         bad = (
