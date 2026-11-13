@@ -1,3 +1,11 @@
+# 0.14.0-dev.48 — Linux pilot delivery candidate
+
+- Record and recheck operator decisions for refused staging jobs against the
+  current Connector scope and journal evidence.
+- Recognize uppercase enrollment error codes in Turkish Windows PowerShell.
+- Apply the new version to the Linux candidate so the health endpoint can
+  distinguish it from the installed dev.47 build.
+
 # 0.14.0-dev.6 — Panel session and storage contention recovery
 
 - Conceal the credentials form in the initial HTML until session validation
