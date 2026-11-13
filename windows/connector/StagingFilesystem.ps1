@@ -162,7 +162,7 @@ function Get-AuthWireStagingFilesystemRows($Lease){
 function Get-AuthWireStagingFilesystemDigest($Rows){
  return (Get-AuthWireScopeDataHash @($Rows))
 }
-function Assert-AuthWireStagingJournalRoot([string]$Path){
+function Assert-AuthWireStagingJournalRoot([string]$Path,[string]$BackupServiceSid){
  # Caller provisions this LOCAL directory. Never weaken an existing ACL.
  $null=Assert-AuthWireCandidatePath $Path
  $item=Get-Item -LiteralPath $Path -Force -ErrorAction Stop
@@ -170,9 +170,14 @@ function Assert-AuthWireStagingJournalRoot([string]$Path){
  $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
  try{$sid=$identity.User.Value}finally{$identity.Dispose()}
  $acl=Get-Acl -LiteralPath $Path -ErrorAction Stop
- if(-not $acl.AreAccessRulesProtected -or $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value -cnotin @($sid,'S-1-5-18','S-1-5-32-544')){throw 'STAGING_JOURNAL_ACL_REJECTED'}
+ $allowed=@($sid,'S-1-5-18','S-1-5-32-544')
+ if($PSBoundParameters.ContainsKey('BackupServiceSid')){
+  if($BackupServiceSid -cnotmatch '\AS-1-5-21-(?:[1-9][0-9]{0,9}-){3}[1-9][0-9]{0,9}\z'){throw 'STAGING_JOURNAL_ACL_REJECTED'}
+  $allowed+=$BackupServiceSid
+ }
+ if(-not $acl.AreAccessRulesProtected -or $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value -cnotin $allowed){throw 'STAGING_JOURNAL_ACL_REJECTED'}
  foreach($ace in $acl.GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier])){
-  if($ace.AccessControlType -ne 'Allow' -or $ace.IdentityReference.Value -cnotin @($sid,'S-1-5-18','S-1-5-32-544')){throw 'STAGING_JOURNAL_ACL_REJECTED'}
+  if($ace.AccessControlType -ne 'Allow' -or $ace.IdentityReference.Value -cnotin $allowed){throw 'STAGING_JOURNAL_ACL_REJECTED'}
  }
 }
 function Write-AuthWireStagingJournal([string]$Path,$Value){

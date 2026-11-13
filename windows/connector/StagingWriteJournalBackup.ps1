@@ -62,12 +62,16 @@ function Assert-AuthWireEmptyJournalBackupDirectory([string]$Path,$Pins){
 }
 
 function Export-AuthWireWriteJournalBackup([string]$Root,[hashtable]$Binding,[string]$Backup){
- Assert-AuthWireStagingWriteJournalLocation $Root $Binding
+ if($Root -cne (Get-AuthWireStagingWriteJournalRoot $Binding)){throw 'WRITE_JOURNAL_LOCATION_REJECTED'}
  Assert-AuthWireJournalBackupSeparate $Root $Backup
  Initialize-AuthWireStagingFilesystemTypes
  $lock=Enter-AuthWireWriteCycleLock $Binding;$source=[AuthWire.Staging.TreeLeaseV1]::new();$target=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
-  $source.PinAncestors($Root);Assert-AuthWireEmptyJournalBackupDirectory $Backup $target
+  $source.PinAncestors($Root)
+  # The verified connector's service SID can have access to the live source.
+  # Backup and restore destinations use the original private ACL check.
+  Assert-AuthWireStagingJournalRoot $Root $Binding.service_sid
+  Assert-AuthWireEmptyJournalBackupDirectory $Backup $target
   $inventory=Get-AuthWireJournalBackupInventory $Root $source
   if($inventory.Files -eq 0){throw 'JOURNAL_BACKUP_EMPTY_SOURCE'}
   $data=Join-Path $Backup 'data';[AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($data);$target.PinDirectory($data)

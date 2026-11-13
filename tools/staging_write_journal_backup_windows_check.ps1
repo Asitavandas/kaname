@@ -6,11 +6,15 @@ $lib=Join-Path (Split-Path $PSScriptRoot) 'windows\connector'
 . (Join-Path $lib 'Test-AuthWireDeploymentCandidate.ps1') -LibraryOnly
 foreach($name in @('Invoke-AuthWireConnectorProbeJob','StagingFilesystem','StagingWriteCycle','StagingWriteConsumption','StagingWriteHistory','StagingWriteJournalBackup')){. (Join-Path $lib ($name+'.ps1'))}
 
+function Set-FixturePrivateDirectoryAcl([string]$Path,[string]$ServiceSid){
+ $serviceAce=if($ServiceSid){'(A;OICI;0x1301bf;;;'+$ServiceSid+')'}else{''}
+ $acl=[Security.AccessControl.DirectorySecurity]::new()
+ $acl.SetSecurityDescriptorSddlForm('O:BAG:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)'+$serviceAce)
+ Set-Acl -LiteralPath $Path -AclObject $acl
+}
 function New-FixturePrivateDirectory([string]$Path){
  $null=New-Item -Path $Path -ItemType Directory
- $acl=[Security.AccessControl.DirectorySecurity]::new()
- $acl.SetSecurityDescriptorSddlForm('O:BAG:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)')
- Set-Acl -LiteralPath $Path -AclObject $acl
+ Set-FixturePrivateDirectoryAcl $Path
 }
 function Assert-FixtureRejection([scriptblock]$Action,[string]$Expected){
  try{& $Action|Out-Null}catch{if($_.Exception.Message -ceq $Expected){return};throw}
@@ -39,6 +43,14 @@ try{
   Write-AuthWireStagingJournal (Join-Path $source 'write-lifecycle\000001\poll-sent.json') ([pscustomobject]@{fixture='pending'})
   Write-AuthWireStagingJournal (Join-Path $source 'write-lifecycle\history-archives\000001\cycles\000001\completion.json') ([pscustomobject]@{fixture='archive'})
   Assert-FixtureRejection {Export-AuthWireWriteJournalBackup $source $binding $source} 'JOURNAL_BACKUP_PATH_OVERLAP'
+  Set-FixturePrivateDirectoryAcl $source 'S-1-5-21-1-2-3-1002'
+  Assert-FixtureRejection {Export-AuthWireWriteJournalBackup $source $binding $backup} 'STAGING_JOURNAL_ACL_REJECTED'
+  Set-FixturePrivateDirectoryAcl $source $binding.service_sid
+  Assert-FixtureRejection {Assert-AuthWireStagingWriteJournalLocation $source $binding} 'STAGING_JOURNAL_ACL_REJECTED'
+  Set-FixturePrivateDirectoryAcl $backup $binding.service_sid
+  Assert-FixtureRejection {Export-AuthWireWriteJournalBackup $source $binding $backup} 'STAGING_JOURNAL_ACL_REJECTED'
+  if(Get-ChildItem -LiteralPath $backup -Force){throw 'Rejected ACL wrote a backup file'}
+  Set-FixturePrivateDirectoryAcl $backup
   $export=Export-AuthWireWriteJournalBackup $source $binding $backup
   if($export.Files -ne 5){throw 'Unexpected export file count'}
   Assert-FixtureRejection {Export-AuthWireWriteJournalBackup $source $binding $backup} 'JOURNAL_BACKUP_DESTINATION_NOT_EMPTY'
