@@ -1,5 +1,14 @@
 # AuthWire current work record
 
+## 13 Kasım AuthWire pilot saha durumu
+
+- **B07 tamamlandı (5/5).** RADIUS beklenmedik süreç kaybından 5,9 saniyede otomatik toparlandı. Ardından VV-Client01 makine EAP-TLS doğrulaması, VLAN 110 ve Accounting doğrulandı. Panelden Durdur, Başlat ve Yeniden başlat ayrı ayrı geçti.
+- **Sunucu güç işlemleri tamamlandı.** Panelden yeniden başlatma (denetim #3981) ve panelden kapatma sonrası ESXi Power On (denetim #3983) yeni Linux açılış kimlikleriyle doğrulandı. HTTPS, UDP 1812/1813, servis kontrolü, yedekleme ve CRL zamanlayıcıları geri geldi. Linux uzaktan yönetim erişimi doğrulandı.
+- **B11 kısmi saha kabulü.** Gerçek switch Start/Stop, canlı tanılama sayaçları, yerel arşiv önizlemesi ve izole veri geri yükleme geçti. VV-SW, `Acct-Interim-Interval=60` içeren Access-Accept sonrası 142 saniyede Interim-Update göndermedi ve Start içinde Class döndürmedi. İki saha kabulü uygun NAS veya yapılandırma değişikliği bekliyor. Saklama süresi ve zamanlanmış temizlik açık.
+- **Takipte.** B09 uzun süreli kablolu kararlılık, AD'den silinmiş bilgisayar ve AD erişim kesintisi, DC01 üzerinde gerçek Connector/GPO kabulü, kullanıcı sertifikalı EAP-TLS ve harici yedekten ayrı kurtarma ortamına geri yükleme açık.
+
+Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
+
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
 
 Doğrulanmış **c5241e55c7728da239070bbe8f9c841043f54cde** kaynağı,
