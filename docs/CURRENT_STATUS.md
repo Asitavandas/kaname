@@ -15,6 +15,8 @@
 
 - **B09 kararlılık izlemesi.** Port 6 açıkken mevcut oturum #8 üzerinde 23:30–23:32 arasında iki dakikalık ölçüm tamamlandı. Dokuz örnekte Ethernet0 ve Ethernet1 açık, VLAN 110 ağ geçidi erişilebilir, panel HTTPS 200 ve RADIUS UDP 1812/1813 etkin kaldı. RADIUS yeniden başlamadı, Windows'ta yeni kablolu doğrulama olayı oluşmadı. 23:33'te aynı oturum için 30 dakikalık ölçüm başlatıldı. Sonuç bekleniyor.
 
+- **B12 harici kurtarma hazırlığı.** 03:17'deki son planlı arşiv Accounting etkinleşmeden önce alındığı için Accounting veritabanını içermiyor. 23:38'de mevcut yedek işçisiyle ayrı, root erişimli yerel kurtarma kopyası oluşturuldu. Beş SQLite veritabanı, Accounting ve erişim kayıtları, SHA-256 ve servis süreçlerinin korunduğu doğrulandı. Planlı yedekler ve saklama ayarı değiştirilmedi. Sunucu dışına aktarım ve ayrı VM'de geri yükleme/açılış, yetkili hedef ve kurtarma ortamı bekliyor.
+
 Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
 
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
