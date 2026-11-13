@@ -1,7 +1,12 @@
 """Production RADIUS adapter/runtime boundaries; no LAN listener is started."""
+import hashlib
 import json
 import os
+import socket
+import sqlite3
+import struct
 import subprocess
+import time
 import tempfile
 import types
 import unittest
@@ -214,6 +219,126 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual('ACCOUNTING_STORAGE_UNAVAILABLE', generated['accounting_events_error'])
         self.assertFalse((failed / 'mods-enabled/accounting-events').exists())
         self.assertNotIn('private detail', str(generated))
+
+    def test_native_accounting_callback_persists_and_deduplicates_on_loopback(self):
+        prefix = os.environ.get('AUTHWIRE_RADIUS_PREFIX')
+        if not prefix:
+            self.skipTest('Pinned FreeRADIUS prefix not supplied')
+
+        def free_port():
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+                probe.bind(('127.0.0.1', 0))
+                return probe.getsockname()[1]
+
+        auth_port, acct_port = free_port(), free_port()
+        while acct_port == auth_port:
+            acct_port = free_port()
+        selected = network()
+        selected['authentication_port'] = auth_port
+        selected['accounting_port'] = acct_port
+        snapshot = self.store.snapshot()
+        self.ops.save_network(snapshot['revision'], selected)
+
+        runtime = self.root / 'native-accounting'; runtime.mkdir(mode=0o700)
+        generated = generate(runtime, Path(prefix), self.state, '127.0.0.1',
+                             accounting_events=True)
+        self.assertTrue(generated['accounting_events_enabled'])
+        secret_a, secret_b = 'isolated-secret-a', 'isolated-secret-b'
+        (runtime / 'clients.conf').write_text(
+            'client fixture_a {\n ipaddr = 127.0.0.1\n secret = ' + secret_a +
+            '\n require_message_authenticator = no\n limit_proxy_state = yes\n}\n'
+            'client fixture_b {\n ipaddr = 127.0.0.2\n secret = ' + secret_b +
+            '\n require_message_authenticator = no\n limit_proxy_state = yes\n}\n')
+        env = dict(os.environ)
+        env['LD_LIBRARY_PATH'] = str(Path(prefix) / 'lib')
+        parsed = subprocess.run(
+            [str(Path(prefix) / 'sbin/radiusd'), '-XC', '-D',
+             str(Path(prefix) / 'share/freeradius'), '-d', str(runtime)],
+            env=env, capture_output=True, text=True, timeout=20)
+        if parsed.returncode != 0:
+            safe = '\n'.join(line for line in (parsed.stdout + parsed.stderr).splitlines()
+                               if 'secret' not in line.lower() and 'password' not in line.lower())
+            self.fail('Isolated Accounting config parse failed: ' + safe[-2000:])
+        process = subprocess.Popen(
+            [str(Path(prefix) / 'sbin/radiusd'), '-f', '-s', '-D',
+             str(Path(prefix) / 'share/freeradius'), '-d', str(runtime)],
+            env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        self.addCleanup(lambda: process.poll() is None and process.terminate())
+
+        def attr(code, value):
+            if isinstance(value, int):
+                value = struct.pack('!I', value)
+            return bytes((code, len(value) + 2)) + value
+
+        def request(identifier, status, session, seconds=0, input_octets=0):
+            attributes = (attr(40, status) + attr(44, session.encode()) +
+                          attr(46, seconds) + attr(42, input_octets))
+            header = struct.pack('!BBH', 4, identifier, 20 + len(attributes))
+            authenticator = hashlib.md5(header + (b'\0' * 16) + attributes +
+                                         secret_a.encode()).digest()
+            return header + authenticator + attributes
+
+        def exchange(packet, source, secret, accept=True):
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client:
+                client.settimeout(0.6)
+                client.bind((source, 0))
+                client.sendto(packet, ('127.0.0.1', acct_port))
+                try:
+                    response, _ = client.recvfrom(4096)
+                except socket.timeout:
+                    if accept:
+                        self.fail('Native Accounting callback did not acknowledge persisted request')
+                    return False
+            if not accept:
+                self.fail('Native Accounting callback acknowledged failed storage')
+            self.assertGreaterEqual(len(response), 20)
+            code, ident, length = struct.unpack('!BBH', response[:4])
+            self.assertEqual((5, packet[1], len(response)), (code, ident, length))
+            expected = hashlib.md5(response[:4] + packet[4:20] +
+                                   response[20:] + secret.encode()).digest()
+            self.assertEqual(expected, response[4:20])
+            return True
+
+        def send_with_ready_retry(packet, source, secret):
+            deadline = time.monotonic() + 15
+            while True:
+                try:
+                    return exchange(packet, source, secret)
+                except AssertionError as error:
+                    if time.monotonic() >= deadline or process.poll() is not None:
+                        if process.poll() is None:
+                            process.terminate()
+                        output = process.communicate(timeout=3)[0]
+                        safe = '\n'.join(line for line in output.splitlines()
+                                           if 'secret' not in line.lower() and 'password' not in line.lower())
+                        if 'Getting debug state failed: ptrace capability not set' in safe:
+                            self.skipTest('Host blocks ptrace required by the native FreeRADIUS runtime')
+                        raise AssertionError(str(error) + '\nNative listener output:\n' + safe[-3000:])
+                    time.sleep(0.1)
+
+        start = request(1, 1, 'same-session')
+        send_with_ready_retry(start, '127.0.0.1', secret_a)
+        exchange(start, '127.0.0.1', secret_a)  # exact retry, new source port
+        send_with_ready_retry(request(2, 3, 'same-session', 60, 20),
+                              '127.0.0.1', secret_a)
+        send_with_ready_retry(request(3, 2, 'same-session', 90, 30),
+                              '127.0.0.1', secret_a)
+        # A second NAS may reuse the same Acct-Session-Id without merging.
+        send_with_ready_retry(request(4, 1, 'same-session'),
+                              '127.0.0.2', secret_b)
+        # Orphan Stop is logged as an event, never as a fabricated session.
+        send_with_ready_retry(request(5, 2, 'stop-only', 1),
+                              '127.0.0.1', secret_a)
+
+        database = self.state / 'radius-accounting/accounting.sqlite3'
+        with sqlite3.connect(database) as db:
+            events = db.execute('SELECT status,orphan FROM accounting_events ORDER BY id').fetchall()
+            sessions = db.execute('SELECT nas_ip,session_id,stopped_at FROM accounting_sessions ORDER BY id').fetchall()
+        self.assertEqual([('Start', 0), ('Interim-Update', 0), ('Stop', 0),
+                          ('Start', 0), ('Stop', 1)], events)
+        self.assertEqual(2, len(sessions))
+        self.assertEqual({'127.0.0.1', '127.0.0.2'}, {row[0] for row in sessions})
+        self.assertIsNotNone(sessions[0][2])
 
     def test_native_freeradius_accepts_generated_production_config_when_prefix_is_supplied(self):
         prefix = os.environ.get('AUTHWIRE_RADIUS_PREFIX')
