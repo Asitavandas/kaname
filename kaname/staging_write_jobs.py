@@ -535,3 +535,25 @@ class StagingWriteJobs(ConnectorJobs):
             result['stage_lock_evidence_sha256'] = digest(value['stage_lock_evidence'])
         return result
 
+    def verify_stage_lock_release_approval(self, value, actor):
+        """Recheck an exact recorded approval and current scope in one read snapshot."""
+        keys(value, {'approval', 'approval_revision'}, {'approval', 'approval_revision'})
+        approval = value['approval']
+        self._validate_reconciliation_decision(approval, actor, confirm=True)
+        revision = value['approval_revision']
+        require(approval['decision'] == RELEASE_APPROVAL and type(revision) is int and
+                1 <= revision < 2**53 and type(approval['expected_revision']) is int and
+                revision == approval['expected_revision'] + 1, 'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
+        with self.store.connect() as db:
+            db.execute('BEGIN')
+            require(db.execute('SELECT 1 FROM audit WHERE revision=? AND event=?',
+                (revision, self._reconciliation_event(approval, actor))).fetchone(),
+                'STAGING_WRITE_RELEASE_APPROVAL_CONFLICT')
+            comparison, job = self._compare_reconciliation(db, approval['evidence'])
+            self._require_refused_stage_release(db, approval, actor, comparison, job)
+            require(not self._busy(self._read(db), job['target'], STAGE, job['scope'], int(self.clock())),
+                    'STAGING_WRITE_GPO_BUSY')
+        return {'job_id': job['id'], 'gpo_id': job['target']['scope_target']['gpo_id'],
+                'decision': RELEASE_APPROVAL, 'approval_revision': revision, 'approval_verified': True,
+                'stage_lock_evidence_sha256': digest(approval['stage_lock_evidence'])}
+

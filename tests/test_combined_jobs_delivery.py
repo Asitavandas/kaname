@@ -90,7 +90,7 @@ class CombinedJobsDeliveryTests(unittest.TestCase):
   # Historical installers remain frozen and reject the new function by default.
   with self.assertRaisesRegex(ValueError,'SERVER_FUNCTION_SET_CHANGED'):self.real_server_guard(raw)
   self.n['SERVER_FUNCTIONS']=[*self.n['SERVER_FUNCTIONS'],'Handler.staging_write_admin']
-  self.n['SERVER_PROTECTED']['Handler.staging_write_admin']='fbfba223d944d54d87c650fadfa1c601d297113a5d3da7cb523ebf7ca457f2ab'
+  self.n['SERVER_PROTECTED']['Handler.staging_write_admin']='5ccd8b0f56fd12f3ae424b00511d1213ca927fef110cabc74455fcc19ec1afaa'
   # Pin the reviewed GET dispatch too; do not relax authentication guards.
   # Current GET dispatch adds only the public, signed CRL route; historical
   # deployment guards and all authorization bodies remain frozen.

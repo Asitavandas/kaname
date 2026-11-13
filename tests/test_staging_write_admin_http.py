@@ -89,6 +89,7 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
             self.assertFalse(receipt['can_apply_gpo'])
         self.assertEqual(before, self.ledger())
         self.assertEqual(len(audit)+1, len(self.store.audit()))
+
         self.assertIn(':keep_under_review:', self.store.audit()[0]['event'])
         self.assertEqual('authorized', self.jobs.status()['jobs'][0]['state'])
 
@@ -197,6 +198,39 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
             self.assertFalse(recorded['can_apply_gpo'])
         self.assertEqual(before, self.ledger())
         self.assertEqual(len(audit)+1, len(self.store.audit()))
+
+        verify_path = RECONCILE+'/verify-lock-release'
+        verify = {'approval': approval, 'approval_revision': recorded['revision']}
+        saved_audit = self.store.audit()
+        saved_state = self.store.snapshot()
+        code, verified, _ = self.request('POST', verify_path, verify, self.headers)
+        self.assertEqual(200, code, verified)
+        self.assertTrue(verified['approval_verified'])
+        self.assertTrue(verified['review_only'])
+        self.assertFalse(verified['write_authorization_enabled'])
+        self.assertEqual(digest(lock), verified['stage_lock_evidence_sha256'])
+        self.assertEqual(offer['job_id'], verified['job_id'])
+        self.assertEqual(lock['gpo_id'], verified['gpo_id'])
+        self.assertEqual(recorded['revision'], verified['approval_revision'])
+        for payload, headers in (
+            (verify, second),
+            (verify | {'approval': approval | {'review_hash': '0'*64}}, self.headers),
+            (verify | {'approval': approval | {'stage_lock_evidence': lock | {'completion_sha256': '0'*64}}}, self.headers),
+        ):
+            code, error, _ = self.request('POST', verify_path, payload, headers)
+            self.assertEqual((409, 'STAGING_WRITE_RELEASE_APPROVAL_CONFLICT'), (code, error['error']))
+        self.assertEqual(400, self.request('POST', verify_path,
+            verify | {'approval_revision': receipt['revision']}, self.headers)[0])
+        self.assertEqual(403, self.request('POST', verify_path, verify, self.headers | {'X-Kaname-CSRF':'bad'})[0])
+        self.assertEqual(saved_audit, self.store.audit())
+        self.assertEqual(saved_state, self.store.snapshot())
+        self.assertEqual(before, self.ledger())
+
+        # A more recent pending stage for this GPO makes the old approval unusable.
+        next_job = value | {'job_id': str(uuid.uuid4()), 'expected_revision': saved_state['revision']}
+        self.jobs.create(next_job | {'review_hash': self.jobs.review(next_job, self.actor)['review_hash']}, self.actor)
+        code, error, _ = self.request('POST', verify_path, verify, self.headers)
+        self.assertEqual((409, 'STAGING_WRITE_GPO_BUSY'), (code, error['error']))
 
     def test_review_binds_real_actor_and_is_readonly_create_never_enqueues(self):
         value = self.ready(); before = self.ledger(); audit = self.store.audit()
