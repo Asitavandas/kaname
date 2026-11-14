@@ -79,6 +79,8 @@
 
 - **A03 pilot GPO iki kullanıcıda otomatik kurulum kabulü (14 Kasım).** İlk kabulden sonra `kemal.savrun1` VV-Client01 konsolunda yeni oturum 6'yı açtı. 15:45:46 Türkiye saati giriş ilkesi sonucu 0 (8001) ve aynı işlemde pilot GPO uygulanabilir listede (5312). 15:45:47'de SYSVOL kurucusunun kullanıcı bağlamında yürütüldüğü PowerShell 4104 ile kaydedildi. Yapılandırma tekrar yazıldı, 15:45:56'da görev güncellendi (140) ve 15:45:57'de sonuç 0 (201). Yerel kurucu sürüm 2'deki imzalı SYSVOL betiğiyle aynı SHA-256 özetine sahip, görev Interactive/Limited, mevcut sertifika kaydı korunmuş ve `installed` durumda. Ethernet1 açık. Bu test, iki belirlenmiş kullanıcıyla imzalı manuel pilot GPO dağıtımını doğruladı. Etkin Connector üzerinden otomatik GPO yazma/geri alma ve genel dağıtım açık.
 
+- **A03 Linux dev.50 adayı (14 Kasım).** Canlı AuthWire Linux paneli dev.49 ve PR #163 öncesi kullanıcı kurucusunu sunuyor. İki kullanıcının doğruladığı SYSVOL düzeltmesini panelin ürettiği pakete taşımak için [PR #164](https://github.com/Asitavandas/kaname/pull/164) `efe6589acb811e0a8b8466911eaf1a40e62b4d6c` hazırlandı. Aday canlı dev.49 teslim kaynağına dayanıyor. Beş kaynak farkı PR #163 kurucusu ve Windows regresyonu, iki sürüm bildirimi ve değişiklik kaydıyla sınırlı. Accounting ve RADIUS kaynakları bu adayda değişmiyor. CI, paket/geri dönüş provası, canlı kurulum ve panelden güncel ZIP kabulü takipte.
+
 Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
 
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
