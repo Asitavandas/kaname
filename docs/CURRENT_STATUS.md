@@ -65,6 +65,8 @@
 
 - **A03 canlı dev.49 kullanıcı pilot ZIP indirme kabulü (14 Kasım).** VV-Client01 üzerinden mevcut panel hesabıyla AuthWire HTTPS oturumu açıldı ve pilot kullanıcı profiline ait ZIP canlı `/api/user-admin/package` yolundan HTTP 200 ile indirildi. Sekiz arşiv üyesi ve manifestteki yedi SHA-256 özeti doğrulandı. İki PowerShell şablonu ana daldaki PR #161 kaynaklarıyla eşleşti. Her betikte dört yapılandırma ve güven dosyasının sabitlenen özeti doğrulandı. Bu dört dosya VV-Client01'deki mevcut kurum imzalı yayın adayındaki dosyalarla birebir aynı. Panel çıktısı imzasız kaynak paketidir. ZIP SHA-256 `c8d4a0d95c2056bb59c98e6bf2ca1e41ed784e3227e154fc090b35a589d83c17`. Panel oturumu kapatıldı. GPO ve genel dağıtım açık.
 
+- **A03 pilot kullanıcı GPO yayını ve arka plan kabulü (14 Kasım).** `AuthWire-Pilot-User-Enrollment` (`09c0a225-6cc5-47a9-aac2-29022a82d89d`) iki pilot kullanıcının OU'suna bağlandı. Apply Group Policy yalnız `AuthWire-Pilot-Users` grubunda. Kullanıcı AD/SYSVOL sürümü 1, bilgisayar sürümü 0. SYSVOL'daki yedi dosya kurum imzalı yayın ZIP'iyle birebir eşleşti ve iki Authenticode imzası geçerli. `scripts.ini` girişte `AllSigned` ile imzalı kurucuyu çağırıyor. VV-Client01'de 13:45 Türkiye saati arka plan yenilemesinde her iki kullanıcı için GPO uygulanabilir listede (5312), Scripts uzantısı işleme tamamlandı (5016) ve kullanıcı policy sonucu 0 (8005). Yeni oturum açılışı ve betiğin girişte çalışması henüz doğrulanmadı. Genel dağıtım ve etkin Connector ile otomatik GPO yazma/geri alma kabulü açık.
+
 Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
 
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
