@@ -87,6 +87,8 @@
 
 - **G01/A04 Connector yazma kuyruğunda pilot GPO kapsamı (14 Kasım).** [PR #165](https://github.com/Asitavandas/kaname/pull/165) `3989906` ile isteğe bağlı tek pilot GPO kimliği sınırı yazma çekirdeğine eklendi. Sınır, inceleme ve tekrar edilen oluşturma isteklerinde, işin Connector'a verilmesinde ve yazma yetkisinde uygulanıyor. Kapsam değiştiğinde önceden verilmiş yetkinin doğrulanmış imzalı sonucu delil olarak korunuyor. Geri alma ayrı onay ve özgün stage makbuzuna bağlı. Yeni iki kapsam testi ve 58 testlik yazma/HTTPS regresyonu ayrı geçici kaynak/veritabanında geçti. Test kopyası kaldırıldı. Canlı panel ve RADIUS çalışıyor ve bu kod canlıya uygulanmadı. Pilot kapsamını panel ve Connector HTTPS yazma uçlarına bağlama, imzalı Windows yazıcısı ve gerçek DC01 saha kabulü açık.
 
+- **G01/A04 izole HTTPS pilotu (14 Kasım).** [Taslak PR #166](https://github.com/Asitavandas/kaname/pull/166) `abe40f7`, tek GPO sınırını yönetici inceleme ve görev oluşturma uçlarına, ayrıca Connector'ın imzalı `poll`, `claim` ve `result` uçlarına bağladı. Loopback HTTPS testinde kapsam dışı GPO, hatalı CSRF, yanlış peer anahtarı ve tekrarlanan claim reddedildi. Stage ve geri alma, ayrı onaylar ve imzalı sentetik sonuçlarla kaydedildi. 123 yerel regresyon testi geçti. Canlı servisler etkin. Bu adımda canlı kurulum, GPO uygulaması veya DC01 dosya yazması yapılmadı. İmzalı Windows yazıcısının korumalı işlem günlüğüyle DC01 saha kabulü açık. Toplam 56/94 tamam, 38 açık.
+
 Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
 
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
