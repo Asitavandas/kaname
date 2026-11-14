@@ -155,8 +155,19 @@ function Restore-AuthWireUpgrade {
  Wait-AuthWireUpgradeHealth $old $since
  Write-AuthWireUpgradeJournal $Journal $Record 'rolled_back'
 }
+function Get-AuthWireUpgradeTargetConfig {
+ param($Current,[guid]$ReleaseId,[int]$WritePilotPort)
+ $target=$Current|ConvertTo-Json -Depth 6|ConvertFrom-Json
+ $target.ReleaseId=$ReleaseId.ToString('D')
+ if($WritePilotPort){
+  $target|Add-Member -NotePropertyName WriteSchedulerEnabled -NotePropertyValue $true -Force
+  $target|Add-Member -NotePropertyName WritePilotPort -NotePropertyValue $WritePilotPort -Force
+ }
+ Assert-AuthWireServiceConfig $target
+ return $target
+}
 function Invoke-AuthWireServiceUpgradeCore {
- param([ValidateSet('Inspect','Prepare','Apply','Rollback')][string]$Mode='Inspect',[guid]$ConnectorId,[guid]$ExpectedCurrentRelease,[guid]$NewReleaseId,[string]$PublisherThumbprint,[string]$SourceDirectory=$PSScriptRoot)
+ param([ValidateSet('Inspect','Prepare','Apply','Rollback')][string]$Mode='Inspect',[guid]$ConnectorId,[guid]$ExpectedCurrentRelease,[guid]$NewReleaseId,[string]$PublisherThumbprint,[string]$SourceDirectory=$PSScriptRoot,[ValidateRange(1024,65535)][int]$WritePilotPort)
  Assert-AuthWireServiceAdmin;Initialize-AuthWireUpgradeNative
  if($ConnectorId -eq [guid]::Empty -or $ExpectedCurrentRelease -eq [guid]::Empty -or $NewReleaseId -eq [guid]::Empty -or $ExpectedCurrentRelease -eq $NewReleaseId){throw 'CONNECTOR_UPGRADE_RELEASE_REJECTED'}
  $root=Join-Path $env:ProgramW6432 ('AuthWire-Connector-'+$ConnectorId.ToString('N'))
@@ -176,8 +187,8 @@ function Invoke-AuthWireServiceUpgradeCore {
    if($v.Format -ne 1 -or $v.ConnectorId -cne $ConnectorId.ToString('D') -or $v.OldConfig.ReleaseId -cne $ExpectedCurrentRelease.ToString('D') -or $v.NewConfig.ReleaseId -cne $NewReleaseId.ToString('D')){throw 'CONNECTOR_UPGRADE_JOURNAL_REJECTED'}
    Assert-AuthWireServiceConfig $v.OldConfig;Assert-AuthWireServiceConfig $v.NewConfig
    if($v.OldConfig.RootPath -cne $root -or $v.NewConfig.RootPath -cne $root -or $v.OldConfig.PublisherThumbprint -cne $PublisherThumbprint -or $v.NewConfig.PublisherThumbprint -cne $PublisherThumbprint){throw 'CONNECTOR_UPGRADE_JOURNAL_REJECTED'}
-   $copy=$v.NewConfig|ConvertTo-Json -Depth 6|ConvertFrom-Json;$copy.ReleaseId=$v.OldConfig.ReleaseId
-   if(($copy|ConvertTo-Json -Depth 6 -Compress) -cne ($v.OldConfig|ConvertTo-Json -Depth 6 -Compress)){throw 'CONNECTOR_UPGRADE_CONFIG_CHANGED'}
+   $expected=Get-AuthWireUpgradeTargetConfig $v.OldConfig $NewReleaseId $WritePilotPort
+   if(($expected|ConvertTo-Json -Depth 6 -Compress) -cne ($v.NewConfig|ConvertTo-Json -Depth 6 -Compress)){throw 'CONNECTOR_UPGRADE_CONFIG_CHANGED'}
    $record=@{};foreach($p in $v.PSObject.Properties){$record[$p.Name]=$p.Value}
   }
   if($Mode -eq 'Rollback'){
@@ -190,7 +201,10 @@ function Invoke-AuthWireServiceUpgradeCore {
    $s=Get-AuthWireUpgradeService $old
    if($s.State -cne 'Running'){throw 'CONNECTOR_UPGRADE_RUNNING_SERVICE_REQUIRED'}
    if($record -and $record.Phase -notin @('prepared','rolled_back')){throw 'CONNECTOR_UPGRADE_INTERRUPTED_REQUIRES_ROLLBACK_REVIEW'}
-   $new=$old|ConvertTo-Json -Depth 6|ConvertFrom-Json;$new.ReleaseId=$NewReleaseId.ToString('D')
+   $new=Get-AuthWireUpgradeTargetConfig $old $NewReleaseId $WritePilotPort
+   if($Mode -eq 'Prepare' -and $WritePilotPort -and -not (Get-AuthWireConnectorWriteJournalReadiness $new).Ready){
+    throw 'CONNECTOR_UPGRADE_WRITE_JOURNAL_NOT_READY'
+   }
    if($Mode -eq 'Prepare' -and -not $record){
     if((Test-Path -LiteralPath $stage) -or (Test-Path -LiteralPath $archive) -or (Test-Path -LiteralPath $private)){throw 'CONNECTOR_UPGRADE_PATH_EXISTS_REQUIRES_REVIEW'}
     $security=[Security.AccessControl.DirectorySecurity]::new();$security.SetSecurityDescriptorSddlForm('O:BAG:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)');$null=[IO.Directory]::CreateDirectory($private,$security)
@@ -210,6 +224,7 @@ function Invoke-AuthWireServiceUpgradeCore {
    }
    if($Mode -eq 'Apply'){
     if(-not $record -or (Test-Path -LiteralPath $archive)){throw 'CONNECTOR_UPGRADE_PREPARATION_REQUIRED'}
+    if($WritePilotPort -and -not (Get-AuthWireConnectorWriteJournalReadiness $new).Ready){throw 'CONNECTOR_UPGRADE_WRITE_JOURNAL_NOT_READY'}
     try{
      Write-AuthWireUpgradeJournal $journal $record 'stopping';Stop-AuthWireUpgradeService $old.ServiceName
      Write-AuthWireUpgradeJournal $journal $record 'stopped'

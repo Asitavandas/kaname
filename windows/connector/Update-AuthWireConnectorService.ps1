@@ -4,7 +4,8 @@ param([ValidateSet('Inspect','Prepare','Apply','Rollback')][string]$Mode='Inspec
  [Parameter(Mandatory=$true)][guid]$ConnectorId,
  [Parameter(Mandatory=$true)][guid]$ExpectedCurrentRelease,
  [Parameter(Mandatory=$true)][guid]$NewReleaseId,
- [Parameter(Mandatory=$true)][ValidatePattern('^[0-9A-F]{40}$')][string]$PublisherThumbprint)
+ [Parameter(Mandatory=$true)][ValidatePattern('^[0-9A-F]{40}$')][string]$PublisherThumbprint,
+ [ValidateRange(1024,65535)][int]$WritePilotPort)
 $ErrorActionPreference='Stop';Set-StrictMode -Version 2
 # Generated reviewed source pins; customer input cannot expand the executor.
 $reviewed=@{
@@ -56,7 +57,7 @@ $reviewed=@{
  'ConnectorServiceControl.ps1'='A6BA90BB2AABD1BB0AD12F649A0E7EABBEDC54776194042A538D5FE8FEC3F97D'
  'Install-AuthWireConnectorService.ps1'='B82C8CEF7B625092517136E6A7A05E8AE82EF97B6FD1D65DC78AD2C36C3B4C3E'
  'Initialize-AuthWireConnectorChannelKey.ps1'='836FC43FEACB286239E556A1E2339E8AB141F1FE8363BF243764C087DDB0EECE'
- 'ConnectorServiceUpgrade.ps1'='366EDD58D2435B01DC13D8831B3768137D3CD4438F9C9B2284EDE59F19B4E976'
+ 'ConnectorServiceUpgrade.ps1'='AD4587269FF186CBBAD546F82BEB41F46F4A48A2AAA8B094E8C2D6357DA1BB3E'
 }
 $locks=@()
 try{
@@ -74,5 +75,7 @@ try{
   }
  }
  foreach($file in @('ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','ConnectorChannelKey.ps1','ConnectorChannelTypes.ps1','Compare-AuthWireSigningKeyAcl.ps1','New-AuthWireConnectorHealthProof.ps1','ConnectorServiceUpgrade.ps1')){. (Join-Path $PSScriptRoot $file)}
- Invoke-AuthWireServiceUpgradeCore -Mode $Mode -ConnectorId $ConnectorId -ExpectedCurrentRelease $ExpectedCurrentRelease -NewReleaseId $NewReleaseId -PublisherThumbprint $PublisherThumbprint -SourceDirectory $PSScriptRoot|ConvertTo-Json -Depth 6
+ $pilotArgs=@{}
+ if($PSBoundParameters.ContainsKey('WritePilotPort')){$pilotArgs.WritePilotPort=$WritePilotPort}
+ Invoke-AuthWireServiceUpgradeCore -Mode $Mode -ConnectorId $ConnectorId -ExpectedCurrentRelease $ExpectedCurrentRelease -NewReleaseId $NewReleaseId -PublisherThumbprint $PublisherThumbprint -SourceDirectory $PSScriptRoot @pilotArgs|ConvertTo-Json -Depth 6
 }finally{foreach($handle in $locks){$handle.Dispose()}}
