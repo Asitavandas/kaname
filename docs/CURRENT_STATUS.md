@@ -69,6 +69,8 @@
 
 - **A03 pilot GPO yeni oturum açılışı (14 Kasım).** `kemal.savrun2` VV-Client01'de yeni oturum açtı. 15:27:53 Türkiye saatinde GPO uygulanabilir listede (5312) ve giriş ilkesi sonucu 0 (8001). PowerShell olayları 400/4104, kullanıcı bağlamında SYSVOL'daki `AllSigned` kurucunun 15:27:59'da başladığını doğruladı. Aynı UNC yolu ve kullanıcıyla sonuç yakalanan geçici tanıda çıkış 1, `User enrollment reparse point refused.` alındı. Kurucunun dizin denetimi hem etki alanı hem DC01 SYSVOL yolundaki `SYSVOL\\vizyonveri.local` üst dizinini reparse point olarak görüyor. Mevcut kullanıcı görevi ayrı giriş tetikleyicisinde 0 ile tamamlandı ve sertifika/anahtar değişmedi. GPO logon dağıtımı tamamlanmadı. Sıradaki düzeltme, güvenilen pilot SYSVOL yolunu desteklerken yerel ve diğer ağ reparse korumalarını sürdürmektir.
 
+- **A03 SYSVOL yol düzeltmesi (14 Kasım).** [PR #163](https://github.com/Asitavandas/kaname/pull/163), yalnız etki alanı SYSVOL'undaki kullanıcı GPO Logon dizinini tanır ve tek beklenen etki alanı üst dizinini reparse kontrolünden muaf tutar. İmzalı paket domain'iyle eşleşme zorunludur. İki betik, güven dosyaları, alt dizinler ve yerel hedefte reparse kontrolü sürer. VV-Client01'de mevcut pilot UNC yolu ve altı dosya gerçek SYSVOL üzerinden yeni denetimle geçti. Yerel junction ve kapsam dışı yol olumsuz kontrolleri geçti, geçici dizin temizlendi. Yeni betiğin kurum imzası, pilot GPO'ya uygulanması ve yeni Windows oturumunda kurulum kabulü açık.
+
 Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
 
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
