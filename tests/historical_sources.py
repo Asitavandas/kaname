@@ -4,7 +4,7 @@ Historical archive/file pins stay exact when the current product advances.
 Current service source pin validation is independent of these fixtures.
 """
 # Current reviewed initializer for tests which compare against historical guards.
-SERVER_INIT_AST_SHA256 = '8298adcc18bd0358c8412111376d52f57a722a9a394a4d63440e9219ece5767f'
+SERVER_INIT_AST_SHA256 = '7cbcf1544ccd70bd22097510385ca98e0e81bf1e5c3632e0b4829bdf78fc790b'
 
 FROZEN = {
     'ConnectorServiceHost.cs': 'connector-host-dev45.cs',
