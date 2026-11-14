@@ -454,7 +454,6 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
             code, queued, _ = self.request('POST', ROOT+'/create', body, self.headers)
             self.assertEqual(200, code, queued)
             self.assertEqual('queued', queued['state'])
-            return body
 
         def run_peer(request, outcome):
             self.now = int(time.time())
@@ -469,6 +468,7 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
             self.assertTrue(grant['write_authorized'])
             self.assertFalse(grant['can_apply_gpo'])
             self.assertEqual(403, self.peer(CLAIM_PATH, raw)[0])
+            self.now = int(time.time())
             result = wf.StagingWriteJobTests.result(self, offer, grant)
             self.assertEqual(outcome, result['outcome'])
             for _ in range(2):
