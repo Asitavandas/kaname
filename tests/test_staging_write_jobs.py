@@ -95,6 +95,47 @@ class StagingWriteJobTests(unittest.TestCase):
         self.jobs.complete(self.proof('RESULT', result))
         return offer, authorization, result
 
+    def test_pilot_scope_blocks_review_and_leasing_for_other_gpos(self):
+        request = self.enqueue()
+        with self.store.connect() as db:
+            target = self.jobs._read(db)['jobs'][0]['target']
+        self.jobs = StagingWriteJobs(self.engine, wall_clock=lambda: self.now,
+                                     pilot_gpo_id=str(uuid.uuid4()))
+        with self.assertRaisesRegex(JobError, 'PILOT_SCOPE_CHANGED'):
+            self.jobs.review(self.value(), self.actor)
+        with self.assertRaisesRegex(JobError, 'PILOT_SCOPE_CHANGED'):
+            self.jobs.create(request, self.actor)
+        self.assertEqual('', self.jobs.poll(self.proof())['job_id'])
+        self.assertEqual('queued', self.jobs.status()['jobs'][0]['state'])
+        self.jobs = StagingWriteJobs(self.engine, wall_clock=lambda: self.now,
+                                     pilot_gpo_id=target['scope_target']['gpo_id'])
+        self.assertEqual(request['job_id'], self.jobs.poll(self.proof())['job_id'])
+
+    def test_pilot_scope_blocks_new_authority_but_preserves_previous_result(self):
+        offer = self.offer()
+        pilot = offer['target']['scope_target']['gpo_id']
+        self.jobs = StagingWriteJobs(self.engine, wall_clock=lambda: self.now,
+                                     pilot_gpo_id=str(uuid.uuid4()))
+        with self.assertRaisesRegex(JobError, 'CLAIM_CHANGED'):
+            self.authorize(offer)
+        self.jobs = StagingWriteJobs(self.engine, wall_clock=lambda: self.now,
+                                     pilot_gpo_id=pilot)
+        grant = self.authorize(offer)
+        result = self.result(offer, grant)
+        self.jobs = StagingWriteJobs(self.engine, wall_clock=lambda: self.now,
+                                     pilot_gpo_id=str(uuid.uuid4()))
+        # An authentic result for authority already issued remains evidence.
+        self.assertTrue(self.jobs.complete(self.proof('RESULT', result))['result_recorded'])
+        self.assertEqual('staged', self.jobs.status()['jobs'][0]['peer_reported_outcome'])
+        self.jobs = StagingWriteJobs(self.engine, wall_clock=lambda: self.now,
+                                     pilot_gpo_id=pilot)
+        self.assertTrue(self.jobs.complete(self.proof('RESULT', result))['result_recorded'])
+        self.enqueue(self.value(ROLLBACK, offer['job_id']))
+        rollback = self.jobs.poll(self.proof())
+        grant = self.authorize(rollback)
+        self.assertTrue(self.jobs.complete(self.proof('RESULT',
+                                                    self.result(rollback, grant)))['result_recorded'])
+
     def test_reconciliation_is_readonly_and_compares_full_result(self):
         offer = self.offer()
         authorization = self.authorize(offer)

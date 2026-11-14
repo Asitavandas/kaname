@@ -65,10 +65,17 @@ def intent_id(scope, identity, operation, target):
 
 class StagingWriteJobs(ConnectorJobs):
     """Trusted-caller ledger with an optional loopback transport probe."""
-    def __init__(self, candidates, **kwargs):
+    def __init__(self, candidates, *, pilot_gpo_id=None, **kwargs):
+        if pilot_gpo_id is not None and not guid(pilot_gpo_id):
+            raise ValueError('Pilot GPO must be a canonical UUID')
         super().__init__(candidates.registry, **kwargs)
+        self.pilot_gpo_id = pilot_gpo_id
         self.candidates = candidates
         self.previews = StagingPreviewJobs(candidates, wall_clock=self.clock)
+
+    def _in_pilot(self, target):
+        pilot = getattr(self, 'pilot_gpo_id', None)
+        return pilot is None or target['scope_target']['gpo_id'] == pilot
 
     def _proof(self, raw, binding, kind):
         require(kind in {'POLL', 'CLAIM', 'RESULT'})
@@ -215,6 +222,8 @@ class StagingWriteJobs(ConnectorJobs):
         return target
 
     def _current(self, db, ledger, j):
+        if not self._in_pilot(j['target']):
+            return False
         try:
             identity = j['target']['scope_target']['candidate_id']
             expected = (self._stage_target(db, identity, j['target']['writer_release_id']) if j['operation'] == STAGE
@@ -258,6 +267,7 @@ class StagingWriteJobs(ConnectorJobs):
         else:
             require(guid(value['stage_job_id']), 'STAGING_ROLLBACK_RECEIPT_REQUIRED')
             target = self._rollback_target(db, ledger, value['candidate_id'], value['stage_job_id'], last['release_id'])
+        require(self._in_pilot(target), 'STAGING_WRITE_PILOT_SCOPE_CHANGED')
         require(value['staging_preview_sha256'] == target['preview_record']['PreviewSha256'], 'STAGING_WRITE_PREVIEW_CHANGED')
         review = {'revision': revision, 'job_id': value['job_id'], 'operation': value['operation'],
                   'actor': actor, 'scope_sha256': scope, 'target': target,
@@ -280,6 +290,7 @@ class StagingWriteJobs(ConnectorJobs):
             db.execute('BEGIN IMMEDIATE'); scope = scope_id(self._binding(db)); ledger = self._read(db)
             old = next((j for j in ledger['jobs'] if j['id'] == value['job_id']), None)
             if old:
+                require(self._in_pilot(old['target']), 'STAGING_WRITE_PILOT_SCOPE_CHANGED')
                 require(old['creation_sha256'] == creation and old['scope'] == scope, 'STAGING_WRITE_ID_CONFLICT')
                 return {'job_id': old['id'], 'recorded': True, 'state': self._state(old, scope, int(self.clock())), 'can_apply_gpo': False}
             p = self._review(db, {k: value[k] for k in names - {'review_hash'}}, actor)
