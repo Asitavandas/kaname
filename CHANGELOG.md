@@ -1,3 +1,8 @@
+# 0.14.0-dev.49 — Linux pilot delivery candidate
+
+- Include the standard-user AuthWire enrollment and reinstallation fixes from PR #161.
+- Retain the pilot RADIUS Accounting, event history, and diagnostics from PR #160.
+
 # 0.14.0-dev.48 — Linux pilot delivery candidate
 
 - Record and recheck operator decisions for refused staging jobs against the
