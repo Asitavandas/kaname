@@ -1,3 +1,7 @@
+# 0.14.0-dev.50 — Linux pilot delivery candidate
+
+- Include the signed user enrollment installer SYSVOL compatibility fix from PR #163.
+
 # 0.14.0-dev.49 — Linux pilot delivery candidate
 
 - Include the standard-user AuthWire enrollment and reinstallation fixes from PR #161.
