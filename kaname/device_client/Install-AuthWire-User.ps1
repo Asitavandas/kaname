@@ -10,10 +10,16 @@ function Get-AuthWireUserContext {
         return $sid
     } finally { $identity.Dispose() }
 }
-function Assert-AuthWireUserPath([string]$Path) {
+function Get-AuthWireUserSysvolRoot([string]$Directory) {
+    # Only the domain namespace link used by a User Configuration logon GPO.
+    $pattern='^(?<root>\\\\(?<domain>[a-z0-9-]+(?:\.[a-z0-9-]+)+)\\SYSVOL\\\k<domain>)\\Policies\\\{[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\}\\User\\Scripts\\Logon\z'
+    $match=[regex]::Match($Directory,$pattern,[Text.RegularExpressions.RegexOptions]::IgnoreCase -bor [Text.RegularExpressions.RegexOptions]::CultureInvariant)
+    if($match.Success){return $match.Groups['root'].Value}
+}
+function Assert-AuthWireUserPath([string]$Path,[string]$SysvolRoot) {
     $item=[IO.Path]::GetFullPath($Path)
     while($item) {
-        if((Test-Path -LiteralPath $item) -and ((Get-Item -LiteralPath $item -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'User enrollment reparse point refused.' }
+        if($item -ine $SysvolRoot -and (Test-Path -LiteralPath $item) -and ((Get-Item -LiteralPath $item -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'User enrollment reparse point refused.' }
         $parent=[IO.Directory]::GetParent($item)
         $item=if($parent){$parent.FullName}else{$null}
     }
@@ -40,10 +46,13 @@ function Get-AuthWireUserHash([byte[]]$Bytes) {
     try { return [BitConverter]::ToString($hash.ComputeHash($Bytes)).Replace('-','').ToLowerInvariant() } finally { $hash.Dispose() }
 }
 function Assert-AuthWireUserPackage([string]$Directory) {
-    Assert-AuthWireUserPath $Directory
+    $sysvolRoot=Get-AuthWireUserSysvolRoot $Directory
+    Assert-AuthWireUserPath $Directory $sysvolRoot
     $publisher=$null
     foreach($name in @('Install-AuthWire-User.ps1','AuthWire-User-Client.ps1')) {
-        $signature=Get-AuthenticodeSignature (Join-Path $Directory $name)
+        $file=Join-Path $Directory $name
+        Assert-AuthWireUserPath $file $sysvolRoot
+        $signature=Get-AuthenticodeSignature -LiteralPath $file
         if($signature.Status -ne 'Valid') { throw 'Valid enterprise Authenticode signatures are required.' }
         if(!$publisher){$publisher=$signature.SignerCertificate.Thumbprint}
         if($signature.SignerCertificate.Thumbprint -ne $publisher) { throw 'User scripts must have the same trusted publisher.' }
@@ -54,13 +63,14 @@ __AUTHWIRE_USER_ASSET_HASHES__
     $verified=@{}
     foreach($asset in $expected.PSObject.Properties) {
         if($asset.Name -notin @('config.json','root-ca.pem','issuer-ca.pem','https-trust.pem')) { throw 'Unexpected user package asset.' }
-        $file=Join-Path $Directory $asset.Name;Assert-AuthWireUserPath $file
+        $file=Join-Path $Directory $asset.Name;Assert-AuthWireUserPath $file $sysvolRoot
         $bytes=[IO.File]::ReadAllBytes($file)
         if((Get-AuthWireUserHash $bytes) -ine $asset.Value) { throw 'Signed user package asset was changed.' }
         $verified[$asset.Name]=$bytes
     }
     foreach($required in @('config.json','root-ca.pem','issuer-ca.pem')) { if(!$verified.ContainsKey($required)){throw 'Incomplete user package.'} }
     $config=[Text.Encoding]::UTF8.GetString($verified['config.json'])|ConvertFrom-Json
+    if($sysvolRoot -and $sysvolRoot -ine ('\\'+$config.domain+'\SYSVOL\'+$config.domain)) { throw 'User package SYSVOL domain mismatch.' }
     $uri=[Uri]$config.url
     if($config.kind -cne 'user' -or $uri.Scheme -ne 'https' -or $uri.HostNameType -ne [UriHostNameType]::Dns -or $config.spn -cne ('HTTP/'+$uri.DnsSafeHost) -or $uri.AbsolutePath -ne '/' -or $uri.Query -or $uri.Fragment -or $uri.UserInfo -or $config.url.EndsWith('/') -or $config.tls_sha256 -cnotmatch '^[0-9a-f]{64}$') { throw 'Invalid user HTTPS/SPN configuration.' }
     $null=Get-AuthWireUserTarget $config.profile_id
