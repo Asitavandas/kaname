@@ -33,7 +33,7 @@ function Initialize-AuthWireUserDirectory([string]$Directory,[string]$Profile,[s
     foreach($principal in @($Sid,'S-1-5-18','S-1-5-32-544')) {
         $acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule((New-Object Security.Principal.SecurityIdentifier($principal)),'FullControl','ContainerInherit,ObjectInherit','None','Allow')))
     }
-    Set-Acl -LiteralPath $Directory -AclObject $acl
+    [IO.Directory]::SetAccessControl($Directory, $acl)
 }
 function Get-AuthWireUserHash([byte[]]$Bytes) {
     $hash=[Security.Cryptography.SHA256]::Create()
@@ -120,7 +120,18 @@ try {
     $store=New-Object Security.Cryptography.X509Certificates.X509Store('CA','CurrentUser')
     try {$store.Open('ReadWrite');$store.Add($cert)}finally{$store.Close();$cert.Dispose()}
     $existing=Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
-    if($existing -and ($existing.Description -ne 'AuthWire managed user certificate enrollment' -or $existing.Principal.UserId -notin @($sid,[Security.Principal.WindowsIdentity]::GetCurrent().Name))){throw 'Unexpected existing user enrollment task.'}
+    if($existing) {
+        $principal=[string]$existing.Principal.UserId
+        try {
+            $principalSid=if($principal -eq $sid) { $sid } else {
+                ([Security.Principal.NTAccount]::new($principal)).Translate([Security.Principal.SecurityIdentifier]).Value
+            }
+        } catch { throw 'Unexpected existing user enrollment task.' }
+        if($existing.Description -ne 'AuthWire managed user certificate enrollment' -or $principalSid -ne $sid -or
+            $existing.Principal.LogonType -ne 'Interactive' -or $existing.Principal.RunLevel -ne 'Limited'){
+            throw 'Unexpected existing user enrollment task.'
+        }
+    }
     $xml=Get-AuthWireUserTaskXml $sid (Join-Path $target 'Install-AuthWire-User.ps1')
     $null=Register-ScheduledTask -TaskName $taskName -Xml $xml -Force
     $scheduler=New-Object -ComObject 'Schedule.Service';$scheduler.Connect()
