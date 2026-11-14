@@ -50,6 +50,29 @@ exit 0
     & (Join-Path $package 'Install-AuthWire-User.ps1')
     if($LASTEXITCODE -and $LASTEXITCODE -ne 0){throw 'User installer failed.'}
     . (Join-Path $package 'Install-AuthWire-User.ps1') -ValidateOnly
+    $domainRoot='\\lab.example\SYSVOL\lab.example'
+    $policyPath=$domainRoot+'\Policies\{ec2ee012-ab27-49c1-8c78-b3c60f8b2e9c}\User\Scripts\Logon'
+    Check ((Get-AuthWireUserSysvolRoot $policyPath) -ceq $domainRoot) 'Domain SYSVOL logon root not recognized.'
+    foreach($path in @(
+        ($policyPath+'\nested'),
+        ($policyPath.Replace('\User\','\Machine\')),
+        ($policyPath.Replace('\\lab.example\','\\dc01.lab.example\')),
+        ($policyPath.Replace('\SYSVOL\lab.example\','\SYSVOL\other.example\')),
+        'C:\AuthWire\Logon'
+    )) {
+        Check (!(Get-AuthWireUserSysvolRoot $path)) 'Unexpected path received a SYSVOL exception.'
+    }
+    $guardProbe=Join-Path $package 'reparse-probe'
+    $null=New-Item -ItemType Junction -Path $guardProbe -Target $package
+    try {
+        $refused=$false
+        try { Assert-AuthWireUserPath $guardProbe $domainRoot } catch {
+            $refused=$_.Exception.Message -eq 'User enrollment reparse point refused.'
+        }
+        Check $refused 'A local junction passed the package path guard.'
+    } finally {
+        [IO.Directory]::Delete($guardProbe)
+    }
     $target=Get-AuthWireUserTarget $profile;$sid=Get-AuthWireUserContext;$taskName='AuthWire User Enrollment '+$sid+' '+$profile
     $task=Get-ScheduledTask -TaskName $taskName;$xml=[xml](Export-ScheduledTask -TaskName $taskName)
     Check ([string]$task.Principal.LogonType -eq 'Interactive') 'User task must use the logged-in user token.'
