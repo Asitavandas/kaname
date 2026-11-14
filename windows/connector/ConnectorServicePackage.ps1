@@ -24,9 +24,9 @@ function Get-AuthWireReviewedPayloadHashes {
  'CombinedStagingPreview.ps1'='B141175A0B16B1B2B5687DA4A515D24EEA2B8DAAB5D11106F9382B5D514281B9'
  'Invoke-AuthWireStagingPreviewJob.ps1'='949D805820F9C19AA2B42FF15C0CF1AF0D3D472A0D1E9984FF86E4C061C623A7'
  'Read-AuthWireCombinedStagingPreview.ps1'='2BE2E3CB48C3D10B2AB033F9952D846655271EA1E62487188186B938E449D534'
- 'ConnectorWriteServiceRuntime.ps1'='2F4A3AD0F4E5B75B64A6CCE8B0DE32CF0A8D25CA468471D046D7B68844089BEA'
+ 'ConnectorWriteServiceRuntime.ps1'='DD44B8392D868176676F5B4E7660008D9B2C90BBFF89D746C43124E35EE685DC'
  'StagingFilesystem.ps1'='D45CFC86D4508737D951AE68C2D54C5446B678BEBD3A88FD946FF7180A6A54AC'
- 'StagingWritePreclaim.ps1'='CFF553BB69C170CB9B39A8A476B2193743ED86B537C28BEEE38BE242B7537C4D'
+ 'StagingWritePreclaim.ps1'='AE1E1BB5D1DFD51CFCD5F1D42240181D4469CD7A5A683CBB285BF2418485D7F6'
  'StagingWriteTransport.ps1'='1FB72C2D75677A5A3FB6085FC4B5EB6B5BBF711AD193C143643D6629A52D1693'
  'StagingWriteConsumption.ps1'='F66733483B40424E82823B71D558B527FFD5350302359C560159F7B7AD139182'
  'StagingWriteProcess.ps1'='D5812DD81979E04F1BB4041CF0279021649346F0B53BC8E18015DDF3320B800A'
@@ -123,6 +123,12 @@ function Assert-AuthWireServiceConfig {
   if($Config.PSObject.Properties['WriteSchedulerEnabled'].Name -cne 'WriteSchedulerEnabled' -or $Config.WriteSchedulerEnabled -isnot [bool]){throw 'CONNECTOR_CONFIG_REJECTED'}
   $fields+= 'WriteSchedulerEnabled'
  }
+ if($Config.PSObject.Properties['WritePilotPort']){
+  if($Config.PSObject.Properties['WritePilotPort'].Name -cne 'WritePilotPort' -or
+     -not $Config.PSObject.Properties['WriteSchedulerEnabled'] -or -not $Config.WriteSchedulerEnabled -or
+     $Config.WritePilotPort -isnot [int] -or $Config.WritePilotPort -lt 1024 -or $Config.WritePilotPort -gt 65535){throw 'CONNECTOR_CONFIG_REJECTED'}
+  $fields+='WritePilotPort'
+ }
  if(@($Config.PSObject.Properties).Count -ne $fields.Count -or @($Config.PSObject.Properties.Name|Where-Object{$_ -notin $fields}).Count -or $Config.Version -isnot [int] -or $Config.Version -ne 1){throw 'CONNECTOR_CONFIG_REJECTED'}
  $id=[guid]::Empty
  if(-not [guid]::TryParseExact($Config.ReleaseId,'D',[ref]$id) -or $id -eq [guid]::Empty){throw 'CONNECTOR_CONFIG_REJECTED'}
@@ -147,6 +153,7 @@ function Assert-AuthWireServiceConfig {
   $Config.AccountName -cnotmatch '\A[A-Za-z0-9][A-Za-z0-9.-]{0,252}\\[A-Za-z0-9][A-Za-z0-9-]{0,19}\$?\z' -or
   $Config.KeyName -cnotmatch ('\AAuthWire-Channel-'+([guid]$binding.connector_id).ToString('N')+'-[0-9a-f]{32}\z') -or
   -not [uri]::TryCreate($Config.BaseUrl,[UriKind]::Absolute,[ref]$uri) -or $uri.Scheme -cne 'https' -or $uri.Host -cne $binding.appliance_fqdn -or $uri.AbsolutePath -cne '/' -or $uri.Query -ne '' -or $uri.Fragment -ne '' -or $uri.UserInfo -ne ''){throw 'CONNECTOR_CONFIG_REJECTED'}
+ if($Config.PSObject.Properties['WritePilotPort'] -and $Config.WritePilotPort -eq $uri.Port){throw 'CONNECTOR_CONFIG_REJECTED'}
  $descriptor=[Security.AccessControl.RawSecurityDescriptor]::new($Config.ExpectedKeySddl)
  if(-not $descriptor.DiscretionaryAcl){throw 'CONNECTOR_CONFIG_REJECTED'}
 }

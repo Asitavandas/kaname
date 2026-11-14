@@ -57,7 +57,26 @@ try{
  $root=Join-Path $env:ProgramW6432 ('AuthWire-Connector-'+$id)
  if(Test-Path -LiteralPath $root){$root=$null;throw 'Fixture package directory collision'}
  $config=@{Version=1;ReleaseId=[guid]::NewGuid().ToString('D');ServiceName=$name;AccountName=$credential.UserName;PublisherThumbprint=$publisher.Thumbprint;BaseUrl=('https://'+$b.appliance_fqdn+':'+$base.port+'/');Binding=$b;KeyName=$key;ExpectedKeySddl=$receipt.ExpectedKeySddl;RootPath=$root}|ConvertTo-Json -Depth 6|ConvertFrom-Json
- if($WriteSchedulerOnly){$config|Add-Member -NotePropertyName WriteSchedulerEnabled -NotePropertyValue $true}
+ if($WriteSchedulerOnly){
+  . (Join-Path $source 'StagingWritePreclaim.ps1')
+  $config|Add-Member -NotePropertyName WriteSchedulerEnabled -NotePropertyValue $true
+  Check ((Get-AuthWireWriteTransportBaseUrl $config) -ceq $config.BaseUrl) 'Writer defaults to the existing endpoint'
+  $pilot=$config|ConvertTo-Json -Depth 6|ConvertFrom-Json
+  $port=if(([uri]$config.BaseUrl).Port -eq 18765){18766}else{18765}
+  $pilot|Add-Member -NotePropertyName WritePilotPort -NotePropertyValue $port
+  Assert-AuthWireServiceConfig $pilot
+  Check ((Get-AuthWireWriteTransportBaseUrl $pilot) -ceq ('https://'+$b.appliance_fqdn+':'+$port+'/')) 'Writer uses the peer-only HTTPS port'
+  Check ($pilot.BaseUrl -ceq $config.BaseUrl) 'Write port leaves the package and enrollment endpoint intact'
+  foreach($badPort in @('18765',1023,65536,([uri]$config.BaseUrl).Port)){
+   $pilot.WritePilotPort=$badPort
+   Reject {Assert-AuthWireServiceConfig $pilot} 'Invalid package write port rejected'
+   Reject {Get-AuthWireWriteTransportBaseUrl $pilot} 'Invalid transport write port rejected'
+  }
+  $pilot.WritePilotPort=$port
+  $pilot.WriteSchedulerEnabled=$false
+  Reject {Assert-AuthWireServiceConfig $pilot} 'Write port requires explicit writer enablement'
+  Reject {Get-AuthWireWriteTransportBaseUrl $pilot} 'Transport requires explicit writer enablement'
+ }
  $buildSource=Join-Path $Directory 'reviewed-source';$null=New-Item -ItemType Directory -Path $buildSource
  $sources=@('ConnectorServiceHost.cs','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Install-AuthWireConnectorService.ps1','New-AuthWireConnectorServicePackage.ps1','Initialize-AuthWireConnectorChannelKey.ps1','ConnectorServiceUpgrade.ps1','Update-AuthWireConnectorService.ps1')
  $sources+=@(Get-AuthWireServicePayloadNames ([pscustomobject]@{WriteSchedulerEnabled=$true}))
