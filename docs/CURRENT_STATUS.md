@@ -59,6 +59,8 @@
 
 - **A03 kurum imzalı pilot yayın adayı (14 Kasım).** VV-Client01 üzerindeki korumalı pilot dizininde, iki betiğin kurum Authenticode imzası ve dört varlığın imzalı özetleri doğrulandı. İmza bloğu ve varlık değerleri ayrıştırılarak betik gövdeleri ana dal `0f10035` kaynaklarıyla karşılaştırıldı. Doğrulanan mevcut imzalar kullanılarak `SignedRelease-0f10035/AuthWire-User-Pilot-0f10035-signed.zip` oluşturuldu. Yedi dosyalı ZIP açılarak her dosya özeti, iki geçerli imza ve `AllSigned -ValidateOnly` yeniden doğrulandı. ZIP SHA-256 `b2a84c46077835d30f4d381381a8f417f1f1f729a035568a2f0a16c5b015f02d`. Geçici derleme dizini kaldırıldı. Aday mevcut kullanıcı pilot profiline bağlı; canlı panel güncellemesi, SYSVOL/GPO dağıtımı ve genel yayın açık.
 
+- **A03 Linux dev.49 teslim adayı ve geri dönüş provası (14 Kasım).** [PR #162](https://github.com/Asitavandas/kaname/pull/162) adayı `d241a77d0fa169d17da8ba6721ba47ac44b0f98e`, canlı dev.48'deki Accounting koduyla eşleşen PR #160 kaynağı üzerine hazırlandı. CI arşivinde ve Linux güncelleyicisiyle 337 kaynak dosyası doğrulandı. Kurulu kaynakla karşılaştırmada 333 dosya aynı, dört fark iki kullanıcı betiği ve iki sürüm bildirimi. 40 hedefli test geçti. Ayrı test veritabanında dev.48 → dev.49 → dev.48 geçişinde üç HTTPS 200 ve aynı ayar/yönetici koruma özeti görüldü. Planlı canlı yedeğin SHA-256 özeti yeniden eşleşti. Canlı panel ve RADIUS çalışır durumda kaldı. CI paketinin manifest özeti `e382d229dbb224e462f307d1a6e8b27cc31dabbc52082758660b516b0a241bf8`. Canlı dev.49 kurulumu ve genel dağıtım ayrı takipte.
+
 Saha kanıtı [pilot kaydında](https://github.com/Asitavandas/kaname/pull/160).
 
 ## Dev.45 canlı Linux güncellemesi kabul edildi — 4 Kasım 2026
