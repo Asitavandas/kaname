@@ -1,7 +1,6 @@
-# Yazma/geri alma yönetici incelemesi — yürütme kapalı
+# Yazma ve geri alma yönetici incelemesi
 
-29 Ekim 2026. Bu değişiklik kaynak/test entegrasyonudur; müşteri Linux veya Windows
-paketine teslim edilmiş değildir. StagingFilesystem çağrısı ve canlı dosya yazması yoktur.
+14 Kasım 2026. İzole HTTPS pilotu kaynak ve test kapsamındadır. Windows dosya sistemi ve canlı GPO üzerinde işlem yapmaz.
 
 ## HTTP sözleşmesi
 
@@ -15,14 +14,26 @@ paketine teslim edilmiş değildir. StagingFilesystem çağrısı ve canlı dosy
   İnceleme actor UUID'sini oturumdan alır; istemci actor/path/command veremez.
   Mevcut revision, ayrı stage/rollback ack, aday/içerik/binding/kapsam ve taze
   90 saniyelik önizleme kapıları protokol çekirdeğinde aynen korunur.
-  `review_only=true`; ledger, audit veya revision yazılmaz.
+  Varsayılan hizmette `review_only=true`. İnceleme ledger, audit veya revision yazmaz.
 - `POST /api/deployment/staging-write/create`: aynı güvenlik kapılarından sonra
-  koşulsuz `409 STAGING_WRITE_EXECUTION_UNAVAILABLE`. Geçerli review hash'i veya
-  tekrar istek dahi job oluşturmaz. Bunu açan environment/config/istek anahtarı yoktur.
+  varsayılan hizmette `409 STAGING_WRITE_EXECUTION_UNAVAILABLE` döndürür. Canlı
+  komut satırı, environment ve HTTP isteği pilot modunu etkinleştiremez.
 - Varsayılan hizmette `staging-write/poll` kapalıdır. Yalıtılmış kabul için
   loopback HTTPS sunucusu bu ucu açıkça etkinleştirebilir. İmzalı yoklama
   yalnızca boş yanıt alır. Kuyruktaki işler ve yazıcı hazırlık kaydı korunur.
-  `claim`, `result` ve apply/execute uçları kayıtlı değildir.
+  Bu probe modunda `claim`, `result` ve apply/execute uçları kayıtlı değildir.
+
+## İzole tek GPO pilotu
+
+Yalnız loopback TLS sunucusu `DevelopmentServer` oluşturulurken kanonik
+`staging_write_pilot_gpo_id` ile pilot kapsamı tanımlanabilir. Boş yanıt veren probe
+modu aynı anda açılamaz. İzole pilotta yönetici incelemesi ve iş oluşturma ile
+Connector'ın imzalı `poll`, `claim` ve `result` çağrıları aynı GPO sınırını kullanır.
+Stage ve rollback ayrı inceleme, güncel revizyon, onay ve inceleme özeti ister.
+Connector işlemleri kayıtlı peer anahtarını kullanır. Panel oturumu ve CSRF, görev
+oluşturma için yeniden doğrulanır. `can_apply_gpo=false` ve apply/execute rotaları
+kapalı kalır. Testteki peer sonuçları sentetiktir. Fiilî dosya etkisi ve Windows
+Connector kabulü ayrı saha adımlarıdır.
 
 ## Uzlaştırma kararı
 
@@ -64,8 +75,9 @@ Connector kapsamını, kayıtlı ret sonucunu ve GPO üzerindeki diğer işleri
 tek SQLite okuma işleminde yeniden denetler. Başarılı yanıt `approval_verified`
 ve kanıt özetini içerir. Doğrulama yalnızca okuma yapar.
 
-Yeni durum/review sonuçlarında `approval_enabled`, `write_authorization_enabled`,
-`execution_adapter_available`, `can_apply_gpo` daima false'tur. Review hash'i kullanıcı
+Varsayılan hizmette durum ve inceleme sonuçlarında `approval_enabled`,
+`write_authorization_enabled`, `execution_adapter_available` ve `can_apply_gpo`
+false'tur. İzole pilotta ilk üç bayrak HTTP yazma akışının ulaşılabilirliğini gösterir. Review hash'i kullanıcı
 kimlik doğrulaması veya yürütme izni değildir. Core'un `read_only=false` alanı gelecekte
 incelenecek stage/rollback işleminin etkisini tarif eder; HTTP çağrısının etkisi
 `review_only=true` ile ayrılır. Mevcut kurulu Windows worker write capability
@@ -97,7 +109,6 @@ doğrulama/önizleme davranışları. CI sonuçları checkpoint'e ayrıca kayded
 
 Sırada bounded Windows CLAIM/live-scope adapter'ı ve protected yerel durable kayıt,
 kayıp yanıt/kesinti/journal uzlaştırma ve partial recovery, strict backup projection,
-gerçek yönetici onay formu/create ve peer rotalarının bu kapılardan sonra açılması,
-imzalı teslim ve gerçek gMSA/SMB kabulü vardır. GPO aktivasyonu ayrıca açık kapıdır.
+gerçek yönetici onay formu, imzalı teslim ve gerçek gMSA/SMB kabulü vardır. GPO aktivasyonu ayrıca açık kapıdır.
 512 hedef sözleşmesi korunur. Bu değişiklik kurulu sürümü/ayarları veya gerçek
 kapasite/saha kabulünü değiştirmez; tam veri yedeği almaz.

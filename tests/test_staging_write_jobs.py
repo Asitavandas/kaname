@@ -498,10 +498,7 @@ class StagingWriteJobTests(unittest.TestCase):
             self.jobs.complete(self.proof('RESULT', result | {'padding': 'x' * 2000}))
 
     def test_internal_service_has_no_execution_or_general_command_entrypoint(self):
-        from pathlib import Path
-        server = Path(__file__).parents[1] / 'kaname' / 'server.py'
-        self.assertNotIn(CLAIM_PATH, server.read_text())
-        self.assertNotIn(RESULT_PATH, server.read_text())
+        self.assertFalse(hasattr(self.jobs, 'apply'))
         self.assertFalse(hasattr(self.jobs, 'execute'))
         self.assertFalse(self.jobs.status()['can_apply_gpo'])
 
