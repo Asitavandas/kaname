@@ -1,5 +1,13 @@
 # AuthWire current work record
 
+## 15 Kasım AuthWire pilot saha durumu
+
+**Güncel teyitli sayım (15 Kasım 2026):** 94 alt işin 57'si tamam (%60,6), 37'si açık. Temel ürün 47/59, yedi geliştirme paketi 10/35. B11 3/5.
+
+- **B11 Accounting saklama ve arşivleme alt işi tamamlandı.** Canlı AuthWire Linux sunucusunda kurulu bakım komutu, 90 günlük canlı saklama eşiğiyle kalıcı `authwire-accounting-retention.timer` birimine bağlandı. Zamanlayıcı her gün 04:10 Türkiye saatinde çalışır. 15 Kasım 11:16:42 Türkiye saatindeki ilk gerçek tetiklemenin sonucu 0. Canlı veritabanındaki uygun kapalı oturum ve olay sayısı 0 olduğu için kayıt silinmedi. 14 Kasım provasındaki doğrulanmış arşivden sonra temizleme, açık oturumu koruma ve tekrar çalıştırma sonucu geçerlidir. Arşiv dizini `/var/lib/authwire-accounting-archive`, sahibi `kaname-lab`, izinleri 0700. Son kontrolde zamanlayıcı etkin, sıradaki çalışma 16 Kasım 04:10 ve RADIUS PID 1323. B11 gerçek NAS Interim-Update ve Class ile oturum eşlemesi açık.
+- **A03 doğal geçiş iptali doğrulandı.** Kullanıcıya ait eski sertifika 10:21:52 Türkiye saatinde `superseded` olarak otomatik iptal edildi. RADIUS, doğrulanmış CRL #86'yı 10:22:01'de yükledi. Yeni sertifika Windows'ta ve sunucu kaydında geçerli. Yenileme ve EAP-TLS saha testleri tekrar çalıştırılmadı.
+- **G01/A04 sonraki çalışma.** İmzalı Connector servis geçişi ve geri dönüşü DC01'de doğrulandı. Cevapsız ilk yazıcı yoklaması Windows günlüğünde durdu. Linux revizyon 109'da yazma defteri ve yetkilendirilmiş iş olmadığı doğrulandı. Tek GPO ve mevcut üç bilgisayar kapsamı için Linux izole kuyruğu geçici systemd servisiyle hazırlandı. HTTPS sağlık kontrolü geçti, dinleyici `127.0.0.1:18765`, iş sayısı 0. Sırada korunan DC01 günlüğünün ele alınması, izole kuyruğa Connector bağlantısı ve gerçek hazırlama/geri alma makbuzları var.
+
 ## 13 Kasım AuthWire pilot saha durumu
 
 **Güncel teyitli sayım (14 Kasım 2026):** 94 alt işin 56'sı tamam (%59,6), 38'i açık. Temel ürün 46/59, yedi geliştirme paketi 10/35. 12 Kasım sayımından bu yana B07 ve B09'un son alt işleri kapandı.
