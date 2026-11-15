@@ -1,4 +1,4 @@
-"""Panel preparation only. No network IO and no runtime policy activation."""
+"""Panel preparation with live validation of OU drafts where supported."""
 import uuid
 
 from .directory import validate_search_base
@@ -20,9 +20,10 @@ def object_id(value, *, new=False):
 
 
 class Planning:
-    def __init__(self, operations):
+    def __init__(self, operations, *, ou_scope=None):
         self.ops = operations
         self.store = operations.store
+        self.ou_scope = ou_scope
 
     def _list(self, section):
         # Read data and the global lease from the same SQLite snapshot.
@@ -132,6 +133,9 @@ class Planning:
                 'domain': domain, 'selector_type': kind, 'target_ids': ids, 'targets': targets,
                 'ou_dn': ou, 'action': action, 'vlan': vlan, 'access_types': access,
                 'status': 'draft', 'runtime_applied': False}
+        if kind == 'ou' and self.ou_scope is not None:
+            scope = self.ou_scope(expected, ou)
+            item.update(ou_dn=scope['ou_dn'], ou_scope=scope['scope'])
         self._write('policy_drafts', expected, item)
         return self.drafts()
 

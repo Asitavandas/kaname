@@ -105,3 +105,26 @@ class PlanningTests(unittest.TestCase):
         self.assertEqual('none', permissions('Custom', {'network.radius': 'write'})['network.devices'])
         self.assertEqual('read', permissions('Admin_ReadOnly', {})['network.devices'])
         self.assertEqual('write', permissions('SuperAdmin', {})['network.devices'])
+
+    def test_ou_draft_saves_only_after_exact_live_scope_validation(self):
+        dn = 'OU=Child,OU=Parent,DC=lab,DC=example'
+        request = draft(selector_type='ou', target_ids=[], ou_dn=dn)
+        before = self.store.snapshot()
+        calls = []
+
+        def validate(revision, observed):
+            calls.append((revision, observed))
+            if observed != dn:
+                raise ValidationError('AD_SCOPE_NOT_FOUND')
+            return {'ou_dn': dn, 'scope': 'subtree'}
+
+        planner = Planning(self.ops, ou_scope=validate)
+        with self.assertRaisesRegex(ValidationError, 'AD_SCOPE_NOT_FOUND'):
+            planner.save_draft(2, request | {'ou_dn': 'OU=Missing,DC=lab,DC=example'})
+        self.assertEqual([], planner.drafts()['items'])
+        result = planner.save_draft(2, request)
+        self.assertEqual('subtree', result['items'][0]['ou_scope'])
+        self.assertEqual(dn, result['items'][0]['ou_dn'])
+        self.assertFalse(result['items'][0]['runtime_applied'])
+        self.assertEqual((2, dn), calls[-1])
+        self.assertEqual(before['policies'], self.store.snapshot()['policies'])
