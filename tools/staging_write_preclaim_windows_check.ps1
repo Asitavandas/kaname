@@ -397,7 +397,7 @@ namespace AuthWire.PreclaimFixture {
  Check ((Get-AuthWireCandidateHash (Read-AuthWireCandidateBytes $preflightPath 65536)) -ceq $preflightBefore) 'failed child never replaces earlier preflight record'
  . (Join-Path $readerPackage 'StagingWriteConsumption.ps1')
  $code='';try{Read-AuthWireWriteIntentContext $readerJournal $readerOffer.job_id $readerOffer $b ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+30)|Out-Null}catch{$code=$_.Exception.Message}
- Check ($code -ceq 'WRITE_INTENT_PREFLIGHT_FAILED') 'actual fixed AllSigned intent reader refuses config before AD'
+ Check ($code -ceq 'WRITE_INTENT_PREFLIGHT_CHILD_FAILED') 'actual fixed AllSigned intent reader reports a nonzero child exit before AD'
  $slow=Join-Path $readerPackage 'bounded-fixture.ps1';[IO.File]::WriteAllText($slow,'Start-Sleep -Seconds 3');$null=Set-AuthenticodeSignature -FilePath $slow -Certificate $signer -HashAlgorithm SHA256
  $timer=[Diagnostics.Stopwatch]::StartNew();$read=[AuthWire.Connector.ScopeProcessV1]::Run($exe,('-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$slow+'"'),200);$timer.Stop()
  Check ($read.TimedOut -and $timer.ElapsedMilliseconds -lt 5000) 'actual AllSigned timeout is bounded'

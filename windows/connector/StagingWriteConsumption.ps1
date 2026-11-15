@@ -72,9 +72,11 @@ function Read-AuthWireWriteIntentContext([string]$JournalRoot,[string]$JobId,$Of
  $file=Join-Path $PSScriptRoot 'Read-AuthWireStagingWritePreflight.ps1'
  $exe=Join-Path ([Environment]::GetFolderPath('Windows')) 'System32\WindowsPowerShell\v1.0\powershell.exe'
  $arguments='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$file+'" -JournalRoot "'+$JournalRoot.TrimEnd('\')+'" -JobId '+$JobId
- $r=[AuthWire.Connector.ScopeProcessV1]::Run($exe,$arguments,$budget)
- if($r.TimedOut -or $r.Truncated -or $r.ExitCode -ne 0){throw 'WRITE_INTENT_PREFLIGHT_FAILED'}
- $v=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($r.Output))
+ try{$r=[AuthWire.Connector.ScopeProcessV1]::Run($exe,$arguments,$budget)}catch{throw 'WRITE_INTENT_PREFLIGHT_RUNNER_FAILED'}
+ if($r.TimedOut){throw 'WRITE_INTENT_PREFLIGHT_TIMEOUT'}
+ if($r.Truncated){throw 'WRITE_INTENT_PREFLIGHT_OUTPUT_TRUNCATED'}
+ if($r.ExitCode -ne 0){throw 'WRITE_INTENT_PREFLIGHT_CHILD_FAILED'}
+ try{$v=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($r.Output))}catch{throw 'WRITE_INTENT_PREFLIGHT_OUTPUT_INVALID'}
  Assert-AuthWireWriteLiveContext $v $Offer $Binding
  if($v.checked_at -lt $now){throw 'WRITE_INTENT_PREFLIGHT_STALE'}
  return $v

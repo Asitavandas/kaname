@@ -24,11 +24,11 @@ function Get-AuthWireReviewedPayloadHashes {
  'CombinedStagingPreview.ps1'='B141175A0B16B1B2B5687DA4A515D24EEA2B8DAAB5D11106F9382B5D514281B9'
  'Invoke-AuthWireStagingPreviewJob.ps1'='949D805820F9C19AA2B42FF15C0CF1AF0D3D472A0D1E9984FF86E4C061C623A7'
  'Read-AuthWireCombinedStagingPreview.ps1'='2BE2E3CB48C3D10B2AB033F9952D846655271EA1E62487188186B938E449D534'
- 'ConnectorWriteServiceRuntime.ps1'='2F4A3AD0F4E5B75B64A6CCE8B0DE32CF0A8D25CA468471D046D7B68844089BEA'
+ 'ConnectorWriteServiceRuntime.ps1'='DD44B8392D868176676F5B4E7660008D9B2C90BBFF89D746C43124E35EE685DC'
  'StagingFilesystem.ps1'='D45CFC86D4508737D951AE68C2D54C5446B678BEBD3A88FD946FF7180A6A54AC'
- 'StagingWritePreclaim.ps1'='CFF553BB69C170CB9B39A8A476B2193743ED86B537C28BEEE38BE242B7537C4D'
- 'StagingWriteTransport.ps1'='1FB72C2D75677A5A3FB6085FC4B5EB6B5BBF711AD193C143643D6629A52D1693'
- 'StagingWriteConsumption.ps1'='F66733483B40424E82823B71D558B527FFD5350302359C560159F7B7AD139182'
+ 'StagingWritePreclaim.ps1'='AE1E1BB5D1DFD51CFCD5F1D42240181D4469CD7A5A683CBB285BF2418485D7F6'
+ 'StagingWriteTransport.ps1'='071335F33971A6D92FD0F593B44B9F2A8DD87D51CF49F38293944251DFCA607D'
+ 'StagingWriteConsumption.ps1'='15059C2D3A15AE25AFCA8E0856D1B496378AE953A213615E75BD0DE91C6A91B5'
  'StagingWriteProcess.ps1'='D5812DD81979E04F1BB4041CF0279021649346F0B53BC8E18015DDF3320B800A'
  'StagingWriteExecution.ps1'='D1B90C9682E2AA66B7AABD4882CA5734FC5AF7949B425E3F8F8E77F3A269AA66'
  'StagingWriteResult.ps1'='43D0AD067FEB756ABE7D42786CC42B902F36E78BA437B35EE25111EF3BE62260'
@@ -38,9 +38,9 @@ function Get-AuthWireReviewedPayloadHashes {
  'StagingRollbackExecution.ps1'='53C06F6F85A3EB217344A15433F5710A34341D084CC933F96FE789C65F043BDA'
  'StagingRollbackResult.ps1'='4F36935A632466225E6662DD645152E7FB567C5A98866F91287831B95CC530C3'
  'StagingWritePollRecord.ps1'='3299B7D751752D2A564A6ABA536C6465722B69150263692F560DBB1558441882'
- 'StagingWriteHistory.ps1'='37169C6BAB59D48A9806DDAA84979A8CF1DF901583D0CD53AE139D6D5DBD9F88'
+ 'StagingWriteHistory.ps1'='DFFD7963C28B59FA57E0F6BB020542348A03F1CE11AE0E38C47DB184026AFB80'
  'StagingWriteRefusal.ps1'='072381971B10396015D2F94EEADDEFE75E256F7881063BBCEA2CCA2BEC0311D7'
- 'StagingWriteLifecycle.ps1'='685F94E38ABA7A8DDE4E4221DEE62765809FD8F4AFE7BA7EDA4E0608587DA4D8'
+ 'StagingWriteLifecycle.ps1'='E6911CBDB609A7102411022DF9DC039B97EC3F0D22ED51CBAF3B001E877D44A7'
  'StagingWriteScheduler.ps1'='A45C8E00767CABD53854D85AA071465F227074F354C234B0F1A0B5E291D65853'
  'Read-AuthWireStagingWritePreflight.ps1'='5DBCDCA4A92CB819BBE08BC23AB228EF657F9E4C9052A99BBA2FA0C5E0D12349'
  'Read-AuthWireRollbackPreflight.ps1'='F61CD09323E0A0AB7437406B69C6C98CE640BF57D52B639D3FE04934098C9603'
@@ -123,6 +123,12 @@ function Assert-AuthWireServiceConfig {
   if($Config.PSObject.Properties['WriteSchedulerEnabled'].Name -cne 'WriteSchedulerEnabled' -or $Config.WriteSchedulerEnabled -isnot [bool]){throw 'CONNECTOR_CONFIG_REJECTED'}
   $fields+= 'WriteSchedulerEnabled'
  }
+ if($Config.PSObject.Properties['WritePilotPort']){
+  if($Config.PSObject.Properties['WritePilotPort'].Name -cne 'WritePilotPort' -or
+     -not $Config.PSObject.Properties['WriteSchedulerEnabled'] -or -not $Config.WriteSchedulerEnabled -or
+     $Config.WritePilotPort -isnot [int] -or $Config.WritePilotPort -lt 1024 -or $Config.WritePilotPort -gt 65535){throw 'CONNECTOR_CONFIG_REJECTED'}
+  $fields+='WritePilotPort'
+ }
  if(@($Config.PSObject.Properties).Count -ne $fields.Count -or @($Config.PSObject.Properties.Name|Where-Object{$_ -notin $fields}).Count -or $Config.Version -isnot [int] -or $Config.Version -ne 1){throw 'CONNECTOR_CONFIG_REJECTED'}
  $id=[guid]::Empty
  if(-not [guid]::TryParseExact($Config.ReleaseId,'D',[ref]$id) -or $id -eq [guid]::Empty){throw 'CONNECTOR_CONFIG_REJECTED'}
@@ -147,6 +153,7 @@ function Assert-AuthWireServiceConfig {
   $Config.AccountName -cnotmatch '\A[A-Za-z0-9][A-Za-z0-9.-]{0,252}\\[A-Za-z0-9][A-Za-z0-9-]{0,19}\$?\z' -or
   $Config.KeyName -cnotmatch ('\AAuthWire-Channel-'+([guid]$binding.connector_id).ToString('N')+'-[0-9a-f]{32}\z') -or
   -not [uri]::TryCreate($Config.BaseUrl,[UriKind]::Absolute,[ref]$uri) -or $uri.Scheme -cne 'https' -or $uri.Host -cne $binding.appliance_fqdn -or $uri.AbsolutePath -cne '/' -or $uri.Query -ne '' -or $uri.Fragment -ne '' -or $uri.UserInfo -ne ''){throw 'CONNECTOR_CONFIG_REJECTED'}
+ if($Config.PSObject.Properties['WritePilotPort'] -and $Config.WritePilotPort -eq $uri.Port){throw 'CONNECTOR_CONFIG_REJECTED'}
  $descriptor=[Security.AccessControl.RawSecurityDescriptor]::new($Config.ExpectedKeySddl)
  if(-not $descriptor.DiscretionaryAcl){throw 'CONNECTOR_CONFIG_REJECTED'}
 }

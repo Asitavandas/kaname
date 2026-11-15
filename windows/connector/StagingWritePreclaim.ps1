@@ -8,7 +8,25 @@ function Assert-AuthWireWriteServiceConfigFields($Config){
   if($Config.WriteSchedulerEnabled -isnot [bool]){throw 'CONNECTOR_CONFIG_REJECTED'}
   $fields+='WriteSchedulerEnabled'
  }
+ if($Config.PSObject.Properties['WritePilotPort']){
+  if($Config.PSObject.Properties['WritePilotPort'].Name -cne 'WritePilotPort'){throw 'CONNECTOR_CONFIG_REJECTED'}
+  $fields+='WritePilotPort'
+ }
  Assert-AuthWireCandidateFields $Config $fields
+ $null=Get-AuthWireWriteTransportBaseUrl $Config
+}
+
+function Get-AuthWireWriteTransportBaseUrl($Config){
+ if(-not $Config.PSObject.Properties['WritePilotPort']){return $Config.BaseUrl}
+ $base=$null
+ if(-not $Config.PSObject.Properties['WriteSchedulerEnabled'] -or $Config.WriteSchedulerEnabled -isnot [bool] -or -not $Config.WriteSchedulerEnabled -or
+    $Config.WritePilotPort -isnot [int] -or $Config.WritePilotPort -lt 1024 -or $Config.WritePilotPort -gt 65535 -or
+    -not [uri]::TryCreate($Config.BaseUrl,[UriKind]::Absolute,[ref]$base) -or $base.Scheme -cne 'https' -or
+    $base.Host -cne $Config.Binding.appliance_fqdn -or $base.UserInfo -or $base.Query -or $base.Fragment -or
+    $base.AbsolutePath -cne '/' -or $base.Port -eq $Config.WritePilotPort){throw 'CONNECTOR_CONFIG_REJECTED'}
+ $pilot=[UriBuilder]::new($base)
+ $pilot.Port=$Config.WritePilotPort
+ return $pilot.Uri.AbsoluteUri
 }
 
 function Enter-AuthWireWritePreauthorizationLock([string]$JobId){

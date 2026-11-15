@@ -1,0 +1,37 @@
+name: AuthWire isolated recovery approval receipt
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/staging-recovery-receipt.yml'
+      - 'tools/staging_write_cycle_windows_check.py'
+      - 'tools/staging_write_execution_windows_check.ps1'
+      - 'windows/connector/StagingWriteHistory.ps1'
+      - 'windows/connector/StagingWriteTransport.ps1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  receipt:
+    runs-on: windows-2025
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: 2738c9c69498fee105d454b91dd89f7a06f2dad6
+          path: _recovery_backend
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - run: python -m pip install cryptography==46.0.0
+      - name: Verify one consumed-stage receipt through native Windows HTTPS
+        env:
+          AUTHWIRE_STAGE_RECOVERY_RECEIPT_CHECK: '1'
+          AUTHWIRE_RECOVERY_BACKEND: ${{ github.workspace }}\_recovery_backend
+        run: python tools/staging_write_cycle_windows_check.py

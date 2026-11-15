@@ -57,7 +57,35 @@ try{
  $root=Join-Path $env:ProgramW6432 ('AuthWire-Connector-'+$id)
  if(Test-Path -LiteralPath $root){$root=$null;throw 'Fixture package directory collision'}
  $config=@{Version=1;ReleaseId=[guid]::NewGuid().ToString('D');ServiceName=$name;AccountName=$credential.UserName;PublisherThumbprint=$publisher.Thumbprint;BaseUrl=('https://'+$b.appliance_fqdn+':'+$base.port+'/');Binding=$b;KeyName=$key;ExpectedKeySddl=$receipt.ExpectedKeySddl;RootPath=$root}|ConvertTo-Json -Depth 6|ConvertFrom-Json
- if($WriteSchedulerOnly){$config|Add-Member -NotePropertyName WriteSchedulerEnabled -NotePropertyValue $true}
+ if($WriteSchedulerOnly){
+  . (Join-Path $source 'StagingWritePreclaim.ps1')
+  $config|Add-Member -NotePropertyName WriteSchedulerEnabled -NotePropertyValue $true
+  Check ((Get-AuthWireWriteTransportBaseUrl $config) -ceq $config.BaseUrl) 'Writer defaults to the existing endpoint'
+  $pilot=$config|ConvertTo-Json -Depth 6|ConvertFrom-Json
+  $port=if(([uri]$config.BaseUrl).Port -eq 18765){18766}else{18765}
+  $pilot|Add-Member -NotePropertyName WritePilotPort -NotePropertyValue $port
+  Assert-AuthWireServiceConfig $pilot
+  Check ((Get-AuthWireWriteTransportBaseUrl $pilot) -ceq ('https://'+$b.appliance_fqdn+':'+$port+'/')) 'Writer uses the peer-only HTTPS port'
+  Check ($pilot.BaseUrl -ceq $config.BaseUrl) 'Write port leaves the package and enrollment endpoint intact'
+  foreach($badPort in @('18765',1023,65536,([uri]$config.BaseUrl).Port)){
+   $pilot.WritePilotPort=$badPort
+   Reject {Assert-AuthWireServiceConfig $pilot} 'Invalid package write port rejected'
+   Reject {Get-AuthWireWriteTransportBaseUrl $pilot} 'Invalid transport write port rejected'
+  }
+  $pilot.WritePilotPort=$port
+  $pilot.WriteSchedulerEnabled=$false
+  Reject {Assert-AuthWireServiceConfig $pilot} 'Write port requires explicit writer enablement'
+  Reject {Get-AuthWireWriteTransportBaseUrl $pilot} 'Transport requires explicit writer enablement'
+  $readOnlyConfig=$config|ConvertTo-Json -Depth 6|ConvertFrom-Json
+  $readOnlyConfig.PSObject.Properties.Remove('WriteSchedulerEnabled')
+  $nextRelease=[guid]::NewGuid()
+  $ordinary=Get-AuthWireUpgradeTargetConfig $readOnlyConfig $nextRelease 0
+  Check (-not $ordinary.PSObject.Properties['WriteSchedulerEnabled']) 'Ordinary upgrades retain read-only configuration'
+  $pilotTarget=Get-AuthWireUpgradeTargetConfig $readOnlyConfig $nextRelease $port
+  Check ($pilotTarget.ReleaseId -ceq $nextRelease.ToString('D') -and $pilotTarget.WriteSchedulerEnabled -and $pilotTarget.WritePilotPort -eq $port) 'Approved pilot upgrade signs the writer and its separate port'
+  Check ($pilotTarget.BaseUrl -ceq $config.BaseUrl -and $pilotTarget.KeyName -ceq $config.KeyName -and ($pilotTarget.Binding|ConvertTo-Json -Compress) -ceq ($config.Binding|ConvertTo-Json -Compress)) 'Pilot upgrade preserves endpoint, pairing and channel key'
+  Reject {Get-AuthWireUpgradeTargetConfig $readOnlyConfig $nextRelease ([uri]$config.BaseUrl).Port} 'Pilot upgrade refuses the enrollment port'
+ }
  $buildSource=Join-Path $Directory 'reviewed-source';$null=New-Item -ItemType Directory -Path $buildSource
  $sources=@('ConnectorServiceHost.cs','ConnectorServicePackage.ps1','ConnectorServiceControl.ps1','Install-AuthWireConnectorService.ps1','New-AuthWireConnectorServicePackage.ps1','Initialize-AuthWireConnectorChannelKey.ps1','ConnectorServiceUpgrade.ps1','Update-AuthWireConnectorService.ps1')
  $sources+=@(Get-AuthWireServicePayloadNames ([pscustomobject]@{WriteSchedulerEnabled=$true}))
@@ -265,23 +293,34 @@ try{
  }
  $u=Fresh-Upgrade Inspect
  Check ($u.Phase -ceq 'not_prepared' -and -not (Test-Path -LiteralPath $stage) -and -not (Test-Path -LiteralPath $journalRoot)) 'Fresh signed Inspect of actual legacy package creates no stage or journal'
+ $pilotPort=if(([uri]$legacyConfig.BaseUrl).Port -eq 18765){18766}else{18765}
+ $upgradeArgs.WritePilotPort=$pilotPort
+ Reject {Invoke-AuthWireServiceUpgradeCore -Mode Prepare @upgradeArgs -SourceDirectory $buildSource} 'Pilot preparation rejects the existing journal with an unrelated identity'
+ Check (-not (Test-Path -LiteralPath $stage) -and -not (Test-Path -LiteralPath $journalRoot) -and (Read-Status).WorkerPid -eq $beforeUpgradeWorker) 'Rejected journal leaves the service and staging untouched'
+ $security.SetSecurityDescriptorSddlForm($beforeAcl)
+ Set-Acl -LiteralPath $journalPath -AclObject $security
+ Remove-Item -LiteralPath $sentinel
  $u=Fresh-Upgrade Prepare
  Check ($u.Phase -ceq 'prepared' -and (Read-Status).WorkerPid -eq $beforeUpgradeWorker) 'Staged signed build leaves the existing running legacy worker untouched'
  $candidate=Get-AuthWireServicePackage $stage $publisher.Thumbprint -Staged
  Check ($candidate.RootPath -ceq $root -and $candidate.KeyName -ceq $config.KeyName -and ($candidate.Binding|ConvertTo-Json -Compress) -ceq ($config.Binding|ConvertTo-Json -Compress)) 'Candidate keeps final path, original key and exact pairing'
  $u=Fresh-Upgrade Prepare
  Check ($u.Phase -ceq 'prepared' -and (Read-Status).WorkerPid -eq $beforeUpgradeWorker) 'Repeated prepare verifies the same candidate without restart or re-sign'
- $journalPath=Join-Path $journalRoot 'upgrade.json';$journalBytes=[IO.File]::ReadAllBytes($journalPath)
+ Check ($candidate.WriteSchedulerEnabled -and $candidate.WritePilotPort -eq $pilotPort) 'Signed staged package contains the exact approved pilot writer port'
+ $upgradeArgs.WritePilotPort=if($pilotPort -eq 18765){18766}else{18765}
+ Reject {Invoke-AuthWireServiceUpgradeCore -Mode Apply @upgradeArgs -SourceDirectory $buildSource} 'Apply refuses a port different from the signed staging journal'
+ $upgradeArgs.WritePilotPort=$pilotPort
+ $upgradeJournalPath=Join-Path $journalRoot 'upgrade.json';$journalBytes=[IO.File]::ReadAllBytes($upgradeJournalPath)
  try{
-  $bad=Get-Content -LiteralPath $journalPath -Raw|ConvertFrom-Json;$bad.NewConfig.KeyName=$bad.NewConfig.KeyName.Substring(0,$bad.NewConfig.KeyName.Length-32)+[guid]::NewGuid().ToString('N')
-  [IO.File]::WriteAllText($journalPath,($bad|ConvertTo-Json -Depth 6))
+  $bad=Get-Content -LiteralPath $upgradeJournalPath -Raw|ConvertFrom-Json;$bad.NewConfig.KeyName=$bad.NewConfig.KeyName.Substring(0,$bad.NewConfig.KeyName.Length-32)+[guid]::NewGuid().ToString('N')
+  [IO.File]::WriteAllText($upgradeJournalPath,($bad|ConvertTo-Json -Depth 6))
   Reject {Invoke-AuthWireServiceUpgradeCore -Mode Apply @upgradeArgs -SourceDirectory $buildSource} 'Journal cannot change the existing channel key or pairing'
- }finally{[IO.File]::WriteAllBytes($journalPath,$journalBytes)}
+ }finally{[IO.File]::WriteAllBytes($upgradeJournalPath,$journalBytes)}
  try{
-  $bad=Get-Content -LiteralPath $journalPath -Raw|ConvertFrom-Json;$bad.Phase='archiving';[IO.File]::WriteAllText($journalPath,($bad|ConvertTo-Json -Depth 6))
+  $bad=Get-Content -LiteralPath $upgradeJournalPath -Raw|ConvertFrom-Json;$bad.Phase='archiving';[IO.File]::WriteAllText($upgradeJournalPath,($bad|ConvertTo-Json -Depth 6))
   Reject {Invoke-AuthWireServiceUpgradeCore -Mode Apply @upgradeArgs -SourceDirectory $buildSource} 'Interrupted transition is not silently resumed or overwritten'
   Check ((Read-Status).WorkerPid -eq $beforeUpgradeWorker) 'Rejected journal leaves the running worker unchanged'
- }finally{[IO.File]::WriteAllBytes($journalPath,$journalBytes)}
+ }finally{[IO.File]::WriteAllBytes($upgradeJournalPath,$journalBytes)}
  $candidateWorker=Join-Path $stage 'ConnectorServiceRuntime.ps1';$candidateBytes=[IO.File]::ReadAllBytes($candidateWorker)
  try{
   [IO.File]::AppendAllText($candidateWorker,"`r`n# tampered")

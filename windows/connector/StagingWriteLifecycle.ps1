@@ -92,6 +92,22 @@ function Get-AuthWireLifecycleSlots([string]$Life,[int]$ArchivedThrough=0){
  for($i=0;$i -lt $slots.Count;$i++){if($slots[$i] -cne ($ArchivedThrough+$i+1).ToString('D6')){throw 'LIFECYCLE_HISTORY_GAP'}}
  return ,$slots
 }
+function Test-AuthWireConsumptionDiagnostic($Code){
+ return ($Code -is [string] -and $Code -cin @(
+  'WRITE_INTENT_PREFLIGHT_TIMEOUT','WRITE_INTENT_PREFLIGHT_OUTPUT_TRUNCATED',
+  'WRITE_INTENT_PREFLIGHT_CHILD_FAILED','WRITE_INTENT_PREFLIGHT_OUTPUT_INVALID',
+  'WRITE_INTENT_PREFLIGHT_RUNNER_FAILED','WRITE_INTENT_PREFLIGHT_STALE',
+  'WRITE_AUTHORIZATION_EXPIRED','WRITE_PREFLIGHT_STALE','WRITE_PREFLIGHT_PATH_REJECTED',
+  'WRITE_INTENT_USE_CLOCK_REJECTED','WRITE_INTENT_SCOPE_CHANGED','WRITE_CONSUMPTION_UNCLASSIFIED'))
+}
+function New-AuthWireLifecycleDispatchFailureRecord([string]$Operation,[string]$Phase,[string]$ErrorCode){
+ $f=[ordered]@{format='AuthWireLifecycleDispatchFailedV1';phase=$Phase;reason='OUTCOME_REQUIRES_REVIEW';checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()}
+ if($Operation -ceq 'combined.filesystem.stage.v1' -and $Phase -ceq 'consume'){
+  $f.format='AuthWireLifecycleDispatchFailedV2'
+  $f['diagnostic_code']=if(Test-AuthWireConsumptionDiagnostic $ErrorCode){$ErrorCode}else{'WRITE_CONSUMPTION_UNCLASSIFIED'}
+ }
+ return [pscustomobject]$f
+}
 function Read-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key){
  if($Slot -cnotmatch '\A[0-9]{6}\z'){throw 'LIFECYCLE_SLOT_REJECTED'}
  $dir=Join-Path $Life $Slot;$p=[AuthWire.Staging.TreeLeaseV1]::new()
@@ -120,8 +136,15 @@ function Read-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bind
   if($r.reply.job_id -ceq '' -and ((Test-Path -LiteralPath (Join-Path $dir 'dispatch-started.json')) -or (Test-Path -LiteralPath (Join-Path $dir 'dispatch-failed.json')))){throw 'LIFECYCLE_IDLE_REJECTED'}
   $failed=Join-Path $dir 'dispatch-failed.json'
   if(Test-Path -LiteralPath $failed){
-   $f=Read-AuthWireStagingJournal $failed;Assert-AuthWireCandidateFields $f @('format','phase','reason','checked_at')
-   if($f.format -cne 'AuthWireLifecycleDispatchFailedV1' -or $f.phase -isnot [string] -or $f.phase -cnotin @('offer','preflight','claim','consume','execute') -or $f.reason -cne 'OUTCOME_REQUIRES_REVIEW' -or -not (Test-AuthWireWriteInteger $f.checked_at) -or $f.checked_at -lt $r.received_at -or $f.checked_at -gt [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()){throw 'LIFECYCLE_DISPATCH_REJECTED'}
+   $f=Read-AuthWireStagingJournal $failed
+   $fields=@('format','phase','reason','checked_at')
+   if($f.format -ceq 'AuthWireLifecycleDispatchFailedV2'){
+    $fields+= 'diagnostic_code'
+    if($r.reply.operation -cne 'combined.filesystem.stage.v1' -or $f.phase -cne 'consume' -or
+       -not (Test-AuthWireConsumptionDiagnostic $f.diagnostic_code)){throw 'LIFECYCLE_DISPATCH_REJECTED'}
+   }elseif($f.format -cne 'AuthWireLifecycleDispatchFailedV1'){throw 'LIFECYCLE_DISPATCH_REJECTED'}
+   Assert-AuthWireCandidateFields $f $fields
+   if($f.phase -isnot [string] -or $f.phase -cnotin @('offer','preflight','claim','consume','execute') -or $f.reason -cne 'OUTCOME_REQUIRES_REVIEW' -or -not (Test-AuthWireWriteInteger $f.checked_at) -or $f.checked_at -lt $r.received_at -or $f.checked_at -gt [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()){throw 'LIFECYCLE_DISPATCH_REJECTED'}
   }
   return [pscustomobject]@{Slot=$Slot;Phase='reply_saved';Offer=$r.reply;Started=$s;Response=$r}
  }finally{$p.Dispose()}
@@ -324,7 +347,8 @@ function Invoke-AuthWireStagingWriteLifecycleStep([string]$Root,[hashtable]$Bind
     $phase='execute';$null=Invoke-AuthWireAuthorizedFilesystemRollback $Root $o.job_id $Binding $Release $Key
    }
   }catch [Management.Automation.PipelineStoppedException]{throw}catch{
-   try{Write-AuthWireStagingJournal (Join-Path (Join-Path $life $next) 'dispatch-failed.json') ([pscustomobject]@{format='AuthWireLifecycleDispatchFailedV1';phase=$phase;reason='OUTCOME_REQUIRES_REVIEW';checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()})}catch{}
+   $failure=New-AuthWireLifecycleDispatchFailureRecord $o.operation $phase $_.Exception.Message
+   try{Write-AuthWireStagingJournal (Join-Path (Join-Path $life $next) 'dispatch-failed.json') $failure}catch{}
    if($phase -ceq 'preflight'){
     # A successfully persisted offer + no CLAIM/unknown history can freeze a
     # truthful no-authorization refusal. Any IO/evidence failure stays review.

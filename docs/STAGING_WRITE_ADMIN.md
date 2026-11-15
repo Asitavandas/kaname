@@ -70,6 +70,26 @@ Connector bildirimi, bağımsız dosya/saha kabulü değildir. ID/metinler textC
 gösterilir. Oturum nesli veya yenileme sırası değiştiğinde eski async yanıt atılır.
 Sunucudan yanlışlıkla true dönen yetki bayrağı UI'da bir gönderme yolu açmaz.
 
+Yetki tüketildikten sonra ikinci salt okunur kontrol durursa Windows günlüğü
+zaman aşımı, kesilmiş çıktı, alt süreç hatası ve geçersiz sonuç için ayrı,
+sabit hata kodları kaydeder. Yerel uzlaştırma incelemesi, doğrulanmış tüketim
+makbuzu ile dosya yazma niyeti ve yürütme kayıtlarının bulunmadığını birlikte
+gösterir. Bu sınıflandırma bir dosya sistemi sonucu veya kilit açma onayı
+vermez. Eski kayıtlarda ayrıntılı hata kodu `unavailable` görünür. Yeni biçimde
+yazılmış bir günlük eski yazıcıyla açılırsa yazma işlemleri durur.
+
+Tüketilmiş ve dosya yazma niyeti oluşmamış bir stage için yerel kurtarma
+incelemesi ayrı bir imzalı kanıt çıkarabilir. İşin özgün tamamlanma/ACK
+makbuzu, eşleşen kilidi, tüketilmiş ve süresi dolmuş yetki kaydı, güncel SYSVOL
+envanteri ve önceki önizleme ile eşleşen kapsam gerekir. Kanıt en çok 60
+saniye geçerlidir. İmzalı kanıt ayrı bir operatör onayına girdi sağlamak
+içindir. `Confirm-AuthWireConsumedStageRecoveryApproval` makbuzun tamamını
+ve önceki imzalı kanıtı korunan Windows kayıtlarıyla karşılaştırır. Aynı
+operatör oturumu ve CSRF ile sabit, sertifika özetine bağlı HTTPS
+`verify-lock-release` ucuna başvurur. Yanıt tam onay ve kanıt özetiyle
+eşleşmeli ve kanıt güncel olmalıdır. Makbuz doğrulaması salt okunurdur.
+Kontrollü kilit kapatma ayrı adımdır.
+
 ## Doğrulama ve açık kapılar
 
 Gerçek doğrulanan HTTPS fixture'ları: başarılı actor bağlı inceleme, read/read ve
