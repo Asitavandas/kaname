@@ -153,12 +153,44 @@ function Get-AuthWireWriteHistoryReview([string]$Root,[hashtable]$Binding,[Secur
  }finally{if($state){foreach($lease in $state.Leases){$lease.Dispose()};$state.Pins.Dispose()};$lock.ReleaseMutex();$lock.Dispose()}
 }
 
+function Get-AuthWireStageConsumptionReview([string]$Root,[string]$SlotPath,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key){
+ # Evidence classification only. Missing markers never authorize a retry or unlock.
+ if($State.Offer.operation -cne 'combined.filesystem.stage.v1'){return}
+ $jobId=$State.Offer.job_id;$release=$State.Started.release_id
+ $job=Join-Path $Root $jobId;$failure=Join-Path $SlotPath 'dispatch-failed.json'
+ $consumed=Join-Path $job 'grant-consumed.json'
+ if(-not (Test-Path -LiteralPath $failure) -or -not (Test-Path -LiteralPath $consumed)){return}
+ $p=[AuthWire.Staging.TreeLeaseV1]::new()
+ try{
+  $p.PinAncestors($SlotPath);$p.PinAncestors($job);$p.PinFile($failure);$p.PinFile($consumed)
+  $f=Read-AuthWireStagingJournal $failure
+  if($f.phase -cne 'consume'){return}
+  foreach($name in @('filesystem-intent.json','stage-launch.json','stage-child.json','stage-entered.json','stage-preflight.json','execution-complete.json','execution-observed.json','execution-requires-review.json')){
+   if(Test-Path -LiteralPath (Join-Path $job $name)){return}
+  }
+  $auth=Read-AuthWireWriteAuthorizationEvidence $Root $jobId $Binding $release $Key
+  $op=Get-AuthWireFilesystemOperationId $auth
+  if((Get-AuthWireWriteHash $auth.Offer) -cne (Get-AuthWireWriteHash $State.Offer) -or
+     (Test-Path -LiteralPath (Join-Path $Root $op))){return}
+  $record=Read-AuthWireStagingJournal $consumed
+  Assert-AuthWireCandidateFields $record @('format','binding_scope','release_id','job_id','authorization_sha256','filesystem_operation_id','consumed_at','expires_at')
+  if($record.format -cne 'AuthWireWriteGrantConsumedV1' -or $record.binding_scope -cne (Get-AuthWireJobScope $Binding) -or
+     $record.release_id -cne $release -or $record.job_id -cne $jobId -or $record.authorization_sha256 -cne $auth.AuthorizationSha256 -or
+     $record.filesystem_operation_id -cne $op -or -not (Test-AuthWireWriteInteger $record.consumed_at) -or
+     -not (Test-AuthWireWriteInteger $record.expires_at) -or $record.expires_at -ne $auth.Receipt.grant.expires_at -or
+     $record.consumed_at -lt $auth.Receipt.received_at -or $record.consumed_at -ge $record.expires_at -or
+     $record.consumed_at -gt $f.checked_at){throw 'WRITE_CONSUMPTION_REVIEW_REJECTED'}
+  $diagnostic=if($f.format -ceq 'AuthWireLifecycleDispatchFailedV2'){$f.diagnostic_code}else{'unavailable'}
+  return [pscustomobject]@{Phase='consumed_without_filesystem_intent';DiagnosticCode=$diagnostic;GrantConsumedSha256=(Get-AuthWireWriteHash $record)}
+ }finally{$p.Dispose()}
+}
+
 function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key){
  # This is a local evidence read. Even a valid ACK is not fresh approval.
  Assert-AuthWireStagingWriteJournalLocation $Root $Binding
  Initialize-AuthWireStagingFilesystemTypes
  $lock=Enter-AuthWireWriteCycleLock $Binding;$pins=[AuthWire.Staging.TreeLeaseV1]::new()
- $review=[pscustomobject]@{Phase='no_active_cycles';Slot='';JobId='';RecordedOutcome='';AcceptedAck=$false;Evidence=$null}
+ $review=[pscustomobject]@{Phase='no_active_cycles';Slot='';JobId='';RecordedOutcome='';AcceptedAck=$false;Evidence=$null;StageConsumption=$null}
  try{
   $pins.PinAncestors($Root)
   if(-not (Get-ChildItem -LiteralPath $Root -Force -ErrorAction Stop|Select-Object -First 1)){return $review}
@@ -166,7 +198,7 @@ function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding
   for($i=0;$i -lt $h.ActiveStates.Count;$i++){
    $state=$h.ActiveStates[$i];$dir=Join-Path $h.Life $state.Slot
    $pins.PinAncestors($dir)
-   $review.Slot=$state.Slot;$review.JobId='';$review.RecordedOutcome='';$review.AcceptedAck=$false;$review.Evidence=$null
+   $review.Slot=$state.Slot;$review.JobId='';$review.RecordedOutcome='';$review.AcceptedAck=$false;$review.Evidence=$null;$review.StageConsumption=$null
    if($state.Phase -cne 'reply_saved'){
     if($i -ne $h.ActiveStates.Count-1 -or (Test-Path -LiteralPath (Join-Path $dir 'completion.json'))){throw 'LIFECYCLE_PENDING_HISTORY_GAP'}
     $review.Phase=$state.Phase
@@ -180,6 +212,7 @@ function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding
     $done=Read-AuthWireLifecycleCompletion $Root $h.Life $state $Binding $Key
     $review.Phase='completion_verified';$review.RecordedOutcome=$done.outcome;$review.AcceptedAck=$review.JobId -cne ''
     if($review.Evidence){$review.Evidence.result_body_sha256=$done.result_body_sha256;$review.Evidence.accepted_ack=$true}
+    if($done.outcome -ceq 'requires_review'){$review.StageConsumption=Get-AuthWireStageConsumptionReview $Root $dir $state $Binding $Key}
     if($done.outcome -cin @('requires_review','refused_before_authorization') -and $i -ne $h.ActiveStates.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'}
     continue
    }
@@ -197,6 +230,7 @@ function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding
    if(Test-Path -LiteralPath (Join-Path $job $ackFile)){
     $e=Get-AuthWireLifecycleOutcomeEvidence $Root $state $Binding $Key
     $review.Phase='accepted_ack_completion_missing';$review.RecordedOutcome=$e.Outcome;$review.AcceptedAck=$true
+    if($e.Outcome -ceq 'requires_review'){$review.StageConsumption=Get-AuthWireStageConsumptionReview $Root $dir $state $Binding $Key}
     $review.Evidence.result_body_sha256=$e.BodySha256;$review.Evidence.accepted_ack=$true
    }elseif($refusal -or $resultPresent){
     if($refusal){$box=Read-AuthWireWriteRefusalOutbox $Root $h.Life $state $Binding $Key}
@@ -215,7 +249,7 @@ function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding
   }
   return $review
  }catch{
-  return [pscustomobject]@{Phase='evidence_invalid_or_unavailable';Slot='';JobId='';RecordedOutcome='';AcceptedAck=$false;Evidence=$null}
+  return [pscustomobject]@{Phase='evidence_invalid_or_unavailable';Slot='';JobId='';RecordedOutcome='';AcceptedAck=$false;Evidence=$null;StageConsumption=$null}
  }finally{$pins.Dispose();$lock.ReleaseMutex();$lock.Dispose()}
 }
 

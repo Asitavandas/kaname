@@ -57,6 +57,7 @@ function Get-AuthWireWriteStageLiveContext($Offer,[hashtable]$Binding,[string]$P
  $fixture=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'fixture.json') -Raw|ConvertFrom-Json
  [IO.File]::AppendAllText((Join-Path $PSScriptRoot ('reads-'+$Offer.job_id+'.txt')),"read`n")
  $v=$fixture.live;$v.checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+ if($fixture.case -ceq 'consume_timeout'){Start-Sleep -Seconds 12}
  if($fixture.case -ceq 'drift'){$v.pdc='dc02.lab.example'}
  return $v
 }
@@ -231,7 +232,7 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
  $share='aw-stage-execution-'+[guid]::NewGuid().ToString('N');$null=New-SmbShare -Name $share -Path $shareDirectory -FullAccess ([Security.Principal.WindowsIdentity]::GetCurrent().Name)
  $outcomes=@();$exe=Join-Path ([Environment]::GetFolderPath('Windows')) 'System32\WindowsPowerShell\v1.0\powershell.exe'
  $cases=@('success','drift','partial','bad_result','launch_disk','metadata_disk','identity','timeout')
- if($flowMode){$cases+=@('lost_ack','lost_grant','poll_lost','poll_bad','idle')}
+ if($flowMode){$cases+=@('lost_ack','lost_grant','poll_lost','poll_bad','idle')}else{$cases+=,'consume_timeout'}
  if($grantMode){$cases=@('rollback_success','rollback_lost_grant','rollback_bad_grant','rollback_receipt_disk','rollback_consume_disk','rollback_live_drift','rollback_expired','rollback_proof_disk')}
  if($rollbackExecutionMode){$cases=@('rb_execute_success','rb_execute_lost_ack','rb_execute_drift','rb_execute_completion_disk','rb_execute_bad_result','rb_execute_parent_drift','rb_execute_launch_disk','rb_execute_identity','rb_execute_timeout')}
  if($lifecycleMode){$cases=@('lc_stage','lc_success','lc_lost_ack','lc_lost_claim','lc_lost_poll','lc_bad_poll','lc_idle','lc_saved_grant')}
@@ -331,6 +332,37 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
   Write-AuthWireStagingJournal (Join-Path $job 'claim-sent.json') ([pscustomobject]@{format='AuthWireWriteClaimSentV1';job_id=$id;request_id=$requestId;proof_sha256=$proofHash;sent_at=$sent})
   Write-AuthWireStagingJournal (Join-Path $job 'authorization.json') ([pscustomobject]@{format='AuthWireWriteAuthorizationReceiptV1';binding_scope=$scope;release_id=$release;offer_sha256=(Get-AuthWireWriteHash $offer);preflight_sha256=(Get-AuthWireWriteHash $live);claim_proof_sha256=$proofHash;sent_at=$sent;received_at=$sent;grant=$grant})
   $fixture.expires_at=$expiry;[IO.File]::WriteAllText((Join-Path $package 'fixture.json'),($fixture|ConvertTo-Json -Depth 12 -Compress))
+  if($case -ceq 'consume_timeout'){
+   $fixture.case=$case;[IO.File]::WriteAllText((Join-Path $package 'fixture.json'),($fixture|ConvertTo-Json -Depth 12 -Compress))
+   $errorCode='';try{New-AuthWireAuthorizedFilesystemIntent $journal $id $b $release $rsa|Out-Null}catch{$errorCode=$_.Exception.Message}
+   Check ($errorCode -ceq 'WRITE_INTENT_PREFLIGHT_TIMEOUT') 'real signed preflight timeout has its own code'
+   Check ((Test-Path -LiteralPath (Join-Path $job 'grant-consumed.json')) -and -not (Test-Path -LiteralPath (Join-Path $job 'filesystem-intent.json'))) 'consumption is durable before timeout; no filesystem intent'
+   . (Join-Path $lib 'StagingWriteLifecycle.ps1')
+   . (Join-Path $lib 'StagingWriteHistory.ps1')
+   $slot=Join-Path $root 'consume-review';PrivateRoot $slot
+   $failure=Join-Path $slot 'dispatch-failed.json'
+   $state=[pscustomobject]@{Offer=$offer;Started=[pscustomobject]@{release_id=$release}}
+   $record=New-AuthWireLifecycleDispatchFailureRecord $offer.operation 'consume' $errorCode
+   Write-AuthWireStagingJournal $failure $record
+   $review=Get-AuthWireStageConsumptionReview $journal $slot $state $b $rsa
+   Check ($review.Phase -ceq 'consumed_without_filesystem_intent' -and $review.DiagnosticCode -ceq $errorCode) 'review reports validated consumed-grant evidence and the new failure code'
+   $unknown=New-AuthWireLifecycleDispatchFailureRecord $offer.operation 'consume' 'private fixture output'
+   Check ($unknown.diagnostic_code -ceq 'WRITE_CONSUMPTION_UNCLASSIFIED') 'raw exception text is never recorded'
+   Remove-Item -LiteralPath $failure
+   Write-AuthWireStagingJournal $failure (New-AuthWireLifecycleDispatchFailureRecord $offer.operation 'preflight' 'private fixture output')
+   $legacy=Read-AuthWireStagingJournal $failure;$legacy.phase='consume'
+   Remove-Item -LiteralPath $failure
+   Write-AuthWireStagingJournal $failure $legacy
+   Check ((Get-AuthWireStageConsumptionReview $journal $slot $state $b $rsa).DiagnosticCode -ceq 'unavailable') 'existing V1 consume records remain classifiable'
+   $marker=Join-Path $job 'stage-launch.json'
+   Write-AuthWireStagingJournal $marker ([pscustomobject]@{fixture=$true})
+   Check ($null -eq (Get-AuthWireStageConsumptionReview $journal $slot $state $b $rsa)) 'execution evidence suppresses the prewrite classification'
+   Remove-Item -LiteralPath $marker
+   Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $before.Sha256) 'timed-out consumption and review preserve the SMB baseline'
+   Reject {New-AuthWireAuthorizedFilesystemIntent $journal $id $b $release $rsa} 'consumed timeout cannot replay'
+   $outcomes+=,[pscustomobject]@{case=$case;staged=$false;diagnostic=$errorCode}
+   continue
+  }
   $reserved=New-AuthWireAuthorizedFilesystemIntent $journal $id $b $release $rsa
   Check ($reserved.GrantConsumed -and -not $reserved.FilesystemWriteEnabled) 'real signed readonly intent child succeeded'
   $fixture.case=$case;[IO.File]::WriteAllText((Join-Path $package 'fixture.json'),($fixture|ConvertTo-Json -Depth 12 -Compress))
@@ -489,4 +521,3 @@ finally{
  foreach($path in @($journal,$candidateBase)){if($path -and (Test-Path -LiteralPath $path)){Remove-Item -LiteralPath $path -Recurse -Force}}
  if(Test-Path -LiteralPath $root){Remove-Item -LiteralPath $root -Recurse -Force}
 }
-
