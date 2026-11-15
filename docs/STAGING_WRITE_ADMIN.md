@@ -89,8 +89,10 @@ tamamlanma ve tüketim günlüklerine ait özetler Connector imzasıyla bağlıd
 İnceleme özeti kanıtı ve 60 saniyelik geçerliliği içerir. İlk kayıtta
 `acknowledge: record_consumed_stage_lock_release_approval` ve aynı taze
 kanıt gerekir. Tam olarak aynı onay isteğinin tekrarı ilk makbuzu döndürür.
-İş ve GPO engeli korunur. Mevcut `verify-lock-release` ucu yalnız yetki
-verilmeden reddedilmiş işlerin onaylarını doğrulamaya devam eder.
+İş ve GPO engeli korunur. `verify-lock-release` aynı operatör oturumunda
+tam onay isteğini ve makbuz revizyonunu denetim kaydından yeniden doğrular.
+Kanıtın süresi dolduğunda doğrulama durur. Yanıt onay isteğinin ve imzalı
+kanıtın özetlerini içerir. Uç salt okunur çalışır ve kilidi kapatmaz.
 
 Varsayılan hizmette durum ve inceleme sonuçlarında `approval_enabled`,
 `write_authorization_enabled`, `execution_adapter_available` ve `can_apply_gpo`

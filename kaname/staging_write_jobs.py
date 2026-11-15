@@ -634,7 +634,8 @@ class StagingWriteJobs(ConnectorJobs):
         approval = value['approval']
         self._validate_reconciliation_decision(approval, actor, confirm=True)
         revision = value['approval_revision']
-        require(approval['decision'] == RELEASE_APPROVAL and type(revision) is int and
+        decision = approval['decision']
+        require(decision in RELEASE_ACK and type(revision) is int and
                 1 <= revision < 2**53 and type(approval['expected_revision']) is int and
                 revision == approval['expected_revision'] + 1, 'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
         with self.store.connect() as db:
@@ -643,6 +644,14 @@ class StagingWriteJobs(ConnectorJobs):
                 (revision, self._reconciliation_event(approval, actor))).fetchone(),
                 'STAGING_WRITE_RELEASE_APPROVAL_CONFLICT')
             comparison, job = self._compare_reconciliation(db, approval['evidence'])
+            if decision == CONSUMED_RELEASE_APPROVAL:
+                self._require_consumed_stage_release(db, approval, actor, comparison, job)
+                proof = approval['consumed_stage_proof']
+                return {'job_id': job['id'], 'gpo_id': proof['Body']['gpo_id'],
+                        'decision': decision, 'approval_revision': revision, 'approval_verified': True,
+                        'approval_request_sha256': digest(approval),
+                        'consumed_stage_proof_sha256': digest(proof),
+                        'evidence_expires_at': proof['Body']['expires_at']}
             self._require_refused_stage_release(db, approval, actor, comparison, job)
             require(not self._busy(self._read(db), job['target'], STAGE, job['scope'], int(self.clock())),
                     'STAGING_WRITE_GPO_BUSY')

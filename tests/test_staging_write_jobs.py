@@ -269,6 +269,30 @@ class StagingWriteJobTests(unittest.TestCase):
             StagingWriteJobs(self.engine, wall_clock=lambda: self.now).review_reconciliation(request, self.actor)
         self.assertEqual(audit, self.store.audit())
 
+    def test_consumed_stage_receipt_rechecks_exact_audited_approval_and_freshness(self):
+        request = self.consumed_stage_recovery()
+        review = self.jobs.review_reconciliation(request, self.actor)
+        approval = request | {'review_hash': review['review_hash'],
+                              'acknowledge': RELEASE_ACK[CONSUMED_RELEASE_APPROVAL]}
+        verification = {'approval': approval, 'approval_revision': request['expected_revision'] + 1}
+        with self.assertRaisesRegex(JobError, 'RELEASE_APPROVAL_CONFLICT'):
+            self.jobs.verify_stage_lock_release_approval(verification, self.actor)
+        self.jobs.record_reconciliation(approval, self.actor)
+        audit = self.store.audit()
+        receipt = self.jobs.verify_stage_lock_release_approval(verification, self.actor)
+        self.assertTrue(receipt['approval_verified'])
+        self.assertEqual(digest(approval), receipt['approval_request_sha256'])
+        self.assertEqual(review['consumed_stage_proof_sha256'], receipt['consumed_stage_proof_sha256'])
+        self.assertEqual(review['evidence_expires_at'], receipt['evidence_expires_at'])
+        for value, actor in ((verification, str(uuid.uuid4())),
+                             (verification | {'approval': approval | {'review_hash': '0' * 64}}, self.actor)):
+            with self.assertRaisesRegex(JobError, 'RELEASE_APPROVAL_CONFLICT'):
+                self.jobs.verify_stage_lock_release_approval(value, actor)
+        self.now = receipt['evidence_expires_at']
+        with self.assertRaisesRegex(JobError, 'RECOVERY_EVIDENCE_EXPIRED'):
+            self.jobs.verify_stage_lock_release_approval(verification, self.actor)
+        self.assertEqual(audit, self.store.audit())
+
     def test_review_is_readonly_actor_bound_and_never_gpo_activation(self):
         self.jobs.poll(self.proof()); before = self.store.snapshot(); audit = self.store.audit()
         v = self.value(); a = self.jobs.review(v, self.actor)
