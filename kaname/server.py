@@ -38,6 +38,8 @@ from .admin import AdminStore, AdminError, COOKIE, TTL, IDLE, RESOURCES, permits
 
 STATIC = Path(__file__).parent / 'static'
 STAGING_WRITE_PROBE_PATH = '/api/connector/v1/staging-write/poll'
+STAGING_WRITE_PEER_PATHS = frozenset((STAGING_WRITE_PROBE_PATH,
+    '/api/connector/v1/staging-write/claim', '/api/connector/v1/staging-write/result'))
 ASSETS = {'/deployment.js': ('deployment.js','application/javascript'), '/user-enrollment.js': ('user-enrollment.js','application/javascript'), '/dashboard.js': ('dashboard.js','application/javascript'), '/device.js': ('device.js','application/javascript'), '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
           '/audit.js': ('audit.js','application/javascript'),
           '/access-events.js': ('access-events.js','application/javascript'),
@@ -69,7 +71,7 @@ class DevelopmentServer(ThreadingHTTPServer):
     daemon_threads = True
 
     def __init__(self, root, port=8765, token=None, *, listen='127.0.0.1', tls_cert=None, tls_key=None,
-                 public_name=None, staging_write_probe=False):
+                 public_name=None, staging_write_probe=False, staging_write_pilot_gpo_id=None):
         endpoint = ipaddress.ip_address(listen)
         if endpoint.version != 4 or endpoint.is_unspecified or endpoint.is_multicast:
             raise ValueError('An explicit unicast IPv4 listen address is required')
@@ -77,6 +79,10 @@ class DevelopmentServer(ThreadingHTTPServer):
             raise ValueError('TLS certificate and key are required for LAN access')
         if type(staging_write_probe) is not bool or (staging_write_probe and not (endpoint.is_loopback and tls_cert)):
             raise ValueError('Staging write probe requires explicit opt-in on loopback HTTPS')
+        if staging_write_pilot_gpo_id is not None:
+            from .connector_jobs import guid
+            if not (endpoint.is_loopback and tls_cert and guid(staging_write_pilot_gpo_id)) or staging_write_probe:
+                raise ValueError('Staging write pilot requires a canonical GPO UUID on loopback HTTPS without probe mode')
         if public_name:
             public_name = dns_name(public_name)
             if not tls_cert:
@@ -112,6 +118,7 @@ class DevelopmentServer(ThreadingHTTPServer):
         self.connector_peer_gate = threading.BoundedSemaphore(4)
         self.connector_peer_rates = {}
         self.staging_write_probe = staging_write_probe
+        self.staging_write_pilot_gpo_id = staging_write_pilot_gpo_id
         self.users = None
         self.user_sessions = None
         self.user_init_lock = threading.Lock()
@@ -384,7 +391,7 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(503,{'error':'CONNECTOR_SERVICE_UNAVAILABLE'})
 
     def staging_write_admin(self, *, write=False):
-        # Operator decisions are audit records; this handler cannot execute jobs.
+        # Only an explicit loopback pilot can admit operator-approved jobs.
         if not self.guard(write=write, resource='certificates.authority'):
             return
         if not permits(self.actor, 'system.connectors', write):
@@ -401,7 +408,9 @@ class Handler(BaseHTTPRequestHandler):
         except ImportError:
             self.respond(503, {'error': 'CONNECTOR_SERVICE_UNAVAILABLE'}); return
         try:
-            jobs = StagingWriteJobs(DeploymentCandidates(self.connector_services(), self.server.deployment))
+            pilot = self.server.staging_write_pilot_gpo_id
+            jobs = StagingWriteJobs(DeploymentCandidates(self.connector_services(), self.server.deployment),
+                                    pilot_gpo_id=pilot)
             if not write:
                 if self.path != '/api/deployment/staging-write':
                     raise ValueError()
@@ -419,12 +428,12 @@ class Handler(BaseHTTPRequestHandler):
                     if not session or not hmac.compare_digest(session['csrf'].encode(), self.actor['csrf'].encode()):
                         raise AdminError('UNAUTHORIZED')
                     if self.path == '/api/deployment/staging-write/create':
-                        # Do not enqueue even a valid/replayed review. Windows
-                        # recovery and backup projection remain delivery gates.
-                        self.respond(409, {'error': 'STAGING_WRITE_EXECUTION_UNAVAILABLE',
-                                          'approval_enabled': False, 'can_apply_gpo': False})
-                        return
-                    if self.path == '/api/deployment/staging-write/reconciliation/record':
+                        if pilot is None:
+                            self.respond(409, {'error': 'STAGING_WRITE_EXECUTION_UNAVAILABLE',
+                                              'approval_enabled': False, 'can_apply_gpo': False})
+                            return
+                        result = jobs.create(value, actor['id'])
+                    elif self.path == '/api/deployment/staging-write/reconciliation/record':
                         result = jobs.record_reconciliation(value, actor['id'])
                     elif self.path == '/api/deployment/staging-write/reconciliation/verify-lock-release':
                         result = jobs.verify_stage_lock_release_approval(value, actor['id'])
@@ -434,9 +443,10 @@ class Handler(BaseHTTPRequestHandler):
                             result = jobs.review_reconciliation(value, actor['id'])
                         else:
                             result = jobs.review(value, actor['id'])
-                        result['review_only'] = True
-            result.update(approval_enabled=False, write_authorization_enabled=False,
-                          execution_adapter_available=False, can_apply_gpo=False)
+                        result['review_only'] = (self.path != '/api/deployment/staging-write/review' or pilot is None)
+            enabled = pilot is not None
+            result.update(source_only=not enabled, approval_enabled=enabled, write_authorization_enabled=enabled,
+                          execution_adapter_available=enabled, can_apply_gpo=False)
             self.respond(200, result)
         except (CandidateError, RegistryError, JobError) as error:
             self.respond(503 if error.code.endswith('STORE_INVALID') else
@@ -483,7 +493,13 @@ class Handler(BaseHTTPRequestHandler):
             raw = self.rfile.read(size); self.body_read = True
             if len(raw) != size: raise ValueError()
             registry = self.connector_services()
-            if self.path == STAGING_WRITE_PROBE_PATH and self.server.staging_write_probe:
+            if self.path in STAGING_WRITE_PEER_PATHS and self.server.staging_write_pilot_gpo_id is not None:
+                from .deployment_candidates import DeploymentCandidates
+                from .staging_write_jobs import StagingWriteJobs, POLL_PATH, CLAIM_PATH, RESULT_PATH
+                writer = StagingWriteJobs(DeploymentCandidates(registry, self.server.deployment),
+                                          pilot_gpo_id=self.server.staging_write_pilot_gpo_id)
+                result = {POLL_PATH: writer.poll, CLAIM_PATH: writer.claim, RESULT_PATH: writer.complete}[self.path](raw)
+            elif self.path == STAGING_WRITE_PROBE_PATH and self.server.staging_write_probe:
                 from .deployment_candidates import DeploymentCandidates
                 from .staging_write_jobs import StagingWriteJobs
                 result = StagingWriteJobs(DeploymentCandidates(registry, self.server.deployment)).probe(raw)
@@ -1029,7 +1045,8 @@ class Handler(BaseHTTPRequestHandler):
             self.staging_write_admin(write=True); return
         if self.path in {'/api/deployment/candidates/preview','/api/deployment/candidates/record','/api/deployment/candidates/verify/preview','/api/deployment/candidates/verify/create','/api/deployment/candidates/scope/preview','/api/deployment/candidates/scope/create','/api/deployment/candidates/combined/preview','/api/deployment/candidates/combined/create','/api/deployment/candidates/combined-scope/preview','/api/deployment/candidates/combined-scope/create','/api/deployment/candidates/staging-preview/preview','/api/deployment/candidates/staging-preview/create'}:
             self.deployment_candidate_admin(write=True); return
-        if self.path == STAGING_WRITE_PROBE_PATH and self.server.staging_write_probe:
+        if ((self.path == STAGING_WRITE_PROBE_PATH and self.server.staging_write_probe) or
+                (self.path in STAGING_WRITE_PEER_PATHS and self.server.staging_write_pilot_gpo_id is not None)):
             self.connector_peer(); return
         if self.path in {'/api/connector/v1/challenge','/api/connector/v1/health','/api/connector/v1/jobs/poll','/api/connector/v1/jobs/result','/api/connector/v1/candidates/poll','/api/connector/v1/candidates/result','/api/connector/v1/scope/poll','/api/connector/v1/scope/result','/api/connector/v1/combined/poll','/api/connector/v1/combined/result','/api/connector/v1/combined-scope/poll','/api/connector/v1/combined-scope/result','/api/connector/v1/staging-preview/poll','/api/connector/v1/staging-preview/result'}:
             self.connector_peer(); return
@@ -1237,4 +1254,3 @@ class Handler(BaseHTTPRequestHandler):
             self.store_error(error)
         except OSError:
             self.respond(503, {'error': 'STORE_UNAVAILABLE'})
-

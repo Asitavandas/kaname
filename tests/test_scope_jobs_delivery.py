@@ -84,7 +84,7 @@ class ScopeJobsDeliveryTests(unittest.TestCase):
   # Historical installers remain frozen and reject the new function by default.
   with self.assertRaisesRegex(ValueError,'SERVER_FUNCTION_SET_CHANGED'):self.real_server_guard(raw)
   self.n['SERVER_FUNCTIONS']=[*self.n['SERVER_FUNCTIONS'],'Handler.staging_write_admin']
-  self.n['SERVER_PROTECTED']['Handler.staging_write_admin']='5ccd8b0f56fd12f3ae424b00511d1213ca927fef110cabc74455fcc19ec1afaa'
+  self.n['SERVER_PROTECTED']['Handler.staging_write_admin']='a563f7cddab515c771c39b2af265a1994438d3fcf447709fbcfa6cf18fbb6d2e'
   # Pin the reviewed GET dispatch too; do not relax authentication guards.
   # Current GET dispatch includes the signed CRL route and the audit-guarded Accounting route; historical
   # deployment guards and all authorization bodies remain frozen.

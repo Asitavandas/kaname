@@ -1,5 +1,7 @@
-"""Real HTTPS administrator reviews; execution stays unconditionally closed."""
+"""Real HTTPS administrator reviews and isolated pilot job delivery."""
 import json
+from pathlib import Path
+import tempfile
 import sqlite3
 import time
 import unittest
@@ -405,6 +407,89 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
         self.assertEqual(before['last_poll'], after['last_poll'])
         self.assertEqual(before['jobs'], after['jobs'])
         self.assertEqual('queued', after['jobs'][0]['state'])
+
+    def test_pilot_mode_requires_exclusive_loopback_tls_and_canonical_scope(self):
+        pilot = str(uuid.uuid4())
+        for options in ({'staging_write_pilot_gpo_id': pilot},
+                        {'staging_write_pilot_gpo_id': pilot, 'listen':'192.0.2.1',
+                         'tls_cert':'cert', 'tls_key':'key'},
+                        {'staging_write_pilot_gpo_id': 'invalid', 'tls_cert':'cert', 'tls_key':'key'},
+                        {'staging_write_pilot_gpo_id': pilot, 'staging_write_probe':True,
+                         'tls_cert':'cert', 'tls_key':'key'}):
+            with self.subTest(options=options), self.assertRaisesRegex(ValueError, 'loopback HTTPS'):
+                DevelopmentServer(self.store.root, 0, **options)
+        tls = Path(self.base.name)
+        with tempfile.TemporaryDirectory() as directory:
+            with DevelopmentServer(Path(directory), 0, tls_cert=tls/'web.crt', tls_key=tls/'web.key',
+                                   staging_write_pilot_gpo_id=pilot) as server:
+                self.assertEqual(pilot, server.staging_write_pilot_gpo_id)
+                self.assertTrue(server.tls)
+                self.assertEqual('127.0.0.1', server.server_address[0])
+
+    def test_pilot_https_create_stage_and_rollback_use_signed_peer_and_separate_approval(self):
+        value = self.ready()
+        target = self.jobs.review(value, self.actor)['target']
+        pilot = target['scope_target']['gpo_id']
+        self.server.staging_write_pilot_gpo_id = str(uuid.uuid4())
+        code, result, _ = self.request('POST', ROOT+'/review', value, self.headers)
+        self.assertEqual((409, 'STAGING_WRITE_PILOT_SCOPE_CHANGED'), (code, result['error']))
+        self.assertEqual([], self.jobs.status()['jobs'])
+
+        self.server.staging_write_pilot_gpo_id = pilot
+        self.assertEqual(403, self.peer(POLL_PATH, wf.StagingWriteJobTests.proof(self),
+                                       {'Cookie':'session=x'})[0])
+        self.assertEqual(403, self.peer(POLL_PATH, wf.StagingWriteJobTests.proof(self, private=self.other))[0])
+        self.assertEqual(200, self.peer(POLL_PATH, wf.StagingWriteJobTests.proof(self))[0])
+
+        def review_and_create(request):
+            code, review, _ = self.request('POST', ROOT+'/review', request, self.headers)
+            self.assertEqual(200, code, review)
+            self.assertFalse(review['review_only'])
+            self.assertFalse(review['can_apply_gpo'])
+            self.assertTrue(review['approval_enabled'])
+            body = request | {'review_hash': review['review_hash']}
+            code, denied, _ = self.request('POST', ROOT+'/create', body,
+                                            self.headers | {'X-Kaname-CSRF':'invalid'})
+            self.assertEqual(403, code, denied)
+            code, queued, _ = self.request('POST', ROOT+'/create', body, self.headers)
+            self.assertEqual(200, code, queued)
+            self.assertEqual('queued', queued['state'])
+
+        def run_peer(request, outcome):
+            self.now = int(time.time())
+            code, offer = self.peer(POLL_PATH, wf.StagingWriteJobTests.proof(self))
+            self.assertEqual(200, code, offer)
+            self.assertEqual(request['job_id'], offer['job_id'])
+            self.assertFalse(offer['write_authorized'])
+            claim = wf.StagingWriteJobTests.claim_body(self, offer)
+            raw = wf.StagingWriteJobTests.proof(self, 'CLAIM', claim)
+            code, grant = self.peer(CLAIM_PATH, raw)
+            self.assertEqual(200, code, grant)
+            self.assertTrue(grant['write_authorized'])
+            self.assertFalse(grant['can_apply_gpo'])
+            self.assertEqual(403, self.peer(CLAIM_PATH, raw)[0])
+            self.now = int(time.time())
+            result = wf.StagingWriteJobTests.result(self, offer, grant)
+            self.assertEqual(outcome, result['outcome'])
+            for _ in range(2):
+                code, saved = self.peer(RESULT_PATH, wf.StagingWriteJobTests.proof(self, 'RESULT', result))
+                self.assertEqual(200, code, saved)
+                self.assertTrue(saved['result_recorded'])
+
+        review_and_create(value)
+        run_peer(value, 'staged')
+        rollback = value | {'job_id':str(uuid.uuid4()), 'operation':ROLLBACK,
+                            'stage_job_id':value['job_id'], 'acknowledge':ACK[ROLLBACK],
+                            'expected_revision':self.store.snapshot()['revision']}
+        review_and_create(rollback)
+        run_peer(rollback, 'rolled_back')
+        code, status, _ = self.request('GET', ROOT, headers=self.headers)
+        self.assertEqual(200, code, status)
+        self.assertFalse(status['can_apply_gpo'])
+        self.assertTrue(all(not j['customer_filesystem_attested'] for j in status['jobs']))
+        for path in (ROOT+'/apply', ROOT+'/execute'):
+            self.assertEqual(404, self.request('POST', path, {}, self.headers)[0])
+        self.assertEqual(['rolled_back', 'staged'], [j['peer_reported_outcome'] for j in status['jobs']])
 
     def test_json_limits_duplicate_keys_and_wrong_content_type(self):
         # Reject the declared oversized body before uploading it (TLS may close
