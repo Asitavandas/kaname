@@ -101,6 +101,22 @@ def validate_config(value):
             'radius_clients': result, 'access_modes': modes}
 
 
+def validate_policy_selector(value):
+    from .directory import policy_dn_key, validate_search_base
+
+    keys(value, {'type', 'domain', 'dn'}, {'type', 'domain'})
+    kind = enum(value['type'], {'ou', 'everyone'})
+    domain = dns_name(value['domain'])
+    if kind == 'everyone':
+        keys(value, {'type', 'domain'}, {'type', 'domain'})
+        return {'type': kind, 'domain': domain}
+    keys(value, {'type', 'domain', 'dn'}, {'type', 'domain', 'dn'})
+    dn = validate_search_base(value['dn'], domain)
+    if policy_dn_key(dn, domain)[0][0] != 'OU':
+        raise ValidationError('AD_SCOPE_INVALID')
+    return {'type': kind, 'domain': domain, 'dn': dn}
+
+
 def validate_policies(value):
     if type(value) is not list or len(value) > 1000:
         raise ValidationError("Invalid policy list")
@@ -113,7 +129,7 @@ def validate_policies(value):
             raise ValidationError("Invalid policy identifier")
         conditions = policy['conditions']
         constraints = policy['constraints']
-        keys(conditions, {'group_sids', 'access_types', 'nas_ips', 'identity_types'}, {'group_sids', 'access_types', 'nas_ips'})
+        keys(conditions, {'group_sids', 'access_types', 'nas_ips', 'identity_types', 'selector'}, {'group_sids', 'access_types', 'nas_ips'})
         keys(constraints, {'eap_methods', 'require_domain_device'}, {'eap_methods', 'require_domain_device'})
         methods = array(constraints['eap_methods'], lambda x: enum(x, {'EAP-TLS', 'PEAP-TLS', 'PEAP-MSCHAPV2'}), 3)
         if not methods:
@@ -141,6 +157,10 @@ def validate_policies(value):
                        'action': action, 'vlan': vlan})
         if identity_types is not None:
             result[-1]['conditions']['identity_types'] = identity_types
+        if 'selector' in conditions:
+            if groups or methods != ['EAP-TLS']:
+                raise ValidationError('POLICY_IDENTITY_SCOPE_INVALID')
+            result[-1]['conditions']['selector'] = validate_policy_selector(conditions['selector'])
     if len({x['id'] for x in result}) != len(result):
         raise ValidationError("Duplicate policy identifier")
     return result

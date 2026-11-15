@@ -159,9 +159,11 @@ function fillConfig({force=false}={}){if(!force&&setupHasEdits())return;const c=
 function showConflicts(items){const box=$('conflict-alert');box.replaceChildren();box.hidden=!items?.length;if(!items?.length)return;const title=document.createElement('strong');title.textContent='Politika çakışması — düzeltme gerekli';box.append(title);for(const item of items){const p=document.createElement('p');p.textContent=item.policy_names.join(' / ')+' aynı bağlantı için farklı karar, VLAN veya koşul üretiyor.';box.append(p);}const note=document.createElement('p');note.textContent='Çakışmayı düzeltmeden kural kaydedilmez. Liste sırasını değiştirmek çözüm değildir.';box.append(note);}
 function policyColumns(policy){
   const groups=policy.conditions.group_sids.map(sid=>groupNames.get(sid)||sid);
+  const selector=policy.conditions.selector;
+  const conditionLabel=selector?.type==='ou'?selector.dn:selector?.type==='everyone'?'Everyone ('+selector.domain+')':null;
   const access=(policy.conditions.access_types||[]).map(type=>({wired:'Kablolu',wireless:'Kablosuz'}[type]||type)).join(', ')||'Tüm erişim türleri';
   const vlan=networkState?.vlans?.find(item=>item.id===policy.vlan);
-  return {groups:groups.length?groups.join(', '):'Kimlik koşulu yok',access,vlan:policy.vlan===null?'—':'VLAN '+policy.vlan,vlanName:vlan?.name||'',decision:policy.action==='allow'?'İzin ver':'Reddet'};
+  return {groups:conditionLabel||(groups.length?groups.join(', '):'Kimlik koşulu yok'),access,vlan:policy.vlan===null?'—':'VLAN '+policy.vlan,vlanName:vlan?.name||'',decision:policy.action==='allow'?'İzin ver':'Reddet'};
 }
 function selectPolicyRow(id){
   if(policySaving||!can('policies.rules',true))return;
@@ -514,6 +516,7 @@ $('policy-form').addEventListener('submit',async event=>{
     if(scope==='legacy'&&old.constraints.require_domain_device&&selected.some(x=>x.kind==='user'))throw new Error('Bu kural bilgisayar doğrulaması istiyor. Kullanıcı eklemek için doğrulama kapsamını açıkça seçin.');
     const constraints=old&&scope===policyOriginalScope?{...old.constraints}:{eap_methods:old?.constraints.eap_methods||['EAP-TLS'],require_domain_device:scope==='computer'};
     const conditions={group_sids:[...policySelected.keys()],access_types:access==='both'?['wired','wireless']:access==='any'?[]:[access],nas_ips:old?.conditions.nas_ips||[]};
+    if(old?.conditions.selector)conditions.selector={...old.conditions.selector};
     if(types)conditions.identity_types=old?.conditions.identity_types&&scope===policyOriginalScope?[...old.conditions.identity_types]:types;
     const policy={id:editingPolicy||crypto.randomUUID(),name:$('policy-name').value.trim(),enabled:$('policy-enabled').value==='true',conditions,constraints,action,vlan:action==='allow'?Number($('policy-vlan').value):null};
     if(await savePolicies([...state.policies.filter(p=>p.id!==policy.id),policy])){

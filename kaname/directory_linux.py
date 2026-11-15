@@ -172,7 +172,8 @@ def decode_account_response(output, returncode, request, guid):
         if row is None:
             return None
         fields = {'domain', 'object_guid', 'sid', 'kind', 'enabled', 'security_group_sids'}
-        if type(row) is not dict or set(row) != fields or row['domain'] != request['domain'] or row['object_guid'] != guid:
+        if (type(row) is not dict or not fields <= row.keys() <= fields | {'distinguished_name'} or
+                row['domain'] != request['domain'] or row['object_guid'] != guid):
             raise ValueError()
         groups = row['security_group_sids']
         if type(groups) is not list or len(groups) > 256 or len(set(groups)) != len(groups):

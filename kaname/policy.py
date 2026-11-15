@@ -5,7 +5,8 @@ issue RADIUS responses. UI-supplied identity claims are never network proof.
 """
 from dataclasses import dataclass
 
-from .models import ValidationError, address, boolean, enum, validate_policies
+from .directory import policy_dn_key
+from .models import ValidationError, address, boolean, dns_name, enum, validate_policies
 import re
 
 
@@ -21,6 +22,8 @@ class VerifiedIdentity:
     eap_method: str
     account_sid: str = ''
     account_kind: str = ''
+    directory_domain: str = ''
+    directory_dn: str = ''
 
     def __post_init__(self):
         for value in (self.authenticated, self.directory_available, self.account_enabled, self.domain_device):
@@ -34,6 +37,12 @@ class VerifiedIdentity:
         enum(self.account_kind, {'', 'user', 'computer'})
         if self.account_kind == 'user' and self.domain_device:
             raise ValidationError('User identity cannot prove a domain computer')
+        if type(self.directory_domain) is not str or (self.directory_domain and self.directory_domain != dns_name(self.directory_domain)):
+            raise ValidationError('Invalid verified directory domain')
+        if type(self.directory_dn) is not str:
+            raise ValidationError('Invalid verified directory DN')
+        if self.directory_dn:
+            policy_dn_key(self.directory_dn, self.directory_domain)
         enum(self.access_type, {'wired', 'wireless'})
         enum(self.eap_method, {'EAP-TLS', 'PEAP-TLS', 'PEAP-MSCHAPV2'})
         object.__setattr__(self, 'nas_ip', address(self.nas_ip))
@@ -105,6 +114,15 @@ def policy_conflicts(policies, catalog=None):
             common_kinds = set(lc.get('identity_types', ['user', 'computer'])).intersection(rc.get('identity_types', ['user', 'computer']))
             if not common_kinds:
                 continue
+            ls, rs = lc.get('selector'), rc.get('selector')
+            if ls and rs:
+                if ls['domain'] != rs['domain']:
+                    continue
+                if ls['type'] == rs['type'] == 'ou':
+                    ld = policy_dn_key(ls['dn'], ls['domain'])
+                    rd = policy_dn_key(rs['dn'], rs['domain'])
+                    if ld[-len(rd):] != rd and rd[-len(ld):] != ld:
+                        continue
             lg, rg = set(lc['group_sids']), set(rc['group_sids'])
             if lg and rg and not lg.intersection(rg) and not any(account_kinds.get(sid) in common_kinds for sid in member_sets[frozenset(lg)].intersection(member_sets[frozenset(rg)])):
                 continue
@@ -141,6 +159,19 @@ def evaluate(policies, identity):
             continue
         if c['nas_ips'] and identity.nas_ip not in c['nas_ips']:
             continue
+        selector = c.get('selector')
+        if selector:
+            if identity.eap_method != 'EAP-TLS' or not identity.directory_domain or not identity.account_kind:
+                return Decision('deny', 'DIRECTORY_RESULT_INVALID')
+            if identity.directory_domain != selector['domain']:
+                continue
+            if selector['type'] == 'ou':
+                if not identity.directory_dn:
+                    return Decision('deny', 'DIRECTORY_RESULT_INVALID')
+                expected = policy_dn_key(selector['dn'], selector['domain'])
+                actual = policy_dn_key(identity.directory_dn, identity.directory_domain)
+                if len(actual) <= len(expected) or actual[-len(expected):] != expected:
+                    continue
         r = policy['constraints']
         if identity.eap_method not in r['eap_methods']:
             decisions.append(Decision('deny', 'EAP_CONSTRAINT_FAILED', policy['id']))

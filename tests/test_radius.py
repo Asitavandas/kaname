@@ -8,7 +8,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from kaname.models import ValidationError
-from kaname.policy import Decision
+from kaname.policy import Decision, policy_conflicts
 from kaname.radius import (CertificateBinding, CertificateReference, CurrentDirectoryAccount,
                            DirectoryUnavailable, TLSAuthorization, freeradius_result)
 
@@ -17,6 +17,16 @@ GUID = 'e946e670-f4a4-4faa-a1fd-3b534ff963a1'
 SID = 'S-1-5-21-11-22-33-1001'
 GROUP = 'S-1-5-21-11-22-33-1100'
 CERT = CertificateReference('a' * 64, '12ab')
+AD_BASE = 'DC=lab,DC=example,DC=test'
+PILOT_OU = 'OU=Pilot,' + AD_BASE
+
+
+def scoped_policy(kind, *, dn=None, **changes):
+    selector = {'type': kind, 'domain': DOMAIN}
+    if dn is not None:
+        selector['dn'] = dn
+    return policy(conditions={'group_sids': [], 'access_types': ['wired'], 'nas_ips': ['127.0.0.1'],
+                              'selector': selector}, **changes)
 
 
 def policy(**changes):
@@ -67,6 +77,65 @@ class RadiusAuthorizationTests(unittest.TestCase):
         args = {'nas_ip': '127.0.0.1', 'access_type': 'wired'}
         args.update(changes)
         return service.authorize(CERT, **args)
+
+    def test_ou_selector_uses_fresh_bound_account_location(self):
+        rule = scoped_policy('ou', dn=PILOT_OU)
+        s = self.service(a=account(distinguished_name='CN=Client,OU=Child,' + PILOT_OU), policies=[rule])
+        self.assertEqual('allow', self.decide(s).action)
+        s.directory.value = account(distinguished_name='CN=Client,OU=Other,' + AD_BASE)
+        self.assertEqual('NO_MATCHING_POLICY', self.decide(s).reason)
+        s.directory.value = account()
+        self.assertEqual('DIRECTORY_RESULT_INVALID', self.decide(s).reason)
+        s.directory.value = None
+        self.assertEqual('ACCOUNT_NOT_FOUND', self.decide(s).reason)
+
+    def test_everyone_requires_verified_enabled_domain_identity(self):
+        rule = scoped_policy('everyone')
+        s = self.service(policies=[rule])
+        self.assertEqual('allow', self.decide(s).action)
+        s.directory.value = account(enabled=False)
+        self.assertEqual('ACCOUNT_DISABLED', self.decide(s).reason)
+        s.registry.value = None
+        self.assertEqual('CERTIFICATE_UNBOUND', self.decide(s).reason)
+
+    def test_selector_conflicts_include_nested_scopes_and_deny_runtime(self):
+        everyone = scoped_policy('everyone', id='everyone', vlan=33)
+        child = scoped_policy('ou', dn='OU=Child,' + PILOT_OU, id='child', action='deny', vlan=None)
+        parent = scoped_policy('ou', dn=PILOT_OU, id='parent')
+        sibling = scoped_policy('ou', dn='OU=Sibling,' + AD_BASE, id='sibling')
+        self.assertEqual(1, len(policy_conflicts([everyone, child])))
+        self.assertEqual(1, len(policy_conflicts([parent, child])))
+        self.assertEqual([], policy_conflicts([sibling, child]))
+        context = account(distinguished_name='CN=Client,OU=Child,' + PILOT_OU)
+        for rules in ([everyone, child], [child, everyone]):
+            self.assertEqual('POLICY_CONFLICT', self.decide(self.service(a=context, policies=rules)).reason)
+
+    def test_ou_scope_escape_encodings_match_without_joining_rdns(self):
+        account_dn = r'CN=Client,OU=Pilot\, West,' + AD_BASE
+        rule = scoped_policy('ou', dn=r'OU=Pilot\2c West,' + AD_BASE)
+        s = self.service(a=account(distinguished_name=account_dn), policies=[rule])
+        self.assertEqual('allow', self.decide(s).action)
+        s.directory.value = account(distinguished_name='CN=Client,OU=West,' + PILOT_OU)
+        self.assertEqual('NO_MATCHING_POLICY', self.decide(s).reason)
+
+    def test_ou_adapter_preserves_explicit_ad_location_and_rejects_foreign_dn(self):
+        from kaname.directory import DirectoryError
+        from kaname.directory_linux import decode_account_response
+
+        dc = 'dc01.' + DOMAIN
+        context = {'domain': DOMAIN, 'dc_fqdn': dc}
+        row = {'domain': DOMAIN, 'object_guid': GUID, 'sid': SID, 'kind': 'computer',
+               'enabled': True, 'security_group_sids': [GROUP]}
+
+        def decode(fields):
+            return decode_account_response(json.dumps(context | {'account': fields}).encode(),
+                                           0, context, GUID)
+
+        self.assertEqual('', decode(row).distinguished_name)
+        dn = 'CN=Client,' + PILOT_OU
+        self.assertEqual(dn, decode(row | {'distinguished_name': dn}).distinguished_name)
+        with self.assertRaisesRegex(DirectoryError, 'AD_INVALID_RESPONSE'):
+            decode(row | {'distinguished_name': 'CN=Client,OU=Pilot,DC=foreign,DC=test'})
 
     def test_valid_bound_computer_policy_and_tagged_vlan(self):
         s = self.service()

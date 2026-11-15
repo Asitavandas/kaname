@@ -103,6 +103,37 @@ def dn_within(dn, base):
     return len(actual) >= len(expected) and actual[-len(expected):] == expected
 
 
+def policy_dn_key(value, domain):
+    """Immutable RDNs for the bounded DN syntax used by policy scopes."""
+    dn = validate_search_base(value, domain)
+    if not dn:
+        raise ValidationError('AD_SCOPE_INVALID')
+    result = []
+    pattern = r'\\(?:[0-9a-fA-F]{2}|.)|[^\\]+'
+    for part in re.split(r'(?<!\\),', dn):
+        kind, raw = part.split('=', 1)
+        decoded = bytearray()
+        for token in re.findall(pattern, raw):
+            if token.startswith('\\'):
+                if len(token) == 3:
+                    decoded.append(int(token[1:], 16))
+                else:
+                    decoded.extend(token[1:].encode('utf-8'))
+            else:
+                decoded.extend(token.encode('utf-8'))
+        try:
+            name = decoded.decode('utf-8')
+        except UnicodeError:
+            raise ValidationError('AD_SCOPE_INVALID') from None
+        if not name or any(ord(char) < 32 for char in name):
+            raise ValidationError('AD_SCOPE_INVALID')
+        # AD RDN comparisons are case-insensitive. Avoid multi-character
+        # expansions such as sharp-s to "SS", which could join distinct OUs.
+        folded = ''.join(c.upper() if len(c.upper()) == 1 else c for c in name)
+        result.append((kind, folded))
+    return tuple(result)
+
+
 def check_directory_connectivity(value, config):
     """Bounded TCP probe to configured DC IPs only; no password or LDAP bind."""
     keys(value, {'dc_fqdn'}, {'dc_fqdn'})
