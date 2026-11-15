@@ -9,7 +9,8 @@ $package=Join-Path $root 'signed-package';$share=$null;$startedServer=$false;$ke
 $journal=$null;$candidateBase=$null;$oldModulePath=$env:PSModulePath;$script:checks=0
 $grantMode=$env:AUTHWIRE_ROLLBACK_AUTHORIZATION_CHECK -eq '1'
 $rollbackExecutionMode=$env:AUTHWIRE_ROLLBACK_EXECUTION_CHECK -eq '1'
-$lifecycleMode=$env:AUTHWIRE_WRITE_LIFECYCLE_CHECK -eq '1'
+$recoveryReceiptMode=$env:AUTHWIRE_STAGE_RECOVERY_RECEIPT_CHECK -eq '1'
+$lifecycleMode=$env:AUTHWIRE_WRITE_LIFECYCLE_CHECK -eq '1' -or $recoveryReceiptMode
 $historyMode=$env:AUTHWIRE_WRITE_HISTORY_CHECK -eq '1'
 $refusalMode=$env:AUTHWIRE_WRITE_REFUSAL_CHECK -eq '1'
 $flowDirectory=$env:AUTHWIRE_WRITE_CYCLE_DIRECTORY;$flowMode=[bool]$flowDirectory
@@ -238,6 +239,7 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
  if($lifecycleMode){$cases=@('lc_stage','lc_success','lc_lost_ack','lc_lost_claim','lc_lost_poll','lc_bad_poll','lc_idle','lc_saved_grant')}
  if($historyMode){$cases=@('lc_stage','lc_idle','lc_lost_poll','lc_saved_grant')}
  if($refusalMode){$cases=@('ref_stage','ref_lost_ack','ref_ack_limit','ref_disk','ref_claim','ref_rollback')}
+ if($recoveryReceiptMode){$cases=@('consume_timeout')}
  foreach($case in $cases){
   $t=[pscustomobject][ordered]@{candidate_id=[guid]::NewGuid().ToString('D');network_candidate_id=[guid]::NewGuid().ToString('D');plan_id=[guid]::NewGuid().ToString('D');plan_version=1;gpo_id=[guid]::NewGuid().ToString('D');approval_sha256=('a'*64);network_manifest_sha256=('b'*64);manifest_sha256=('c'*64);draft_sha256=('d'*64);dependency_sha256=('e'*64);publisher_thumbprint=$signer.Thumbprint;machine_profile_id=[guid]::NewGuid().ToString('D');machine_profile_version=3;domain='lab.example';root_thumbprint=('f'*40);group_sid=($domainSid+'-1647');content_result_sha256=('2'*64);target_sids_sha256=('3'*64);target_count=1}
   $draft=[Text.Encoding]::ASCII.GetBytes('fixture never execute '+$case);$t.draft_sha256=Get-AuthWireCandidateHash $draft
@@ -266,6 +268,35 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
    $data=@{case=$case;binding=$b;public_key_pem=[AuthWire.Connector.ChannelTypesV1]::PublicPem($rsa);offer=$offer}
    [IO.File]::WriteAllText((Join-Path $flowDirectory 'input.json'),($data|ConvertTo-Json -Depth 15 -Compress),[Text.UTF8Encoding]::new($false))
    Wait-AuthWireFixtureCore
+   if($recoveryReceiptMode){
+    $fixture.case=$case;[IO.File]::WriteAllText((Join-Path $package 'fixture.json'),($fixture|ConvertTo-Json -Depth 12 -Compress))
+    $cycle=Invoke-AuthWireStagingWriteLifecycleStep $journal $b $release $rsa $url
+    Check ($cycle.Phase -ceq 'requires_review' -and $cycle.JobId -ceq $id -and $cycle.ResultRecorded) 'consumed timeout has a genuine accepted lifecycle result'
+    $local=Get-AuthWireWriteReconciliationReview $journal $b $rsa
+    Check ($local.AcceptedAck -and $local.StageConsumption.DiagnosticCode -ceq 'WRITE_INTENT_PREFLIGHT_TIMEOUT') 'local ACK and consumption match'
+    $wait=[Diagnostics.Stopwatch]::StartNew()
+    while([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -lt $local.StageConsumption.GrantExpiresAt -and $wait.Elapsed.TotalSeconds -lt 32){Start-Sleep -Milliseconds 100}
+    # Only the directory/approved-source observation is synthetic. SMB inventory is reread.
+    function Get-AuthWireCombinedStagingPreview($Target,$Binding,$PublisherThumbprint,$BaseUrl){
+     return (New-AuthWireCombinedStagingPlanCore $Target $files (Get-AuthWireSysvolInventory $gpo) $preview.Preview.scope_observations_sha256 ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()))
+    }
+    $proof=Get-AuthWireConsumedStageRecoveryEvidence $journal $id $b $rsa $signer.Thumbprint $url
+    $payload=[pscustomobject]@{evidence=$local.Evidence;proof=$proof}
+    $requestPath=Join-Path $flowDirectory 'recovery-proof.json'
+    [IO.File]::WriteAllText(($requestPath+'.tmp'),(ConvertTo-AuthWireWriteJson $payload),[Text.UTF8Encoding]::new($false))
+    [IO.File]::Move(($requestPath+'.tmp'),$requestPath)
+    $receiptPath=Join-Path $flowDirectory 'recovery-approval.json';$watch=[Diagnostics.Stopwatch]::StartNew()
+    while(-not (Test-Path -LiteralPath $receiptPath) -and $watch.Elapsed.TotalSeconds -lt 15){Start-Sleep -Milliseconds 50}
+    Check (Test-Path -LiteralPath $receiptPath) 'isolated server records the exact recovery approval'
+    $request=ConvertFrom-AuthWireCandidateJson ([IO.File]::ReadAllBytes($receiptPath))
+    $session=ConvertTo-SecureString $web.session -AsPlainText -Force;$csrf=ConvertTo-SecureString $web.csrf -AsPlainText -Force
+    try{$receipt=Confirm-AuthWireConsumedStageRecoveryApproval $journal $id $b $rsa $url $request $session $csrf}
+    finally{$session.Dispose();$csrf.Dispose()}
+    Check ($receipt.approval_verified -and $receipt.review_only -and -not $receipt.can_apply_gpo) 'native Windows client verifies real Linux receipt over pinned TLS'
+    Check ((Test-Path -LiteralPath (Join-Path $journal ('gpo-'+$t.gpo_id+'.json'))) -and (Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $before.Sha256) 'approval verification preserves the lock and SMB inventory'
+    $outcomes+=,[pscustomobject]@{case=$case;receipt_verified=$true}
+    continue
+   }
    if($refusalMode -and $case -cne 'ref_rollback'){
     . (Join-Path $PSScriptRoot 'staging_write_refusal_fixture.ps1')
     $outcomes+=,[pscustomobject]@{case=$case;job_id=$id}
@@ -458,6 +489,10 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
   Check ((Get-AuthWireWriteHash (New-AuthWireWriteResultOutbox $journal $id $b $release $rsa)) -ceq (Get-AuthWireWriteHash $outbox)) 'outbox survives module reload without outcome promotion'
   Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $treeHash -and [IO.File]::ReadAllText($readFile) -ceq $readsBefore) 'result freeze changes no SMB state and performs no new AD observation'
   $outcomes+=,[pscustomobject]@{case=$case;seconds=[Math]::Round($watch.Elapsed.TotalSeconds,2);staged=($case -ceq 'success')}
+ }
+ if($recoveryReceiptMode){
+  [IO.File]::WriteAllText((Join-Path $flowDirectory 'native-summary.json'),(@{checks=$checks;outcomes=$outcomes}|ConvertTo-Json -Depth 6 -Compress),[Text.UTF8Encoding]::new($false))
+  return
  }
  . (Join-Path $lib 'ConnectorServicePackage.ps1')
  $defaultPayload=@(Get-AuthWireServicePayloadNames ([pscustomobject]@{}))

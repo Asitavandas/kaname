@@ -10,6 +10,7 @@ import base64
 import json
 import os
 from pathlib import Path
+import secrets
 import ssl
 import subprocess
 import sys
@@ -19,7 +20,10 @@ import time
 import uuid
 from types import SimpleNamespace
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+RECOVERY_MODE = os.environ.get('AUTHWIRE_STAGE_RECOVERY_RECEIPT_CHECK') == '1'
+BACKEND_ROOT = (Path(os.environ['AUTHWIRE_RECOVERY_BACKEND']) if RECOVERY_MODE else
+                Path(__file__).resolve().parents[1])
+sys.path.insert(0, str(BACKEND_ROOT.resolve()))
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -59,6 +63,10 @@ def main():
         store = Store(root/'state'); ops = Operations(store)
         core = object.__new__(StagingWriteJobs)
         core.store = store; core.ops = ops; core.clock = time.time
+        recovery_request = None
+        actor = str(uuid.uuid4())
+        session, csrf = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+        confirmed = 0
         lock = threading.Lock()
         metrics = {'polls': {}, 'claims': {}, 'results': {}, 'bodies': {}, 'errors': []}
         original = store.snapshot(); original_audit = store.audit()
@@ -85,6 +93,8 @@ def main():
             core._current = lambda db, ledger, job: (True if job['operation'] == STAGE
                 else StagingWriteJobs._current(core, db, ledger, job))
             offer = data['offer']; identity = offer['job_id']
+            if RECOVERY_MODE:
+                core.pilot_gpo_id = offer['target']['scope_target']['gpo_id']
             with store.connect() as db:
                 db.execute('BEGIN IMMEDIATE'); ledger = core._read(db)
                 if data['case'] != 'idle' and not any(j['id'] == identity for j in ledger['jobs']):
@@ -131,6 +141,7 @@ def main():
         # runs the unchanged production core inside its original HTTP deadline.
         prepare_stop = threading.Event()
         def prepare_cases():
+            nonlocal recovery_request
             seen = set()
             while not prepare_stop.wait(0.02):
                 for request in sorted(root.glob('prepare-request-*')):
@@ -145,6 +156,32 @@ def main():
                         print('FIXTURE_PREPARE_FAILURE '+type(error).__name__, flush=True)
                         (root/('prepare-failed-'+token)).mkdir()
                     seen.add(token)
+                proof_path = root/'recovery-proof.json'
+                if RECOVERY_MODE and recovery_request is None and proof_path.exists():
+                    try:
+                        with lock:
+                            from kaname.staging_write_jobs import CONSUMED_RELEASE_APPROVAL, RELEASE_ACK
+                            supplied = json.loads(proof_path.read_text(encoding='ascii'))
+                            value = {'expected_revision': store.snapshot()['revision'],
+                                     'evidence': supplied['evidence'], 'decision': 'keep_under_review'}
+                            review = core.review_reconciliation(value, actor)
+                            saved = core.record_reconciliation(value | {'review_hash': review['review_hash'],
+                                'acknowledge': 'record_reconciliation_decision'}, actor)
+                            value.update(expected_revision=saved['revision'], decision=CONSUMED_RELEASE_APPROVAL,
+                                reconciliation_receipt={'revision': saved['revision'], 'review_hash': review['review_hash']},
+                                consumed_stage_proof=supplied['proof'])
+                            review = core.review_reconciliation(value, actor)
+                            approval = value | {'review_hash': review['review_hash'],
+                                                'acknowledge': RELEASE_ACK[CONSUMED_RELEASE_APPROVAL]}
+                            saved = core.record_reconciliation(approval, actor)
+                            recovery_request = {'approval': approval, 'approval_revision': saved['revision']}
+                            temp_file = root/'recovery-approval.tmp'
+                            temp_file.write_text(json.dumps(recovery_request, separators=(',', ':')), encoding='ascii')
+                            temp_file.replace(root/'recovery-approval.json')
+                    except Exception as error:
+                        print('RECOVERY_APPROVAL_FIXTURE_FAILURE '+type(error).__name__, flush=True)
+                        metrics['errors'].append(type(error).__name__)
+                        return
         preparer = threading.Thread(target=prepare_cases, daemon=True)
         preparer.start()
 
@@ -155,6 +192,7 @@ def main():
                 pass
 
             def do_POST(self):
+                nonlocal confirmed
                 observed_start = time.monotonic()
                 try:
                     size = int(self.headers.get('Content-Length', '0')); assert 0 < size <= 4096
@@ -183,6 +221,24 @@ def main():
                             if case in {'lost_ack', 'rb_execute_lost_ack', 'lc_lost_ack', 'ref_lost_ack'} and metrics['results'][identity] == 1:
                                 self.close_connection = True; self.connection.shutdown(2); return
                             if case == 'ref_ack_limit': reply['request_id'] = '0'*64
+                        elif RECOVERY_MODE and self.path == '/api/deployment/staging-write/reconciliation/verify-lock-release':
+                            # The admin session boundary is tested separately on DevelopmentServer.
+                            # Here the adapter fixes the authenticated actor and calls the same verifier.
+                            authority = f'{fqdn}:{server.server_port}'
+                            assert self.headers.get('Host') == authority
+                            assert self.headers.get('Origin') == f'https://{authority}'
+                            assert self.headers.get('Cookie') == f'kaname_session={session}'
+                            assert self.headers.get('X-Kaname-CSRF') == csrf
+                            request = json.loads(raw)
+                            assert request == recovery_request
+                            before = store.snapshot()
+                            audit = store.audit()
+                            reply = core.verify_stage_lock_release_approval(request, actor)
+                            assert store.snapshot() == before and store.audit() == audit
+                            reply.update(review_only=True, source_only=False, approval_enabled=True,
+                                         write_authorization_enabled=True, execution_adapter_available=True,
+                                         can_apply_gpo=False)
+                            confirmed += 1
                         else:
                             raise AssertionError('Unexpected route')
                     body = json.dumps(reply, separators=(',', ':')).encode('ascii')
@@ -203,8 +259,10 @@ def main():
         context.load_cert_chain(root/'web.crt', root/'web.key')
         server.socket = context.wrap_socket(server.socket, server_side=True)
         thread = threading.Thread(target=server.serve_forever, daemon=True); thread.start()
-        (root/'base.json').write_text(json.dumps({'fqdn': fqdn, 'port': server.server_port,
-            'pin': cert.fingerprint(hashes.SHA256()).hex()}), encoding='ascii')
+        base = {'fqdn': fqdn, 'port': server.server_port, 'pin': cert.fingerprint(hashes.SHA256()).hex()}
+        if RECOVERY_MODE:
+            base.update(session=session, csrf=csrf)
+        (root/'base.json').write_text(json.dumps(base), encoding='ascii')
         env = {k: v for k, v in os.environ.items() if k.upper() != 'PSMODULEPATH'}
         env['AUTHWIRE_WRITE_CYCLE_DIRECTORY'] = str(root)
         try:
@@ -215,6 +273,18 @@ def main():
                 # production HTTP/grant/reader/child deadlines stay unchanged.
                 check=True, timeout=1320 if execution_mode else (1100 if lifecycle_mode else 650), env=env)
             native = json.loads((root/'native-summary.json').read_text(encoding='utf-8-sig'))
+            if RECOVERY_MODE:
+                assert native['outcomes'] == [{'case': 'consume_timeout', 'receipt_verified': True}]
+                assert confirmed == 1 and not metrics['errors']
+                assert list(metrics['polls'].values()) == list(metrics['claims'].values()) == list(metrics['results'].values()) == [1]
+                with store.connect() as db:
+                    job, = core._read(db)['jobs']
+                assert job['state'] == 'requires_review' and job['result']['outcome'] == 'requires_review'
+                assert store.snapshot()['revision'] == original['revision'] + 4
+                print(f'AUTHWIRE_STAGE_RECOVERY_RECEIPT_E2E_OK native_checks={native["checks"]} '
+                      'real_tls_cng_sqlite=true verification_count=1 sysvol_unchanged=true '
+                      'ad_simulated=true lock_released=false customer_changed=false', flush=True)
+                return
             if refusal_mode:
                 assert len(native['outcomes']) == 6 and not metrics['errors']
                 assert len(metrics['polls']) == 7 and set(metrics['polls'].values()) == {1}
