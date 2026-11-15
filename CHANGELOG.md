@@ -1,3 +1,8 @@
+# 0.14.0-dev.51 — Linux pilot delivery candidate
+
+- Verify policy draft OU scopes through the configured live AD connection before saving on Linux.
+- Keep the dev.50 RADIUS, Accounting, and Windows enrollment sources.
+
 # 0.14.0-dev.50 — Linux pilot delivery candidate
 
 - Include the signed user enrollment installer SYSVOL compatibility fix from PR #163.
