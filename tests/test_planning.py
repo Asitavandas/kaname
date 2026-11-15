@@ -118,11 +118,11 @@ class PlanningTests(unittest.TestCase):
                 raise ValidationError('AD_SCOPE_NOT_FOUND')
             return {'ou_dn': dn, 'scope': 'subtree'}
 
-        planner = Planning(self.ops, ou_scope=validate)
+        planner = Planning(self.ops)
         with self.assertRaisesRegex(ValidationError, 'AD_SCOPE_NOT_FOUND'):
-            planner.save_draft(2, request | {'ou_dn': 'OU=Missing,DC=lab,DC=example'})
+            planner.save_draft(2, request | {'ou_dn': 'OU=Missing,DC=lab,DC=example'}, ou_scope=validate)
         self.assertEqual([], planner.drafts()['items'])
-        result = planner.save_draft(2, request)
+        result = planner.save_draft(2, request, ou_scope=validate)
         self.assertEqual('subtree', result['items'][0]['ou_scope'])
         self.assertEqual(dn, result['items'][0]['ou_dn'])
         self.assertFalse(result['items'][0]['runtime_applied'])

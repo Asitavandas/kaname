@@ -107,6 +107,8 @@ class DirectorySync:
         except DirectoryError as error:
             if connection is not None and error.code == 'AD_CREDENTIALS_REJECTED':
                 server.operations.record_health(error.code, expected_revision=expected_revision)
+            if error.code in {'AD_SCOPE_INVALID', 'AD_SCOPE_NOT_FOUND', 'AD_SCOPE_AMBIGUOUS'}:
+                raise ValidationError(error.code) from None
             raise
         finally:
             if connection is not None:

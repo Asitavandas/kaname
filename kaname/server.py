@@ -95,7 +95,7 @@ class DevelopmentServer(ThreadingHTTPServer):
             self.directory_reader = read_linux_directory
             self.directory_health_reader = check_linux_directory
         self.operations = Operations(self.store)
-        self.planning = Planning(self.operations, ou_scope=self.validate_policy_ou if os.name != 'nt' else None)
+        self.planning = Planning(self.operations)
         self.deployment = Deployment(self.operations)
         self.services = Services()
         self.public_name = public_name
@@ -126,14 +126,6 @@ class DevelopmentServer(ThreadingHTTPServer):
         self.device_stop = threading.Event()
         self.device_worker = threading.Thread(target=self.device_maintenance,daemon=True)
         self.device_worker.start()
-
-    def validate_policy_ou(self, expected_revision, ou_dn):
-        try:
-            return self.directory_sync.ou_scope(expected_revision, ou_dn)
-        except DirectoryError as error:
-            if error.code in {'AD_SCOPE_INVALID', 'AD_SCOPE_NOT_FOUND', 'AD_SCOPE_AMBIGUOUS'}:
-                raise ValidationError(error.code) from None
-            raise
 
     def device_maintenance(self):
         while not self.device_stop.wait(30):
@@ -1129,7 +1121,11 @@ class Handler(BaseHTTPRequestHandler):
                 keys(value, {'expected_revision', field}, {'expected_revision', field})
                 device = self.path.startswith('/api/network/')
                 operation = (self.server.planning.delete_device if deleting else self.server.planning.save_device) if device else (self.server.planning.delete_draft if deleting else self.server.planning.save_draft)
-                self.respond(200, operation(value['expected_revision'], value[field]))
+                args = (value['expected_revision'], value[field])
+                if self.path == '/api/policies/drafts/save' and os.name != 'nt':
+                    self.respond(200, operation(*args, ou_scope=self.server.directory_sync.ou_scope))
+                else:
+                    self.respond(200, operation(*args))
             elif self.path in {'/api/network/vlans', '/api/network/radius'}:
                 part = self.path.rsplit('/', 1)[1]
                 fields = {'vlans'} if part == 'vlans' else {'radius_clients', 'authentication_port', 'accounting_port'}
