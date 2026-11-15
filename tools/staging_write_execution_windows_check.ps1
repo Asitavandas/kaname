@@ -58,7 +58,7 @@ function Get-AuthWireWriteStageLiveContext($Offer,[hashtable]$Binding,[string]$P
  $fixture=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'fixture.json') -Raw|ConvertFrom-Json
  [IO.File]::AppendAllText((Join-Path $PSScriptRoot ('reads-'+$Offer.job_id+'.txt')),"read`n")
  $v=$fixture.live;$v.checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
- if($fixture.case -ceq 'consume_timeout'){Start-Sleep -Seconds 12}
+ if($fixture.case -ceq 'consume_timeout' -and (Test-Path -LiteralPath $fixture.grant_marker)){Start-Sleep -Seconds 12}
  if($fixture.case -ceq 'drift'){$v.pdc='dc02.lab.example'}
  return $v
 }
@@ -260,7 +260,7 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
   $intentFrame='AuthWireStagingWriteIntentV1'+"`n"+$scope+"`n"+$id+"`ncombined.filesystem.stage.v1`n"+(Get-AuthWireWriteHash $target)+"`n"
   $offer=[pscustomobject]@{format=1;request_id=$request;scope_sha256=$scope;job_id=$id;operation='combined.filesystem.stage.v1';lease_id=('6'*64);intent_sha256=(Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes($intentFrame)));expires_at=$preview.Preview.expires_at;target=$target;write_authorized=$false;can_apply_gpo=$false}
   $live=[pscustomobject]@{format='AuthWireWriteLiveContextV1';job_id=$id;intent_sha256=$offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $target);source_root=$source;gpo_root=$gpo;protected_gpo_id=[guid]::NewGuid().ToString('D');pdc='dc01.lab.example';checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();can_apply_gpo=$false}
-  $fixture=[pscustomobject]@{case='prepare';requested_case=$(if($grantMode){'success'}else{$case});rollback_case=$case;rollback_drift=$false;rollback_expires_at=0;gpo_id=$t.gpo_id;gpo_root=$gpo;live=$live;expires_at=0}
+  $fixture=[pscustomobject]@{case='prepare';requested_case=$(if($grantMode){'success'}else{$case});rollback_case=$case;rollback_drift=$false;rollback_expires_at=0;gpo_id=$t.gpo_id;gpo_root=$gpo;live=$live;expires_at=0;grant_marker=(Join-Path (Join-Path $journal $id) 'grant-consumed.json')}
   [IO.File]::WriteAllText((Join-Path $package 'fixture.json'),($fixture|ConvertTo-Json -Depth 12 -Compress))
   if($flowMode){
    # Only the queued job and AD/current-context lookup are seeded/stubbed.
