@@ -75,6 +75,23 @@ Connector kapsamını, kayıtlı ret sonucunu ve GPO üzerindeki diğer işleri
 tek SQLite okuma işleminde yeniden denetler. Başarılı yanıt `approval_verified`
 ve kanıt özetini içerir. Doğrulama yalnızca okuma yapar.
 
+`approve_consumed_stage_lock_release` yalnız izole tek GPO pilotunda, yazma
+yetkisi tüketilip `requires_review / OUTCOME_UNKNOWN` sonucuyla duran
+hazırlama işi için aynı review ve record uçlarında kullanılabilir.
+`reconciliation_receipt`, aynı operatörün aynı sonuç ve ACK için kaydettiği
+`keep_under_review` kararına bağlanır. `consumed_stage_proof`, Windows'un
+ürettiği `Body` ve `Signature` nesnesidir. Sunucu imzayı güncel Connector
+anahtarıyla doğrular. İş, yetki bitişi, GPO, kilit, ilk önizleme ve güncel
+envanter özetlerini kayıtlı işle eşler. Güncel önizleme özetini, kayıtlı
+önizlemenin yalnız gözlem zamanlarını değiştirerek hesaplar. Yerel ACK,
+tamamlanma ve tüketim günlüklerine ait özetler Connector imzasıyla bağlıdır.
+
+İnceleme özeti kanıtı ve 60 saniyelik geçerliliği içerir. İlk kayıtta
+`acknowledge: record_consumed_stage_lock_release_approval` ve aynı taze
+kanıt gerekir. Tam olarak aynı onay isteğinin tekrarı ilk makbuzu döndürür.
+İş ve GPO engeli korunur. Mevcut `verify-lock-release` ucu yalnız yetki
+verilmeden reddedilmiş işlerin onaylarını doğrulamaya devam eder.
+
 Varsayılan hizmette durum ve inceleme sonuçlarında `approval_enabled`,
 `write_authorization_enabled`, `execution_adapter_available` ve `can_apply_gpo`
 false'tur. İzole pilotta ilk üç bayrak HTTP yazma akışının ulaşılabilirliğini gösterir. Review hash'i kullanıcı

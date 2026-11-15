@@ -5,8 +5,13 @@ session/Origin/CSRF checks; HTTP create is closed. Actor UUIDs and ack are not a
 Peer possession proofs do not attest to filesystem effects. This ledger never
 enables GPO activation and never re-leases an uncertain write.
 """
+import base64
 import copy
 import secrets
+
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 from .connector_jobs import (ConnectorJobs, JobError, require, guid, HEX,
                              scope_id, sha, LIFETIME, LIMIT, verify_job_proof)
@@ -31,6 +36,17 @@ REFUSALS = {'CONTENT_REJECTED', 'SCOPE_CHANGED', 'PREVIEW_EXPIRED',
 REVIEW_REASONS = {'IO_FAILURE', 'JOURNAL_FAILURE', 'DRIFT', 'WORKER_INTERRUPTED',
                   'OUTCOME_UNKNOWN', 'POSTCHECK_FAILED'}
 RELEASE_APPROVAL = 'approve_refused_stage_lock_release'
+CONSUMED_RELEASE_APPROVAL = 'approve_consumed_stage_lock_release'
+RELEASE_ACK = {
+    RELEASE_APPROVAL: 'record_stage_lock_release_approval',
+    CONSUMED_RELEASE_APPROVAL: 'record_consumed_stage_lock_release_approval',
+}
+RECOVERY_FRAME = 'AUTHWIRE-CONSUMED-STAGE-RECOVERY-EVIDENCE-V1'
+RECOVERY_HASH_FIELDS = {'scope_sha256', 'intent_sha256', 'result_body_sha256',
+                        'accepted_ack_sha256', 'completion_sha256', 'grant_consumed_sha256',
+                        'lock_sha256', 'approved_preview_sha256', 'observed_preview_sha256',
+                        'baseline_inventory_sha256'}
+RECOVERY_TIMES = {'grant_expires_at', 'observed_at', 'expires_at'}
 
 
 def is_hash(value):
@@ -444,23 +460,26 @@ class StagingWriteJobs(ConnectorJobs):
         required = {'expected_revision', 'evidence', 'decision'}
         if confirm:
             required.update({'review_hash', 'acknowledge'})
-        keys(value, required | {'reconciliation_receipt', 'stage_lock_evidence'}, required)
+        keys(value, required | {'reconciliation_receipt', 'stage_lock_evidence', 'consumed_stage_proof'}, required)
         self._validate_reconciliation_evidence(value['evidence'])
-        require(guid(actor) and type(value['decision']) is str and
-                value['decision'] in {'keep_under_review', 'acknowledge_saved_result', RELEASE_APPROVAL},
+        decision = value['decision']
+        require(guid(actor) and type(decision) is str and
+                decision in {'keep_under_review', 'acknowledge_saved_result', *RELEASE_ACK},
                 'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
-        release = value['decision'] == RELEASE_APPROVAL
-        acknowledgement = 'record_stage_lock_release_approval' if release else 'record_reconciliation_decision'
-        require(release == ('reconciliation_receipt' in value) == ('stage_lock_evidence' in value) and
+        acknowledgement = RELEASE_ACK.get(decision, 'record_reconciliation_decision')
+        require((decision in RELEASE_ACK) == ('reconciliation_receipt' in value) and
+                (decision == RELEASE_APPROVAL) == ('stage_lock_evidence' in value) and
+                (decision == CONSUMED_RELEASE_APPROVAL) == ('consumed_stage_proof' in value) and
                 (not confirm or (is_hash(value['review_hash']) and
                                  value['acknowledge'] == acknowledgement)),
                 'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
-        if release:
+        if decision in RELEASE_ACK:
             receipt = value['reconciliation_receipt']
             fields = {'revision', 'review_hash'}
             keys(receipt, fields, fields)
             require(type(receipt['revision']) is int and 1 <= receipt['revision'] < 2**53 and
                     is_hash(receipt['review_hash']), 'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
+        if decision == RELEASE_APPROVAL:
             lock = value['stage_lock_evidence']
             hashes = {'scope_sha256', 'intent_sha256', 'result_body_sha256', 'accepted_ack_sha256',
                       'completion_sha256', 'lock_sha256'}
@@ -470,6 +489,18 @@ class StagingWriteJobs(ConnectorJobs):
             require(lock['format'] == 'AuthWireRefusedStageLockEvidenceV1' and
                     type(slot) is str and len(slot) == 6 and slot.isascii() and slot.isdecimal() and slot != '000000' and
                     guid(lock['gpo_id']) and guid(lock['job_id']) and all(is_hash(lock[field]) for field in hashes),
+                    'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
+        if decision == CONSUMED_RELEASE_APPROVAL:
+            proof = value['consumed_stage_proof']
+            keys(proof, {'Body', 'Signature'}, {'Body', 'Signature'})
+            body, signature = proof['Body'], proof['Signature']
+            fields = RECOVERY_HASH_FIELDS | RECOVERY_TIMES | {'format', 'job_id', 'gpo_id'}
+            keys(body, fields, fields)
+            require(body['format'] == 'AuthWireConsumedStageRecoveryEvidenceV1' and
+                    guid(body['gpo_id']) and guid(body['job_id']) and
+                    all(is_hash(body[field]) for field in RECOVERY_HASH_FIELDS) and
+                    all(type(body[field]) is int and 0 < body[field] < 2**40 for field in RECOVERY_TIMES) and
+                    type(signature) is str and 1 <= len(signature) <= 684 and signature.isascii(),
                     'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
 
     @staticmethod
@@ -492,13 +523,56 @@ class StagingWriteJobs(ConnectorJobs):
                 all(lock[field] == evidence[field] for field in
                     ('job_id', 'scope_sha256', 'intent_sha256', 'result_body_sha256')) and
                 lock['lock_sha256'] == digest(expected_lock), 'STAGING_WRITE_RELEASE_EVIDENCE_CONFLICT')
+        self._require_release_receipt(db, value, actor, 'acknowledge_saved_result')
+
+    def _require_release_receipt(self, db, value, actor, decision):
         receipt = value['reconciliation_receipt']
         prior = {'expected_revision': receipt['revision'] - 1, 'evidence': value['evidence'],
-                 'decision': 'acknowledge_saved_result', 'review_hash': receipt['review_hash'],
+                 'decision': decision, 'review_hash': receipt['review_hash'],
                  'acknowledge': 'record_reconciliation_decision'}
         require(db.execute('SELECT 1 FROM audit WHERE revision=? AND event=?',
             (receipt['revision'], self._reconciliation_event(prior, actor))).fetchone(),
             'STAGING_WRITE_RELEASE_RECONCILIATION_REQUIRED')
+
+    def _require_consumed_stage_release(self, db, value, actor, comparison, job):
+        require(self.pilot_gpo_id is not None, 'STAGING_WRITE_RECOVERY_PILOT_REQUIRED')
+        binding = self._binding(db)
+        conflict = 'STAGING_WRITE_RECOVERY_EVIDENCE_CONFLICT'
+        require(comparison['comparison'] == 'result_matches' and
+                comparison.get('stored_state') == 'requires_review' and
+                comparison.get('server_outcome') == 'requires_review' and
+                job['operation'] == STAGE and job['authorization_id'] and
+                job['scope'] == scope_id(binding) and self._in_pilot(job['target']), conflict)
+        result = job['result']
+        require(result['reason'] == 'OUTCOME_UNKNOWN' and
+                result['journal_sha256'] == result['tree_sha256'] == '', conflict)
+        proof = value['consumed_stage_proof']
+        body = proof['Body']
+        approved = job['target']['preview_record']
+        observed = body['observed_at']
+        observed_preview = approved['Preview'] | {'checked_at': observed, 'expires_at': observed + 90}
+        expected_lock = {'format': 'AuthWireWriteGpoLockV1', 'job_id': job['id'],
+                         'intent_sha256': job['intent_sha256']}
+        require(all(body[field] == value['evidence'][field] for field in
+                    ('job_id', 'scope_sha256', 'intent_sha256', 'result_body_sha256')) and
+                body['gpo_id'] == self.pilot_gpo_id and body['lock_sha256'] == digest(expected_lock) and
+                body['grant_expires_at'] == job['authorized_until'] and
+                observed >= max(job['authorized_until'], result['checked_at']) and
+                body['expires_at'] == observed + 60 and
+                body['approved_preview_sha256'] == approved['PreviewSha256'] and
+                body['observed_preview_sha256'] == preview_hash(observed_preview) and
+                body['baseline_inventory_sha256'] == approved['Preview']['baseline_inventory_sha256'], conflict)
+        self._require_release_receipt(db, value, actor, 'keep_under_review')
+        try:
+            signature = base64.b64decode(proof['Signature'], validate=True)
+            public = serialization.load_pem_public_key(binding.public_key_pem)
+            require(isinstance(public, rsa.RSAPublicKey) and len(signature) == public.key_size // 8 and
+                    base64.b64encode(signature).decode('ascii') == proof['Signature'], conflict)
+            frame = f"{RECOVERY_FRAME}\n{digest(body)}\n".encode('ascii')
+            public.verify(signature, frame, padding.PKCS1v15(), hashes.SHA256())
+        except (InvalidSignature, ValueError, TypeError):
+            raise JobError(conflict) from None
+        require(observed <= int(self.clock()) < body['expires_at'], 'STAGING_WRITE_RECOVERY_EVIDENCE_EXPIRED')
 
     def _reconciliation_decision_review(self, db, value, actor):
         revision = self.ops._revision(db, value['expected_revision'])
@@ -513,6 +587,12 @@ class StagingWriteJobs(ConnectorJobs):
             self._require_refused_stage_release(db, value, actor, comparison, job)
             review.update(gpo_id=job['target']['scope_target']['gpo_id'],
                           stage_lock_evidence_sha256=digest(value['stage_lock_evidence']),
+                          reconciliation_receipt=value['reconciliation_receipt'])
+        if value['decision'] == CONSUMED_RELEASE_APPROVAL:
+            self._require_consumed_stage_release(db, value, actor, comparison, job)
+            proof = value['consumed_stage_proof']
+            review.update(gpo_id=proof['Body']['gpo_id'], consumed_stage_proof_sha256=digest(proof),
+                          evidence_expires_at=proof['Body']['expires_at'],
                           reconciliation_receipt=value['reconciliation_receipt'])
         review['review_hash'] = digest({'domain': 'AuthWireStagingWriteReconciliationV1',
             'review': review, 'evidence': evidence, 'stored_job_sha256': digest(job)})
@@ -544,6 +624,8 @@ class StagingWriteJobs(ConnectorJobs):
         result = {'job_id': job_id, 'decision': decision, 'decision_recorded': True, 'revision': revision}
         if decision == RELEASE_APPROVAL:
             result['stage_lock_evidence_sha256'] = digest(value['stage_lock_evidence'])
+        if decision == CONSUMED_RELEASE_APPROVAL:
+            result['consumed_stage_proof_sha256'] = digest(value['consumed_stage_proof'])
         return result
 
     def verify_stage_lock_release_approval(self, value, actor):

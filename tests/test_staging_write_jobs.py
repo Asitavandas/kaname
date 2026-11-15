@@ -1,4 +1,5 @@
 """Real SQLite/RSA intents; no peer registration or filesystem mutation."""
+import base64
 import concurrent.futures
 import copy
 import json
@@ -7,11 +8,16 @@ import unittest
 import uuid
 from unittest.mock import patch
 
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+
 from kaname.connector_jobs import JobError, scope_id
 from kaname.connector_registry import digest
 from kaname.store import ConflictError
 from kaname.staging_write_jobs import (StagingWriteJobs, SECTION, STAGE, ROLLBACK,
-    CAPABILITY, ACK, POLL_PATH, CLAIM_PATH, RESULT_PATH, RESULT_GRACE, target_valid)
+    CAPABILITY, ACK, POLL_PATH, CLAIM_PATH, RESULT_PATH, RESULT_GRACE, target_valid,
+    CONSUMED_RELEASE_APPROVAL, RELEASE_ACK)
+from kaname.staging_preview_jobs import preview_hash
 from . import test_staging_preview_jobs as pf
 from . import test_connector_jobs as proofs
 
@@ -170,6 +176,97 @@ class StagingWriteJobTests(unittest.TestCase):
             self.jobs.reconcile_readonly(evidence | {'accepted_ack': True})
         with self.store.connect() as db:
             self.assertEqual(before, self.jobs._read(db))
+        self.assertEqual(audit, self.store.audit())
+
+    def consumed_stage_recovery(self):
+        offer = self.offer()
+        grant = self.authorize(offer)
+        result = self.result(offer, grant, outcome='requires_review', reason='OUTCOME_UNKNOWN',
+                             filesystem_effects='unconfirmed', journal_sha256='', tree_sha256='')
+        self.jobs.complete(self.proof('RESULT', result))
+        gpo_id = offer['target']['scope_target']['gpo_id']
+        self.jobs = StagingWriteJobs(self.engine, wall_clock=lambda: self.now, pilot_gpo_id=gpo_id)
+        self.now = grant['expires_at'] + 1
+        evidence = {field: offer[field] for field in ('job_id', 'scope_sha256', 'intent_sha256')}
+        evidence.update(result_body_sha256=digest(result), accepted_ack=True)
+        prior = {'expected_revision': self.store.snapshot()['revision'], 'evidence': evidence,
+                 'decision': 'keep_under_review'}
+        review = self.jobs.review_reconciliation(prior, self.actor)
+        prior |= {'review_hash': review['review_hash'], 'acknowledge': 'record_reconciliation_decision'}
+        receipt = self.jobs.record_reconciliation(prior, self.actor)
+        approved = offer['target']['preview_record']
+        observed = approved['Preview'] | {'checked_at': self.now, 'expires_at': self.now + 90}
+        lock = {'format': 'AuthWireWriteGpoLockV1', 'job_id': offer['job_id'],
+                'intent_sha256': offer['intent_sha256']}
+        body = {field: evidence[field] for field in ('job_id', 'scope_sha256', 'intent_sha256', 'result_body_sha256')}
+        body.update(format='AuthWireConsumedStageRecoveryEvidenceV1', gpo_id=gpo_id,
+                    accepted_ack_sha256='a' * 64, completion_sha256='b' * 64, grant_consumed_sha256='c' * 64,
+                    lock_sha256=digest(lock), approved_preview_sha256=approved['PreviewSha256'],
+                    observed_preview_sha256=preview_hash(observed),
+                    baseline_inventory_sha256=observed['baseline_inventory_sha256'],
+                    grant_expires_at=grant['expires_at'], observed_at=self.now, expires_at=self.now + 60)
+        return {'expected_revision': receipt['revision'], 'evidence': evidence,
+                'decision': CONSUMED_RELEASE_APPROVAL,
+                'reconciliation_receipt': {'revision': receipt['revision'], 'review_hash': review['review_hash']},
+                'consumed_stage_proof': self.sign_recovery(body)}
+
+    def sign_recovery(self, body, *, purpose='AUTHWIRE-CONSUMED-STAGE-RECOVERY-EVIDENCE-V1'):
+        frame = f'{purpose}\n{digest(body)}\n'.encode('ascii')
+        signature = self.private.sign(frame, padding.PKCS1v15(), hashes.SHA256())
+        return {'Body': body, 'Signature': base64.b64encode(signature).decode('ascii')}
+
+    def test_consumed_stage_review_records_explicit_approval_and_preserves_job(self):
+        request = self.consumed_stage_recovery()
+        with self.store.connect() as db:
+            before = self.jobs._read(db)
+        audit = self.store.audit()
+        review = self.jobs.review_reconciliation(request, self.actor)
+        self.assertEqual(audit, self.store.audit())
+        self.assertEqual(digest(request['consumed_stage_proof']), review['consumed_stage_proof_sha256'])
+        approval = request | {'review_hash': review['review_hash'],
+                              'acknowledge': RELEASE_ACK[CONSUMED_RELEASE_APPROVAL]}
+        with self.assertRaisesRegex(JobError, 'INPUT_INVALID'):
+            self.jobs.record_reconciliation(approval | {'acknowledge': 'record_stage_lock_release_approval'},
+                                            self.actor)
+        self.now = review['evidence_expires_at']
+        with self.assertRaisesRegex(JobError, 'RECOVERY_EVIDENCE_EXPIRED'):
+            self.jobs.record_reconciliation(approval, self.actor)
+        self.now -= 1
+        receipt = self.jobs.record_reconciliation(approval, self.actor)
+        self.now += 1
+        self.assertEqual(receipt, self.jobs.record_reconciliation(approval, self.actor))
+        self.assertEqual(review['consumed_stage_proof_sha256'], receipt['consumed_stage_proof_sha256'])
+        self.assertEqual(len(audit) + 1, len(self.store.audit()))
+        self.assertIn(f':{CONSUMED_RELEASE_APPROVAL}:', self.store.audit()[0]['event'])
+        with self.store.connect() as db:
+            self.assertEqual(before, self.jobs._read(db))
+        old = before['jobs'][0]
+        self.assertEqual('requires_review', old['state'])
+        self.assertTrue(self.jobs._busy(before, old['target'], STAGE, old['scope'], self.now))
+
+    def test_consumed_stage_review_requires_signature_exact_binding_and_prior_review(self):
+        request = self.consumed_stage_recovery()
+        proof = request['consumed_stage_proof']
+        body = proof['Body']
+        audit = self.store.audit()
+        for field, wrong in [('gpo_id', str(uuid.uuid4())), ('intent_sha256', '0' * 64),
+                             ('result_body_sha256', '0' * 64), ('lock_sha256', '0' * 64),
+                             ('grant_expires_at', body['grant_expires_at'] - 1),
+                             ('approved_preview_sha256', '0' * 64), ('observed_preview_sha256', '0' * 64),
+                             ('baseline_inventory_sha256', '0' * 64)]:
+            with self.subTest(field=field), self.assertRaisesRegex(JobError, 'RECOVERY_EVIDENCE_CONFLICT'):
+                self.jobs.review_reconciliation(request | {'consumed_stage_proof':
+                    self.sign_recovery(body | {field: wrong})}, self.actor)
+        for bad in (proof | {'Body': body | {'accepted_ack_sha256': '0' * 64}},
+                    self.sign_recovery(body, purpose='AUTHWIRE-STAGING-WRITE-JOB-RESULT-V1')):
+            with self.assertRaisesRegex(JobError, 'RECOVERY_EVIDENCE_CONFLICT'):
+                self.jobs.review_reconciliation(request | {'consumed_stage_proof': bad}, self.actor)
+        for value, actor in ((request, str(uuid.uuid4())), (request | {'reconciliation_receipt':
+                request['reconciliation_receipt'] | {'review_hash': '0' * 64}}, self.actor)):
+            with self.assertRaisesRegex(JobError, 'RELEASE_RECONCILIATION_REQUIRED'):
+                self.jobs.review_reconciliation(value, actor)
+        with self.assertRaisesRegex(JobError, 'RECOVERY_PILOT_REQUIRED'):
+            StagingWriteJobs(self.engine, wall_clock=lambda: self.now).review_reconciliation(request, self.actor)
         self.assertEqual(audit, self.store.audit())
 
     def test_review_is_readonly_actor_bound_and_never_gpo_activation(self):
