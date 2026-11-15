@@ -78,6 +78,13 @@ gösterir. Bu sınıflandırma bir dosya sistemi sonucu veya kilit açma onayı
 vermez. Eski kayıtlarda ayrıntılı hata kodu `unavailable` görünür. Yeni biçimde
 yazılmış bir günlük eski yazıcıyla açılırsa yazma işlemleri durur.
 
+Tüketilmiş ve dosya yazma niyeti oluşmamış bir stage için yerel kurtarma
+incelemesi ayrı bir imzalı kanıt çıkarabilir. İşin özgün tamamlanma/ACK
+makbuzu, eşleşen kilidi, tüketilmiş ve süresi dolmuş yetki kaydı, güncel SYSVOL
+envanteri ve önceki önizleme ile eşleşen kapsam gerekir. Kanıt en çok 60
+saniye geçerlidir. İmzalı kanıt ayrı bir operatör onayına girdi sağlamak
+içindir; Linux onay doğrulaması ve kilit kapatma bu aşamada açık.
+
 ## Doğrulama ve açık kapılar
 
 Gerçek doğrulanan HTTPS fixture'ları: başarılı actor bağlı inceleme, read/read ve

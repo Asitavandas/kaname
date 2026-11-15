@@ -181,8 +181,75 @@ function Get-AuthWireStageConsumptionReview([string]$Root,[string]$SlotPath,$Sta
      $record.consumed_at -lt $auth.Receipt.received_at -or $record.consumed_at -ge $record.expires_at -or
      $record.consumed_at -gt $f.checked_at){throw 'WRITE_CONSUMPTION_REVIEW_REJECTED'}
   $diagnostic=if($f.format -ceq 'AuthWireLifecycleDispatchFailedV2'){$f.diagnostic_code}else{'unavailable'}
-  return [pscustomobject]@{Phase='consumed_without_filesystem_intent';DiagnosticCode=$diagnostic;GrantConsumedSha256=(Get-AuthWireWriteHash $record)}
+  return [pscustomobject]@{Phase='consumed_without_filesystem_intent';DiagnosticCode=$diagnostic;GrantConsumedSha256=(Get-AuthWireWriteHash $record);GrantExpiresAt=$record.expires_at}
  }finally{$p.Dispose()}
+}
+
+function New-AuthWireConsumedStageRecoveryProof($State,$Completion,$Consumption,$Fresh,[Security.Cryptography.RSACng]$Key,[long]$Now){
+ $offer=$State.Offer;$approved=$offer.target.preview_record;$seen=$Fresh.Preview
+ if($Completion.outcome -cne 'requires_review' -or $Consumption.Phase -cne 'consumed_without_filesystem_intent' -or
+    -not (Test-AuthWireWriteInteger $Consumption.GrantExpiresAt) -or -not (Test-AuthWireWriteInteger $seen.checked_at) -or
+    $seen.checked_at -lt $Consumption.GrantExpiresAt -or $seen.checked_at -gt $Now -or $Now -ge $seen.checked_at+60){
+  throw 'WRITE_RECOVERY_EVIDENCE_NOT_CURRENT'
+ }
+ if((Get-AuthWireWritePreviewHash $seen) -cne $Fresh.PreviewSha256){throw 'WRITE_RECOVERY_PREVIEW_REJECTED'}
+ # Compare all approved observations, excluding the fresh timestamps only.
+ $normalized=ConvertTo-AuthWireWriteOrderedPreview $seen
+ $normalized.checked_at=$approved.Preview.checked_at
+ $normalized.expires_at=$approved.Preview.expires_at
+ if((Get-AuthWireWritePreviewHash $normalized) -cne $approved.PreviewSha256){throw 'WRITE_RECOVERY_OBSERVATIONS_CHANGED'}
+ $lock=[pscustomobject]@{format='AuthWireWriteGpoLockV1';job_id=$offer.job_id;intent_sha256=$offer.intent_sha256}
+ $body=[pscustomobject][ordered]@{
+  format='AuthWireConsumedStageRecoveryEvidenceV1'
+  job_id=$offer.job_id
+  gpo_id=$offer.target.scope_target.gpo_id
+  scope_sha256=$offer.scope_sha256
+  intent_sha256=$offer.intent_sha256
+  result_body_sha256=$Completion.result_body_sha256
+  accepted_ack_sha256=$Completion.ack_sha256
+  completion_sha256=(Get-AuthWireWriteHash $Completion)
+  grant_consumed_sha256=$Consumption.GrantConsumedSha256
+  lock_sha256=(Get-AuthWireWriteHash $lock)
+  approved_preview_sha256=$approved.PreviewSha256
+  observed_preview_sha256=$Fresh.PreviewSha256
+  baseline_inventory_sha256=$seen.baseline_inventory_sha256
+  grant_expires_at=$Consumption.GrantExpiresAt
+  observed_at=$seen.checked_at
+  expires_at=($seen.checked_at+60)
+ }
+ # Domain-separated evidence for an operator review. It is never a write grant.
+ $frame=[Text.Encoding]::ASCII.GetBytes("AUTHWIRE-CONSUMED-STAGE-RECOVERY-EVIDENCE-V1`n"+(Get-AuthWireWriteHash $body)+"`n")
+ $signature=$Key.SignData($frame,[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)
+ return [pscustomobject]@{Body=$body;Signature=[Convert]::ToBase64String($signature)}
+}
+
+function Get-AuthWireConsumedStageRecoveryEvidence([string]$Root,[string]$JobId,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[string]$PublisherThumbprint,[string]$BaseUrl){
+ Assert-AuthWireStagingWriteJournalLocation $Root $Binding
+ Assert-AuthWireCandidateGuid $JobId
+ Initialize-AuthWireStagingFilesystemTypes
+ $lock=Enter-AuthWireWriteCycleLock $Binding;$pins=[AuthWire.Staging.TreeLeaseV1]::new()
+ try{
+  $pins.PinAncestors($Root)
+  $history=Read-AuthWireLifecycleHistory $Root $Binding $Key
+  if(-not $history.ActiveStates.Count){throw 'WRITE_RECOVERY_STAGE_NOT_FOUND'}
+  $state=$history.ActiveStates[-1]
+  if($state.Phase -cne 'reply_saved' -or $state.Offer.job_id -cne $JobId -or $state.Offer.operation -cne 'combined.filesystem.stage.v1'){
+   throw 'WRITE_RECOVERY_STAGE_NOT_FOUND'
+  }
+  $slot=Join-Path $history.Life $state.Slot
+  $target=$state.Offer.target.scope_target
+  $pins.PinAncestors($slot)
+  $pins.PinFile((Join-Path $slot 'completion.json'))
+  $pins.PinFile((Join-Path $Root ('gpo-'+$target.gpo_id+'.json')))
+  $done=Read-AuthWireLifecycleCompletion $Root $history.Life $state $Binding $Key
+  $consumed=Get-AuthWireStageConsumptionReview $Root $slot $state $Binding $Key
+  if($done.outcome -cne 'requires_review' -or $null -eq $consumed -or
+     [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -lt $consumed.GrantExpiresAt){throw 'WRITE_RECOVERY_STAGE_NOT_ELIGIBLE'}
+  $fresh=Get-AuthWireCombinedStagingPreview $target $Binding $PublisherThumbprint $BaseUrl
+  $again=Get-AuthWireStageConsumptionReview $Root $slot $state $Binding $Key
+  if($null -eq $again -or $again.GrantConsumedSha256 -cne $consumed.GrantConsumedSha256){throw 'WRITE_RECOVERY_STAGE_CHANGED'}
+  return (New-AuthWireConsumedStageRecoveryProof $state $done $again $fresh $Key ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()))
+ }finally{$pins.Dispose();$lock.ReleaseMutex();$lock.Dispose()}
 }
 
 function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key){

@@ -359,6 +359,19 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
    Check ($null -eq (Get-AuthWireStageConsumptionReview $journal $slot $state $b $rsa)) 'execution evidence suppresses the prewrite classification'
    Remove-Item -LiteralPath $marker
    Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $before.Sha256) 'timed-out consumption and review preserve the SMB baseline'
+   $recovery=Get-AuthWireStageConsumptionReview $journal $slot $state $b $rsa
+   $frozen=New-AuthWireWriteResultOutbox $journal $id $b $release $rsa
+   $completion=[pscustomobject]@{outcome=$frozen.body.outcome;result_body_sha256=$frozen.body_sha256;ack_sha256=('a'*64)}
+   $observedAt=$recovery.GrantExpiresAt+1
+   $fresh=New-AuthWireCombinedStagingPlanCore $t $files (Get-AuthWireSysvolInventory $gpo) $preview.Preview.scope_observations_sha256 $observedAt
+   Reject {New-AuthWireConsumedStageRecoveryProof $state $completion $recovery $fresh $rsa ($observedAt-2)} 'future observation and active grant cannot become recovery proof'
+   $attested=New-AuthWireConsumedStageRecoveryProof $state $completion $recovery $fresh $rsa $observedAt
+   $frame=[Text.Encoding]::ASCII.GetBytes("AUTHWIRE-CONSUMED-STAGE-RECOVERY-EVIDENCE-V1`n"+(Get-AuthWireWriteHash $attested.Body)+"`n")
+   Check ($rsa.VerifyData($frame,[Convert]::FromBase64String($attested.Signature),[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)) 'purpose-bound recovery evidence has a valid RSA signature'
+   Check ($attested.Body.baseline_inventory_sha256 -ceq $before.Sha256 -and $attested.Body.result_body_sha256 -ceq $frozen.body_sha256 -and $attested.Body.expires_at -eq $observedAt+60) 'recovery evidence binds original result and verified baseline'
+   Reject {New-AuthWireConsumedStageRecoveryProof $state $completion $recovery $fresh $rsa ($observedAt+60)} 'recovery evidence expires without extending the original grant'
+   $drift=Clone $fresh;$drift.Preview.baseline_inventory_sha256='f'*64;$drift.PreviewSha256=Get-AuthWireWritePreviewHash $drift.Preview
+   Reject {New-AuthWireConsumedStageRecoveryProof $state $completion $recovery $drift $rsa $observedAt} 'valid fresh hash cannot hide baseline drift'
    Reject {New-AuthWireAuthorizedFilesystemIntent $journal $id $b $release $rsa} 'consumed timeout cannot replay'
    $outcomes+=,[pscustomobject]@{case=$case;staged=$false;diagnostic=$errorCode}
    continue
