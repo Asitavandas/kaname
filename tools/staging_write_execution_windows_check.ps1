@@ -369,6 +369,24 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
    $frame=[Text.Encoding]::ASCII.GetBytes("AUTHWIRE-CONSUMED-STAGE-RECOVERY-EVIDENCE-V1`n"+(Get-AuthWireWriteHash $attested.Body)+"`n")
    Check ($rsa.VerifyData($frame,[Convert]::FromBase64String($attested.Signature),[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)) 'purpose-bound recovery evidence has a valid RSA signature'
    Check ($attested.Body.baseline_inventory_sha256 -ceq $before.Sha256 -and $attested.Body.result_body_sha256 -ceq $frozen.body_sha256 -and $attested.Body.expires_at -eq $observedAt+60) 'recovery evidence binds original result and verified baseline'
+   $approval=[pscustomobject]@{decision='approve_consumed_stage_lock_release';consumed_stage_proof=$attested;expected_revision=4;review_hash=('a'*64)}
+   $request=[pscustomobject]@{approval=$approval;approval_revision=5}
+   $receipt=[pscustomobject]@{job_id=$id;gpo_id=$t.gpo_id;decision=$approval.decision;approval_revision=5;approval_verified=$true;
+    approval_request_sha256=(Get-AuthWireWriteHash $approval);consumed_stage_proof_sha256=(Get-AuthWireWriteHash $attested);evidence_expires_at=$observedAt+60;
+    review_only=$true;source_only=$false;approval_enabled=$true;write_authorization_enabled=$true;execution_adapter_available=$true;can_apply_gpo=$false}
+   Assert-AuthWireConsumedStageRecoveryReceipt $request $receipt $observedAt
+   Check (Test-Path -LiteralPath (Join-Path $journal ('gpo-'+$t.gpo_id+'.json'))) 'valid recovery receipt preserves the stage lock'
+   foreach($name in @('approval_request_sha256','consumed_stage_proof_sha256','gpo_id','approval_revision','can_apply_gpo')){
+    $wrong=Clone $receipt
+    $wrong.$name=if($name -ceq 'approval_revision'){6}elseif($name -ceq 'can_apply_gpo'){$true}else{'0'*64}
+    Reject {Assert-AuthWireConsumedStageRecoveryReceipt $request $wrong $observedAt} ('wrong recovery receipt '+$name)
+   }
+   Reject {Assert-AuthWireConsumedStageRecoveryReceipt $request $receipt ($observedAt+60)} 'expired recovery receipt is rejected'
+   Initialize-AuthWireWriteTransportTypes
+   $transportFailure=''
+   try{[AuthWire.Connector.WriteTransportV1]::VerifyStageRecovery($url,$b.appliance_fqdn,$b.appliance_tls_sha256,'{}','invalid',('a'*43))|Out-Null}
+   catch{$transportFailure=$_.Exception.GetBaseException().Message}
+   Check ($transportFailure -ceq 'WRITE_RECOVERY_SESSION_REJECTED') 'malformed session is rejected before transport'
    Reject {New-AuthWireConsumedStageRecoveryProof $state $completion $recovery $fresh $rsa ($observedAt+60)} 'recovery evidence expires without extending the original grant'
    $drift=Clone $fresh;$drift.Preview.baseline_inventory_sha256='f'*64;$drift.PreviewSha256=Get-AuthWireWritePreviewHash $drift.Preview
    Reject {New-AuthWireConsumedStageRecoveryProof $state $completion $recovery $drift $rsa $observedAt} 'valid fresh hash cannot hide baseline drift'

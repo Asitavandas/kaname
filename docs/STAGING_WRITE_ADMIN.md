@@ -83,7 +83,12 @@ incelemesi ayrı bir imzalı kanıt çıkarabilir. İşin özgün tamamlanma/ACK
 makbuzu, eşleşen kilidi, tüketilmiş ve süresi dolmuş yetki kaydı, güncel SYSVOL
 envanteri ve önceki önizleme ile eşleşen kapsam gerekir. Kanıt en çok 60
 saniye geçerlidir. İmzalı kanıt ayrı bir operatör onayına girdi sağlamak
-içindir; Linux onay doğrulaması ve kilit kapatma bu aşamada açık.
+içindir. `Confirm-AuthWireConsumedStageRecoveryApproval` makbuzun tamamını
+ve önceki imzalı kanıtı korunan Windows kayıtlarıyla karşılaştırır. Aynı
+operatör oturumu ve CSRF ile sabit, sertifika özetine bağlı HTTPS
+`verify-lock-release` ucuna başvurur. Yanıt tam onay ve kanıt özetiyle
+eşleşmeli ve kanıt güncel olmalıdır. Makbuz doğrulaması salt okunurdur.
+Kontrollü kilit kapatma ayrı adımdır.
 
 ## Doğrulama ve açık kapılar
 
