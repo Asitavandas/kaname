@@ -10,7 +10,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-from .directory import DirectoryError, decode_helper_response, validate_connection
+from .directory import (DirectoryError, decode_helper_response, dn_within,
+                        validate_connection, validate_search_base)
 from .models import strict_json
 from .radius import CurrentDirectoryAccount, object_id
 
@@ -35,8 +36,15 @@ def _helper_python():
     return str(candidate)
 
 
-def read_linux_directory(value, config, *, probe=False, object_guid=None, authenticate_self=False, computer_sam=None, user_sam=None):
+def read_linux_directory(value, config, *, probe=False, object_guid=None, authenticate_self=False, computer_sam=None, user_sam=None, ou_dn=None):
     request = validate_connection(value, config)
+    if ou_dn is not None:
+        if probe or object_guid is not None or authenticate_self or computer_sam is not None or user_sam is not None:
+            raise DirectoryError('AD_INPUT_INVALID')
+        ou_dn = validate_search_base(ou_dn, request['domain'])
+        if not ou_dn.startswith('OU='):
+            raise DirectoryError('AD_SCOPE_INVALID')
+        request['ou_dn'] = ou_dn
     if user_sam is not None:
         if probe or object_guid is not None or authenticate_self or computer_sam is not None or type(user_sam) is not str or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,19}', user_sam):
             raise DirectoryError('AD_INPUT_INVALID')
@@ -90,6 +98,18 @@ def read_linux_directory(value, config, *, probe=False, object_guid=None, authen
         finally:
             request['password'] = ''
             payload = b''
+    if ou_dn is not None and process.returncode == 0:
+        try:
+            result = strict_json(output.decode('utf-8'))
+            if (type(result) is dict and set(result) == {'domain', 'dc_fqdn', 'ou_dn', 'scope'} and
+                    result['domain'] == request['domain'] and result['dc_fqdn'] == request['dc_fqdn'] and
+                    result['scope'] == 'subtree'):
+                observed = validate_search_base(result['ou_dn'], request['domain'])
+                if dn_within(observed, ou_dn) and dn_within(ou_dn, observed):
+                    return result | {'ou_dn': observed}
+        except (ValueError, UnicodeError, TypeError, KeyError):
+            pass
+        raise DirectoryError('AD_INVALID_RESPONSE')
     if probe:
         try:
             result = json.loads(output)
