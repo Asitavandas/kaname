@@ -7,9 +7,11 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from kaname.directory import DirectoryError, decode_helper_response, read_windows_directory, validate_catalog, validate_connection
+from kaname.directory_linux_helper import Reader
 from kaname.models import ValidationError
 from kaname.server import DevelopmentServer
 from kaname.store import Store, ConflictError
@@ -29,6 +31,34 @@ def connection():
 
 
 class DirectoryModelTests(unittest.TestCase):
+    def test_live_ou_scope_requires_exact_ou_class_in_configured_subtree(self):
+        parent = 'OU=Parent,DC=lab,DC=example'
+        child = 'OU=Child,' + parent
+        outside = 'OU=Other,DC=lab,DC=example'
+        missing = 'OU=Missing,' + parent
+
+        class NoSuchObject(Exception):
+            pass
+
+        reader = Reader(None, SimpleNamespace(SCOPE_BASE=0, NO_SUCH_OBJECT=NoSuchObject), None)
+        reader.resolve_scopes = lambda domain, scopes: [parent]
+
+        def search(base, scope, filter_value, attributes):
+            self.assertEqual((0, '(objectClass=organizationalUnit)', ['objectClass']),
+                             (scope, filter_value, attributes))
+            if base == missing:
+                raise NoSuchObject()
+            return [(child, {'objectclass': [b'top', b'organizationalUnit']})], []
+
+        reader.search = search
+        self.assertEqual(child, reader.ou_scope('lab.example', parent, child))
+        with self.assertRaisesRegex(DirectoryError, 'AD_SCOPE_INVALID'):
+            reader.ou_scope('lab.example', parent, outside)
+        with self.assertRaisesRegex(DirectoryError, 'AD_SCOPE_NOT_FOUND'):
+            reader.ou_scope('lab.example', parent, missing)
+        with self.assertRaisesRegex(DirectoryError, 'AD_INVALID_RESPONSE'):
+            reader.ou_scope('lab.example', parent, parent)
+
     def test_connection_domain_and_upn(self):
         self.assertEqual('lab.example', validate_connection(connection(), config())['domain'])
 
@@ -232,6 +262,35 @@ class DirectoryHTTPTests(unittest.TestCase):
 
     def sync(self):
         return self.call('POST', '/api/directory/sync', {'expected_revision': 1, 'connection': connection()})
+
+    @unittest.skipIf(os.name == 'nt', 'Live OU check uses the installed Linux directory adapter')
+    def test_linux_http_ou_draft_requires_a_live_scoped_read(self):
+        dn = 'OU=Child,OU=Parent,DC=lab,DC=example'
+        calls = []
+        self.server.operations.directory_connection = connection
+
+        def read(value, settings, *, ou_dn):
+            calls.append(ou_dn)
+            if ou_dn != dn:
+                raise DirectoryError('AD_SCOPE_NOT_FOUND')
+            return {'ou_dn': dn, 'scope': 'subtree'}
+
+        self.server.directory_reader = read
+        path = '/api/policies/drafts/save'
+        item = {'id': '', 'name': 'OU pilot', 'selector_type': 'ou', 'target_ids': [],
+                'ou_dn': 'OU=Missing,DC=lab,DC=example', 'action': 'deny', 'vlan': None,
+                'access_types': ['wired']}
+        payload = {'expected_revision': 1, 'item': item}
+        self.assertEqual((400, {'error': 'AD_SCOPE_NOT_FOUND'}), self.call('POST', path, payload))
+        self.assertEqual([], self.server.planning.drafts()['items'])
+        self.server.directory_next_attempt = 0
+        item['ou_dn'] = dn
+        status, saved = self.call('POST', path, payload)
+        self.assertEqual(200, status, saved)
+        self.assertEqual(dn, saved['items'][0]['ou_dn'])
+        self.assertEqual('subtree', saved['items'][0]['ou_scope'])
+        self.assertEqual(['OU=Missing,DC=lab,DC=example', dn], calls)
+        self.assertEqual([], self.server.store.snapshot()['policies'])
 
     def test_sync_and_catalog_are_authenticated(self):
         self.assertEqual(401, self.call('POST', '/api/directory/sync', {}, authenticated=False)[0])

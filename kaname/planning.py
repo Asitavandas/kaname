@@ -1,4 +1,4 @@
-"""Panel preparation only. No network IO and no runtime policy activation."""
+"""Panel preparation with live validation of OU drafts where supported."""
 import uuid
 
 from .directory import validate_search_base
@@ -86,7 +86,7 @@ class Planning:
             item['domain_matches'] = item['domain'] == domain
         return result
 
-    def save_draft(self, expected, value):
+    def save_draft(self, expected, value, *, ou_scope=None):
         fields = {'id', 'name', 'selector_type', 'target_ids', 'ou_dn', 'action', 'vlan', 'access_types'}
         keys(value, fields, fields)
         config = self.store.snapshot()['config'] or {}
@@ -132,6 +132,9 @@ class Planning:
                 'domain': domain, 'selector_type': kind, 'target_ids': ids, 'targets': targets,
                 'ou_dn': ou, 'action': action, 'vlan': vlan, 'access_types': access,
                 'status': 'draft', 'runtime_applied': False}
+        if kind == 'ou' and ou_scope is not None:
+            scope = ou_scope(expected, ou)
+            item.update(ou_dn=scope['ou_dn'], ou_scope=scope['scope'])
         self._write('policy_drafts', expected, item)
         return self.drafts()
 

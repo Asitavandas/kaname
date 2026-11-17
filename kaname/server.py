@@ -1121,7 +1121,11 @@ class Handler(BaseHTTPRequestHandler):
                 keys(value, {'expected_revision', field}, {'expected_revision', field})
                 device = self.path.startswith('/api/network/')
                 operation = (self.server.planning.delete_device if deleting else self.server.planning.save_device) if device else (self.server.planning.delete_draft if deleting else self.server.planning.save_draft)
-                self.respond(200, operation(value['expected_revision'], value[field]))
+                args = (value['expected_revision'], value[field])
+                if self.path == '/api/policies/drafts/save' and os.name != 'nt':
+                    self.respond(200, operation(*args, ou_scope=self.server.directory_sync.ou_scope))
+                else:
+                    self.respond(200, operation(*args))
             elif self.path in {'/api/network/vlans', '/api/network/radius'}:
                 part = self.path.rsplit('/', 1)[1]
                 fields = {'vlans'} if part == 'vlans' else {'radius_clients', 'authentication_port', 'accounting_port'}
@@ -1180,7 +1184,7 @@ class Handler(BaseHTTPRequestHandler):
         except sqlite3.IntegrityError:
             self.respond(409 if self.path.startswith('/api/system/') else 503, {'error': 'ADMIN_NAME_EXISTS' if self.path.startswith('/api/system/') else 'STORE_UNAVAILABLE'})
         except ValidationError as exc:
-            allowed = {'POLICY_IDENTITY_SCOPE_MISMATCH', 'POLICY_IDENTITY_SCOPE_INVALID', 'DEVICE_IP_EXISTS', 'DEVICE_MODE_CONNECTION_INVALID', 'PLANNING_ITEM_NOT_FOUND', 'DRAFT_TARGET_REQUIRED', 'CATALOG_OBJECT_NOT_FOUND', 'AD_SCOPE_INVALID', 'AD_PASSWORD_REQUIRED', 'CONFIG_REQUIRED', 'VLAN_IN_USE', 'VLAN_NOT_DEFINED', 'RADIUS_CLIENTS_MANAGED', 'RADIUS_SECRET_INVALID', 'RADIUS_PORT_CONFLICT', 'RADIUS_SECRET_MISSING'}
+            allowed = {'POLICY_IDENTITY_SCOPE_MISMATCH', 'POLICY_IDENTITY_SCOPE_INVALID', 'DEVICE_IP_EXISTS', 'DEVICE_MODE_CONNECTION_INVALID', 'PLANNING_ITEM_NOT_FOUND', 'DRAFT_TARGET_REQUIRED', 'CATALOG_OBJECT_NOT_FOUND', 'AD_SCOPE_INVALID', 'AD_SCOPE_NOT_FOUND', 'AD_SCOPE_AMBIGUOUS', 'AD_PASSWORD_REQUIRED', 'CONFIG_REQUIRED', 'VLAN_IN_USE', 'VLAN_NOT_DEFINED', 'RADIUS_CLIENTS_MANAGED', 'RADIUS_SECRET_INVALID', 'RADIUS_PORT_CONFLICT', 'RADIUS_SECRET_MISSING'}
             self.respond(400, {'error': str(exc) if str(exc) in allowed else 'INVALID_INPUT'})
         except (ValueError, TypeError, KeyError):
             self.respond(400, {'error': 'INVALID_INPUT'})
