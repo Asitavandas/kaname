@@ -1,5 +1,25 @@
 # AuthWire current work record
 
+## 21 Kasım G05 OU/Everyone fiziksel saha kabulü tamamlandı
+
+**Güncel teyitli sayım:** 94 alt işin **59'u tamam (%62,8), 35'i açık**. Temel ürün 47/59; geliştirme paketleri **12/35**. **G05 4/5**. OU/Everyone etkin EAP-TLS kararları ve çakışma koruması alt işi bu saha kabulüyle kapandı.
+
+- **Kapsam:** Kurulu dev.52, VV-Client01 **yalnız Ethernet0**, mevcut makine sertifikası, kablolu pilot NAS `10.35.50.253`, VLAN110. Ethernet1 `10.35.50.71` yönetim arayüzü açık kaldı; adresi ve 802.1X otomatik yapılandırmadan çıkarılmış ayarı değiştirilmedi. Mevcut wired-user ve wireless kuralları korundu. Geçici bilgisayar kuralları aynı NAS/kablolu/bilgisayar kapsamıyla, özgün bilgisayar kuralı geçici devre dışı bırakılarak uygulandı. Her değişiklik normal Store.save revizyon/çakışma/VLAN doğrulaması ve append-only audit yolundan geçti. İşlem öncesi ayrı, oturuma bağlı olmayan otomatik geri dönüş koruması hazırlandı.
+
+| Tamamlanan kabul | Gerçek saha kanıtı |
+| --- | --- |
+| G05-FIELD-OU-ALLOW | 12:03:37 Türkiye saati, Access-Accept **#129**, `g05-field-ou`, doğrulanmış bilgisayar TLS kimliği, VLAN110; Windows **15505** ve ağ geçidine **2/2** yanıt. |
+| G05-FIELD-EVERYONE-ALLOW | 12:04:08, Access-Accept **#130**, `g05-field-everyone`, doğrulanmış bilgisayar TLS kimliği, VLAN110; Windows **15505** ve **2/2** yanıt. |
+| G05-FIELD-OU-OUTSIDE-DENY | Gerçek hedef `OU=Domain Controllers` seçildiğinde VV-Client01 kapsam dışında kaldı. 12:04:40, Access-Reject **#131**, `NO_MATCHING_POLICY`, TLS doğrulanmış, VLAN yok; Windows **15506**, Ethernet0 `Not Authenticated`, ağ geçidine **0/2**. AD nesnesi taşınmadı veya silinmedi. |
+| G05-FIELD-CONFLICT-SAVE | Etkin Everyone iznine aynı kapsamdaki ret ekleme girişimi **PolicyConflictError** ile kaydedilmeden reddedildi. Revizyon/politikalar değişmedi; çakışan kural canlıya yazılmadı. |
+| G05-FIELD-RESTORE | Özgün üç politika birebir geri yüklendi, revizyon **113**. 12:06:28, Access-Accept **#132**, özgün `authwire-pilot-wired`, Windows **15505**, VLAN110 ve **2/2** ağ geçidi yanıtı; Ethernet0/Ethernet1 açık. |
+
+- **Geri dönüş ayrıntısı:** Negatif deneme Windows'ta beklenen 600 saniyelik EAP engelini oluşturdu. Özgün politika geri yüklendikten sonraki ilk arayüz yeniden başlatmada yeni RADIUS isteği oluşmadı ve Windows 1200 saniyelik ağı desteklemiyor engeli bildirdi. Ethernet1'in mevcut otomatik yapılandırma dışlama kaydı ve parametresi doğrulandı. Önceki kurtarma yoluyla Wired AutoConfig bir kez yeniden başlatıldı ve yalnız Ethernet0 yeniden bağlandı; #132 ve Windows 15505 ile toparlanma tamamlandı. Profil/sertifika veya Ethernet1 ayarı değiştirilmedi. `netsh` cihazda engelliydi; engel listesi değiştirilmedi.
+- **Denetim ve korunma:** Politika kayıtları **audit #4740–#4743**, revizyon **110–113**. RADIUS PID **647261**, hizmet kontrol PID **919** ve G01/DC01 hizmetleri aktif kaldı; RADIUS yeniden başlatılmadı. Canlı G01 `d918bc0d` işi/GPO kilidi, sertifika bağları ve AD nesneleri bu denemede değiştirilmedi.
+- **Tekrar etmeme kaydı:** Yukarıdaki beş kabul artık tamamdır ve sonraki adım olarak yeniden seçilmeyecek. Dev.52 kurulumu, önceki altı salt okunur gerçek AD kontrolü, A03 doğal iptal, B11 saklama ve B09 31/31 kararlılık testleri tekrar edilmedi. Son arayüz bağlantısı yalnız negatif test sonrası özgün erişimi geri getirme ve doğrulama içindi.
+- **G05'te kalan tek alt iş:** User/Computer/Group/OU/Everyone için tüm pozitif/negatif matrisin **henüz kanıtlanmamış** satırları, gerçek AD üyelik/OU değişikliği ve silinmiş nesne kabulü. Bugünkü OU/Everyone pozitifleri, OU kapsam dışı ret ve çakışma kaydetme kanıtları bu matriste yeniden çalıştırılmadan kullanılacak. İki eski bilgisayarın erişilebilir olduğu varsayılmayacak; istenen üç bilgisayar kapsamı korunacak.
+- **Diğer açık saha kapıları korunuyor:** G01/A04 DC01 iş/kilit uzlaştırması ve gerçek hazırlama/geri alma, B11 NAS Interim-Update/Class, B12 sunucu dışı yedek/kurtarma, A03 kullanıcı Wi-Fi/genel istemci yayını ve B04/G01 gerçek uç ölçeği. Güncel rapor aynı belge kimliğinde 59 tamam/35 açık olarak güncellendi.
+
 ## 21 Kasım AuthWire G05 canlı dev.52 teslimi
 
 **Güncel teyitli sayım:** 94 alt işin 58'i tamam (%61,7), 36'sı açık. Temel ürün 47/59, geliştirme paketleri 11/35, G05 3/5. Yeni kodun canlı teslimi tamamlandı; gerçek AD/sertifika saha kabulü yerine yalnız kaynak/CI sonucu kullanılmadı.
