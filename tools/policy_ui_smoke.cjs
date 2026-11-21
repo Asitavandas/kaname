@@ -18,6 +18,10 @@ wireless=policy(id='wireless',name='Pilot Kablosuz',vlan=140,conditions=dict(gro
 s.store.save(1,policies=[wired,wireless])
 from tests.test_membership import computer_membership_catalog
 s.store.save_directory(2,computer_membership_catalog())
+def ou_proof(revision, names):
+ assert names==['OU=Pilot,DC=lab,DC=example']
+ return [dict(ou_dn=names[0],scope='subtree')]
+s.directory_sync.ou_scopes=ou_proof
 print(s.server_port,flush=True)
 s.serve_forever()`;
  const child=spawn(python,['-u','-c',script,temp],{cwd:root,stdio:['ignore','pipe','pipe']});let browser;
@@ -99,7 +103,7 @@ s.serve_forever()`;
   assert.equal(await row('wired').locator('.policy-summary td').nth(0).locator('.object-status').count(),0);
   assert.equal(await row('wired').locator('.policy-summary td').nth(5).textContent(),'Etkin');
   await page.locator('#new-policy').click();await page.locator('#policy-editor').waitFor({state:'visible'});
-  assert.deepEqual(await page.locator('.rule-fields>label').allTextContents(),['Kural Adı','Erişim Türü','Kullanıcı/Grup','Doğrulama Kapsamı','VLAN','Karar','Etkin/Devre Dışı']);
+  assert.deepEqual(await page.locator('.rule-fields>label').allTextContents(),['Kural Adı','Erişim Türü','Kimlik Koşulu','OU adresi (DN)','Kullanıcı/Grup','Doğrulama Kapsamı','VLAN','Karar','Etkin/Devre Dışı']);
   await page.locator('#policy-name').fill('Selected computers');await page.locator('#policy-access').selectOption('wireless');await page.locator('#policy-vlan').selectOption('140');await page.locator('#policy-enabled').selectOption('false');
   await page.locator('#policy-kind').selectOption('computer');await page.locator('#policy-target-results input').first().waitFor();
   const modalBox=await page.locator('#policy-editor').boundingBox(),pickerBox=await page.locator('#policy-picker').boundingBox();assert.ok(pickerBox.x>modalBox.x&&pickerBox.width<modalBox.width*.9,'Picker leaves part of the modal visible');
@@ -146,6 +150,36 @@ s.serve_forever()`;
   await page.waitForFunction(()=>document.getElementById('policy-form-error').textContent.includes('kapsamıyla uyumlu değil'));assert.equal(writes,mismatchWrites);
   if(process.env.KANAME_UI_ARTIFACTS){await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'policy-user-scope-mobile.png'),animations:'disabled'});await page.setViewportSize({width:1440,height:1050});}
   await page.locator('#cancel-policy').click();assert.equal((await snapshot()).policies.length,2);
+  // Explicit OU/Everyone choices save through the active policy editor and
+  // preserve their scope through reload, edit and enable/disable operations.
+  await save({...await snapshot(),policies:[]});await page.evaluate(()=>refresh());
+  await page.locator('#new-policy').click();await page.locator('#policy-editor').waitFor({state:'visible'});
+  await page.locator('#policy-name').fill('Pilot OU');await page.locator('#policy-vlan').selectOption('110');
+  await page.locator('#policy-selector').selectOption('ou');
+  assert.equal(await page.locator('#policy-kind').isDisabled(),true);
+  assert.equal(await page.locator('#policy-ou-dn').isVisible(),true);
+  await page.locator('#policy-ou-dn').fill('OU=Pilot,DC=lab,DC=example');
+  await page.locator('#add-policy').click();await page.waitForFunction(()=>!policySaving&&!document.getElementById('policy-editor').open);
+  const ouRule=(await snapshot()).policies.find(p=>p.name==='Pilot OU');
+  assert.deepEqual(ouRule.conditions.selector,{type:'ou',domain:'lab.example',dn:'OU=Pilot,DC=lab,DC=example'});
+  assert.deepEqual(ouRule.conditions.group_sids,[]);
+  assert.match(await row(ouRule.id).textContent(),/OU=Pilot,DC=lab,DC=example/);
+  await page.reload();await page.locator('#workspace').waitFor({state:'visible'});await policiesView();
+  await selectRow(ouRule.id);await row(ouRule.id).getByRole('button',{name:'Düzenle',exact:true}).click();
+  await page.locator('#policy-editor').waitFor({state:'visible'});
+  assert.equal(await page.locator('#policy-selector').inputValue(),'ou');
+  assert.equal(await page.locator('#policy-ou-dn').inputValue(),'OU=Pilot,DC=lab,DC=example');
+  await page.locator('#policy-name').fill('Pilot OU renamed');
+  await page.locator('#add-policy').click();await page.waitForFunction(()=>!policySaving&&!document.getElementById('policy-editor').open);
+  assert.deepEqual((await snapshot()).policies[0].conditions,ouRule.conditions);
+  await page.locator('#new-policy').click();await page.locator('#policy-editor').waitFor({state:'visible'});
+  await page.locator('#policy-name').fill('All verified computers');await page.locator('#policy-vlan').selectOption('110');
+  await page.locator('#policy-selector').selectOption('everyone');
+  assert.equal(await page.locator('#policy-ou-dn').isVisible(),false);
+  await page.locator('#add-policy').click();await page.waitForFunction(()=>!policySaving&&!document.getElementById('policy-editor').open);
+  const allRule=(await snapshot()).policies.find(p=>p.name==='All verified computers');
+  assert.deepEqual(allRule.conditions.selector,{type:'everyone',domain:'lab.example'});
+  assert.match(await row(allRule.id).textContent(),/Everyone \(lab.example\)/);
   for(const width of [390,1366,1920]){await page.setViewportSize({width,height:1050});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
   if(process.env.KANAME_UI_ARTIFACTS){fs.mkdirSync(process.env.KANAME_UI_ARTIFACTS,{recursive:true});await page.screenshot({path:path.join(process.env.KANAME_UI_ARTIFACTS,'policy-toggle.png'),fullPage:true,animations:'disabled'});}
   assert.deepEqual(errors,[]);console.log('Policy UI: aligned columns, compact search, row menus, keyboard selection, read-only filtering, new-rule button, persistence, preserved VLAN/selectors, disabled evaluation, editing, single POST, failures, stale revision, activation conflict, RBAC, CSRF and responsive layout passed.');

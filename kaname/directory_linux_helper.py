@@ -10,7 +10,8 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .directory import DirectoryError, TRANSPORT, validate_catalog, validate_search_scopes, dn_within
+from .directory import DirectoryError, TRANSPORT, validate_catalog, validate_search_scopes, dn_within, policy_dn_key
+from .models import ValidationError
 from .radius import CurrentDirectoryAccount, account_sid, object_id
 
 DOMAIN_SCOPE = '1.2.840.113556.1.4.1339'
@@ -210,6 +211,14 @@ class Reader:
         enabled = not flags & 2 and not computed & 0x10 and (expires in (0, 2**63 - 1) or expires > ticks)
         result = asdict(CurrentDirectoryAccount(domain, guid, sid, kind, bool(enabled), groups))
         result['security_group_sids'] = sorted(groups)
+        try:
+            policy_dn_key(dn, domain)
+        except ValidationError:
+            # Keep legacy SID-based decisions working for a DN outside the
+            # bounded syntax. OU policy evaluation requires a usable DN.
+            result.pop('distinguished_name')
+        else:
+            result['distinguished_name'] = dn
         return result
 
     def computer(self, domain, sam):

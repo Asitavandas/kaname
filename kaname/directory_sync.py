@@ -84,6 +84,11 @@ class DirectorySync:
             server.directory_lock.release()
 
     def ou_scope(self, expected_revision, ou_dn):
+        return self.ou_scopes(expected_revision, [ou_dn])[0]
+
+    def ou_scopes(self, expected_revision, distinguished_names):
+        if type(distinguished_names) is not list or not 1 <= len(distinguished_names) <= 16:
+            raise ValidationError('AD_SCOPE_INVALID')
         server = self.server
         current = server.store.snapshot()
         if current['config'] is None:
@@ -100,10 +105,12 @@ class DirectorySync:
                 raise DirectoryError('AD_CREDENTIALS_REJECTED')
             server.directory_next_attempt = time.monotonic() + 10
             connection = server.operations.directory_connection()
-            result = server.directory_reader(connection, current['config'], ou_dn=ou_dn)
-            if server.store.snapshot()['revision'] != expected_revision:
-                raise ConflictError()
-            return result
+            results = []
+            for ou_dn in distinguished_names:
+                results.append(server.directory_reader(connection, current['config'], ou_dn=ou_dn))
+                if server.store.snapshot()['revision'] != expected_revision:
+                    raise ConflictError()
+            return results
         except DirectoryError as error:
             if connection is not None and error.code == 'AD_CREDENTIALS_REJECTED':
                 server.operations.record_health(error.code, expected_revision=expected_revision)

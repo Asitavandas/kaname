@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import re
 import uuid
 
+from .directory import policy_dn_key
 from .models import ValidationError, address, dns_name, enum, text, validate_policies
 from .policy import Decision, VerifiedIdentity, evaluate, radius_vlan_attributes
 
@@ -87,6 +88,7 @@ class CurrentDirectoryAccount:
     kind: str
     enabled: bool
     security_group_sids: frozenset[str]
+    distinguished_name: str = ''
 
     def __post_init__(self):
         if self.domain != dns_name(self.domain) or type(self.enabled) is not bool:
@@ -94,6 +96,10 @@ class CurrentDirectoryAccount:
         object_id(self.object_guid)
         account_sid(self.sid)
         enum(self.kind, {'user', 'computer'})
+        if type(self.distinguished_name) is not str:
+            raise ValidationError('Invalid current AD account DN')
+        if self.distinguished_name:
+            policy_dn_key(self.distinguished_name, self.domain)
         # Reuse the engine's strict group bounds; never silently truncate.
         VerifiedIdentity(True, True, self.enabled, self.kind == 'computer',
                          self.security_group_sids, 'wired', '127.0.0.1', 'EAP-TLS')
@@ -147,7 +153,8 @@ class TLSAuthorization:
                 return Decision('deny', 'CERTIFICATE_BINDING_CHANGED')
             identity = VerifiedIdentity(True, True, account.enabled, account.kind == 'computer',
                                         account.security_group_sids, access_type, nas_ip, 'EAP-TLS',
-                                        account_sid=account.sid, account_kind=account.kind)
+                                        account_sid=account.sid, account_kind=account.kind,
+                                        directory_domain=account.domain, directory_dn=account.distinguished_name)
             return evaluate(self.policies, identity)
         except DirectoryUnavailable:
             return Decision('deny', 'DIRECTORY_UNAVAILABLE')

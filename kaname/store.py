@@ -80,6 +80,11 @@ class Store:
             if revision != expected_revision:
                 raise ConflictError('State changed; refresh before saving')
             if policies is not None:
+                configured, = db.execute('SELECT config FROM state WHERE id=1').fetchone()
+                domain = json.loads(configured)['ad_domain'] if configured else ''
+                if any(p['conditions'].get('selector', {}).get('domain', domain) != domain for p in value):
+                    from .models import ValidationError
+                    raise ValidationError('AD_SCOPE_INVALID')
                 from .policy import PolicyConflictError, policy_conflicts, validate_identity_targets
                 catalog = self.directory_catalog()
                 validate_identity_targets(value, catalog)
