@@ -1,5 +1,15 @@
 # AuthWire current work record
 
+## 21 Kasım AuthWire G05 geliştirme ve teslim hazırlığı
+
+**Güncel teyitli sayım:** 94 alt işin 58'i tamam (%61,7), 36'sı açık. Temel ürün 47/59, geliştirme paketleri 11/35, G05 3/5. Saha kabulü gerektiren işler yalnız kaynak/CI sonucuyla kapatılmadı.
+
+- **G05 OU/Everyone etkin politika editörü ve EAP-TLS karar bağlantısı hazır.** [PR #170](https://github.com/Asitavandas/kaname/pull/170), son kaynak `912c2d434ddeaa83ee03bbf554cfd399d9123d8b`. Panelde açık OU ve Everyone seçimi, düzenleme/yenilemede kapsam korunumu, sertifikaya bağlı güncel AD domain/DN ile karar ve çakışmada ret eklendi. Yeni, kapsamı değişen veya yeniden etkinleştirilen OU kuralları kayıttan önce canlı AD'den doğrulanır. Birden çok OU tek dizin kilidi ve aynı revizyonda okunur. AD sorgusu sonrasında panel oturumu/yazma yetkisi tekrar doğrulanır; oturum kaybı veya revizyon değişiminde kayıt/audit yazılmaz. Kapatma ve silme için gereksiz AD okuması yapılmaz. Simülasyonun dışarıdan güvenilir AD alanı kabul etmeme sınırı korundu.
+- **Kaynak doğrulaması geçti.** [Genel testler](https://github.com/Asitavandas/kaname/actions/runs/44881189301): 1.253 test, 58 platform atlaması. [Tarayıcı](https://github.com/Asitavandas/kaname/actions/runs/44881189290): OU/Everyone kaydetme, yenileme, düzenleme ve mevcut politika akışları başarılı. [Gerçek FreeRADIUS/eapol_test](https://github.com/Asitavandas/kaname/actions/runs/44881189285): sentetik AD ile beş yeni senaryo geçti; alt OU kabul/VLAN33, OU dışına taşınma ret, doğrulanmış Everyone kabul, bağlanmamış sertifika ret ve Everyone/OU çakışma ret. Bu sonuç gerçek müşteri AD/uç saha kabulü değildir. Linux kaynak ve tekrar üretilebilir teslim kontrolleri geçti. Ayrı Windows connector CI hattı bu kayıt anında sürüyordu.
+- **Canlı teslim henüz yapılmadı.** Son teyitli canlı sürüm dev.51. Sıradaki adım mevcut kurulumun salt okunur kontrolü, yeni sürümün kaynak/hash doğrulamalı teslim paketi ve uygun koşullarda kurulumdur. Sonrasında yalnız açık beş seçici User/Computer/Group/OU/Everyone saha kabulleri, nesne silinmesi ve AD değişikliği senaryoları çalışılacak. 15 Kasım OU varlığı/subtree, A03 doğal iptal, B11 saklama ve eski EAP-TLS/VLAN saha testleri tekrar edilmedi.
+- **Açık saha işler korunuyor.** G01/A04 `d918bc0d` işi ve GPO kilidi, B11 NAS Interim-Update/Class, B12 sunucu dışı yedek/kurtarma, A03 kullanıcı Wi-Fi ve genel istemci yayını, B04/G01 gerçek uç ölçeği açık. Bu turda bu sahalara işlem yapılmadı.
+- **Güncel rapor:** `AuthWire_Guncel_Durum_Raporu_2026-11-21.pdf`, aynı belge kimliğinde güncellendi; saha kanıtları ve açık testler korundu.
+
 ## 15 Kasım AuthWire pilot saha durumu
 
 **Güncel teyitli sayım (15 Kasım 2026):** 94 alt işin 58'i tamam (%61,7), 36'sı açık. Temel ürün 47/59, yedi geliştirme paketi 11/35. B11 3/5, G05 3/5.
