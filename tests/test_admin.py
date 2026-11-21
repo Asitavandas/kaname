@@ -215,7 +215,10 @@ class AdministratorHTTPTests(unittest.TestCase):
         for path in ['/api/policies', '/api/directory/sync', '/api/system/users/save', '/api/system/users/delete', '/api/system/profiles/save', '/api/system/profiles/delete']:
             self.assertEqual(403, self.call('POST', path, {}, auth=pair)[0], path)
         self.assertEqual(403, self.call('POST', '/api/config', {'expected_revision': 1, 'patch': {'appliance_fqdn': 'changed.lab.example'}}, auth=pair)[0])
-        data = asdict(identity()); data.pop('account_sid'); data['group_sids'] = list(data['group_sids'])
+        data = asdict(identity())
+        for key in ('account_sid', 'directory_domain', 'directory_dn'):
+            data.pop(key)
+        data['group_sids'] = list(data['group_sids'])
         self.assertEqual(200, self.call('POST', '/api/simulate', data, auth=pair)[0])
 
     def test_custom_profile_filters_state_and_checks_each_setup_tab(self):

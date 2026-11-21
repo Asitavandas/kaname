@@ -1216,6 +1216,25 @@ class Handler(BaseHTTPRequestHandler):
                     current = self.server.store.snapshot()
                     value = {'expected_revision': value['expected_revision'], 'config': {**(current['config'] or {}), **patch}}
                 keys(value, {'expected_revision', section}, {'expected_revision', section})
+                if section == 'policies':
+                    from .models import validate_policies
+                    policies = validate_policies(value['policies'])
+                    current = self.server.store.snapshot()
+                    if value['expected_revision'] != current['revision']:
+                        raise ConflictError()
+                    before = {p['id']: p for p in current['policies']}
+                    ou_checks = []
+                    for policy in policies:
+                        selector = policy['conditions'].get('selector')
+                        if selector and selector['domain'] != (current['config'] or {}).get('ad_domain'):
+                            raise ValidationError('AD_SCOPE_INVALID')
+                        previous = before.get(policy['id'])
+                        needs_read = policy['enabled'] and (not previous or not previous['enabled'] or
+                                     previous['conditions'].get('selector') != selector)
+                        if selector and selector['type'] == 'ou' and needs_read:
+                            ou_checks.append(selector['dn'])
+                    if ou_checks:
+                        self.server.directory_sync.ou_scopes(current['revision'], list(dict.fromkeys(ou_checks)))
                 revision = self.server.store.save(value['expected_revision'], **{section: value[section]})
                 self.respond(200, {'revision': revision, 'runtime_applied': False})
         except DeploymentError as exc:
