@@ -656,6 +656,33 @@ def run_lab(prefix, *, debug=False, access_events=False):
                 case('conflicting-deny-allow', reason='POLICY_CONFLICT',
                      change=lambda d: d.update(policies=[policy(id='deny', action='deny', vlan=None), policy()]))
 
+                def selector_rules(data, *, everyone=False, moved=False, conflict=False):
+                    domain = data['accounts'][GUID]['domain']
+                    base = ','.join('DC=' + component for component in domain.split('.'))
+                    ou = 'OU=Pilot,' + base
+                    location = 'OU=Other,' + base if moved else 'OU=Child,' + ou
+                    data['accounts'][GUID]['distinguished_name'] = 'CN=Client,' + location
+                    selected = policy()
+                    selected['conditions']['group_sids'] = []
+                    selected['conditions']['selector'] = ({'type': 'everyone', 'domain': domain} if everyone else
+                                                          {'type': 'ou', 'domain': domain, 'dn': ou})
+                    data['policies'] = [selected]
+                    if conflict:
+                        rejected = policy(id='ou-deny', action='deny', vlan=None)
+                        rejected['conditions']['group_sids'] = []
+                        rejected['conditions']['selector'] = {'type': 'ou', 'domain': domain, 'dn': ou}
+                        data['policies'].append(rejected)
+
+                case('verified-ou-subtree', expected=2, reason='POLICY_ALLOW', change=selector_rules)
+                case('verified-ou-moved-outside', reason='NO_MATCHING_POLICY',
+                     change=lambda data: selector_rules(data, moved=True))
+                case('verified-everyone', expected=2, reason='POLICY_ALLOW',
+                     change=lambda data: selector_rules(data, everyone=True))
+                case('unbound-cannot-use-everyone', cert='unbound', reason='CERTIFICATE_UNBOUND',
+                     change=lambda data: selector_rules(data, everyone=True))
+                case('everyone-ou-conflict', reason='POLICY_CONFLICT',
+                     change=lambda data: selector_rules(data, everyone=True, conflict=True))
+
                 def as_user(data):
                     data['accounts'][GUID]['kind'] = 'user'
 
