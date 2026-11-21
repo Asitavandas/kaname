@@ -1235,6 +1235,8 @@ class Handler(BaseHTTPRequestHandler):
                             ou_checks.append(selector['dn'])
                     if ou_checks:
                         self.server.directory_sync.ou_scopes(current['revision'], list(dict.fromkeys(ou_checks)))
+                        if not self.guard(write=True, resource='policies.rules'):
+                            return
                 revision = self.server.store.save(value['expected_revision'], **{section: value[section]})
                 self.respond(200, {'revision': revision, 'runtime_applied': False})
         except DeploymentError as exc:

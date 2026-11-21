@@ -144,3 +144,22 @@ class PolicyIdentityHTTPTests(unittest.TestCase):
         code, result, _ = self.save([rule])
         self.assertEqual((409, 'REVISION_CONFLICT'), (code, result['error']))
         self.assertEqual([], self.server.store.snapshot()['policies'])
+
+    def test_selector_http_rechecks_session_after_live_ad_read(self):
+        rule = scoped('computer')
+        rule['conditions'].update(group_sids=[], selector={
+            'type': 'ou', 'domain': 'lab.example', 'dn': 'OU=Pilot,DC=lab,DC=example'})
+        self.server.operations.directory_connection = lambda: {
+            'dc_fqdn': 'dc01.lab.example', 'username': 'reader@lab.example',
+            'password': 'fixture-secret', 'search_base': ''}
+
+        def expires_during_read(connection, config, *, ou_dn):
+            with self.server.admin.connect() as db:
+                db.execute('DELETE FROM admin_sessions')
+            return {'ou_dn': ou_dn, 'scope': 'subtree'}
+
+        self.server.directory_reader = expires_during_read
+        before, audit = self.server.store.snapshot(), self.server.store.audit()
+        self.assertEqual(401, self.save([rule])[0])
+        self.assertEqual(before, self.server.store.snapshot())
+        self.assertEqual(audit, self.server.store.audit())
