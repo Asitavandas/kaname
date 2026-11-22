@@ -1,5 +1,9 @@
 # AuthWire — güncel çalışma planı
 
+## 22 Kasım 2026, 19:03 — Boş kısmi hedef ve kilit kurtarması tamam
+
+c292e179 işi AllSigned gMSA bakımıyla kapandı:18:58:33 yalnız boş hedef kaldırıldı, tam başlangıç envanteri geri geldi; engine intent/grant/belirsiz sonuç korundu.18:59:48 ayrı CNG kapanışı Linux rev145'te kabul edildi; ilgili kilit yok. Kalıcı B9 Connector ve izole Linux f5b98a5e kuruldu.51 Linux defter testi,17 Linux CI ve79 native kontrol geçti; tüm Windows CI ilan edilmez. Yazıcı soğuk çocuk bütçesi çözülene kadar duraklatıldı; yeni iş/boş çevrim veya eski saha testi tekrarlanmadı. **Sırada süre sorununun ölçümü ve çözümü var; c292 kurtarması tekrar edilmeyecek.** Sonra tam20 dosyalı stage/rollback, üç uç etkin teslimi ve harici eşleşen kurtarma.60/94,34 açık,G012/5,G055/5 ve5–9 aktif iş günü korundu. [Kanıt](checkpoints/2026-11-22-g01-empty-stage-field-recovery.json).
+
 ## 22 Kasım 2026, 17:20 — Yeni gerçek stage süre aşımı: kısmi boş hedef korunuyor
 
 Yeni önizleme geçti; tek yeni c292e179 işi14s çocuk bütçesini aştı. Engine intent ve yalnız boş sahip olunan sürüm dizini var;0 dosya. Dizinin dışındaki GPO envanteri başlangıçla aynı. İmzalı requires_review sonucu Linux rev142'de; worker dikkat gerektiği için durdu. Kilit/hedef/kanıtlar korundu, geri alma işi oluşmadı.733 no-engine kapanışı bu kısmi yazıma uygulanamaz. **Sırada yeni deneme değil, mevcut kısmi işin ayrı denetimli kurtarması ve yürütme bütçesi çözümü var.**18 mevcut kaynak CI koşusu başarılı; yeniden başlatılmadı. Geçici operatör/görev/parola dosyaları temizlendi. Sayım60/94,34 açık,G012/5,G055/5; G01 süre5–9 aktif iş günü korundu. [Kanıt](checkpoints/2026-11-22-g01-stage-timeout-review.json), [durum](CURRENT_STATUS.md).
