@@ -30,6 +30,7 @@ namespace AuthWire.Staging {
   }
   [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern SafeFileHandle CreateFile(string p,uint access,uint share,IntPtr sa,uint mode,uint flags,IntPtr template);
   [DllImport("kernel32.dll",SetLastError=true)] static extern bool GetFileInformationByHandle(SafeFileHandle h,out Info i);
+  [DllImport("kernel32.dll",SetLastError=true)] static extern bool DeviceIoControl(SafeFileHandle h,uint code,IntPtr input,uint inputSize,byte[] output,uint outputSize,out uint returned,IntPtr overlap);
   [DllImport("kernel32.dll",SetLastError=true)] static extern bool SetFileInformationByHandle(SafeFileHandle h,int c,ref Disposition d,uint size);
   [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern bool CreateDirectory(string p,IntPtr sa);
   [DllImport("advapi32.dll",SetLastError=true)] static extern uint GetSecurityInfo(SafeFileHandle h,int kind,uint flags,out IntPtr owner,out IntPtr group,out IntPtr dacl,out IntPtr sacl,out IntPtr sd);
@@ -86,6 +87,53 @@ namespace AuthWire.Staging {
    var parts=new Stack<string>();string cur=full;string root=System.IO.Path.GetPathRoot(full);
    while(cur!=null){parts.Push(cur);if(String.Equals(cur.TrimEnd('\\'),root.TrimEnd('\\'),StringComparison.OrdinalIgnoreCase))break;string next=System.IO.Path.GetDirectoryName(cur);if(next==cur)break;cur=next;}
    while(parts.Count>0)Open(parts.Pop(),"",true,false,false);
+  }
+  // Trusted local-PDC adapter only. The caller supplies an independently
+  // derived, fixed local SYSVOL target, never a value from a job/request.
+  // Pin BOTH the junction object (without write/delete sharing) and the local
+  // physical target; prove that following SMB reaches that same NTFS object.
+  // Generic PinAncestors and every descendant still reject all reparse points.
+  public void PinLocalSysvolAncestors(string path,string anchor,string localTarget){
+   string full=System.IO.Path.GetFullPath(path),link=System.IO.Path.GetFullPath(anchor),target=System.IO.Path.GetFullPath(localTarget);
+   if(!String.Equals(full,path,StringComparison.OrdinalIgnoreCase)||!String.Equals(link,anchor,StringComparison.OrdinalIgnoreCase)||
+      !String.Equals(target,localTarget,StringComparison.OrdinalIgnoreCase)||full.Length>2000||link.Length>2000||target.Length>2000||
+      !link.StartsWith(@"\\")||link.StartsWith(@"\\?\")||link.StartsWith(@"\\.\")||
+      target.StartsWith(@"\\")||System.IO.Path.GetPathRoot(target).Length!=3||
+      !(String.Equals(full,link,StringComparison.OrdinalIgnoreCase)||full.StartsWith(link+"\\",StringComparison.OrdinalIgnoreCase)))Fail("STAGING_SYSVOL_ANCHOR_REJECTED");
+   PinAncestors(target);
+   Info expected;if(!GetFileInformationByHandle(entries[entries.Count-1].H,out expected))NativeFail();
+   var parts=new Stack<string>();string cur=full,root=System.IO.Path.GetPathRoot(full);
+   while(cur!=null){parts.Push(cur);if(String.Equals(cur.TrimEnd('\\'),root.TrimEnd('\\'),StringComparison.OrdinalIgnoreCase))break;string next=System.IO.Path.GetDirectoryName(cur);if(next==cur)break;cur=next;}
+   bool seen=false;
+   while(parts.Count>0){
+    string part=parts.Pop();
+    if(!String.Equals(part,link,StringComparison.OrdinalIgnoreCase)){Open(part,"",true,false,false);continue;}
+    seen=true;
+    var h=CreateFile(part,0x20080u,1u,IntPtr.Zero,3,0x02200000,IntPtr.Zero);
+    if(h.IsInvalid){h.Dispose();NativeFail();}
+    try{
+     Info i;if(!GetFileInformationByHandle(h,out i))NativeFail();
+     if((i.Attributes&0x410)!=0x410)Fail("STAGING_SYSVOL_JUNCTION_REQUIRED");
+     var b=new byte[16384];uint n;
+     if(!DeviceIoControl(h,0x900A8u,IntPtr.Zero,0,b,(uint)b.Length,out n,IntPtr.Zero))NativeFail();
+     if(n<16||BitConverter.ToUInt32(b,0)!=0xA0000003u||BitConverter.ToUInt16(b,4)+8!=n)Fail("STAGING_SYSVOL_JUNCTION_REJECTED");
+     int at=BitConverter.ToUInt16(b,8),size=BitConverter.ToUInt16(b,10),printAt=BitConverter.ToUInt16(b,12),printSize=BitConverter.ToUInt16(b,14);
+     if((at|size|printAt|printSize)%2!=0||size<8||16+at+size>n||16+printAt+printSize>n)Fail("STAGING_SYSVOL_JUNCTION_REJECTED");
+     var utf=new System.Text.UnicodeEncoding(false,false,true);
+     string substitute=utf.GetString(b,16+at,size),print=utf.GetString(b,16+printAt,printSize);
+     if(!String.Equals(substitute,@"\??\"+target,StringComparison.OrdinalIgnoreCase)||
+        (printSize!=0&&!String.Equals(print,target,StringComparison.OrdinalIgnoreCase)))Fail("STAGING_SYSVOL_TARGET_REJECTED");
+     entries.Add(new Entry{H=h,R=new RowV1{Path="",Kind="directory"},Delete=false});h=null;
+    }finally{if(h!=null)h.Dispose();}
+    var followed=CreateFile(part,0x20080u,3u,IntPtr.Zero,3,0x02000000,IntPtr.Zero);
+    if(followed.IsInvalid){followed.Dispose();NativeFail();}
+    try{
+     Info actual;if(!GetFileInformationByHandle(followed,out actual))NativeFail();
+     if((actual.Attributes&0x410)!=0x10||actual.Volume!=expected.Volume||actual.IndexHigh!=expected.IndexHigh||actual.IndexLow!=expected.IndexLow)Fail("STAGING_SYSVOL_IDENTITY_REJECTED");
+     entries.Add(new Entry{H=followed,R=new RowV1{Path="",Kind="directory"},Delete=false});followed=null;
+    }finally{if(followed!=null)followed.Dispose();}
+   }
+   if(!seen)Fail("STAGING_SYSVOL_ANCHOR_REJECTED");
   }
   void Walk(string path,string relative,bool delete,int depth){
    if(depth>3)Fail("STAGING_DEPTH_LIMIT");
@@ -159,6 +207,25 @@ namespace AuthWire.Staging {
 '@
 }
 
+function Add-AuthWireStagingGpoPins($Pins,[string]$Path,[string]$GpoRoot){
+ # The canonical UNC root was independently derived from fresh AD/PDC/GPO
+ # observations. Only a Connector running on THAT PDC may handle its standard
+ # domain junction; custom locations/remote PDCs keep the existing rejection.
+ $pattern='\A\\\\(?<pdc>[a-z0-9][a-z0-9.-]{0,252})\\SYSVOL\\(?<domain>[a-z0-9][a-z0-9.-]{0,252})\\Policies\\\{[0-9a-f-]{36}\}\z'
+ $m=[regex]::Match($GpoRoot,$pattern,[Text.RegularExpressions.RegexOptions]::CultureInvariant)
+ if(-not $m.Success){$Pins.PinAncestors($Path);return}
+ if($Path -cne $GpoRoot -and -not $Path.StartsWith($GpoRoot+'\',[StringComparison]::Ordinal)){throw 'STAGING_GPO_PIN_BOUNDARY_REJECTED'}
+ $anchor='\\'+$m.Groups['pdc'].Value+'\SYSVOL\'+$m.Groups['domain'].Value
+ # This observation cannot authorize a race: generic pinning rejects a new
+ # reparse point, and the special pin verifies the held reparse object again.
+ if(-not (([IO.File]::GetAttributes($anchor)) -band [IO.FileAttributes]::ReparsePoint)){$Pins.PinAncestors($Path);return}
+ $local=[Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
+ $fqdn=($local.HostName+'.'+$local.DomainName).ToLowerInvariant()
+ if($local.DomainName.ToLowerInvariant() -cne $m.Groups['domain'].Value -or $fqdn -cne $m.Groups['pdc'].Value){throw 'STAGING_LOCAL_PDC_REQUIRED'}
+ $target=Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::Windows)) 'SYSVOL\domain'
+ $Pins.PinLocalSysvolAncestors($Path,$anchor,$target)
+}
+
 function Get-AuthWireStagingFilesystemRows($Lease){
  return @(foreach($r in $Lease.Rows){[pscustomobject][ordered]@{Path=$r.Path;Kind=$r.Kind;Size=[long]$r.Size;Sha256=$r.Sha256;Sddl=$r.Sddl;Identity=$r.Identity}})
 }
@@ -220,7 +287,7 @@ function Invoke-AuthWireStagingFilesystemStage {
  Assert-AuthWireStagingWriteDeadline $NotAfter $clockStart $writeClock
  $pins=[AuthWire.Staging.TreeLeaseV1]::new();$source=$null;$staged=$null;$journalPins=$null
  try{
-  $pins.PinAncestors($GpoRoot);$pins.PinAncestors(([IO.Path]::Combine($GpoRoot,'Machine')))
+  Add-AuthWireStagingGpoPins $pins $GpoRoot $GpoRoot;Add-AuthWireStagingGpoPins $pins ([IO.Path]::Combine($GpoRoot,'Machine')) $GpoRoot
   $pins.PinAncestors($SourceRoot);$pins.PinAncestors($JournalRoot)
   $source=[AuthWire.Staging.TreeLeaseV1]::Tree($SourceRoot,$false)
   $sourceRows=Get-AuthWireStagingFilesystemRows $source
@@ -242,8 +309,8 @@ function Invoke-AuthWireStagingFilesystemStage {
   if((Get-AuthWireSysvolInventory $GpoRoot).Sha256 -cne $baseline.Sha256){throw 'STAGING_BASELINE_CHANGED'}
   Assert-AuthWireStagingWriteDeadline $NotAfter $clockStart $writeClock
   [AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($destination)
-  $pins.PinAncestors($destination)
-  foreach($d in @('enrollment','network')){Assert-AuthWireStagingWriteDeadline $NotAfter $clockStart $writeClock;[AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory(([IO.Path]::Combine($destination,$d)));$pins.PinAncestors(([IO.Path]::Combine($destination,$d)))}
+  Add-AuthWireStagingGpoPins $pins $destination $GpoRoot
+  foreach($d in @('enrollment','network')){Assert-AuthWireStagingWriteDeadline $NotAfter $clockStart $writeClock;[AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory(([IO.Path]::Combine($destination,$d)));Add-AuthWireStagingGpoPins $pins ([IO.Path]::Combine($destination,$d)) $GpoRoot}
   foreach($r in $PreviewRecord.Preview.files){
    Assert-AuthWireStagingWriteDeadline $NotAfter $clockStart $writeClock
    $from=[IO.Path]::Combine($SourceRoot,$r.Path.Replace('/','\'));$to=[IO.Path]::Combine($destination,$r.Path.Replace('/','\'))
@@ -283,7 +350,7 @@ function Invoke-AuthWireStagingFilesystemRollback {
  Assert-AuthWireStagingJournalRoot $JournalRoot
  $pins=[AuthWire.Staging.TreeLeaseV1]::new();$owned=$null
  try{
-  $pins.PinAncestors($GpoRoot);$pins.PinAncestors(([IO.Path]::Combine($GpoRoot,'Machine')));$pins.PinAncestors($JournalRoot)
+  Add-AuthWireStagingGpoPins $pins $GpoRoot $GpoRoot;Add-AuthWireStagingGpoPins $pins ([IO.Path]::Combine($GpoRoot,'Machine')) $GpoRoot;$pins.PinAncestors($JournalRoot)
   $journal=Join-Path $JournalRoot $OperationId;$pins.PinAncestors($journal)
   foreach($n in @('intent.json','complete.json')){$pins.PinFile((Join-Path $journal $n))}
   if(Test-Path -LiteralPath (Join-Path $journal 'rolled-back.json')){throw 'STAGING_ROLLBACK_ALREADY_RECORDED'}
