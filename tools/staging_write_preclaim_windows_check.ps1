@@ -120,7 +120,14 @@ namespace AuthWire.PreclaimFixture {
  $script:protected=[guid]::NewGuid().ToString('D');$script:pdc='dc01.lab.example';$script:domainCalls=0;$script:pdcChanges=$false
  function Get-AuthWireCombinedScopeContext {return [pscustomobject]@{Approval=[pscustomobject]@{domain=$t.domain;protected_gpo_id=$script:protected}}}
  function Get-ADDomain {$script:domainCalls++;$server=if($script:pdcChanges -and $script:domainCalls -gt 1){'dc02.lab.example'}else{$script:pdc};return [pscustomobject]@{DNSRoot=$t.domain;DomainSID=[pscustomobject]@{Value=$domainSid};PDCEmulator=$server}}
- function Get-AuthWireCombinedStagingPreview {return (Clone $preview)}
+ function Get-AuthWireCombinedStagingObservation {
+  # Fixture-only environment boundary for the shared bounded observation.
+  # Real non-admin identity and drift guards are covered by the separate
+  # staging_live_observation_windows_check under the domain service account.
+  $context=Get-AuthWireCombinedScopeContext
+  $domain=Get-ADDomain
+  return [pscustomobject]@{Context=$context;Pdc=[string]$domain.PDCEmulator;PreviewRecord=(Clone $preview)}
+ }
  $live=Get-AuthWireWriteStageLiveContext $offer $b $t.publisher_thumbprint 'https://kaname.lab.example/'
  Assert-AuthWireWriteLiveContext $live $offer $b
  Check ($live.gpo_root -ceq ('\\dc01.lab.example\SYSVOL\lab.example\Policies\{'+$t.gpo_id+'}')) 'GPO path derived locally'
