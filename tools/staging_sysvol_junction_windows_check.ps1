@@ -6,7 +6,7 @@ Initialize-AuthWireStagingFilesystemTypes
 $script:checks=0
 function Check($value,[string]$name){if(-not $value){throw ('SYSVOL_FIXTURE:'+ $name)};$script:checks++}
 function Denied([scriptblock]$Action,[string]$name){$blocked=$false;try{& $Action}catch{$blocked=$true};Check $blocked $name}
-$root=Join-Path $env:TEMP ('aw-sysvol-'+[guid]::NewGuid().ToString('N'))
+$root=[IO.Path]::GetFullPath((Join-Path $env:TEMP ('aw-sysvol-'+[guid]::NewGuid().ToString('N'))))
 $share='awj'+[guid]::NewGuid().ToString('N').Substring(0,12)
 $pins=$null;$owned=$null
 try{
@@ -18,6 +18,7 @@ try{
  $account=[Security.Principal.WindowsIdentity]::GetCurrent().Name
  New-SmbShare -Name $share -Path $export -FullAccess $account -CachingMode None | Out-Null
  $anchor='\\'+$env:COMPUTERNAME+'\'+$share+'\domain';$unc=$anchor+'\Policies\{'+$id+'}';$uncMachine=$unc+'\Machine'
+ Write-Output ('SYSVOL_FIXTURE_CANONICAL '+(@{path=([IO.Path]::GetFullPath($uncMachine) -ceq $uncMachine);anchor=([IO.Path]::GetFullPath($anchor) -ceq $anchor);target=([IO.Path]::GetFullPath($target) -ceq $target);target_root_length=[IO.Path]::GetPathRoot($target).Length}|ConvertTo-Json -Compress))
  Check ([IO.File]::ReadAllText($unc+'\outside.txt') -ceq 'existing protected data') 'real SMB read'
  $pins=[AuthWire.Staging.TreeLeaseV1]::new()
  Denied {$pins.PinAncestors($unc)} 'generic traversal still rejects junction';$pins.Dispose();$pins=$null
