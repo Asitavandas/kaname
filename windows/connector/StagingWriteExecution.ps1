@@ -15,7 +15,7 @@ function New-AuthWireStageInputPins([string]$JournalRoot,[string]$JobId,$Offer){
  try{
   $p.PinAncestors($JournalRoot);$job=Join-Path $JournalRoot $JobId;$p.PinAncestors($job)
   foreach($n in @('offer.json','preflight.json','claim-started.json','claim-proof.json','claim-sent.json','authorization.json','grant-consumed.json','filesystem-intent.json')){$p.PinFile((Join-Path $job $n))}
-  $p.PinFile((Join-Path $JournalRoot ('gpo-'+$Offer.target.scope_target.gpo_id+'.json')))
+  $p.PinFile((Get-AuthWireHistoricalWriteLockPath $JournalRoot $JobId $Offer.target.scope_target.gpo_id))
   return $p
  }catch{$p.Dispose();throw}
 }

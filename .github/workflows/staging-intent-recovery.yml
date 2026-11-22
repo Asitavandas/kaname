@@ -1,0 +1,37 @@
+name: AuthWire exited stage intent recovery
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/staging-intent-recovery.yml'
+      - 'tools/staging_write_intent_recovery_fixture.ps1'
+      - 'tools/staging_write_execution_windows_check.ps1'
+      - 'tools/staging_write_cycle_windows_check.py'
+      - 'windows/connector/StagingWriteHistory.ps1'
+      - 'windows/connector/StagingWriteExecution.ps1'
+      - 'windows/connector/StagingFilesystem.ps1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  intent-recovery:
+    runs-on: windows-2025
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: a93f3fbe55d9f62ee2601f314846bde0890db37a
+          path: _intent_backend
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - run: python -m pip install cryptography==46.0.0
+      - name: Recover expired intent with real CNG TLS and audited SQLite closure
+        env:
+          AUTHWIRE_STAGE_RECOVERY_CLOSURE_CHECK: '1'
+          AUTHWIRE_STAGE_INTENT_RECOVERY_CHECK: '1'
+          AUTHWIRE_RECOVERY_BACKEND: ${{ github.workspace }}\_intent_backend
+        run: python tools/staging_write_cycle_windows_check.py

@@ -10,6 +10,7 @@ $journal=$null;$candidateBase=$null;$oldModulePath=$env:PSModulePath;$script:che
 $grantMode=$env:AUTHWIRE_ROLLBACK_AUTHORIZATION_CHECK -eq '1'
 $rollbackExecutionMode=$env:AUTHWIRE_ROLLBACK_EXECUTION_CHECK -eq '1'
 $closureMode=$env:AUTHWIRE_STAGE_RECOVERY_CLOSURE_CHECK -eq '1'
+$intentRecoveryMode=$env:AUTHWIRE_STAGE_INTENT_RECOVERY_CHECK -eq '1'
 $recoveryReceiptMode=$env:AUTHWIRE_STAGE_RECOVERY_RECEIPT_CHECK -eq '1' -or $closureMode
 $lifecycleMode=$env:AUTHWIRE_WRITE_LIFECYCLE_CHECK -eq '1' -or $recoveryReceiptMode
 $historyMode=$env:AUTHWIRE_WRITE_HISTORY_CHECK -eq '1'
@@ -84,6 +85,7 @@ function Invoke-AuthWireStagingFilesystemStage {
  $fixture=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'fixture.json') -Raw|ConvertFrom-Json
  if($NotAfter -ne $fixture.expires_at){throw 'FIXTURE_GRANT_EXPIRY_NOT_FORWARDED'}
  if($fixture.case -ceq 'timeout'){Start-Sleep -Seconds 25}
+ if($fixture.case -ceq 'intent_no_effect'){throw 'FIXTURE_ENGINE_BEFORE_JOURNAL'}
  $r=& $script:FixtureEngineBody @PSBoundParameters
  if($fixture.case -ceq 'bad_result'){$r.Phase='wrong'}
  return $r
@@ -240,7 +242,7 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
  if($lifecycleMode){$cases=@('lc_stage','lc_success','lc_lost_ack','lc_lost_claim','lc_lost_poll','lc_bad_poll','lc_idle','lc_saved_grant')}
  if($historyMode){$cases=@('lc_stage','lc_idle','lc_lost_poll','lc_saved_grant')}
  if($refusalMode){$cases=@('ref_stage','ref_lost_ack','ref_ack_limit','ref_disk','ref_claim','ref_rollback')}
- if($recoveryReceiptMode){$cases=@('consume_timeout')}
+ if($recoveryReceiptMode){$cases=@($(if($intentRecoveryMode){'intent_no_effect'}else{'consume_timeout'}))}
  foreach($case in $cases){
   $t=[pscustomobject][ordered]@{candidate_id=[guid]::NewGuid().ToString('D');network_candidate_id=[guid]::NewGuid().ToString('D');plan_id=[guid]::NewGuid().ToString('D');plan_version=1;gpo_id=[guid]::NewGuid().ToString('D');approval_sha256=('a'*64);network_manifest_sha256=('b'*64);manifest_sha256=('c'*64);draft_sha256=('d'*64);dependency_sha256=('e'*64);publisher_thumbprint=$signer.Thumbprint;machine_profile_id=[guid]::NewGuid().ToString('D');machine_profile_version=3;domain='lab.example';root_thumbprint=('f'*40);group_sid=($domainSid+'-1647');content_result_sha256=('2'*64);target_sids_sha256=('3'*64);target_count=1}
   $draft=[Text.Encoding]::ASCII.GetBytes('fixture never execute '+$case);$t.draft_sha256=Get-AuthWireCandidateHash $draft
@@ -274,15 +276,18 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
     $cycle=Invoke-AuthWireStagingWriteLifecycleStep $journal $b $release $rsa $url
     Check ($cycle.Phase -ceq 'requires_review' -and $cycle.JobId -ceq $id -and $cycle.ResultRecorded) 'consumed timeout has a genuine accepted lifecycle result'
     $local=Get-AuthWireWriteReconciliationReview $journal $b $rsa
-    Check ($local.AcceptedAck -and $local.StageConsumption.DiagnosticCode -ceq 'WRITE_INTENT_PREFLIGHT_TIMEOUT') 'local ACK and consumption match'
+    if($intentRecoveryMode){$grantExpires=(Read-AuthWireStagingJournal (Join-Path (Join-Path $journal $id) 'grant-consumed.json')).expires_at;Check $local.AcceptedAck 'intent failure has accepted original result ACK'}
+    else{$grantExpires=$local.StageConsumption.GrantExpiresAt;Check ($local.AcceptedAck -and $local.StageConsumption.DiagnosticCode -ceq 'WRITE_INTENT_PREFLIGHT_TIMEOUT') 'local ACK and consumption match'}
     $wait=[Diagnostics.Stopwatch]::StartNew()
-    while([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -lt $local.StageConsumption.GrantExpiresAt -and $wait.Elapsed.TotalSeconds -lt 32){Start-Sleep -Milliseconds 100}
+    while([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -lt $grantExpires -and $wait.Elapsed.TotalSeconds -lt 32){Start-Sleep -Milliseconds 100}
+    if($intentRecoveryMode){$local=Get-AuthWireWriteReconciliationReview $journal $b $rsa;Check ($local.StageConsumption.Phase -ceq 'expired_intent_without_engine_journal') 'expired original intent is separately classified'}
     $script:RecoveryExpectedEnrollmentBase=$url
     # Only the directory/approved-source observation is synthetic. SMB inventory is reread.
     function Get-AuthWireCombinedStagingPreview($Target,$Binding,$PublisherThumbprint,$BaseUrl){
      if($BaseUrl -cne $script:RecoveryExpectedEnrollmentBase){throw 'FIXTURE_ENROLLMENT_PORT_CHANGED'}
      return (New-AuthWireCombinedStagingPlanCore $Target $files (Get-AuthWireSysvolInventory $gpo) $preview.Preview.scope_observations_sha256 ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()))
     }
+    if($intentRecoveryMode){. (Join-Path $PSScriptRoot 'staging_write_intent_recovery_fixture.ps1')}
     $proof=Get-AuthWireConsumedStageRecoveryEvidence $journal $id $b $rsa $signer.Thumbprint $url
     $payload=[pscustomobject]@{evidence=$local.Evidence;proof=$proof}
     $requestPath=Join-Path $flowDirectory 'recovery-proof.json'
@@ -314,6 +319,11 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
      }finally{$session.Dispose();$csrf.Dispose()}
      $h=Read-AuthWireLifecycleHistory $journal $b $rsa;$s=$h.ActiveStates[-1]
      Check (Test-AuthWireConsumedStageClosed $journal $h.Life $s $b $rsa) 'closed stage survives a fresh local journal read'
+     if($intentRecoveryMode){
+      $laterDestination=Join-Path $gpo $preview.Preview.relative_destination.Replace('/','\')
+      [AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($laterDestination)
+      try{Check (Test-AuthWireConsumedStageClosed $journal $h.Life $s $b $rsa) 'historical intent closure does not claim ownership of a later version directory'}finally{[IO.Directory]::Delete($laterDestination)}
+     }
      $closedPath=Join-Path $job 'consumed-stage-closed.json';$savedClosed=[IO.File]::ReadAllBytes($closedPath)
      $partialPath=Join-Path $root 'pending-closure.json';[IO.File]::Move($closedPath,$partialPath)
      try{

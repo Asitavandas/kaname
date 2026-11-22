@@ -22,6 +22,7 @@ from types import SimpleNamespace
 
 CLOSURE_MODE = os.environ.get('AUTHWIRE_STAGE_RECOVERY_CLOSURE_CHECK') == '1'
 CLOSED_ARCHIVE_MODE = os.environ.get('AUTHWIRE_CLOSED_HISTORY_ARCHIVE_CHECK') == '1'
+INTENT_RECOVERY_MODE = os.environ.get('AUTHWIRE_STAGE_INTENT_RECOVERY_CHECK') == '1'
 RECOVERY_MODE = os.environ.get('AUTHWIRE_STAGE_RECOVERY_RECEIPT_CHECK') == '1' or CLOSURE_MODE
 BACKEND_ROOT = (Path(os.environ['AUTHWIRE_RECOVERY_BACKEND']) if RECOVERY_MODE else
                 Path(__file__).resolve().parents[1])
@@ -290,7 +291,7 @@ def main():
             native = json.loads((root/'native-summary.json').read_text(encoding='utf-8-sig'))
             if RECOVERY_MODE:
                 if CLOSURE_MODE:
-                    assert native['outcomes'] == [{'case': 'consume_timeout', 'closure_verified': True}]
+                    assert native['outcomes'] == [{'case': ('intent_no_effect' if INTENT_RECOVERY_MODE else 'consume_timeout'), 'closure_verified': True}]
                     assert confirmed == 2 and not metrics['errors']
                     assert list(metrics['polls'].values()) == [3 if CLOSED_ARCHIVE_MODE else 2]
                     assert list(metrics['claims'].values()) == list(metrics['results'].values()) == [1]
