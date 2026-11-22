@@ -10,7 +10,16 @@ function Read-AuthWireEmptyStageEngine($Original,$State,[string]$Root,$Pins){
  $file=Join-Path $engine 'intent.json';$Pins.PinFile($file);$ei=Read-AuthWireStagingJournal $file
  Assert-AuthWireCandidateFields $ei @('format','operation_id','preview_sha256','target_sha256','gpo_root','relative_destination','baseline_sha256','protected_gpo_id')
  $approved=$State.Offer.target.preview_record
- $relative=Assert-AuthWireStagingFilesystemContext $State.Offer.target.scope_target $approved $approved.PreviewSha256 $live.gpo_root $live.protected_gpo_id
+ # Validate historical ownership at the recorded original consumption time.
+ # This is not a new stage approval: execution still uses the unmodified live
+ # preview-expiry gate; cleanup additionally requires fresh current observations.
+ $target=$State.Offer.target.scope_target;Assert-AuthWireCombinedScopeTarget $target
+ Assert-AuthWireCandidateGuid $live.protected_gpo_id
+ if($target.gpo_id -ceq $live.protected_gpo_id -or [IO.Path]::GetFileName($live.gpo_root) -cne ('{'+$target.gpo_id+'}')){throw 'EMPTY_RECOVERY_GPO_BOUNDARY_REJECTED'}
+ $pv=$approved.Preview;$at=$s.Consumed.consumed_at
+ if((Get-AuthWireWritePreviewHash $pv) -cne $approved.PreviewSha256 -or $pv.checked_at -gt $at -or $pv.expires_at -le $at -or $pv.expires_at-$pv.checked_at -ne 90){throw 'EMPTY_RECOVERY_ORIGINAL_PREVIEW_REJECTED'}
+ $relative='Machine/AuthWire-'+([guid]$target.plan_id).ToString('N')+'-v'+$target.plan_version+'-'+$target.manifest_sha256
+ if($pv.relative_destination -cne $relative -or $pv.scope_target_sha256 -cne (Get-AuthWireCombinedScopeTargetHash $target)){throw 'EMPTY_RECOVERY_TARGET_CHANGED'}
  if($ei.format -cne 'AuthWireFilesystemIntentV1' -or $ei.operation_id -cne $op -or $ei.preview_sha256 -cne $approved.PreviewSha256 -or $ei.target_sha256 -cne $approved.Preview.scope_target_sha256 -or $ei.gpo_root -cne $live.gpo_root -or $ei.relative_destination -cne $relative -or $ei.baseline_sha256 -cne $approved.Preview.baseline_inventory_sha256 -or $ei.protected_gpo_id -cne $live.protected_gpo_id){throw 'EMPTY_RECOVERY_ENGINE_INTENT_REJECTED'}
  return $ei
 }
