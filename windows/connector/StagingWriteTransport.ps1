@@ -23,9 +23,15 @@ public static class WriteTransportV1 {
   return PostBound(baseUrl,fqdn,pin,path,json,null,null);
  }
  public static string VerifyStageRecovery(string baseUrl,string fqdn,string pin,string json,string session,string csrf){
+  return RecoveryPost(baseUrl,fqdn,pin,"/api/deployment/staging-write/reconciliation/verify-lock-release",json,session,csrf);
+ }
+ public static string CloseStageRecovery(string baseUrl,string fqdn,string pin,string json,string session,string csrf){
+  return RecoveryPost(baseUrl,fqdn,pin,"/api/deployment/staging-write/reconciliation/close-consumed-stage",json,session,csrf);
+ }
+ private static string RecoveryPost(string baseUrl,string fqdn,string pin,string path,string json,string session,string csrf){
   if(session==null||csrf==null||!Regex.IsMatch(session,"\\A[A-Za-z0-9_-]{43}\\z")||!Regex.IsMatch(csrf,"\\A[A-Za-z0-9_-]{43}\\z"))
    throw new InvalidOperationException("WRITE_RECOVERY_SESSION_REJECTED");
-  return PostBound(baseUrl,fqdn,pin,"/api/deployment/staging-write/reconciliation/verify-lock-release",json,session,csrf);
+  return PostBound(baseUrl,fqdn,pin,path,json,session,csrf);
  }
  private static string PostBound(string baseUrl,string fqdn,string pin,string path,string json,string session,string csrf){
   Uri root;
@@ -33,7 +39,8 @@ public static class WriteTransportV1 {
    !Regex.IsMatch(fqdn,"\\A[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?\\z")||fqdn.IndexOf('.')<1||!Regex.IsMatch(pin,"\\A[0-9a-f]{64}\\z")||
    (session==null&&path!="/api/connector/v1/staging-write/poll"&&path!="/api/connector/v1/staging-write/claim"&&path!="/api/connector/v1/staging-write/result"))throw new InvalidOperationException("WRITE_HTTPS_CONFIGURATION_REJECTED");
   byte[] body=new UTF8Encoding(false,true).GetBytes(json);
-  if(body.Length==0||body.Length>4096)throw new InvalidOperationException("WRITE_HTTPS_BODY_LIMIT");
+  int bodyLimit=path=="/api/deployment/staging-write/reconciliation/close-consumed-stage"?8192:4096;
+  if(body.Length==0||body.Length>bodyLimit)throw new InvalidOperationException("WRITE_HTTPS_BODY_LIMIT");
   int limit=path.EndsWith("/poll",StringComparison.Ordinal)?32768:4096;
   using(var handler=new HttpClientHandler()){
    handler.SslProtocols=SslProtocols.Tls12;handler.AllowAutoRedirect=false;handler.UseProxy=false;handler.Proxy=null;

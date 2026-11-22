@@ -20,7 +20,8 @@ import time
 import uuid
 from types import SimpleNamespace
 
-RECOVERY_MODE = os.environ.get('AUTHWIRE_STAGE_RECOVERY_RECEIPT_CHECK') == '1'
+CLOSURE_MODE = os.environ.get('AUTHWIRE_STAGE_RECOVERY_CLOSURE_CHECK') == '1'
+RECOVERY_MODE = os.environ.get('AUTHWIRE_STAGE_RECOVERY_RECEIPT_CHECK') == '1' or CLOSURE_MODE
 BACKEND_ROOT = (Path(os.environ['AUTHWIRE_RECOVERY_BACKEND']) if RECOVERY_MODE else
                 Path(__file__).resolve().parents[1])
 sys.path.insert(0, str(BACKEND_ROOT.resolve()))
@@ -195,7 +196,8 @@ def main():
                 nonlocal confirmed
                 observed_start = time.monotonic()
                 try:
-                    size = int(self.headers.get('Content-Length', '0')); assert 0 < size <= 4096
+                    size = int(self.headers.get('Content-Length', '0'))
+                    assert 0 < size <= (8192 if self.path.endswith('/close-consumed-stage') else 4096)
                     raw = self.rfile.read(size)
                     with lock:
                         data, identity = setup_case(allow_prepare=False)
@@ -239,6 +241,18 @@ def main():
                                          write_authorization_enabled=True, execution_adapter_available=True,
                                          can_apply_gpo=False)
                             confirmed += 1
+                        elif CLOSURE_MODE and self.path == '/api/deployment/staging-write/reconciliation/close-consumed-stage':
+                            authority = f'{fqdn}:{server.server_port}'
+                            assert self.headers.get('Host') == authority
+                            assert self.headers.get('Origin') == f'https://{authority}'
+                            assert self.headers.get('Cookie') == f'kaname_session={session}'
+                            assert self.headers.get('X-Kaname-CSRF') == csrf
+                            request = json.loads(raw)
+                            assert request['approval'] == recovery_request['approval']
+                            reply = core.close_consumed_stage(request, actor)
+                            reply.update(source_only=False, approval_enabled=True,
+                                         write_authorization_enabled=True, execution_adapter_available=True,
+                                         can_apply_gpo=False)
                         else:
                             raise AssertionError('Unexpected route')
                     body = json.dumps(reply, separators=(',', ':')).encode('ascii')
@@ -274,6 +288,21 @@ def main():
                 check=True, timeout=1320 if execution_mode else (1100 if lifecycle_mode else 650), env=env)
             native = json.loads((root/'native-summary.json').read_text(encoding='utf-8-sig'))
             if RECOVERY_MODE:
+                if CLOSURE_MODE:
+                    assert native['outcomes'] == [{'case': 'consume_timeout', 'closure_verified': True}]
+                    assert confirmed == 2 and not metrics['errors']
+                    assert list(metrics['polls'].values()) == [2]
+                    assert list(metrics['claims'].values()) == list(metrics['results'].values()) == [1]
+                    with store.connect() as db:
+                        job, = core._read(db)['jobs']
+                        assert not core._busy(core._read(db), job['target'], STAGE, job['scope'], int(time.time()))
+                    assert job['state'] == 'requires_review' and job['result']['outcome'] == 'requires_review'
+                    assert 'closure' in job
+                    assert store.snapshot()['revision'] == original['revision'] + 5
+                    print(f'AUTHWIRE_STAGE_RECOVERY_CLOSURE_E2E_OK native_checks={native["checks"]} '
+                          'real_tls_cng_sqlite=true sysvol_unchanged=true old_grant_replay=false '
+                          'ad_simulated=true lock_released=true customer_changed=false', flush=True)
+                    return
                 assert native['outcomes'] == [{'case': 'consume_timeout', 'receipt_verified': True}]
                 assert confirmed == 1 and not metrics['errors']
                 assert list(metrics['polls'].values()) == list(metrics['claims'].values()) == list(metrics['results'].values()) == [1]

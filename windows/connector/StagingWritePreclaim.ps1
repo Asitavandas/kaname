@@ -222,6 +222,16 @@ function Save-AuthWireStagingWriteOffer($Offer,[hashtable]$Binding,[string]$Rele
 function Read-AuthWireStagingWriteOffer([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release){
  return (Read-AuthWireStagingWriteOfferAt $JournalRoot $JobId $Binding $Release ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()))
 }
+function Get-AuthWireHistoricalWriteLockPath([string]$Root,[string]$JobId,[string]$GpoId){
+ # Historical bytes do not authorize execution or close a cycle. The lifecycle
+ # separately verifies the CNG-signed closure before it can advance.
+ $job=Join-Path $Root $JobId;$saved=Join-Path $job 'released-gpo-lock.json'
+ if(Test-Path -LiteralPath $saved){
+  if(-not (Test-Path -LiteralPath (Join-Path $job 'consumed-stage-release.json'))){throw 'WRITE_RECOVERY_PARTIAL_REQUIRES_REVIEW'}
+  return $saved
+ }
+ return (Join-Path $Root ('gpo-'+$GpoId+'.json'))
+}
 function Read-AuthWireStagingWriteOfferAt([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[long]$ObservedAt){
  Assert-AuthWireCandidateGuid $JobId;Assert-AuthWireStagingJournalRoot $JournalRoot;Initialize-AuthWireStagingFilesystemTypes
  $pin=[AuthWire.Staging.TreeLeaseV1]::new()
@@ -231,7 +241,7 @@ function Read-AuthWireStagingWriteOfferAt([string]$JournalRoot,[string]$JobId,[h
   Assert-AuthWireCandidateFields $v @('format','binding_scope','release_id','offer')
   if($v.format -cne 'AuthWireWriteOfferV1' -or $v.binding_scope -cne (Get-AuthWireJobScope $Binding) -or $v.release_id -cne $Release -or $v.offer.job_id -cne $JobId){throw 'WRITE_LOCAL_RECORD_CHANGED'}
   Assert-AuthWireWriteOfferAt $v.offer $Binding $Release $v.offer.request_id $ObservedAt
-  $lock=Join-Path $JournalRoot ('gpo-'+$v.offer.target.scope_target.gpo_id+'.json');$pin.PinFile($lock)
+  $lock=Get-AuthWireHistoricalWriteLockPath $JournalRoot $JobId $v.offer.target.scope_target.gpo_id;$pin.PinFile($lock)
   $l=Read-AuthWireStagingJournal $lock;Assert-AuthWireCandidateFields $l @('format','job_id','intent_sha256')
   if($l.format -cne 'AuthWireWriteGpoLockV1' -or $l.job_id -cne $JobId -or $l.intent_sha256 -cne $v.offer.intent_sha256){throw 'WRITE_LOCAL_RECORD_CHANGED'}
   return $v.offer

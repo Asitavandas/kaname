@@ -102,6 +102,9 @@ namespace AuthWire.Staging {
    var v=new TreeLeaseV1();try{v.Walk(path,"",delete,0);v.Rows.Sort((a,b)=>StringComparer.Ordinal.Compare(a.Path,b.Path));return v;}catch{v.Dispose();throw;}
   }
   public void PinFile(string path){Open(path,"",false,false,false);}
+  public static TreeLeaseV1 OwnedLockFile(string path){
+   var v=new TreeLeaseV1();try{v.Open(path,"lock",false,true,true);return v;}catch{v.Dispose();throw;}
+  }
   public void PinDirectory(string path){Open(path,"",true,false,false);NoStreams(path);}
   // Read through the already held lease; no second pathname open can replace
   // the bytes between reviewed ownership and a local history archive copy.

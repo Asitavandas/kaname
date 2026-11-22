@@ -33,7 +33,7 @@ function Read-AuthWireWriteAuthorizationEvidence([string]$JournalRoot,[string]$J
  try{
   $pin.PinAncestors($JournalRoot);$job=Join-Path $JournalRoot $JobId;$pin.PinAncestors($job)
   foreach($n in @('offer.json','preflight.json','claim-started.json','claim-proof.json','claim-sent.json','authorization.json')){$pin.PinFile((Join-Path $job $n))}
-  $pin.PinFile((Join-Path $JournalRoot ('gpo-'+$offer.target.scope_target.gpo_id+'.json')))
+  $pin.PinFile((Get-AuthWireHistoricalWriteLockPath $JournalRoot $JobId $offer.target.scope_target.gpo_id))
   $again=Read-AuthWireStagingWriteOfferAt $JournalRoot $JobId $Binding $Release $timeRecord.sent_at
   if((Get-AuthWireWriteHash $again) -cne (Get-AuthWireWriteHash $offer)){throw 'WRITE_LOCAL_RECORD_CHANGED'}
   $preflight=Read-AuthWireStagingJournal (Join-Path $job 'preflight.json')

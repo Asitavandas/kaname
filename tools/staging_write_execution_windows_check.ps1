@@ -9,7 +9,8 @@ $package=Join-Path $root 'signed-package';$share=$null;$startedServer=$false;$ke
 $journal=$null;$candidateBase=$null;$oldModulePath=$env:PSModulePath;$script:checks=0
 $grantMode=$env:AUTHWIRE_ROLLBACK_AUTHORIZATION_CHECK -eq '1'
 $rollbackExecutionMode=$env:AUTHWIRE_ROLLBACK_EXECUTION_CHECK -eq '1'
-$recoveryReceiptMode=$env:AUTHWIRE_STAGE_RECOVERY_RECEIPT_CHECK -eq '1'
+$closureMode=$env:AUTHWIRE_STAGE_RECOVERY_CLOSURE_CHECK -eq '1'
+$recoveryReceiptMode=$env:AUTHWIRE_STAGE_RECOVERY_RECEIPT_CHECK -eq '1' -or $closureMode
 $lifecycleMode=$env:AUTHWIRE_WRITE_LIFECYCLE_CHECK -eq '1' -or $recoveryReceiptMode
 $historyMode=$env:AUTHWIRE_WRITE_HISTORY_CHECK -eq '1'
 $refusalMode=$env:AUTHWIRE_WRITE_REFUSAL_CHECK -eq '1'
@@ -294,7 +295,36 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
     finally{$session.Dispose();$csrf.Dispose()}
     Check ($receipt.approval_verified -and $receipt.review_only -and -not $receipt.can_apply_gpo) 'native Windows client verifies real Linux receipt over pinned TLS'
     Check ((Test-Path -LiteralPath (Join-Path $journal ('gpo-'+$t.gpo_id+'.json'))) -and (Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $before.Sha256) 'approval verification preserves the lock and SMB inventory'
-    $outcomes+=,[pscustomobject]@{case=$case;receipt_verified=$true}
+    if($closureMode){
+     $job=Join-Path $journal $id;$grantHash=(Get-FileHash -LiteralPath (Join-Path $job 'grant-consumed.json')).Hash
+     $resultHash=(Get-FileHash -LiteralPath (Join-Path $job 'result-outbox.json')).Hash
+     $session=ConvertTo-SecureString $web.session -AsPlainText -Force;$csrf=ConvertTo-SecureString $web.csrf -AsPlainText -Force
+     try{
+      $closed=Complete-AuthWireConsumedStageLocalClosure $journal $id $b $rsa $signer.Thumbprint $url $request $session $csrf
+      Check (-not (Test-Path -LiteralPath (Join-Path $journal ('gpo-'+$t.gpo_id+'.json')))) 'only the approved held GPO lock is released'
+      Check ((Get-FileHash -LiteralPath (Join-Path $job 'grant-consumed.json')).Hash -ceq $grantHash -and (Get-FileHash -LiteralPath (Join-Path $job 'result-outbox.json')).Hash -ceq $resultHash) 'old consumed grant and uncertain result bytes are retained'
+      $accepted=Send-AuthWireConsumedStageClosure $b $url $request $closed $session $csrf
+      $again=Send-AuthWireConsumedStageClosure $b $url $request $closed $session $csrf
+      Check ($accepted.closed -and $again.closure_revision -eq $accepted.closure_revision) 'server closure is audited once and exact resend is idempotent'
+     }finally{$session.Dispose();$csrf.Dispose()}
+     $h=Read-AuthWireLifecycleHistory $journal $b $rsa;$s=$h.ActiveStates[-1]
+     Check (Test-AuthWireConsumedStageClosed $journal $h.Life $s $b $rsa) 'closed stage survives a fresh local journal read'
+     $closedPath=Join-Path $job 'consumed-stage-closed.json';$savedClosed=[IO.File]::ReadAllBytes($closedPath)
+     $partialPath=Join-Path $root 'pending-closure.json';[IO.File]::Move($closedPath,$partialPath)
+     try{
+      $partial=Invoke-AuthWireStagingWriteLifecycleStep $journal $b $release $rsa $url
+      Check ($partial.Phase -ceq 'requires_review') 'interruption without a closure record blocks any new poll'
+     }finally{[IO.File]::Move($partialPath,$closedPath)}
+     $tampered=Clone $closed;$tampered.Body.lock_sha256='0'*64
+     [IO.File]::WriteAllText($closedPath,(ConvertTo-AuthWireWriteJson $tampered),[Text.UTF8Encoding]::new($false))
+     try{Reject {Invoke-AuthWireStagingWriteLifecycleStep $journal $b $release $rsa $url} 'tampered closure cannot release the lifecycle blocker'}
+     finally{[IO.File]::WriteAllBytes($closedPath,$savedClosed)}
+     Reject {New-AuthWireAuthorizedFilesystemIntent $journal $id $b $release $rsa} 'recovery cannot reuse the original consumed authorization'
+     $next=Invoke-AuthWireStagingWriteLifecycleStep $journal $b $release $rsa $url
+     Check ($next.Phase -ceq 'no_job') 'retained closed cycle permits a new no-job poll without executing a writer'
+     Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $before.Sha256) 'recovery changes no SMB source or SYSVOL bytes'
+     $outcomes+=,[pscustomobject]@{case=$case;closure_verified=$true}
+    }else{$outcomes+=,[pscustomobject]@{case=$case;receipt_verified=$true}}
     continue
    }
    if($refusalMode -and $case -cne 'ref_rollback'){
