@@ -1,0 +1,411 @@
+{
+  "artifact": "authwire-g01-expired-intent-field-closure",
+  "recorded_date": "2026-11-22",
+  "timezone": "Europe/Istanbul",
+  "status": "passed",
+  "scope": "Retire one expired, exited pre-engine stage intent; preserve its uncertain result, grant and intent; install matching permanent Windows package. No real SYSVOL stage/rollback or GPO activation.",
+  "sources": {
+    "linux": "a93f3fbe55d9f62ee2601f314846bde0890db37a",
+    "windows": "4b7b71b7b6e2d8b0f9d2844bbc2b045261caf0fd",
+    "linux_pr": 166,
+    "windows_pr": 167,
+    "draft_prs_merged": false,
+    "permanent_connector_release": "d3b84b6a-fe17-4d43-8a85-e3cc094550cf",
+    "panel": "0.14.0-dev.52"
+  },
+  "field_closure": {
+    "status": "closed",
+    "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+    "gpo_id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+    "closure_revision": 137,
+    "closure_sha256": "b8ac27e9a5c1b832991cbe46351f274f95a9d2ab564f0e23a8a44d4353a76d6d",
+    "local_phase": "closed_without_engine_journal",
+    "original_result_preserved": true,
+    "original_filesystem_intent_preserved": true,
+    "original_grant_preserved": true,
+    "closure_kind": "AuthWireStageIntentClosureV1",
+    "can_apply_gpo": false,
+    "closed_at": 1795355943,
+    "runtime_sid": "S-1-5-21-34256453-3348971241-2809240126-1648"
+  },
+  "retained_original_result": {
+    "journal_sha256": "",
+    "tree_sha256": "",
+    "reason": "OUTCOME_UNKNOWN",
+    "intent_sha256": "430ee90e5276d6d9d62e6f75bd79e0c5198bb9c7acc8ee016caf1624b4efab42",
+    "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+    "release_id": "21d54b36-75e0-4834-93d3-886d675bec79",
+    "target_sha256": "7184cd4c6c2b45e5326cf8d3457d1f313fd78a483fd0a335975ad84101925985",
+    "filesystem_effects": "unconfirmed",
+    "checked_at": 1795343513,
+    "authorization_id": "b00966f06a296ab23f4f8e5fa8ed69d78a95fd8755e3755983f17d2dd82980e3",
+    "outcome": "requires_review",
+    "lease_id": "71be1125e5ab7aaef86f198ac70cce0b8d82b21a7481ecf4f65d2c720dc2d41b"
+  },
+  "linux_saved_closure": {
+    "request": {
+      "approval": {
+        "acknowledge": "record_consumed_stage_lock_release_approval",
+        "consumed_stage_proof": {
+          "Body": {
+            "accepted_ack_sha256": "3d867e2a529eb7ea09e17e268444c59052ebda1b19e58a05d71d260b654fcdd5",
+            "approved_preview_sha256": "c5e59decc09411b6c847004886f722b0c2e5bd96ce33d11d86c73aff33768b3b",
+            "baseline_inventory_sha256": "b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6",
+            "child_exit_confirmed": true,
+            "completion_sha256": "ee0de0a65c2188d5353eb84f9887bd0592d48fca27f1a8f773374e7d9194e3d6",
+            "destination_absent": true,
+            "engine_journal_absent": true,
+            "execution_review_sha256": "6d213dff63a61e65779d6b5ff2896e8771c694015a5c7bea658a02c42933e030",
+            "expires_at": 1795355967,
+            "filesystem_intent_sha256": "e6dbd0f90b41b14f88e06f2046717199bf48b4738ab835ce815132b231585838",
+            "filesystem_operation_id": "ecb37ea6-6a3c-de54-5234-1ce7d6d3867f",
+            "format": "AuthWireStageIntentRecoveryEvidenceV1",
+            "gpo_id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+            "grant_consumed_sha256": "4aa2539ad98dc28c6aabebd160fad4222e2dce7b83ec134c54b094774f966cd6",
+            "grant_expires_at": 1795343516,
+            "intent_sha256": "430ee90e5276d6d9d62e6f75bd79e0c5198bb9c7acc8ee016caf1624b4efab42",
+            "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+            "lock_sha256": "f374aeb5b739b0580ad48ec4aa97c1cb882c39c1cdd4003f4a1e0a9c9e318c6d",
+            "observed_at": 1795355907,
+            "observed_preview_sha256": "a4bdb253824c1d6805da3aed3042fac213fcd8c45dc36cd618fab3aad1993184",
+            "result_body_sha256": "f0812de7effea7ebedd39a3497b02593028042efe922dffd1588172a27807a54",
+            "scope_sha256": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e",
+            "stage_child_sha256": "6388117ec4ae3add37a768adfc775b05bf7de76caebccc6cae539b4d50623353",
+            "stage_entered_sha256": "3378932a0d3928c30cd2df88aca959a3e0fcb7eb32c1923b5ed89ea984e6d1f9",
+            "stage_launch_sha256": "9426392007b4e34e6a51fb17b7791ce12e5eb27e78d14d0d5636d8dbdaad8c4c",
+            "stage_preflight_sha256": "c925d937c33879a87f2e9fbd536ff2933b2d97b251fb005feed6446a9525b451"
+          },
+          "Signature": "uGGhZBnVmr7jpGSbjmSpd2TrFcV1kZwQqIu5g35IwSeGy8T1/03i36ng/AlciO2UxNcG44g+ydkJxCQPYwtPl+IldEymum/Dq4sRTW2Np2YFq5+WB7rG1loLkUIXkbPKBjU9WtdDRKk9l+3xBVUNNNnFBwgJjq7loeYw8VfhzmbXuoktcUp2YIyxsUYtp4/4+sEPI3TT65CEheCiMYm37Icn6Fby7BnPk34455FzTzvPHbFnhEV8f4JY3AwCp0vvIkVDJjM4hfGpZXJxTnzr/6VWy9vPB7Nx9uPqFA+Nf1zhWCqSOWAiNy/sLrDS1WpmiD670K/+jNSpZhW3dkCKsQ3rgB6fdIqEb5C6Y6LxEcrB928NMB/OWoPl9PTazbgfGHzeS+H59ikugLKsBM3I/Bwq1TxCGiW9pZZfFOqomaDjDv24h7jr9YVr1fUgqJnVqOqdMmpFBsLkZrBDnG92XlJN3kCVtEuhXc/78/FzGsZ9J6nSgGe9j1EWS5nN7V3T"
+        },
+        "decision": "approve_consumed_stage_lock_release",
+        "evidence": {
+          "accepted_ack": true,
+          "intent_sha256": "430ee90e5276d6d9d62e6f75bd79e0c5198bb9c7acc8ee016caf1624b4efab42",
+          "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+          "result_body_sha256": "f0812de7effea7ebedd39a3497b02593028042efe922dffd1588172a27807a54",
+          "scope_sha256": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e"
+        },
+        "expected_revision": 135,
+        "reconciliation_receipt": {
+          "review_hash": "eae1b8c1eefd0fe8ddaa835bfc489625d453041becc6f760fb249bdd789a079f",
+          "revision": 135
+        },
+        "review_hash": "330067d62ec9c923f182a94f6b7ce7bceef0d1994dcb53eb1bed2bf674bccfba"
+      },
+      "approval_revision": 136,
+      "closure": {
+        "Body": {
+          "approval_request_sha256": "8b06b65c36727c0f1ddbae0d9d93b246072ce221fc5efa8260079a40c6af5930",
+          "approval_revision": 136,
+          "closed_at": 1795355943,
+          "completion_sha256": "ee0de0a65c2188d5353eb84f9887bd0592d48fca27f1a8f773374e7d9194e3d6",
+          "consumed_stage_proof_sha256": "04a9ba4454d8b3d3bcb37b73e59f0de53b2a1254e4fee1e43639f0a2407cb12b",
+          "evidence_expires_at": 1795355967,
+          "filesystem_intent_sha256": "e6dbd0f90b41b14f88e06f2046717199bf48b4738ab835ce815132b231585838",
+          "filesystem_operation_id": "ecb37ea6-6a3c-de54-5234-1ce7d6d3867f",
+          "format": "AuthWireStageIntentClosureV1",
+          "gpo_id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+          "intent_sha256": "430ee90e5276d6d9d62e6f75bd79e0c5198bb9c7acc8ee016caf1624b4efab42",
+          "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+          "lock_released": true,
+          "lock_sha256": "f374aeb5b739b0580ad48ec4aa97c1cb882c39c1cdd4003f4a1e0a9c9e318c6d",
+          "result_body_sha256": "f0812de7effea7ebedd39a3497b02593028042efe922dffd1588172a27807a54",
+          "scope_sha256": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e"
+        },
+        "Signature": "zoAGrQd00S21Bxa5t6+vyJ3eVTaDAuo+r1uGVDsnpyO3MuWeCjiHJinZAP+O4S/sTXBm3YmiCMqJSJb0G7qokLUhFbtx0rLD6M6tSknNAuQSk0aD1PB4yvNuS5XQluzlBRoLaqyieoYx2MkeG/qM/r5LxzcWHdBXpSn/J6HfXNG6qGMo5UFi2ZI3EJ6MoZyTC/zya1NV/N5iD8I8yYk1/Lc6RfNBPHEurXOuL26aDQIP1uOyXKV1Noo/GdgF3wJKwg5MiUEh9421Vo3Eii8uQqS1bGq0xvcb+E7bA7kks5coymkkXj31zk0lr4MR/+SV3sx/L6WRZ+mnnTWAkweuVOR1s77XWVirB11KWzrf4EpTb+9k9opAVO8um8Xe771Rb7jTCA+f0gGHPTJhBVf0dNF6Ml7pZH7ZQOvFpUjmmyUoHnTHlIWYbaYTkFt6H6TeIrlEOKW6MqDKl6/N4qxrKTlZSnJA/Td8BCuOZ7JC68G8bimPEvOIUAW/oer5lvOq"
+      }
+    },
+    "actor": "f95b1610-3215-4cba-b16c-b8ef1804ffb7",
+    "revision": 137
+  },
+  "resume": {
+    "slot": "000072",
+    "completion": {
+      "format": "AuthWireLifecycleCompletionV1",
+      "slot": "000072",
+      "operation": "",
+      "job_id": "",
+      "offer_sha256": "43afc823639f4482d9de9fe131daad5d8e1c1a6bfb5a079d64250d099daf02a4",
+      "response_sha256": "ee3191c3daed19af0fe88f6aec13c6edbe8d834520c76b030100da05728c3443",
+      "outcome": "no_job",
+      "result_body_sha256": "",
+      "ack_sha256": "",
+      "completed_at": 1795356042
+    },
+    "lock_absent": true,
+    "scheduler": {
+      "WorkerPid": 5500,
+      "ServiceName": "AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46",
+      "State": "running",
+      "StopReason": "",
+      "LastPhase": "",
+      "Steps": 0,
+      "ReleaseId": "d3b84b6a-fe17-4d43-8a85-e3cc094550cf",
+      "Event": "WINDOWS_CONNECTOR_WRITE_SCHEDULER"
+    },
+    "linux_last_poll": {
+      "scope": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e",
+      "at": 1795356042,
+      "release_id": "d3b84b6a-fe17-4d43-8a85-e3cc094550cf"
+    },
+    "old_job_replayed": false,
+    "new_stage_job_created": false,
+    "new_rollback_job_created": false
+  },
+  "package_upgrade": {
+    "prepare": {
+      "Event": "WINDOWS_CONNECTOR_SERVICE_UPGRADE",
+      "Mode": "Prepare",
+      "ConnectorId": "4c23eebe-0715-46d1-88ee-a2e96ad7ee46",
+      "PreviousReleaseId": "21d54b36-75e0-4834-93d3-886d675bec79",
+      "NewReleaseId": "d3b84b6a-fe17-4d43-8a85-e3cc094550cf",
+      "Phase": "prepared",
+      "JournalPath": "C:\\ProgramData\\AuthWire-ConnectorUpgrade-4c23eebe071546d188eea2e96ad7ee46-d3b84b6afe174d438a85e3cc094550cf\\upgrade.json",
+      "CandidatePath": "C:\\Program Files\\AuthWire-Connector-4c23eebe071546d188eea2e96ad7ee46.candidate-d3b84b6afe174d438a85e3cc094550cf",
+      "ArchivePath": "C:\\Program Files\\AuthWire-Connector-4c23eebe071546d188eea2e96ad7ee46.previous-21d54b3675e0483493d3886d675bec79",
+      "PackagePrepared": true,
+      "ExistingAccountPreserved": true,
+      "PairingPreserved": true,
+      "ChannelKeyPreserved": true,
+      "ServicesCreated": false,
+      "ServiceTransitioned": false,
+      "CanApplyGpo": false,
+      "AdChanged": false,
+      "GpoChanged": false,
+      "KeyAclChanged": false,
+      "TrustStoreChanged": false,
+      "SecretsExported": false
+    },
+    "apply": {
+      "Event": "WINDOWS_CONNECTOR_SERVICE_UPGRADE",
+      "Mode": "Apply",
+      "ConnectorId": "4c23eebe-0715-46d1-88ee-a2e96ad7ee46",
+      "PreviousReleaseId": "21d54b36-75e0-4834-93d3-886d675bec79",
+      "NewReleaseId": "d3b84b6a-fe17-4d43-8a85-e3cc094550cf",
+      "Phase": "applied",
+      "JournalPath": "C:\\ProgramData\\AuthWire-ConnectorUpgrade-4c23eebe071546d188eea2e96ad7ee46-d3b84b6afe174d438a85e3cc094550cf\\upgrade.json",
+      "CandidatePath": "C:\\Program Files\\AuthWire-Connector-4c23eebe071546d188eea2e96ad7ee46.candidate-d3b84b6afe174d438a85e3cc094550cf",
+      "ArchivePath": "C:\\Program Files\\AuthWire-Connector-4c23eebe071546d188eea2e96ad7ee46.previous-21d54b3675e0483493d3886d675bec79",
+      "PackagePrepared": true,
+      "ExistingAccountPreserved": true,
+      "PairingPreserved": true,
+      "ChannelKeyPreserved": true,
+      "ServicesCreated": false,
+      "ServiceTransitioned": true,
+      "CanApplyGpo": false,
+      "AdChanged": false,
+      "GpoChanged": false,
+      "KeyAclChanged": false,
+      "TrustStoreChanged": false,
+      "SecretsExported": false
+    }
+  },
+  "validation": {
+    "linux_ledger_tests": 48,
+    "linux_foundation_run": 45029049889,
+    "windows_foundation_run": 45029590861,
+    "intent_e2e": {
+      "run": 45029590973,
+      "job": 137230010629,
+      "checks": 67,
+      "conclusion": "success",
+      "real_tls_cng_sqlite_smb": true,
+      "ad_simulated": true,
+      "old_grant_replay": false,
+      "sysvol_unchanged": true
+    },
+    "new_negative_cases": [
+      "Any engine operation journal including an empty directory blocks recovery",
+      "Any existing destination blocks recovery",
+      "Live original PID/start identity blocks recovery",
+      "Timed-out or unobserved child is ineligible",
+      "Missing child preflight blocks recovery",
+      "Changed SYSVOL baseline blocks recovery",
+      "Historical closure permits a later owned destination but rejects a newly appearing unique engine journal",
+      "Cross-protocol evidence/closure signature, mismatched intent/op ID and false absence assertions are rejected"
+    ],
+    "source_ci_as_observed": [
+      {
+        "run": 45029590888,
+        "name": "AuthWire isolated governed write history",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "run": 45029590840,
+        "name": "AuthWire bounded retry network probe checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "run": 45029590852,
+        "name": "AuthWire Windows write scheduler checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "run": 45029590891,
+        "name": "AuthWire isolated rollback execution and result",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "run": 45029590872,
+        "name": "AuthWire local PDC SYSVOL junction checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "run": 45029590958,
+        "name": "AuthWire reproducible Linux delivery",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "run": 45029590976,
+        "name": "AuthWire isolated write preclaim checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "run": 45029590887,
+        "name": "AuthWire preauthorization refusal reporting",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "run": 45029590971,
+        "name": "AuthWire isolated staging filesystem checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "run": 45029591046,
+        "name": "AuthWire isolated rollback origin evidence",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "run": 45029590992,
+        "name": "AuthWire isolated durable write lifecycle",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "run": 45029591010,
+        "name": "AuthWire isolated authorized stage execution",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "run": 45029590861,
+        "name": "KANAME foundation checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "run": 45029590995,
+        "name": "AuthWire isolated consumed-stage closure",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "run": 45029590973,
+        "name": "AuthWire exited stage intent recovery",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "run": 45029590906,
+        "name": "AuthWire isolated one-shot staging cycle",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "run": 45029590860,
+        "name": "AuthWire isolated rollback authorization",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "run": 45029590898,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "junction_17_and_prior_successful_field_observation_not_rerun_by_operator": true
+  },
+  "deployment": {
+    "isolated_linux_backup": "/opt/authwire-g01-https-pilot/recovery-20261122-intent",
+    "isolated_queue_revision_before": 134,
+    "isolated_queue_revision_after": 137,
+    "isolated_https_pid": 783921,
+    "dc01_only_relay_pid": 783925,
+    "production_processes_unchanged": [
+      919,
+      647245,
+      647261
+    ],
+    "existing_gmsa_sid_cng_key_acl_pairing_and_publisher_preserved": true,
+    "canonical_enrollment_8765_and_transport_18765_separate": true,
+    "matching_source_required_for_new_closure_format": true,
+    "old_source_only_downgrade_after_revision137_not_validated": true
+  },
+  "cleanup": {
+    "user_absent": true,
+    "profile_absent": true,
+    "sessions_absent": true,
+    "at": 1795356025,
+    "enabled_isolated_admin_users": 0,
+    "windows_credential_files_absent": true,
+    "temporary_tasks_removed": 2,
+    "linux_private_transfer_directory_removed": true,
+    "original_jobs_signed_closure_archive_upgrade_and_audit_evidence_retained": true
+  },
+  "progress": {
+    "complete": 60,
+    "total": 94,
+    "open": 34,
+    "g05": "5/5",
+    "g01": "2/5",
+    "count_changed": false
+  },
+  "remaining": [
+    "Read final already-started source CI results before the next write-field step; no manual rerun of successful suites.",
+    "Fresh preview plus separately authorized real owned SYSVOL stage and rollback; do not replay job733fc751 or any prior consumed grant.",
+    "Three-computer effective GPO delivery; two older machines still unavailable.",
+    "External Windows journal backup and independent restore with matching source/state.",
+    "Original cold preflight timing and earlier rollback/RESULT instability are not conclusively explained by later successful source checks."
+  ],
+  "deduplication": "Completed d918/4da closures, real history archive, G05/EAP/OU/group/stability/timed CRL and junction17/read-only acceptance were read/reused. New intent protocol and its targeted negative cases were tested. The real733 job was closed once, then only a new no_job poll was observed.",
+  "forecast": {
+    "g01_active_work_days": [
+      5,
+      9
+    ],
+    "reason": "Intent recovery and permanent delivery are now complete. No real write/rollback or effective three-endpoint delivery has passed; cold reader/child budgets, external matching-source restore and unavailable endpoints still prevent narrowing the package band.",
+    "other_package_bands_unchanged": true,
+    "conditional_start": "2026-11-23",
+    "macro_weeks": {
+      "pilot": [
+        2,
+        3
+      ],
+      "base": [
+        6,
+        9
+      ],
+      "base_with_guide": [
+        7,
+        10
+      ],
+      "full": [
+        13,
+        19
+      ]
+    },
+    "active_hours_measured": false,
+    "guide_flags_unchanged": true
+  }
+}

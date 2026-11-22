@@ -1,5 +1,9 @@
 # AuthWire — güncel çalışma planı
 
+## 22 Kasım 2026 — Intent kurtarması ve kalıcı paket teslimi kapandı
+
+733fc751 işi16:59:03'te CNG kapanışı ve Linux rev137 ile denetimli kapandı. Özgün grant/intent/belirsiz sonuç korundu; yeni000072 no_job ile devam doğrulandı. Windows kalıcı released3b84b6a, kaynak4b7b71b7; izole Linux kaynağıa93f3fbe. Gerçek yeni stage/rollback, üç uç etkin GPO teslimi ve harici eşleşen günlük kurtarma açık; **60/94 tamam,34 açık;G012/5,G055/5** korunur. [Kapanış](checkpoints/2026-11-22-g01-intent-field-closure.json), [süre](reports/2026-10-29-process-forecast.md). Bitmiş kurtarma ve junction testleri tekrar edilmeyecek.
+
 ## 22 Kasım 2026 — Junction kaynak ve salt okunur saha kabulü geçti
 
 PR167 kaynak1d6c4757: yerel PDC'nin standart SYSVOL junction'ı ve fiziksel hedef kimliği sabitleniyor; FILE_LIST_DIRECTORY ile yeniden adlandırma engeli doğrulandı. Ayrı alanda17 native kontrol ve gerçek gMSA ile CNG imzalı salt okunur gözlem geçti. Kalıcı paket21d54b36 ve 733 işinin inceleme kilidi korunuyor; intent uzlaştırması, CI/paket ve gerçek stage/rollback açık. Sayım60/94,34 açık,G012/5; G055/5. [Kanıt](checkpoints/2026-11-22-g01-sysvol-junction-validation.json), [süre](reports/2026-10-29-process-forecast.md). Başarılı junction/alan gözlemi tekrar edilmeyecek.
