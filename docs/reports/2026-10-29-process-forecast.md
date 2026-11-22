@@ -1,5 +1,10 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## 22 Kasım 2026, 17:20 — Gerçek stage süre aşımı sonrası yeniden değerlendirme
+
+G01 **5–9 aktif iş günü** korunur. Önceki kurtarma ve kalıcı paket teslimi tamamdır; son18 kaynak CI koşusu başarılıdır. Ancak tek yeni gerçek c292e179 işi14s çocuk bütçesinde timeout ile yalnız boş hedef dizini oluşturdu,0 dosya kopyalandı; tam hazırlama/geri alma kabulü geçmedi. Kısmi engine intent ve hedef için ayrı denetimli kurtarma, soğuk hazırlık/yürütme bütçesinin çözümü, ardından gerçek stage/rollback, harici eşleşen restore ve üç uç etkin teslimi açık. Bunlar önceki banttaki açık iş/risklerdi; daraltma yapılmaz ve başarısız kabul tamam sayılmaz. Yeni yazma denemesi bu iki kapı kapanmadan yapılmayacak. Diğer12 paket bandı ve23 Kasım koşullu makro pencereleri değişmedi; etkin çalışma saati ölçülmedi. [Kanıt](../checkpoints/2026-11-22-g01-stage-timeout-review.json).
+
+
 ## 22 Kasım 2026 — Gerçek intent kapanışı ve kalıcı teslim sonrası
 
 733fc751 kurtarması Linux revizyon137 ve CNG kapanışıyla tamamlandı; eşleşen kalıcı Windows paketi teslim edildi, yeni72 no_job gözlendi. Bu iki teknik adımın kalan işi0. **G01 5–9 aktif iş günü** bandı yeniden değerlendirildi ve korundu: gerçek yeni stage/rollback ve soğuk AD/çocuk işlem bütçeleri sahada henüz doğrulanmadı; etkili üç uç yayılımı ve harici eşleşen kaynak/günlük kurtarma kapıları açık. Dolayısıyla bütün94-alt-iş kabulü kapanmadı; **60/94,34 açık;G012/5**.

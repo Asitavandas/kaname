@@ -1,5 +1,22 @@
 # AuthWire current work record
 
+## 22 Kasım 2026, 17:20 — G01 yeni gerçek hazırlama: süre aşımı ve boş kısmi hedef incelemede
+
+**60/94 tamam, 34 açık; G05 5/5, G01 2/5.** Bu saha kabulü geçmedi; önceki733 kapanışı ve kalıcı d3b84b6a teslimi tamamdır, tekrar çalıştırılmadı.
+
+- **Ön koşul:** rapor sürüm11 ve güncel çalışma kaydı okundu; Windows4b7b71b7 kaynağının daha önce başlamış18 CI koşusunun tamamı başarılı bitmiş. Hiçbir başarılı test operatörce yeniden başlatılmadı. Linux/VV/DC01 erişimi mevcut.
+- **Yeni, tek iş:** taze salt okunur önizleme `1ca4fd1b-9b9e-4b1b-86c8-6cc7cb1fe4ac` geçti; 20 dosya /125601 byte, önizleme SHA `bc7d3c1e73b31e51b943a8a2be8791bd828dcff6ad0d73946fc5834d9307b98a`. Ayrı yeni hazırlama işi `c292e179-5dc7-4f24-afcd-61df41d8346c` bir kez oluşturuldu; eski iş/yetki yeniden kullanılmadı. Geri alma işi oluşturulmadı.
+- **Kesin sonuç:** imzalı gMSA/permanent worker ile hazırlama alt süreci **14000ms** bütçeyi **14069ms** ile aştı; `timed_out=true`, exit20. Linux imzalı `requires_review/OUTCOME_UNKNOWN` sonucunu **rev142** ile kabul etti; yerel kabul makbuzu ve CNG sonuç kanıtı eşleşiyor. Yeni sonuç SHA `c3ea77451c91299d483c5202d94daa0c0186da3c2f8a29ac7817e88986a8599d`.
+- **Gerçek kısmi etki:** engine işlem `5c2c5c13-0891-0f9f-4524-8e1dd34a7a03` altında `intent.json` var, `complete.json` yok. Yalnız planın sahip olunan sürüm dizini oluştu; **0 dosya,0 alt dizin**. Başlangıç envanteri ile bu yeni boş dizin dışındaki envanter hashleri birebir aynı: `b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6`. Bütün SYSVOL değişmedi denmez: boş dizin eklendi. AD/GPO etkinleştirme, uç dağıtımı veya RADIUS işlemi yapılmadı.
+- **Durdu ve korundu:** özgün çocuk PID2084/start identity artık canlı değil. Yazıcı worker `stopped/lifecycle_requires_attention`, `requires_review`,24 adım. GPO kilidi, grant, intent, sonuç ve boş hedef korunuyor. Timeout + engine/hedef mevcut olduğundan733 için kullanılan “engine yok” kapanışı **bu iş için uygun değildir**; kilit zorla kaldırılmadı, dizin silinmedi ve aynı iş yeniden başlatılmadı.
+- **Süre kanıtı ve sınır:** grant17:17:41–17:18:11; çocuk başlangıcı17:17:55, taze çocuk preflight17:18:08, inceleme17:18:09. Yaklaşık13 saniye preflight'a kadar geçti; kalan yaklaşık1 saniye tam20 dosyalı engine/postcheck için yetersiz kaldı. Bu kayıt tek tek modül/AD gecikmesini ölçmez; kesin alt neden henüz ayrıştırılmadı. Süreyi körlemesine uzatmak, expiry kontrolünü kapatmak veya eski grant'i yenilemek çözüm sayılmaz.
+- **Geçici görev düzeltmesi:** ilk başlatma yalnız kanıt klasörüne yazma yetkisi eksikliğiyle çıktı; klasör boştu. Önceki geçici çıktı klasörleriyle aynı dar gMSA Modify yetkisi yalnız yeni kanıt klasörüne verildi. Boş çıktı/çıkmış görev ve create-once marker kontrolleri ile devam edildi; gerçek stage işi yalnız bir kez oluştu. Kaynak/anahtar/SYSVOL ACL'leri değiştirilmedi.
+- **Temizlik:** yeni geçici operatör/profil/oturumlar silindi; izole enabled admin0. Linux/DC01 parola dosyaları ve bitmiş geçici görev kaldırıldı, expiry timer durdu. Öncesi iki SQLite yedeği `/opt/authwire-g01-https-pilot/field-20261122-stage-r3`; imzalı iş/kanıtlar ve kısmi hedef inceleme için saklanır. Genel panel/RADIUS kaynak ve süreçleri aynı.
+
+**Sıradaki iş artık yeni bir yazma denemesi değildir:** eldeki kısmi engine intent/boş hedef için ayrı denetimli kurtarma sözleşmesi; ardından çocuk hazırlık/yürütme zaman bütçesini çözmek. Bu kapılar kapanmadan yeni stage/rollback yapılmayacak. Sonra tam gerçek hazırlama/geri alma ve üç uç etkin GPO teslimi. Önceki tüm açık saha kapıları korunur. **G01 5–9 aktif iş günü yeniden değerlendirildi ve korundu**; zaten açık olan soğuk işlem ve kurtarma riskleri kapanmadığından bant daraltılmadı. Aktif saat ölçülmedi; diğer paket ve koşullu takvim bantları değişmedi.
+
+[Gerçek kısmi yazım ve imzalı sonuç kanıtı](checkpoints/2026-11-22-g01-stage-timeout-review.json), [tek işlik görev](checkpoints/2026-11-22-g01-stage-timeout-runner.ps1), [süre](reports/2026-10-29-process-forecast.md).
+
 ## 22 Kasım 2026 — G01 intent taşıyan gerçek iş kapandı; kalıcı Connector teslim edildi
 
 **60/94 tamam,34 açık; G05 5/5,G01 2/5.** Bu adım `733fc751` kurtarma/kilit kapanışı ve eşleşen kalıcı paketin teslimidir. Gerçek yeni SYSVOL hazırlama/geri alma ve üç uç GPO teslimi tamamlanmış sayılmaz.

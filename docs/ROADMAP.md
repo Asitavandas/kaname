@@ -1,5 +1,9 @@
 # AuthWire — güncel çalışma planı
 
+## 22 Kasım 2026, 17:20 — Yeni gerçek stage süre aşımı: kısmi boş hedef korunuyor
+
+Yeni önizleme geçti; tek yeni c292e179 işi14s çocuk bütçesini aştı. Engine intent ve yalnız boş sahip olunan sürüm dizini var;0 dosya. Dizinin dışındaki GPO envanteri başlangıçla aynı. İmzalı requires_review sonucu Linux rev142'de; worker dikkat gerektiği için durdu. Kilit/hedef/kanıtlar korundu, geri alma işi oluşmadı.733 no-engine kapanışı bu kısmi yazıma uygulanamaz. **Sırada yeni deneme değil, mevcut kısmi işin ayrı denetimli kurtarması ve yürütme bütçesi çözümü var.**18 mevcut kaynak CI koşusu başarılı; yeniden başlatılmadı. Geçici operatör/görev/parola dosyaları temizlendi. Sayım60/94,34 açık,G012/5,G055/5; G01 süre5–9 aktif iş günü korundu. [Kanıt](checkpoints/2026-11-22-g01-stage-timeout-review.json), [durum](CURRENT_STATUS.md).
+
 ## 22 Kasım 2026 — Intent kurtarması ve kalıcı paket teslimi kapandı
 
 733fc751 işi16:59:03'te CNG kapanışı ve Linux rev137 ile denetimli kapandı. Özgün grant/intent/belirsiz sonuç korundu; yeni000072 no_job ile devam doğrulandı. Windows kalıcı released3b84b6a, kaynak4b7b71b7; izole Linux kaynağıa93f3fbe. Gerçek yeni stage/rollback, üç uç etkin GPO teslimi ve harici eşleşen günlük kurtarma açık; **60/94 tamam,34 açık;G012/5,G055/5** korunur. [Kapanış](checkpoints/2026-11-22-g01-intent-field-closure.json), [süre](reports/2026-10-29-process-forecast.md). Bitmiş kurtarma ve junction testleri tekrar edilmeyecek.

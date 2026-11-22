@@ -1,0 +1,646 @@
+{
+  "artifact": "authwire-g01-real-stage-timeout-field-review",
+  "recorded_date": "2026-11-22",
+  "timezone": "Europe/Istanbul",
+  "status": "requires_review",
+  "sources": {
+    "linux": "a93f3fbe55d9f62ee2601f314846bde0890db37a",
+    "windows": "4b7b71b7b6e2d8b0f9d2844bbc2b045261caf0fd",
+    "release": "d3b84b6a-fe17-4d43-8a85-e3cc094550cf",
+    "main_prior": "d71d6df8ab9f50c20fa4e53d340b06a764f79867"
+  },
+  "new_work": {
+    "preview_job_id": "1ca4fd1b-9b9e-4b1b-86c8-6cc7cb1fe4ac",
+    "preview_sha256": "bc7d3c1e73b31e51b943a8a2be8791bd828dcff6ad0d73946fc5834d9307b98a",
+    "preview_verified": true,
+    "file_count": 20,
+    "total_bytes": 125601,
+    "stage_job_id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+    "stage_jobs_created": 1,
+    "rollback_jobs_created": 0,
+    "old_job_or_grant_replayed": false,
+    "task_initial_evidence_directory_acl": {
+      "first_launch_exit": 1,
+      "output_directory_empty": true,
+      "fix_scope": "Only temporary output directory gained gMSA Modify, matching previous output-directory provisioning; parent/source/key/SYSVOL ACL unchanged",
+      "resume_guard": "Only empty output and exited task allowed; preview/stage markers prevent replay"
+    },
+    "signed_script_sha256": "b949d537d962775cd5e7cd90e9d48797b57f3fc76f0daa09e0784036b0df4cc4"
+  },
+  "timing": {
+    "grant_issued": 1795357061,
+    "grant_expires": 1795357091,
+    "launch": 1795357075,
+    "child_preflight": 1795357088,
+    "diagnostic": {
+      "format": "AuthWireStageDiagnosticV1",
+      "parent_phase": "child_exit",
+      "child_phase": "unknown",
+      "exception_kind": "unknown",
+      "timed_out": true,
+      "truncated": false,
+      "exit_code": 20,
+      "elapsed_ms": 14069,
+      "work_budget_ms": 14000
+    },
+    "inference": "Recorded child preflight arrived about13s after launch within14s process budget. This demonstrates little remaining engine time; exact per-module cold-start cause is not yet measured. Grant/process budget mismatch must be resolved without relaxing original expiry or replay protection."
+  },
+  "native_field_review": {
+    "status": "requires_review",
+    "job_id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+    "operation_id": "5c2c5c13-0891-0f9f-4524-8e1dd34a7a03",
+    "baseline_sha256": "b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6",
+    "outside_sha256": "b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6",
+    "outside_unchanged": true,
+    "current_inventory_sha256": "9f3b499e453647b13c5d2e4f362881acace85fcdec4c374fa826cb50ccb9aa48",
+    "destination_entries": [
+      {
+        "Path": "Machine/AuthWire-524653f5135946f584a546355bb82aff-v1-480134d8bb31c1f6b6f9132fa9bd01d256fcb993e9babe7090c2ea6e3f713542",
+        "Kind": "directory",
+        "Size": 0,
+        "Sha256": "",
+        "Sddl": "O:S-1-5-21-34256453-3348971241-2809240126-1648G:DCD:AI(A;OICIID;FA;;;DA)(A;OICIID;0x1200a9;;;S-1-5-21-34256453-3348971241-2809240126-1647)(A;OICIID;FA;;;S-1-5-21-34256453-3348971241-2809240126-519)(A;OICIID;0x1200a9;;;AU)(A;OICIID;0x1200a9;;;ED)(A;OICIID;FA;;;SY)(A;ID;FA;;;S-1-5-21-34256453-3348971241-2809240126-1648)(A;OICIIOID;FA;;;CO)(A;OICIIOID;0x1201ff;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+      }
+    ],
+    "engine_intent": {
+      "format": "AuthWireFilesystemIntentV1",
+      "operation_id": "5c2c5c13-0891-0f9f-4524-8e1dd34a7a03",
+      "preview_sha256": "bc7d3c1e73b31e51b943a8a2be8791bd828dcff6ad0d73946fc5834d9307b98a",
+      "target_sha256": "6040deaf7599bf42253897835ba98e89eeaf770653cda9cc9dd65f6817c6bd9e",
+      "gpo_root": "\\\\dc01.vizyonveri.local\\SYSVOL\\vizyonveri.local\\Policies\\{8c6808fd-a382-4bf2-9c9c-d9e1d46082a3}",
+      "relative_destination": "Machine/AuthWire-524653f5135946f584a546355bb82aff-v1-480134d8bb31c1f6b6f9132fa9bd01d256fcb993e9babe7090c2ea6e3f713542",
+      "baseline_sha256": "b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6",
+      "protected_gpo_id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12"
+    },
+    "engine_complete_exists": false,
+    "records": {
+      "stage-preflight.json": {
+        "sha256": "191fa7589e1c383c60e8a718a62ad83c644ad953e829c8bd0d4d8bca93d9fcb2",
+        "value": {
+          "format": "AuthWireWriteLiveContextV1",
+          "job_id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+          "intent_sha256": "c944455f10b1c7d6827594238df5001b4afafd5f283f134f589ad691172ff723",
+          "target_sha256": "e3b9343f983641b3ffb6065249860d003d067000e2ad7ce4b21cd779be45d099",
+          "source_root": "C:\\ProgramData\\AuthWire-CombinedCandidates-4c23eebe071546d188eea2e96ad7ee46\\524653f5-1359-46f5-84a5-46355bb82aff-v1-f502e4d64489f896b0600cb20f286e873016a1a381a0d4b1c30e5e7b7ea6bd7e-ab1a11c683810061",
+          "gpo_root": "\\\\dc01.vizyonveri.local\\SYSVOL\\vizyonveri.local\\Policies\\{8c6808fd-a382-4bf2-9c9c-d9e1d46082a3}",
+          "protected_gpo_id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
+          "pdc": "dc01.vizyonveri.local",
+          "checked_at": 1795357088,
+          "can_apply_gpo": false
+        }
+      },
+      "stage-child.json": {
+        "sha256": "b7cad63121773fca213c252ac0056921272de2fa15398eb360c728a3bb22ad66",
+        "value": {
+          "format": "AuthWireStageChildIdentityV1",
+          "job_id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+          "launch_sha256": "04dc29e2b704f9deebda2a2dfe0448cba425364ea9bf7de568d7099b41774550",
+          "process_id": 2084,
+          "process_started_ticks": "639309538754157100"
+        }
+      },
+      "result-outbox.json": {
+        "sha256": "e985cedf53a93587286d956f7e0ae0e688343e18c9be4ae22d5d50391c83bf73",
+        "value": {
+          "format": "AuthWireWriteResultOutboxV1",
+          "binding_scope": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e",
+          "release_id": "d3b84b6a-fe17-4d43-8a85-e3cc094550cf",
+          "job_id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+          "authorization_sha256": "09cd03c37568d66f05a0cc772963f50e2bb8495880cea1c15e3a78dfcca6864b",
+          "body_sha256": "c3ea77451c91299d483c5202d94daa0c0186da3c2f8a29ac7817e88986a8599d",
+          "body": {
+            "job_id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+            "lease_id": "0c880e1dca50bb147f67e0e1e88e5baae3951bb1b3ec8a67fe2d8572c9ef35c1",
+            "intent_sha256": "c944455f10b1c7d6827594238df5001b4afafd5f283f134f589ad691172ff723",
+            "target_sha256": "e3b9343f983641b3ffb6065249860d003d067000e2ad7ce4b21cd779be45d099",
+            "release_id": "d3b84b6a-fe17-4d43-8a85-e3cc094550cf",
+            "authorization_id": "a5197977a422cce6992c36d44b2fb9a7c5538c703e3f59ca56921371a266aa09",
+            "checked_at": 1795357090,
+            "outcome": "requires_review",
+            "reason": "OUTCOME_UNKNOWN",
+            "journal_sha256": "",
+            "tree_sha256": "",
+            "filesystem_effects": "unconfirmed"
+          }
+        }
+      },
+      "grant-consumed.json": {
+        "sha256": "d1f647a459582dede3f8fdb890965116016967007ed77f57335a82997e26ec09",
+        "value": {
+          "format": "AuthWireWriteGrantConsumedV1",
+          "binding_scope": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e",
+          "release_id": "d3b84b6a-fe17-4d43-8a85-e3cc094550cf",
+          "job_id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+          "authorization_sha256": "09cd03c37568d66f05a0cc772963f50e2bb8495880cea1c15e3a78dfcca6864b",
+          "filesystem_operation_id": "5c2c5c13-0891-0f9f-4524-8e1dd34a7a03",
+          "consumed_at": 1795357062,
+          "expires_at": 1795357091
+        }
+      },
+      "filesystem-intent.json": {
+        "sha256": "8efd8aba7b3cc3cfd3199bd0b855e2d3a5bdaa2d944eebe27108c9d6a97b707b",
+        "value": {
+          "format": "AuthWireAuthorizedFilesystemIntentV1",
+          "job_id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+          "filesystem_operation_id": "5c2c5c13-0891-0f9f-4524-8e1dd34a7a03",
+          "binding_scope": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e",
+          "release_id": "d3b84b6a-fe17-4d43-8a85-e3cc094550cf",
+          "authorization_sha256": "09cd03c37568d66f05a0cc772963f50e2bb8495880cea1c15e3a78dfcca6864b",
+          "consumption_sha256": "c51fced73ee5ffb1c6080c5f15cae82c57bb9bfaff78f73cbfd57beb0259e2e7",
+          "offer_sha256": "32ceabc9a0bb9a7f220f1b82eeb3034f10c067e9789f979973d509896a3f6c54",
+          "target_sha256": "e3b9343f983641b3ffb6065249860d003d067000e2ad7ce4b21cd779be45d099",
+          "preview_sha256": "bc7d3c1e73b31e51b943a8a2be8791bd828dcff6ad0d73946fc5834d9307b98a",
+          "live_context": {
+            "format": "AuthWireWriteLiveContextV1",
+            "job_id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+            "intent_sha256": "c944455f10b1c7d6827594238df5001b4afafd5f283f134f589ad691172ff723",
+            "target_sha256": "e3b9343f983641b3ffb6065249860d003d067000e2ad7ce4b21cd779be45d099",
+            "source_root": "C:\\ProgramData\\AuthWire-CombinedCandidates-4c23eebe071546d188eea2e96ad7ee46\\524653f5-1359-46f5-84a5-46355bb82aff-v1-f502e4d64489f896b0600cb20f286e873016a1a381a0d4b1c30e5e7b7ea6bd7e-ab1a11c683810061",
+            "gpo_root": "\\\\dc01.vizyonveri.local\\SYSVOL\\vizyonveri.local\\Policies\\{8c6808fd-a382-4bf2-9c9c-d9e1d46082a3}",
+            "protected_gpo_id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
+            "pdc": "dc01.vizyonveri.local",
+            "checked_at": 1795357072,
+            "can_apply_gpo": false
+          },
+          "expires_at": 1795357091,
+          "filesystem_write_enabled": false,
+          "can_apply_gpo": false
+        }
+      },
+      "execution-requires-review.json": {
+        "sha256": "6e85af0525da6793b2d06ca8c796c4dbaa3758d2d1984de185944ae8ae90765b",
+        "value": {
+          "format": "AuthWireStageReviewV2",
+          "job_id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+          "execution_intent_sha256": "338e89af58ad93fbe73a3ec14d7540580fa0be0b15fdc5be6641959590200546",
+          "reason": "OUTCOME_REQUIRES_REVIEW",
+          "checked_at": 1795357089,
+          "diagnostic": {
+            "format": "AuthWireStageDiagnosticV1",
+            "parent_phase": "child_exit",
+            "child_phase": "unknown",
+            "exception_kind": "unknown",
+            "timed_out": true,
+            "truncated": false,
+            "exit_code": 20,
+            "elapsed_ms": 14069,
+            "work_budget_ms": 14000
+          }
+        }
+      },
+      "result-accepted.json": {
+        "sha256": "e74902d83d19c3f76cfec5512566cece1427606f934e2cfb642921bb3d60be30",
+        "value": {
+          "format": "AuthWireWriteResultAcceptedV1",
+          "job_id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+          "body_sha256": "c3ea77451c91299d483c5202d94daa0c0186da3c2f8a29ac7817e88986a8599d",
+          "request_id": "8594b7d0324e1943c97a2359c5c4ed858aef3a476ef10a6bd6c912ca14382381",
+          "ack": {
+            "format": 1,
+            "request_id": "8594b7d0324e1943c97a2359c5c4ed858aef3a476ef10a6bd6c912ca14382381",
+            "job_id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+            "result_recorded": true,
+            "can_apply_gpo": false
+          }
+        }
+      },
+      "stage-launch.json": {
+        "sha256": "9f200f161c8ed9aa218ceb4882ca8eada47340ba7e3511cd0c0d60713cfe4c41",
+        "value": {
+          "format": "AuthWireStageLaunchV1",
+          "job_id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+          "filesystem_operation_id": "5c2c5c13-0891-0f9f-4524-8e1dd34a7a03",
+          "execution_intent_sha256": "338e89af58ad93fbe73a3ec14d7540580fa0be0b15fdc5be6641959590200546",
+          "authorization_sha256": "09cd03c37568d66f05a0cc772963f50e2bb8495880cea1c15e3a78dfcca6864b",
+          "gate_name": "Local\\AuthWireStage-c292e1795dc74f24afcd61df41d8346c-255748739fa6496cb5028987d1cdc4e2",
+          "started_at": 1795357075,
+          "expires_at": 1795357091,
+          "work_budget_ms": 14000
+        }
+      }
+    },
+    "worker_pid_present": false,
+    "scheduler": {
+      "WorkerPid": 5500,
+      "ServiceName": "AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46",
+      "State": "stopped",
+      "StopReason": "lifecycle_requires_attention",
+      "LastPhase": "requires_review",
+      "Steps": 24,
+      "ReleaseId": "d3b84b6a-fe17-4d43-8a85-e3cc094550cf",
+      "Event": "WINDOWS_CONNECTOR_WRITE_SCHEDULER"
+    },
+    "at": 1795357204
+  },
+  "linux_state": {
+    "revision": 142,
+    "job": {
+      "id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+      "operation": "combined.filesystem.stage.v1",
+      "actor": "4b489592-d0d1-4364-8406-4633e0e44634",
+      "scope": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e",
+      "created": 1795357041,
+      "deadline": 1795357123,
+      "lease_id": "0c880e1dca50bb147f67e0e1e88e5baae3951bb1b3ec8a67fe2d8572c9ef35c1",
+      "lease_until": 1795357123,
+      "state": "requires_review",
+      "intent_sha256": "c944455f10b1c7d6827594238df5001b4afafd5f283f134f589ad691172ff723",
+      "creation_sha256": "80e36ac7ddcf2ef39449bce67a24b1b1d7f0bb1de08b4b443f101228cc16ac1c",
+      "approval_sha256": "899517441778773422f425367f3847fc8a87ec90dd0db8426a5115725371f2ab",
+      "target": {
+        "scope_target": {
+          "plan_id": "524653f5-1359-46f5-84a5-46355bb82aff",
+          "plan_version": 1,
+          "gpo_id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+          "approval_sha256": "02e695d2948cfaf2d2699c4d8226058828a134900a72331a250132149d72eb1a",
+          "manifest_sha256": "480134d8bb31c1f6b6f9132fa9bd01d256fcb993e9babe7090c2ea6e3f713542",
+          "draft_sha256": "f502e4d64489f896b0600cb20f286e873016a1a381a0d4b1c30e5e7b7ea6bd7e",
+          "dependency_sha256": "d5a7371a2136a8763c49c194c3738590314d3f8308a26c2a22b150513c1c59d3",
+          "publisher_thumbprint": "FFC134BC305757457163F99C7479B4168E397129",
+          "network_candidate_id": "c5025308-6906-4f60-b811-af4b4e39cb48",
+          "candidate_id": "2e2723bd-9987-4734-9fae-2433193d8e6c",
+          "network_manifest_sha256": "aa538a2ff14c6aaf9deeb7baffb1286d520bcdb18a309bd43c6f45cf84fbe3a1",
+          "machine_profile_id": "e3597842-3499-4ace-aaf3-29890eabd908",
+          "machine_profile_version": 3,
+          "domain": "vizyonveri.local",
+          "root_thumbprint": "c789a0595adb95a6be4534d01b1d205f6c37de18",
+          "group_sid": "S-1-5-21-34256453-3348971241-2809240126-1647",
+          "content_result_sha256": "c5fdd9d80894bc62e983394568be395ecee37c08413333ef59f8a2543009a15f",
+          "target_sids_sha256": "c4046d26de74a11b4f16f8ebd758cc488a5fdb17c97bef375673ff9192a6d0e6",
+          "target_count": 3
+        },
+        "preview_record": {
+          "Preview": {
+            "format": "AuthWireCombinedStagingPreviewV1",
+            "operation": "combined.stage.preview.v1",
+            "scope_target_sha256": "6040deaf7599bf42253897835ba98e89eeaf770653cda9cc9dd65f6817c6bd9e",
+            "scope_observations_sha256": "19af005c38e189b3c694fac1cb30a894c3f2dcd2d8665e8e639d3abd3a4ce36d",
+            "baseline_inventory_sha256": "b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6",
+            "source_ledger_sha256": "76ffc9a259a874506005adfeefd872deb26084c11e3a37463488158fc3c605a7",
+            "plan_id": "524653f5-1359-46f5-84a5-46355bb82aff",
+            "plan_version": 1,
+            "gpo_id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+            "manifest_sha256": "480134d8bb31c1f6b6f9132fa9bd01d256fcb993e9babe7090c2ea6e3f713542",
+            "draft_sha256": "f502e4d64489f896b0600cb20f286e873016a1a381a0d4b1c30e5e7b7ea6bd7e",
+            "relative_destination": "Machine/AuthWire-524653f5135946f584a546355bb82aff-v1-480134d8bb31c1f6b6f9132fa9bd01d256fcb993e9babe7090c2ea6e3f713542",
+            "files": [
+              {
+                "Path": "AuthWire-Combined-Manifest.ps1",
+                "Size": 6286,
+                "Sha256": "706ac1dc9cdcd568ba3be3c1f816dff6e25a21b1c8515d5e3ead7d32bf88e7e3",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "README.txt",
+                "Size": 251,
+                "Sha256": "93322c94d3ac5b85a615041dc3455d280cb6c63ab8e87e13fb34160e311ef93f",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "enrollment/AuthWire-Client.ps1",
+                "Size": 42034,
+                "Sha256": "50166489420a59836d1dff81b58b5b3ae2ee3ab9c8abe5e2bf75e31d10770530",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "enrollment/Install-AuthWire.ps1",
+                "Size": 18015,
+                "Sha256": "41436f12c9f915b75634c7e1353c4c0cb714cbf16b60dcf9c5b432c8f2413672",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "enrollment/README.txt",
+                "Size": 559,
+                "Sha256": "17fa5d017f72ea9ea1c3b69681a46efd0e1e2414b395efd4eee1092e344076ad",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "enrollment/SHA256SUMS.txt",
+                "Size": 567,
+                "Sha256": "449b1ae5ff9da04587ba6cbe75f71e31ac5f9c22270d5148f392c9e67d122467",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "enrollment/config.json",
+                "Size": 264,
+                "Sha256": "6cc07dfed87884370ce9d3304a1d4fa3b458255b4924123287783398fb954789",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "enrollment/https-trust.pem",
+                "Size": 611,
+                "Sha256": "88c30e357d38359f9a7cc1f087229c05757760eb54e8ef4e5a90f14444c83083",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "enrollment/issuer-ca.pem",
+                "Size": 1517,
+                "Sha256": "b09a9e69771e30fc08257f04afd7c3613770a20e06f15d9845fb4a4790063b42",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "enrollment/root-ca.pem",
+                "Size": 1517,
+                "Sha256": "4f25c29bb9c373a9be8da92a0ecba7b6fd123264e398427fd67060cd3af96328",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "network-profiles.zip",
+                "Size": 6123,
+                "Sha256": "2e27526933de2f94f2e3ecd12e7d2010373cc3f94e814c1a8459b949d4e557b4",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "network/README.txt",
+                "Size": 590,
+                "Sha256": "9f627944d00daa68908e43b7aa940031002130e8504230671b615be57899f5f3",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "network/WiFi-EAP-TLS.xml",
+                "Size": 2500,
+                "Sha256": "5f81060e2964d96cb9d22816da35b6165338782143381e11c0c65b2ca193f8db",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "network/Wired-EAP-TLS.xml",
+                "Size": 2191,
+                "Sha256": "581848a03b3058a6fb5de6cdee00ec5131fd9bfcd434cb5a2941e3cb905874ee",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "network/issuer-ca.pem",
+                "Size": 1517,
+                "Sha256": "b09a9e69771e30fc08257f04afd7c3613770a20e06f15d9845fb4a4790063b42",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "network/manifest.json",
+                "Size": 722,
+                "Sha256": "8a3e1237f0ce0abef347d2d53b5fb3645a59824dd95cae966386b0151183276f",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "network/plan.json",
+                "Size": 2293,
+                "Sha256": "bde8a4623744eb2995fc981096d287015fe9ab345f52512bea8261238db26675",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "network/root-ca.pem",
+                "Size": 1517,
+                "Sha256": "4f25c29bb9c373a9be8da92a0ecba7b6fd123264e398427fd67060cd3af96328",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "original-draft.zip",
+                "Size": 34412,
+                "Sha256": "f502e4d64489f896b0600cb20f286e873016a1a381a0d4b1c30e5e7b7ea6bd7e",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              },
+              {
+                "Path": "signed-manifest.json",
+                "Size": 2115,
+                "Sha256": "480134d8bb31c1f6b6f9132fa9bd01d256fcb993e9babe7090c2ea6e3f713542",
+                "Sddl": "O:BAG:BAD:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;FR;;;S-1-5-21-34256453-3348971241-2809240126-1648)"
+              }
+            ],
+            "file_count": 20,
+            "total_bytes": 125601,
+            "checked_at": 1795357033,
+            "expires_at": 1795357123,
+            "rollback": {
+              "relative_directory": "Machine/AuthWire-524653f5135946f584a546355bb82aff-v1-480134d8bb31c1f6b6f9132fa9bd01d256fcb993e9babe7090c2ea6e3f713542",
+              "requires_ownership_journal": true,
+              "requires_exact_staged_tree": true,
+              "drift_requires_review": true,
+              "delete_existing_data": false
+            },
+            "read_only": true,
+            "can_stage": false,
+            "can_apply_gpo": false,
+            "writer_available": false,
+            "requires_new_write_approval": true
+          },
+          "PreviewSha256": "bc7d3c1e73b31e51b943a8a2be8791bd828dcff6ad0d73946fc5834d9307b98a"
+        },
+        "preview_job_id": "1ca4fd1b-9b9e-4b1b-86c8-6cc7cb1fe4ac",
+        "preview_result_sha256": "104478762deba2f168790f8e77fbf5d219976a74f6efc86ad8ddfad5888faf8a",
+        "writer_release_id": "d3b84b6a-fe17-4d43-8a85-e3cc094550cf",
+        "stage_receipt": null
+      },
+      "authorized_at": 1795357061,
+      "authorized_until": 1795357091,
+      "authorization_id": "a5197977a422cce6992c36d44b2fb9a7c5538c703e3f59ca56921371a266aa09",
+      "claim_sha256": "44784533c200e237449ead59ec1f3d3e10efd957ab4b6748f4eaff4258e8f6e2",
+      "result": {
+        "journal_sha256": "",
+        "tree_sha256": "",
+        "reason": "OUTCOME_UNKNOWN",
+        "intent_sha256": "c944455f10b1c7d6827594238df5001b4afafd5f283f134f589ad691172ff723",
+        "job_id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+        "release_id": "d3b84b6a-fe17-4d43-8a85-e3cc094550cf",
+        "target_sha256": "e3b9343f983641b3ffb6065249860d003d067000e2ad7ce4b21cd779be45d099",
+        "filesystem_effects": "unconfirmed",
+        "checked_at": 1795357090,
+        "authorization_id": "a5197977a422cce6992c36d44b2fb9a7c5538c703e3f59ca56921371a266aa09",
+        "outcome": "requires_review",
+        "lease_id": "0c880e1dca50bb147f67e0e1e88e5baae3951bb1b3ec8a67fe2d8572c9ef35c1"
+      }
+    },
+    "last_poll": {
+      "scope": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e",
+      "at": 1795357049,
+      "release_id": "d3b84b6a-fe17-4d43-8a85-e3cc094550cf"
+    },
+    "cleanup": {
+      "user_absent": true,
+      "profile_absent": true,
+      "sessions_absent": true,
+      "at": 1795357246
+    },
+    "enabled_admin_users": 0,
+    "rollback_jobs_for_current_stage": [],
+    "production_process_start_identities": {
+      "919": "412",
+      "647245": "64693127",
+      "647261": "64693227"
+    },
+    "at": 1795357246
+  },
+  "result_proof": {
+    "format": "AuthWireWriteResultProofV1",
+    "job_id": "c292e179-5dc7-4f24-afcd-61df41d8346c",
+    "body_sha256": "c3ea77451c91299d483c5202d94daa0c0186da3c2f8a29ac7817e88986a8599d",
+    "proof": {
+      "signature": "FYq9bOYjOaKXv9qHEZg23AkU33b0QB3MJJY/by8YhqHZXekrnrEIm9X1sjpI9jBXn01OK7lkFHBEqbVbnmiR2DyXTP8aRAlPa9B9Xe0lKweQqwsFibx6vumbWcAcFimtnUNZ09sQKFDixpcB/87jaxayQuF354zVIa/W/b85FT3GOnHPv1WslVCfvPqEdKWzIzJzV9qs08Wop3SQ6cr+XplRBANry+j8hm6NaQeTp1e5NqLXLHMOfssYsy5gfm0yUin2mssJzWgDpu4xX2LB0bTrYHABHwbqkS6t5AOQcKrP0UlJ59uWRlccTyCuP4j8E6R/RA8ESmKD5w8Dg9Fi8J31DlJ0H+yhyZarQGYZzjYdiAp5UIanKAjlXBFOa1m2k79vCS7WLbA3ihSokOf8Vw2MZeKiU3D4fN57S7Ti3bCjL148q8ruhNwiKqi2n1H8NlDZeJVdwwEd8ZfAfwMmAc4PhQgkvWE/ke3oONKyS95zYz4kigpSnZqPRUr1ICTM",
+      "payload": "eyJqb3VybmFsX3NoYTI1NiI6IiIsInRyZWVfc2hhMjU2IjoiIiwicmVhc29uIjoiT1VUQ09NRV9VTktOT1dOIiwiaW50ZW50X3NoYTI1NiI6ImM5NDQ0NTVmMTBiMWM3ZDY4Mjc1OTQyMzhkZjUwMDFiNGFmYWZkNWYyODNmMTM0ZjU4OWFkNjkxMTcyZmY3MjMiLCJqb2JfaWQiOiJjMjkyZTE3OS01ZGM3LTRmMjQtYWZjZC02MWRmNDFkODM0NmMiLCJyZWxlYXNlX2lkIjoiZDNiODRiNmEtZmUxNy00ZDQzLThhODUtZTNjYzA5NDU1MGNmIiwidGFyZ2V0X3NoYTI1NiI6ImUzYjkzNDNmOTgzNjQxYjNmZmI2MDY1MjQ5ODYwZDAwM2QwNjcwMDBlMmFkN2NlNGIyMWNkNzc5YmU0NWQwOTkiLCJmaWxlc3lzdGVtX2VmZmVjdHMiOiJ1bmNvbmZpcm1lZCIsImNoZWNrZWRfYXQiOjE3OTUzNTcwOTAsImF1dGhvcml6YXRpb25faWQiOiJhNTE5Nzk3N2E0MjJjY2U2OTkyYzM2ZDQ0YjJmYjlhN2M1NTM4YzcwM2UzZjU5Y2E1NjkyMTM3MWEyNjZhYTA5Iiwib3V0Y29tZSI6InJlcXVpcmVzX3JldmlldyIsImxlYXNlX2lkIjoiMGM4ODBlMWRjYTUwYmIxNDdmNjdlMGUxZTg4ZTViYWFlMzk1MWJiMWIzZWM4YTY3ZmUyZDg1NzJjOWVmMzVjMSJ9",
+      "frame": "QVVUSFdJUkUtU1RBR0lORy1XUklURS1KT0ItUkVTVUxULVYxCjY3OTZmYTg0LWZjZmYtNDFjMS1iOWM1LWQ3MjViOTViYTEzOQo0YzIzZWViZS0wNzE1LTQ2ZDEtODhlZS1hMmU5NmFkN2VlNDYKMQowZmE0MTQzZi1hYWUzLTRiYzMtOWNkMy1kYjhhMWRlMjRhY2QKZGMwMS52aXp5b252ZXJpLmxvY2FsClMtMS01LTIxLTM0MjU2NDUzLTMzNDg5NzEyNDEtMjgwOTI0MDEyNi0xNjQ4CmthbmFtZS52aXp5b252ZXJpLmxvY2FsCmE1ODgzOGI5NTUxMGY3NTk5NDNlNWYxYjdmZWZlMjllMjI3OTYwYTVjMTE3MWI1ZWJjNmQ1MDg5ZGY0N2E3NmQKY2JlM2I1YWZkYzQwZTVhMTQxZjU1NDk5YWRlNGUzMmRiYWY0NzkyYjA3NzJkZmNkMDI1NDQ4Yzc2MzNhOTA0MQo4NTk0YjdkMDMyNGUxOTQzYzk3YTIzNTljNWM0ZWQ4NThhZWYzYTQ3NmVmMTBhNmJkNmM5MTJjYTE0MzgyMzgxCjIzN2UyYzM4MDNkYzRjMmJhOGE4NjBhNWIxZDI4MWI4ZTY3NWQyZDA4ZTFhODRmYzg2MTkwNWZkZDAxYWJhOTAKMTc5NTM1NzA5MAoxNzk1MzU3MTUwCjNkODk0OWU1ZTY0YjY4NTM0YzFlMWM0ZWI2NDUyYzRiYjI3MDMzN2Y3YmYyYTQ1MDUwNzZiOGM3ZGVjZjdhNDAKUE9TVAovYXBpL2Nvbm5lY3Rvci92MS9zdGFnaW5nLXdyaXRlL3Jlc3VsdAo="
+    }
+  },
+  "cleanup": {
+    "linux": {
+      "user_absent": true,
+      "profile_absent": true,
+      "sessions_absent": true,
+      "at": 1795357246
+    },
+    "enabled_isolated_admin_users": 0,
+    "windows": {
+      "TaskRemoved": true,
+      "CredentialFileAbsent": true,
+      "LastTaskResult": 1,
+      "OriginalJobEvidenceRetained": true,
+      "GpoLockRetained": true
+    },
+    "ephemeral_credential_file_removed_on_linux": true,
+    "expiry_timer_stopped": true
+  },
+  "ci": {
+    "windows_workflows": [
+      {
+        "id": 45029590840,
+        "name": "AuthWire bounded retry network probe checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029590852,
+        "name": "AuthWire Windows write scheduler checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029590872,
+        "name": "AuthWire local PDC SYSVOL junction checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029590958,
+        "name": "AuthWire reproducible Linux delivery",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029590976,
+        "name": "AuthWire isolated write preclaim checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029590887,
+        "name": "AuthWire preauthorization refusal reporting",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029590971,
+        "name": "AuthWire isolated staging filesystem checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029591046,
+        "name": "AuthWire isolated rollback origin evidence",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029590992,
+        "name": "AuthWire isolated durable write lifecycle",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029591010,
+        "name": "AuthWire isolated authorized stage execution",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029590861,
+        "name": "KANAME foundation checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029590995,
+        "name": "AuthWire isolated consumed-stage closure",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029590973,
+        "name": "AuthWire exited stage intent recovery",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029590906,
+        "name": "AuthWire isolated one-shot staging cycle",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029590860,
+        "name": "AuthWire isolated rollback authorization",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029590888,
+        "name": "AuthWire isolated governed write history",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029590898,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45029590891,
+        "name": "AuthWire isolated rollback execution and result",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "all_18_success": true,
+    "rerun_by_operator": false,
+    "field_result_is_not_ci_success": true
+  },
+  "progress": {
+    "complete": 60,
+    "total": 94,
+    "open": 34,
+    "g01": "2/5",
+    "g05": "5/5",
+    "count_changed": false
+  },
+  "decision": {
+    "no_replay": true,
+    "no_unilateral_unlock": true,
+    "no_manual_sysvol_deletion": true,
+    "old_no_engine_closure_ineligible": true,
+    "reason": "Timed-out child created engine intent and an empty destination; the existing expired-intent/no-engine closure explicitly rejects this state.",
+    "automatic_write_worker_stopped": "lifecycle_requires_attention",
+    "gpo_activation": false
+  },
+  "next": [
+    "Reconcile the retained incomplete engine intent and exact empty owned destination under a distinct approved partial-write recovery contract; existing no-engine closure must keep rejecting it.",
+    "Measure and fix child preparation/execution budgeting; verify the new targeted contract before any new field write. Do not replay c292 or previous grants.",
+    "Only after safe reconciliation, perform fresh separately authorized full stage/rollback; then effective3-endpoint GPO delivery.",
+    "Keep B02 deleted-account/AD interruption, A03 userWi-Fi, B11 NAS Interim/Class, B12 external matching-state recovery and other original open gates."
+  ],
+  "forecast": {
+    "g01_active_work_days": [
+      5,
+      9
+    ],
+    "reason": "Reassessed and retained: unresolved cold execution and partial-write recovery were already open; no narrowing or completed field acceptance is justified.",
+    "other_package_bands_unchanged": true,
+    "active_hours_measured": false
+  }
+}
