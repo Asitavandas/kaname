@@ -37,6 +37,21 @@ function New-AuthWireStageInputPins([string]$JournalRoot,[string]$JobId,$Offer){
   return $p
  }catch{$p.Dispose();throw}
 }
+function New-AuthWireStageIntentInputPins([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release){
+ # Select and pin private inputs before the ONE full intent validation. This
+ # selector grants nothing: the pinned authorization/claim/intent chain is
+ # still validated below before any gate, module, observation or effect.
+ Assert-AuthWireStagingWriteJournalLocation $JournalRoot $Binding;Assert-AuthWireCandidateGuid $JobId;Initialize-AuthWireStagingFilesystemTypes
+ $selector=[AuthWire.Staging.TreeLeaseV1]::new()
+ try{
+  $selector.PinAncestors($JournalRoot);$job=Join-Path $JournalRoot $JobId;$selector.PinAncestors($job)
+  foreach($name in @('offer.json','claim-sent.json')){$selector.PinFile((Join-Path $job $name))}
+  $sent=Read-AuthWireStagingJournal (Join-Path $job 'claim-sent.json')
+  if(-not (Test-AuthWireWriteInteger $sent.sent_at)){throw 'WRITE_AUTHORIZATION_REJECTED'}
+  $offer=Read-AuthWireStagingWriteOfferAt $JournalRoot $JobId $Binding $Release $sent.sent_at
+  return (New-AuthWireStageInputPins $JournalRoot $JobId $offer)
+ }finally{$selector.Dispose()}
+}
 function Read-AuthWireAuthorizedStageIntent([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
  $s=Read-AuthWireAuthorizedStageIntentEvidence $JournalRoot $JobId $Binding $Release $Key
  if([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -ge $s.Authorization.Receipt.grant.expires_at){throw 'WRITE_AUTHORIZATION_EXPIRED'}
@@ -125,12 +140,10 @@ function Get-AuthWireStageCompletion([string]$JournalRoot,[string]$JobId,$State,
 }
 function Invoke-AuthWireAuthorizedStageChild([string]$JournalRoot,[string]$JobId,[string]$ExpectedIntentSha256,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[string]$Publisher,[string]$BaseUrl){
  $script:AuthWireStageChildPhase='intent'
- $s=Read-AuthWireAuthorizedStageIntent $JournalRoot $JobId $Binding $Release $Key
- if(-not (Test-AuthWireWriteHash $ExpectedIntentSha256) -or $s.IntentSha256 -cne $ExpectedIntentSha256){throw 'WRITE_EXECUTION_INTENT_REJECTED'}
- $p=New-AuthWireStageInputPins $JournalRoot $JobId $s.Authorization.Offer
+ $p=New-AuthWireStageIntentInputPins $JournalRoot $JobId $Binding $Release
  try{
-  $again=Read-AuthWireAuthorizedStageIntent $JournalRoot $JobId $Binding $Release $Key
-  if($again.IntentSha256 -cne $s.IntentSha256){throw 'WRITE_LOCAL_RECORD_CHANGED'}
+  $s=Read-AuthWireAuthorizedStageIntent $JournalRoot $JobId $Binding $Release $Key
+  if(-not (Test-AuthWireWriteHash $ExpectedIntentSha256) -or $s.IntentSha256 -cne $ExpectedIntentSha256){throw 'WRITE_EXECUTION_INTENT_REJECTED'}
   $launch=Read-AuthWireStageLaunch $JournalRoot $JobId $s
   $job=Join-Path $JournalRoot $JobId;$op=$s.Intent.filesystem_operation_id
   if(Test-Path -LiteralPath (Join-Path $JournalRoot $op)){throw 'WRITE_EXECUTION_JOURNAL_EXISTS_REQUIRES_REVIEW'}
@@ -173,13 +186,11 @@ function Invoke-AuthWireAuthorizedStageChild([string]$JournalRoot,[string]$JobId
  }finally{$p.Dispose()}
 }
 function Invoke-AuthWireAuthorizedFilesystemStage([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
- $s=Read-AuthWireAuthorizedStageIntent $JournalRoot $JobId $Binding $Release $Key
- $p=New-AuthWireStageInputPins $JournalRoot $JobId $s.Authorization.Offer
+ $p=New-AuthWireStageIntentInputPins $JournalRoot $JobId $Binding $Release
  $gate=$null
  $decisionLock=$null
  try{
-  $again=Read-AuthWireAuthorizedStageIntent $JournalRoot $JobId $Binding $Release $Key
-  if($again.IntentSha256 -cne $s.IntentSha256){throw 'WRITE_LOCAL_RECORD_CHANGED'}
+  $s=Read-AuthWireAuthorizedStageIntent $JournalRoot $JobId $Binding $Release $Key
   $decisionLock=Enter-AuthWireWriteOutcomeLock $JobId
   $job=Join-Path $JournalRoot $JobId
   if(Test-Path -LiteralPath (Join-Path $job 'result-outbox.json')){throw 'WRITE_EXECUTION_RESULT_ALREADY_FROZEN'}
