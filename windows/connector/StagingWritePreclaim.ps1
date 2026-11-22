@@ -169,19 +169,23 @@ function Get-AuthWireWriteStageLiveContext($Offer,[hashtable]$Binding,[string]$P
  # candidate/signature + non-admin service identity validation remains in use.
  if($Offer.operation -cne 'combined.filesystem.stage.v1'){throw 'WRITE_ROLLBACK_PREFLIGHT_UNAVAILABLE'}
  $target=$Offer.target.scope_target
- $context=Get-AuthWireCombinedScopeContext $target $Binding $Publisher $BaseUrl
+ # Reuse the context checked before AND after this one live observation.
+ # Previously a third full content/ACL/signature pass ran immediately before
+ # the preview's two passes, consuming the short grant's cold-child budget.
+ # Nothing is cached between calls; AD/source/SYSVOL and expiry stay fresh.
+ $observation=Get-AuthWireCombinedStagingObservation $target $Binding $Publisher $BaseUrl
+ $context=$observation.Context
  $a=$context.Approval
- $before=Get-ADDomain -Identity $a.domain -Server $a.domain -ErrorAction Stop
- $server=[string]$before.PDCEmulator;$domainSid=$Binding.service_sid.Substring(0,$Binding.service_sid.LastIndexOf('-'))
- if($before.DNSRoot -cne $target.domain -or $before.DomainSID.Value -cne $domainSid -or $server -cnotmatch '\A[a-z0-9.-]{1,253}\z' -or -not $server.EndsWith('.'+$target.domain,[StringComparison]::Ordinal)){throw 'WRITE_LIVE_SCOPE_CHANGED'}
- $fresh=Get-AuthWireCombinedStagingPreview $target $Binding $Publisher $BaseUrl
+ $server=[string]$observation.Pdc;$domainSid=$Binding.service_sid.Substring(0,$Binding.service_sid.LastIndexOf('-'))
+ if($a.domain -cne $target.domain -or $server -cnotmatch '\A[a-z0-9.-]{1,253}\z' -or -not $server.EndsWith('.'+$target.domain,[StringComparison]::Ordinal)){throw 'WRITE_LIVE_SCOPE_CHANGED'}
+ $fresh=$observation.PreviewRecord
  # Compare current business observations at the ORIGINAL approved timestamps.
  # A later snapshot must not silently replace/extend the approved preview.
  $fresh.Preview.checked_at=$Offer.target.preview_record.Preview.checked_at
  $fresh.Preview.expires_at=$Offer.target.preview_record.Preview.expires_at
  if((Get-AuthWireWritePreviewHash $fresh.Preview) -cne $Offer.target.preview_record.PreviewSha256){throw 'WRITE_LIVE_PREVIEW_CHANGED'}
  $after=Get-ADDomain -Identity $a.domain -Server $a.domain -ErrorAction Stop
- if($after.DNSRoot -cne $before.DNSRoot -or $after.DomainSID.Value -cne $domainSid -or [string]$after.PDCEmulator -cne $server){throw 'WRITE_LIVE_PDC_CHANGED'}
+ if($after.DNSRoot -cne $a.domain -or $after.DomainSID.Value -cne $domainSid -or [string]$after.PDCEmulator -cne $server){throw 'WRITE_LIVE_PDC_CHANGED'}
  $source=Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) ('AuthWire-CombinedCandidates-'+([guid]$Binding.connector_id).ToString('N'))
  $source=Join-Path $source ($target.plan_id+'-v'+$target.plan_version+'-'+$target.draft_sha256+'-ab1a11c683810061')
  $gpo=Get-AuthWireWriteGpoPath $server $target

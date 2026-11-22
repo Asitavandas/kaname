@@ -81,6 +81,14 @@ function New-AuthWireCombinedStagingPlanCore {
 
 function Get-AuthWireCombinedStagingPreview {
  param($Target,[hashtable]$Binding,[string]$PublisherThumbprint,[string]$BaseUrl)
+ # Keep the public preview projection unchanged. Only trusted local adapters
+ # use the already verified context from this same bounded observation.
+ $observation=Get-AuthWireCombinedStagingObservation $Target $Binding $PublisherThumbprint $BaseUrl
+ return $observation.PreviewRecord
+}
+
+function Get-AuthWireCombinedStagingObservation {
+ param($Target,[hashtable]$Binding,[string]$PublisherThumbprint,[string]$BaseUrl)
  # Future fixed, bounded child entry point; not installed in the live worker.
  $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
  try {
@@ -103,12 +111,13 @@ function Get-AuthWireCombinedStagingPreview {
  $null=Test-AuthWireScopeData $two $a $network $Binding
  $null=Read-AuthWireCombinedSysvolTree $root
  $inventoryTwo=Get-AuthWireSysvolInventory $root
- $null=Get-AuthWireCombinedScopeContext $Target $Binding $PublisherThumbprint $BaseUrl
+ $lastContext=Get-AuthWireCombinedScopeContext $Target $Binding $PublisherThumbprint $BaseUrl
  $sourceTwo=@(Get-AuthWireCombinedStagingLedger $Target $Binding)
  $scopeHash=Get-AuthWireScopeDataHash $one
- if($scopeHash -cne (Get-AuthWireScopeDataHash $two) -or $inventoryOne.Sha256 -cne $inventoryTwo.Sha256 -or (Get-AuthWireScopeDataHash $sourceOne) -cne (Get-AuthWireScopeDataHash $sourceTwo)){throw 'STAGING_OBSERVATIONS_CHANGED'}
+ if($scopeHash -cne (Get-AuthWireScopeDataHash $two) -or $inventoryOne.Sha256 -cne $inventoryTwo.Sha256 -or (Get-AuthWireScopeDataHash $sourceOne) -cne (Get-AuthWireScopeDataHash $sourceTwo) -or
+    (Get-AuthWireScopeDataHash $context) -cne (Get-AuthWireScopeDataHash $lastContext)){throw 'STAGING_OBSERVATIONS_CHANGED'}
  # PDC selection is part of this scope; a changed domain view requires a new read.
  $lastDomain=Get-ADDomain -Identity $a.domain -Server $a.domain -ErrorAction Stop
  if($lastDomain.DNSRoot -cne $a.domain -or $lastDomain.DomainSID.Value -cne $domainSid -or [string]$lastDomain.PDCEmulator -cne $server -or [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -ge $checked+90){throw 'STAGING_OBSERVATIONS_CHANGED'}
- return (New-AuthWireCombinedStagingPlanCore $Target $sourceTwo $inventoryTwo $scopeHash $checked)
+ return [pscustomobject]@{PreviewRecord=(New-AuthWireCombinedStagingPlanCore $Target $sourceTwo $inventoryTwo $scopeHash $checked);Context=$context;Pdc=$server}
 }
