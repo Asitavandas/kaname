@@ -1,5 +1,9 @@
 # AuthWire — güncel çalışma planı
 
+## 22 Kasım 2026 — Junction kaynak ve salt okunur saha kabulü geçti
+
+PR167 kaynak1d6c4757: yerel PDC'nin standart SYSVOL junction'ı ve fiziksel hedef kimliği sabitleniyor; FILE_LIST_DIRECTORY ile yeniden adlandırma engeli doğrulandı. Ayrı alanda17 native kontrol ve gerçek gMSA ile CNG imzalı salt okunur gözlem geçti. Kalıcı paket21d54b36 ve 733 işinin inceleme kilidi korunuyor; intent uzlaştırması, CI/paket ve gerçek stage/rollback açık. Sayım60/94,34 açık,G012/5; G055/5. [Kanıt](checkpoints/2026-11-22-g01-sysvol-junction-validation.json), [süre](reports/2026-10-29-process-forecast.md). Başarılı junction/alan gözlemi tekrar edilmeyecek.
+
 ## 22 Kasım 2026 — G01 arşivi tamam, yeni junction/intent inceleme kapısı
 
 64 gerçek çevrim arşivi ve 65. no_job kabulü tamamlandı. 4da20206 intent öncesi tüketim kurtarması kapandı; sonraki 733fc751 işi standart SYSVOL junction reddiyle filesystem-intent sonrası incelemede, kilidi korunuyor. Kaynak c729289e PR167'de, release21d54b36 DC01'de. Geri alma CI başarısız olduğundan bütün stage/rollback kabulü açık; sırada doğrulanmış junction desteği ve denetimli intent uzlaştırması var. **G01 2/5; toplam60/94,34 açık**. [Kanıt](checkpoints/2026-11-22-g01-history-and-stage-review.json), [durum](CURRENT_STATUS.md), [yeniden değerlendirilen süre](reports/2026-10-29-process-forecast.md).

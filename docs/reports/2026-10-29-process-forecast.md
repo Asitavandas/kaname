@@ -1,5 +1,13 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## 22 Kasım 2026 — SYSVOL junction salt okunur kabulü sonrası değerlendirme
+
+Junction desteği, yeniden adlandırma paylaşım koruması ve17 native kontrol tamam; gerçek non-admin gMSA/AD/kaynak/SYSVOL salt okunur gözlemi geçti. Son yazma işinin intent uzlaştırması, güncel kaynak CI, kalıcı imzalı paket teslimi ve gerçek stage/rollback hâlâ açık. **G01 5–9 aktif iş günü** bandı bu yeni kanıt ve kalan kapılarla yeniden değerlendirildi, korundu; hiçbir bütün94-alt-iş kabulü kapanmadığından sayım **60/94,34 açık; G012/5**.
+
+Diğer12 paket bantları ve aşağıdaki23 Kasım koşullu başlangıç pencereleri; ilk pilot2–3, temel6–9, temel+kılavuz7–10, tüm kapsam13–19 hafta olarak korundu. Operatör katılımı temel20–30/tüm kapsam30–45 saat ve ayrıca7–14 takvim günü gözlem; dış iki uç/API/VM beklemelerine tarih verilmemesi değişmedi. Bu tur aktif mesai ölçülmedi; kuyruk ve takvim arası aktif çalışma sayılmadı. G05 kalan0; bitmiş EAP/G05/CRL/arşiv saha testleri yeniden yapılmadı. [Kanıt](../checkpoints/2026-11-22-g01-sysvol-junction-validation.json).
+
+---
+
 ## 22 Kasım 2026 — Arşiv kapandı, SYSVOL junction ve intent kurtarma kapısı kesinleşti
 
 64 çevrimlik gerçek imzalı arşiv ve 65. no_job kabulü tamamlandı. İlk yeni stage'in intent öncesi tüketim kurtarması revizyon129'da kapandı. Sonraki ayrı stage ön kontrolü geçti ancak standart SYSVOL domain junction'ında güvenli yol korumasıyla durdu; filesystem-intent mevcut olduğundan iş/kilit incelemede kaldı. Geri alma CI'sı aynı kaynakta başarısızdır; alan hazırlama/geri alma kabulü tamamlanmış sayılmaz.

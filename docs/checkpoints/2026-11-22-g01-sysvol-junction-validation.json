@@ -1,0 +1,279 @@
+{
+  "artifact": "authwire-g01-local-pdc-sysvol-junction-validation",
+  "recorded_date": "2026-11-22",
+  "timezone": "Europe/Istanbul",
+  "status": "native_boundary_and_readonly_field_acceptance_passed",
+  "progress": {
+    "complete": 60,
+    "total": 94,
+    "open": 34,
+    "g05": "5/5",
+    "g01": "2/5",
+    "count_changed": false
+  },
+  "source": {
+    "pr": 167,
+    "commit": "1d6c47578a145e71b56a128d36aeb3b7a170304f",
+    "module_source_sha256": "af98b69852ae3a733cbf77759d40d60b8d39b2dbec230a446b5b7e80c0dde0c8",
+    "draft": true,
+    "merged": false,
+    "permanent_package_updated": false,
+    "installed_connector_release": "21d54b36-75e0-4834-93d3-886d675bec79",
+    "production_panel": "0.14.0-dev.52"
+  },
+  "design": {
+    "scope": "Standard SYSVOL junction on the same freshly observed PDC only",
+    "path_sources": "PDC/domain from independently validated AD/GPO context; fixed local SYSVOL paths from the local Windows directory; no job-supplied target or exception switch.",
+    "local_junction_and_smb_identity_compared": true,
+    "local_target_and_followed_smb_identity_compared": true,
+    "junction_and_target_ancestors_held": true,
+    "directory_data_access": "FILE_LIST_DIRECTORY enables rename/delete share checking; metadata-only access did not.",
+    "arbitrary_reparse_points_rejected": true,
+    "redirected_descendants_rejected": true,
+    "legacy_journal_deletion_handoff_unchanged": true,
+    "custom_sysvol_locations_or_remote_pdc_not_implicitly_allowed": true
+  },
+  "validation": {
+    "disposable_native": {
+      "device": "DC01",
+      "identity": "Administrator WinRM session, separate from real gMSA field observation",
+      "source_same_as_commit": true,
+      "checks": 17,
+      "real_smb": true,
+      "real_ntfs": true,
+      "real_ad_exercised": false,
+      "owned_test_files": 20,
+      "owned_tree_created_and_removed": true,
+      "outside_content_preserved": true,
+      "junction_rename_blocked": true,
+      "physical_target_rename_blocked": true,
+      "intermediate_failures_retained": [
+        "Runner short temporary-path canonicalization",
+        "Metadata-only handles did not block junction rename",
+        "Read-to-delete lease handoff fixture initially attempted delete while its stable directory read pin was still held"
+      ],
+      "module_import_note": "Only this disposable test thread used en-US UI culture while loading the built-in SMB module because its tr-TR localization resource was missing; the saved thread culture was restored. No OS or user culture was changed."
+    },
+    "real_field_readonly": {
+      "task_exit_code": 0,
+      "all_signed": true,
+      "runtime_identity": "original non-admin gMSA",
+      "original_authorization_evidence_verified": true,
+      "fresh_ad_source_scope_observations_match": true,
+      "output_cng_signed_and_self_verified": true,
+      "linux_closure_ack_claimed": false,
+      "observation": {
+        "Body": {
+          "format": "AuthWireLocalSysvolJunctionObservationV1",
+          "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+          "gpo_id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+          "scope": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e",
+          "release_id": "21d54b36-75e0-4834-93d3-886d675bec79",
+          "module_source_sha256": "af98b69852ae3a733cbf77759d40d60b8d39b2dbec230a446b5b7e80c0dde0c8",
+          "runtime_sid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+          "baseline_inventory_sha256": "b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6",
+          "approved_preview_sha256": "c5e59decc09411b6c847004886f722b0c2e5bd96ce33d11d86c73aff33768b3b",
+          "pinned_preview_sha256": "c5e59decc09411b6c847004886f722b0c2e5bd96ce33d11d86c73aff33768b3b",
+          "source_file_count": 20,
+          "fresh_business_observations_match": true,
+          "filesystem_intent_present": true,
+          "engine_operation_directory_absent": true,
+          "staged_destination_absent": true,
+          "gpo_lock_preserved": true,
+          "can_apply_gpo": false,
+          "read_only": true,
+          "observed_at": 1795354021
+        },
+        "Signature": "YwUz2qXJM4xpvRwRN2ZVgKnySs4Ik9lOACClciG4TLuaIqHVUSc8/f1btzxMiNlaQyZHrsYZzM0BIQyKptI8eKaVsEopR8P2d6JRsa2MnC1A5YarigxdXgb0AEO54zXo9bP6aYRmAm5QSwEy045fNOcwvUep5fyY7k8v1cqa/yf19K2wr6Phkg81qVVukiqrPJblLjpK6SoByRjpJf8t+P0wU4wUDM1RZkRk9RJfmHlAdolrjdy9Ots+ysxlqSbhR7e0JWCqod9fS5JRdSMKYDPxbkvNmuoOZpNUyktA0fss6kynXZkK5WHpLEb1ptGk/+jO1jFWX/77WsnVaYQDmxiwgIiJdPE5P+zAiZ5mftHouT+VtPFrT6y4Bm86PVzfkViMTtR6s6uJU2pRaN+6y2VceCYS8h+PlgdtJGs5I4eCSyIqHdjkvSDQyYH3fus5PBHkmsrM9koYuR4LaPZBieWISthvldeOTkWlkaxSRfIaJZ6SPTMfrJekUa6HnQ3z"
+      }
+    },
+    "hosted_ci": {
+      "source": "1d6c47578a145e71b56a128d36aeb3b7a170304f",
+      "junction_run": 45027447614,
+      "job": 137223454811,
+      "status": "completed",
+      "whole_source_success_claimed": false,
+      "manual_reruns": false,
+      "conclusion": "success",
+      "checks": 17,
+      "source_workflows_as_observed": [
+        {
+          "id": 45027447624,
+          "name": "AuthWire isolated durable write lifecycle",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 45027447678,
+          "name": "AuthWire reproducible Linux delivery",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 45027447609,
+          "name": "AuthWire Windows connector bootstrap checks",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 45027447627,
+          "name": "AuthWire isolated consumed-stage closure",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 45027447623,
+          "name": "AuthWire isolated rollback execution and result",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 45027447610,
+          "name": "AuthWire bounded retry network probe checks",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 45027447667,
+          "name": "KANAME foundation checks",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 45027447735,
+          "name": "AuthWire isolated rollback authorization",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 45027447670,
+          "name": "AuthWire Windows write scheduler checks",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 45027447684,
+          "name": "AuthWire isolated staging filesystem checks",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 45027447614,
+          "name": "AuthWire local PDC SYSVOL junction checks",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 45027447665,
+          "name": "AuthWire isolated write preclaim checks",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 45027447674,
+          "name": "AuthWire isolated governed write history",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 45027447654,
+          "name": "AuthWire isolated one-shot staging cycle",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 45027447615,
+          "name": "AuthWire isolated authorized stage execution",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 45027447629,
+          "name": "AuthWire preauthorization refusal reporting",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 45027447616,
+          "name": "AuthWire isolated rollback origin evidence",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  },
+  "preserved": {
+    "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+    "state": "requires_review",
+    "filesystem_intent": true,
+    "gpo_lock": true,
+    "original_grant_not_replayed": true,
+    "new_stage_job_created": false,
+    "new_rollback_job_created": false,
+    "real_sysvol_files_or_ad_settings_changed": false,
+    "network_interfaces_changed": false
+  },
+  "cleanup": {
+    "temporary_readonly_task_removed": true,
+    "disposable_smb_shares_absent": true,
+    "disposable_fixture_roots_removed": true,
+    "one_earlier_localization_failure_fixture_removed_after_exact_layout_target_content_checks": true,
+    "observation_signed_scripts_and_original_job_evidence_retained": true,
+    "temporary_privileged_operator_created": false
+  },
+  "remaining": [
+    "Inspect the latest already-started hosted source checks; do not rerun the passed 17 native checks or the successful real gMSA read-only observation.",
+    "Implement a distinct audited recovery path for the existing filesystem-intent-bearing job, with expired original grant, child/process evidence, absent engine journal and destination, fresh unchanged AD/source/SYSVOL observations, preserved original result and separately acknowledged closure. Do not reuse the no-filesystem-intent closer.",
+    "After audited reconciliation and required source acceptance, deliver the signed permanent package through the controlled updater; keep the worker stopped until its review lock can be released by the supported protocol.",
+    "Fresh separately authorized real stage and rollback acceptance remains open, as do three-endpoint deployment and external journal recovery.",
+    "The earlier full rollback execution/RESULT CI failure remains unresolved; no full suite pass is inferred from the disposable junction rollback."
+  ],
+  "deduplication": "Existing completed G05/EAP/OU/group/stability/timed-CRL and history archive/recovery tests were reused. Only the new junction boundary and its fix-specific disposable checks were exercised; no new production write grant or field stage was requested.",
+  "forecast": {
+    "g01_active_work_days": [
+      5,
+      9
+    ],
+    "reason": "The junction pinning and non-admin read-only field acceptance advanced. Intent-bearing recovery, full source CI, signed permanent delivery, real stage/rollback, external restore and three-endpoint acceptance still block the package; no full 94-item subtask closed.",
+    "other_package_bands_unchanged": true,
+    "conditional_start": "2026-11-23",
+    "macro_weeks": {
+      "pilot": [
+        2,
+        3
+      ],
+      "base": [
+        6,
+        9
+      ],
+      "base_with_guide": [
+        7,
+        10
+      ],
+      "full": [
+        13,
+        19
+      ]
+    },
+    "operator_hours": {
+      "base": [
+        20,
+        30
+      ],
+      "full": [
+        30,
+        45
+      ]
+    },
+    "observation_calendar_days": [
+      7,
+      14
+    ],
+    "active_hours_measured": false
+  },
+  "references": [
+    "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew",
+    "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/ca069dad-ed16-42aa-b057-b6b207f447cc",
+    "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfileinformationbyhandle"
+  ]
+}
