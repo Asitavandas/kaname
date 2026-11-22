@@ -65,6 +65,8 @@ function Get-AuthWireEmptyCleanupState([string]$Root,[string]$JobId,[hashtable]$
 }
 function New-AuthWireEmptyCleanupBody($Original,$Row,$Fresh,[hashtable]$Binding,[long]$At){
  Assert-AuthWireEmptyStageRow @($Row) $Binding
+ $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+ if($At -gt $now -or $Fresh.Preview.checked_at -gt $now -or $now -ge $Fresh.Preview.checked_at+60){throw 'EMPTY_RECOVERY_FRESH_OBSERVATION_EXPIRED'}
  $p=ConvertTo-AuthWireWriteOrderedPreview $Fresh.Preview;$approved=$Original.State.Offer.target.preview_record
  $p.checked_at=$approved.Preview.checked_at;$p.expires_at=$approved.Preview.expires_at
  if((Get-AuthWireWritePreviewHash $p) -cne $approved.PreviewSha256){throw 'EMPTY_RECOVERY_FRESH_OBSERVATIONS_CHANGED'}
@@ -77,7 +79,7 @@ function Get-AuthWireEmptyStageCleanupReview([string]$Root,[string]$JobId,[hasht
   Add-AuthWireStagingGpoPins $pins $o.Gpo $o.Gpo;Add-AuthWireStagingGpoPins $pins ([IO.Path]::Combine($o.Gpo,'Machine')) $o.Gpo
   $tree=[AuthWire.Staging.TreeLeaseV1]::Tree($o.Destination,$false);Assert-AuthWireEmptyStageRow $tree.Rows $Binding
   $fresh=Get-AuthWireEmptyStageCleanupPreview $o.State.Offer.target.scope_target $Binding $Publisher $BaseUrl $o
-  return (New-AuthWireEmptyCleanupProof (New-AuthWireEmptyCleanupBody $o $tree.Rows[0] $fresh $Binding ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())) $Key 'AUTHWIRE-EMPTY-STAGE-CLEANUP-REVIEW-V1')
+  return (New-AuthWireEmptyCleanupProof (New-AuthWireEmptyCleanupBody $o $tree.Rows[0] $fresh $Binding $fresh.Preview.checked_at) $Key 'AUTHWIRE-EMPTY-STAGE-CLEANUP-REVIEW-V1')
  }finally{if($tree){$tree.Dispose()};$pins.Dispose();$lock.ReleaseMutex();$lock.Dispose()}
 }
 function Complete-AuthWireEmptyStageCleanup([string]$Root,[string]$JobId,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[string]$Publisher,[string]$BaseUrl,$Proof,[string]$ExpectedReviewSha256,[string]$Acknowledge){
@@ -456,6 +458,7 @@ function Get-AuthWireEmptyStageCleanupPreview {
  $domainSid=$Binding.service_sid.Substring(0,$Binding.service_sid.LastIndexOf('-'))
  if($domain.DNSRoot -cne $a.domain -or $domain.DomainSID.Value -cne $domainSid -or $server -cnotmatch '\A[a-z0-9.-]{1,253}\z' -or -not $server.EndsWith('.'+$a.domain,[StringComparison]::Ordinal)){throw 'SCOPE_DIRECTORY_CHANGED'}
  $root='\\'+$server+'\SYSVOL\'+$a.domain+'\Policies\{'+$Target.gpo_id+'}'
+ if($root -cne $Original.Gpo -or $server -cne $Original.Original.Live.pdc){throw 'EMPTY_RECOVERY_PDC_CHANGED'}
  $sourceOne=@(Get-AuthWireCombinedStagingLedger $Target $Binding)
  $one=Get-AuthWireScopeData $a $network $Binding
  $null=Test-AuthWireScopeData $one $a $network $Binding
