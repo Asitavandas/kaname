@@ -293,6 +293,82 @@ class StagingWriteJobTests(unittest.TestCase):
             self.jobs.verify_stage_lock_release_approval(verification, self.actor)
         self.assertEqual(audit, self.store.audit())
 
+
+    def approved_closure(self):
+        request = self.consumed_stage_recovery()
+        review = self.jobs.review_reconciliation(request, self.actor)
+        approval = request | {'review_hash': review['review_hash'],
+                              'acknowledge': RELEASE_ACK[CONSUMED_RELEASE_APPROVAL]}
+        saved = self.jobs.record_reconciliation(approval, self.actor)
+        evidence = approval['consumed_stage_proof']['Body']
+        body = {k: evidence[k] for k in ('job_id', 'gpo_id', 'scope_sha256', 'intent_sha256',
+                                        'result_body_sha256', 'completion_sha256', 'lock_sha256')}
+        body.update(format='AuthWireConsumedStageClosureV1', closed_at=self.now,
+                    evidence_expires_at=evidence['expires_at'], lock_released=True,
+                    consumed_stage_proof_sha256=digest(approval['consumed_stage_proof']),
+                    approval_request_sha256=digest(approval), approval_revision=saved['revision'])
+        return {'approval': approval, 'approval_revision': saved['revision'],
+                'closure': self.sign_recovery(body, purpose='AUTHWIRE-CONSUMED-STAGE-CLOSURE-V1')}
+
+    def test_closure_retires_only_blocker_preserves_result_and_is_idempotent(self):
+        request = self.approved_closure()
+        with self.store.connect() as db:
+            before = self.jobs._read(db)
+        old = before['jobs'][-1]
+        self.assertTrue(self.jobs._busy(before, old['target'], STAGE, old['scope'], self.now))
+        reply = self.jobs.close_consumed_stage(request, self.actor)
+        self.assertTrue(reply['closed']); self.assertFalse(reply['can_apply_gpo'])
+        with self.store.connect() as db:
+            after = self.jobs._read(db)
+        retained = after['jobs'][-1]
+        self.assertEqual(old, {k: v for k, v in retained.items() if k != 'closure'})
+        self.assertFalse(self.jobs._busy(after, old['target'], STAGE, old['scope'], self.now))
+        self.assertEqual('closed_without_filesystem_intent', self.jobs._state(retained, old['scope'], self.now))
+        self.now += 120
+        audit = self.store.audit()
+        self.assertEqual(reply, self.jobs.close_consumed_stage(request, self.actor))
+        self.assertEqual(audit, self.store.audit())
+        self.assertEqual(old['id'], retained['id'])  # Old IDs/results are never freed for reuse.
+
+    def test_closure_requires_audited_actor_valid_signature_exact_body_and_freshness(self):
+        request = self.approved_closure()
+        body = request['closure']['Body']
+        audit = self.store.audit()
+        for field, wrong in [('lock_released', False), ('approval_request_sha256', '0'*64),
+                             ('job_id', str(uuid.uuid4())), ('completion_sha256', '0'*64),
+                             ('closed_at', self.now + 61)]:
+            with self.subTest(field=field), self.assertRaises(JobError):
+                self.jobs.close_consumed_stage(request | {'closure': self.sign_recovery(body | {field: wrong},
+                    purpose='AUTHWIRE-CONSUMED-STAGE-CLOSURE-V1')}, self.actor)
+        for bad, actor in ((request, str(uuid.uuid4())),
+                           (request | {'closure': self.sign_recovery(body)}, self.actor),
+                           (request | {'approval_revision': request['approval_revision']-1}, self.actor)):
+            with self.assertRaises(JobError):
+                self.jobs.close_consumed_stage(bad, actor)
+        self.now = body['evidence_expires_at']
+        with self.assertRaisesRegex(JobError, 'RECOVERY_EVIDENCE_EXPIRED'):
+            self.jobs.close_consumed_stage(request, self.actor)
+        self.assertEqual(audit, self.store.audit())
+
+    def test_stored_closure_tamper_fails_closed_and_original_authorization_stays_consumed(self):
+        request = self.approved_closure()
+        self.jobs.close_consumed_stage(request, self.actor)
+        with self.store.connect() as db:
+            before = self.jobs._read(db)
+            broken = copy.deepcopy(before)
+            broken['jobs'][-1]['closure']['request']['closure']['Body']['lock_sha256'] = '0'*64
+            self.jobs.ops._save(db, SECTION, broken)
+        with self.assertRaises(JobError):
+            self.jobs.status()
+        with self.store.connect() as db:
+            self.jobs.ops._save(db, SECTION, before)
+        offer = before['jobs'][-1]
+        with self.assertRaises(JobError):
+            self.jobs.claim(self.proof('CLAIM', {'job_id': offer['id'], 'lease_id': offer['lease_id'],
+                'intent_sha256': offer['intent_sha256'], 'target_sha256': digest(offer['target']),
+                'release_id': self.release}))
+
+
     def test_review_is_readonly_actor_bound_and_never_gpo_activation(self):
         self.jobs.poll(self.proof()); before = self.store.snapshot(); audit = self.store.audit()
         v = self.value(); a = self.jobs.review(v, self.actor)

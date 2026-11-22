@@ -126,7 +126,7 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
         self.assertEqual(audit, self.store.audit())
 
     def test_reconciliation_rechecks_both_permissions_and_session(self):
-        for suffix in ('/review', '/record'):
+        for suffix in ('/review', '/record', '/close-consumed-stage'):
             self.assertEqual(401, self.request('POST', RECONCILE+suffix, {})[0])
             self.assertEqual(403, self.request('POST', RECONCILE+suffix, {},
                 self.headers | {'X-Kaname-CSRF':'bad'})[0])

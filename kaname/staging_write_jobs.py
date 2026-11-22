@@ -42,6 +42,7 @@ RELEASE_ACK = {
     CONSUMED_RELEASE_APPROVAL: 'record_consumed_stage_lock_release_approval',
 }
 RECOVERY_FRAME = 'AUTHWIRE-CONSUMED-STAGE-RECOVERY-EVIDENCE-V1'
+CLOSURE_FRAME = 'AUTHWIRE-CONSUMED-STAGE-CLOSURE-V1'
 RECOVERY_HASH_FIELDS = {'scope_sha256', 'intent_sha256', 'result_body_sha256',
                         'accepted_ack_sha256', 'completion_sha256', 'grant_consumed_sha256',
                         'lock_sha256', 'approved_preview_sha256', 'observed_preview_sha256',
@@ -148,7 +149,7 @@ class StagingWriteJobs(ConnectorJobs):
                      'target', 'authorized_at', 'authorized_until', 'authorization_id',
                      'claim_sha256', 'result'}
             for j in v['jobs']:
-                keys(j, names, names)
+                keys(j, names | {'closure'}, names)
                 require(guid(j['id']) and j['id'] not in ids and guid(j['actor'])); ids.add(j['id'])
                 require(j['operation'] in ACK and target_valid(j['target'], j['operation']) and
                         j['state'] in {'queued', 'leased', 'authorized', 'completed', 'requires_review'})
@@ -182,6 +183,8 @@ class StagingWriteJobs(ConnectorJobs):
                             (j['state'] == 'requires_review') == (j['result']['outcome'] == 'requires_review'))
                 else:
                     require(j['result'] is None)
+                if 'closure' in j:
+                    self._validate_saved_closure(db, j)
             poll_ids = set()
             for p in v['polls']:
                 keys(p, {'id', 'until'}, {'id', 'until'})
@@ -196,6 +199,8 @@ class StagingWriteJobs(ConnectorJobs):
             raise JobError('STAGING_WRITE_STORE_INVALID') from None
 
     def _state(self, j, scope, now):
+        if 'closure' in j:
+            return 'closed_without_filesystem_intent'
         # An issued write never becomes a harmless expired/obsolete read job.
         if j['state'] == 'requires_review':
             return 'requires_review'
@@ -254,6 +259,8 @@ class StagingWriteJobs(ConnectorJobs):
     def _busy(self, ledger, target, operation, scope, now):
         gpo = target['scope_target']['gpo_id']
         for j in ledger['jobs']:
+            if 'closure' in j:
+                continue
             if j['target']['scope_target']['gpo_id'] != gpo:
                 continue
             if j['state'] in {'authorized', 'requires_review'} or self._state(j, scope, now) in {'queued', 'leased'}:
@@ -627,6 +634,111 @@ class StagingWriteJobs(ConnectorJobs):
         if decision == CONSUMED_RELEASE_APPROVAL:
             result['consumed_stage_proof_sha256'] = digest(value['consumed_stage_proof'])
         return result
+
+    @staticmethod
+    def _closure_event(record):
+        return ('staging_write_consumed_closed:' + record['request']['closure']['Body']['job_id'] +
+                ':actor:' + record['actor'] + ':request:' + digest(record['request']))
+
+    def _validate_closure_proof(self, db, request, job):
+        keys(request, {'approval', 'approval_revision', 'closure'},
+             {'approval', 'approval_revision', 'closure'})
+        approval, proof = request['approval'], request['closure']
+        self._validate_reconciliation_decision(approval, job['closure']['actor']
+                                              if 'closure' in job else job['actor'], confirm=True)
+        # The independently audited approval actor is checked by the caller.
+        require(approval['decision'] == CONSUMED_RELEASE_APPROVAL and
+                type(request['approval_revision']) is int and
+                request['approval_revision'] == approval['expected_revision'] + 1,
+                'STAGING_WRITE_CLOSURE_REJECTED')
+        keys(proof, {'Body', 'Signature'}, {'Body', 'Signature'})
+        body = proof['Body']; original = approval['consumed_stage_proof']['Body']
+        hashes_ = {'scope_sha256', 'intent_sha256', 'result_body_sha256', 'completion_sha256',
+                   'lock_sha256', 'consumed_stage_proof_sha256', 'approval_request_sha256'}
+        fields = hashes_ | {'format', 'job_id', 'gpo_id', 'approval_revision', 'closed_at',
+                            'evidence_expires_at', 'lock_released'}
+        keys(body, fields, fields)
+        require(body['format'] == 'AuthWireConsumedStageClosureV1' and
+                body['job_id'] == job['id'] and body['gpo_id'] == job['target']['scope_target']['gpo_id'] and
+                all(is_hash(body[k]) for k in hashes_) and
+                all(body[k] == original[k] for k in
+                    ('scope_sha256', 'intent_sha256', 'result_body_sha256', 'completion_sha256', 'lock_sha256')) and
+                body['scope_sha256'] == job['scope'] and body['intent_sha256'] == job['intent_sha256'] and
+                body['result_body_sha256'] == digest(job['result']) and
+                body['consumed_stage_proof_sha256'] == digest(approval['consumed_stage_proof']) and
+                body['approval_request_sha256'] == digest(approval) and
+                type(body['approval_revision']) is int and body['approval_revision'] == request['approval_revision'] and
+                type(body['closed_at']) is int and
+                type(body['evidence_expires_at']) is int and
+                body['evidence_expires_at'] == original['expires_at'] and
+                original['observed_at'] <= body['closed_at'] < original['expires_at'] and
+                body['lock_released'] is True,
+                'STAGING_WRITE_CLOSURE_REJECTED')
+        try:
+            signature = base64.b64decode(proof['Signature'], validate=True)
+            public = serialization.load_pem_public_key(self._binding(db).public_key_pem)
+            require(isinstance(public, rsa.RSAPublicKey) and len(signature) == public.key_size // 8 and
+                    base64.b64encode(signature).decode('ascii') == proof['Signature'],
+                    'STAGING_WRITE_CLOSURE_REJECTED')
+            public.verify(signature, f"{CLOSURE_FRAME}\n{digest(body)}\n".encode('ascii'),
+                          padding.PKCS1v15(), hashes.SHA256())
+        except (InvalidSignature, ValueError, TypeError):
+            raise JobError('STAGING_WRITE_CLOSURE_REJECTED') from None
+        return body
+
+    def _validate_saved_closure(self, db, job):
+        record = job['closure']
+        keys(record, {'request', 'actor', 'revision'}, {'request', 'actor', 'revision'})
+        require(guid(record['actor']) and type(record['revision']) is int and record['revision'] > 0 and
+                job['state'] == 'requires_review' and job['operation'] == STAGE and job['authorization_id'] and
+                job['result']['reason'] == 'OUTCOME_UNKNOWN' and
+                job['result']['journal_sha256'] == job['result']['tree_sha256'] == '',
+                'STAGING_WRITE_CLOSURE_STORE_INVALID')
+        self._validate_closure_proof(db, record['request'], job)
+        request = record['request']
+        require(db.execute('SELECT 1 FROM audit WHERE revision=? AND event=?',
+                (request['approval_revision'],
+                 self._reconciliation_event(request['approval'], record['actor']))).fetchone() and
+                db.execute('SELECT 1 FROM audit WHERE revision=? AND event=?',
+                           (record['revision'], self._closure_event(record))).fetchone(),
+                'STAGING_WRITE_CLOSURE_STORE_INVALID')
+
+    def close_consumed_stage(self, value, actor):
+        """Retain the uncertain result; retire only the explicitly approved blocker."""
+        keys(value, {'approval', 'approval_revision', 'closure'},
+             {'approval', 'approval_revision', 'closure'})
+        require(guid(actor), 'STAGING_WRITE_CLOSURE_REJECTED')
+        self._validate_reconciliation_decision(value['approval'], actor, confirm=True)
+        require(value['approval']['decision'] == CONSUMED_RELEASE_APPROVAL and
+                type(value['approval_revision']) is int and
+                value['approval_revision'] == value['approval']['expected_revision'] + 1,
+                'STAGING_WRITE_CLOSURE_REJECTED')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            ledger = self._read(db)
+            job = next((j for j in ledger['jobs'] if j['id'] == value['approval']['evidence']['job_id']), None)
+            require(job is not None, 'STAGING_WRITE_CLOSURE_REJECTED')
+            if 'closure' in job:
+                record = job['closure']
+                require(record['actor'] == actor and record['request'] == value,
+                        'STAGING_WRITE_CLOSURE_CONFLICT')
+            else:
+                revision = self.ops._revision(db, value['approval_revision'])
+                require(db.execute('SELECT 1 FROM audit WHERE revision=? AND event=?',
+                        (revision, self._reconciliation_event(value['approval'], actor))).fetchone(),
+                        'STAGING_WRITE_RELEASE_APPROVAL_CONFLICT')
+                comparison, _ = self._compare_reconciliation(db, value['approval']['evidence'])
+                self._require_consumed_stage_release(db, value['approval'], actor, comparison, job)
+                body = self._validate_closure_proof(db, value, job)
+                require(body['closed_at'] <= int(self.clock()) < body['evidence_expires_at'],
+                        'STAGING_WRITE_RECOVERY_EVIDENCE_EXPIRED')
+                record = {'request': copy.deepcopy(value), 'actor': actor, 'revision': revision + 1}
+                job['closure'] = record
+                self.ops._save(db, SECTION, ledger)
+                self.ops._audit(db, self._closure_event(record), revision)
+            return {'job_id': job['id'], 'gpo_id': job['target']['scope_target']['gpo_id'],
+                    'closed': True, 'closure_revision': record['revision'],
+                    'closure_sha256': digest(value['closure']), 'can_apply_gpo': False}
 
     def verify_stage_lock_release_approval(self, value, actor):
         """Recheck an exact recorded approval and current scope in one read snapshot."""
