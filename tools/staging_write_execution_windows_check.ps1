@@ -323,6 +323,9 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
       $laterDestination=Join-Path $gpo $preview.Preview.relative_destination.Replace('/','\')
       [AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($laterDestination)
       try{Check (Test-AuthWireConsumedStageClosed $journal $h.Life $s $b $rsa) 'historical intent closure does not claim ownership of a later version directory'}finally{[IO.Directory]::Delete($laterDestination)}
+      $unexpectedEngine=Join-Path $journal (Read-AuthWireStagingJournal (Join-Path $job 'filesystem-intent.json')).filesystem_operation_id
+      [AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($unexpectedEngine)
+      try{Reject {Test-AuthWireConsumedStageClosed $journal $h.Life $s $b $rsa} 'new engine journal cannot be hidden behind historical intent closure'}finally{[IO.Directory]::Delete($unexpectedEngine)}
      }
      $closedPath=Join-Path $job 'consumed-stage-closed.json';$savedClosed=[IO.File]::ReadAllBytes($closedPath)
      $partialPath=Join-Path $root 'pending-closure.json';[IO.File]::Move($closedPath,$partialPath)

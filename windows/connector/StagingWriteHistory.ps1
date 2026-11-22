@@ -228,13 +228,15 @@ function Get-AuthWireExpiredStageIntentReview([string]$Root,[string]$SlotPath,$S
      $d.exception_kind -cne 'runtime' -or $d.timed_out -isnot [bool] -or $d.timed_out -or $d.truncated -isnot [bool] -or $d.truncated -or
      $d.exit_code -isnot [int] -or $d.exit_code -ne 20 -or -not (Test-AuthWireWriteInteger $d.elapsed_ms) -or
      $d.work_budget_ms -ne $launch.work_budget_ms -or $d.elapsed_ms -gt $d.work_budget_ms){throw 'WRITE_INTENT_RECOVERY_RECORD_REJECTED'}
+  # This unique operation journal can never belong to a later job, unlike the
+  # reusable version destination. Its unexpected appearance always blocks.
+  if(Test-Path -LiteralPath (Join-Path $Root $s.Intent.filesystem_operation_id)){return}
   if(-not $Historical){
    # A reused PID is safe only if its immutable start identity differs. Access
    # errors are fatal; no process is stopped or killed by this observer.
    $process=$null
    try{$process=[Diagnostics.Process]::GetProcessById([int]$child.process_id)}catch [ArgumentException]{}
    if($process){try{if(-not $process.HasExited -and $process.StartTime.ToUniversalTime().Ticks.ToString([Globalization.CultureInfo]::InvariantCulture) -ceq $child.process_started_ticks){return}}finally{$process.Dispose()}}
-   if(Test-Path -LiteralPath (Join-Path $Root $s.Intent.filesystem_operation_id)){return}
    $gpoPins=[AuthWire.Staging.TreeLeaseV1]::new()
    try{
     Add-AuthWireStagingGpoPins $gpoPins $live.gpo_root $live.gpo_root
