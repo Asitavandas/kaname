@@ -1,5 +1,44 @@
 # AuthWire current work record
 
+## 22 Kasım 2026 — G05 kabulü tamamlandı: 5/5
+
+**Güncel teyitli sayım: 60/94 tamam (%63,8), 34 açık; G05 5/5.** Temel ürün 47/59, geliştirmeler 13/35. Saha ölçümleri 21 Kasım 2026'da yapıldı; 22 Kasım'da kalıcı kanıtlar okunarak kapanış kaydı tamamlandı. Bu devam çalışmasında EAP veya AD değişikliği testleri tekrarlanmadı. Kurulu sürüm 0.14.0-dev.52, kaynak `965cb6bb2b394a9b2a564610ab73f19829b4d2ea`; teslim PR171 ve seçici PR170 taslak durumları korunur.
+
+### Beş seçicinin kabul matrisi
+
+| Seçici | İzin kanıtı | Ret kanıtı | Kanıt katmanı |
+| --- | --- | --- | --- |
+| User | Gerçek kullanıcı SID'si POLICY_ALLOW/VLAN110 | Diğer gerçek kullanıcı SID'si NO_MATCHING_POLICY | Gerçek CertificateRegistry + taze LiveDirectory ile TLSAuthorization kararı; önceki fiziksel kullanıcı EAP #109/#116/#117/#120/#121 yeniden kullanıldı. Yeni kullanıcı profili EAP alışverişi yapıldığı iddia edilmez. |
+| Computer | Doğru SID karar katmanında ve fiziksel EAP #136 ile izin | Başka gerçek bilgisayar SID'si karar katmanında ret | Gerçek sertifika kaydı/taze AD kararları ile fiziksel makine EAP kanıtı ayrı doğrulandı. |
+| Group | Önceki pilot grup; üyelik geri dönüşü #134/#135; geçici seçici grup #139 | Gerçek üyelik çıkarma #133; seçili geçici grubun silinmesi #140 | Gerçek AD değişikliği ve fiziksel EAP. #140 sırasında UI kataloğu silinmiş grubu hâlâ gösterirken taze AD ile ret. |
+| OU | Önceki #129; aynı AD bilgisayarının alt OU'ya taşınması #137 | Önceki kapsam dışı #131; aynı bilgisayarın kural kapsamından çıkarılması #138 | Gerçek AD move, aynı SID/GUID ve fiziksel EAP; gPLink olmayan geçici alt OU. |
+| Everyone | Fiziksel EAP #130, Windows15505, VLAN110 | Önceki gerçek registry üzerinden bağlanmamış sertifika reddi; canlı çakışan allow/deny kaydı engellendi | Önceki fiziksel izin, salt okunur karar ve çakışma koruması yeniden çalıştırılmadan kullanıldı. |
+
+### Son eksik saha senaryoları ve geri dönüş
+
+Saatler **21 Kasım Türkiye saati**dir. #136–#142'nin tamamında TLS doğrulandı.
+
+| Olay | Saat | Gerçek işlem / sonuç |
+| --- | --- | --- |
+| #136 | 12:33:46 | Doğrudan Computer seçicisi; POLICY_ALLOW, VLAN110, Windows15505, ağ geçidi 2/2. |
+| #137 | 12:34:09 | VV-Client01 geçici alt OU içine taşındı; OU kuralı POLICY_ALLOW, VLAN110, Windows15505, 2/2. |
+| #138 | 12:34:32 | Aynı nesne özgün Client OU'ya geri taşındı; alt OU kuralı yerindeyken NO_MATCHING_POLICY, VLAN yok, Windows15506, 0/2. |
+| #139 | 12:36:09 | Geçici güvenlik grubunu seçen kural; POLICY_ALLOW, VLAN110, Windows15505, 2/2. |
+| #140 | 12:36:38 | Yalnız bu test için oluşturulan seçici grup silindi; eski UI kataloğuna rağmen NO_MATCHING_POLICY, VLAN yok, Windows15506, 0/2. |
+| #141 / #142 | 12:37:57 / 12:37:59 | Özgün authwire-pilot-wired kuralı geri geldi; POLICY_ALLOW, VLAN110, Windows15505, 2/2. İki kayıt aynı toparlanmanın sunucu istekleridir. |
+
+- Özgün üç politika **revizyon117** ile geri yüklendi. Bilgisayar `CN=VV-CLIENT01,OU=Client,DC=vizyonveri,DC=local` konumunda; GUID `81089596-7e4a-44b7-a7af-d84bc4fbf974` ve SID korundu.
+- Geçici `AuthWire-G05-dd3749fb` alt OU ve `AWG05-dd3749fb` grubu kaldırıldı; katalog yenilendi. Bağımsız koruyucunun kalıcı sonucu `status=restored`, özgün DN geri dönüşü/geçici nesne temizliği/GUID-SID korunması true olarak okundu.
+- Ethernet0 metriği25'e döndü; Ethernet1 metriği25 ve yönetim erişimi korundu. Her iki adaptör Up; yönetim bağlantısı10.35.50.71 üzerinden doğrulandı. Ethernet1 802.1X dışlaması korunarak yalnız test arayüzü toparlandı.
+- RADIUS647261, kontrol919 ve G01 süreçleri305746/317590 korundu; bu kapanış için sunucu yeniden başlatılmadı.
+- Yapılandırılmış kanıt: [G05 kabul kaydı](checkpoints/2026-11-21-g05-acceptance.json). Güncel PDF: **AuthWire_Guncel_Durum_Raporu_2026-11-22.pdf**; aynı rapor kimliği güncellendi.
+
+### Açık kalan diğer kabul kapıları
+
+G05'in silinmiş nesne testi, **geçici seçici güvenlik grubunun** silinmesidir. Gerçek bilgisayar/hesap silinmesi ve AD kesintisiyle yaşam döngüsü kabulü **B02'de açık** kalır. Üç bilgisayarlı yayılım (VV06/2GL13ZU/VV-Client01), DC01 `d918bc0d` işi ve korunan GPO kilidi **G01/A04** kapsamındadır; bunlar G05 kapanışıyla yapılmış sayılmaz. A03 kullanıcı Wi-Fi/genel yayılım, B04 gerçek ölçek, B11 Interim-Update/Class ve B12 dış yedek/ayrı VM kurtarma da açık kalır. Önceki zamanlı test/CRL, 31/31 kararlılık, OU/Everyone ve grup üyelik kanıtları tekrar edilmez.
+
+**Süre yeniden değerlendirmesi:** G05 için önceki 2–4 iş günü kalan süre **0**. Diğer 13 açık paket, bağımlılıklar, aktif süre/gözlem ayrımı ve 23 Kasım koşullu başlangıcına göre yeniden kurulan takvim [süre raporunda](reports/2026-10-29-process-forecast.md) kayıtlıdır. Kalan süre sayımdan doğrusal türetilmedi. READY_FOR_FINAL_GUIDE ve GUIDE_DELIVERED değişmez.
+
 ## 21 Kasım G05 gerçek AD bilgisayar grubu üyelik değişikliği tamamlandı
 
 **Güncel teyitli sayım:** **59/94 tamam (%62,8), 35 açık; G05 4/5.** Bu çalışma G05'in son toplu kabul maddesindeki iki eksik senaryoyu kapattı; gerçek OU değişikliği, silinmiş nesne ve matrisin diğer açık satırları tamamlanmadığı için G05 5/5 sayılmadı.

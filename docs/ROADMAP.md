@@ -1,5 +1,9 @@
 # AuthWire — güncel çalışma planı
 
+## 22 Kasım 2026 — güncel kabul durumu
+
+**60/94 tamam, 34 açık; G05 5/5 kapandı.** Saha kanıtları 21 Kasım'a aittir; kapanışta tamamlanmış testler tekrarlanmadı. [Güncel kayıt](CURRENT_STATUS.md), [beş seçici kabul matrisi](checkpoints/2026-11-21-g05-acceptance.json) ve [yeniden değerlendirilen süreler](reports/2026-10-29-process-forecast.md). G01/A04 üç uç/GPO teslimi, B02 hesap silinmesi/AD kesintisi, A03 kullanıcı Wi-Fi, B11 NAS ve B12 dış kurtarma kapıları açıktır. Aşağıdaki tarihli eski bölümler geçmiş kayıttır.
+
 ## 29 Ekim 2026 — raporlama ve ölçek açıklaması
 
 Her durum raporunda kalan süre yeniden hesaplanır: [raporlama kuralı](STATUS_REPORTING_RULES.md).
@@ -63,7 +67,7 @@ izlenir. Kullanıcı+bilgisayar menüsü eşzamanlı iki kimlik/TEAP kanıtı de
 | G02 | Manual, Read Only, Managed, Import | Envanter kayıtları var; gerçek cihaz bağlantı/uygulama adaptörleri açık |
 | G03 | Cloud yönetilen cihazlar | Kullanıcının HPE cloud panelini elle kullanması AuthWire vendor API kabulü değildir |
 | G04 | VLAN/port keşfi | Elle VLAN/policy var; kaynak/zaman bilgili cihaz keşfi G02/G03'e bağlı |
-| G05 | Gelişmiş User/Computer/Group/OU/Everyone seçicileri | Taslaklar gerçek yetkilendirme hattı ve ayrı deny testleriyle kabul edilecek |
+| G05 | Gelişmiş User/Computer/Group/OU/Everyone seçicileri | **5/5 tamam (22 Kasım)**: gerçek karar hattı, fiziksel EAP ve ayrı ret kanıtları; katman ayrımı kabul matrisinde |
 | G06 | Canlı port/kullanıcı topolojisi | Accounting, güvenilir cihaz/port bilgisi ve korelasyon gerekir |
 | G07 | Network intelligence | Güvenilir oturum/topoloji verisi sonrasında açıklanabilir öneriler |
 

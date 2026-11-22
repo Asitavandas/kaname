@@ -1,5 +1,34 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## 22 Kasım 2026 — G05 kapanışı sonrası yeniden değerlendirme
+
+G05 **5/5**; toplam **60/94 tamam, 34 açık**. Kabul kanıtları 21 Kasım'a, kapanış kaydı 22 Kasım'a aittir. G05'in önceki **2–4 iş günlük** kalan bandı **0** oldu. Diğer paketlerin sayımı değişmedi. Aşağıdaki aralıklar güncel açık kapılara göre planlama tahminidir; test sonucu veya tarih taahhüdü değildir.
+
+| Açık paket | Kalan aktif çalışma | Başlıca koşul |
+| --- | --- | --- |
+| B01 | 2–4 iş günü | Temiz kurulum, ilk erişim ve uzun kullanım kabulü |
+| B02 | 6–10 iş günü | Tek hesap geçişi; silinmiş hesap, AD kesintisi ve kapasite |
+| B03 | 3–5 iş günü | CA/Issuer ve kod imzalama yenilemesi, CRL yayını |
+| B04 | 5–9 iş günü | Gerçek AD/Windows/GPO ölçeği ve ağ sonrası toparlanma |
+| B06 | 1–3 iş günü | Kalan sertifika seçim/temizlik ve kurtarma çeşitleri |
+| B11 | 2–4 iş günü | NAS Interim-Update/Class desteği ve gerçek oturum |
+| B12 | 3–5 iş günü | Yetkili dış yedek hedefi ve ayrı kurtarma VM’si |
+| G01 | 5–9 iş günü | DC01 kilit uzlaştırması, gerçek stage/rollback ve GPO teslimi |
+| G02 | 3–6 iş günü | İlk desteklenen cihazda okuma, uygulama ve geri alma |
+| G03 | 3–6 iş günü | İlk üreticinin resmî API’si ve yetkili erişim |
+| G04 | 3–5 iş günü | Güvenilir cihaz okuması, VLAN/port eşlemesi |
+| G06 | 4–7 iş günü | Accounting ve cihaz verisiyle canlı topoloji |
+| G07 | 4–7 iş günü + gözlem | Temsilî trafik, korelasyon ve öneri doğruluğu |
+
+B11 bandı Start/Stop ve saklama kabulü tamamlandığı için önceki 3–5'ten 2–4 iş gününe daraltıldı. G01'in birleşik bandı, mevcut iş/kilit uzlaştırmasına ek gerçek stage/rollback ve GPO etkin teslimini kapsadığı için 5–9 iş günü olarak ayrıştırıldı; önceki 3–5 yalnız yazma/kurtarma hattıydı. B02 tek hesap için önceki 6–10, B04 ölçek için 5–9, G04/G06/G07 aralıkları korundu. G02/G03 ilk aile için ortak 6–12 iş gününün iki bileşenidir; paylaşılan hazırlık iki kez sayılmaz. B01/B03/B06/B12 aralıkları bugünkü kalan kabul kapsamına göre ayrıştırıldı. Paket süreleri aritmetik olarak toplanmaz; ortak hazırlık, bağımlılık ve paralel kabul vardır.
+
+**Yeni koşullu başlangıç 23 Kasım 2026:** haftada beş ortak çalışma günü ve erişimlerin hazır olması varsayımıyla ilk küçük otomatik pilot 2–3 hafta (**7–14 Aralık 2026**); temel ürün 6–9 hafta (**4–25 Ocak 2027**); temel+kılavuz 7–10 hafta (**11 Ocak–1 Şubat 2027**); tüm kapsam+nihai kılavuz 13–19 hafta (**22 Şubat–5 Nisan 2027**). Bunlar önceki 4 Kasım başlangıçlı tarihlerin açıkça yeniden kurulmuş pencereleridir. Geçen takvim süresi çalışılmış sayılmadı veya kalan süreden düşülmedi.
+
+Makro süreler G05 kapanınca doğrusal olarak kısaltılmadı: kritik yol hâlâ G01 gerçek yazma/geri alma, tek hesap, kapasite, cihaz/API ve bağımsız kurtarma kapılarından geçiyor. Önceki operatör katılım bandı temel için 20–30 saat, tüm kapsam için 30–45 saat; ayrıca 7–14 takvim günü gözlem, yeni saha erişim kanıtı olmadığından korundu. Dış yedek/VM, iki eski uç, Wi-Fi ve üretici erişimi beklemelerine bitiş tarihi verilmez. G05 için ek test/operatör zamanı kalmadı. READY_FOR_FINAL_GUIDE ve GUIDE_DELIVERED bu kapanışla true yapılmaz.
+
+
+---
+
 ## 4 Kasım 2026 — Yerel arşivleme doğrulandı, Linux teslim hazırlığı sırada
 
 PR134 kaynak **53d35ab2867e684e6400d94f6b7eee5c6b88bfea**, merge

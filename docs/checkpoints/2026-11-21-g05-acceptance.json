@@ -1,0 +1,128 @@
+{
+  "artifact": "authwire-g05-acceptance",
+  "recorded_date": "2026-11-22",
+  "field_test_date": "2026-11-21",
+  "version": "0.14.0-dev.52",
+  "source_commit": "965cb6bb2b394a9b2a564610ab73f19829b4d2ea",
+  "status": "passed",
+  "g05": {
+    "complete": 5,
+    "total": 5
+  },
+  "overall": {
+    "complete": 60,
+    "total": 94,
+    "open": 34
+  },
+  "layers": {
+    "direct_user": "Actual CertificateRegistry and fresh LiveDirectory through TLSAuthorization; previous native user EAP field evidence reused, no new user-profile EAP exchange claimed.",
+    "direct_computer": "Actual registry/fresh AD allow/other-account deny and new native EAP allow #136.",
+    "group": "Existing group EAP, actual membership removal/recovery #133-135, disposable selected group allow #139/deleted-group reject #140.",
+    "ou": "Existing OU allow/outside deny #129/#131 plus same AD object's actual move-in allow #137/move-out reject #138.",
+    "everyone": "Native allow #130, prior actual registry unbound deny and live conflict-save rejection reused."
+  },
+  "direct_decisions": [
+    {
+      "selector": "User",
+      "match": "POLICY_ALLOW",
+      "other_account": "NO_MATCHING_POLICY",
+      "actual_registry": true,
+      "fresh_ad": true
+    },
+    {
+      "selector": "Computer",
+      "match": "POLICY_ALLOW",
+      "other_account": "NO_MATCHING_POLICY",
+      "actual_registry": true,
+      "fresh_ad": true
+    }
+  ],
+  "events": [
+    {
+      "id": 136,
+      "at": "2026-11-21T09:33:46.200Z",
+      "code": 2,
+      "reason": "POLICY_ALLOW",
+      "policy": "g05-close-computer",
+      "vlan": 110
+    },
+    {
+      "id": 137,
+      "at": "2026-11-21T09:34:09.765Z",
+      "code": 2,
+      "reason": "POLICY_ALLOW",
+      "policy": "g05-close-ou",
+      "vlan": 110
+    },
+    {
+      "id": 138,
+      "at": "2026-11-21T09:34:32.538Z",
+      "code": 3,
+      "reason": "NO_MATCHING_POLICY",
+      "policy": null,
+      "vlan": null
+    },
+    {
+      "id": 139,
+      "at": "2026-11-21T09:36:09.822Z",
+      "code": 2,
+      "reason": "POLICY_ALLOW",
+      "policy": "g05-close-group",
+      "vlan": 110
+    },
+    {
+      "id": 140,
+      "at": "2026-11-21T09:36:38.980Z",
+      "code": 3,
+      "reason": "NO_MATCHING_POLICY",
+      "policy": null,
+      "vlan": null
+    },
+    {
+      "id": 141,
+      "at": "2026-11-21T09:37:57.172Z",
+      "code": 2,
+      "reason": "POLICY_ALLOW",
+      "policy": "authwire-pilot-wired",
+      "vlan": 110
+    },
+    {
+      "id": 142,
+      "at": "2026-11-21T09:37:59.427Z",
+      "code": 2,
+      "reason": "POLICY_ALLOW",
+      "policy": "authwire-pilot-wired",
+      "vlan": 110
+    }
+  ],
+  "all_events_tls_verified": true,
+  "client_guid": "81089596-7e4a-44b7-a7af-d84bc4fbf974",
+  "deleted_group_sid": "S-1-5-21-34256453-3348971241-2809240126-1652",
+  "stale_catalog_group_present_at_reject": true,
+  "recovery": {
+    "original_policies_restored": true,
+    "revision": 117,
+    "original_ad_dn_restored": true,
+    "guid_sid_preserved": true,
+    "disposable_group_ou_removed": true,
+    "directory_catalog_refreshed": true,
+    "windows_success": 15505,
+    "pilot_gateway_received": 2,
+    "pilot_gateway_sent": 2,
+    "both_adapters_up": true,
+    "ethernet0_metric_restored": 25,
+    "ethernet1_metric_preserved": 25,
+    "radius_pid_preserved": 647261,
+    "control_pid_preserved": 919,
+    "g01_pids_preserved": [
+      305746,
+      317590
+    ]
+  },
+  "scope_exclusions": [
+    "B02 deleted computer/account lifecycle acceptance remains open; G05 deleted object is the disposable selected security group.",
+    "G01/A04 three-computer deployment, DC01 d918bc0d job and protected GPO lock remain open.",
+    "A03 user Wi-Fi, B11 Interim-Update/Class, B12 external recovery and scale gates remain open."
+  ],
+  "deduplication": "22 November only read existing proof and finalized records; no EAP/AD mutation tests repeated."
+}
