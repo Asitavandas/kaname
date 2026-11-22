@@ -282,7 +282,8 @@ function Assert-AuthWireStagingFilesystemContext($Target,$PreviewRecord,[string]
 }
 function Assert-AuthWireStagingWriteDeadline([long]$NotAfter,[long]$StartedAt,$Timer){
  # Zero is retained only for the historical low-level fixture interface.
- # The authorized stage adapter always supplies the original grant expiry.
+ # Authorized adapters supply a positive deadline no later than the original
+ # grant expiry; stage also caps this at the parent's shorter work window.
  if($NotAfter -eq 0){return}
  $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
  if($NotAfter -le $StartedAt -or $now -lt $StartedAt -or $now -ge $NotAfter -or $Timer.ElapsedMilliseconds -ge ($NotAfter-$StartedAt)*1000){throw 'STAGING_AUTHORIZATION_EXPIRED'}

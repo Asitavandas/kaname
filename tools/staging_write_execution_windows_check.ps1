@@ -7,6 +7,7 @@ $lib=Join-Path $PSScriptRoot '..\windows\connector'
 $root=[IO.Path]::GetFullPath((Join-Path $env:TEMP ('aw-stage-execution-'+[guid]::NewGuid().ToString('N'))))
 $package=Join-Path $root 'signed-package';$share=$null;$startedServer=$false;$key=$null;$rsa=$null;$signer=$null;$public=$null
 $journal=$null;$candidateBase=$null;$oldModulePath=$env:PSModulePath;$script:checks=0
+$budgetMode=$env:AUTHWIRE_STAGE_BUDGET_CHECK -eq '1'
 $grantMode=$env:AUTHWIRE_ROLLBACK_AUTHORIZATION_CHECK -eq '1'
 $rollbackExecutionMode=$env:AUTHWIRE_ROLLBACK_EXECUTION_CHECK -eq '1'
 $closureMode=$env:AUTHWIRE_STAGE_RECOVERY_CLOSURE_CHECK -eq '1'
@@ -62,6 +63,13 @@ function Get-AuthWireWriteStageLiveContext($Offer,[hashtable]$Binding,[string]$P
  [IO.File]::AppendAllText((Join-Path $PSScriptRoot ('reads-'+$Offer.job_id+'.txt')),"read`n")
  $v=$fixture.live;$v.checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
  if($fixture.case -ceq 'consume_timeout' -and (Test-Path -LiteralPath $fixture.grant_marker)){Start-Sleep -Seconds 18}
+ if($fixture.case -ceq 'budget_cold_success'){Start-Sleep -Seconds 7;$v.checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()}
+ if($fixture.case -ceq 'budget_late_context'){
+  $launch=Get-Content -LiteralPath (Join-Path (Join-Path $JournalRoot $Offer.job_id) 'stage-launch.json') -Raw|ConvertFrom-Json
+  $until=($launch.started_at+[long][Math]::Floor($launch.work_budget_ms/1000.0)-2)*1000
+  $wait=[int][Math]::Max(0,($until-[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()))
+  if($wait -gt 0){Start-Sleep -Milliseconds $wait};$v.checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+ }
  if($fixture.case -ceq 'drift'){$v.pdc='dc02.lab.example'}
  return $v
 }
@@ -84,7 +92,9 @@ function Write-AuthWireStagingJournal([string]$Path,$Value){
 function Invoke-AuthWireStagingFilesystemStage {
  param($Target,$PreviewRecord,[string]$ApprovedPreviewSha256,[string]$SourceRoot,[string]$GpoRoot,[string]$JournalRoot,[string]$OperationId,[string]$ProtectedGpoId,[long]$NotAfter=0)
  $fixture=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'fixture.json') -Raw|ConvertFrom-Json
- if($NotAfter -ne $fixture.expires_at){throw 'FIXTURE_GRANT_EXPIRY_NOT_FORWARDED'}
+ $launch=Get-Content -LiteralPath (Join-Path (Join-Path $JournalRoot $fixture.job_id) 'stage-launch.json') -Raw|ConvertFrom-Json
+ $expected=[long][Math]::Min($fixture.expires_at,($launch.started_at+[long][Math]::Floor($launch.work_budget_ms/1000.0)))-1
+ if($NotAfter -ne $expected -or $NotAfter -gt $fixture.expires_at){throw 'FIXTURE_PARENT_WORK_DEADLINE_NOT_FORWARDED'}
  if($fixture.case -ceq 'timeout'){Start-Sleep -Seconds 25}
  if($fixture.case -ceq 'intent_no_effect'){throw 'FIXTURE_ENGINE_BEFORE_JOURNAL'}
  $r=& $script:FixtureEngineBody @PSBoundParameters
@@ -244,7 +254,9 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
  if($historyMode){$cases=@('lc_stage','lc_idle','lc_lost_poll','lc_saved_grant')}
  if($refusalMode){$cases=@('ref_stage','ref_lost_ack','ref_ack_limit','ref_disk','ref_claim','ref_rollback')}
  if($recoveryReceiptMode){$cases=@($(if($intentRecoveryMode){'intent_no_effect'}else{'consume_timeout'}))}
+ if($budgetMode){$cases=@('budget_cold_success','budget_late_context')}
  foreach($case in $cases){
+  $stageSuccess=$case -cin @('success','budget_cold_success')
   $t=[pscustomobject][ordered]@{candidate_id=[guid]::NewGuid().ToString('D');network_candidate_id=[guid]::NewGuid().ToString('D');plan_id=[guid]::NewGuid().ToString('D');plan_version=1;gpo_id=[guid]::NewGuid().ToString('D');approval_sha256=('a'*64);network_manifest_sha256=('b'*64);manifest_sha256=('c'*64);draft_sha256=('d'*64);dependency_sha256=('e'*64);publisher_thumbprint=$signer.Thumbprint;machine_profile_id=[guid]::NewGuid().ToString('D');machine_profile_version=3;domain='lab.example';root_thumbprint=('f'*40);group_sid=($domainSid+'-1647');content_result_sha256=('2'*64);target_sids_sha256=('3'*64);target_count=1}
   $draft=[Text.Encoding]::ASCII.GetBytes('fixture never execute '+$case);$t.draft_sha256=Get-AuthWireCandidateHash $draft
   $source=Join-Path $candidateBase ($t.plan_id+'-v1-'+$t.draft_sha256+'-ab1a11c683810061');PrivateRoot $source
@@ -264,7 +276,7 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
   $intentFrame='AuthWireStagingWriteIntentV1'+"`n"+$scope+"`n"+$id+"`ncombined.filesystem.stage.v1`n"+(Get-AuthWireWriteHash $target)+"`n"
   $offer=[pscustomobject]@{format=1;request_id=$request;scope_sha256=$scope;job_id=$id;operation='combined.filesystem.stage.v1';lease_id=('6'*64);intent_sha256=(Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes($intentFrame)));expires_at=$preview.Preview.expires_at;target=$target;write_authorized=$false;can_apply_gpo=$false}
   $live=[pscustomobject]@{format='AuthWireWriteLiveContextV1';job_id=$id;intent_sha256=$offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $target);source_root=$source;gpo_root=$gpo;protected_gpo_id=[guid]::NewGuid().ToString('D');pdc='dc01.lab.example';checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();can_apply_gpo=$false}
-  $fixture=[pscustomobject]@{case='prepare';requested_case=$(if($grantMode){'success'}else{$case});rollback_case=$case;rollback_drift=$false;rollback_expires_at=0;gpo_id=$t.gpo_id;gpo_root=$gpo;live=$live;expires_at=0;grant_marker=(Join-Path (Join-Path $journal $id) 'grant-consumed.json')}
+  $fixture=[pscustomobject]@{case='prepare';requested_case=$(if($grantMode){'success'}else{$case});rollback_case=$case;rollback_drift=$false;rollback_expires_at=0;job_id=$id;gpo_id=$t.gpo_id;gpo_root=$gpo;live=$live;expires_at=0;grant_marker=(Join-Path (Join-Path $journal $id) 'grant-consumed.json')}
   [IO.File]::WriteAllText((Join-Path $package 'fixture.json'),($fixture|ConvertTo-Json -Depth 12 -Compress))
   if($flowMode){
    # Only the queued job and AD/current-context lookup are seeded/stubbed.
@@ -481,7 +493,7 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
   $watch=[Diagnostics.Stopwatch]::StartNew();$failure='';$result=$null
   try{$result=Invoke-AuthWireAuthorizedFilesystemStage $journal $id $b $release $rsa}catch{$failure=$_.Exception.Message};$watch.Stop()
   $destination=Join-Path $gpo $preview.Preview.relative_destination.Replace('/','\')
-  if($case -ceq 'success'){
+  if($stageSuccess){
    if($failure -cne ''){
     # The production review diagnostic starts after the durable launch. Record
     # only fixed error codes/existence/timing in this disposable CI fixture so
@@ -501,7 +513,7 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
    Check ($failure -ne '') ('failed stage surfaced '+$case)
    Check (-not (Test-Path -LiteralPath (Join-Path $job 'execution-observed.json'))) 'failed child never reported observed completion'
    if($case -cne 'launch_disk'){Check (Test-Path -LiteralPath (Join-Path $job 'execution-requires-review.json')) 'uncertain outcome recorded for review'}
-   if($case -cin @('drift','launch_disk','metadata_disk','identity','timeout')){Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $before.Sha256) 'refused or prewrite timeout preserves entire SMB baseline'}
+   if($case -cin @('drift','launch_disk','metadata_disk','identity','timeout','budget_late_context')){Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $before.Sha256) 'refused or prewrite timeout preserves entire SMB baseline'}
    if($case -ceq 'partial'){
     Check (Test-Path -LiteralPath $destination) 'partial outcome never recursively cleaned'
     Check (Test-Path -LiteralPath (Join-Path (Join-Path $journal $reserved.FilesystemOperationId) 'intent.json')) 'actual engine intent retained on completion failure'
@@ -514,6 +526,11 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
     if($case -ceq 'timeout'){Check $diag.timed_out 'timeout identified without raw child output'}
     if($case -ceq 'drift'){Check ($diag.child_phase -ceq 'context') 'signed child context failure phase retained'}
     if($case -ceq 'partial'){Check ($diag.child_phase -ceq 'engine') 'signed child engine failure phase retained'}
+    if($case -ceq 'budget_late_context'){
+     Check (-not $diag.timed_out -and $diag.child_phase -ceq 'engine') 'late preflight refuses before parent termination'
+     Check (-not (Test-Path -LiteralPath $destination)) 'late preflight creates no destination'
+     Check (-not (Test-Path -LiteralPath (Join-Path $journal $reserved.FilesystemOperationId))) 'late preflight creates no engine journal'
+    }
    }
   }
   Check (Test-Path -LiteralPath (Join-Path $job 'stage-launch.json')) 'durable one-launch gate retained'
@@ -530,7 +547,7 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
   Check ([IO.File]::ReadAllText($readFile) -ceq $readsBefore) 'parent and direct child replay perform no second live observation'
   Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $treeHash) 'replay changes no SMB bytes or permissions'
   $outbox=New-AuthWireWriteResultOutbox $journal $id $b $release $rsa
-  if($case -ceq 'success'){
+  if($stageSuccess){
    Check ($outbox.body.outcome -ceq 'staged' -and $outbox.body.journal_sha256 -ceq $result.CompleteSha256 -and $outbox.body.tree_sha256 -ceq $result.TreeSha256) 'observed real SMB completion becomes exact immutable success'
   }else{
    Check ($outbox.body.outcome -ceq 'requires_review' -and $outbox.body.filesystem_effects -ceq 'unconfirmed' -and $outbox.body.journal_sha256 -ceq '') 'partial timeout and unobserved complete never promoted to success'
@@ -538,7 +555,7 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
   . (Join-Path $package 'StagingWriteResult.ps1')
   Check ((Get-AuthWireWriteHash (New-AuthWireWriteResultOutbox $journal $id $b $release $rsa)) -ceq (Get-AuthWireWriteHash $outbox)) 'outbox survives module reload without outcome promotion'
   Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $treeHash -and [IO.File]::ReadAllText($readFile) -ceq $readsBefore) 'result freeze changes no SMB state and performs no new AD observation'
-  $outcomes+=,[pscustomobject]@{case=$case;seconds=[Math]::Round($watch.Elapsed.TotalSeconds,2);staged=($case -ceq 'success')}
+  $outcomes+=,[pscustomobject]@{case=$case;seconds=[Math]::Round($watch.Elapsed.TotalSeconds,2);staged=$stageSuccess}
  }
  if($recoveryReceiptMode){
   [IO.File]::WriteAllText((Join-Path $flowDirectory 'native-summary.json'),(@{checks=$checks;outcomes=$outcomes}|ConvertTo-Json -Depth 6 -Compress),[Text.UTF8Encoding]::new($false))
@@ -555,6 +572,7 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
  }
  Check ((Get-Acl -LiteralPath $keyPath).Sddl -ceq $keyAcl) 'dedicated native key ACL preserved'
  $timer=[Diagnostics.Stopwatch]::StartNew();Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-1) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()) $timer} 'engine refuses expired authorization';Reject {Assert-AuthWireStagingWriteDeadline ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+90) ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()+60) $timer} 'engine refuses clock rollback'
+ if(-not $budgetMode){
  # Real controller death: this independently tests the new kernel job runner,
  # not a customer reboot or a live interrupted SMB transaction.
  $sleepFile=Join-Path $package 'fixture-sleeper.ps1';$controllerFile=Join-Path $package 'fixture-controller.ps1'
@@ -594,6 +612,7 @@ try{
   while($alive -and $wait.Elapsed.TotalSeconds -lt 4){try{$probe=[Diagnostics.Process]::GetProcessById($childPid);try{$alive=-not $probe.HasExited}finally{$probe.Dispose()}}catch [ArgumentException]{$alive=$false};if($alive){Start-Sleep -Milliseconds 100}}
   Check (-not $alive -and -not (Test-Path -LiteralPath ($ready+'.escaped'))) 'kill-on-close job terminates child when controller dies'
  }finally{if(-not $controllerProcess.HasExited){Stop-Process -Id $controllerProcess.Id -Force};$controllerProcess.Dispose()}
+ }
  Write-Host ('AUTHWIRE_AUTHORIZED_STAGE_WINDOWS_OK checks='+$checks+' outcomes='+($outcomes|ConvertTo-Json -Compress)+' actual_smb=true seeded_grants='+(-not $flowMode)+' namespace_ad_content_simulated=true customer_changed=false')
  if($flowMode){[IO.File]::WriteAllText((Join-Path $flowDirectory 'native-summary.json'),(@{checks=$checks;outcomes=$outcomes}|ConvertTo-Json -Depth 6 -Compress),[Text.UTF8Encoding]::new($false))}
 }catch{

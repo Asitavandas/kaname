@@ -1,0 +1,28 @@
+name: AuthWire stage parent and engine budget
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/staging-write-budget.yml'
+      - 'tools/staging_write_budget_windows_check.ps1'
+      - 'tools/staging_write_execution_windows_check.ps1'
+      - 'windows/connector/StagingWriteExecution.ps1'
+      - 'windows/connector/Invoke-AuthWireStagingWriteChild.ps1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  budget:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Deadline arithmetic and admission refusal
+        shell: powershell
+        run: ./tools/staging_write_budget_windows_check.ps1
+      - name: Actual signed cold child and late preflight without SMB effects
+        shell: powershell
+        env:
+          AUTHWIRE_STAGE_BUDGET_CHECK: '1'
+        run: ./tools/staging_write_execution_windows_check.ps1
