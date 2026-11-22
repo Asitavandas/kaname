@@ -1,5 +1,15 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## 22 Kasım 2026 — Arşiv kapandı, SYSVOL junction ve intent kurtarma kapısı kesinleşti
+
+64 çevrimlik gerçek imzalı arşiv ve 65. no_job kabulü tamamlandı. İlk yeni stage'in intent öncesi tüketim kurtarması revizyon129'da kapandı. Sonraki ayrı stage ön kontrolü geçti ancak standart SYSVOL domain junction'ında güvenli yol korumasıyla durdu; filesystem-intent mevcut olduğundan iş/kilit incelemede kaldı. Geri alma CI'sı aynı kaynakta başarısızdır; alan hazırlama/geri alma kabulü tamamlanmış sayılmaz.
+
+G01 **5–9 aktif iş günü** bandı yeniden değerlendirildi ve korundu. Biten bakım/kurtarma işi bandı daraltacak kadar bütün bir kabul kapısı kapatmadı; doğrulanmış junction desteği, intent taşıyan işin denetimli uzlaştırması, başarısız CI tanısı, gerçek stage/rollback, harici günlük kurtarma ve üç uç teslimi kalıyor. Sayım **60/94 tamam,34 açık; G01 2/5**. Diğer 12 paketin aşağıdaki bantları, koşullu 23 Kasım başlangıcı, 2–3/6–9/7–10/13–19 haftalık makro pencereler ve 20–30/30–45 operatör saati +7–14 takvim günü gözlem aralığı korundu. Bu turdaki aktif saat ölçülmedi; beklemeler aktif iş veya tarih indirimi sayılmadı. Dış uç/API/VM beklemelerine tarih eklenmedi.
+
+[Kalıcı kanıt](../checkpoints/2026-11-22-g01-history-and-stage-review.json). Tamamlanmış G05/EAP ve zamanlı CRL testleri tekrarlanmadı.
+
+---
+
 ## 22 Kasım 2026, 12:44 sonrası — G01 kurtarma kapanışı
 
 Eski `d918bc0d` işi ve yerel GPO kilidi imzalı saha kanıtıyla kapandı; Connector yeni boş çevrime devam etti. **Sayım 60/94 ve 34 açık, G01 2/5** olarak kaldı: bu kurtarma, gerçek hazırlama/geri alma/teslim alt işinin tamamı değildir.

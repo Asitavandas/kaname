@@ -1,0 +1,412 @@
+{
+  "artifact": "authwire-g01-closed-history-and-real-stage-review",
+  "recorded_date": "2026-11-22",
+  "timezone": "Europe/Istanbul",
+  "status": "partial_completed_field_stage_requires_review",
+  "progress": {
+    "complete": 60,
+    "total": 94,
+    "open": 34,
+    "g05": "5/5",
+    "g01": "2/5",
+    "count_changed": false
+  },
+  "sources": {
+    "windows_pr": 167,
+    "windows_source": "c729289e859dc42dfa3b7213ac6716000eccf347",
+    "archive_source": "381486ecbbd3c437777b0fdfb81bf3e797aad7f4",
+    "linux_source": "a141f47b70377582f4aa4f1745ba7da68d04deaa",
+    "installed_connector_release": "21d54b36-75e0-4834-93d3-886d675bec79",
+    "production_panel": "0.14.0-dev.52",
+    "draft_prs_merged": false
+  },
+  "completed": [
+    {
+      "name": "output\\archive-result.json",
+      "body": {
+        "status": "archived",
+        "through": 64,
+        "archive_count": 1,
+        "archive_sha256": "80e287150e7257d3e0b860d032a4565d0b4349908349b8d76af10af86ebe661a",
+        "protected_manifest_sha256": "18ad6d46788a648432103ef58e56dbbaae4c13a0814bc264c662eb7c9cb708aa",
+        "closed_stage_verified": true,
+        "continuation": "no_job",
+        "next_slot": "000065",
+        "release": "168905ca-d9ef-4326-821f-fa12e5718ad2",
+        "can_apply_gpo": false,
+        "at": 1795342526
+      }
+    },
+    {
+      "name": "output\\stage-recovery-result.json",
+      "body": {
+        "status": "closed",
+        "job_id": "4da20206-4042-498b-89c9-e1d99acebc9d",
+        "gpo_id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+        "closure_revision": 129,
+        "closure_sha256": "555b66989048813f277489f3dd638f4f13e8039a232e26889a61bcf4d0dab0fc",
+        "local_phase": "closed_without_filesystem_intent",
+        "original_result_preserved": true,
+        "can_apply_gpo": false,
+        "closed_at": 1795343158,
+        "runtime_sid": "S-1-5-21-34256453-3348971241-2809240126-1648"
+      }
+    }
+  ],
+  "field_review": {
+    "linux_revision": 134,
+    "jobs": [
+      {
+        "id": "4da20206-4042-498b-89c9-e1d99acebc9d",
+        "operation": "combined.filesystem.stage.v1",
+        "state": "requires_review",
+        "intent_sha256": "7ac169d27fb64856e0b33962dba450fe92755d34ba7e91da4f84b4edbbe4c95e",
+        "result": {
+          "journal_sha256": "",
+          "tree_sha256": "",
+          "reason": "OUTCOME_UNKNOWN",
+          "intent_sha256": "7ac169d27fb64856e0b33962dba450fe92755d34ba7e91da4f84b4edbbe4c95e",
+          "job_id": "4da20206-4042-498b-89c9-e1d99acebc9d",
+          "release_id": "168905ca-d9ef-4326-821f-fa12e5718ad2",
+          "target_sha256": "08f9c5b935c216ac2a4e4601e4f38229f12563368031bbfb42674bacd88060f0",
+          "filesystem_effects": "unconfirmed",
+          "checked_at": 1795342932,
+          "authorization_id": "b7f63cb3cd17493f49a79ae1e7f08fe59c01a2acd4452655f607bfca45ee8f69",
+          "outcome": "requires_review",
+          "lease_id": "fe3eb5cc3165fe7b41ca05a557e7f8c7ced1819c6c4b7c19c3ce28ab48f2d21a"
+        },
+        "closure": {
+          "request": {
+            "approval": {
+              "acknowledge": "record_consumed_stage_lock_release_approval",
+              "consumed_stage_proof": {
+                "Body": {
+                  "accepted_ack_sha256": "60a7001f27ea58b2e123c2dc12cbf66852552be44bfdc413aba9c4da7adefe88",
+                  "approved_preview_sha256": "60913dc6c739834a912d67557065a524dd1bb690df895e9de1123fa7568603e3",
+                  "baseline_inventory_sha256": "b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6",
+                  "completion_sha256": "ea2b2804e92023d494ef8b2693bc9ffc223c5d7c6d239e9a92913d7f9b1d5acb",
+                  "expires_at": 1795343189,
+                  "format": "AuthWireConsumedStageRecoveryEvidenceV1",
+                  "gpo_id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+                  "grant_consumed_sha256": "62af73188fb2fd4196e9d04d441ccaff01873d6166fb7c6244c7060adbf78590",
+                  "grant_expires_at": 1795342952,
+                  "intent_sha256": "7ac169d27fb64856e0b33962dba450fe92755d34ba7e91da4f84b4edbbe4c95e",
+                  "job_id": "4da20206-4042-498b-89c9-e1d99acebc9d",
+                  "lock_sha256": "6850e8d40808cf0a00e0f9429409f127e8671609a3a351083d0ec352706bff38",
+                  "observed_at": 1795343129,
+                  "observed_preview_sha256": "ea44fb30d01b850808262010cbce7a6dd9811ef896eab0ccc1989783a8417fc7",
+                  "result_body_sha256": "875955a1d2f2347e168c12bec6cc3d14fdb28ce9ece5ddea21d44944ed989444",
+                  "scope_sha256": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e"
+                },
+                "Signature": "yxCjSSGp2jR+FpjR1nE/slFr6nfIYiWCXHpsZZcT8xPDDmLiqYMh7c7MfBNIFP+6uZAat6SeD7GYTKF6SI1s22zMs94SegKah2Oe8fmHqZloFBMOzZ0yrzzzTp3TWggAvQHIKzQm45WVPMck+GdfWKgJe/h2NVL902qwP/0k5vgVEZqmCS4GlCT1+dJ3foKVI0tuWOJErKRmwrhhEBpHMsFeF0vxSNvXsYCua+EK7ymvD6NbtGpOm9zDvxuAn/9w++zgXNr92WvjctVKFeZAAOqkO9ZDii1Gw2NPPlLYZNxKB1D67C9Z/nKCVvKDpq88iBNI6nSv56xM/wXulvB/jKZpGIBdsTuo85TDCB2NDlxoztMoax0VMqvpsoP6DYOLwEP9A6MHVYq7fcckluzZ69LPNCQjxhaTt6tCrE1jRZsWOBGaD7Yzn4GtUwLuM2Y1FKBFK3JBtf1f2Pyoq5f92KZz9cbVzHTWnKFZyyWARoIc9dcDNcaFzFzEuVRfwHfK"
+              },
+              "decision": "approve_consumed_stage_lock_release",
+              "evidence": {
+                "accepted_ack": true,
+                "intent_sha256": "7ac169d27fb64856e0b33962dba450fe92755d34ba7e91da4f84b4edbbe4c95e",
+                "job_id": "4da20206-4042-498b-89c9-e1d99acebc9d",
+                "result_body_sha256": "875955a1d2f2347e168c12bec6cc3d14fdb28ce9ece5ddea21d44944ed989444",
+                "scope_sha256": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e"
+              },
+              "expected_revision": 127,
+              "reconciliation_receipt": {
+                "review_hash": "714c215fe0dd4f19d5467a085542d3d81e462c576b8e9f35ec7e1e24483c0a93",
+                "revision": 127
+              },
+              "review_hash": "28b60f7a5c597bc144edd1d1212ff518e2429338a2b3871681e6cacac82e8b51"
+            },
+            "approval_revision": 128,
+            "closure": {
+              "Body": {
+                "approval_request_sha256": "808f1e3d69ff0ad554c502b425cbaccaf7b8dd07258c51b449b9f304a223721c",
+                "approval_revision": 128,
+                "closed_at": 1795343158,
+                "completion_sha256": "ea2b2804e92023d494ef8b2693bc9ffc223c5d7c6d239e9a92913d7f9b1d5acb",
+                "consumed_stage_proof_sha256": "b927f72df978516fcd185b63e729e65f1bc8a264689baaf2fd411a1776f15b50",
+                "evidence_expires_at": 1795343189,
+                "format": "AuthWireConsumedStageClosureV1",
+                "gpo_id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+                "intent_sha256": "7ac169d27fb64856e0b33962dba450fe92755d34ba7e91da4f84b4edbbe4c95e",
+                "job_id": "4da20206-4042-498b-89c9-e1d99acebc9d",
+                "lock_released": true,
+                "lock_sha256": "6850e8d40808cf0a00e0f9429409f127e8671609a3a351083d0ec352706bff38",
+                "result_body_sha256": "875955a1d2f2347e168c12bec6cc3d14fdb28ce9ece5ddea21d44944ed989444",
+                "scope_sha256": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e"
+              },
+              "Signature": "dbScL31qJZw3eDMSgvn1kVi7fhs3xQi7uZq43+fefApXL+njtVpnkw+MVz1Cx4mLMwDnB3fyb5RmfHa3FikEPbe/yH79hpY5ycNTbXQ09N71zMTw2fxDP4IBA+tTJwDQzT0+jGyl8ME3ZX/TpcZpf1jbYTvkXjthZFpIGnCa3Nyi7vpiDM4WOKZx9cRtFMY7anNmKeWvaqCv/QT4lWgwZWCsr3s7FEDEUKFphcrEINJjqbPc3V3fqBdtZ/rydUBqFhpVO+g0Yyb5uqUXRVUpc0JnOOkEJctojDLmhBc/WTyhABW5fVpHBglepJbQjHGb91zpobDpoC9JikJKkNOAlbnKe8DqrRhby0/dJ/XniqQsbVFWLghthQU0bEnHpgwm57ugiohGs8NDG2kr1JkjvDMNkHykd33B8qeVq7QzjgnleF8CEMo+cQWuR3NAj0m+xu/AtVWlrpu8uG+00yoYtPLHYPwL8aDowIma52hjgoTj1lDBsWEnOWk+2xKgSZei"
+            }
+          },
+          "actor": "a646d644-690b-433e-be47-cd00cd104f4f",
+          "revision": 129
+        }
+      },
+      {
+        "id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+        "operation": "combined.filesystem.stage.v1",
+        "state": "requires_review",
+        "intent_sha256": "430ee90e5276d6d9d62e6f75bd79e0c5198bb9c7acc8ee016caf1624b4efab42",
+        "result": {
+          "journal_sha256": "",
+          "tree_sha256": "",
+          "reason": "OUTCOME_UNKNOWN",
+          "intent_sha256": "430ee90e5276d6d9d62e6f75bd79e0c5198bb9c7acc8ee016caf1624b4efab42",
+          "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+          "release_id": "21d54b36-75e0-4834-93d3-886d675bec79",
+          "target_sha256": "7184cd4c6c2b45e5326cf8d3457d1f313fd78a483fd0a335975ad84101925985",
+          "filesystem_effects": "unconfirmed",
+          "checked_at": 1795343513,
+          "authorization_id": "b00966f06a296ab23f4f8e5fa8ed69d78a95fd8755e3755983f17d2dd82980e3",
+          "outcome": "requires_review",
+          "lease_id": "71be1125e5ab7aaef86f198ac70cce0b8d82b21a7481ecf4f65d2c720dc2d41b"
+        }
+      }
+    ],
+    "native_records": [
+      {
+        "name": "execution-requires-review.json",
+        "body": {
+          "format": "AuthWireStageReviewV2",
+          "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+          "execution_intent_sha256": "e6dbd0f90b41b14f88e06f2046717199bf48b4738ab835ce815132b231585838",
+          "reason": "OUTCOME_REQUIRES_REVIEW",
+          "checked_at": 1795343512,
+          "diagnostic": {
+            "format": "AuthWireStageDiagnosticV1",
+            "parent_phase": "child_exit",
+            "child_phase": "engine",
+            "exception_kind": "runtime",
+            "timed_out": false,
+            "truncated": false,
+            "exit_code": 20,
+            "elapsed_ms": 12991,
+            "work_budget_ms": 15000
+          }
+        }
+      },
+      {
+        "name": "filesystem-intent.json",
+        "body": {
+          "format": "AuthWireAuthorizedFilesystemIntentV1",
+          "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+          "filesystem_operation_id": "ecb37ea6-6a3c-de54-5234-1ce7d6d3867f",
+          "binding_scope": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e",
+          "release_id": "21d54b36-75e0-4834-93d3-886d675bec79",
+          "authorization_sha256": "3e8667da18fbad2d6a58f7797d497b43dd625649660a012864f8128ca57ce51f",
+          "consumption_sha256": "4aa2539ad98dc28c6aabebd160fad4222e2dce7b83ec134c54b094774f966cd6",
+          "offer_sha256": "592d01c9113b34d3e1416240faadc7de05cfc121d3e9c92aeb7149be996baa69",
+          "target_sha256": "7184cd4c6c2b45e5326cf8d3457d1f313fd78a483fd0a335975ad84101925985",
+          "preview_sha256": "c5e59decc09411b6c847004886f722b0c2e5bd96ce33d11d86c73aff33768b3b",
+          "live_context": {
+            "format": "AuthWireWriteLiveContextV1",
+            "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+            "intent_sha256": "430ee90e5276d6d9d62e6f75bd79e0c5198bb9c7acc8ee016caf1624b4efab42",
+            "target_sha256": "7184cd4c6c2b45e5326cf8d3457d1f313fd78a483fd0a335975ad84101925985",
+            "source_root": "C:\\ProgramData\\AuthWire-CombinedCandidates-4c23eebe071546d188eea2e96ad7ee46\\524653f5-1359-46f5-84a5-46355bb82aff-v1-f502e4d64489f896b0600cb20f286e873016a1a381a0d4b1c30e5e7b7ea6bd7e-ab1a11c683810061",
+            "gpo_root": "\\\\dc01.vizyonveri.local\\SYSVOL\\vizyonveri.local\\Policies\\{8c6808fd-a382-4bf2-9c9c-d9e1d46082a3}",
+            "protected_gpo_id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
+            "pdc": "dc01.vizyonveri.local",
+            "checked_at": 1795343496,
+            "can_apply_gpo": false
+          },
+          "expires_at": 1795343516,
+          "filesystem_write_enabled": false,
+          "can_apply_gpo": false
+        }
+      },
+      {
+        "name": "stage-child.json",
+        "body": {
+          "format": "AuthWireStageChildIdentityV1",
+          "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+          "launch_sha256": "9426392007b4e34e6a51fb17b7791ce12e5eb27e78d14d0d5636d8dbdaad8c4c",
+          "process_id": 8100,
+          "process_started_ticks": "639309402999031571"
+        }
+      },
+      {
+        "name": "stage-launch.json",
+        "body": {
+          "format": "AuthWireStageLaunchV1",
+          "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+          "filesystem_operation_id": "ecb37ea6-6a3c-de54-5234-1ce7d6d3867f",
+          "execution_intent_sha256": "e6dbd0f90b41b14f88e06f2046717199bf48b4738ab835ce815132b231585838",
+          "authorization_sha256": "3e8667da18fbad2d6a58f7797d497b43dd625649660a012864f8128ca57ce51f",
+          "gate_name": "Local\\AuthWireStage-733fc751202d448aaf680bea09c2aeb4-d9d7c9a256204e7a842e600015904af3",
+          "started_at": 1795343499,
+          "expires_at": 1795343516,
+          "work_budget_ms": 15000
+        }
+      },
+      {
+        "name": "result-outbox.json",
+        "body": {
+          "format": "AuthWireWriteResultOutboxV1",
+          "binding_scope": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e",
+          "release_id": "21d54b36-75e0-4834-93d3-886d675bec79",
+          "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+          "authorization_sha256": "3e8667da18fbad2d6a58f7797d497b43dd625649660a012864f8128ca57ce51f",
+          "body_sha256": "f0812de7effea7ebedd39a3497b02593028042efe922dffd1588172a27807a54",
+          "body": {
+            "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+            "lease_id": "71be1125e5ab7aaef86f198ac70cce0b8d82b21a7481ecf4f65d2c720dc2d41b",
+            "intent_sha256": "430ee90e5276d6d9d62e6f75bd79e0c5198bb9c7acc8ee016caf1624b4efab42",
+            "target_sha256": "7184cd4c6c2b45e5326cf8d3457d1f313fd78a483fd0a335975ad84101925985",
+            "release_id": "21d54b36-75e0-4834-93d3-886d675bec79",
+            "authorization_id": "b00966f06a296ab23f4f8e5fa8ed69d78a95fd8755e3755983f17d2dd82980e3",
+            "checked_at": 1795343513,
+            "outcome": "requires_review",
+            "reason": "OUTCOME_UNKNOWN",
+            "journal_sha256": "",
+            "tree_sha256": "",
+            "filesystem_effects": "unconfirmed"
+          }
+        }
+      },
+      {
+        "name": "stage-preflight.json",
+        "body": {
+          "format": "AuthWireWriteLiveContextV1",
+          "job_id": "733fc751-202d-448a-af68-0bea09c2aeb4",
+          "intent_sha256": "430ee90e5276d6d9d62e6f75bd79e0c5198bb9c7acc8ee016caf1624b4efab42",
+          "target_sha256": "7184cd4c6c2b45e5326cf8d3457d1f313fd78a483fd0a335975ad84101925985",
+          "source_root": "C:\\ProgramData\\AuthWire-CombinedCandidates-4c23eebe071546d188eea2e96ad7ee46\\524653f5-1359-46f5-84a5-46355bb82aff-v1-f502e4d64489f896b0600cb20f286e873016a1a381a0d4b1c30e5e7b7ea6bd7e-ab1a11c683810061",
+          "gpo_root": "\\\\dc01.vizyonveri.local\\SYSVOL\\vizyonveri.local\\Policies\\{8c6808fd-a382-4bf2-9c9c-d9e1d46082a3}",
+          "protected_gpo_id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
+          "pdc": "dc01.vizyonveri.local",
+          "checked_at": 1795343512,
+          "can_apply_gpo": false
+        }
+      }
+    ],
+    "read_only_diagnostic": {
+      "stack": "at <ScriptBlock>, C:\\ProgramData\\AuthWire-G01-Stage-20261122\\Invoke-EngineReadOnly.ps1: line 29",
+      "status": "diagnostic_failed",
+      "message": "STAGING_REPARSE_OR_KIND_REJECTED",
+      "step": "pin-gpo",
+      "line": 29
+    },
+    "engine_operation_directory_present": false,
+    "owned_destination_present": false,
+    "gpo_baseline_children": [
+      "Machine",
+      "User",
+      "GPO.cmt",
+      "GPT.INI"
+    ],
+    "gpo_lock_preserved": true,
+    "worker_state": "stopped",
+    "worker_stop_reason": "lifecycle_requires_attention",
+    "new_rollback_created": false,
+    "old_job_replayed": false
+  },
+  "root_cause": {
+    "confirmed": "PinAncestors rejects the standard SYSVOL domain junction before engine ownership journal creation.",
+    "code": "STAGING_REPARSE_OR_KIND_REJECTED",
+    "junction": "\\\\dc01.vizyonveri.local\\SYSVOL\\vizyonveri.local",
+    "observed_target": "C:\\Windows\\SYSVOL\\domain",
+    "attributes": "Directory, ReparsePoint",
+    "diagnostic_identity": "original non-admin gMSA; signed read-only scheduled task",
+    "no_junction_restriction_relaxed": true,
+    "original_eight_second_timeout_root_cause_not_conclusively_proven": true
+  },
+  "budget_change": {
+    "consumed_readonly_preflight_ms": {
+      "before": 8000,
+      "after": 12000
+    },
+    "claim_deadline_seconds": 30,
+    "remaining_deadline_minus_seconds": 2,
+    "outer_execution_ms": 15000,
+    "timeout_fault_sleep_seconds": {
+      "before": 12,
+      "after": 18
+    },
+    "note": "The budget change allowed the next distinct real job to reach the engine; it does not resolve the junction rejection. No original grant was extended or replayed."
+  },
+  "ci": {
+    "source": "c729289e859dc42dfa3b7213ac6716000eccf347",
+    "workflow_successes": 15,
+    "workflow_failures": 1,
+    "closure_archive": {
+      "run": 45012311963,
+      "checks": 65,
+      "conclusion": "success",
+      "ad_simulated": true,
+      "capacity_rows_62_synthetic_cng_signed_metadata": true,
+      "real_field_64_history_archive_separate": true
+    },
+    "foundation": {
+      "run": 45012312015,
+      "conclusion": "success"
+    },
+    "rollback_execution": {
+      "run": 45012312093,
+      "job": 137177092549,
+      "conclusion": "failure",
+      "checks_before_failure": 397,
+      "error": "real core accepts exact rollback success or review RESULT",
+      "observed_transport_error": "SSLEOFError",
+      "passed_cases": [
+        "rb_execute_success",
+        "rb_execute_lost_ack",
+        "rb_execute_drift",
+        "rb_execute_completion_disk",
+        "rb_execute_bad_result",
+        "rb_execute_parent_drift"
+      ],
+      "full_suite_pass_claimed": false
+    }
+  },
+  "cleanup": {
+    "temporary_operator_profile_sessions_absent": true,
+    "temporary_tasks_removed": 5,
+    "windows_credential_files_absent": true,
+    "linux_credential_input_absent": true,
+    "immutable_jobs_archives_upgrade_journals_preserved": true,
+    "production_processes_preserved": [
+      647261,
+      647245,
+      919
+    ],
+    "isolated_processes_preserved": [
+      722704,
+      725079
+    ]
+  },
+  "remaining": [
+    "Support a verified SYSVOL domain-junction anchor while preserving arbitrary reparse/redirect rejection and destination ownership boundaries.",
+    "Reconcile the existing filesystem-intent-bearing 733fc751 job through a supported audited recovery path; do not use the consumed-without-filesystem-intent closer or manually delete its lock.",
+    "Resolve failed rollback CI case from saved logs before claiming full source acceptance.",
+    "Only after reconciliation and relevant code validation: fresh separately authorized stage and rollback field acceptance.",
+    "Three-computer GPO delivery and external Windows journal backup/restore acceptance remain open."
+  ],
+  "deduplication": "Successful old d918 closure, G05/EAP/OU/group/stability/time-based CRL and actual archive were read and reused, not rerun. The two real new stage jobs are distinguished by IDs, source change and failure phase. No fresh stage was started after resuming the interruption.",
+  "forecast": {
+    "g01_active_work_days": [
+      5,
+      9
+    ],
+    "reason": "Archive/consumed-stage recovery progressed; verified junction support, intent-bearing recovery and rollback CI remain, alongside existing endpoint/external restore dependencies. Band retained, no automatic reduction for elapsed time.",
+    "other_package_bands_unchanged": true,
+    "conditional_start": "2026-11-23",
+    "macro_weeks": {
+      "pilot": [
+        2,
+        3
+      ],
+      "base": [
+        6,
+        9
+      ],
+      "base_with_guide": [
+        7,
+        10
+      ],
+      "full": [
+        13,
+        19
+      ]
+    },
+    "active_hours_measured": false
+  }
+}

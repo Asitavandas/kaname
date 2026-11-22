@@ -1,5 +1,9 @@
 # AuthWire — güncel çalışma planı
 
+## 22 Kasım 2026 — G01 arşivi tamam, yeni junction/intent inceleme kapısı
+
+64 gerçek çevrim arşivi ve 65. no_job kabulü tamamlandı. 4da20206 intent öncesi tüketim kurtarması kapandı; sonraki 733fc751 işi standart SYSVOL junction reddiyle filesystem-intent sonrası incelemede, kilidi korunuyor. Kaynak c729289e PR167'de, release21d54b36 DC01'de. Geri alma CI başarısız olduğundan bütün stage/rollback kabulü açık; sırada doğrulanmış junction desteği ve denetimli intent uzlaştırması var. **G01 2/5; toplam60/94,34 açık**. [Kanıt](checkpoints/2026-11-22-g01-history-and-stage-review.json), [durum](CURRENT_STATUS.md), [yeniden değerlendirilen süre](reports/2026-10-29-process-forecast.md).
+
 ## 22 Kasım 2026, 12:44 — G01 kurtarma saha adımı tamamlandı
 
 Eski d918bc0d işi/kilidi kapandı; imzalı Windows kapanışı ile Linux revizyon121 eşleşti, Connector yeni no_job çevrimine devam etti. **G01 2/5 ve toplam 60/94, 34 açık** korunur: gerçek GPO hazırlama/geri alma, üç uç teslimi ve harici Windows günlük kurtarma kabulü açıktır. [Kapanış kaydı](checkpoints/2026-11-22-g01-consumed-stage-closure.json), [güncel durum](CURRENT_STATUS.md), [yeniden değerlendirilen süre](reports/2026-10-29-process-forecast.md).

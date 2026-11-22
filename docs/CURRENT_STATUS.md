@@ -1,5 +1,22 @@
 # AuthWire current work record
 
+## 22 Kasım 2026 — G01 arşiv bakımı kapandı; gerçek hazırlama SYSVOL junction sınırında durdu
+
+**60/94 tamam, 34 açık; G05 5/5, G01 2/5.** Arşiv bakımı tamamlandı; gerçek hazırlama/geri alma alt işi kapanmadı. Kesinti sonrası mevcut kayıtlar okundu, yeni stage veya eski test başlatılmadı.
+
+- **Gerçek 64 çevrim arşivi tamam:** imzalı arşiv `000001`, through64, SHA-256 `80e287150e7257d3e0b860d032a4565d0b4349908349b8d76af10af86ebe661a`. Korunan kayıt manifesti `18ad6d46788a648432103ef58e56dbbaae4c13a0814bc264c662eb7c9cb708aa`; eski d918 kapanışı doğrulanarak özgün grant/sonuç/kilit tarihçesi saklandı. Sonraki gerçek `000065` çevrimi no_job. Bu bakım üç uç veya stage/rollback kabulü sayılmaz.
+- **İlk yeni stage `4da20206`:** 8 saniyelik tüketim sonrası ön kontrolde durdu, filesystem-intent oluşmadı. Ayrı taze gözlem/operatör onayı/CNG makbuzuyla kapandı; Linux revizyon129, kapanış SHA `555b66989048813f277489f3dd638f4f13e8039a232e26889a61bcf4d0dab0fc`. Özgün belirsiz sonuç korunur; iş yeniden yürütülmez.
+- **Kaynak düzeltmesi ve ayrı sonraki iş:** tüketilmiş stage/rollback salt okunur ön kontrolü 8→12 saniye oldu; özgün 30 saniye yetki ve kalan süreden 2 saniye pay korundu, yetki yenilenmedi. Windows PR167 kaynak `c729289e859dc42dfa3b7213ac6716000eccf347`, imzalı release `21d54b36-75e0-4834-93d3-886d675bec79` DC01'de etkin. Linux PR166 ve genel panel dev.52 değişmedi; PR'ler taslak kaldı.
+- **Son gerçek stage `733fc751-202d-448a-af68-0bea09c2aeb4`:** otomatik Connector worker ön kontrolü geçti, `filesystem-intent.json` ve çocuk giriş/ön kontrolü kaydoldu; engine aşamasında runtime/exit20 ile durdu (12.991ms, timeout=false, bütçe15.000ms). Linux revizyon134 `requires_review/OUTCOME_UNKNOWN`; engine işlem dizini `ecb37ea6-6a3c-de54-5234-1ce7d6d3867f` ve hazırlama hedefi gözlemde yok, yalnız başlangıç GPO öğeleri var. Ayrı rollback oluşturulmadı.
+- **Kesinleştirilen yeni engel:** aynı gMSA ile imzalı salt okunur tanı, `PinAncestors` içinde `STAGING_REPARSE_OR_KIND_REJECTED` verdi. `\\dc01.vizyonveri.local\SYSVOL\vizyonveri.local`, `C:\Windows\SYSVOL\domain` hedefine standart Windows junction'ı. Genel reparse koruması gevşetilmedi. Bu tespit, 15 Kasım'daki veya bugünkü ilk sekiz saniyelik timeout'un kesin kök nedeni sayılmaz.
+- **İnceleme korunuyor:** 733 işi filesystem-intent taşıdığı için önceki “tüketilmiş ama intent yok” kapanışı uygulanamaz. Yerel GPO kilidi ve özgün sonuç/grant/işlem kanıtları saklandı. Yazma worker `lifecycle_requires_attention` ile durmuş durumda; manuel kilit silme, grant replay veya yeni yazma yapılmadı.
+- **CI ayrımı:** [güncel kurtarma/arşiv koşusu](https://github.com/Asitavandas/kaname/actions/runs/45012311963) 65 kontrol geçti; 62 dolgu kaydı sentetik CNG metadata, gerçek istek veya saha yazması değildir. Kaynaktaki 16 PR workflow'un 15'i geçti. [Geri alma yürütme koşusu](https://github.com/Asitavandas/kaname/actions/runs/45012312093) 397 kontrolden sonra exact RESULT kabulü/SSLEOFError ile başarısız; ilk altı senaryo geçmiş olsa da bütün paket başarılı ilan edilmez veya otomatik tekrar edilmez.
+- **Temizlik:** geçici operatör/profil/oturumları ve beş geçici görev kaldırıldı; DC01/VV parola dosyaları ile Linux girdi dosyası yok. İmzalı arşiv/iş/upgrade günlükleri korundu. RADIUS647261, panel647245, kontrol919 ve G01 süreçleri722704/725079 aynı. Ethernet/AD/GPO ayarları değiştirilmedi.
+
+**Sıradaki somut iş:** doğrulanmış SYSVOL junction desteği ve intent taşıyan son iş için denetimli uzlaştırma; başarısız geri alma CI tanısı. Bu kapılar geçtikten sonra yeni taze önizleme ile ayrı stage/rollback saha kabulü. Üç bilgisayarlı teslim, harici günlük kurtarma ve önceki diğer açık saha kapıları korunur.
+
+**Süre yeniden değerlendirildi:** G01 **5–9 aktif iş günü** korundu: arşiv/ilk tüketim kurtarması ilerledi, fakat junction desteği, intent uzlaştırması ve geri alma CI engeli kesinleşti. Diğer paket bantları ve 23 Kasım koşullu başlangıç pencereleri değişmedi; aktif mesai ölçülmedi, takvim arası çalışma sayılmadı. [Ayrıntılı kanıt](checkpoints/2026-11-22-g01-history-and-stage-review.json), [süre değerlendirmesi](reports/2026-10-29-process-forecast.md). Güncel PDF aynı kimlikte güncellendi.
+
 ## 22 Kasım 2026 — G01/A04 eski iş/kilit kurtarması sahada kapandı
 
 **Sayım değişmedi: 60/94 tamam, 34 açık; G05 5/5, G01 2/5.** Bu sonuç G01'in gerçek hazırlama/geri alma/teslim kabulünün önündeki eski iş engelini kapatır; bütün G01 alt işini veya üç uç yayılımını tamamlanmış saymaz.
