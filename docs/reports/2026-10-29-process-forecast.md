@@ -1,5 +1,12 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## 22 Kasım 2026 — G01 parent/engine süre koruması ve kalıcı teslim sonrası
+
+Yeni24 süre ve92 native AllSigned/CNG/SMB kontrolü geçti.7s gecikmeli context ile20 dosya12,95s'de hazırlandı; geç context14,06s'de etki oluşturmadan durdu. AD/grant/namespace test verisidir; gerçek domain stage/rollback yerine sayılmaz. da8ff7c0/e3573903 kalıcı paket kuruldu, gMSA/pairing/CNG/config korunarak worker dinlemeye döndü. Eski kapanış/ölçüm testleri tekrarlanmadı.
+
+**G01 kalan5–9 aktif iş günü korundu.** Ortak bütçe koruması ve kalıcı teslim bu adımda tamam; gerçek AD taze stage/ayrı rollback, üç uç etkin teslim ve dış eşleşen journal/state restore henüz kabul edilmedi. Son snapshot18/21 genel CI başarılı, üç koşu sürüyor; sonraki adım yalnız sonuçlarını okuyacak. Güvenlik payı veya CI süresi gün azalması sayılmadı. Diğer12 paket,23 Kasım koşullu başlangıç ve mevcut makro/operatör/gözlem bantları aynı. Aktif saat ölçülmedi. [Kanıt](../checkpoints/2026-11-22-g01-stage-work-budget.json).
+
+
 ## 22 Kasım 2026 — G01 hazırlık okuması sonrası süre değerlendirmesi
 
 Yeni salt okunur kapsam okuması7876→6745ms (~%14),18 dar sözleşme ve5 tarihsel kaynak kontrolü geçti. Bu yalnız hazırlık okumasıdır; bütün gerçek çocuk/grant/gate/engine/postcheck toplamının süre kabulü değildir. Kalıcı0a55 aday hazır, uygulanmadı; mevcut B9 ve durmuş yazıcı korunur. Son kaynak76b87e3b CI sürüyor. c292 kurtarması kapalıdır, tekrarlanmayacak.

@@ -1,0 +1,402 @@
+{
+  "date": "2026-11-22",
+  "timezone": "Europe/Istanbul",
+  "counts": {
+    "complete": 60,
+    "total": 94,
+    "open": 34,
+    "G01": "2/5",
+    "G05": "5/5"
+  },
+  "step": "Stage parent/child/engine work-window guard and permanent delivery",
+  "source": {
+    "repository": "Asitavandas/kaname",
+    "pr": 167,
+    "head": "da8ff7c0f3b4587242660db9653c2271b751c1bb",
+    "merged": false,
+    "all9_changed_git_blobs_match_local": true
+  },
+  "contract": {
+    "parent_max_ms": 15000,
+    "grant_lifetime_unchanged": true,
+    "finish_deadline": "min(original grant expiry, recorded launch.started_at + floor(work_budget_ms / 1000))",
+    "engine_deadline": "finish deadline minus one second",
+    "engine_admission_minimum_ms": 2000,
+    "rounding": "conservative down to whole seconds",
+    "admission_margin_is_not_latency_guarantee": true,
+    "child_postcheck_and_parent_observation_use_finish_deadline": true,
+    "no_effects_on_late_context": true,
+    "one_use_gate_and_exact_pid_start_identity_preserved": true,
+    "all_private_inputs_pinned_before_full_chain_validation": true,
+    "modules_imported_after_full_intent_validation_gate_and_pid": true,
+    "old_grants_never_renewed": true,
+    "partial_outcomes_remain_review": true
+  },
+  "tests": {
+    "new_deadline_arithmetic_checks": 24,
+    "actual_dc01_arithmetic_no_effects": true,
+    "dedicated_run": 45046334525,
+    "dedicated_job": 137281654446,
+    "dedicated_conclusion": "success",
+    "native_integration_checks": 92,
+    "cases": [
+      {
+        "name": "budget_cold_success",
+        "injected_context_delay_seconds": 7,
+        "elapsed_seconds": 12.95,
+        "staged_files": 20
+      },
+      {
+        "name": "budget_late_context",
+        "elapsed_seconds": 14.06,
+        "staged": false,
+        "timed_out": false,
+        "destination_absent": true,
+        "engine_journal_absent": true,
+        "full_smb_baseline_unchanged": true
+      }
+    ],
+    "environment": {
+      "Windows_PowerShell_51": true,
+      "AllSigned_child": true,
+      "CNG": true,
+      "SMB": true,
+      "seeded_grants": true,
+      "AD_and_namespace_simulated": true,
+      "customer_AD_GPO_changed": false
+    },
+    "latest_general_ci_snapshot": [
+      {
+        "id": 45046334581,
+        "name": "AuthWire combined staging preview checks",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 14,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334581/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334581/logs",
+        "workflow_id": 399509077
+      },
+      {
+        "id": 45046334663,
+        "name": "AuthWire isolated rollback execution and result",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 92,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334663/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334663/logs",
+        "workflow_id": 406671057
+      },
+      {
+        "id": 45046334725,
+        "name": "AuthWire isolated durable write lifecycle",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 90,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334725/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334725/logs",
+        "workflow_id": 406720639
+      },
+      {
+        "id": 45046334590,
+        "name": "AuthWire Windows write scheduler checks",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 29,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334590/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334590/logs",
+        "workflow_id": 416181057
+      },
+      {
+        "id": 45046334711,
+        "name": "AuthWire preauthorization refusal reporting",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 64,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334711/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334711/logs",
+        "workflow_id": 409666861
+      },
+      {
+        "id": 45046334588,
+        "name": "AuthWire local PDC SYSVOL junction checks",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 16,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334588/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334588/logs",
+        "workflow_id": 426824194
+      },
+      {
+        "id": 45046334864,
+        "name": "AuthWire isolated staging filesystem checks",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 47,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334864/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334864/logs",
+        "workflow_id": 400392336
+      },
+      {
+        "id": 45046334574,
+        "name": "AuthWire isolated authorized stage execution",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 104,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334574/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334574/logs",
+        "workflow_id": 401134937
+      },
+      {
+        "id": 45046334598,
+        "name": "AuthWire isolated one-shot staging cycle",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 99,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334598/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334598/logs",
+        "workflow_id": 401181139
+      },
+      {
+        "id": 45046334482,
+        "name": "AuthWire bounded retry network probe checks",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 1202,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334482/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334482/logs",
+        "workflow_id": 390643325
+      },
+      {
+        "id": 45046334493,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 304,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334493/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334493/logs",
+        "workflow_id": 395329531
+      },
+      {
+        "id": 45046334485,
+        "name": "AuthWire reproducible Linux delivery",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 117,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334485/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334485/logs",
+        "workflow_id": 407305352
+      },
+      {
+        "id": 45046334525,
+        "name": "AuthWire stage parent and engine budget",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 2,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334525/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334525/logs",
+        "workflow_id": 426975921
+      },
+      {
+        "id": 45046334494,
+        "name": "AuthWire isolated write preclaim checks",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 136,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334494/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334494/logs",
+        "workflow_id": 400886599
+      },
+      {
+        "id": 45046334527,
+        "name": "AuthWire isolated consumed-stage closure",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 23,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334527/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334527/logs",
+        "workflow_id": 419239552
+      },
+      {
+        "id": 45046334544,
+        "name": "AuthWire exited stage intent recovery",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 12,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334544/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334544/logs",
+        "workflow_id": 426843074
+      },
+      {
+        "id": 45046334533,
+        "name": "AuthWire empty stage recovery",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 10,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334533/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334533/logs",
+        "workflow_id": 426893946
+      },
+      {
+        "id": 45046334501,
+        "name": "AuthWire isolated rollback origin evidence",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 102,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334501/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334501/logs",
+        "workflow_id": 401522782
+      },
+      {
+        "id": 45046334511,
+        "name": "AuthWire isolated governed write history",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 81,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334511/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334511/logs",
+        "workflow_id": 407072998
+      },
+      {
+        "id": 45046334530,
+        "name": "KANAME foundation checks",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 1676,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334530/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334530/logs",
+        "workflow_id": 373980015
+      },
+      {
+        "id": 45046334529,
+        "name": "AuthWire isolated rollback authorization",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 98,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334529/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45046334529/logs",
+        "workflow_id": 406634595
+      }
+    ],
+    "no_blanket_general_ci_success_claim": true
+  },
+  "delivery": {
+    "checked_at": 1795366743,
+    "active_release": "e3573903-4243-4228-a874-2f496af51dda",
+    "source": "da8ff7c0f3b4587242660db9653c2271b751c1bb",
+    "service_state": "Running",
+    "health": {
+      "CandidateChannelVerified": true,
+      "KerberosReady": false,
+      "ServiceName": "AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46",
+      "CombinedJobsCompleted": 0,
+      "SuccessCount": 3,
+      "WorkerPid": 2296,
+      "ScopeJobsCompleted": 0,
+      "Event": "WINDOWS_CONNECTOR_SERVICE_HEALTH",
+      "LastScopeJobId": "",
+      "ReleaseId": "e3573903-4243-4228-a874-2f496af51dda",
+      "ProbeChannelVerified": true,
+      "LastCombinedJobId": "",
+      "LastScopeReason": "",
+      "ScopeChannelVerified": true,
+      "CombinedScopeChannelVerified": true,
+      "LastSuccessUtc": "2026-11-22T16:58:42.9932064+00:00",
+      "CanApply": false,
+      "ConsecutiveFailures": 0,
+      "CombinedChannelVerified": true,
+      "Healthy": true,
+      "LastCombinedScopeReason": "",
+      "Version": 1,
+      "CheckedUtc": "2026-11-22T16:58:43.2588332+00:00",
+      "LastCombinedScopeJobId": "",
+      "NextAttemptSeconds": 30,
+      "DirectorySyncReady": false,
+      "LastProbeJobId": "",
+      "ProbeJobsCompleted": 0,
+      "StagingPreviewChannelVerified": true,
+      "RuntimeSid": "S-1-5-21-34256453-3348971241-2809240126-1648",
+      "CombinedScopeJobsCompleted": 0
+    },
+    "scheduler": {
+      "WorkerPid": 6840,
+      "ServiceName": "AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46",
+      "State": "running",
+      "StopReason": "",
+      "LastPhase": "",
+      "Steps": 0,
+      "ReleaseId": "e3573903-4243-4228-a874-2f496af51dda",
+      "Event": "WINDOWS_CONNECTOR_WRITE_SCHEDULER"
+    },
+    "entire_configuration_preserved_except_release": true,
+    "write_pilot_port": 18765,
+    "original_records_and_engine_intent_unchanged": true,
+    "job_ids_unchanged": true,
+    "job_ids": [
+      "4da20206-4042-498b-89c9-e1d99acebc9d",
+      "733fc751-202d-448a-af68-0bea09c2aeb4",
+      "c292e179-5dc7-4f24-afcd-61df41d8346c",
+      "d918bc0d-bb26-459c-9fe3-b9e38b18d788"
+    ],
+    "gpo_lock_absent": true,
+    "archive_present": true,
+    "transfer_files_absent": true,
+    "temporary_operator_created": false,
+    "new_stage_or_rollback_created": false
+  },
+  "linux": {
+    "sources_or_services_installed": false,
+    "production_process_start_ticks": {
+      "919": "412",
+      "647245": "64693127",
+      "647261": "64693227"
+    },
+    "same_as_before": true,
+    "normal_health_and_queue_poll_may_update_runtime_state": true
+  },
+  "cleanup": {
+    "new_temporary_operator": false,
+    "new_credential_file": false,
+    "new_scheduled_task": false,
+    "transfer_files_removed": true,
+    "signed_sdk_evidence_and_B9_archive_preserved": true,
+    "sdk_root": "C:\\ProgramData\\AuthWire-G01-WorkBudget-20261122\\accepted-sources"
+  },
+  "superseded_unapplied_candidates": [
+    "b24a6a88-d7f1-4c3a-ae3c-dd0fe0eced33",
+    "0a55f57c-89a6-4de0-8f1d-3d9bcb91877b",
+    "0455b196-2159-41b2-985e-33b6a750ff6d",
+    "5991cfb3-4412-4ff0-8b6e-bde4ee721422"
+  ],
+  "intermediate_failures_preserved": {
+    "first_source": "28766c89b740307d1f8146faa703bfc71054165e",
+    "dedicated_run": 45046034735,
+    "first_cold_case_not_accepted": true,
+    "first_child_phase": "engine",
+    "first_child_elapsed_ms": 11630,
+    "fix": "Pin private inputs before one full intent validation; remove repeat unpinned/full chain reads.",
+    "source_transfer_error_also_fixed": "Initial published package module was incomplete; final 9 Git blobs match exact reviewed local files; corrupted intermediate source was never installed."
+  },
+  "deduplication": {
+    "old_c292_cleanup_and_closure_not_repeated": true,
+    "old_18_contract_checks_and_2_read_profiles_not_repeated": true,
+    "old_archive_G05_EAP_OU_group_CRL_tests_not_repeated": true,
+    "new_customer_stage_or_rollback_job": false,
+    "manual_no_job_test": false,
+    "normal_write_worker_poll_resumed_as_part_of_install": true
+  },
+  "remaining": [
+    "Read pending general CI outcomes; do not manually rerun passing checks",
+    "Fresh real AD approved preview and separately authorized full 20-file stage within original work/grant deadlines",
+    "Separately authorized rollback of the new real stage",
+    "Three-endpoint effective GPO delivery",
+    "External matching Windows journal and Linux state restore"
+  ],
+  "forecast": {
+    "G01_active_work_days": [
+      5,
+      9
+    ],
+    "active_hours_measured": false,
+    "other_bands_unchanged": true
+  }
+}

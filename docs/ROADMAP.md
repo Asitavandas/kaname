@@ -1,5 +1,16 @@
 # AuthWire — güncel çalışma planı
 
+## 22 Kasım 2026 — G01 süre koruması kalıcı teslim edildi
+
+60/94 tamam,34 açık; G01 2/5,G05 5/5. Parent/child/engine artık özgün grant ve gerçek15000ms work penceresinin küçüğüne bağlı. Engine girişinde2s kalmazsa dosya/journal oluşturmadan ret; sonuç için1s ayrılır. Private input'lar önce native handle ile sabitlenir, sonra tam yetki zinciri doğrulanır; modül import'u intent/gate/PID denetiminden sonradır.
+
+Yeni24 süre hesabı ve92 AllSigned/CNG/SMB kontrolü geçti:7s kontrollü context gecikmesiyle20 dosya12,95s'de hazırlandı; geç context14,06s'de hard timeout/hedef/engine journal olmadan reddedildi. AD/namespace ve grant bu CI'de test verisidir. Son kaynakda8ff7c0;9 değişen Git blob'u yerelle aynı. Son snapshot18/21 genel CI başarılı, üç koşu sürüyor.
+
+İmzalıe3573903 release DC01'e Prepare/Apply ile kuruldu; Connector healthy ve writer dinlemede. Mevcut18765 dahil config yalnız release dışında aynı; B9 arşivi ve eski kapanış kanıtları korunur. Yeni saha stage/rollback job yok; c292 kurtarması,24/92 testleri veya önceki18 ölçümleri tekrarlanmayacak. Önceki0a55/B24/0455/5991 adaylar hiç uygulanmadı ve yeni kabulde kullanılmayacak.
+
+Sırada kalan CI sonuçlarını okumak; uygun koşulda yeni taze önizleme/yetkiyle gerçek AD20 dosyalı stage ve ayrı rollback. Üç uç etkin GPO teslimi ve harici eşleşen restore açık. G01 5–9 aktif iş günü yeniden değerlendirildi, korundu; diğer bantlar aynı. [Kanıt](checkpoints/2026-11-22-g01-stage-work-budget.json).
+
+
 ## 22 Kasım 2026 — G01 hazırlık okuması iyileştirildi; tam yürütme kabulü açık
 
 60/94 tamam,34 açık; G01 2/5,G05 5/5. Yeni gerçek salt okunur gözlem7876→6745ms; iki uçtaki bütün güvenlik gözlemleri korunarak üçüncü fazladan içerik turu kaldırıldı.18 yeni non-admin sözleşme kontrolü ve5 tarihsel kaynak kontrolü geçti. PR167 son76b87e3b, ürün kodu453d1585; son genel CI sürüyor. İmzalı0a55f57c aday Prepare geçti; tüm bağlantı/eşleştirme/anahtar ayarları aynı. Apply işçiyi otomatik başlattığından mevcut B9 ve durmuş yazıcı korunur. Yanlış port taşıyan0455 aday hiç uygulanmadı.
