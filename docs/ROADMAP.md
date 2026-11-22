@@ -1,5 +1,9 @@
 # AuthWire — güncel çalışma planı
 
+## 22 Kasım 2026, 12:44 — G01 kurtarma saha adımı tamamlandı
+
+Eski d918bc0d işi/kilidi kapandı; imzalı Windows kapanışı ile Linux revizyon121 eşleşti, Connector yeni no_job çevrimine devam etti. **G01 2/5 ve toplam 60/94, 34 açık** korunur: gerçek GPO hazırlama/geri alma, üç uç teslimi ve harici Windows günlük kurtarma kabulü açıktır. [Kapanış kaydı](checkpoints/2026-11-22-g01-consumed-stage-closure.json), [güncel durum](CURRENT_STATUS.md), [yeniden değerlendirilen süre](reports/2026-10-29-process-forecast.md).
+
 ## 22 Kasım 2026 — güncel kabul durumu
 
 **60/94 tamam, 34 açık; G05 5/5 kapandı.** Saha kanıtları 21 Kasım'a aittir; kapanışta tamamlanmış testler tekrarlanmadı. [Güncel kayıt](CURRENT_STATUS.md), [beş seçici kabul matrisi](checkpoints/2026-11-21-g05-acceptance.json) ve [yeniden değerlendirilen süreler](reports/2026-10-29-process-forecast.md). G01/A04 üç uç/GPO teslimi, B02 hesap silinmesi/AD kesintisi, A03 kullanıcı Wi-Fi, B11 NAS ve B12 dış kurtarma kapıları açıktır. Aşağıdaki tarihli eski bölümler geçmiş kayıttır.

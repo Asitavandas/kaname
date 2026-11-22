@@ -1,5 +1,15 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## 22 Kasım 2026, 12:44 sonrası — G01 kurtarma kapanışı
+
+Eski `d918bc0d` işi ve yerel GPO kilidi imzalı saha kanıtıyla kapandı; Connector yeni boş çevrime devam etti. **Sayım 60/94 ve 34 açık, G01 2/5** olarak kaldı: bu kurtarma, gerçek hazırlama/geri alma/teslim alt işinin tamamı değildir.
+
+G01 eski iş/kilit kurtarması için kalan aktif çalışma **0**. G01 birleşik **5–9 iş günü** bandı yeniden değerlendirildi ve korundu: yeni gerçek stage/rollback, ilk ön kontrolün kesinleşmemiş kök nedeni, harici Windows günlük kurtarma kabulü ve üç bilgisayara erişim/teslim hâlâ açık. Diğer 12 açık paket için aşağıdaki G05 sonrası bantlar geçerlidir. Küçük pilot 2–3 hafta, temel 6–9, temel+kılavuz 7–10, tüm kapsam 13–19 hafta koşullu pencereleri; 23 Kasım başlangıcı, operatör katılımı ve ayrıca gözlem/bekleme ayrımı korunur. Bu kapanış yeni bir takvim taahhüdü veya tüm G01 kabulü değildir.
+
+[Gerçek kapanış kanıtı](../checkpoints/2026-11-22-g01-consumed-stage-closure.json). Aşağıdaki tarihli değerlendirme önceki kapsamı ve karşılaştırma tabanını korur.
+
+---
+
 ## 22 Kasım 2026 — G05 kapanışı sonrası yeniden değerlendirme
 
 G05 **5/5**; toplam **60/94 tamam, 34 açık**. Kabul kanıtları 21 Kasım'a, kapanış kaydı 22 Kasım'a aittir. G05'in önceki **2–4 iş günlük** kalan bandı **0** oldu. Diğer paketlerin sayımı değişmedi. Aşağıdaki aralıklar güncel açık kapılara göre planlama tahminidir; test sonucu veya tarih taahhüdü değildir.
@@ -813,7 +823,7 @@ Her durum raporunda kalan süre yeniden hesaplanacak; [raporlama kuralları](../
 parçalama ve sonuç birleştirme henüz yoktur. [Kaynak incelemesi ve ölçek planı](../CAPACITY_AND_ACCEPTANCE.md).
 
 Ölçek paketine3–5 ek işgünü payı kondu: önceki2–4 gün yerine5–9 aktif işgünü.
-Bu nedenle ilk küçük pilot2–3 hafta korunurken ölçek kanıtlı temel kapanış5–8'den6–9 haftaya,
+Bu nedenle ilk küçük pilot 2–3 hafta korunurken ölçek kanıtlı temel kapanış5–8'den6–9 haftaya,
 tüm hedef kapsam12–18'den13–19 haftaya revize edildi. Bu ilerleme veya kapasite garantisi değildir.
 Temel saha eforu20–30 saat, tüm geliştirmelerle30–45 saat olarak yeniden planlandı.
 Sayı sınırları kodda yükseltilmedi; bu güncelleme yalnız plan/rapor kaydıdır.

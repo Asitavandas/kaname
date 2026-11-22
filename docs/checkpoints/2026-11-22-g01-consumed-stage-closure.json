@@ -1,0 +1,171 @@
+{
+  "artifact": "authwire-g01-consumed-stage-field-closure",
+  "recorded_date": "2026-11-22",
+  "timezone": "Europe/Istanbul",
+  "status": "passed",
+  "scope": "One pre-existing consumed stage and its local GPO lock; no new stage/rollback/application",
+  "job_id": "d918bc0d-bb26-459c-9fe3-b9e38b18d788",
+  "gpo_id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+  "sources": {
+    "linux": "a141f47b70377582f4aa4f1745ba7da68d04deaa",
+    "windows": "f8a8e2fdcb033112eddf332c0267d3b661d976c7",
+    "linux_pr": 166,
+    "windows_pr": 167,
+    "merged": false,
+    "installed_connector_release": "19fee47a-6f40-4896-989f-ed5b27e8fa86",
+    "production_panel": "0.14.0-dev.52"
+  },
+  "tests": {
+    "native_closure_ci": {
+      "run": 45008628905,
+      "checks": 57,
+      "real_tls_cng_sqlite_smb": true,
+      "ad_observations_simulated": true
+    },
+    "linux_foundation": {
+      "run": 45007742318,
+      "conclusion": "success"
+    },
+    "windows_foundation": {
+      "run": 45008628799,
+      "conclusion": "success"
+    }
+  },
+  "field_evidence": {
+    "job_id": "d918bc0d-bb26-459c-9fe3-b9e38b18d788",
+    "original_state": "requires_review",
+    "original_result": {
+      "journal_sha256": "",
+      "tree_sha256": "",
+      "reason": "OUTCOME_UNKNOWN",
+      "intent_sha256": "4221857363f8c15eef59b86917e12c059a5e74d5f0c18f14c510695529af175e",
+      "job_id": "d918bc0d-bb26-459c-9fe3-b9e38b18d788",
+      "release_id": "c8424837-f76e-45d5-aa67-af8e24b1e1ef",
+      "target_sha256": "22095e0f28dfceebd4106a87713fb0efe0ee969e161b20895bf1f86b1862cc2c",
+      "filesystem_effects": "unconfirmed",
+      "checked_at": 1794733164,
+      "authorization_id": "e950b3557fb59b4504c3122aaa39021387f539a0592de9204eb917ae27a4d7dc",
+      "outcome": "requires_review",
+      "lease_id": "b04b531057ffbac47c911159143b58f5fe01b482c8c2ec4b272a4010719fe345"
+    },
+    "saved_closure": {
+      "request": {
+        "approval": {
+          "acknowledge": "record_consumed_stage_lock_release_approval",
+          "consumed_stage_proof": {
+            "Body": {
+              "accepted_ack_sha256": "3c20d4da20c98ce79e192b2fdd29a6aa69bba22fbc1e587ef2de6ac37344577d",
+              "approved_preview_sha256": "6e6c594323c0f6f614c171a586974e6f814212bd245f5254a6eca7033240fa3c",
+              "baseline_inventory_sha256": "b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6",
+              "completion_sha256": "4a2bcff66fedf6eb3537c798104095d02283e361ecacf4d8e2dcbcdbfd9e7e28",
+              "expires_at": 1795340713,
+              "format": "AuthWireConsumedStageRecoveryEvidenceV1",
+              "gpo_id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+              "grant_consumed_sha256": "60a3d8dfe95816a450b0c3a1ee5959cb371ca7f99017217eaa4485359f22c106",
+              "grant_expires_at": 1794733185,
+              "intent_sha256": "4221857363f8c15eef59b86917e12c059a5e74d5f0c18f14c510695529af175e",
+              "job_id": "d918bc0d-bb26-459c-9fe3-b9e38b18d788",
+              "lock_sha256": "b9c65a81c5e124cf6427a437c25e8bc4f4daa2c3f192b62d869f3da5fdf2d47a",
+              "observed_at": 1795340653,
+              "observed_preview_sha256": "65a7e93078fae71e30aa6720de0a05df19c8d7b6eabc20f609cf1bee1a0d17d0",
+              "result_body_sha256": "a69a6185934d93c347c06ae10d85bfcfe2a0ce54b6a50333f8aac5c4e89fd063",
+              "scope_sha256": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e"
+            },
+            "Signature": "ijuYoJZmlxBaeOiTJc1sE1HPY98gC/Ungdja68SqohGjuLGW5hKOF2u+ZHpMXqam1I2sDl4Aop4zilxsmkbb93zWc44tWzyfG1iBQja15ZDAT6WpWLB2+113vKrQ3tG7Dt7UVO24OEeJyxYPo1aXjr0cIo0l6xq8qfjBvIk9nQBy/gyxZ+rbfEKQ66FWXBIGVEN+wuCHUw6MqqEtUbB1dUQvRWv09b9t5i50z5o1dbZqoe3fTk2FRqgVIfgWJNTQznBjDRjpNtnAR6KYgoIpiDPROwa9oV3ZrOHyygm0ffoKI/o427kWld5cmJuW3f/ULRH2JZlhTkROuX/uybZWmJ2+2zZP/VLQ7g/nksC0292L9xXZsSQCPCqfajVF2Zrqik3LSmUNX9TghD467CJk3NgkiFIjcdnziCgQjx2DHXQPTUUVZiapdQ1DM5nLjmh8r5d3ruInfT8rftyXwbV7Pgb3zG85g5fTH1oC2h92gLW11k+63DgeBdNsPLEiJ/QV"
+          },
+          "decision": "approve_consumed_stage_lock_release",
+          "evidence": {
+            "accepted_ack": true,
+            "intent_sha256": "4221857363f8c15eef59b86917e12c059a5e74d5f0c18f14c510695529af175e",
+            "job_id": "d918bc0d-bb26-459c-9fe3-b9e38b18d788",
+            "result_body_sha256": "a69a6185934d93c347c06ae10d85bfcfe2a0ce54b6a50333f8aac5c4e89fd063",
+            "scope_sha256": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e"
+          },
+          "expected_revision": 119,
+          "reconciliation_receipt": {
+            "review_hash": "cbd1fda328f31576a8984c76591ed02eddfc75bf35d4ac4aa2f9f1e562428dd2",
+            "revision": 119
+          },
+          "review_hash": "88070506bad8debe0fef6b12191f24f35e0dc6f34fa8c6d51ea21d8392012e62"
+        },
+        "approval_revision": 120,
+        "closure": {
+          "Body": {
+            "approval_request_sha256": "5791d6706342090b90d0a33fefc68bce64a029120ba551d15d723de10da7b86c",
+            "approval_revision": 120,
+            "closed_at": 1795340673,
+            "completion_sha256": "4a2bcff66fedf6eb3537c798104095d02283e361ecacf4d8e2dcbcdbfd9e7e28",
+            "consumed_stage_proof_sha256": "4665d5b41dbab3dc56eacedf17a5aaa0b7f40c32e588843aeb88e7b880b58c58",
+            "evidence_expires_at": 1795340713,
+            "format": "AuthWireConsumedStageClosureV1",
+            "gpo_id": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+            "intent_sha256": "4221857363f8c15eef59b86917e12c059a5e74d5f0c18f14c510695529af175e",
+            "job_id": "d918bc0d-bb26-459c-9fe3-b9e38b18d788",
+            "lock_released": true,
+            "lock_sha256": "b9c65a81c5e124cf6427a437c25e8bc4f4daa2c3f192b62d869f3da5fdf2d47a",
+            "result_body_sha256": "a69a6185934d93c347c06ae10d85bfcfe2a0ce54b6a50333f8aac5c4e89fd063",
+            "scope_sha256": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e"
+          },
+          "Signature": "Tnp9mD9C4osxml5R6BjXSRhxIlxlVRs60IGUzHsYt2BvkupeWfUVD+/hQRwtj7fGoGqp6mBOCfX/lBMHnw1O4hktvpsTbFp9XSk9GNHTFYxL4RSyIs1/qoLLWx1lzMQFZG3klvnXTSrkxYUKmstlNndqIbq2itbeDd7XXsO7o0IwqOQIGKbdQm1dnlhdeQJG0CFyliiJYL3iEnp/qxwm4TZ01sj7+/7p+pvv8XuNbFVHM0/b8vbY4o/fCRO1IOptAeNCk8zaMG38voBNWxbr8xHMPjXK1ojEF925VbvRN99sM+NY3Hd5gMo82C1r+pz3bM1SKvIl/DJxUwo7lOABHrCb+lrtIWbNfY7BUNZu5MtGwnn+3nP4yF7aOGwVhsL8hm7aAyuvEZz+sfLHh51CggjSML1Mg1dAGxRtA/74YWip2YEfKKttKV9AZTEKoRvAEvAoPAqhqcEsGjt+I+G7h4oheRiRF2/5hri51IeBfe94Ic0lLYp8n2yhpgsUaTGI"
+        }
+      },
+      "actor": "ea6aaf46-9dc0-43c5-98ed-93777b75135a",
+      "revision": 121
+    },
+    "last_poll": {
+      "scope": "dd4f0c8da16445a2c4020a270fff39b919d02235b8956efda268f0ed6070476e",
+      "at": 1795340928,
+      "release_id": "19fee47a-6f40-4896-989f-ed5b27e8fa86"
+    }
+  },
+  "resume": {
+    "connector_restarted_after_closure": true,
+    "local_slot": "000038",
+    "outcome": "no_job",
+    "job_id": "",
+    "completed_at": 1795340894,
+    "old_lock_absent": true,
+    "can_apply_gpo": false
+  },
+  "preserved": {
+    "original_grant": true,
+    "original_uncertain_result": true,
+    "no_old_grant_replay": true,
+    "baseline_inventory_sha256": "b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6",
+    "ad_sysvol_gpo_unchanged": true,
+    "radius_pid": 647261,
+    "panel_pid": 647245,
+    "service_control_pid": 919,
+    "read_only_management_interface_untouched": true
+  },
+  "recovery_operations": {
+    "private_backup": "/opt/authwire-g01-https-pilot/recovery-20261122",
+    "isolated_https_pid": 722704,
+    "dc01_only_relay_pid": 725079,
+    "runtime_units_recreated": true,
+    "canonical_enrollment_url_kept_separate_from_pilot_transport": true
+  },
+  "cleanup": {
+    "temporary_scheduled_task_removed": true,
+    "scoped_operator_and_profile_removed": true,
+    "sessions_removed": true,
+    "windows_credentials_removed": true,
+    "linux_credential_input_removed": true,
+    "linux_source_transfer_removed": true
+  },
+  "progress": {
+    "complete": 60,
+    "total": 94,
+    "open": 34,
+    "g05": "5/5",
+    "g01": "2/5",
+    "count_changed": false
+  },
+  "remaining": [
+    "Fresh separately authorized real stage and rollback",
+    "Three-computer GPO delivery; two earlier endpoints still unavailable",
+    "External Windows journal recovery acceptance",
+    "Original 15 November preflight timeout root cause is not conclusively proven"
+  ],
+  "deduplication": "Interrupted task was read, not rerun after success. No prior EAP-TLS, OU, group, or G05 acceptance tests repeated."
+}

@@ -1,0 +1,23 @@
+[Unit]
+Description=AuthWire isolated G01 pilot HTTPS queue
+[Service]
+Type=exec
+ExecStart=/opt/kaname-lab/venv/bin/python -I -B /opt/authwire-g01-https-pilot/serve.py
+DynamicUser=yes
+StateDirectory=authwire-g01-https-pilot
+StateDirectoryMode=0700
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+InaccessiblePaths=/var/lib/kaname-lab /run/authwire-radius
+RestrictAddressFamilies=AF_UNIX AF_INET
+IPAddressDeny=0.0.0.0/0
+IPAddressDeny=::/0
+IPAddressAllow=::1/128
+IPAddressAllow=127.0.0.0/8
+LoadCredential=pilot.json:/opt/authwire-g01-https-pilot/pilot.json
+LoadCredential=pilot.sqlite3:/opt/authwire-g01-https-pilot/pilot.sqlite3
+LoadCredential=radius-public.pem:/opt/authwire-g01-https-pilot/radius-public.pem
+LoadCredential=web.crt:/etc/kaname-lab/web.crt
+LoadCredential=web.key:/etc/kaname-lab/web.key

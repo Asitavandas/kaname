@@ -1,0 +1,18 @@
+[Unit]
+Description=AuthWire DC01-only G01 TLS relay
+BindsTo=authwire-g01-https-pilot.service
+After=authwire-g01-https-pilot.service
+[Service]
+Type=exec
+ExecStart=/usr/bin/python3 -I -B /opt/authwire-g01-https-pilot/dc01_relay.py
+DynamicUser=yes
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+InaccessiblePaths=/var/lib/kaname-lab /run/authwire-radius /var/lib/authwire-g01-https-pilot
+RestrictAddressFamilies=AF_UNIX AF_INET
+IPAddressDeny=0.0.0.0/0
+IPAddressDeny=::/0
+IPAddressAllow=127.0.0.0/8
+IPAddressAllow=10.35.50.70/32
