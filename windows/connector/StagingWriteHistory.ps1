@@ -74,7 +74,9 @@ function Read-AuthWireHistoryArchives([string]$Root,[string]$Life,$Baseline,[has
     $s=Read-AuthWireLifecyclePoll $cycles $slot $Binding $Key
     if($s.Phase -cne 'reply_saved'){throw 'HISTORY_ARCHIVE_INCOMPLETE_CYCLE'}
     $done=Read-AuthWireLifecycleCompletion $Root $cycles $s $Binding $Key
-    if($done.outcome -cnotin @('no_job','staged','rolled_back') -or $done.completed_at -gt $a.created_at){throw 'HISTORY_ARCHIVE_INCOMPLETE_CYCLE'}
+    $safe=$done.outcome -cin @('no_job','staged','rolled_back')
+    if(-not $safe -and $done.outcome -ceq 'requires_review'){$safe=Test-AuthWireConsumedStageClosed $Root $cycles $s $Binding $Key}
+    if(-not $safe -or $done.completed_at -gt $a.created_at){throw 'HISTORY_ARCHIVE_INCOMPLETE_CYCLE'}
     $states+=,$s
    }
    if($bytes -ne $a.total_bytes -or $records -ne $a.record_count){throw 'HISTORY_ARCHIVE_TOTALS_REJECTED'}
@@ -135,7 +137,9 @@ function New-AuthWireHistoryReviewState([string]$Root,[hashtable]$Binding,[Secur
    $s=$h.ActiveStates[$j]
    if($s.Phase -cne 'reply_saved' -or -not (Test-Path -LiteralPath (Join-Path (Join-Path $h.Life $s.Slot) 'completion.json'))){$eligible=$false;$reason='pending_cycle';if($j -ne $h.ActiveStates.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'};continue}
    $done=Read-AuthWireLifecycleCompletion $Root $h.Life $s $Binding $Key
-   if($done.outcome -cnotin @('no_job','staged','rolled_back')){$eligible=$false;$reason='review_barrier';if($j -ne $h.ActiveStates.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'}}
+   $safe=$done.outcome -cin @('no_job','staged','rolled_back')
+   if(-not $safe -and $done.outcome -ceq 'requires_review'){$safe=Test-AuthWireConsumedStageClosed $Root $h.Life $s $Binding $Key}
+   if(-not $safe){$eligible=$false;$reason='review_barrier';if($j -ne $h.ActiveStates.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'}}
   }
   if($h.ArchiveCount -ge 8){$eligible=$false;$reason='archive_quota'}
   if($total -gt 16777216){$eligible=$false;$reason='archive_byte_limit'}

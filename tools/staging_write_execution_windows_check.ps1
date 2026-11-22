@@ -328,6 +328,7 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
      $next=Invoke-AuthWireStagingWriteLifecycleStep $journal $b $release $rsa $url
      Check ($next.Phase -ceq 'no_job') 'retained closed cycle permits a new no-job poll without executing a writer'
      Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $before.Sha256) 'recovery changes no SMB source or SYSVOL bytes'
+     if($env:AUTHWIRE_CLOSED_HISTORY_ARCHIVE_CHECK -eq '1'){. (Join-Path $PSScriptRoot 'staging_write_closed_archive_fixture.ps1')}
      $outcomes+=,[pscustomobject]@{case=$case;closure_verified=$true}
     }else{$outcomes+=,[pscustomobject]@{case=$case;receipt_verified=$true}}
     continue

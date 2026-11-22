@@ -21,6 +21,7 @@ import uuid
 from types import SimpleNamespace
 
 CLOSURE_MODE = os.environ.get('AUTHWIRE_STAGE_RECOVERY_CLOSURE_CHECK') == '1'
+CLOSED_ARCHIVE_MODE = os.environ.get('AUTHWIRE_CLOSED_HISTORY_ARCHIVE_CHECK') == '1'
 RECOVERY_MODE = os.environ.get('AUTHWIRE_STAGE_RECOVERY_RECEIPT_CHECK') == '1' or CLOSURE_MODE
 BACKEND_ROOT = (Path(os.environ['AUTHWIRE_RECOVERY_BACKEND']) if RECOVERY_MODE else
                 Path(__file__).resolve().parents[1])
@@ -291,7 +292,7 @@ def main():
                 if CLOSURE_MODE:
                     assert native['outcomes'] == [{'case': 'consume_timeout', 'closure_verified': True}]
                     assert confirmed == 2 and not metrics['errors']
-                    assert list(metrics['polls'].values()) == [2]
+                    assert list(metrics['polls'].values()) == [3 if CLOSED_ARCHIVE_MODE else 2]
                     assert list(metrics['claims'].values()) == list(metrics['results'].values()) == [1]
                     with store.connect() as db:
                         job, = core._read(db)['jobs']
@@ -301,7 +302,8 @@ def main():
                     assert store.snapshot()['revision'] == original['revision'] + 5
                     print(f'AUTHWIRE_STAGE_RECOVERY_CLOSURE_E2E_OK native_checks={native["checks"]} '
                           'real_tls_cng_sqlite=true sysvol_unchanged=true old_grant_replay=false '
-                          'ad_simulated=true lock_released=true customer_changed=false', flush=True)
+                          f'ad_simulated=true lock_released=true closed_history_archived={CLOSED_ARCHIVE_MODE} '
+                          'customer_changed=false', flush=True)
                     return
                 assert native['outcomes'] == [{'case': 'consume_timeout', 'receipt_verified': True}]
                 assert confirmed == 1 and not metrics['errors']
