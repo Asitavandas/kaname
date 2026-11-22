@@ -88,28 +88,8 @@ namespace AuthWire.Staging {
    while(cur!=null){parts.Push(cur);if(String.Equals(cur.TrimEnd('\\'),root.TrimEnd('\\'),StringComparison.OrdinalIgnoreCase))break;string next=System.IO.Path.GetDirectoryName(cur);if(next==cur)break;cur=next;}
    while(parts.Count>0)Open(parts.Pop(),"",true,false,false);
   }
-  // Trusted local-PDC adapter only. The caller supplies an independently
-  // derived, fixed local SYSVOL target, never a value from a job/request.
-  // Pin BOTH the junction object (without write/delete sharing) and the local
-  // physical target; prove that following SMB reaches that same NTFS object.
-  // Generic PinAncestors and every descendant still reject all reparse points.
-  public void PinLocalSysvolAncestors(string path,string anchor,string localTarget){
-   string full=System.IO.Path.GetFullPath(path),link=System.IO.Path.GetFullPath(anchor),target=System.IO.Path.GetFullPath(localTarget);
-   if(!String.Equals(full,path,StringComparison.OrdinalIgnoreCase)||!String.Equals(link,anchor,StringComparison.OrdinalIgnoreCase)||
-      !String.Equals(target,localTarget,StringComparison.OrdinalIgnoreCase)||full.Length>2000||link.Length>2000||target.Length>2000||
-      !link.StartsWith(@"\\")||link.StartsWith(@"\\?\")||link.StartsWith(@"\\.\")||
-      target.StartsWith(@"\\")||System.IO.Path.GetPathRoot(target).Length!=3||
-      !(String.Equals(full,link,StringComparison.OrdinalIgnoreCase)||full.StartsWith(link+"\\",StringComparison.OrdinalIgnoreCase)))Fail("STAGING_SYSVOL_ANCHOR_REJECTED");
-   PinAncestors(target);
-   Info expected;if(!GetFileInformationByHandle(entries[entries.Count-1].H,out expected))NativeFail();
-   var parts=new Stack<string>();string cur=full,root=System.IO.Path.GetPathRoot(full);
-   while(cur!=null){parts.Push(cur);if(String.Equals(cur.TrimEnd('\\'),root.TrimEnd('\\'),StringComparison.OrdinalIgnoreCase))break;string next=System.IO.Path.GetDirectoryName(cur);if(next==cur)break;cur=next;}
-   bool seen=false;
-   while(parts.Count>0){
-    string part=parts.Pop();
-    if(!String.Equals(part,link,StringComparison.OrdinalIgnoreCase)){Open(part,"",true,false,false);continue;}
-    seen=true;
-    var h=CreateFile(part,0x20080u,1u,IntPtr.Zero,3,0x02200000,IntPtr.Zero);
+  Info PinSysvolJunction(string part,string target){
+   var h=CreateFile(part,0x20080u,1u,IntPtr.Zero,3,0x02200000,IntPtr.Zero);
     if(h.IsInvalid){h.Dispose();NativeFail();}
     try{
      Info i;if(!GetFileInformationByHandle(h,out i))NativeFail();
@@ -125,6 +105,33 @@ namespace AuthWire.Staging {
         (printSize!=0&&!String.Equals(print,target,StringComparison.OrdinalIgnoreCase)))Fail("STAGING_SYSVOL_TARGET_REJECTED");
      entries.Add(new Entry{H=h,R=new RowV1{Path="",Kind="directory"},Delete=false});h=null;
     }finally{if(h!=null)h.Dispose();}
+   Info result;if(!GetFileInformationByHandle(entries[entries.Count-1].H,out result))NativeFail();return result;
+  }
+  // Trusted local-PDC adapter only. The caller supplies an independently
+  // derived, fixed local SYSVOL target, never a value from a job/request.
+  // Pin local AND SMB junction handles (without write/delete sharing) and the local
+  // physical target; prove that following SMB reaches that same NTFS object.
+  // Generic PinAncestors and every descendant still reject all reparse points.
+  public void PinLocalSysvolAncestors(string path,string anchor,string localAnchor,string localTarget){
+   string full=System.IO.Path.GetFullPath(path),link=System.IO.Path.GetFullPath(anchor),local=System.IO.Path.GetFullPath(localAnchor),target=System.IO.Path.GetFullPath(localTarget);
+   if(!String.Equals(full,path,StringComparison.OrdinalIgnoreCase)||!String.Equals(link,anchor,StringComparison.OrdinalIgnoreCase)||
+      !String.Equals(target,localTarget,StringComparison.OrdinalIgnoreCase)||!String.Equals(local,localAnchor,StringComparison.OrdinalIgnoreCase)||full.Length>2000||link.Length>2000||target.Length>2000||local.Length>2000||
+      !link.StartsWith(@"\\")||link.StartsWith(@"\\?\")||link.StartsWith(@"\\.\")||
+      target.StartsWith(@"\\")||local.StartsWith(@"\\")||System.IO.Path.GetPathRoot(target).Length!=3||System.IO.Path.GetPathRoot(local).Length!=3||
+      !(String.Equals(full,link,StringComparison.OrdinalIgnoreCase)||full.StartsWith(link+"\\",StringComparison.OrdinalIgnoreCase)))Fail("STAGING_SYSVOL_ANCHOR_REJECTED");
+   PinAncestors(target);
+   Info expected;if(!GetFileInformationByHandle(entries[entries.Count-1].H,out expected))NativeFail();
+   PinAncestors(System.IO.Path.GetDirectoryName(local));
+   Info localLink=PinSysvolJunction(local,target);
+   var parts=new Stack<string>();string cur=full,root=System.IO.Path.GetPathRoot(full);
+   while(cur!=null){parts.Push(cur);if(String.Equals(cur.TrimEnd('\\'),root.TrimEnd('\\'),StringComparison.OrdinalIgnoreCase))break;string next=System.IO.Path.GetDirectoryName(cur);if(next==cur)break;cur=next;}
+   bool seen=false;
+   while(parts.Count>0){
+    string part=parts.Pop();
+    if(!String.Equals(part,link,StringComparison.OrdinalIgnoreCase)){Open(part,"",true,false,false);continue;}
+    seen=true;
+    Info remoteLink=PinSysvolJunction(part,target);
+    if(remoteLink.Volume!=localLink.Volume||remoteLink.IndexHigh!=localLink.IndexHigh||remoteLink.IndexLow!=localLink.IndexLow)Fail("STAGING_SYSVOL_JUNCTION_IDENTITY_REJECTED");
     var followed=CreateFile(part,0x20080u,3u,IntPtr.Zero,3,0x02000000,IntPtr.Zero);
     if(followed.IsInvalid){followed.Dispose();NativeFail();}
     try{
@@ -223,7 +230,8 @@ function Add-AuthWireStagingGpoPins($Pins,[string]$Path,[string]$GpoRoot){
  $fqdn=($local.HostName+'.'+$local.DomainName).ToLowerInvariant()
  if($local.DomainName.ToLowerInvariant() -cne $m.Groups['domain'].Value -or $fqdn -cne $m.Groups['pdc'].Value){throw 'STAGING_LOCAL_PDC_REQUIRED'}
  $target=Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::Windows)) 'SYSVOL\domain'
- $Pins.PinLocalSysvolAncestors($Path,$anchor,$target)
+ $localAnchor=Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::Windows)) ('SYSVOL\sysvol\'+$m.Groups['domain'].Value)
+ $Pins.PinLocalSysvolAncestors($Path,$anchor,$localAnchor,$target)
 }
 
 function Get-AuthWireStagingFilesystemRows($Lease){
