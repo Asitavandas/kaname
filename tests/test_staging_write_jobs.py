@@ -294,8 +294,21 @@ class StagingWriteJobTests(unittest.TestCase):
         self.assertEqual(audit, self.store.audit())
 
 
-    def approved_closure(self):
+    def intent_stage_recovery(self):
         request = self.consumed_stage_recovery()
+        body = request['consumed_stage_proof']['Body'] | {
+            'format': 'AuthWireStageIntentRecoveryEvidenceV1',
+            'filesystem_operation_id': str(uuid.uuid4()),
+            'child_exit_confirmed': True, 'engine_journal_absent': True, 'destination_absent': True}
+        for name in ('filesystem_intent_sha256', 'stage_launch_sha256', 'stage_child_sha256',
+                     'stage_entered_sha256', 'stage_preflight_sha256', 'execution_review_sha256'):
+            body[name] = digest(name)
+        request['consumed_stage_proof'] = self.sign_recovery(body,
+            purpose='AUTHWIRE-STAGE-INTENT-RECOVERY-EVIDENCE-V1')
+        return request
+
+    def approved_closure(self, *, intent=False):
+        request = self.intent_stage_recovery() if intent else self.consumed_stage_recovery()
         review = self.jobs.review_reconciliation(request, self.actor)
         approval = request | {'review_hash': review['review_hash'],
                               'acknowledge': RELEASE_ACK[CONSUMED_RELEASE_APPROVAL]}
@@ -307,8 +320,61 @@ class StagingWriteJobTests(unittest.TestCase):
                     evidence_expires_at=evidence['expires_at'], lock_released=True,
                     consumed_stage_proof_sha256=digest(approval['consumed_stage_proof']),
                     approval_request_sha256=digest(approval), approval_revision=saved['revision'])
+        if intent:
+            body.update(format='AuthWireStageIntentClosureV1',
+                        filesystem_intent_sha256=evidence['filesystem_intent_sha256'],
+                        filesystem_operation_id=evidence['filesystem_operation_id'])
         return {'approval': approval, 'approval_revision': saved['revision'],
-                'closure': self.sign_recovery(body, purpose='AUTHWIRE-CONSUMED-STAGE-CLOSURE-V1')}
+                'closure': self.sign_recovery(body, purpose=('AUTHWIRE-STAGE-INTENT-CLOSURE-V1' if intent
+                    else 'AUTHWIRE-CONSUMED-STAGE-CLOSURE-V1'))}
+
+    def test_intent_closure_preserves_original_uncertain_job_and_cannot_reauthorize(self):
+        request = self.approved_closure(intent=True)
+        with self.store.connect() as db:
+            before = copy.deepcopy(self.jobs._read(db)['jobs'][-1])
+        reply = self.jobs.close_consumed_stage(request, self.actor)
+        with self.store.connect() as db:
+            after = self.jobs._read(db)['jobs'][-1]
+        self.assertEqual(before, {k: v for k, v in after.items() if k != 'closure'})
+        self.assertEqual('closed_without_engine_journal', self.jobs._state(after, after['scope'], self.now))
+        audit = self.store.audit(); self.now += 120
+        self.assertEqual(reply, self.jobs.close_consumed_stage(request, self.actor))
+        self.assertEqual(audit, self.store.audit())
+        with self.assertRaises(JobError):
+            self.jobs.claim(self.proof('CLAIM', {'job_id': after['id'], 'lease_id': after['lease_id'],
+                'intent_sha256': after['intent_sha256'], 'target_sha256': digest(after['target']),
+                'release_id': self.release}))
+
+    def test_intent_recovery_requires_exact_assertions_fields_and_separate_signature_purpose(self):
+        request = self.intent_stage_recovery(); body = request['consumed_stage_proof']['Body']
+        self.jobs.review_reconciliation(request, self.actor); audit = self.store.audit()
+        for field, wrong in [('child_exit_confirmed', False), ('engine_journal_absent', False),
+                             ('destination_absent', 1), ('filesystem_intent_sha256', ''),
+                             ('filesystem_operation_id', body['job_id'])]:
+            bad = self.sign_recovery(body | {field: wrong}, purpose='AUTHWIRE-STAGE-INTENT-RECOVERY-EVIDENCE-V1')
+            with self.subTest(field=field), self.assertRaises(JobError):
+                self.jobs.review_reconciliation(request | {'consumed_stage_proof': bad}, self.actor)
+        for field in ('stage_child_sha256', 'execution_review_sha256'):
+            missing = dict(body); del missing[field]
+            with self.assertRaises((JobError, ValueError)):
+                self.jobs.review_reconciliation(request | {'consumed_stage_proof': self.sign_recovery(
+                    missing, purpose='AUTHWIRE-STAGE-INTENT-RECOVERY-EVIDENCE-V1')}, self.actor)
+        with self.assertRaises(JobError):
+            self.jobs.review_reconciliation(request | {'consumed_stage_proof': self.sign_recovery(body)}, self.actor)
+        self.assertEqual(audit, self.store.audit())
+
+    def test_intent_closure_binds_original_filesystem_intent_and_rejects_cross_protocol_closure(self):
+        request = self.approved_closure(intent=True); body = request['closure']['Body']; audit = self.store.audit()
+        for field, wrong in [('filesystem_intent_sha256', '0'*64),
+                             ('filesystem_operation_id', str(uuid.uuid4())),
+                             ('format', 'AuthWireConsumedStageClosureV1')]:
+            bad = self.sign_recovery(body | {field: wrong}, purpose='AUTHWIRE-STAGE-INTENT-CLOSURE-V1')
+            with self.subTest(field=field), self.assertRaises(JobError):
+                self.jobs.close_consumed_stage(request | {'closure': bad}, self.actor)
+        with self.assertRaises(JobError):
+            self.jobs.close_consumed_stage(request | {'closure': self.sign_recovery(body,
+                purpose='AUTHWIRE-CONSUMED-STAGE-CLOSURE-V1')}, self.actor)
+        self.assertEqual(audit, self.store.audit())
 
     def test_closure_retires_only_blocker_preserves_result_and_is_idempotent(self):
         request = self.approved_closure()
