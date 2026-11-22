@@ -1,5 +1,12 @@
 # AuthWire — güncel çalışma planı
 
+## 22 Kasım 2026 — G01 hazırlık okuması iyileştirildi; tam yürütme kabulü açık
+
+60/94 tamam,34 açık; G01 2/5,G05 5/5. Yeni gerçek salt okunur gözlem7876→6745ms; iki uçtaki bütün güvenlik gözlemleri korunarak üçüncü fazladan içerik turu kaldırıldı.18 yeni non-admin sözleşme kontrolü ve5 tarihsel kaynak kontrolü geçti. PR167 son76b87e3b, ürün kodu453d1585; son genel CI sürüyor. İmzalı0a55f57c aday Prepare geçti; tüm bağlantı/eşleştirme/anahtar ayarları aynı. Apply işçiyi otomatik başlattığından mevcut B9 ve durmuş yazıcı korunur. Yanlış port taşıyan0455 aday hiç uygulanmadı.
+
+Sırada bütün çocuk başlangıç/özgün yetki/engine/postcheck bütçesinin kapanması; son CI'yi okumak ve sonra doğru aday Apply + ayrı taze yetkiyle tam20 dosyalı stage/ayrı rollback. İki süre ölçümü,18 kontrol, c292 kurtarması veya G05/EAP/CRL testleri tekrarlanmayacak. Üç uç etkin teslim ve harici eşleşen restore açık. G01 5–9 aktif iş günü yeniden değerlendirildi, daraltılmadı; diğer bantlar aynı. [Kanıt](checkpoints/2026-11-22-g01-cold-read-optimization.json).
+
+
 ## 22 Kasım 2026, 19:03 — Boş kısmi hedef ve kilit kurtarması tamam
 
 c292e179 işi AllSigned gMSA bakımıyla kapandı:18:58:33 yalnız boş hedef kaldırıldı, tam başlangıç envanteri geri geldi; engine intent/grant/belirsiz sonuç korundu.18:59:48 ayrı CNG kapanışı Linux rev145'te kabul edildi; ilgili kilit yok. Kalıcı B9 Connector ve izole Linux f5b98a5e kuruldu.51 Linux defter testi,17 Linux CI ve79 native kontrol geçti; tüm Windows CI ilan edilmez. Yazıcı soğuk çocuk bütçesi çözülene kadar duraklatıldı; yeni iş/boş çevrim veya eski saha testi tekrarlanmadı. **Sırada süre sorununun ölçümü ve çözümü var; c292 kurtarması tekrar edilmeyecek.** Sonra tam20 dosyalı stage/rollback, üç uç etkin teslimi ve harici eşleşen kurtarma.60/94,34 açık,G012/5,G055/5 ve5–9 aktif iş günü korundu. [Kanıt](checkpoints/2026-11-22-g01-empty-stage-field-recovery.json).

@@ -1,5 +1,12 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## 22 Kasım 2026 — G01 hazırlık okuması sonrası süre değerlendirmesi
+
+Yeni salt okunur kapsam okuması7876→6745ms (~%14),18 dar sözleşme ve5 tarihsel kaynak kontrolü geçti. Bu yalnız hazırlık okumasıdır; bütün gerçek çocuk/grant/gate/engine/postcheck toplamının süre kabulü değildir. Kalıcı0a55 aday hazır, uygulanmadı; mevcut B9 ve durmuş yazıcı korunur. Son kaynak76b87e3b CI sürüyor. c292 kurtarması kapalıdır, tekrarlanmayacak.
+
+**G01 kalan5–9 aktif iş günü korundu.** Tam özgün pencerede stage/ayrı rollback, üç uç etkin GPO teslimi ve harici eşleşen günlük/state restore kapanmadı; hazırlıktan kazanılan1,13s bir iş günü azalması olarak sayılmadı. Diğer12 paket,23 Kasım koşullu başlangıç ve mevcut makro/operatör/gözlem bantları değişmedi. Bu turun aktif saatleri ölçülmedi. Sonraki işte bu ölçümler ve başarılı saha testleri yeniden çalıştırılmayacak. [Kanıt](../checkpoints/2026-11-22-g01-cold-read-optimization.json).
+
+
 ## 22 Kasım 2026, 19:03 — Boş kısmi hedef kurtarması sonrası yeniden değerlendirme
 
 Kısmi boş hedefin kaldırılması, tam başlangıç envanterinin geri gelmesi ve ayrı kilit kapanışı rev145 ile tamamlandı. Eşleşen kalıcı B9 paket ve izole Linux kaynak teslimi yapıldı;51 Linux defter testi ve79 native yeni kontrol geçti. Bu teknik kurtarma için kalan iş0; eski c292 işi tekrar edilmeyecek. **G01 birleşik5–9 aktif iş günü** korundu: soğuk çocuk hazırlık/yürütme süresi henüz çözülmedi; tam gerçek20 dosyalı stage/rollback, harici eşleşen Windows günlük restore ve üç uç etkin GPO teslimi açık. Erişilemeyen iki uç değişmedi. Yazıcı yeni deneme için başlatılmadı. Diğer12 paket bandı,23 Kasım koşullu makro pencereleri ve kılavuz bayrakları aynı; aktif saat ölçülmedi, bekleme takvimi çalışma sayılmadı. [Kanıt](../checkpoints/2026-11-22-g01-empty-stage-field-recovery.json).

@@ -1,0 +1,591 @@
+{
+  "date": "2026-11-22",
+  "counts": {
+    "complete": 60,
+    "total": 94,
+    "open": 34,
+    "G01": "2/5",
+    "G05": "5/5"
+  },
+  "step": "Cold preparation read optimization, not full authorized stage acceptance",
+  "source": {
+    "production": "453d15852f9167f5d1feef2a02d0605cee360dba",
+    "final_with_test_shim_fix": "f1c0946dd00ba4735dd100a33ace26ce692ef5d0",
+    "pr": 167,
+    "merged": false,
+    "final_with_test_shim_and_historical_fixture_fixes": "76b87e3ba47ecb1ae2e6b6fbd886c52f922f4384"
+  },
+  "field": {
+    "Original": {
+      "format": "AuthWireColdReadDiagnosticV1",
+      "status": "observed",
+      "release": "b9e84cf9-b560-4c4f-b729-921bdf03afe6",
+      "checked_at": 1795364369,
+      "identity": "S-1-5-21-34256453-3348971241-2809240126-1648",
+      "context_ms": 7876,
+      "total_ms": 9199,
+      "timings": [
+        {
+          "name": "signed_source_load",
+          "ms": 203
+        },
+        {
+          "name": "native_types",
+          "ms": 341
+        },
+        {
+          "name": "key_open_acl",
+          "ms": 41
+        },
+        {
+          "name": "directory_module_import",
+          "ms": 251
+        },
+        {
+          "name": "Get-AuthWireCandidatePublicSigner",
+          "ms": 92
+        },
+        {
+          "name": "Test-AuthWireJobCandidateContent",
+          "ms": 675
+        },
+        {
+          "name": "Test-AuthWireJobCombinedContent",
+          "ms": 1444
+        },
+        {
+          "name": "Get-AuthWireCandidatePublicSigner",
+          "ms": 6
+        },
+        {
+          "name": "Test-AuthWireJobCandidateContent",
+          "ms": 174
+        },
+        {
+          "name": "Get-AuthWireScopeContext",
+          "ms": 210
+        },
+        {
+          "name": "Get-AuthWireCombinedScopeContext",
+          "ms": 1749
+        },
+        {
+          "name": "Get-AuthWireCandidatePublicSigner",
+          "ms": 4
+        },
+        {
+          "name": "Test-AuthWireJobCandidateContent",
+          "ms": 204
+        },
+        {
+          "name": "Test-AuthWireJobCombinedContent",
+          "ms": 796
+        },
+        {
+          "name": "Get-AuthWireCandidatePublicSigner",
+          "ms": 4
+        },
+        {
+          "name": "Test-AuthWireJobCandidateContent",
+          "ms": 186
+        },
+        {
+          "name": "Get-AuthWireScopeContext",
+          "ms": 211
+        },
+        {
+          "name": "Get-AuthWireCombinedScopeContext",
+          "ms": 1010
+        },
+        {
+          "name": "Get-AuthWireCombinedStagingLedger",
+          "ms": 279
+        },
+        {
+          "name": "Get-AuthWireScopeData",
+          "ms": 2586
+        },
+        {
+          "name": "Get-AuthWireSysvolInventory",
+          "ms": 99
+        },
+        {
+          "name": "Get-AuthWireScopeData",
+          "ms": 182
+        },
+        {
+          "name": "Get-AuthWireSysvolInventory",
+          "ms": 90
+        },
+        {
+          "name": "Get-AuthWireCandidatePublicSigner",
+          "ms": 4
+        },
+        {
+          "name": "Test-AuthWireJobCandidateContent",
+          "ms": 179
+        },
+        {
+          "name": "Test-AuthWireJobCombinedContent",
+          "ms": 746
+        },
+        {
+          "name": "Get-AuthWireCandidatePublicSigner",
+          "ms": 4
+        },
+        {
+          "name": "Test-AuthWireJobCandidateContent",
+          "ms": 174
+        },
+        {
+          "name": "Get-AuthWireScopeContext",
+          "ms": 201
+        },
+        {
+          "name": "Get-AuthWireCombinedScopeContext",
+          "ms": 955
+        },
+        {
+          "name": "Get-AuthWireCombinedStagingLedger",
+          "ms": 205
+        },
+        {
+          "name": "Get-AuthWireCombinedStagingPreview",
+          "ms": 5862
+        },
+        {
+          "name": "Get-AuthWireSysvolInventory",
+          "ms": 87
+        }
+      ],
+      "expired_preview_rejected": true,
+      "original_records_unchanged": true,
+      "inventory_sha256": "b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6",
+      "new_job_created": false,
+      "engine_invoked": false,
+      "authorization_extended": false
+    },
+    "Optimized": {
+      "format": "AuthWireColdReadDiagnosticV1",
+      "status": "observed",
+      "release": "b9e84cf9-b560-4c4f-b729-921bdf03afe6",
+      "checked_at": 1795364691,
+      "identity": "S-1-5-21-34256453-3348971241-2809240126-1648",
+      "context_ms": 6745,
+      "total_ms": 8017,
+      "timings": [
+        {
+          "name": "signed_source_load",
+          "ms": 213
+        },
+        {
+          "name": "native_types",
+          "ms": 303
+        },
+        {
+          "name": "key_open_acl",
+          "ms": 41
+        },
+        {
+          "name": "directory_module_import",
+          "ms": 221
+        },
+        {
+          "name": "Get-AuthWireCandidatePublicSigner",
+          "ms": 77
+        },
+        {
+          "name": "Test-AuthWireJobCandidateContent",
+          "ms": 631
+        },
+        {
+          "name": "Test-AuthWireJobCombinedContent",
+          "ms": 1402
+        },
+        {
+          "name": "Get-AuthWireCandidatePublicSigner",
+          "ms": 6
+        },
+        {
+          "name": "Test-AuthWireJobCandidateContent",
+          "ms": 199
+        },
+        {
+          "name": "Get-AuthWireScopeContext",
+          "ms": 237
+        },
+        {
+          "name": "Get-AuthWireCombinedScopeContext",
+          "ms": 1709
+        },
+        {
+          "name": "Get-AuthWireCombinedStagingLedger",
+          "ms": 278
+        },
+        {
+          "name": "Get-AuthWireScopeData",
+          "ms": 2568
+        },
+        {
+          "name": "Get-AuthWireSysvolInventory",
+          "ms": 96
+        },
+        {
+          "name": "Get-AuthWireScopeData",
+          "ms": 189
+        },
+        {
+          "name": "Get-AuthWireSysvolInventory",
+          "ms": 96
+        },
+        {
+          "name": "Get-AuthWireCandidatePublicSigner",
+          "ms": 12
+        },
+        {
+          "name": "Test-AuthWireJobCandidateContent",
+          "ms": 195
+        },
+        {
+          "name": "Test-AuthWireJobCombinedContent",
+          "ms": 730
+        },
+        {
+          "name": "Get-AuthWireCandidatePublicSigner",
+          "ms": 4
+        },
+        {
+          "name": "Test-AuthWireJobCandidateContent",
+          "ms": 204
+        },
+        {
+          "name": "Get-AuthWireScopeContext",
+          "ms": 234
+        },
+        {
+          "name": "Get-AuthWireCombinedScopeContext",
+          "ms": 970
+        },
+        {
+          "name": "Get-AuthWireCombinedStagingLedger",
+          "ms": 228
+        },
+        {
+          "name": "Get-AuthWireCombinedStagingObservation",
+          "ms": 6505
+        },
+        {
+          "name": "Get-AuthWireSysvolInventory",
+          "ms": 77
+        }
+      ],
+      "expired_preview_rejected": true,
+      "original_records_unchanged": true,
+      "inventory_sha256": "b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6",
+      "new_job_created": false,
+      "engine_invoked": false,
+      "authorization_extended": false
+    },
+    "Focused": {
+      "exit_code": 0,
+      "output": "{\"status\":\"passed\",\"checks\":18,\"identity\":\"S-1-5-21-34256453-3348971241-2809240126-1648\",\"ad_and_content_synthetic\":true,\"engine_invoked\":false,\"grant_created\":false,\"original_job_replayed\":false}"
+    }
+  },
+  "changes": {
+    "shared_bounded_observation": true,
+    "full_content_boundary_passes_before": 3,
+    "after": 2,
+    "retained": [
+      "two content/signature/ACL boundaries",
+      "two AD/business observations",
+      "two source ledgers and SYSVOL inventory checks",
+      "PDC stability and final independent PDC read",
+      "same public preview wire projection",
+      "original approved timestamps and expiry",
+      "original grant lifetime and 15000ms child maximum"
+    ],
+    "no_cross_call_cache": true
+  },
+  "limits": {
+    "diagnostic_is_read_only": true,
+    "actual_cold_authorization_chain_gate_engine_timing_not_measured": true,
+    "two_observations_are_not_latency_guarantee": true,
+    "full_20_file_stage_and_separate_rollback_open": true
+  },
+  "candidate": {
+    "prepared_config_preserving": "0a55f57c-89a6-4de0-8f1d-3d9bcb91877b",
+    "preserved_write_pilot_port": 18765,
+    "unapplied_mismatched_port": "0455b196-2159-41b2-985e-33b6a750ff6d",
+    "mismatched_candidate_never_applied": true,
+    "active_release_unchanged": "b9e84cf9-b560-4c4f-b729-921bdf03afe6",
+    "package_applied": false,
+    "reason_not_applied": "Apply automatically starts the write worker; preserve its stopped state until the complete cold-child/engine budget is accepted."
+  },
+  "deduplication": {
+    "old_job_c292_recovery_not_repeated": true,
+    "expired_grant_not_replayed": true,
+    "new_stage_rollback_job_created": false,
+    "manual_no_job_test_started": false,
+    "successful_G05_EAP_OU_CRL_tests_not_repeated": true
+  },
+  "forecast": {
+    "G01_active_work_days": [
+      5,
+      9
+    ],
+    "active_hours_measured": false,
+    "other_bands_unchanged": true
+  },
+  "remaining": [
+    "Read latest automatic CI results without manually rerunning successes; only then decide complete-child budget implementation/acceptance, followed by exact prepared package Apply before any fresh write acceptance",
+    "Complete actual fresh-grant whole-child 20-file stage within original deadline and separate authorized rollback",
+    "Three endpoint effective GPO delivery",
+    "External matching Windows journal and Linux state restore"
+  ],
+  "final_native": {
+    "checked_at": 1795365342,
+    "active_release": "b9e84cf9-b560-4c4f-b729-921bdf03afe6",
+    "prepared_release": "0a55f57c-89a6-4de0-8f1d-3d9bcb91877b",
+    "entire_config_preserved_except_release": true,
+    "current_write_pilot_port": 18765,
+    "package_applied": false,
+    "service_state": "Running",
+    "service_healthy": true,
+    "scheduler": {
+      "WorkerPid": 3144,
+      "ServiceName": "AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46",
+      "State": "stopped",
+      "StopReason": "lifecycle_requires_attention",
+      "LastPhase": "requires_review",
+      "Steps": 1,
+      "ReleaseId": "b9e84cf9-b560-4c4f-b729-921bdf03afe6",
+      "Event": "WINDOWS_CONNECTOR_WRITE_SCHEDULER"
+    },
+    "diagnostic_tasks_absent": true,
+    "transfer_absent": true,
+    "gpo_lock_absent": true,
+    "original_engine_intent_preserved": true,
+    "mismatched_port_candidate_applied": false,
+    "temporary_operator_created": false
+  },
+  "validation": {
+    "focused_nonadmin_checks": 18,
+    "historical_delivery_exactness_checks": 5,
+    "latest_foundation_pending": true,
+    "preclaim_fixture_fix_passed_run": 45044165770,
+    "production_payload_unchanged_after_453d1585": true,
+    "original_5bc_all19_workflows_succeeded": true,
+    "diagnostic_capture_failure_preserved": true,
+    "synthetic_expired_case_corrected_before_final18_pass": true,
+    "historical_embedded_dev45_delivery_left_unchanged": true,
+    "latest_source_ci": [
+      {
+        "id": 45044864413,
+        "name": "KANAME foundation checks",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 1671,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864413/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864413/logs",
+        "workflow_id": 373980015
+      },
+      {
+        "id": 45044864424,
+        "name": "AuthWire isolated durable write lifecycle",
+        "status": "queued",
+        "conclusion": null,
+        "run_number": 88,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864424/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864424/logs",
+        "workflow_id": 406720639
+      },
+      {
+        "id": 45044864392,
+        "name": "AuthWire isolated write preclaim checks",
+        "status": "queued",
+        "conclusion": null,
+        "run_number": 134,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864392/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864392/logs",
+        "workflow_id": 400886599
+      },
+      {
+        "id": 45044864437,
+        "name": "AuthWire isolated consumed-stage closure",
+        "status": "queued",
+        "conclusion": null,
+        "run_number": 21,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864437/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864437/logs",
+        "workflow_id": 419239552
+      },
+      {
+        "id": 45044864398,
+        "name": "AuthWire isolated rollback execution and result",
+        "status": "queued",
+        "conclusion": null,
+        "run_number": 90,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864398/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864398/logs",
+        "workflow_id": 406671057
+      },
+      {
+        "id": 45044864400,
+        "name": "AuthWire isolated authorized stage execution",
+        "status": "queued",
+        "conclusion": null,
+        "run_number": 102,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864400/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864400/logs",
+        "workflow_id": 401134937
+      },
+      {
+        "id": 45044864457,
+        "name": "AuthWire local PDC SYSVOL junction checks",
+        "status": "queued",
+        "conclusion": null,
+        "run_number": 14,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864457/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864457/logs",
+        "workflow_id": 426824194
+      },
+      {
+        "id": 45044864335,
+        "name": "AuthWire exited stage intent recovery",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 10,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864335/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864335/logs",
+        "workflow_id": 426843074
+      },
+      {
+        "id": 45044864287,
+        "name": "AuthWire isolated one-shot staging cycle",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 97,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864287/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864287/logs",
+        "workflow_id": 401181139
+      },
+      {
+        "id": 45044864347,
+        "name": "AuthWire isolated staging filesystem checks",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 45,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864347/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864347/logs",
+        "workflow_id": 400392336
+      },
+      {
+        "id": 45044864414,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 302,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864414/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864414/logs",
+        "workflow_id": 395329531
+      },
+      {
+        "id": 45044864351,
+        "name": "AuthWire preauthorization refusal reporting",
+        "status": "queued",
+        "conclusion": null,
+        "run_number": 62,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864351/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864351/logs",
+        "workflow_id": 409666861
+      },
+      {
+        "id": 45044864289,
+        "name": "AuthWire reproducible Linux delivery",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 115,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864289/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864289/logs",
+        "workflow_id": 407305352
+      },
+      {
+        "id": 45044864494,
+        "name": "AuthWire empty stage recovery",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 8,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864494/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864494/logs",
+        "workflow_id": 426893946
+      },
+      {
+        "id": 45044864427,
+        "name": "AuthWire isolated rollback authorization",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 96,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864427/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864427/logs",
+        "workflow_id": 406634595
+      },
+      {
+        "id": 45044864423,
+        "name": "AuthWire bounded retry network probe checks",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 1197,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864423/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864423/logs",
+        "workflow_id": 390643325
+      },
+      {
+        "id": 45044864305,
+        "name": "AuthWire Windows write scheduler checks",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 27,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864305/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864305/logs",
+        "workflow_id": 416181057
+      },
+      {
+        "id": 45044864319,
+        "name": "AuthWire isolated governed write history",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 79,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864319/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864319/logs",
+        "workflow_id": 407072998
+      },
+      {
+        "id": 45044864357,
+        "name": "AuthWire combined staging preview checks",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 12,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864357/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864357/logs",
+        "workflow_id": 399509077
+      },
+      {
+        "id": 45044864421,
+        "name": "AuthWire isolated rollback origin evidence",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 100,
+        "jobs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864421/jobs",
+        "logs_url": "https://api.github.com/repos/Asitavandas/kaname/actions/runs/45044864421/logs",
+        "workflow_id": 401522782
+      }
+    ]
+  },
+  "cleanup": {
+    "temporary_tasks_removed": 2,
+    "transfer_removed": true,
+    "temporary_operator_created": false,
+    "credentials_or_key_exported": false,
+    "signed_sources_and_observation_receipts_retained": true
+  }
+}
