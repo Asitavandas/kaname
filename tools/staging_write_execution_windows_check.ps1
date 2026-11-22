@@ -277,8 +277,10 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
     Check ($local.AcceptedAck -and $local.StageConsumption.DiagnosticCode -ceq 'WRITE_INTENT_PREFLIGHT_TIMEOUT') 'local ACK and consumption match'
     $wait=[Diagnostics.Stopwatch]::StartNew()
     while([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -lt $local.StageConsumption.GrantExpiresAt -and $wait.Elapsed.TotalSeconds -lt 32){Start-Sleep -Milliseconds 100}
+    $script:RecoveryExpectedEnrollmentBase=$url
     # Only the directory/approved-source observation is synthetic. SMB inventory is reread.
     function Get-AuthWireCombinedStagingPreview($Target,$Binding,$PublisherThumbprint,$BaseUrl){
+     if($BaseUrl -cne $script:RecoveryExpectedEnrollmentBase){throw 'FIXTURE_ENROLLMENT_PORT_CHANGED'}
      return (New-AuthWireCombinedStagingPlanCore $Target $files (Get-AuthWireSysvolInventory $gpo) $preview.Preview.scope_observations_sha256 ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()))
     }
     $proof=Get-AuthWireConsumedStageRecoveryEvidence $journal $id $b $rsa $signer.Thumbprint $url
@@ -300,7 +302,10 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
      $resultHash=(Get-FileHash -LiteralPath (Join-Path $job 'result-outbox.json')).Hash
      $session=ConvertTo-SecureString $web.session -AsPlainText -Force;$csrf=ConvertTo-SecureString $web.csrf -AsPlainText -Force
      try{
-      $closed=Complete-AuthWireConsumedStageLocalClosure $journal $id $b $rsa $signer.Thumbprint $url $request $session $csrf
+      $canonical=[UriBuilder]::new($url);$canonical.Port=443
+      $script:RecoveryExpectedEnrollmentBase=$canonical.Uri.AbsoluteUri
+      Reject {Complete-AuthWireConsumedStageLocalClosure $journal $id $b $rsa $signer.Thumbprint $url $request $session $csrf 'https://other.lab.example/'} 'enrollment URL cannot move to an unbound appliance'
+      $closed=Complete-AuthWireConsumedStageLocalClosure $journal $id $b $rsa $signer.Thumbprint $url $request $session $csrf $canonical.Uri.AbsoluteUri
       Check (-not (Test-Path -LiteralPath (Join-Path $journal ('gpo-'+$t.gpo_id+'.json')))) 'only the approved held GPO lock is released'
       Check ((Get-FileHash -LiteralPath (Join-Path $job 'grant-consumed.json')).Hash -ceq $grantHash -and (Get-FileHash -LiteralPath (Join-Path $job 'result-outbox.json')).Hash -ceq $resultHash) 'old consumed grant and uncertain result bytes are retained'
       $accepted=Send-AuthWireConsumedStageClosure $b $url $request $closed $session $csrf

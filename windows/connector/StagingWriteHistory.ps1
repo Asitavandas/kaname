@@ -375,8 +375,17 @@ function Test-AuthWireConsumedStageClosed([string]$Root,[string]$Life,$State,[ha
   return $true
  }finally{$p.Dispose()}
 }
-function Complete-AuthWireConsumedStageLocalClosure([string]$Root,[string]$JobId,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[string]$PublisherThumbprint,[string]$BaseUrl,$Request,[securestring]$Session,[securestring]$Csrf){
+function Complete-AuthWireConsumedStageLocalClosure([string]$Root,[string]$JobId,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[string]$PublisherThumbprint,[string]$BaseUrl,$Request,[securestring]$Session,[securestring]$Csrf,[string]$EnrollmentBaseUrl=''){
  Assert-AuthWireStagingWriteJournalLocation $Root $Binding;Assert-AuthWireCandidateGuid $JobId
+ # The isolated write HTTPS port is transport only. Signed enrollment content
+ # remains bound to the canonical appliance URL in the protected service config.
+ if($EnrollmentBaseUrl -ceq ''){$EnrollmentBaseUrl=$BaseUrl}
+ $enrollment=$null
+ if(-not [uri]::TryCreate($EnrollmentBaseUrl,[UriKind]::Absolute,[ref]$enrollment) -or
+    $enrollment.Scheme -cne 'https' -or $enrollment.Host -cne $Binding.appliance_fqdn -or
+    $enrollment.UserInfo -or $enrollment.Query -or $enrollment.Fragment -or $enrollment.AbsolutePath -cne '/'){
+  throw 'WRITE_RECOVERY_ENROLLMENT_URL_REJECTED'
+ }
  Initialize-AuthWireStagingFilesystemTypes
  $mutex=Enter-AuthWireWriteCycleLock $Binding;$p=[AuthWire.Staging.TreeLeaseV1]::new();$owned=$null
  try{
@@ -392,7 +401,7 @@ function Complete-AuthWireConsumedStageLocalClosure([string]$Root,[string]$JobId
   $receipt=Confirm-AuthWireConsumedStageRecoveryApproval $Root $JobId $Binding $Key $BaseUrl $Request $Session $Csrf
   # A second real observation immediately precedes retirement. Normalize only
   # timestamps; any AD, source, ACL or SYSVOL drift keeps the lock closed.
-  $fresh=Get-AuthWireCombinedStagingPreview $current.State.Offer.target.scope_target $Binding $PublisherThumbprint $BaseUrl
+  $fresh=Get-AuthWireCombinedStagingPreview $current.State.Offer.target.scope_target $Binding $PublisherThumbprint $EnrollmentBaseUrl
   $null=New-AuthWireConsumedStageRecoveryBody $current.State $current.Completion $current.Consumption $fresh ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
   $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
   Assert-AuthWireConsumedStageRecoveryReceipt $Request $receipt $now
