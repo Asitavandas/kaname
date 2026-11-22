@@ -10,7 +10,8 @@ $journal=$null;$candidateBase=$null;$oldModulePath=$env:PSModulePath;$script:che
 $grantMode=$env:AUTHWIRE_ROLLBACK_AUTHORIZATION_CHECK -eq '1'
 $rollbackExecutionMode=$env:AUTHWIRE_ROLLBACK_EXECUTION_CHECK -eq '1'
 $closureMode=$env:AUTHWIRE_STAGE_RECOVERY_CLOSURE_CHECK -eq '1'
-$intentRecoveryMode=$env:AUTHWIRE_STAGE_INTENT_RECOVERY_CHECK -eq '1'
+$emptyRecoveryMode=$env:AUTHWIRE_EMPTY_STAGE_RECOVERY_CHECK -eq '1'
+$intentRecoveryMode=$env:AUTHWIRE_STAGE_INTENT_RECOVERY_CHECK -eq '1' -or $emptyRecoveryMode
 $recoveryReceiptMode=$env:AUTHWIRE_STAGE_RECOVERY_RECEIPT_CHECK -eq '1' -or $closureMode
 $lifecycleMode=$env:AUTHWIRE_WRITE_LIFECYCLE_CHECK -eq '1' -or $recoveryReceiptMode
 $historyMode=$env:AUTHWIRE_WRITE_HISTORY_CHECK -eq '1'
@@ -287,7 +288,7 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
      if($BaseUrl -cne $script:RecoveryExpectedEnrollmentBase){throw 'FIXTURE_ENROLLMENT_PORT_CHANGED'}
      return (New-AuthWireCombinedStagingPlanCore $Target $files (Get-AuthWireSysvolInventory $gpo) $preview.Preview.scope_observations_sha256 ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()))
     }
-    if($intentRecoveryMode){. (Join-Path $PSScriptRoot 'staging_write_intent_recovery_fixture.ps1')}
+    if($emptyRecoveryMode){. (Join-Path $PSScriptRoot 'staging_write_empty_recovery_fixture.ps1')}elseif($intentRecoveryMode){. (Join-Path $PSScriptRoot 'staging_write_intent_recovery_fixture.ps1')}
     $proof=Get-AuthWireConsumedStageRecoveryEvidence $journal $id $b $rsa $signer.Thumbprint $url
     $payload=[pscustomobject]@{evidence=$local.Evidence;proof=$proof}
     $requestPath=Join-Path $flowDirectory 'recovery-proof.json'
@@ -319,7 +320,7 @@ function New-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bindi
      }finally{$session.Dispose();$csrf.Dispose()}
      $h=Read-AuthWireLifecycleHistory $journal $b $rsa;$s=$h.ActiveStates[-1]
      Check (Test-AuthWireConsumedStageClosed $journal $h.Life $s $b $rsa) 'closed stage survives a fresh local journal read'
-     if($intentRecoveryMode){
+     if($intentRecoveryMode -and -not $emptyRecoveryMode){
       $laterDestination=Join-Path $gpo $preview.Preview.relative_destination.Replace('/','\')
       [AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($laterDestination)
       try{Check (Test-AuthWireConsumedStageClosed $journal $h.Life $s $b $rsa) 'historical intent closure does not claim ownership of a later version directory'}finally{[IO.Directory]::Delete($laterDestination)}
