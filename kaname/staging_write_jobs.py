@@ -43,6 +43,12 @@ RELEASE_ACK = {
 }
 RECOVERY_FRAME = 'AUTHWIRE-CONSUMED-STAGE-RECOVERY-EVIDENCE-V1'
 CLOSURE_FRAME = 'AUTHWIRE-CONSUMED-STAGE-CLOSURE-V1'
+EMPTY_RECOVERY_FORMAT = 'AuthWireEmptyStageRecoveryEvidenceV1'
+EMPTY_RECOVERY_FRAME = 'AUTHWIRE-EMPTY-STAGE-RECOVERY-EVIDENCE-V1'
+EMPTY_CLOSURE_FORMAT = 'AuthWireEmptyStageClosureV1'
+EMPTY_CLOSURE_FRAME = 'AUTHWIRE-EMPTY-STAGE-CLOSURE-V1'
+EMPTY_RECOVERY_HASHES = {'engine_intent_sha256', 'empty_cleanup_receipt_sha256', 'destination_row_sha256'}
+EMPTY_RECOVERY_ASSERTIONS = {'child_exit_confirmed', 'engine_intent_retained', 'empty_destination_removed', 'destination_absent'}
 INTENT_RECOVERY_FORMAT = 'AuthWireStageIntentRecoveryEvidenceV1'
 INTENT_RECOVERY_FRAME = 'AUTHWIRE-STAGE-INTENT-RECOVERY-EVIDENCE-V1'
 INTENT_CLOSURE_FORMAT = 'AuthWireStageIntentClosureV1'
@@ -207,6 +213,8 @@ class StagingWriteJobs(ConnectorJobs):
 
     def _state(self, j, scope, now):
         if 'closure' in j:
+            if j['closure']['request']['approval']['consumed_stage_proof']['Body']['format'] == EMPTY_RECOVERY_FORMAT:
+                return 'closed_after_empty_stage_cleanup'
             return ('closed_without_engine_journal' if j['closure']['request']['approval']
                     ['consumed_stage_proof']['Body']['format'] == INTENT_RECOVERY_FORMAT
                     else 'closed_without_filesystem_intent')
@@ -510,14 +518,18 @@ class StagingWriteJobs(ConnectorJobs):
             proof = value['consumed_stage_proof']
             keys(proof, {'Body', 'Signature'}, {'Body', 'Signature'})
             body, signature = proof['Body'], proof['Signature']
-            intent = type(body) is dict and body.get('format') == INTENT_RECOVERY_FORMAT
+            empty = type(body) is dict and body.get('format') == EMPTY_RECOVERY_FORMAT
+            intent = type(body) is dict and body.get('format') in {INTENT_RECOVERY_FORMAT, EMPTY_RECOVERY_FORMAT}
             fields = RECOVERY_HASH_FIELDS | RECOVERY_TIMES | {'format', 'job_id', 'gpo_id'}
             hashes_ = set(RECOVERY_HASH_FIELDS)
             if intent:
-                fields |= INTENT_RECOVERY_HASHES | INTENT_RECOVERY_ASSERTIONS | {'filesystem_operation_id'}
+                fields |= INTENT_RECOVERY_HASHES | (EMPTY_RECOVERY_ASSERTIONS if empty else INTENT_RECOVERY_ASSERTIONS) | {'filesystem_operation_id'}
+                if empty:
+                    fields |= EMPTY_RECOVERY_HASHES
+                    hashes_ |= EMPTY_RECOVERY_HASHES
                 hashes_ |= INTENT_RECOVERY_HASHES
             keys(body, fields, fields)
-            require(body['format'] in {'AuthWireConsumedStageRecoveryEvidenceV1', INTENT_RECOVERY_FORMAT} and
+            require(body['format'] in {'AuthWireConsumedStageRecoveryEvidenceV1', INTENT_RECOVERY_FORMAT, EMPTY_RECOVERY_FORMAT} and
                     guid(body['gpo_id']) and guid(body['job_id']) and
                     all(is_hash(body[field]) for field in hashes_) and
                     all(type(body[field]) is int and 0 < body[field] < 2**40 for field in RECOVERY_TIMES) and
@@ -525,7 +537,7 @@ class StagingWriteJobs(ConnectorJobs):
                     'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
             if intent:
                 require(guid(body['filesystem_operation_id']) and body['filesystem_operation_id'] != body['job_id'] and
-                        all(body[field] is True for field in INTENT_RECOVERY_ASSERTIONS),
+                        all(body[field] is True for field in (EMPTY_RECOVERY_ASSERTIONS if empty else INTENT_RECOVERY_ASSERTIONS)),
                         'STAGING_WRITE_RECONCILIATION_INPUT_INVALID')
 
     @staticmethod
@@ -593,7 +605,8 @@ class StagingWriteJobs(ConnectorJobs):
             public = serialization.load_pem_public_key(binding.public_key_pem)
             require(isinstance(public, rsa.RSAPublicKey) and len(signature) == public.key_size // 8 and
                     base64.b64encode(signature).decode('ascii') == proof['Signature'], conflict)
-            purpose = INTENT_RECOVERY_FRAME if body['format'] == INTENT_RECOVERY_FORMAT else RECOVERY_FRAME
+            purpose = (EMPTY_RECOVERY_FRAME if body['format'] == EMPTY_RECOVERY_FORMAT else
+                       INTENT_RECOVERY_FRAME if body['format'] == INTENT_RECOVERY_FORMAT else RECOVERY_FRAME)
             frame = f"{purpose}\n{digest(body)}\n".encode('ascii')
             public.verify(signature, frame, padding.PKCS1v15(), hashes.SHA256())
         except (InvalidSignature, ValueError, TypeError):
@@ -676,11 +689,14 @@ class StagingWriteJobs(ConnectorJobs):
                    'lock_sha256', 'consumed_stage_proof_sha256', 'approval_request_sha256'}
         fields = hashes_ | {'format', 'job_id', 'gpo_id', 'approval_revision', 'closed_at',
                             'evidence_expires_at', 'lock_released'}
-        intent = original['format'] == INTENT_RECOVERY_FORMAT
+        empty = original['format'] == EMPTY_RECOVERY_FORMAT
+        intent = original['format'] in {INTENT_RECOVERY_FORMAT, EMPTY_RECOVERY_FORMAT}
         if intent:
             fields |= {'filesystem_intent_sha256', 'filesystem_operation_id'}
+        if empty:
+            fields |= EMPTY_RECOVERY_HASHES
         keys(body, fields, fields)
-        require(body['format'] == (INTENT_CLOSURE_FORMAT if intent else 'AuthWireConsumedStageClosureV1') and
+        require(body['format'] == (EMPTY_CLOSURE_FORMAT if empty else INTENT_CLOSURE_FORMAT if intent else 'AuthWireConsumedStageClosureV1') and
                 body['job_id'] == job['id'] and body['gpo_id'] == job['target']['scope_target']['gpo_id'] and
                 all(is_hash(body[k]) for k in hashes_) and
                 all(body[k] == original[k] for k in
@@ -700,13 +716,16 @@ class StagingWriteJobs(ConnectorJobs):
             require(body['filesystem_intent_sha256'] == original['filesystem_intent_sha256'] and
                     body['filesystem_operation_id'] == original['filesystem_operation_id'],
                     'STAGING_WRITE_CLOSURE_REJECTED')
+        if empty:
+            require(all(is_hash(body[k]) and body[k] == original[k] for k in EMPTY_RECOVERY_HASHES),
+                    'STAGING_WRITE_CLOSURE_REJECTED')
         try:
             signature = base64.b64decode(proof['Signature'], validate=True)
             public = serialization.load_pem_public_key(self._binding(db).public_key_pem)
             require(isinstance(public, rsa.RSAPublicKey) and len(signature) == public.key_size // 8 and
                     base64.b64encode(signature).decode('ascii') == proof['Signature'],
                     'STAGING_WRITE_CLOSURE_REJECTED')
-            purpose = INTENT_CLOSURE_FRAME if intent else CLOSURE_FRAME
+            purpose = EMPTY_CLOSURE_FRAME if empty else INTENT_CLOSURE_FRAME if intent else CLOSURE_FRAME
             public.verify(signature, f"{purpose}\n{digest(body)}\n".encode('ascii'),
                           padding.PKCS1v15(), hashes.SHA256())
         except (InvalidSignature, ValueError, TypeError):
