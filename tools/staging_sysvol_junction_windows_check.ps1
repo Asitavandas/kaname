@@ -32,7 +32,7 @@ try{
  $version=$uncMachine+'\AuthWire-fixture';[AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($version)
  $pins.PinLocalSysvolAncestors($version,$anchor,$link,$target)
  for($i=0;$i -lt 20;$i++){[IO.File]::WriteAllText(($version+'\f'+$i+'.txt'),('fixture '+$i))}
- $owned=[AuthWire.Staging.TreeLeaseV1]::Tree($version,$true)
+ $owned=[AuthWire.Staging.TreeLeaseV1]::Tree($version,$false)
  Check ($owned.Rows.Count -eq 21) 'exact owned 20-file tree observed'
  # The separate path pin is not a delete lease. Release it before deletion,
  # then reacquire only GPO/Machine ancestors as the rollback engine does.

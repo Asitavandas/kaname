@@ -57,9 +57,9 @@ namespace AuthWire.Staging {
    try{do{if(info.Name!="::$DATA")Fail("STAGING_ALTERNATE_STREAM_REJECTED");}while(FindNextStreamW(h,out info));if(Marshal.GetLastWin32Error()!=38)NativeFail();}
    finally{FindClose(h);}
   }
-  Entry Open(string path,string relative,bool dir,bool delete,bool record){
+  Entry Open(string path,string relative,bool dir,bool delete,bool record,bool stable=false){
    // Do not share file writes or renames. Directory handles pin ancestors.
-   uint access=0x20080u|(dir?0u:0x80000000u)|(delete?0x10000u:0u);
+   uint access=0x20080u|(dir?(stable?1u:0u):0x80000000u)|(delete?0x10000u:0u);
    var h=CreateFile(path,access,dir?3u:1u,IntPtr.Zero,3,0x02200000,IntPtr.Zero);
    if(h.IsInvalid){h.Dispose();NativeFail();}
    try{
@@ -81,15 +81,20 @@ namespace AuthWire.Staging {
     return e;
    }catch{h.Dispose();throw;}
   }
-  public void PinAncestors(string path){
+  public void PinAncestors(string path){PinAncestorsCore(path,false);}
+  // FILE_LIST_DIRECTORY makes the directory open participate in Windows
+  // share checking. Metadata-only opens do not prevent rename/delete.
+  // Separate from legacy journal bookkeeping leases, which hand off deletion.
+  public void PinStableAncestors(string path){PinAncestorsCore(path,true);}
+  void PinAncestorsCore(string path,bool stable){
    string full=System.IO.Path.GetFullPath(path);
    if(!String.Equals(full,path,StringComparison.OrdinalIgnoreCase)||full.Length>2000||full.StartsWith(@"\\?\")||full.StartsWith(@"\\.\"))Fail("STAGING_PATH_REJECTED");
    var parts=new Stack<string>();string cur=full;string root=System.IO.Path.GetPathRoot(full);
    while(cur!=null){parts.Push(cur);if(String.Equals(cur.TrimEnd('\\'),root.TrimEnd('\\'),StringComparison.OrdinalIgnoreCase))break;string next=System.IO.Path.GetDirectoryName(cur);if(next==cur)break;cur=next;}
-   while(parts.Count>0)Open(parts.Pop(),"",true,false,false);
+   while(parts.Count>0)Open(parts.Pop(),"",true,false,false,stable);
   }
   Info PinSysvolJunction(string part,string target){
-   var h=CreateFile(part,0x20080u,1u,IntPtr.Zero,3,0x02200000,IntPtr.Zero);
+   var h=CreateFile(part,0x20081u,1u,IntPtr.Zero,3,0x02200000,IntPtr.Zero);
     if(h.IsInvalid){h.Dispose();NativeFail();}
     try{
      Info i;if(!GetFileInformationByHandle(h,out i))NativeFail();
@@ -119,20 +124,20 @@ namespace AuthWire.Staging {
       !link.StartsWith(@"\\")||link.StartsWith(@"\\?\")||link.StartsWith(@"\\.\")||
       target.StartsWith(@"\\")||local.StartsWith(@"\\")||System.IO.Path.GetPathRoot(target).Length!=3||System.IO.Path.GetPathRoot(local).Length!=3||
       !(String.Equals(full,link,StringComparison.OrdinalIgnoreCase)||full.StartsWith(link+"\\",StringComparison.OrdinalIgnoreCase)))Fail("STAGING_SYSVOL_ANCHOR_REJECTED");
-   PinAncestors(target);
+   PinStableAncestors(target);
    Info expected;if(!GetFileInformationByHandle(entries[entries.Count-1].H,out expected))NativeFail();
-   PinAncestors(System.IO.Path.GetDirectoryName(local));
+   PinStableAncestors(System.IO.Path.GetDirectoryName(local));
    Info localLink=PinSysvolJunction(local,target);
    var parts=new Stack<string>();string cur=full,root=System.IO.Path.GetPathRoot(full);
    while(cur!=null){parts.Push(cur);if(String.Equals(cur.TrimEnd('\\'),root.TrimEnd('\\'),StringComparison.OrdinalIgnoreCase))break;string next=System.IO.Path.GetDirectoryName(cur);if(next==cur)break;cur=next;}
    bool seen=false;
    while(parts.Count>0){
     string part=parts.Pop();
-    if(!String.Equals(part,link,StringComparison.OrdinalIgnoreCase)){Open(part,"",true,false,false);continue;}
+    if(!String.Equals(part,link,StringComparison.OrdinalIgnoreCase)){Open(part,"",true,false,false,true);continue;}
     seen=true;
     Info remoteLink=PinSysvolJunction(part,target);
     if(remoteLink.Volume!=localLink.Volume||remoteLink.IndexHigh!=localLink.IndexHigh||remoteLink.IndexLow!=localLink.IndexLow)Fail("STAGING_SYSVOL_JUNCTION_IDENTITY_REJECTED");
-    var followed=CreateFile(part,0x20080u,3u,IntPtr.Zero,3,0x02000000,IntPtr.Zero);
+    var followed=CreateFile(part,0x20081u,3u,IntPtr.Zero,3,0x02000000,IntPtr.Zero);
     if(followed.IsInvalid){followed.Dispose();NativeFail();}
     try{
      Info actual;if(!GetFileInformationByHandle(followed,out actual))NativeFail();
@@ -220,12 +225,12 @@ function Add-AuthWireStagingGpoPins($Pins,[string]$Path,[string]$GpoRoot){
  # domain junction; custom locations/remote PDCs keep the existing rejection.
  $pattern='\A\\\\(?<pdc>[a-z0-9][a-z0-9.-]{0,252})\\SYSVOL\\(?<domain>[a-z0-9][a-z0-9.-]{0,252})\\Policies\\\{[0-9a-f-]{36}\}\z'
  $m=[regex]::Match($GpoRoot,$pattern,[Text.RegularExpressions.RegexOptions]::CultureInvariant)
- if(-not $m.Success){$Pins.PinAncestors($Path);return}
+ if(-not $m.Success){$Pins.PinStableAncestors($Path);return}
  if($Path -cne $GpoRoot -and -not $Path.StartsWith($GpoRoot+'\',[StringComparison]::Ordinal)){throw 'STAGING_GPO_PIN_BOUNDARY_REJECTED'}
  $anchor='\\'+$m.Groups['pdc'].Value+'\SYSVOL\'+$m.Groups['domain'].Value
  # This observation cannot authorize a race: generic pinning rejects a new
  # reparse point, and the special pin verifies the held reparse object again.
- if(-not (([IO.File]::GetAttributes($anchor)) -band [IO.FileAttributes]::ReparsePoint)){$Pins.PinAncestors($Path);return}
+ if(-not (([IO.File]::GetAttributes($anchor)) -band [IO.FileAttributes]::ReparsePoint)){$Pins.PinStableAncestors($Path);return}
  $local=[Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
  $fqdn=($local.HostName+'.'+$local.DomainName).ToLowerInvariant()
  if($local.DomainName.ToLowerInvariant() -cne $m.Groups['domain'].Value -or $fqdn -cne $m.Groups['pdc'].Value){throw 'STAGING_LOCAL_PDC_REQUIRED'}
