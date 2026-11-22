@@ -66,7 +66,10 @@ function Read-AuthWireWriteAuthorizationEvidence([string]$JournalRoot,[string]$J
 function Read-AuthWireWriteIntentContext([string]$JournalRoot,[string]$JobId,$Offer,[hashtable]$Binding,[long]$ExpiresAt){
  Initialize-AuthWireScopeProcess
  $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
- $budget=[int][Math]::Min(8000,($ExpiresAt-$now-2)*1000)
+ # Cold AllSigned/AD readers exceeded eight seconds in the real DC pilot.
+ # This read remains inside the original grant, with two seconds reserved;
+ # it never renews a lease, recreates a claim, or extends authorization.
+ $budget=[int][Math]::Min(12000,($ExpiresAt-$now-2)*1000)
  if($budget -lt 100){throw 'WRITE_AUTHORIZATION_EXPIRED'}
  if($JournalRoot.Length -gt 1800 -or $JournalRoot.Contains('"')){throw 'WRITE_JOURNAL_PATH_REJECTED'}
  $file=Join-Path $PSScriptRoot 'Read-AuthWireStagingWritePreflight.ps1'

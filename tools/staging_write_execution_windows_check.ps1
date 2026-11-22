@@ -59,7 +59,7 @@ function Get-AuthWireWriteStageLiveContext($Offer,[hashtable]$Binding,[string]$P
  $fixture=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'fixture.json') -Raw|ConvertFrom-Json
  [IO.File]::AppendAllText((Join-Path $PSScriptRoot ('reads-'+$Offer.job_id+'.txt')),"read`n")
  $v=$fixture.live;$v.checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
- if($fixture.case -ceq 'consume_timeout' -and (Test-Path -LiteralPath $fixture.grant_marker)){Start-Sleep -Seconds 12}
+ if($fixture.case -ceq 'consume_timeout' -and (Test-Path -LiteralPath $fixture.grant_marker)){Start-Sleep -Seconds 18}
  if($fixture.case -ceq 'drift'){$v.pdc='dc02.lab.example'}
  return $v
 }

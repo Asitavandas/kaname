@@ -89,7 +89,8 @@ function Read-AuthWireRollbackPreflightProcess([string]$Root,[string]$JobId,[has
  if($Root.Length -gt 1800 -or $Root.Contains('"')){throw 'WRITE_JOURNAL_PATH_REJECTED'}
  $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
  $budget=[int][Math]::Min(15000,($saved.Offer.expires_at-$now-5)*1000)
- if($NotAfter -ne 0){if(-not (Test-AuthWireWriteInteger $NotAfter)){throw 'ROLLBACK_DEADLINE_REJECTED'};$budget=[int][Math]::Min(8000,[Math]::Min($budget,($NotAfter-$now-2)*1000))}
+ # Match the consumed-stage cold reader budget without extending its grant.
+ if($NotAfter -ne 0){if(-not (Test-AuthWireWriteInteger $NotAfter)){throw 'ROLLBACK_DEADLINE_REJECTED'};$budget=[int][Math]::Min(12000,[Math]::Min($budget,($NotAfter-$now-2)*1000))}
  if($budget -lt 100){throw 'ROLLBACK_AUTHORIZATION_EXPIRED'}
  $file=Join-Path $PSScriptRoot 'Read-AuthWireRollbackPreflight.ps1'
  $exe=Join-Path ([Environment]::GetFolderPath('Windows')) 'System32\WindowsPowerShell\v1.0\powershell.exe'
