@@ -131,6 +131,23 @@ function Assert-AuthWireRollbackContentLease($Lease){
   try{if((Get-AuthWireStagingFilesystemDigest (Get-AuthWireStagingFilesystemRows $again)) -cne (Get-AuthWireStagingFilesystemDigest (Get-AuthWireStagingFilesystemRows $Lease.Trees[$i]))){throw 'ROLLBACK_CONTENT_CHANGED'}}finally{$again.Dispose()}
  }
 }
+function Initialize-AuthWireRollbackDirectoryReader($Offer,[hashtable]$Binding,$context){
+ # The first GroupPolicy report call initializes native/report machinery and
+ # may take seconds. Pay that cold cost inside the OUTER budget, before the
+ # live observation starts. Discard this report completely: both subsequent
+ # current AD/GPO observations still execute and validate the full reader.
+ Assert-AuthWireRollbackReaderIdentity $Binding
+ $t=$Offer.target.scope_target;$a=$context.Approval
+ $domain=Get-ADDomain -Identity $a.domain -Server $a.domain -ErrorAction Stop
+ $sid=$Binding.service_sid.Substring(0,$Binding.service_sid.LastIndexOf('-'))
+ if($domain.DNSRoot -cne $t.domain -or $domain.DomainSID.Value -cne $sid){throw 'ROLLBACK_DIRECTORY_CHANGED'}
+ $server=[string]$domain.PDCEmulator
+ $null=Get-AuthWireWriteGpoPath $server $t
+ $report=Get-GPOReport -Guid ([guid]$t.gpo_id) -Domain $a.domain -Server $server -ReportType Xml -ErrorAction Stop
+ if($report.Length -gt 1048576 -or $report.IndexOf('<!DOCTYPE',[StringComparison]::OrdinalIgnoreCase) -ge 0){throw 'ROLLBACK_DIRECTORY_CHANGED'}
+ # No saved context, report, directory digest, eligibility or timestamp leaves
+ # initialization. It cannot substitute for either live observation.
+}
 function Get-AuthWireRollbackDirectoryObservationFromContext($Offer,[hashtable]$Binding,$context){
  # Only a locally verified context held by New-AuthWireRollbackContentLease is
  # reused. This internal reader still makes a fresh complete AD/GPO/ACL read.
@@ -179,6 +196,7 @@ function Get-AuthWireRollbackLivePreflight($Offer,[hashtable]$Binding,[string]$R
   Assert-AuthWireNoActiveStage $root $origin.StageJobId
   foreach($n in @('rollback-started.json','rolled-back.json')){if(Test-Path -LiteralPath (Join-Path $engine $n)){throw 'ROLLBACK_PREVIOUS_ATTEMPT_REQUIRES_REVIEW'}}
  $contentLease=New-AuthWireRollbackContentLease $Offer $Binding $Publisher $BaseUrl
+ $null=Initialize-AuthWireRollbackDirectoryReader $Offer $Binding $contentLease.Context
  # Freshness begins BEFORE live directory/tree reads, never after the final
  # history recheck. Slow validation must consume the observation's lifetime.
  $observedAt=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$observationClock=[Diagnostics.Stopwatch]::StartNew()

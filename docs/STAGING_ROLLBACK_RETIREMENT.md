@@ -28,8 +28,10 @@ rollback for that same original stage must have a valid signed retirement.
 The first root reservation remains as its immutable anchor. A successor adds
 `rollback-reservation.json` inside its own new job directory. This preserves
 all old readers and prevents a third job from bypassing an outstanding second
-reservation. Lifecycle continuation and archiving recognize only a fully
-validated retirement; the original outcome still reads
+reservation. Lifecycle continuation recognizes only a fully validated retirement;
+archived-refusal reader acceptance and matching external restore remain OPEN
+(the refusal input-pin reader still requires the active lifecycle path). Do not
+archive a retired refusal until that separate gate is implemented and verified; the original outcome still reads
 `refused_before_authorization`.
 
 The subsequent rollback still needs a new job, current AD/GPO/ACL/content/tree
@@ -41,5 +43,5 @@ Focused native check: `tools/staging_rollback_retirement_windows_check.ps1`.
 It uses real non-exportable CNG keys, NTFS handles/CreateNew records and
 reservation succession. Original stage-chain inputs and privileged HTTPS are
 explicit fixture seams; real pilot validation is recorded separately. The
-9-check live-window and 22-check retirement native acceptances are distinct;
+13-check live-window and 24-check retirement native acceptances are distinct;
 neither is a new EAP, renewal, reboot or successful-stage replay.

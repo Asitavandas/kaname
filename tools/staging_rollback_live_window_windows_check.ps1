@@ -50,6 +50,12 @@ try{
  $protected=[guid]::NewGuid().ToString('D')
  $origin=[pscustomobject]@{StageJobId=$stageId;StageReleaseId=[guid]::NewGuid().ToString('D');FilesystemOperationId=$op;ChainSha256=('8'*64);Complete=$complete;StageLive=[pscustomobject]@{gpo_root=$gpo;pdc='dc01.lab.example'};Intent=[pscustomobject]@{relative_destination=$relative;protected_gpo_id=$protected;baseline_sha256=(Get-AuthWireScopeDataHash $outside)}}
  $script:contentCalls=0;$script:contentDelay=0;$script:adReads=0;$script:adDelay=0
+ $script:initCalls=0;$script:initDelay=0;$script:initFinished=0;$script:liveScopeChanged=$false
+ function Initialize-AuthWireRollbackDirectoryReader($Offer,$Binding,$Context){
+  if(-not $Context.verified){throw 'FIXTURE_UNVERIFIED_CONTEXT'}
+  $script:initCalls++;if($script:initDelay){Start-Sleep -Milliseconds $script:initDelay}
+  $script:initFinished=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+ }
  function Get-AuthWireCombinedScopeContext {
   $script:contentCalls++;if($script:contentDelay){Start-Sleep -Milliseconds $script:contentDelay}
   if((Get-AuthWireCandidateHash ([IO.File]::ReadAllBytes($approval))) -cne $approvalHash -or (Get-AuthWireCandidateHash ([IO.File]::ReadAllBytes($contentFile))) -cne $contentHash){throw 'FIXTURE_CONTENT_CHANGED'}
@@ -58,7 +64,8 @@ try{
  function Get-AuthWireRollbackDirectoryObservationFromContext($Offer,$Binding,$Context){
   if(-not $Context.verified){throw 'FIXTURE_UNVERIFIED_CONTEXT'}
   $script:adReads++;if($script:adDelay -and $script:adReads -eq 1){Start-Sleep -Milliseconds $script:adDelay}
-  return [pscustomobject]@{pdc='dc01.lab.example';gpo_root=$gpo;protected_gpo_id=$protected;scope_sha256=('7'*64)}
+  $scope=if($script:liveScopeChanged){'9'*64}else{'7'*64}
+  return [pscustomobject]@{pdc='dc01.lab.example';gpo_root=$gpo;protected_gpo_id=$protected;scope_sha256=$scope}
  }
  $lease=New-AuthWireRollbackContentLease $offer $b ('A'*40) 'https://fixture.example/'
  Reject {[IO.File]::WriteAllText($contentFile,'substituted')} 'verified combined file cannot change during AD observation'
@@ -73,6 +80,15 @@ try{
  Check ($script:contentCalls -eq 1 -and $script:adReads -eq 2) 'one pinned content validation and two current directory observations'
  Check ($result.checked_at -ge $at+5 -and $clock.ElapsedMilliseconds -lt 15000) 'cold signature/content work consumes outer budget without aging not-yet-started AD observation'
  Check ($result.expires_at -eq $result.checked_at+5 -and -not $result.can_delete -and -not $result.write_authorized) 'original five second observation and false authority flags preserved'
+ $script:contentDelay=0;$script:initDelay=5200;$script:initCalls=0;$script:adReads=0
+ $clock=[Diagnostics.Stopwatch]::StartNew();$at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+ $result=Get-AuthWireRollbackLivePreflight $offer $b ([guid]::NewGuid().ToString('D')) ('A'*40) 'https://fixture.example/' $origin
+ Check ($script:initCalls -eq 1 -and $script:adReads -eq 2) 'cold report initialization is separate from both fresh directory observations'
+ Check ($result.checked_at -ge $at+5 -and $result.checked_at -ge $script:initFinished -and $clock.ElapsedMilliseconds -lt 15000) 'report initialization consumes outer budget before the unchanged live window'
+ Check ($result.expires_at -eq $result.checked_at+5 -and -not $result.can_delete) 'report warmup never extends the original five second lifetime or grants authority'
+ $script:initDelay=0;$script:liveScopeChanged=$true;$script:adReads=0
+ Reject {Get-AuthWireRollbackLivePreflight $offer $b ([guid]::NewGuid().ToString('D')) ('A'*40) 'https://fixture.example/' $origin} 'successful initialization never replaces a rejected fresh directory observation'
+ $script:liveScopeChanged=$false
  $script:contentDelay=0;$script:adDelay=5100;$script:adReads=0
  $expired='';try{$null=Get-AuthWireRollbackLivePreflight $offer $b ([guid]::NewGuid().ToString('D')) ('A'*40) 'https://fixture.example/' $origin}catch{$expired=$_.Exception.Message}
  Check ($expired -ceq 'ROLLBACK_PREFLIGHT_EXPIRED') 'actual slow AD observation still expires at five seconds'

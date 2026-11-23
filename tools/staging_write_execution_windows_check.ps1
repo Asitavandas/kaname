@@ -107,6 +107,7 @@ function Invoke-AuthWireStagingFilesystemStage {
   $rollbackShim=@'
 # Fixture-only positive AD/content/service-identity observations, signed with package.
 function New-AuthWireRollbackContentLease { return [pscustomobject]@{Context=$null;Pins=([AuthWire.Staging.TreeLeaseV1]::new());Trees=@()} }
+function Initialize-AuthWireRollbackDirectoryReader { } # Explicit fixture: directory/report initialization is simulated.
 function Assert-AuthWireRollbackContentLease { }
 function Get-AuthWireRollbackDirectoryObservationFromContext($Offer,[hashtable]$Binding,$Context){
  $f=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'fixture.json') -Raw|ConvertFrom-Json

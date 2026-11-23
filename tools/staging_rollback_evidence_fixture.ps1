@@ -2,6 +2,7 @@
 # Fixture-only content lease; these suites do not build real signed candidate stores.
 function Assert-AuthWireRollbackContentLease { }
 function New-AuthWireRollbackContentLease { return [pscustomobject]@{Context=$null;Pins=([AuthWire.Staging.TreeLeaseV1]::new());Trees=@()} }
+function Initialize-AuthWireRollbackDirectoryReader { } # Explicit fixture: directory/report initialization is simulated.
 # Invoked only inside the existing disposable signed CNG/TLS/SQLite/SMB fixture,
 # after a real stage RESULT is accepted. AD/content/service-identity are explicit
 # directory-observation shims. No product reset or fault hook is introduced.
