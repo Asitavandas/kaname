@@ -2,8 +2,13 @@
 # Not loaded by the worker/package; no delete, unlock, RESULT or peer route here.
 Set-StrictMode -Version 2
 
-function Get-AuthWireRollbackReservationPath([string]$Root,[string]$StageJobId){
+function Get-AuthWireRollbackReservationPath([string]$Root,[string]$StageJobId,[string]$JobId=''){
  Assert-AuthWireCandidateGuid $StageJobId
+ if($JobId -cne ''){
+  Assert-AuthWireCandidateGuid $JobId
+  $local=Join-Path (Join-Path $Root $JobId) 'rollback-reservation.json'
+  if(Test-Path -LiteralPath $local){return $local}
+ }
  return (Join-Path $Root ('rollback-stage-'+$StageJobId+'.json'))
 }
 function Assert-AuthWireRollbackReservation($Value,$Offer,[hashtable]$Binding,[string]$Release){
@@ -24,7 +29,7 @@ function Read-AuthWireRollbackOfferAt([string]$Root,[string]$JobId,[hashtable]$B
   Assert-AuthWireStageStrings $v @('format','binding_scope','release_id','reservation_sha256')
   if($v.format -cne 'AuthWireRollbackOfferV1' -or $v.binding_scope -cne (Get-AuthWireJobScope $Binding) -or $v.release_id -cne $Release -or $v.offer.job_id -cne $JobId -or $v.offer.operation -cne 'combined.filesystem.rollback.v1'){throw 'ROLLBACK_OFFER_REJECTED'}
   Assert-AuthWireWriteOfferAt $v.offer $Binding $Release $v.offer.request_id $ObservedAt
-  $file=Get-AuthWireRollbackReservationPath $Root $v.offer.target.stage_receipt.stage_job_id;$p.PinFile($file);$r=Read-AuthWireStagingJournal $file
+  $file=Get-AuthWireRollbackReservationPath $Root $v.offer.target.stage_receipt.stage_job_id $JobId;$p.PinFile($file);$r=Read-AuthWireStagingJournal $file
   Assert-AuthWireRollbackReservation $r $v.offer $Binding $Release
   if($v.reservation_sha256 -cne (Get-AuthWireWriteHash $r)){throw 'ROLLBACK_RESERVATION_REJECTED'}
   $file=Join-Path $Root ('gpo-'+$v.offer.target.scope_target.gpo_id+'.json');$p.PinFile($file);$l=Read-AuthWireStagingJournal $file
@@ -41,7 +46,7 @@ function New-AuthWireRollbackInputPins([string]$Root,[string]$JobId,$Saved,[stri
  try{
   $p.PinAncestors($Root);$job=Join-Path $Root $JobId;$p.PinAncestors($job)
   foreach($n in @('rollback-offer.json')+$Names){$p.PinFile((Join-Path $job $n))}
-  $p.PinFile((Get-AuthWireRollbackReservationPath $Root $Saved.Reservation.stage_job_id))
+  $p.PinFile((Get-AuthWireRollbackReservationPath $Root $Saved.Reservation.stage_job_id $JobId))
   $p.PinFile((Join-Path $Root ('gpo-'+$Saved.Offer.target.scope_target.gpo_id+'.json')))
   return $p
  }catch{$p.Dispose();throw}
@@ -58,14 +63,24 @@ function Save-AuthWireRollbackOffer($Offer,[hashtable]$Binding,[string]$Release,
   $children=@(Get-ChildItem -LiteralPath $root -Force)
   if($children.Count -gt 62 -or @($children|Where-Object PSIsContainer).Count -ge 32){throw 'ROLLBACK_STORE_LIMIT'}
   $job=Join-Path $root $Offer.job_id;$file=Get-AuthWireRollbackReservationPath $root $origin.StageJobId
-  if((Test-Path -LiteralPath $job) -or (Test-Path -LiteralPath $file)){throw 'ROLLBACK_PRIOR_RESERVATION_REQUIRES_REVIEW'}
+  if(Test-Path -LiteralPath $job){throw 'ROLLBACK_PRIOR_RESERVATION_REQUIRES_REVIEW'}
+  $successor=Test-Path -LiteralPath $file
+  if($successor){
+   # Append-only succession. The original root reservation is NEVER removed,
+   # rewritten or made live again. Every predecessor must have its own valid
+   # signed, operator-approved no-authorization retirement before a new offer.
+   Assert-AuthWireRetiredRollbackPredecessors $root $Offer $Binding $Key
+   [AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($job);$p.PinAncestors($job)
+   $file=Join-Path $job 'rollback-reservation.json'
+  }
   $again=Read-AuthWireRollbackOrigin $Offer $Binding $Release $Key
   if($again.ChainSha256 -cne $origin.ChainSha256){throw 'ROLLBACK_ORIGIN_CHANGED'}
   $r=[pscustomobject]@{format='AuthWireRollbackReservationV1';binding_scope=(Get-AuthWireJobScope $Binding);release_id=$Release;job_id=$Offer.job_id;stage_job_id=$origin.StageJobId;stage_release_id=$origin.StageReleaseId;stage_operation_id=$origin.FilesystemOperationId;intent_sha256=$Offer.intent_sha256;origin_chain_sha256=$origin.ChainSha256}
-  # Original-stage reservation is flushed BEFORE the new job directory. A new
-  # rollback job ID or an incomplete local write cannot bypass this reservation.
+  # First reservation is flushed BEFORE its job directory. A successor keeps
+  # that original anchor and appends its own reservation in the new directory;
+  # partial writes remain a durable barrier, never an automatic reset.
   Write-AuthWireStagingJournal $file $r
-  [AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($job);$p.PinAncestors($job)
+  if(-not $successor){[AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($job);$p.PinAncestors($job)}
   Write-AuthWireStagingJournal (Join-Path $job 'rollback-offer.json') ([pscustomobject]@{format='AuthWireRollbackOfferV1';binding_scope=$r.binding_scope;release_id=$Release;reservation_sha256=(Get-AuthWireWriteHash $r);offer=$Offer})
   return [pscustomobject]@{JobId=$Offer.job_id;Phase='rollback_offer_saved';CanDelete=$false;CanApplyGpo=$false}
  }finally{if($taken){$mutex.ReleaseMutex()};if($mutex){$mutex.Dispose()};$p.Dispose()}

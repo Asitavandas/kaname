@@ -17,6 +17,7 @@ function New-AuthWireWriteRefusalInputPins([string]$Root,[string]$Life,$State,[h
   # Strict allow-list: even a CLAIM signing-start marker or unknown file makes
   # "none" unsafe. Pin every existing file, rejecting hardlinks/ADS/reparse.
   $allowed=@('refusal-outbox.json','refusal-accepted.json')
+  if($o.operation -ceq 'combined.filesystem.rollback.v1'){$allowed+=@('rollback-reservation.json','rollback-retirement-review.json','rollback-retirement-complete.json')}
   foreach($i in 1..3){foreach($kind in @('attempt','proof')){$allowed+=,('refusal-'+$kind+'-'+$i+'.json')}}
   if($o.operation -ceq 'combined.filesystem.stage.v1'){$allowed+=@('offer.json','preflight.json')}
   else{$allowed+=@('rollback-offer.json','rollback-preflight.json')}
@@ -26,7 +27,7 @@ function New-AuthWireWriteRefusalInputPins([string]$Root,[string]$Life,$State,[h
    $saved=Read-AuthWireStagingWriteOfferAt $Root $o.job_id $Binding $release $State.Response.received_at
   }else{
    $saved=(Read-AuthWireRollbackOfferAt $Root $o.job_id $Binding $release $State.Response.received_at).Offer
-   $p.PinFile((Get-AuthWireRollbackReservationPath $Root $o.target.stage_receipt.stage_job_id))
+   $p.PinFile((Get-AuthWireRollbackReservationPath $Root $o.target.stage_receipt.stage_job_id $o.job_id))
   }
   $p.PinFile((Join-Path $Root ('gpo-'+$o.target.scope_target.gpo_id+'.json')))
   if((Get-AuthWireWriteHash $saved) -cne (Get-AuthWireWriteHash $o)){throw 'WRITE_REFUSAL_OFFER_REJECTED'}

@@ -28,6 +28,11 @@ public static class WriteTransportV1 {
  public static string CloseStageRecovery(string baseUrl,string fqdn,string pin,string json,string session,string csrf){
   return RecoveryPost(baseUrl,fqdn,pin,"/api/deployment/staging-write/reconciliation/close-consumed-stage",json,session,csrf);
  }
+ public static string ConfirmSavedRefusal(string baseUrl,string fqdn,string pin,string json,string session,string csrf){
+  // Idempotently recheck the exact recorded acknowledgement under a CURRENT
+  // privileged session. This acknowledges the old result, not a new grant.
+  return RecoveryPost(baseUrl,fqdn,pin,"/api/deployment/staging-write/reconciliation/record",json,session,csrf);
+ }
  private static string RecoveryPost(string baseUrl,string fqdn,string pin,string path,string json,string session,string csrf){
   if(session==null||csrf==null||!Regex.IsMatch(session,"\\A[A-Za-z0-9_-]{43}\\z")||!Regex.IsMatch(csrf,"\\A[A-Za-z0-9_-]{43}\\z"))
    throw new InvalidOperationException("WRITE_RECOVERY_SESSION_REJECTED");

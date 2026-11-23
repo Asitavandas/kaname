@@ -210,7 +210,7 @@ function Assert-AuthWireLifecycleRootEntries([string]$Root,$Baseline,[object[]]$
    'rollback-offer.json','rollback-preflight.json','rollback-claim-started.json','rollback-claim-proof.json','rollback-claim-sent.json','rollback-authorization.json','rollback-grant-consumed.json','rollback-filesystem-intent.json','rollback-consumption-preflight.json','rollback-launch.json','rollback-child.json','rollback-entered.json','rollback-execution-preflight.json','rollback-execution-complete.json','rollback-execution-observed.json','rollback-execution-requires-review.json','rollback-result-outbox.json','rollback-result-accepted.json')
   $jobNames+=@('refusal-outbox.json','refusal-accepted.json')
   $jobNames+=@('consumed-stage-release.json','released-gpo-lock.json','consumed-stage-closed.json')
-  $jobNames+=@('empty-stage-cleanup-intent.json','empty-stage-cleanup-complete.json')
+  $jobNames+=@('empty-stage-cleanup-intent.json','empty-stage-cleanup-complete.json','rollback-reservation.json','rollback-retirement-review.json','rollback-retirement-complete.json')
   foreach($n in 1..3){foreach($kind in @('attempt','proof')){$jobNames+=,('refusal-'+$kind+'-'+$n+'.json')};foreach($prefix in @('','rollback-')){foreach($kind in @('attempt','proof')){$jobNames+=,($prefix+'result-'+$kind+'-'+$n+'.json')}}}
   foreach($id in $jobs.Keys){$dir=Join-Path $Root $id;if(-not (Test-Path -LiteralPath $dir)){continue};foreach($i in Get-ChildItem -LiteralPath $dir -Force){if($i.PSIsContainer -or $i.Name -cnotin $jobNames){throw 'LIFECYCLE_UNKNOWN_JOB_RECORD'};$p.PinFile($i.FullName)}}
   foreach($id in $engines.Keys){$dir=Join-Path $Root $id;if(-not (Test-Path -LiteralPath $dir)){continue};foreach($i in Get-ChildItem -LiteralPath $dir -Force){if($i.PSIsContainer -or $i.Name -cnotin @('intent.json','complete.json','rollback-started.json','rolled-back.json') -or ($i.Name -cin @('rollback-started.json','rolled-back.json') -and -not $rollbackEngines.ContainsKey($id))){throw 'LIFECYCLE_UNKNOWN_ENGINE_RECORD'};$p.PinFile($i.FullName)}}
@@ -317,7 +317,7 @@ function Invoke-AuthWireStagingWriteLifecycleStep([string]$Root,[hashtable]$Bind
      if(Test-AuthWireConsumedStageClosed $Root $life $s $Binding $Key){continue}
      if($i -ne $states.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'};return (Get-AuthWireLifecycleResult 'requires_review' $s.Offer.job_id $done.outcome $true)
     }
-    if($done.outcome -ceq 'refused_before_authorization'){if($i -ne $states.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'};return (Get-AuthWireLifecycleResult 'refused_before_authorization' $s.Offer.job_id $done.outcome $true 'PREFLIGHT_FAILED')}
+    if($done.outcome -ceq 'refused_before_authorization'){if(Test-AuthWireRefusedRollbackRetired $Root $life $s $Binding $Key){continue};if($i -ne $states.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'};return (Get-AuthWireLifecycleResult 'refused_before_authorization' $s.Offer.job_id $done.outcome $true 'PREFLIGHT_FAILED')}
     continue
    }
    if($i -ne $states.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'}
