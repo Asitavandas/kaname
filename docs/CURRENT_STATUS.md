@@ -1,5 +1,22 @@
 # AuthWire current work record
 
+## 23 Kasım 2026 — G01 soğuk GPO raporu gecikmesi düzeltildi ve imzalı paket kuruldu
+
+**61/94 tamam,33 açık (11 temel+22 geliştirme); B065/5,G055/5,G012/5.** Ön kontroldeki teknik gecikme adımı tamamlandı; özgün G01 üç kalan kabul ölçütü açık.
+
+**Tanı:** Eski8e9 üretim sarmalayıcısı iç hata kodunu saklamamıştı. Windows olayları sabit AllSigned/gMSA çocuk sürecini doğruladı. Aynı okuma algoritmasının ayrı, yetki üretmeyen tarihsel tanısı **ROLLBACK_PREFLIGHT_EXPIRED** koşulunu yeniden üretti: canlı4.347ms, Unix tam saniye başlangıç/son farkı5; ebeveyn12.246ms, timeoutfalse, çıkış20. Bu, eski kaybolmuş iç hatanın kurtarıldığı iddiası değildir. Komut profili ilk Get-GPOReport çağrısını **2.203ms**, ikinciyi13ms ölçtü.
+
+**Düzeltme ve gerçek salt okunur kabul:** Kaynak **fdc44617** ilk rapor okuyucu hazırlığını içerik doğrulamasından sonra fakat checked_at öncesine alır. Hazırlık raporu atılır; uygunluk veya gözlem zamanı saklanmaz. Sonraki iki tam güncel AD/GPO/ACL okuması ve sabitlenmiş içerik/ağaç kontrolü korunur. İmzalı gMSA tanısında hazırlık2.365ms, canlı **1.549ms**, iç toplam9.672ms, ebeveyn **11.702ms**, çıkış0/timeoutfalse. **5s/15s ve özgün offer/grant süreleri aynı.** Çıktı ayrı tarihsel tanı formatında, expires_at0/can_deletefalse; gerçek rollback yetkisi/başarısı değildir.
+
+**Kalıcı teslim:** fdc44617 için **23/23 son CI akışı başarılı**, yeni odaklı canlı pencere kontrolü13. Geri alma yürütme koşusunda ilk denemede ikinci olumlu çocuk kalan özgün9s bütçede durdu; yalnız o başarısız job137775876141 bir kez yeniden çalıştırıldı (137779124302), eski başarısız kayıt korunur. İmzalı **3de29342** Prepare/Apply çıkış0 ile DC01’e kuruldu. 18765, config release dışında, gMSA/SID, pairing, CNG anahtar/ACL ve yayıncı korundu; önceki50f59c85 paket yedeği tutuldu. PR167 hâlâ taslak/birleşmemiş; genel Linux panel dev.52/RADIUS aynı süreçlerde.
+
+**Son durum:** Genel Connector Running. Yazıcı mevcut8e9 reddini görünce **stopped/lifecycle_requires_attention**,1adım,refused_before_authorization ile güvenli bariyerde durdu. Eski kök rezervasyonun kanonik kayıt hash’i c82a7dfb…61ea aynı ve hâlâ68df işine ait; ham dosya hash’i farklı hash türüdür (c18a782d…d5c8). Yeni8e9 altı dosyası/ret/iş içi rezervasyonu korunur; grant/claim/retirement eklenmedi. Stage/preview/EAP/yenileme/açılış veya eski kapanış tekrarlanmadı. Ethernet0/1 Up. Altı geçici tanı görevi ve aktarım kopyaları kaldırıldı; bu adımda yeni operatör/parola/root oturumu oluşturulmadı. İmzalı kanıtlar tutuldu.
+
+**Sıradaki bağımlı iş:** mevcut8e9 reddine ayrı denetimli append-only kapanış; ardından aynı mevcut e195a1c3 20dosyalı hazırlamaya bağlı ayrı taze yetkili rollback ve tam özgün baseline kabulü. Ret işi yeniden açılmayacak; stage/preview tekrarlanmayacak. Kapatılmış ret arşiv okuyucusu ve eşleşen harici restore; özgün G01 panel otomasyonu+rollback, imza/sürüm entegrasyonu ve VV06/2GL13ZU/VV-Client01 kademeli etkin teslimi açık. B02 hesap/AD kesintisi, B03 CA/imza/CRL, B04 ölçek/ağ kurtarma, A03 kullanıcı Wi-Fi/genel yayın, B11 NAS Interim/Class, B12 ayrı dış VM kurtarma açık.
+
+**G01 5–9 aktif iş günü yeniden değerlendirildi ve korundu.** Diğer12 açık paket bantları/koşullu takvim aynı; aktif saat ölçülmedi. [Tanı, CI ve kalıcı teslim kanıtı](checkpoints/2026-11-23-g01-cold-directory-report.json). Önceki bölümler tarihsel kayıttır.
+
+
 ## 23 Kasım 2026, 17:30 — G01 imzalı rezervasyon kapanışı ve kalıcı paket devrede; ayrı gerçek geri alma hâlâ açık
 
 **61/94 tamam, 33 açık; temel 48/59 (11 açık), geliştirmeler 13/35 (22 açık). B06 5/5, G05 5/5, G01 2/5.** Bu teknik ilerleme özgün G01 alt maddelerini kapatmaz.

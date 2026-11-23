@@ -1,5 +1,14 @@
 # AuthWire — güncel çalışma planı
 
+## 23 Kasım 2026 — G01 canlı gözlem gecikmesi düzeltildi ve kalıcı teslim edildi
+
+**61/94 tamam,33 açık: 11 temel+22 geliştirme; G012/5,B065/5,G055/5.** Aynı AllSigned/gMSA okuma algoritmasının yetki üretmeyen tanısında 4.347ms gözlem tam saniye sınırında expired oldu; ilk GPO raporu2.203ms ölçüldü. fdc44617 hazırlığı checked_at öncesine alır ve raporu atar; iki yeni tam AD/GPO/ACL okuması sürer. Gerçek imzalı salt okunur kabul: canlı1.549ms, ebeveyn11.702ms, çıkış0. 5s/15s ve özgün yetki süreleri korunur.
+
+Son23CI akışı başarılı (ilk başarısız rollback yürütme job’ı bir kez tekrar edildi, başarılı koşular yeniden başlatılmadı). Kalıcı imzalı3de29342 Prepare/Apply0 ile kuruldu; config release dışında,18765,gMSA,pairing,CNG/ACL/yayıncı korunur. Connector Running; worker mevcut8e9 reddinde güvenli inceleme bariyerine döndü. Eski20dosya stage/preview, EAP/yenileme/açılış ve eski68df kapanışı tekrarlanmadı.
+
+**Sıradaki:** mevcut8e9 reddinin ayrı denetimli append-only kapanışı → aynı mevcut e195 stage için ayrı taze yetkili rollback → bağımsız tam baseline kabulü. Ardından kapatılmış ret arşiv okuyucusu/harici restore ve özgün G01 panel otomasyonu, imza-sürüm akışı, VV06/2GL13ZU/VV-Client01 etkin kademeli teslimi. B02/B03/B04/A03/B11/B12 saha kapıları korunur. G01 5–9 aktif iş günü yeniden değerlendirildi ve korundu; aktif saat ölçülmedi. [Kanıt](checkpoints/2026-11-23-g01-cold-directory-report.json).
+
+
 ## 23 Kasım 2026, 17:30 — G01 teslim ilerledi; gerçek geri alma kapanmadı
 
 **61/94 tamam,33 açık: 11 temel+22 geliştirme. B065/5,G055/5,G012/5.** Eski68dfc2b5 imzalı append-only kapanışı kabul edildi; özgün rezervasyon ve GPO kilidi silinmedi. 34b9bc96 kaynağının23 CI akışı başarılı, kalıcı imzalı50f59c85 Prepare/Apply0 ile kuruldu. Genel panel dev.52 ve Linux/RADIUS aynı süreçlerde.

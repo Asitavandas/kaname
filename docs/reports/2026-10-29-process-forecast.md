@@ -1,5 +1,12 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## 23 Kasım 2026 — G01 soğuk rapor gecikmesi sonrası süre değerlendirmesi
+
+**61/94 tamam,33 açık; G012/5,B065/5,G055/5. G01 5–9 aktif iş günü korunur.** Soğuk Get-GPOReport gecikmesi mevcut5s penceresinden önceki hazırlığa alındı; iki taze AD/GPO/ACL okuması1.549ms ve tam ebeveyn11.702ms ile gerçek salt okunur kabul geçti. fdc44617 son23CI başarılı; imzalı3de29342 Prepare/Apply0 ile kuruldu. Teknik gecikme adımı tamamdır; gerçek rollback kabulü henüz yapılmadı ve makro alt iş sayısı artmadı.
+
+Kalan bağımlılıklar: mevcut8e9 reddinin ayrı denetimli kapanışı ve aynı20dosyalı stage için ayrı rollback/baseline; kapatılmış ret arşiv okuyucusu/harici restore; panel GPO otomasyonu, imza/sürüm entegrasyonu ve üç uç etkin teslimi. Hazırlama/önizleme/EAP/yenileme/açılış veya eski kapanış tekrarlanmaz. Diğer12 açık paket bantları ve23Kasım başlangıçlı koşullu makro takvim korunur; aktif saat ölçülmedi. [Kanıt](../checkpoints/2026-11-23-g01-cold-directory-report.json).
+
+
 ## 23 Kasım 2026, 17:30 — G01 kapanış/teslim ve yeni gerçek ret sonrası değerlendirme
 
 **61/94 tamam,33 açık; temel48/59, geliştirmeler13/35; G012/5,B065/5,G055/5. G01 5–9 aktif iş günü korunur.** Eski yetki öncesi ret için imzalı append-only kapanış ve kalıcı50f59c85 paketi tamamlandı; fakat bir kez oluşturulan ayrı8e9ae160 geri alma işi de yetki öncesi reddedildi. Mevcut20dosya stage tekrarlanmadı, silme yapılmadı. Yeni salt okunur okuma ağaç ve AD uyumunu doğrulasa da soğuk gerçek çocuk girişinin başarısını veya rollback kabulünü göstermez.

@@ -1,0 +1,334 @@
+{
+  "date": "2026-11-23",
+  "timezone": "Europe/Istanbul",
+  "step": "G01 cold directory report latency",
+  "status": "technical_cold_report_latency_fix_installed_real_rollback_pending",
+  "counts": {
+    "completed": 61,
+    "total": 94,
+    "open": 33,
+    "basic_open": 11,
+    "growth_open": 22,
+    "G01": "2/5",
+    "B06": "5/5",
+    "G05": "5/5"
+  },
+  "source": {
+    "commit": "fdc446177bab7727ebbab901cfb05d0a96486503",
+    "tree": "b4c58213ac7c1375e22ad0a45fff8aebc3d8a1b5",
+    "branch": "codex/authwire-writer-pilot-port",
+    "pr": 167,
+    "draft": true,
+    "merged": false
+  },
+  "reused_evidence": {
+    "existing_stage": "e195a1c3-ce02-46bc-869a-6063bba14f9f",
+    "files": 20,
+    "bytes": 125601,
+    "existing_refused_rollback": "8e9ae160-ea08-4a70-878a-7e556e31e6ec",
+    "existing_job_result": "refused_before_authorization",
+    "requeued": false,
+    "retired": false,
+    "stage_preview_repeated": false,
+    "eap_renewal_expiry_reboot_repeated": false,
+    "prior_68df_retirement_repeated": false
+  },
+  "diagnosis": {
+    "original_event": {
+      "process_id": 10012,
+      "runspace": "aed35ab8-be2a-4148-9415-d87dc67d7858",
+      "error_event_id": 4100,
+      "error_event_record": 21396530,
+      "scriptblock_last_record": 21396529,
+      "original_event_limit": "original 8e9 wrapper did not preserve its inner exception; Windows event 4100 says System error"
+    },
+    "reproduction": {
+      "kind": "separate AllSigned gMSA historical read-only diagnostic through actual ScopeProcessV1.Run with 15000ms budget",
+      "code": "ROLLBACK_PREFLIGHT_EXPIRED",
+      "phase": "final-deadline",
+      "observed_at": 1795445192,
+      "now": 1795445197,
+      "observation_ms": 4347,
+      "live_total_ms": 6063,
+      "origin_outer_ms": 10112,
+      "parent_elapsed_ms": 12246,
+      "parent_timed_out": false,
+      "parent_exit": 20,
+      "result_file_sha256": "724b89a6e6c228699cf1ea7826cdce14abf05cbe4d27ee3294c5b3b3ccf263f6",
+      "boundary": "integer Unix time difference reached5seconds while actual elapsed was4347ms"
+    },
+    "profile": {
+      "first_Get_GPOReport_ms": 2203,
+      "second_Get_GPOReport_ms": 13,
+      "result_file_sha256": "7dabbc444d7d11b2e747416c722ef095303d59a1a9a9b050213715609e564190"
+    },
+    "causality_limit": "A reproducible current guard failure and concrete cold-report latency source were found. This is not recovery of the unavailable original 8e9 inner error."
+  },
+  "fix": {
+    "function": "Initialize-AuthWireRollbackDirectoryReader",
+    "behavior": "Validate current service identity/domain/SID/fixed PDC-GPO; initialize report reader before checked_at and discard that report. Both following full current AD/GPO/ACL reads still execute and agree under held content/tree handles.",
+    "freshness_seconds": 5,
+    "outer_budget_ms": 15000,
+    "original_offer_grant_deadlines_unchanged": true,
+    "no_eligibility_or_timestamp_cache": true,
+    "no_gpo_activation": true
+  },
+  "field_acceptance": {
+    "kind": "separate signed read-only fixed-source audit, not an actual rollback authority or execution",
+    "source_commit": "fdc446177bab7727ebbab901cfb05d0a96486503",
+    "active_release_at_audit": "50f59c85-b6e6-4410-8e87-98c04f6eac5e",
+    "report_warmup_ms": 2365,
+    "observation_ms": 1549,
+    "live_total_ms": 5641,
+    "origin_outer_ms": 9672,
+    "parent_elapsed_ms": 11702,
+    "parent_exit": 0,
+    "parent_timed_out": false,
+    "checked_at": 1795445643,
+    "at": 1795445644,
+    "output_format": "AuthWireClosedRollbackDiagnosticV1",
+    "historical_inner_format": "AuthWireRollbackHistoricalAuditV1",
+    "expires_at": 0,
+    "can_delete": false,
+    "authority_renewed": false,
+    "tree_sha256": "0978eb9c1ef8f1ca147df8729669ccabc9c123d2eff9d0329c36ea57bdc5c175",
+    "baseline_sha256": "b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6",
+    "directory_sha256": "1b801e28817bca3d97d116d43afe85dd2fe2eafa5c4c1e83085c261fe5fdd6b9",
+    "result_file_sha256": "247011e1dacaff7ea943a2c4b7af02e228e9360b5d536ae2e82ff74bdad943b6",
+    "limits": "Only the old offer's historical checks use its recorded receipt; the fresh AD/tree/content reads are current. No production preflight output, claim/grant, result, reservation or rollback was replayed/written."
+  },
+  "native_focused": {
+    "checks": 13,
+    "successful_workflow": 45198664129,
+    "covers": [
+      "5200ms cold content preparation",
+      "5200ms cold directory reader preparation before unchanged live window",
+      "two following fresh directory observations",
+      "fresh changed directory rejection despite successful preparation",
+      "slow actual live observation expires",
+      "real NTFS handle/file/namespace integrity"
+    ],
+    "explicit_fixture_seams": [
+      "AD",
+      "content/signature validation",
+      "service identity"
+    ],
+    "real_grant": false
+  },
+  "ci": {
+    "runs": [
+      {
+        "id": 45198664480,
+        "name": "AuthWire combined staging preview checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664658,
+        "name": "AuthWire isolated governed write history",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664674,
+        "name": "AuthWire preauthorization refusal reporting",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664499,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664295,
+        "name": "AuthWire append-only refused rollback retirement",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664129,
+        "name": "AuthWire rollback pinned content and live window",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664305,
+        "name": "AuthWire empty stage recovery",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664395,
+        "name": "AuthWire isolated one-shot staging cycle",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664038,
+        "name": "AuthWire isolated staging filesystem checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664135,
+        "name": "AuthWire Windows write scheduler checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664466,
+        "name": "AuthWire reproducible Linux delivery",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664368,
+        "name": "AuthWire bounded retry network probe checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664423,
+        "name": "AuthWire local PDC SYSVOL junction checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664451,
+        "name": "AuthWire stage parent and engine budget",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664363,
+        "name": "AuthWire exited stage intent recovery",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664236,
+        "name": "AuthWire isolated authorized stage execution",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664410,
+        "name": "AuthWire isolated write preclaim checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198663942,
+        "name": "AuthWire isolated consumed-stage closure",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664382,
+        "name": "KANAME foundation checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664403,
+        "name": "AuthWire isolated durable write lifecycle",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664218,
+        "name": "AuthWire isolated rollback origin evidence",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664418,
+        "name": "AuthWire isolated rollback authorization",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 45198664328,
+        "name": "AuthWire isolated rollback execution and result",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "first_failure": {
+      "workflow": 45198664328,
+      "job": 137775876141,
+      "reason": "second positive rollback execution child killed at remaining original9000ms budget; first positive case succeeded13238ms",
+      "failed_job_rerun_once": true,
+      "rerun_job": 137779124302,
+      "passed_workflows_not_restarted": true
+    },
+    "all_success": true
+  },
+  "delivery": {
+    "candidate_release": "3de29342-ea72-4b5e-a17c-646e56d3f830",
+    "expected_current_release": "50f59c85-b6e6-4410-8e87-98c04f6eac5e",
+    "prepare_exit": 0,
+    "config_differences_except_release": [],
+    "source_signature": "Valid",
+    "source_signed_ps_files": 51,
+    "apply_requested": true,
+    "apply_exit": 0,
+    "installed": true,
+    "active_release": "3de29342-ea72-4b5e-a17c-646e56d3f830",
+    "general_connector": "Running",
+    "writer": {
+      "state": "stopped",
+      "stop_reason": "lifecycle_requires_attention",
+      "last_phase": "refused_before_authorization",
+      "steps": 1
+    },
+    "configuration_except_release_preserved": true,
+    "pairing_key_acl_publisher_account_preserved": true,
+    "base_url_port_preserved": 18765,
+    "previous_release_archive_preserved": true,
+    "root_reservation_record_sha256": "c82a7dfb4a58fffc87b6f15c9666960dd3481b29573412ca7f7ca277b02d61ea",
+    "root_reservation_raw_file_sha256": "c18a782dec7ac0c6cc3a3cd0c4a2d2910b2945e3ca0bc897a4b479faf039d5c8",
+    "root_reservation_original_job": "68dfc2b5-ea6a-483a-876e-c33bfabf765b",
+    "new_refused_job_files_unchanged": [
+      "refusal-accepted.json",
+      "refusal-attempt-1.json",
+      "refusal-outbox.json",
+      "refusal-proof-1.json",
+      "rollback-offer.json",
+      "rollback-reservation.json"
+    ],
+    "ethernet0": "Up",
+    "ethernet1": "Up"
+  },
+  "operator_attempts_preserved": {
+    "cold_entry_v1": "diagnostic-only dependency selector accidentally included mandatory main script without LibraryOnly; failed before operation; fixed only in V2",
+    "fixed_directory_v1": "diagnostic copied historical core omitted new initialization call; not counted as fixed-source acceptance; V2 asserts exactly one initialization call",
+    "transfer": "Archive module auto-import unavailable; extraction resumed only with .NET ZipArchive using five exact whitelisted entries; no package Prepare/Apply replay"
+  },
+  "cleanup": {
+    "temporary_task_registrations_removed": 6,
+    "temporary_tasks_remaining": 0,
+    "temporary_transfer_removed": true,
+    "new_operator_or_secret_created": false,
+    "root_session_created": false,
+    "all_signed_evidence_retained": true,
+    "linux_process_start_ticks_unchanged": {
+      "919": "412",
+      "647245": "64693127",
+      "647261": "64693227"
+    }
+  },
+  "next": [
+    "The existing8e9 refusal and job-local reservation stay immutable. Its distinct reviewed append-only retirement must precede any new rollback job. Do not reopen or requeue it.",
+    "Then separate fresh rollback authorization for the same existing stage and independent original full-baseline restoration; no repeated stage/preview.",
+    "Keep retired-refusal archive reader + matching external restore, original G01 panel automation/signing-version flow/three endpoints, and B02/B03/B04/A03/B11/B12 field gates open."
+  ],
+  "forecast": {
+    "G01_active_days": "5-9",
+    "reassessed": "The cold observation latency defect was fixed, but original three acceptance criteria remain open.",
+    "other_package_bands_preserved": true,
+    "active_hours_measured": false
+  }
+}
