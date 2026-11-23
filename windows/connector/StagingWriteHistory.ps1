@@ -46,9 +46,9 @@ function Assert-AuthWireEmptyCleanupProof($Proof,[Security.Cryptography.RSACng]$
  Assert-AuthWireCandidateFields $Proof @('Body','Signature')
  if(-not $Key.VerifyData((Get-AuthWireEmptyCleanupFrame $Proof.Body $Purpose),(ConvertFrom-AuthWireWriteBase64 $Proof.Signature 512),[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)){throw 'EMPTY_RECOVERY_SIGNATURE_REJECTED'}
 }
-function Get-AuthWireEmptyCleanupState([string]$Root,[string]$JobId,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,$Pins,[bool]$Historical=$false,$ExistingState=$null){
+function Get-AuthWireEmptyCleanupState([string]$Root,[string]$JobId,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,$Pins,[bool]$Historical=$false,$ExistingState=$null,[string]$ExistingLife=''){
  if($null -eq $ExistingState){$h=Read-AuthWireLifecycleHistory $Root $Binding $Key;$state=$h.ActiveStates[-1];$life=$h.Life}
- else{$state=$ExistingState;$life=Get-AuthWireWriteLifecyclePath $Root $Binding}
+ else{$state=$ExistingState;$life=if($ExistingLife -ceq ''){Get-AuthWireWriteLifecyclePath $Root $Binding}else{$ExistingLife}}
  if($state.Offer.job_id -cne $JobId){throw 'EMPTY_RECOVERY_NOT_LATEST'}
  $done=Read-AuthWireLifecycleCompletion $Root $life $state $Binding $Key
  if($done.outcome -cne 'requires_review'){throw 'EMPTY_RECOVERY_RESULT_REJECTED'}
@@ -113,12 +113,12 @@ function Complete-AuthWireEmptyStageCleanup([string]$Root,[string]$JobId,[hashta
   return $receipt
  }finally{if($owned){$owned.Dispose()};$pins.Dispose();if($outcome){$outcome.ReleaseMutex();$outcome.Dispose()};$lock.ReleaseMutex();$lock.Dispose()}
 }
-function Get-AuthWireRecoveredEmptyStageReview([string]$Root,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[bool]$Historical=$false){
+function Get-AuthWireRecoveredEmptyStageReview([string]$Root,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[bool]$Historical=$false,[string]$Life=''){
  $job=Join-Path $Root $State.Offer.job_id;$path=Join-Path $job 'empty-stage-cleanup-complete.json'
  if(-not (Test-Path -LiteralPath $path)){return}
  $pins=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
-  $o=Get-AuthWireEmptyCleanupState $Root $State.Offer.job_id $Binding $Key $pins $Historical $State
+  $o=Get-AuthWireEmptyCleanupState $Root $State.Offer.job_id $Binding $Key $pins $Historical $State $Life
   $pins.PinFile($path);$pins.PinFile((Join-Path $job 'empty-stage-cleanup-intent.json'))
   $receipt=Read-AuthWireStagingJournal $path;Assert-AuthWireEmptyCleanupProof $receipt $Key 'AUTHWIRE-EMPTY-STAGE-CLEANUP-COMPLETE-V1';$b=$receipt.Body
   Assert-AuthWireCandidateFields $b @('format','job_id','filesystem_operation_id','scope_sha256','original_records_sha256','engine_intent_sha256','destination_row_sha256','baseline_inventory_sha256','restored_inventory_sha256','cleanup_intent_sha256','review_evidence_sha256','completed_at','removed_empty_directory','can_apply_gpo')
@@ -477,7 +477,9 @@ function Get-AuthWireEmptyStageCleanupPreview {
 }
 
 function Get-AuthWireStageRecoveryClassification([string]$Root,[string]$SlotPath,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[bool]$Historical=$false){
- $empty=Get-AuthWireRecoveredEmptyStageReview $Root $State $Binding $Key $Historical
+ # SlotPath is supplied by the already validated active or archived cycle reader.
+ # Keep all original completion/signature/ownership checks at that same location.
+ $empty=Get-AuthWireRecoveredEmptyStageReview $Root $State $Binding $Key $Historical ([IO.Path]::GetDirectoryName($SlotPath))
  if($null -ne $empty){return $empty}
  $value=Get-AuthWireStageConsumptionReview $Root $SlotPath $State $Binding $Key
  if($null -ne $value){return $value}
@@ -896,3 +898,4 @@ function Invoke-AuthWireWriteHistoryArchive([string]$Root,[hashtable]$Binding,[S
   return [pscustomobject]@{Phase='history_archived';ArchivedThrough=[int]$fresh.last_slot;ArchivedCycles=64;ArchiveCount=$fresh.archive_index;ArchiveSha256=(Get-AuthWireWriteHash $archive);ProtectedRecordsPreserved=$true;CanApplyGpo=$false;NetworkSent=$false}
  }finally{foreach($lease in $copies){$lease.Dispose()};foreach($lease in $owned){$lease.Dispose()};if($state){foreach($lease in $state.Leases){$lease.Dispose()};$state.Pins.Dispose()};$lock.ReleaseMutex();$lock.Dispose()}
 }
+
