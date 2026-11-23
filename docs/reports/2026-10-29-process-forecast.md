@@ -1,5 +1,13 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## 23 Kasım 2026, 11:29 — B06 kapanışı sonrası süre
+
+**B06 kalan1–3 aktif iş günü bandı0; 61/94 tamam,33 açık.** Özgün beş pilot kriteri önceki19-20 Ekim ve12 Kasım kanıtlarıyla uzlaştırıldı; eksik kurumsal imzalı makine istemcisi bugün GPO/VV-Client01'e teslim edildi ve var olan SYSTEM görevi tek normal çalışmada çıkış0 verdi. Eski yenileme/EAP/expiry/boot/retry testleri yeniden yapılmadı. Canlı Linux dev.52 kaynağı zaten düzeltmeyi içeriyordu; Linux güncellemesi/yeniden başlatma gerekmedi. [Kabul ve sınırlar](../checkpoints/2026-11-23-b06-client-delivery-and-closure.json).
+
+Temel48/59 (11 açık), geliştirmeler13/35 (22 açık). Diğer12 iş paketi açık ve kendi süre bantları korundu. G01 2/5,5–9 aktif iş günü: gerçek20 dosyalı stage tamamdır ve tekrar edilmez; açık ayrı rollback/junction-süre/denetimli ret rezervasyonu kurtarması, aynı stage'e bağlı tam baseline, üç uç ve harici eşleşen restore bekler. B02/B03/B04, A03 kullanıcı Wi-Fi/genel yayın, B11 NAS ve B12 ayrı harici kurtarma kapıları korunur.
+
+Makro aralıklar gün sayımından doğrusal türetilmedi ve değişmedi: 23 Kasım koşullu başlangıçla küçük otomatik pilot2–3 hafta (7–14 Aralık); temel6–9 hafta (4–25 Ocak); temel+kılavuz7–10 hafta (11 Ocak–1 Şubat); tüm kapsam+nihai kılavuz13–19 hafta (22 Şubat–5 Nisan2027). Operatör20–30/30–45 saat ve7–14 takvim günü gözlem bantları aynı; dış erişim beklemelerine tarih verilmedi, bugünkü aktif saat ölçülmedi. Eski tarihli60/94 ve34 açık kayıtlar önceki aşamaların tarihsel sayımıdır.
+
 ## 23 Kasım 2026 — Gerçek hazırlama ve açık geri alma sonrası süre
 
 Gerçek20 dosyalı e195 hazırlaması10:48:26'da başarılı; bu teknik adım için kalan iş0 ve tekrar edilmeyecek. Arşiv okuyucu düzeltmesi,87 yeni native kabul,21/21 kaynak CI ve d539 kalıcı teslim tamam. Ayrı68df geri alma yetki öncesinde reddedildi; standart SYSVOL junction ve6985ms gözlem/5s sınırı somut engellerdir. Hazır dosyalar, GPO kilidi ve rezervasyon korunur.

@@ -1,5 +1,15 @@
 # AuthWire — güncel çalışma planı
 
+## 23 Kasım 2026, 11:29 — B06 5/5 kapandı
+
+**61/94 tamam,33 açık; temel48/59, geliştirmeler13/35.** Özgün19 Ekim beş maddelik B06 makine pilotu kapandı. 19-20 Ekim seçim/temizlik, yenileme/anahtar/makbuz, açılış/çevrimdışı retry; 12 Kasım doğal süresi dolan pending kurtarması önceki kanıtlardan uzlaştırıldı. Bu testler, EAP, boot ve CI yeniden yapılmadı.
+
+Bugün eksik kalan imzalı makine istemcisi dar pilot teslimi tamamlandı: canlı Linux dev.52'de zaten bulunan965cb6bb kaynağı (kaynak SHA256fd4dfbcf…76856e8d) mevcut6E74 yayıncıyla imzalandı; GPO e5a9ab39 ve VV-Client01 aynı65A5CCC8…98B63178 dosyasına geçti. Güven, GPO bağlantıları ve görev tanımı değişmedi. SYSTEM görev örneği c1debe73,11:24:37-11:25:44, çıkış0; mevcut sertifika/özel anahtar ve tüm diğer durum dosyaları korundu. Yeni sertifika verilmedi. Linux güncellenmedi/yeniden başlatılmadı.
+
+B06 kapsamı özgün beş pilot koşuldur; tüm olası varyantlar/genel filo yayını veya ayrı12 Kasım test yaprağının fiziksel EAP seçimi iddia edilmez. Önceki `entire_B06_closed:false` tarihsel kayıt korunur; eksik teslim bugün kapandı. [Kalıcı kabul](checkpoints/2026-11-23-b06-client-delivery-and-closure.json).
+
+G01 2/5 ve5–9 aktif iş günü; mevcut başarılı e195 stage yeniden yapılmayacak. Açık68df rollback ret rezervasyonuna denetimli kurtarma/junction-gözlem bütçesi, aynı stage'e bağlı rollback/tam baseline, üç uç etkin teslim ve harici eşleşen restore sıradaki devamdır. Kilit/dosyalar/rezervasyon korunur; writer durmuş, genel Connector sağlıklı. B02/B03/B04, A03 kullanıcı Wi-Fi/genel yayın, B11 NAS ve B12 harici VM kapıları açık. B06 kalan bandı0; diğer12 açık paket ve makro takvim aynı.
+
 ## 23 Kasım 2026 — G01 gerçek hazırlama geçti; geri alma açık
 
 60/94 tamam,34 açık; G012/5,G055/5. Arşiv okuyucu düzeltmesi c27be5aa,87 yeni native kontrol ve21/21 CI geçti; d539aa00 kalıcı paket kuruldu. Yeni e195a1c3 işi10:48:26'da gerçek domain GPO'sunda20 dosya/125601byte hazırladı; Linuxrev150, imzalı sonuç/ACK kabul edildi. Bu stage yeniden yapılmayacak.

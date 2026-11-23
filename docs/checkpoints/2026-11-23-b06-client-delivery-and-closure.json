@@ -1,0 +1,395 @@
+{
+  "schema": 1,
+  "event": "AUTHWIRE_B06_ORIGINAL_FIVE_CRITERIA_CLOSED_AFTER_SIGNED_CLIENT_DELIVERY",
+  "date": "2026-11-23",
+  "timezone": "Europe/Istanbul",
+  "status": "accepted_closed",
+  "scope": "Original 2026-10-19 B06 five-item machine pilot; not all product lifecycle variants, general fleet release, or new recovered-leaf physical EAP acceptance.",
+  "completion_before": {
+    "total": 94,
+    "complete": 60,
+    "open": 34,
+    "B06": "4/5",
+    "basic": "47/59"
+  },
+  "completion_after": {
+    "total": 94,
+    "complete": 61,
+    "open": 33,
+    "B06": "5/5",
+    "basic": "48/59",
+    "growth": "13/35"
+  },
+  "original_acceptance_source": {
+    "library_file_id": "libfile_c31c1505120881918a5a4e75987e768f",
+    "filename": "AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-19.docx",
+    "lines": "158-177",
+    "page": 5
+  },
+  "criteria": [
+    {
+      "id": 1,
+      "result": "accepted",
+      "criterion": "Client code and SYSTEM enrollment/renewal task foundation",
+      "evidence": "Original report and retained installed scheduled task; unchanged task XML; new signed client normal SYSTEM execution accepted today."
+    },
+    {
+      "id": 2,
+      "result": "accepted",
+      "criterion": "Preserve valid certificate/private key until replacement approved",
+      "evidence": "Original controlled renewal acceptance; 12 Nov expired-pending evidence retains old key until recovery; today installed receipt/status/cert/key unchanged."
+    },
+    {
+      "id": 3,
+      "result": "accepted",
+      "criterion": "Real controlled renewal, new certificate/key, installation receipt, task and access",
+      "evidence": "19 Oct VV06 acceptance, later 20 Oct partial-install receipt and real fresh EAP/VLAN110 accepted; prior results reused, not rerun."
+    },
+    {
+      "id": 4,
+      "result": "accepted",
+      "criterion": "Reboot/offline automatic recovery",
+      "evidence": "20 Oct normal/offline boot and natural retry, reconciled 6 Nov; no new boot/retry test."
+    },
+    {
+      "id": 5,
+      "result": "accepted",
+      "criterion": "Old/new certificate selection and cleanup, including expired pending recovery",
+      "evidence": "19 Oct selected new serial EAP and server24h/local12h cert+CNG cleanup already passed; 12 Nov natural expired-pending retry passed on VV-Client01; 23 Nov missing signed GPO/client delivery now completed. New recovered test leaf physical EAP was not measured."
+    }
+  ],
+  "delivery": {
+    "source_commit": "965cb6bb2b394a9b2a564610ab73f19829b4d2ea",
+    "source_pr": 171,
+    "source_blob": "1ce168ac78d0f57b0bdc77d18b1689dc07b90498",
+    "unsigned_sha256": "fd4dfbcf9795227f3f0669ba209f79e9f0c9910ff4f3d863a4e398e476856e8d",
+    "signed_sha256": "65A5CCC8617946E331C0D7D2C7E4B7D7E224F8C9AFF8A39FCACED29098B63178",
+    "publisher": "6E74B513F766E01730719684A41B2664380CA68A",
+    "fix": "$errorCode -cnotmatch (ASCII DEVICE_CERTIFICATE_EXPIRED acceptance under tr-TR)",
+    "linux_source_already_matched": true,
+    "linux_services_restarted": false,
+    "linux_update_performed": false,
+    "gpo": {
+      "id": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
+      "accepted_at_utc": "2026-11-23T08:23:59.8568661+00:00",
+      "client_replaced": true,
+      "unsigned_checksum_index_refreshed": true,
+      "other_package_files_and_acls_unchanged": true,
+      "ad_settings_or_links_changed": false
+    },
+    "endpoint": {
+      "name": "VV-Client01",
+      "accepted_at_utc": "2026-11-23T08:24:37.4038931+00:00",
+      "client_replaced": true,
+      "trust_changed": false,
+      "normal_execution": {
+        "accepted": true,
+        "observed_utc": "2026-11-23T08:29:22.0142396Z",
+        "task_state": "Ready",
+        "last_task_result": 0,
+        "task_last_run_local": "2026-11-23T11:24:24.0000000+03:00",
+        "task_event_instance": "c1debe73-9dc1-4663-abcb-da6f2379dc04",
+        "events": [
+          {
+            "id": 102,
+            "system_time_utc": "2026-11-23T08:25:44.6948250Z",
+            "record_id": 1183622,
+            "data": [
+              {
+                "value": "\\AuthWire Certificate Enrollment",
+                "name": "TaskName"
+              },
+              {
+                "value": "NT AUTHORITY\\SYSTEM",
+                "name": "UserContext"
+              },
+              {
+                "value": "{c1debe73-9dc1-4663-abcb-da6f2379dc04}",
+                "name": "InstanceId"
+              }
+            ]
+          },
+          {
+            "id": 201,
+            "system_time_utc": "2026-11-23T08:25:44.6946541Z",
+            "record_id": 1183621,
+            "data": [
+              {
+                "value": "\\AuthWire Certificate Enrollment",
+                "name": "TaskName"
+              },
+              {
+                "value": "{c1debe73-9dc1-4663-abcb-da6f2379dc04}",
+                "name": "TaskInstanceId"
+              },
+              {
+                "value": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+                "name": "ActionName"
+              },
+              {
+                "value": "0",
+                "name": "ResultCode"
+              },
+              {
+                "value": "13416",
+                "name": "EnginePID"
+              }
+            ]
+          },
+          {
+            "id": 100,
+            "system_time_utc": "2026-11-23T08:24:37.4563689Z",
+            "record_id": 1183611,
+            "data": [
+              {
+                "value": "\\AuthWire Certificate Enrollment",
+                "name": "TaskName"
+              },
+              {
+                "value": "NT AUTHORITY\\SYSTEM",
+                "name": "UserContext"
+              },
+              {
+                "value": "{c1debe73-9dc1-4663-abcb-da6f2379dc04}",
+                "name": "InstanceId"
+              }
+            ]
+          }
+        ],
+        "task_definition_unchanged": true,
+        "client_sha256": "65A5CCC8617946E331C0D7D2C7E4B7D7E224F8C9AFF8A39FCACED29098B63178",
+        "signature": "Valid",
+        "publisher": "6E74B513F766E01730719684A41B2664380CA68A",
+        "other_state_files_and_acls_unchanged": true,
+        "serial": "5815C6397AF55D7421155D9995FC8B99BB907BE4",
+        "thumbprint": "BD498F87BB886AE760B3FAC40AB7BB6D2AC3B987",
+        "has_private_key": true,
+        "pending_absent": true,
+        "retry_absent": true,
+        "ethernet0_up": true,
+        "ethernet1_up": true,
+        "normal_execution_count": 1,
+        "forced_renewal": false,
+        "certificate_issued": false,
+        "prior_tests_repeated": false,
+        "timing_note": "TaskScheduler LastRunTime is 13.456 seconds earlier than its event100 actual start; use correlated event instance100/201/102, not LastRunTime, for this delivery execution chronology."
+      }
+    },
+    "native_private_evidence": "C:\\ProgramData\\AuthWire-B06-Delivery-20261123",
+    "backups_retained": true,
+    "dc01_validation_note": "DC01 candidate AllSigned ValidateOnly was blocked by existing missing TrustedPublisher. No trust changed; actual target VV-Client01 AllSigned ValidateOnly passed0 before delivery.",
+    "atomic_replace_note": "First GPO Replace failed before mutation due to null backup path; resumed from retained temp using non-null private backup, then single successful replacement. No renewal tests repeated."
+  },
+  "prior_provenance": {
+    "pinned_commit": "99d3511489edbcb5a1b7cf1ee103ef5e8c1e9ad4",
+    "expired_pending_checkpoint": "docs/checkpoints/2026-11-12-natural-expiry-field-accepted.json",
+    "expired_pending_blob": "f00ab766dcc05864d47f26c76ffc45d6678b59b8",
+    "expired_pending_original": {
+      "schema": 1,
+      "event": "AUTHWIRE_REAL_NATURAL_EXPIRED_PENDING_FIELD_ACCEPTED",
+      "date": "2026-11-12",
+      "endpoint": "VV-Client01",
+      "report_gate": "B06 actual expired-pending recovery",
+      "acceptance": "closed",
+      "scope": "Enterprise-signed isolated pilot, existing naturally expired CSR, real SYSTEM, AD/Kerberos and HTTPS.",
+      "old_case": {
+        "attempts": 8,
+        "status": "BLOCKED_REQUIRES_REVIEW",
+        "historical_issue_responses_identified": false,
+        "original_evidence_retained": true
+      },
+      "source": {
+        "pr": 143,
+        "sha": "bf4bbf9199629e237e84a9c18639292130f82468",
+        "cause": "Case-insensitive ASCII range validation on tr-TR discarded the uppercase I in DEVICE_CERTIFICATE_EXPIRED.",
+        "windows_http_regression": {
+          "tr_TR": true,
+          "en_US": true
+        },
+        "ci_workflow": 43217706812,
+        "passed_workflows": 8,
+        "signed_client_sha256": "dd6def822d9b6806ebef8d786bbebde3555308e73e57d103f8a08637ce9e2d50",
+        "signed_operator_sha256": "4122ad38ff779cf7089a81441a3351f7f9b81af4b69db1accafbdac29347ee41"
+      },
+      "field": {
+        "attempts": 2,
+        "rejected_utc": "2026-11-12T12:28:45.9683220+00:00",
+        "error_code": "DEVICE_CERTIFICATE_EXPIRED",
+        "original_bytes_archived": true,
+        "old_key_retained_until_recovery": true,
+        "client_retry_due_utc": "2026-11-12T12:45:45.9526980+00:00",
+        "retry_started_utc": "2026-11-12T12:45:49.3765973Z",
+        "completed_utc": "2026-11-12T12:45:52.6575036Z",
+        "new_serial": "25c6d57484492eb39fb021c53669b663d4ae7299",
+        "real_kerberos_and_https": true,
+        "online_chain_valid": true,
+        "installation_receipt": true,
+        "radius_selected_leaf_measured": false
+      },
+      "post_verification": {
+        "state": "RECOVERED_AND_DISPOSABLE_KEYS_CLEANED",
+        "new_test_cert_absent": true,
+        "new_test_key_absent": true,
+        "old_test_key_absent": true,
+        "main_key_present": true,
+        "main_installed_unchanged": true,
+        "old_pending_preserved": true,
+        "new_pending_absent": true,
+        "new_retry_absent": true,
+        "new_task_absent": true,
+        "old_task_state": "Disabled",
+        "ethernet1": "Up"
+      },
+      "limits": {
+        "live_linux_and_main_windows_package_updated": false,
+        "main_ad_gpo_changed": false,
+        "macro_completion_unchanged": "54/94",
+        "entire_B06_closed": false
+      },
+      "next": "B02 deleted test identity and isolated directory interruption/recovery, then other open field tests before remaining delivery items."
+    },
+    "historical_renewal_boot_checkpoint": "docs/checkpoints/2026-11-06-historical-windows-renewal-boot-closure.json",
+    "historical_renewal_boot_original": {
+      "schema": 1,
+      "event": "AUTHWIRE_HISTORICAL_WINDOWS_ACCEPTANCE_RECONCILED",
+      "date": "2026-11-06",
+      "requested_action": "Read prior conversations and current reports, close already passed tests, and do not repeat them.",
+      "sources": {
+        "current_report": {
+          "library_file_id": "libfile_4096195b800c8191b6b139c7fcba0c79",
+          "name": "AuthWire_Durum_ve_Kalan_Isler_2026-11-05.pdf",
+          "version": "6",
+          "relevant_pages": [
+            10,
+            12
+          ]
+        },
+        "historical_report": {
+          "library_file_id": "libfile_1891bff59ea881918f5b8a00cf5e4fd7",
+          "name": "AuthWire_Durum_ve_Tamamlama_Raporu_2026-10-19.pdf",
+          "relevant_pages": [
+            2,
+            5,
+            7,
+            13
+          ]
+        },
+        "prior_conversations_reviewed": true
+      },
+      "closed": [
+        {
+          "test": "Controlled machine certificate renewal and old identity retirement",
+          "status": "CLOSED_PREVIOUSLY_PASSED",
+          "computer": "VV06",
+          "accepted": "2026-10-19",
+          "new_serial": "5899e122009871b0d5536890bee81e4f0499e605",
+          "new_thumbprint": "4CFD8321AE08D6074B99AF5C194151AD5F99F454",
+          "previous_thumbprint": "68B32BBD470847950BAE5629B853739F819150B5",
+          "evidence": [
+            "Actual new certificate and new key; installed receipt and task result 0",
+            "Renewed serial observed in live RADIUS Access-Accept/POLICY_ALLOW with VLAN 110",
+            "SYSTEM old certificate absent, old CNG key absent, current key present"
+          ],
+          "source": "docs/CURRENT_STATUS.md sections dated 19 October; reports 19 October pages 2/5/13 and 5 November page 10",
+          "retest": false
+        },
+        {
+          "test": "Normal network-ready Windows boot, natural SYSTEM task and wired return",
+          "status": "CLOSED_PREVIOUSLY_PASSED",
+          "computer": "VV06",
+          "evidence_files": [
+            "docs/checkpoints/2026-10-19-vv06-dev10-boot-acceptance.json",
+            "docs/checkpoints/2026-10-20-vv06-dev11-boot-acceptance.json",
+            "docs/checkpoints/2026-10-21-vv06-dev12-copy-boot-accepted.json"
+          ],
+          "last_known_boot": "2026-10-21T18:14:12+03:00",
+          "natural_task_start": "2026-10-21T18:14:24+03:00",
+          "last_task_result": 0,
+          "wired_authentication": "succeeded",
+          "retest": false
+        },
+        {
+          "test": "Offline boot followed by automatic network return recovery",
+          "status": "CLOSED_PREVIOUSLY_PASSED",
+          "computer": "VV06",
+          "evidence_file": "docs/checkpoints/2026-10-20-vv06-offline-reconnect-acceptance.json",
+          "boot": "2026-10-20T17:08:48+03:00",
+          "natural_run": "2026-10-20T17:11:44+03:00",
+          "last_task_result": 0,
+          "retry_file_exists": false,
+          "wired_authentication": "succeeded",
+          "retest": false
+        },
+        {
+          "test": "Real failed enrollment followed by automatic deadline retry",
+          "status": "CLOSED_PREVIOUSLY_PASSED",
+          "computer": "VV06",
+          "evidence_file": "docs/checkpoints/2026-10-20-vv06-automatic-retry-recovery-acceptance.json",
+          "first_failed_run": "2026-10-20T17:37:00+03:00",
+          "retry_run": "2026-10-20T17:52:30+03:00",
+          "main_recovery_run": "2026-10-20T17:52:32+03:00",
+          "last_task_result": 0,
+          "manual_restart_after_failure": false,
+          "retest": false
+        }
+      ],
+      "scope_correction": "The previous broad statement that Windows renewal/reboot tests remain open is superseded for these already accepted scopes. VV06 is a distinct historical endpoint: its Realtek MAC/GUID differ from the current virtual VV-Client01; no alias equivalence is claimed.",
+      "still_separate": [
+        "Expired machine certificate recovery and remaining selection/cleanup variants",
+        "VV-Client01 stability after the 5 November dot3svc crash",
+        "Central Connector/gMSA reboot and lost-result recovery, which is not the endpoint enrollment boot test",
+        "Long-duration and scale acceptance"
+      ],
+      "macro_counts_changed": false,
+      "reason": "These historical successes are already represented by B06 4/5 and the fixed report baseline; auditing them is not new work completion credit.",
+      "no_report_regenerated": true
+    },
+    "main_retry_checkpoint": "docs/checkpoints/2026-10-20-vv06-automatic-retry-recovery-acceptance.json",
+    "main_partial_install_checkpoint": "docs/checkpoints/2026-10-20-vv06-partial-install-fresh-eap-accepted.json"
+  },
+  "historical_limits_preserved": {
+    "nov12_entire_B06_closed": false,
+    "nov12_live_linux_and_main_windows_package_updated": false,
+    "nov12_radius_selected_leaf_measured": false,
+    "all_partial_install_variants_complete": false,
+    "all_global_certificate_lifecycle_complete": false,
+    "main_runtime_branch_merge_claimed": false
+  },
+  "unchanged_open_gates": [
+    "G01 rollback junction/observation budget and governed rejected reservation recovery; same e195 stage rollback/full baseline; three endpoint effective GPO delivery; external matched journal/state restore",
+    "B02 deleted computer account and AD outage/recovery/single account/capacity",
+    "B03 CA/code signing transition and root CRL publication",
+    "B04 real endpoint/GPO scale and network recovery",
+    "A03 user Wi-Fi and general signed user client release",
+    "B11 NAS Interim-Update and Class correlation",
+    "B12 external backup and clean separate VM restore"
+  ],
+  "G01_preserved": {
+    "stage": "e195a1c3-ce02-46bc-869a-6063bba14f9f",
+    "stage_repeated": false,
+    "rollback": "68dfc2b5-ea6a-483a-876e-c33bfabf765b",
+    "rollback_status": "refused_before_authorization",
+    "reservation_and_lock_retained": true,
+    "stage_files20_retained": true,
+    "worker_requires_attention": true,
+    "connector_healthy": true,
+    "target_gpo": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3"
+  },
+  "no_retest": [
+    "renewal",
+    "certificate expiry",
+    "reboot",
+    "offline retry",
+    "EAP",
+    "G05",
+    "G01 stage/rollback",
+    "passed CI"
+  ],
+  "forecast": {
+    "B06_remaining_active_work_days": 0,
+    "G01_active_work_days": "5-9",
+    "other_remaining_packages": 12,
+    "macro_windows_unchanged": true,
+    "active_hours_not_measured": true
+  }
+}

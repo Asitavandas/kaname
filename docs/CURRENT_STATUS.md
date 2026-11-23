@@ -1,5 +1,21 @@
 # AuthWire current work record
 
+## 23 Kasım 2026, 11:29 — B06 özgün beş koşul 5/5 kapandı; eksik imzalı istemci teslimi tamamlandı
+
+**61/94 tamam, 33 açık (%64,9). Temel ürün 48/59, geliştirmeler 13/35; B06 5/5, G01 2/5, G05 5/5.** Bugünkü artış yalnız B06'nın son alt işidir. Önceki testler yeniden çalıştırılmadı.
+
+Özgün kabul 19 Ekim durum raporundaki beş koşuldur: (1) istemci/SYSTEM kayıt-yenileme temeli, (2) değişim onaylanana kadar geçerli eski sertifika/anahtarı koruma, (3) gerçek kontrollü yenileme/yeni anahtar/makbuz/erişim, (4) açılış-çevrimdışı otomatik toparlanma, (5) eski/yeni seçim-temizlik ve süresi dolan pending isteğinden kurtarma. 19 Ekim seçim/EAP, sunucuda24 saat ve yerelde12 saat sertifika/CNG temizliği; 20 Ekim doğal retry/açılış/kısmi kurulum ve taze EAP/VLAN110 kabulü zaten tamamdır. 6 Kasım uzlaştırması ve 12 Kasım gerçek doğal süre dolumu kurtarması pinned PR143 kaydından okundu, tekrar edilmedi. VV06 ve VV-Client01 farklı uçlardır; kanıtlar aynı cihaz gibi sunulmadı.
+
+**Bugün eksik teslim tamamlandı:** Linux dev.52 (965cb6bb) istemci kaynağı zaten doğru kültür bağımsız `$errorCode -cnotmatch` düzeltmesini içeriyordu; Linux güncellenmedi/yeniden başlatılmadı. Eski GPO/Windows kopyaları gerideydi. Aynı kaynak mevcut6E74…68A kurumsal yayıncı ile imzalandı. DC01 eski yayıncıyı TrustedPublisher'da bulundurmadığından orada AllSigned ValidateOnly engellendi; güven deposu değiştirilmedi. Gerçek hedef VV-Client01'de AllSigned ValidateOnly çıkış0 doğrulandı. Eski pilot GPO e5a9ab39 istemcisi ve unsigned SHA256SUMS yenilendi; diğer7 paket dosyasının içeriği ve8 dosya ACL'i korundu. GPO bağlantıları/AD ayarları değişmedi. VV-Client01'de yalnız istemci atomik değişti; geri dönüş kopyaları özel BA/SY klasöründe tutulur.
+
+**Tek normal teslim kabulü:** var olan AuthWire Certificate Enrollment SYSTEM görevi bir kez başlatıldı; yeni sertifika veya zorunlu yenileme yok. Aynı c1debe73 görev örneğinde olay100 11:24:37, olay201/102 11:25:44, dönüş0; son durum Ready. LastRunTime gerçek başlangıç olayından13,456sn önce göründüğünden kronoloji alanı yerine eşleşen olay örneği kullanıldı. Görev XML'i, diğer bütün durum dosyaları/ACL'ler aynı; mevcut5815c639…7be4 sertifikası ve BD498F87…B987 özel anahtarı korundu, pending/retry yok, Ethernet0/1 Up. İmzalı dosya SHA25665A5CCC8…98B63178; kaynak SHA256fd4dfbcf…76856e8d.
+
+**Sınırlar:** 12 Kasım kanıtının o gün `entire_B06_closed:false` ve genel paketin güncellenmediği kaydı aynen korunur; o tarih geriye dönük kapatılmadı. Eksik teslim bugün kabul edildi. O ayrı kurtarılan test yaprağıyla fiziksel RADIUS seçimi ölçülmedi. Özgün beş pilot koşulunun kapanışı bütün olası sertifika/kısmi kurulum çeşitleri veya genel filo yayını değildir. PR143/171'in main'e runtime birleştiği iddia edilmiyor. Doğrulanan kaynak zaten canlı dev.52'deydi.
+
+**Açık kapılar korunur:** G01 e195a1c3 gerçek20 dosyalı stage tekrar edilmedi; 68dfc2b5 geri alma yetki öncesi reddedilmiş durumda, dosyalar/kilit/rezervasyon duruyor. Junction/gözlem bütçesi ve ret rezervasyonuna ayrı kanıtı koruyan kurtarma, aynı stage'e bağlı geri alma/tam baseline, üç uç etkin teslim ve harici eşleşen restore açık. B02 silinmiş hesap/AD kesintisi, B03 CA/kod imza/CRL, B04 ölçek/ağ kurtarma, A03 kullanıcı Wi-Fi/genel kullanıcı istemcisi, B11 NAS Interim/Class ve B12 ayrı harici VM kurtarması açık. G01 kalıcı genel Connector sağlıklı, yazıcı requires_attention nedeniyle durmuş; bu aşamada dokunulmadı.
+
+B06 kalan1–3 aktif iş günü bandı0 oldu. Diğer12 açık paket ve G01 5–9 gün bandı korunur; makro takvim/operatör/gözlem bantları otomatik gün çıkarılmadan aynı tutuldu, aktif saat ölçülmedi. [Beş koşul, özgün tarihsel kanıtlar ve teslim kabulü](checkpoints/2026-11-23-b06-client-delivery-and-closure.json).
+
 ## 23 Kasım 2026, 10:54 — G01 gerçek 20 dosyalı hazırlama geçti; ayrı geri alma ön kontrolde reddedildi
 
 **60/94 tamam,34 açık; G01 2/5,G05 5/5.** Gerçek domain üzerinde hazırlama teknik kapısı geçti. Ayrı geri alma, tam başlangıç envanteri ve etkili GPO teslimi kabulü henüz kapanmadı. Başarılı hazırlama yeniden çalıştırılmayacak.
