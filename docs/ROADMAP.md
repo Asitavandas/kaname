@@ -1,5 +1,13 @@
 # AuthWire — güncel çalışma planı
 
+## 23 Kasım 2026 — G01 gerçek hazırlama geçti; geri alma açık
+
+60/94 tamam,34 açık; G012/5,G055/5. Arşiv okuyucu düzeltmesi c27be5aa,87 yeni native kontrol ve21/21 CI geçti; d539aa00 kalıcı paket kuruldu. Yeni e195a1c3 işi10:48:26'da gerçek domain GPO'sunda20 dosya/125601byte hazırladı; Linuxrev150, imzalı sonuç/ACK kabul edildi. Bu stage yeniden yapılmayacak.
+
+Ayrı68dfc2b5 geri alma yetki verilmeden PREFLIGHT_FAILED ile reddedildi; silme yok, rev152. Gerçek salt okunur tanı standart yerel PDC SYSVOL junction reddini ve6985ms gözlemin mevcut5s sınırını aştığını gösterdi. Hazır20 dosya, GPO kilidi ve geri alma rezervasyonu korunur; tam baseline dönmedi. Yazıcı durmuş, genel Connector sağlıklı. Eski kapalı işler, eski arşiv ve tamamlanmış saha testleri tekrarlanmadı; geçici erişim/görev/parola dosyaları temizlendi.
+
+Sırada yalnız rollback junction/süre düzeltmesi ve yetki öncesi ret rezervasyonu için ayrı denetimli, kanıtı koruyan kurtarma; sonra aynı e195 stage'ine bağlı yeni ayrı rollback ve tam baseline. Eski ret yeniden açılmaz, kilit/rezervasyon elle silinmez. Üç uç etkin GPO teslimi, harici eşleşen restore ve bütün diğer açık saha testleri korunur. G01 5–9 aktif iş günü yeniden değerlendirildi/korundu; diğer bantlar aynı. [Kanıt](checkpoints/2026-11-23-g01-archive-read-and-field.json).
+
 ## 22 Kasım 2026 — G01 süre koruması kalıcı teslim edildi
 
 60/94 tamam,34 açık; G01 2/5,G05 5/5. Parent/child/engine artık özgün grant ve gerçek15000ms work penceresinin küçüğüne bağlı. Engine girişinde2s kalmazsa dosya/journal oluşturmadan ret; sonuç için1s ayrılır. Private input'lar önce native handle ile sabitlenir, sonra tam yetki zinciri doğrulanır; modül import'u intent/gate/PID denetiminden sonradır.

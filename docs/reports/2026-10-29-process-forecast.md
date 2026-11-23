@@ -1,5 +1,11 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## 23 Kasım 2026 — Gerçek hazırlama ve açık geri alma sonrası süre
+
+Gerçek20 dosyalı e195 hazırlaması10:48:26'da başarılı; bu teknik adım için kalan iş0 ve tekrar edilmeyecek. Arşiv okuyucu düzeltmesi,87 yeni native kabul,21/21 kaynak CI ve d539 kalıcı teslim tamam. Ayrı68df geri alma yetki öncesinde reddedildi; standart SYSVOL junction ve6985ms gözlem/5s sınırı somut engellerdir. Hazır dosyalar, GPO kilidi ve rezervasyon korunur.
+
+**G01 5–9 aktif iş günü korundu.** Önce rollback junction/gözlem bütçesi ve ret rezervasyonunun kanıtı koruyan ayrı denetimli kurtarması, sonra aynı stage'e bağlı gerçek geri alma/tam baseline; üç uç etkin teslim ve harici eşleşen journal/state restore açık. Süre kontrolünü gevşetme veya rezervasyonu elle silme kabul değildir. Teknik hazırlama başarısı bütün94-alt-iş puanı sayılmadı:60/94 tamam,34 açık,G012/5,G055/5. Diğer12 paket,23 Kasım koşullu başlangıç, makro/operatör/gözlem bantları aynı; aktif saat ölçülmedi. [Kanıt](../checkpoints/2026-11-23-g01-archive-read-and-field.json).
+
 ## 22 Kasım 2026 — G01 parent/engine süre koruması ve kalıcı teslim sonrası
 
 Yeni24 süre ve92 native AllSigned/CNG/SMB kontrolü geçti.7s gecikmeli context ile20 dosya12,95s'de hazırlandı; geç context14,06s'de etki oluşturmadan durdu. AD/grant/namespace test verisidir; gerçek domain stage/rollback yerine sayılmaz. da8ff7c0/e3573903 kalıcı paket kuruldu, gMSA/pairing/CNG/config korunarak worker dinlemeye döndü. Eski kapanış/ölçüm testleri tekrarlanmadı.

@@ -1,0 +1,249 @@
+{
+  "date": "2026-11-23",
+  "timezone": "Europe/Istanbul",
+  "counts": {
+    "complete": 60,
+    "total": 94,
+    "open": 34,
+    "G01": "2/5",
+    "G05": "5/5"
+  },
+  "source": {
+    "branch": "codex/authwire-writer-pilot-port",
+    "commit": "c27be5aa81d2872cdf2aea10d3f8f9e51f78e71a",
+    "tree": "046c92f752b74bb92a86f8211af9193b7261e0df",
+    "draft_pr": 167,
+    "all_21_workflows": "success",
+    "changed_5_git_blobs_verified": true,
+    "empty_archive_ci": {
+      "run": 45131691262,
+      "job": 137548405565,
+      "native_checks": 87
+    },
+    "workflows": [
+      {
+        "run_id": 45131691255,
+        "name": "AuthWire stage parent and engine budget",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691222,
+        "name": "AuthWire exited stage intent recovery",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691230,
+        "name": "AuthWire combined staging preview checks",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691243,
+        "name": "AuthWire preauthorization refusal reporting",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691253,
+        "name": "AuthWire local PDC SYSVOL junction checks",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691122,
+        "name": "AuthWire isolated one-shot staging cycle",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691204,
+        "name": "AuthWire isolated consumed-stage closure",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691262,
+        "name": "AuthWire empty stage recovery",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691241,
+        "name": "AuthWire isolated authorized stage execution",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691289,
+        "name": "AuthWire isolated rollback origin evidence",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691156,
+        "name": "KANAME foundation checks",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691148,
+        "name": "AuthWire isolated rollback authorization",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691295,
+        "name": "AuthWire Windows write scheduler checks",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691298,
+        "name": "AuthWire reproducible Linux delivery",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691307,
+        "name": "AuthWire isolated staging filesystem checks",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691399,
+        "name": "AuthWire isolated governed write history",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691141,
+        "name": "AuthWire bounded retry network probe checks",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691142,
+        "name": "AuthWire isolated write preclaim checks",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691114,
+        "name": "AuthWire isolated durable write lifecycle",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691152,
+        "name": "AuthWire isolated rollback execution and result",
+        "conclusion": "success"
+      },
+      {
+        "run_id": 45131691127,
+        "name": "AuthWire Windows connector bootstrap checks",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "archive": {
+    "new_range": "000065-000128",
+    "archive_count": 2,
+    "sha256": "5a02da438bf2bc82d299f6c20fc3f8643be21590ab2ac3872e5bd2de17b8a0f1",
+    "old_archive_unchanged": true,
+    "protected_manifest_sha256": "fe9a1b9ae89f812f216c0ea7b724c8770087ff13e5740bf4651beb71e1ef0572",
+    "fixed_sdk_real_gmsa_read_exit": 0,
+    "repair": "Closed empty-stage proof now follows the already validated archived cycle location. Original completion/signature/ownership/timestamps remain checked."
+  },
+  "delivery": {
+    "old_release": "e3573903-4243-4228-a874-2f496af51dda",
+    "active_release": "d539aa00-4acf-4b22-a952-4b24d57e0cde",
+    "prepare_exit": 0,
+    "apply_exit": 0,
+    "config_except_release_unchanged": true,
+    "port": 18765,
+    "service_healthy": true,
+    "writer": {
+      "state": "stopped",
+      "reason": "lifecycle_requires_attention",
+      "last_phase": "refused_before_authorization",
+      "steps": 5
+    },
+    "original_package_archived": true
+  },
+  "field": {
+    "candidate_id": "2e2723bd-9987-4734-9fae-2433193d8e6c",
+    "target_gpo": "8c6808fd-a382-4bf2-9c9c-d9e1d46082a3",
+    "protected_gpo": "e5a9ab39-3709-49cb-837a-0208d2eb3b12",
+    "preview_id": "29b4c0b1-74b5-46d9-af67-7b85d6210b98",
+    "preview_hash": "dddb40d30545bd13a967830626012377dcffbdcfe49d784d4ed896a068888b55",
+    "preview_checked_at": 1795420024,
+    "stage_id": "e195a1c3-ce02-46bc-869a-6063bba14f9f",
+    "stage_status": "completed",
+    "stage_outcome": "staged",
+    "stage_checked_at": 1795420106,
+    "file_count": 20,
+    "total_bytes": 125601,
+    "stage_engine_id": "29f1e53b-6c1b-453b-c715-7c1682d9dd52",
+    "stage_result_sha256": "c9ac2552872bbb7a810ee6fb62c3a61710ebee6dca47367693edc37464485a28",
+    "complete_journal_sha256": "2039678ec9e1544ee466531023f6bde80f887678e0ecce8e4178dbdf882bc723",
+    "tree_sha256": "0978eb9c1ef8f1ca147df8729669ccabc9c123d2eff9d0329c36ea57bdc5c175",
+    "rollback_id": "68dfc2b5-ea6a-483a-876e-c33bfabf765b",
+    "rollback_status": "completed",
+    "rollback_outcome": "refused_before_authorization",
+    "rollback_reason": "PREFLIGHT_FAILED",
+    "rollback_authorization_issued": false,
+    "rollback_effects": "none",
+    "rollback_checked_at": 1795420188,
+    "rollback_refusal_sha256": "aa6db055340956b0b8c8b22e73041b3b26d3cf2f21e9ad14cbb20b0d74454e03",
+    "linux_revision": 152,
+    "full_stage_and_rollback_acceptance": false,
+    "gpo_applied": false,
+    "staged_files_still_present": true,
+    "gpo_lock_preserved": true,
+    "rollback_reservation_preserved": true
+  },
+  "diagnostic": {
+    "read_only": true,
+    "grant_or_offer_renewed": false,
+    "original_offer_observed_at": 1795420169,
+    "generic_pin_error": "STAGING_REPARSE_OR_KIND_REJECTED",
+    "first_directory_ms": 4823,
+    "both_directory_and_tree_ms": 6985,
+    "current_preflight_freshness_ms": 5000,
+    "staged_tree_matches": true,
+    "outside_inventory_unchanged": true,
+    "baseline_inventory_sha256": "b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6",
+    "at": 1795420358,
+    "notes": "Two concrete barriers: generic rollback GPO ancestor pin rejects the local PDC's standard SYSVOL junction; observed full read also exceeds unchanged 5-second freshness. No rollback authorization or deletion occurred."
+  },
+  "cleanup": {
+    "temporary_operators_profiles_sessions_removed": true,
+    "isolated_enabled_users": 0,
+    "temporary_tasks_removed": true,
+    "linux_and_windows_password_files_removed": true,
+    "expiry_timer_stopped": true,
+    "root_session_closed": true,
+    "transfer_files_removed": true,
+    "evidence_and_backups_preserved": true,
+    "production_process_start_identities": {
+      "control919": "412",
+      "panel647245": "64693127",
+      "radius647261": "64693227"
+    }
+  },
+  "next": [
+    "Do not replay the successful e195 stage or closed old jobs/archives/G05/EAP/OU/group/CRL/24-92 timing tests.",
+    "Fix bounded rollback live observation and local-PDC junction handling without relaxing generic reparse, original time, identity or authority checks; add new focused regression coverage.",
+    "Design separately approved, evidence-preserving retirement of the preauthorization-refused rollback reservation and lifecycle blocker before a fresh separately authorized rollback. Existing 68df job, reservation and GPO lock must not be deleted, reopened, renewed or bypassed manually.",
+    "Complete rollback on the already staged e195 origin, verify exact full baseline restoration, then continue actual GPO activation/three endpoints and matched external restore."
+  ],
+  "open_field_gates": [
+    "G01/A04 rollback and governed refusal recovery",
+    "G01 three endpoints VV06/2GL13ZU/VV-Client01 effective GPO delivery",
+    "G01/B12 matched external state/journal restore on separate VM",
+    "B02 deleted computer/account, AD interruption and one-account migration/capacity",
+    "A03 user Wi-Fi and general signed client release",
+    "B04 actual Windows/AD/GPO scale and outage recovery",
+    "B11 real NAS Interim-Update and Class correlation"
+  ],
+  "forecast": {
+    "G01_active_work_days": "5-9",
+    "others_unchanged": true,
+    "active_hours_measured": false
+  },
+  "native_evidence": {
+    "root": "C:\\ProgramData\\AuthWire-G01-StageField-d539-20261123",
+    "field_output": "output-v2",
+    "diagnostic_output": "diagnostic-output",
+    "history_root": "C:\\ProgramData\\AuthWire-G01-HistoryRead-20261123",
+    "linux_root": "/opt/authwire-g01-https-pilot/field-20261123-stage-d539"
+  },
+  "orchestration_notes": [
+    "22 Nov preview create failed STAGING_PREVIEW_WORKER_NOT_READY; request29b remained uncreated, was resumed once on23Nov via isolated signed preview reader.",
+    "First23Nov helper stopped before any preview create because ChannelTypes initialization was missing. Failure retained. v2 initializes it; no stage replay.",
+    "Connection loss did not interrupt the permanent worker. Existing outputs were read; rollback refusal was not mistaken for success."
+  ]
+}
