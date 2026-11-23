@@ -66,12 +66,76 @@ function Read-AuthWireRollbackOriginEvidenceAt($Offer,[hashtable]$Binding,[strin
  }finally{$p.Dispose();$lock.ReleaseMutex();$lock.Dispose()}
 }
 
+function Assert-AuthWireRollbackReaderIdentity([hashtable]$Binding){
+ $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
+ try{if($identity.User.Value -cne $Binding.service_sid -or -not $identity.IsAuthenticated -or ([Security.Principal.WindowsPrincipal]::new($identity)).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){throw 'ROLLBACK_SERVICE_IDENTITY_REQUIRED'}}finally{$identity.Dispose()}
+}
 function Get-AuthWireRollbackDirectoryObservation($Offer,[hashtable]$Binding,[string]$Publisher,[string]$BaseUrl){
  # Explicit service identity plus existing bounded content/AD/GPO/ACL checks.
  # Unlike the stage preview this does not require an empty Machine directory.
- $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
- try{if($identity.User.Value -cne $Binding.service_sid -or -not $identity.IsAuthenticated -or ([Security.Principal.WindowsPrincipal]::new($identity)).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){throw 'ROLLBACK_SERVICE_IDENTITY_REQUIRED'}}finally{$identity.Dispose()}
- $t=$Offer.target.scope_target;$context=Get-AuthWireCombinedScopeContext $t $Binding $Publisher $BaseUrl
+ Assert-AuthWireRollbackReaderIdentity $Binding
+ $context=Get-AuthWireCombinedScopeContext $Offer.target.scope_target $Binding $Publisher $BaseUrl
+ return (Get-AuthWireRollbackDirectoryObservationFromContext $Offer $Binding $context)
+}
+function New-AuthWireRollbackContentLease($Offer,[hashtable]$Binding,[string]$Publisher,[string]$BaseUrl){
+ # Fixed local candidates, never paths or cached context from a peer. Hold the
+ # verified bytes through BOTH current AD observations. Expensive signature/
+ # ZIP validation belongs to the enclosing 15s budget, not the 5s AD window.
+ Assert-AuthWireRollbackReaderIdentity $Binding
+ Assert-AuthWireCombinedScopeTarget $Offer.target.scope_target
+ $t=$Offer.target.scope_target;$pins=[AuthWire.Staging.TreeLeaseV1]::new()
+ $leases=[Collections.Generic.List[IDisposable]]::new()
+ try{
+  $id=([guid]$Binding.connector_id).ToString('N');$area=[Environment]::GetFolderPath('CommonApplicationData')
+  $networkRoot=Join-Path $area ('AuthWire-DeploymentCandidates-'+$id)
+  $combinedRoot=Join-Path $area ('AuthWire-CombinedCandidates-'+$id)
+  foreach($root in @($networkRoot,$combinedRoot)){$pins.PinStableAncestors($root);Assert-AuthWireCandidateAcl $root $Binding.service_sid -Directory}
+  $prefix=([guid]$t.plan_id).ToString('N')+'-v'+$t.plan_version+'-'
+  $items=@(Get-ChildItem -LiteralPath $networkRoot -Force);if($items.Count -gt 32){throw 'ROLLBACK_CONTENT_LIMIT'}
+  $found=0;$selectedNetwork=''
+  foreach($item in $items){
+   if($item.Name -cnotmatch ('\A'+[regex]::Escape($prefix)+'[0-9a-f]{64}\z')){continue}
+   if(-not $item.PSIsContainer){throw 'ROLLBACK_CONTENT_CHANGED'}
+   $pins.PinStableAncestors($item.FullName);$file=Join-Path $item.FullName 'approval.json';$pins.PinFile($file)
+   if((Get-AuthWireCandidateHash (Read-AuthWireCandidateBytes $file 8192)) -cne $t.approval_sha256){continue}
+   $leases.Add([AuthWire.Staging.TreeLeaseV1]::Tree($item.FullName,$false));$selectedNetwork=$item.FullName;$found++
+  }
+  if($found -ne 1){throw 'ROLLBACK_CONTENT_CHANGED'}
+  # The staging ledger admits only the combined startup installer template.
+  $template='ab1a11c68381006173518df77deeb0d32fc56e0b28cc260c42b7378c624be14a'
+  $combined=Join-Path $combinedRoot ($t.plan_id+'-v'+$t.plan_version+'-'+$t.draft_sha256+'-'+$template.Substring(0,16))
+  $pins.PinStableAncestors($combined);$leases.Add([AuthWire.Staging.TreeLeaseV1]::Tree($combined,$false))
+  # This retains the complete existing public signer, network/combined content,
+  # fixed ACL, domain/profile/CA and enrollment/TLS binding validation.
+  $namespaces=@(foreach($root in @($networkRoot,$combinedRoot)){
+   $names=@(Get-ChildItem -LiteralPath $root -Force|ForEach-Object {$_.Name+'|'+[int]$_.PSIsContainer}|Sort-Object -CaseSensitive)
+   [pscustomobject]@{Root=$root;Names=($names -join ';')}
+  })
+  $context=Get-AuthWireCombinedScopeContext $t $Binding $Publisher $BaseUrl
+  $lease=[pscustomobject]@{Context=$context;Pins=$pins;Trees=$leases;Namespaces=$namespaces;SelectedPaths=@($selectedNetwork,$combined)}
+  Assert-AuthWireRollbackContentLease $lease
+  return $lease
+ }catch{foreach($lease in $leases){$lease.Dispose()};$pins.Dispose();throw}
+}
+function Close-AuthWireRollbackContentLease($Lease){
+ if($Lease){foreach($tree in $Lease.Trees){$tree.Dispose()};$Lease.Pins.Dispose()}
+}
+function Assert-AuthWireRollbackContentLease($Lease){
+ foreach($namespace in $Lease.Namespaces){
+  $names=@(Get-ChildItem -LiteralPath $namespace.Root -Force|ForEach-Object {$_.Name+'|'+[int]$_.PSIsContainer}|Sort-Object -CaseSensitive)
+  if(($names -join ';') -cne $namespace.Names){throw 'ROLLBACK_CONTENT_CHANGED'}
+ }
+ if(@($Lease.SelectedPaths).Count -ne $Lease.Trees.Count){throw 'ROLLBACK_CONTENT_CHANGED'}
+ for($i=0;$i -lt $Lease.Trees.Count;$i++){
+  $again=[AuthWire.Staging.TreeLeaseV1]::Tree($Lease.SelectedPaths[$i],$false)
+  try{if((Get-AuthWireStagingFilesystemDigest (Get-AuthWireStagingFilesystemRows $again)) -cne (Get-AuthWireStagingFilesystemDigest (Get-AuthWireStagingFilesystemRows $Lease.Trees[$i]))){throw 'ROLLBACK_CONTENT_CHANGED'}}finally{$again.Dispose()}
+ }
+}
+function Get-AuthWireRollbackDirectoryObservationFromContext($Offer,[hashtable]$Binding,$context){
+ # Only a locally verified context held by New-AuthWireRollbackContentLease is
+ # reused. This internal reader still makes a fresh complete AD/GPO/ACL read.
+ Assert-AuthWireRollbackReaderIdentity $Binding
+ $t=$Offer.target.scope_target
  $a=$context.Approval;$domain=Get-ADDomain -Identity $a.domain -Server $a.domain -ErrorAction Stop
  $server=[string]$domain.PDCEmulator;$sid=$Binding.service_sid.Substring(0,$Binding.service_sid.LastIndexOf('-'))
  if($domain.DNSRoot -cne $t.domain -or $domain.DomainSID.Value -cne $sid){throw 'ROLLBACK_DIRECTORY_CHANGED'}
@@ -108,23 +172,25 @@ function Get-AuthWireRollbackLivePreflight($Offer,[hashtable]$Binding,[string]$R
     (Get-AuthWireScopeDataHash $origin.Complete) -cne $Offer.target.stage_receipt.complete_journal_sha256 -or $origin.Complete.tree_sha256 -cne $Offer.target.stage_receipt.staged_tree_sha256){throw 'ROLLBACK_ORIGIN_CHANGED'}
  $root=Get-AuthWireStagingWriteJournalRoot $Binding;Assert-AuthWireStagingWriteJournalLocation $root $Binding
  $clock=[Diagnostics.Stopwatch]::StartNew();$start=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
- $decision=Enter-AuthWireWriteOutcomeLock $origin.StageJobId
+ $decision=Enter-AuthWireWriteOutcomeLock $origin.StageJobId;$contentLease=$null
  try{
   $stage=Join-Path $root $origin.StageJobId;$engine=Join-Path $root $origin.FilesystemOperationId
   if(Test-Path -LiteralPath (Join-Path $stage 'execution-requires-review.json')){throw 'ROLLBACK_STAGE_REVIEW_REQUIRED'}
   Assert-AuthWireNoActiveStage $root $origin.StageJobId
   foreach($n in @('rollback-started.json','rolled-back.json')){if(Test-Path -LiteralPath (Join-Path $engine $n)){throw 'ROLLBACK_PREVIOUS_ATTEMPT_REQUIRES_REVIEW'}}
+ $contentLease=New-AuthWireRollbackContentLease $Offer $Binding $Publisher $BaseUrl
  # Freshness begins BEFORE live directory/tree reads, never after the final
  # history recheck. Slow validation must consume the observation's lifetime.
  $observedAt=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$observationClock=[Diagnostics.Stopwatch]::StartNew()
- $directory=Get-AuthWireRollbackDirectoryObservation $Offer $Binding $Publisher $BaseUrl
+ $directory=Get-AuthWireRollbackDirectoryObservationFromContext $Offer $Binding $contentLease.Context
  $expected=Get-AuthWireWriteGpoPath $directory.pdc $Offer.target.scope_target
  Assert-AuthWireCandidateGuid $directory.protected_gpo_id
  if($directory.gpo_root -cne $expected -or $directory.gpo_root -cne $origin.StageLive.gpo_root -or $directory.pdc -cne $origin.StageLive.pdc -or $directory.protected_gpo_id -cne $origin.Intent.protected_gpo_id -or
     $directory.protected_gpo_id -ceq $Offer.target.scope_target.gpo_id -or $directory.scope_sha256 -cne $Offer.target.preview_record.Preview.scope_observations_sha256){throw 'ROLLBACK_DIRECTORY_CHANGED'}
  $p=[AuthWire.Staging.TreeLeaseV1]::new();$tree=$null
  try{
-  $p.PinAncestors($directory.gpo_root);$p.PinAncestors((Join-Path $directory.gpo_root 'Machine'))
+  Add-AuthWireStagingGpoPins $p $directory.gpo_root $directory.gpo_root
+  Add-AuthWireStagingGpoPins $p (Join-Path $directory.gpo_root 'Machine') $directory.gpo_root
   $relative=$origin.Intent.relative_destination
   $fixed='Machine/AuthWire-'+([guid]$Offer.target.scope_target.plan_id).ToString('N')+'-v'+$Offer.target.scope_target.plan_version+'-'+$Offer.target.scope_target.manifest_sha256
   if($relative -cne $fixed){throw 'ROLLBACK_STAGE_TARGET_CHANGED'}
@@ -134,8 +200,9 @@ function Get-AuthWireRollbackLivePreflight($Offer,[hashtable]$Binding,[string]$R
   $all=Get-AuthWireSysvolInventory $directory.gpo_root
   $outside=@($all.Entries|Where-Object {$_.Path -cne $relative -and -not $_.Path.StartsWith($relative+'/',[StringComparison]::Ordinal)})
   if((Get-AuthWireScopeDataHash $outside) -cne $origin.Intent.baseline_sha256){throw 'ROLLBACK_OUTSIDE_CHANGED'}
-  $again=Get-AuthWireRollbackDirectoryObservation $Offer $Binding $Publisher $BaseUrl
+  $again=Get-AuthWireRollbackDirectoryObservationFromContext $Offer $Binding $contentLease.Context
   if((Get-AuthWireWriteHash $again) -cne (Get-AuthWireWriteHash $directory)){throw 'ROLLBACK_DIRECTORY_CHANGED'}
+  Assert-AuthWireRollbackContentLease $contentLease
   $stage=Join-Path $root $origin.StageJobId;$engine=Join-Path $root $origin.FilesystemOperationId
   if(Test-Path -LiteralPath (Join-Path $stage 'execution-requires-review.json')){throw 'ROLLBACK_STAGE_REVIEW_REQUIRED'}
   Assert-AuthWireNoActiveStage $root $origin.StageJobId
@@ -146,7 +213,7 @@ function Get-AuthWireRollbackLivePreflight($Offer,[hashtable]$Binding,[string]$R
   # or grant. All old timestamps and the stage/GPO durable lock stay unchanged.
   return [pscustomobject][ordered]@{format='AuthWireRollbackPreflightV1';job_id=$Offer.job_id;intent_sha256=$Offer.intent_sha256;target_sha256=(Get-AuthWireWriteHash $Offer.target);binding_scope=(Get-AuthWireJobScope $Binding);release_id=$Release;stage_job_id=$origin.StageJobId;stage_release_id=$origin.StageReleaseId;filesystem_operation_id=$origin.FilesystemOperationId;origin_chain_sha256=$origin.ChainSha256;complete_sha256=$Offer.target.stage_receipt.complete_journal_sha256;tree_sha256=$Offer.target.stage_receipt.staged_tree_sha256;directory_sha256=(Get-AuthWireWriteHash $directory);checked_at=$observedAt;expires_at=([long][Math]::Min(($observedAt+5),[long]$Offer.expires_at));read_only=$true;write_authorized=$false;can_delete=$false;can_apply_gpo=$false;requires_separate_claim=$true}
  }finally{if($tree){$tree.Dispose()};$p.Dispose()}
- }finally{$decision.ReleaseMutex();$decision.Dispose()}
+ }finally{Close-AuthWireRollbackContentLease $contentLease;$decision.ReleaseMutex();$decision.Dispose()}
 }
 
 function Get-AuthWireRollbackPreflight($Offer,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[string]$Publisher,[string]$BaseUrl){

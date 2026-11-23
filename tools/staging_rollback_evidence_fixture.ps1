@@ -1,3 +1,7 @@
+
+# Fixture-only content lease; these suites do not build real signed candidate stores.
+function Assert-AuthWireRollbackContentLease { }
+function New-AuthWireRollbackContentLease { return [pscustomobject]@{Context=$null;Pins=([AuthWire.Staging.TreeLeaseV1]::new());Trees=@()} }
 # Invoked only inside the existing disposable signed CNG/TLS/SQLite/SMB fixture,
 # after a real stage RESULT is accepted. AD/content/service-identity are explicit
 # directory-observation shims. No product reset or fault hook is introduced.
@@ -29,7 +33,7 @@ function RehashRollback($v){
  $v.intent_sha256=Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes($frame));return $v
 }
 $script:rollbackDirectoryDrift=$false;$script:rollbackDirectoryReads=0;$script:rollbackDirectoryDelay=$false
-function Get-AuthWireRollbackDirectoryObservation($Offer,[hashtable]$Binding,[string]$Publisher,[string]$BaseUrl){
+function Get-AuthWireRollbackDirectoryObservationFromContext($Offer,[hashtable]$Binding,[string]$Publisher,[string]$BaseUrl){
  $script:rollbackDirectoryReads++
  if($script:rollbackDirectoryDelay){Start-Sleep -Milliseconds 5100}
  return [pscustomobject]@{pdc=$(if($script:rollbackDirectoryDrift){'dc02.lab.example'}else{'dc01.lab.example'});gpo_root=$gpo;protected_gpo_id=$stageIntent.live_context.protected_gpo_id;scope_sha256=$Offer.target.preview_record.Preview.scope_observations_sha256}
@@ -40,7 +44,7 @@ try{
  # lookup. Restore it only for this negative native identity check.
  Set-Item Function:Get-AuthWireRollbackDirectoryObservation $directoryBody
  Reject {Get-AuthWireRollbackDirectoryObservation $r $b $signer.Thumbprint $url} 'rollback refuses administrator as customer service identity'
- function Get-AuthWireRollbackDirectoryObservation($Offer,[hashtable]$Binding,[string]$Publisher,[string]$BaseUrl){
+ function Get-AuthWireRollbackDirectoryObservationFromContext($Offer,[hashtable]$Binding,[string]$Publisher,[string]$BaseUrl){
   $script:rollbackDirectoryReads++
  if($script:rollbackDirectoryDelay){Start-Sleep -Milliseconds 5100}
   return [pscustomobject]@{pdc=$(if($script:rollbackDirectoryDrift){'dc02.lab.example'}else{'dc01.lab.example'});gpo_root=$gpo;protected_gpo_id=$stageIntent.live_context.protected_gpo_id;scope_sha256=$Offer.target.preview_record.Preview.scope_observations_sha256}

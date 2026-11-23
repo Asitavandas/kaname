@@ -1,0 +1,20 @@
+name: AuthWire rollback pinned content and live window
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/staging-rollback-live-window.yml'
+      - 'tools/staging_rollback_live_window_windows_check.ps1'
+      - 'windows/connector/StagingRollbackEvidence.ps1'
+permissions:
+  contents: read
+jobs:
+  live-window:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Held candidate bytes and unchanged five second live observation
+        shell: powershell
+        run: ./tools/staging_rollback_live_window_windows_check.ps1
