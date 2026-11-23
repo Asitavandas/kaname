@@ -1,5 +1,12 @@
 # AuthWire tahmini süreç ve canlı test raporu
 
+## 23 Kasım 2026, 17:30 — G01 kapanış/teslim ve yeni gerçek ret sonrası değerlendirme
+
+**61/94 tamam,33 açık; temel48/59, geliştirmeler13/35; G012/5,B065/5,G055/5. G01 5–9 aktif iş günü korunur.** Eski yetki öncesi ret için imzalı append-only kapanış ve kalıcı50f59c85 paketi tamamlandı; fakat bir kez oluşturulan ayrı8e9ae160 geri alma işi de yetki öncesi reddedildi. Mevcut20dosya stage tekrarlanmadı, silme yapılmadı. Yeni salt okunur okuma ağaç ve AD uyumunu doğrulasa da soğuk gerçek çocuk girişinin başarısını veya rollback kabulünü göstermez.
+
+Kalan bağımlılıklar: gerçek çocuk girişinin kesin ret nedenini kaydederek düzeltmek; yeni reddi ayrı denetimli kapattıktan sonra mevcut stage’in gerçek rollback/baseline kabulü; kapatılmış ret için arşiv okuyucu ve eşleşen harici kurtarma; panel GPO otomasyonu, imza/sürüm bakım akışı ve üç uç etkin dağıtımı. Teknik kapanış/teslim makro alt iş sayısını artırmadı. Önceki12 açık paket bantları ve 23Kasım başlangıçlı koşullu makro takvim korunur; bu turun aktif saatleri ölçülmedi. [Kanıt](../checkpoints/2026-11-23-g01-rollback-retirement-and-field.json).
+
+
 ## 23 Kasım 2026, 11:29 — B06 kapanışı sonrası süre
 
 **B06 kalan1–3 aktif iş günü bandı0; 61/94 tamam,33 açık.** Özgün beş pilot kriteri önceki19-20 Ekim ve12 Kasım kanıtlarıyla uzlaştırıldı; eksik kurumsal imzalı makine istemcisi bugün GPO/VV-Client01'e teslim edildi ve var olan SYSTEM görevi tek normal çalışmada çıkış0 verdi. Eski yenileme/EAP/expiry/boot/retry testleri yeniden yapılmadı. Canlı Linux dev.52 kaynağı zaten düzeltmeyi içeriyordu; Linux güncellemesi/yeniden başlatma gerekmedi. [Kabul ve sınırlar](../checkpoints/2026-11-23-b06-client-delivery-and-closure.json).

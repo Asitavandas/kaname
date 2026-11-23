@@ -1,5 +1,20 @@
 # AuthWire current work record
 
+## 23 Kasım 2026, 17:30 — G01 imzalı rezervasyon kapanışı ve kalıcı paket devrede; ayrı gerçek geri alma hâlâ açık
+
+**61/94 tamam, 33 açık; temel 48/59 (11 açık), geliştirmeler 13/35 (22 açık). B06 5/5, G05 5/5, G01 2/5.** Bu teknik ilerleme özgün G01 alt maddelerini kapatmaz.
+
+- Eski **68dfc2b5** yetki öncesi ret işi, **17:06:04**’te yalnız iki imzalı CreateNew kayıtla denetimli olarak kapatıldı. Özgün ret, rezervasyon, GPO kilidi, dosyalar ve zaman damgaları korundu. Sunucunun mevcut sonucu kabul kararı rev153; bu karar silme yetkisi değildir. Kapanış sonrası zaman aşımından sonra yalnız salt okunur son kontrol tamamlandı; kapanış tekrarlanmadı.
+- Kaynak **34b9bc96 / taslak PR167** için **23/23 CI** başarılı; ayrı yerel native kontroller 9 ve24. İmzalı **50f59c85** paketi DC01’e Prepare/Apply çıkış0 ile kuruldu. 18765, config (release dışında), gMSA/SID, pairing, CNG anahtar/ACL ve kurumsal yayıncı korundu. Önceki d539 paket yedeği korunur; 55a2a5ca hazırlığı uygulanmadı. Genel panel dev.52/Linux/RADIUS süreçleri yeniden başlatılmadı.
+- Kalıcı yazıcının yeni pakette normal POLL yaptığı görüldükten sonra **yalnız bir yeni geri alma işi 8e9ae160** oluşturuldu. Mevcut **e195a1c3 /20 dosya/125601byte** hazırlaması ve önizlemesi tekrar yapılmadı. Yeni iş **17:22:34’te refused_before_authorization / PREFLIGHT_FAILED**, ACK17:22:37 ile sunucuda tamamlandı (rev155). Claim, grant ve silme yok. **completed, rolled_back anlamına gelmez.**
+- Yeni ret için17:27:05 salt okunur tanı: özgün zincir4028ms, içerik1617ms, iki güncel AD/ağaç/içerik okuması3900ms; içerik+canlı5517ms, tam9547ms. Ağaç ve dış başlangıç envanteri eşleşti. Bu ayrı yardımcı gerçek soğuk AllSigned çocuk süreç başarısı veya geri alma kabulü değildir; asıl ret nedeni genel hata kaydı yüzünden henüz kesinleşmedi.
+- Genel Connector Running; yazıcı **stopped/lifecycle_requires_attention** durumunda güvenli bariyerde. Yeni8e9 rezervasyonu/ret sonucu kapatılmadı veya tekrar açılmadı. Test GPO etkinleştirilmedi. Ethernet0/1 Up. Geçici dar operatör/profil/oturumlar, altı görev ve parola dosyaları kaldırıldı; root oturumu kapatıldı. Kalıcı imzalı kanıtlar tutuldu.
+- **Sıradaki iş:** gerçek sabit AllSigned/gMSA çocuk girişindeki kesin ret nedenini sınırlandırılmış salt okunur tanıyla kaydetmek ve yalnız bulunan kusuru düzeltmek. 5s/15s ve özgün offer/grant süreleri, imza/ACL/kimlik korumaları gevşetilmeyecek. Yeni ret, doğrulanmış düzeltmeden sonra ayrı incelemeyle kapatılmadan başka geri alma işi açılmayacak. Eski başarılı stage, preview, EAP/yenileme/açılış testleri tekrarlanmayacak.
+- **Arşiv kapısı açık:** kapatılmış ret kaydının arşivden okunması henüz kabul edilmedi; refusal input-pin okuyucusunun aktif lifecycle yol koşulu çözülüp eşleşen harici restore ile doğrulanmalı. Özgün G01’in panel GPO otomasyonu/geri alma, imza-sürüm bakım akışı ve üç uç kademeli etkin teslimi (VV06/2GL13ZU/VV-Client01) açık. B02 hesap/AD kesintisi, B03 CA/CRL, B04 gerçek ölçek, A03 kullanıcı Wi-Fi/genel yayın, B11 NAS Interim/Class, B12 dış VM kurtarma atlanmaz.
+
+**G01 süre bandı yeniden değerlendirildi: 5–9 aktif iş günü korunur; diğer12 açık paket bantları ve koşullu makro takvim aynı.** Bu turun aktif saatleri ölçülmedi. Ayrıntı: [kalıcı kapanış/teslim ve yeni ret kanıtı](checkpoints/2026-11-23-g01-rollback-retirement-and-field.json). Önceki bölümler tarihsel kayıttır.
+
+
 ## 23 Kasım 2026, 11:29 — B06 özgün beş koşul 5/5 kapandı; eksik imzalı istemci teslimi tamamlandı
 
 **61/94 tamam, 33 açık (%64,9). Temel ürün 48/59, geliştirmeler 13/35; B06 5/5, G01 2/5, G05 5/5.** Bugünkü artış yalnız B06'nın son alt işidir. Önceki testler yeniden çalıştırılmadı.

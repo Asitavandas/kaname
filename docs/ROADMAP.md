@@ -1,5 +1,16 @@
 # AuthWire — güncel çalışma planı
 
+## 23 Kasım 2026, 17:30 — G01 teslim ilerledi; gerçek geri alma kapanmadı
+
+**61/94 tamam,33 açık: 11 temel+22 geliştirme. B065/5,G055/5,G012/5.** Eski68dfc2b5 imzalı append-only kapanışı kabul edildi; özgün rezervasyon ve GPO kilidi silinmedi. 34b9bc96 kaynağının23 CI akışı başarılı, kalıcı imzalı50f59c85 Prepare/Apply0 ile kuruldu. Genel panel dev.52 ve Linux/RADIUS aynı süreçlerde.
+
+Mevcut e195a1c3 20 dosyalı hazırlama tekrarlanmadı. Ayrı8e9ae160 işi bir kez oluşturuldu ve yetki öncesi PREFLIGHT_FAILED sonucu sunucuda rev155 tamamlandı: **rolled_back değil, silme yok**. Yeni salt okunur tanıda zincir/ağaç/dış envanter uyumlu; gerçek soğuk AllSigned çocuk girişinin ret nedeni henüz kesinleşmedi. Genel Connector Running, writer stopped/lifecycle_requires_attention; yeni ret ve rezervasyon korunuyor.
+
+**Bir sonraki bağımlı iş:** sabit gMSA/AllSigned çocuk girişinde ayrıntılı sınırlı tanı → yalnız kanıtlanan kusur düzeltmesi ve ilgili doğrulama → yeni8e9 reddinin ayrıca denetimli append-only kapanışı → mevcut aynı stage için ayrı taze yetkili geri alma ve tam baseline kabulü. Aynı ret, stage, preview, EAP/yenileme/açılış işleri yeniden çalıştırılmaz; güvenlik süreleri uzatılmaz.
+
+Kapatılmış ret kaydının arşivden okunması ve eşleşen harici restore ayrıca açık; mevcut aktif-yol koşulu nedeniyle bu yeni ret kaydı arşivlenmeyecek. Özgün G01 üç kalan ölçüt: panel GPO otomasyonu+rollback; imza/sürüm bakımı entegrasyonu; VV06/2GL13ZU/VV-Client01 kademeli gerçek teslim. Diğer B02/B03/B04/A03/B11/B12 saha kapıları korunur. G01 5–9 aktif iş günü yeniden değerlendirildi ve korundu; aktif saat ölçülmedi. [Kanıt](checkpoints/2026-11-23-g01-rollback-retirement-and-field.json).
+
+
 ## 23 Kasım 2026, 11:29 — B06 5/5 kapandı
 
 **61/94 tamam,33 açık; temel48/59, geliştirmeler13/35.** Özgün19 Ekim beş maddelik B06 makine pilotu kapandı. 19-20 Ekim seçim/temizlik, yenileme/anahtar/makbuz, açılış/çevrimdışı retry; 12 Kasım doğal süresi dolan pending kurtarması önceki kanıtlardan uzlaştırıldı. Bu testler, EAP, boot ve CI yeniden yapılmadı.
