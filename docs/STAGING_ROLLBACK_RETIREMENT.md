@@ -12,6 +12,9 @@ retirement proof. Completion additionally requires the exact saved-result
 acknowledgement to be rechecked through a current privileged product session
 with Origin/CSRF and both existing permissions. That server acknowledgement
 confirms the original result; it is not server rollback or deletion authority.
+The three endpoint capability flags may be enabled on the isolated pilot.
+They are checked as consistent boolean metadata, never accepted as a grant;
+the acknowledgement still has the exact decision/job and cannot apply a GPO.
 The explicit local acknowledgement is `retire_refused_rollback_without_replay`.
 
 Completion appends only `rollback-retirement-review.json` and

@@ -63,6 +63,17 @@ try{
  Reject {Complete-AuthWireRefusedRollbackRetirement $root $jobId $b $rsa 'https://fixture.example/' $review.Proof $review.ProofSha256 $ack $session $csrf 'retire_refused_rollback_without_replay'} 'current privileged-session refusal preserves barrier'
  Check (-not(Test-Path (Join-Path $job 'rollback-retirement-review.json'))) 'failed acknowledgement creates no retirement record'
  $script:ackDenied=$false
+ $fp=[AuthWire.Staging.TreeLeaseV1]::new()
+ try{$fake=Get-AuthWireRollbackRetirementState $root $jobId $b $rsa $fp}finally{$fp.Dispose()}
+ $sourceReceipt=[pscustomobject]@{job_id=$jobId;decision='acknowledge_saved_result';decision_recorded=$true;revision=11;approval_enabled=$false;write_authorization_enabled=$false;execution_adapter_available=$false;can_apply_gpo=$false}
+ Assert-AuthWireRollbackRetirementAcknowledgement $ack $sourceReceipt $fake
+ Check $true 'source-only acknowledgement metadata remains supported'
+ $badReceipt=[pscustomobject]@{job_id=$jobId;decision='acknowledge_saved_result';decision_recorded=$true;revision=11;source_only=$false;approval_enabled=$true;write_authorization_enabled=$true;execution_adapter_available=$true;can_apply_gpo=$true}
+ Reject {Assert-AuthWireRollbackRetirementAcknowledgement $ack $badReceipt $fake} 'pilot capability metadata never enables GPO activation'
+ function Confirm-AuthWireRollbackRetirementAcknowledgement {
+  $script:ackCalls++
+  return [pscustomobject]@{job_id=$jobId;decision='acknowledge_saved_result';decision_recorded=$true;revision=11;source_only=$false;approval_enabled=$true;write_authorization_enabled=$true;execution_adapter_available=$true;can_apply_gpo=$false}
+ }
  $complete=Complete-AuthWireRefusedRollbackRetirement $root $jobId $b $rsa 'https://fixture.example/' $review.Proof $review.ProofSha256 $ack $session $csrf 'retire_refused_rollback_without_replay'
  Check (Test-AuthWireRefusedRollbackRetired $root $life $oldState $b $rsa) 'signed append-only completion validates'
  Check ($complete.Body.original_reservation_retained -and $complete.Body.gpo_lock_retained -and -not $complete.Body.authority_renewed -and -not $complete.Body.can_delete) 'completion retains immutable records and grants no authority'

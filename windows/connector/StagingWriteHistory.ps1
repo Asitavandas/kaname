@@ -975,9 +975,18 @@ function Assert-AuthWireRollbackRetirementReview($Proof,$State,[hashtable]$Bindi
 function Assert-AuthWireRollbackRetirementAcknowledgement($Request,$Receipt,$State){
  Assert-AuthWireCandidateFields $Request @('expected_revision','evidence','decision','review_hash','acknowledge')
  if($Request.decision -cne 'acknowledge_saved_result' -or $Request.acknowledge -cne 'record_reconciliation_decision' -or -not (Test-AuthWireWriteInteger $Request.expected_revision) -or -not (Test-AuthWireWriteHash $Request.review_hash) -or (Get-AuthWireWriteHash $Request.evidence) -cne (Get-AuthWireWriteHash $State.Evidence)){throw 'ROLLBACK_RETIRE_SERVER_ACK_REJECTED'}
- Assert-AuthWireCandidateFields $Receipt @('job_id','decision','decision_recorded','revision','approval_enabled','write_authorization_enabled','execution_adapter_available','can_apply_gpo')
+ $fields=@('job_id','decision','decision_recorded','revision','approval_enabled','write_authorization_enabled','execution_adapter_available','can_apply_gpo')
+ if($Receipt.PSObject.Properties['source_only']){$fields+='source_only'}
+ Assert-AuthWireCandidateFields $Receipt $fields
  if($Receipt.job_id -cne $State.State.Offer.job_id -or $Receipt.decision -cne $Request.decision -or $Receipt.decision_recorded -isnot [bool] -or -not $Receipt.decision_recorded -or -not (Test-AuthWireWriteInteger $Receipt.revision) -or $Receipt.revision -ne $Request.expected_revision+1){throw 'ROLLBACK_RETIRE_SERVER_ACK_REJECTED'}
- foreach($n in @('approval_enabled','write_authorization_enabled','execution_adapter_available','can_apply_gpo')){if($Receipt.$n -isnot [bool] -or $Receipt.$n){throw 'ROLLBACK_RETIRE_SERVER_ACK_REJECTED'}}
+ # These three describe the endpoint's capabilities, NOT this acknowledgement's
+ # authority. The fixed G01 pilot reports enabled capabilities; the source-only
+ # product route reports disabled capabilities. Neither reply contains a grant.
+ foreach($n in @('approval_enabled','write_authorization_enabled','execution_adapter_available')){if($Receipt.$n -isnot [bool] -or $Receipt.$n -ne $Receipt.approval_enabled){throw 'ROLLBACK_RETIRE_SERVER_ACK_REJECTED'}}
+ if($Receipt.PSObject.Properties['source_only']){
+  if($Receipt.source_only -isnot [bool] -or $Receipt.source_only -eq $Receipt.approval_enabled){throw 'ROLLBACK_RETIRE_SERVER_ACK_REJECTED'}
+ }elseif($Receipt.approval_enabled){throw 'ROLLBACK_RETIRE_SERVER_ACK_REJECTED'}
+ if($Receipt.can_apply_gpo -isnot [bool] -or $Receipt.can_apply_gpo){throw 'ROLLBACK_RETIRE_SERVER_ACK_REJECTED'}
 }
 function Confirm-AuthWireRollbackRetirementAcknowledgement([hashtable]$Binding,[string]$BaseUrl,$Request,[securestring]$Session,[securestring]$Csrf){
  Initialize-AuthWireWriteTransportTypes
