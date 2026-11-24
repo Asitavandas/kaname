@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/staging-rollback-retirement.yml'
       - 'tools/staging_rollback_retirement_windows_check.ps1'
+      - 'tools/staging_consumed_rollback_retirement_windows_check.ps1'
       - 'windows/connector/StagingRollbackAuthorization.ps1'
       - 'windows/connector/StagingWriteHistory.ps1'
       - 'windows/connector/StagingWriteRefusal.ps1'
@@ -22,3 +23,7 @@ jobs:
       - name: Original reservation retained and distinct successor cannot bypass open history
         shell: powershell
         run: ./tools/staging_rollback_retirement_windows_check.ps1
+      - name: Consumed rollback keeps unknown result and requires independent unchanged-tree evidence
+        shell: powershell
+        run: ./tools/staging_consumed_rollback_retirement_windows_check.ps1
+

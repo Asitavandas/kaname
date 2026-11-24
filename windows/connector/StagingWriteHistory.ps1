@@ -798,6 +798,7 @@ function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding
      $review.Phase=if($closed.Body.format -ceq 'AuthWireEmptyStageClosureV1'){'closed_after_empty_stage_cleanup'}elseif($closed.Body.format -ceq 'AuthWireStageIntentClosureV1'){'closed_without_engine_journal'}else{'closed_without_filesystem_intent'};continue
     }
     if($done.outcome -ceq 'refused_before_authorization' -and (Test-AuthWireRefusedRollbackRetired $Root $h.Life $state $Binding $Key)){$review.Phase='refused_rollback_retired_reservation_retained';continue}
+    if($done.outcome -ceq 'requires_review' -and (Test-AuthWireConsumedRollbackRetired $Root $h.Life $state $Binding $Key)){$review.Phase='consumed_rollback_retired_unknown_result_preserved';continue}
     if($done.outcome -ceq 'requires_review'){$review.StageConsumption=Get-AuthWireStageRecoveryClassification $Root $dir $state $Binding $Key}
     if($done.outcome -cin @('requires_review','refused_before_authorization') -and $i -ne $h.ActiveStates.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'}
     continue
@@ -908,7 +909,7 @@ function Invoke-AuthWireWriteHistoryArchive([string]$Root,[hashtable]$Binding,[S
 # retirement, retaining the original reservation, refusal, stage and GPO lock.
 # A server saved-result acknowledgement is NOT rollback/delete authorization.
 function Get-AuthWireRollbackRetirementFrame($Body,[string]$Purpose){
- if($Purpose -cnotin @('AUTHWIRE-REFUSED-ROLLBACK-RETIRE-REVIEW-V1','AUTHWIRE-REFUSED-ROLLBACK-RETIRE-COMPLETE-V1')){throw 'ROLLBACK_RETIRE_PURPOSE_REJECTED'}
+ if($Purpose -cnotin @('AUTHWIRE-REFUSED-ROLLBACK-RETIRE-REVIEW-V1','AUTHWIRE-REFUSED-ROLLBACK-RETIRE-COMPLETE-V1','AUTHWIRE-CONSUMED-ROLLBACK-RETIRE-REVIEW-V1','AUTHWIRE-CONSUMED-ROLLBACK-RETIRE-COMPLETE-V1')){throw 'ROLLBACK_RETIRE_PURPOSE_REJECTED'}
  return ,([Text.Encoding]::ASCII.GetBytes($Purpose+[char]10+(Get-AuthWireWriteHash $Body)+[char]10))
 }
 function New-AuthWireRollbackRetirementProof($Body,[Security.Cryptography.RSACng]$Key,[string]$Purpose){
@@ -1057,8 +1058,168 @@ function Assert-AuthWireRetiredRollbackPredecessors([string]$Root,$Offer,[hashta
    $matches=@(Get-ChildItem -LiteralPath (Join-Path $h.Life 'history-archives') -Directory|ForEach-Object {Join-Path $_.FullName 'cycles'}|Where-Object {Test-Path -LiteralPath (Join-Path $_ $s.Slot)})
    if($matches.Count -ne 1){throw 'ROLLBACK_RETIRE_PREDECESSOR_HISTORY_REJECTED'};$life=$matches[0]
   }
-  if(-not (Test-AuthWireRefusedRollbackRetired $Root $life $s $Binding $Key)){throw 'ROLLBACK_PRIOR_RESERVATION_REQUIRES_REVIEW'}
+  $retired=if($s.Offer.operation -ceq 'combined.filesystem.rollback.v1' -and (Test-Path -LiteralPath (Join-Path (Join-Path $Root $s.Offer.job_id) 'rollback-consumed-retirement-complete.json'))){Test-AuthWireConsumedRollbackRetired $Root $life $s $Binding $Key}else{Test-AuthWireRefusedRollbackRetired $Root $life $s $Binding $Key}
+  if(-not $retired){throw 'ROLLBACK_PRIOR_RESERVATION_REQUIRES_REVIEW'}
   $found++
  }
  if($found -lt 1){throw 'ROLLBACK_PRIOR_RESERVATION_REQUIRES_REVIEW'}
 }
+
+# Intent-bearing rollback retirement is deliberately separate from a refusal.
+# It preserves OUTCOME_UNKNOWN; a later unchanged-tree observation does not
+# retroactively prove that no transient filesystem effect ever occurred.
+function Assert-AuthWireRollbackReadOnlyObservation($Observation,$Original,[Security.Cryptography.RSACng]$Key){
+ Assert-AuthWireCandidateFields $Observation @('domain','body','signature')
+ $b=$Observation.body;$a=$Original.Authorization;$origin=$a.Origin
+ Assert-AuthWireCandidateFields $b @('format','job_id','stage_job_id','stage_operation_id','active_release','authority_expired','intent_sha256','original_child_running','entered_marker_exists','engine_markers','tree_sha256','outside_baseline_sha256','tree_rows','staged_tree_unchanged','outside_unchanged','read_only','can_delete','authority_renewed','at')
+ Assert-AuthWireCandidateFields $b.engine_markers @('rolled-back.json','rollback-started.json')
+ foreach($n in @('authority_expired','staged_tree_unchanged','outside_unchanged','read_only')){if($b.$n -isnot [bool] -or -not $b.$n){throw 'ROLLBACK_CONSUMED_OBSERVATION_REJECTED'}}
+ foreach($n in @('original_child_running','entered_marker_exists','can_delete','authority_renewed')){if($b.$n -isnot [bool] -or $b.$n){throw 'ROLLBACK_CONSUMED_OBSERVATION_REJECTED'}}
+ foreach($n in @('rolled-back.json','rollback-started.json')){if($b.engine_markers.$n -isnot [bool] -or $b.engine_markers.$n){throw 'ROLLBACK_CONSUMED_OBSERVATION_REJECTED'}}
+ if($Observation.domain -cne 'AUTHWIRE-ROLLBACK-READONLY-OBSERVATION-V1' -or $b.format -cne 'AuthWireRollbackReadOnlyObservationV1' -or
+    $b.job_id -cne $a.Offer.job_id -or $b.stage_job_id -cne $origin.StageJobId -or $b.stage_operation_id -cne $origin.FilesystemOperationId -or
+    $b.active_release -cne $a.Receipt.release_id -or $b.intent_sha256 -cne $Original.IntentSha256 -or $b.tree_sha256 -cne $origin.Complete.tree_sha256 -or
+    $b.outside_baseline_sha256 -cne $origin.Intent.baseline_sha256 -or -not (Test-AuthWireWriteInteger $b.tree_rows) -or $b.tree_rows -lt 1 -or
+    -not (Test-AuthWireWriteInteger $b.at) -or $b.at -lt $Original.Intent.expires_at -or $b.at -gt [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()){throw 'ROLLBACK_CONSUMED_OBSERVATION_REJECTED'}
+ $frame=[Text.Encoding]::UTF8.GetBytes($Observation.domain+[char]10+(ConvertTo-AuthWireWriteJson $b))
+ if(-not $Key.VerifyData($frame,(ConvertFrom-AuthWireWriteBase64 $Observation.signature 512),[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)){throw 'ROLLBACK_CONSUMED_OBSERVATION_SIGNATURE_REJECTED'}
+}
+function Assert-AuthWireConsumedRollbackCurrentState([string]$Root,[string]$JobId,$State,$Original,$Observation,$Pins){
+ $state=$State;$original=$Original;$origin=$Original.Authorization.Origin
+  if([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() -lt [Math]::Max($state.Offer.expires_at,$original.Intent.expires_at)){throw 'ROLLBACK_CONSUMED_AUTHORITY_NOT_EXPIRED'}
+  Assert-AuthWireNoActiveRollback $Root $JobId;Assert-AuthWireNoActiveStage $Root $origin.StageJobId
+  $engine=Join-Path $Root $origin.FilesystemOperationId
+  foreach($n in @('rollback-started.json','rolled-back.json')){if(Test-Path -LiteralPath (Join-Path $engine $n)){throw 'ROLLBACK_CONSUMED_ENGINE_ENTERED'}}
+  $tree=$null
+  try{
+   Add-AuthWireStagingGpoPins $Pins $origin.Intent.gpo_root $origin.Intent.gpo_root;Add-AuthWireStagingGpoPins $Pins (Join-Path $origin.Intent.gpo_root 'Machine') $origin.Intent.gpo_root
+   $dest=Join-Path $origin.Intent.gpo_root $origin.Intent.relative_destination.Replace('/','\');$tree=[AuthWire.Staging.TreeLeaseV1]::Tree($dest,$false)
+   $rows=Get-AuthWireStagingFilesystemRows $tree
+   if((Get-AuthWireStagingFilesystemDigest $rows) -cne $origin.Complete.tree_sha256 -or @($rows).Count -ne $Observation.body.tree_rows){throw 'ROLLBACK_CONSUMED_STAGE_DRIFT'}
+   foreach($row in $rows){$path=if($row.Path -ceq ''){$dest}else{Join-Path $dest $row.Path.Replace('/','\')};if($row.Kind -ceq 'file'){$Pins.PinFile($path)}else{$Pins.PinAncestors($path)}}
+   $v=Get-AuthWireSysvolInventory $origin.Intent.gpo_root;$rel=$origin.Intent.relative_destination
+   $outside=@($v.Entries|Where-Object {$_.Path -cne $rel -and -not $_.Path.StartsWith($rel+'/',[StringComparison]::Ordinal)})
+   if((Get-AuthWireScopeDataHash $outside) -cne $origin.Intent.baseline_sha256){throw 'ROLLBACK_CONSUMED_OUTSIDE_DRIFT'}
+  }finally{if($tree){$tree.Dispose()}}
+}
+function Get-AuthWireConsumedRollbackRetirementState([string]$Root,[string]$JobId,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,$Pins,$Observation,$ExistingState=$null,[string]$ExistingLife='',[bool]$Historical=$false){
+ Assert-AuthWireStagingWriteJournalLocation $Root $Binding;Assert-AuthWireCandidateGuid $JobId
+ if($null -eq $ExistingState){
+  $h=Read-AuthWireLifecycleHistory $Root $Binding $Key
+  if($h.ActiveStates.Count -lt 1){throw 'ROLLBACK_CONSUMED_NOT_LATEST'}
+  $state=$h.ActiveStates[-1];$life=$h.Life
+ }else{$state=$ExistingState;$life=$ExistingLife}
+ if($state.Phase -cne 'reply_saved' -or $state.Offer.job_id -cne $JobId -or $state.Offer.operation -cne 'combined.filesystem.rollback.v1'){throw 'ROLLBACK_CONSUMED_NOT_ROLLBACK'}
+ $job=Join-Path $Root $JobId;$slot=Join-Path $life $state.Slot;$Pins.PinAncestors($Root);$Pins.PinAncestors($job);$Pins.PinAncestors($slot)
+ $allowed=@('rollback-offer.json','rollback-preflight.json','rollback-claim-started.json','rollback-claim-proof.json','rollback-claim-sent.json','rollback-authorization.json','rollback-grant-consumed.json','rollback-consumption-preflight.json','rollback-filesystem-intent.json','rollback-launch.json','rollback-child.json','rollback-execution-requires-review.json','rollback-result-outbox.json','rollback-result-accepted.json','rollback-reservation.json')
+ foreach($n in @($allowed|Where-Object {$_ -cne 'rollback-reservation.json'})){$Pins.PinFile((Join-Path $job $n))}
+ foreach($i in 1..3){foreach($kind in @('attempt','proof')){$allowed+=,('rollback-result-'+$kind+'-'+$i+'.json')}}
+ $records=@()
+ foreach($f in @(Get-ChildItem -LiteralPath $job -Force|Sort-Object Name -CaseSensitive)){
+  if($f.PSIsContainer){throw 'ROLLBACK_CONSUMED_UNKNOWN_HISTORY'}
+  $Pins.PinFile($f.FullName)
+  if($f.Name -cin @('rollback-consumed-retirement-review.json','rollback-consumed-retirement-complete.json')){continue}
+  if($f.Name -cnotin $allowed){throw 'ROLLBACK_CONSUMED_UNKNOWN_HISTORY'}
+  $records+=,[pscustomobject]@{name=$f.Name;sha256=(Get-AuthWireJobHash (Read-AuthWireCandidateBytes $f.FullName 65536))}
+ }
+ foreach($f in Get-ChildItem -LiteralPath $slot -Force){if($f.PSIsContainer){throw 'ROLLBACK_CONSUMED_UNKNOWN_HISTORY'};$Pins.PinFile($f.FullName)}
+ $done=Read-AuthWireLifecycleCompletion $Root $life $state $Binding $Key
+ if($done.outcome -cne 'requires_review'){throw 'ROLLBACK_CONSUMED_RESULT_REJECTED'}
+ $original=Read-AuthWireAuthorizedRollbackIntentEvidence $Root $JobId $Binding $state.Started.release_id $Key
+ $a=$original.Authorization;$origin=$a.Origin
+ $Pins.PinFile((Get-AuthWireRollbackReservationPath $Root $origin.StageJobId $JobId))
+ $Pins.PinFile((Get-AuthWireRollbackReservationPath $Root $origin.StageJobId))
+ $gpoLock=Join-Path $Root ('gpo-'+$state.Offer.target.scope_target.gpo_id+'.json');$Pins.PinFile($gpoLock)
+ foreach($dir in @((Join-Path $Root $origin.StageJobId),(Join-Path $Root $origin.FilesystemOperationId))){$Pins.PinAncestors($dir);foreach($f in Get-ChildItem -LiteralPath $dir -File){$Pins.PinFile($f.FullName)}}
+ $box=Read-AuthWireRollbackResultOutbox $Root $JobId $Binding $state.Started.release_id $Key
+ if($box.body.outcome -cne 'requires_review' -or $box.body.reason -cne 'OUTCOME_UNKNOWN' -or $box.body.filesystem_effects -cne 'unconfirmed' -or $box.body.authorization_id -ceq ''){throw 'ROLLBACK_CONSUMED_RESULT_REJECTED'}
+ $accepted=Get-AuthWireLifecycleOutcomeEvidence $Root $state $Binding $Key
+ if($accepted.Outcome -cne 'requires_review' -or $accepted.BodySha256 -cne $box.body_sha256){throw 'ROLLBACK_CONSUMED_ACK_REJECTED'}
+ $launch=Read-AuthWireRollbackLaunch $Root $JobId $original
+ $child=Read-AuthWireRollbackChildIdentity $Root $JobId $launch
+ $review=Read-AuthWireStagingJournal (Join-Path $job 'rollback-execution-requires-review.json')
+ Assert-AuthWireCandidateFields $review @('format','job_id','execution_intent_sha256','reason','checked_at','diagnostic')
+ if($review.format -cne 'AuthWireRollbackReviewV1' -or $review.job_id -cne $JobId -or $review.execution_intent_sha256 -cne $original.IntentSha256 -or $review.reason -cne 'OUTCOME_REQUIRES_REVIEW' -or
+    -not (Test-AuthWireWriteInteger $review.checked_at) -or $review.checked_at -lt $launch.started_at -or $review.checked_at -gt $done.completed_at){throw 'ROLLBACK_CONSUMED_EXECUTION_REJECTED'}
+ Assert-AuthWireRollbackReadOnlyObservation $Observation $original $Key
+ if(-not $Historical){Assert-AuthWireConsumedRollbackCurrentState $Root $JobId $state $original $Observation $Pins}
+ $frozen=[pscustomobject]@{offer=(Get-AuthWireWriteHash $state.Offer);completion=(Get-AuthWireWriteHash $done);ack=$accepted.AckSha256;result=(Get-AuthWireWriteHash $box);reservation=(Get-AuthWireWriteHash $a.Reservation);origin=$origin.ChainSha256;gpo_lock=(Get-AuthWireWriteHash (Read-AuthWireStagingJournal $gpoLock));intent=$original.IntentSha256;launch=(Get-AuthWireWriteHash $launch);child=(Get-AuthWireWriteHash $child);observation=(Get-AuthWireWriteHash $Observation);job_records=(Get-AuthWireWriteHash $records)}
+ $evidence=[pscustomobject]@{job_id=$JobId;scope_sha256=(Get-AuthWireJobScope $Binding);intent_sha256=$state.Offer.intent_sha256;result_body_sha256=$box.body_sha256;accepted_ack=$true}
+ return [pscustomobject]@{State=$state;Life=$life;Origin=$origin;Evidence=$evidence;Frozen=$frozen;OriginalSha256=(Get-AuthWireWriteHash $frozen);Reservation=$a.Reservation;Original=$original}
+}
+function New-AuthWireConsumedRollbackRetirementBody($State,[hashtable]$Binding,[long]$At){
+ $v=New-AuthWireRollbackRetirementBody $State $Binding $At;$v.format='AuthWireConsumedRollbackRetirementReviewV1'
+ $v|Add-Member NoteProperty filesystem_intent_sha256 $State.Frozen.intent
+ $v|Add-Member NoteProperty prior_observation_sha256 $State.Frozen.observation
+ $v|Add-Member NoteProperty original_outcome 'requires_review'
+ $v|Add-Member NoteProperty filesystem_effects 'unconfirmed'
+ return $v
+}
+function Assert-AuthWireConsumedRollbackRetirementReview($Proof,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[long]$At){
+ Assert-AuthWireRollbackRetirementProof $Proof $Key 'AUTHWIRE-CONSUMED-ROLLBACK-RETIRE-REVIEW-V1'
+ $expected=New-AuthWireConsumedRollbackRetirementBody $State $Binding $Proof.Body.observed_at
+ if((Get-AuthWireWriteHash $expected) -cne (Get-AuthWireWriteHash $Proof.Body) -or $At -lt $Proof.Body.observed_at -or $At -ge $Proof.Body.expires_at){throw 'ROLLBACK_CONSUMED_REVIEW_CHANGED_OR_EXPIRED'}
+}
+function Get-AuthWireConsumedRollbackRetirementReview([string]$Root,[string]$JobId,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,$Observation){
+ Assert-AuthWireRollbackReaderIdentity $Binding
+ $lock=Enter-AuthWireWriteCycleLock $Binding;$p=[AuthWire.Staging.TreeLeaseV1]::new()
+ try{
+  $s=Get-AuthWireConsumedRollbackRetirementState $Root $JobId $Binding $Key $p $Observation
+  $proof=New-AuthWireRollbackRetirementProof (New-AuthWireConsumedRollbackRetirementBody $s $Binding ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())) $Key 'AUTHWIRE-CONSUMED-ROLLBACK-RETIRE-REVIEW-V1'
+  return [pscustomobject]@{Proof=$proof;ProofSha256=(Get-AuthWireWriteHash $proof);Evidence=$s.Evidence;Observation=$Observation}
+ }finally{$p.Dispose();$lock.ReleaseMutex();$lock.Dispose()}
+}
+function New-AuthWireConsumedRollbackRetirementCompletion($Record,$State,[hashtable]$Binding,[long]$At){
+ $v=New-AuthWireRollbackRetirementCompletion $Record $State $Binding $At;$v.format='AuthWireConsumedRollbackRetirementCompleteV1'
+ $v.PSObject.Properties.Remove('original_refusal_preserved')
+ $v|Add-Member NoteProperty original_unknown_result_preserved $true
+ $v|Add-Member NoteProperty filesystem_intent_sha256 $State.Frozen.intent
+ $v|Add-Member NoteProperty prior_observation_sha256 $State.Frozen.observation
+ return $v
+}
+function Complete-AuthWireConsumedRollbackRetirement([string]$Root,[string]$JobId,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[string]$BaseUrl,$Reviewed,$Acknowledgement,[securestring]$Session,[securestring]$Csrf,[string]$Acknowledge){
+ Assert-AuthWireCandidateFields $Reviewed @('Proof','ProofSha256','Evidence','Observation')
+ if($Acknowledge -cne 'retire_consumed_rollback_preserve_unknown_outcome' -or (Get-AuthWireWriteHash $Reviewed.Proof) -cne $Reviewed.ProofSha256){throw 'ROLLBACK_CONSUMED_EXPLICIT_REVIEW_REQUIRED'}
+ Assert-AuthWireRollbackReaderIdentity $Binding
+ $lock=Enter-AuthWireWriteCycleLock $Binding;$decision=$null;$p=[AuthWire.Staging.TreeLeaseV1]::new();$store=$null;$taken=$false
+ try{
+  $decision=Enter-AuthWireWritePreauthorizationLock $JobId;$store=[Threading.Mutex]::new($false,'Global\AuthWireWritePreclaimStoreV1')
+  try{$taken=$store.WaitOne(0)}catch [Threading.AbandonedMutexException]{$taken=$true;throw 'ROLLBACK_CONSUMED_STORE_ABANDONED'}
+  if(-not $taken){throw 'ROLLBACK_CONSUMED_STORE_BUSY'}
+  $job=Join-Path $Root $JobId
+  foreach($n in @('rollback-consumed-retirement-review.json','rollback-consumed-retirement-complete.json')){if(Test-Path -LiteralPath (Join-Path $job $n)){throw 'ROLLBACK_CONSUMED_ALREADY_STARTED_READ_EXISTING'}}
+  $s=Get-AuthWireConsumedRollbackRetirementState $Root $JobId $Binding $Key $p $Reviewed.Observation
+  if((Get-AuthWireWriteHash $Reviewed.Evidence) -cne (Get-AuthWireWriteHash $s.Evidence)){throw 'ROLLBACK_CONSUMED_ACK_REJECTED'}
+  Assert-AuthWireConsumedRollbackRetirementReview $Reviewed.Proof $s $Binding $Key ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
+  $receipt=Confirm-AuthWireRollbackRetirementAcknowledgement $Binding $BaseUrl $Acknowledgement $Session $Csrf
+  Assert-AuthWireRollbackRetirementAcknowledgement $Acknowledgement $receipt $s
+  Assert-AuthWireConsumedRollbackCurrentState $Root $JobId $s.State $s.Original $Reviewed.Observation $p
+  $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();Assert-AuthWireConsumedRollbackRetirementReview $Reviewed.Proof $s $Binding $Key $now
+  $record=[pscustomobject]@{format='AuthWireConsumedRollbackRetirementRecordV1';review=$Reviewed.Proof;observation=$Reviewed.Observation;acknowledgement_request=$Acknowledgement;acknowledgement_receipt=$receipt;acknowledge=$Acknowledge}
+  Write-AuthWireStagingJournal (Join-Path $job 'rollback-consumed-retirement-review.json') $record
+  $closed=New-AuthWireRollbackRetirementProof (New-AuthWireConsumedRollbackRetirementCompletion $record $s $Binding $now) $Key 'AUTHWIRE-CONSUMED-ROLLBACK-RETIRE-COMPLETE-V1'
+  Write-AuthWireStagingJournal (Join-Path $job 'rollback-consumed-retirement-complete.json') $closed
+  return $closed
+ }finally{if($taken){$store.ReleaseMutex()};if($store){$store.Dispose()};$p.Dispose();if($decision){$decision.ReleaseMutex();$decision.Dispose()};$lock.ReleaseMutex();$lock.Dispose()}
+}
+function Test-AuthWireConsumedRollbackRetired([string]$Root,[string]$Life,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key){
+ if($State.Offer.operation -cne 'combined.filesystem.rollback.v1'){return $false}
+ $job=Join-Path $Root $State.Offer.job_id;$file=Join-Path $job 'rollback-consumed-retirement-complete.json'
+ if(-not (Test-Path -LiteralPath $file)){return $false}
+ $p=[AuthWire.Staging.TreeLeaseV1]::new()
+ try{
+  $p.PinFile($file);$p.PinFile((Join-Path $job 'rollback-consumed-retirement-review.json'))
+  $record=Read-AuthWireStagingJournal (Join-Path $job 'rollback-consumed-retirement-review.json');$closed=Read-AuthWireStagingJournal $file
+  Assert-AuthWireCandidateFields $record @('format','review','observation','acknowledgement_request','acknowledgement_receipt','acknowledge')
+  if($record.format -cne 'AuthWireConsumedRollbackRetirementRecordV1' -or $record.acknowledge -cne 'retire_consumed_rollback_preserve_unknown_outcome'){throw 'ROLLBACK_CONSUMED_COMPLETION_REJECTED'}
+  Assert-AuthWireRollbackRetirementProof $closed $Key 'AUTHWIRE-CONSUMED-ROLLBACK-RETIRE-COMPLETE-V1'
+  if(-not (Test-AuthWireWriteInteger $closed.Body.closed_at) -or $closed.Body.closed_at -gt [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()){throw 'ROLLBACK_CONSUMED_COMPLETION_REJECTED'}
+  $s=Get-AuthWireConsumedRollbackRetirementState $Root $State.Offer.job_id $Binding $Key $p $record.observation $State $Life $true
+  Assert-AuthWireConsumedRollbackRetirementReview $record.review $s $Binding $Key $closed.Body.closed_at
+  Assert-AuthWireRollbackRetirementAcknowledgement $record.acknowledgement_request $record.acknowledgement_receipt $s
+  $expected=New-AuthWireConsumedRollbackRetirementCompletion $record $s $Binding $closed.Body.closed_at
+  if((Get-AuthWireWriteHash $expected) -cne (Get-AuthWireWriteHash $closed.Body)){throw 'ROLLBACK_CONSUMED_COMPLETION_REJECTED'}
+  return $true
+ }finally{$p.Dispose()}
+}
+
