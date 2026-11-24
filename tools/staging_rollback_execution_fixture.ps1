@@ -6,6 +6,7 @@ $fixture.rollback_expires_at=$rxReceipt.grant.expires_at
 # Count only this parent's full authority traversals. The independently signed
 # child loads its own original module, so this cannot stub its validation.
 $rxOriginalAuthorityReader=${function:Read-AuthWireRollbackAuthorizationEvidence}
+$rxOriginalIntentProducer=${function:New-AuthWireRollbackFilesystemIntent}
 $rxOriginalProcessInit=${function:Initialize-AuthWireStageProcess}
 $script:RollbackParentAuthorityReads=0;$script:RollbackHandoffPinsHeld=$false
 function Read-AuthWireRollbackAuthorizationEvidence([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
@@ -13,12 +14,20 @@ function Read-AuthWireRollbackAuthorizationEvidence([string]$Root,[string]$JobId
  if($script:RollbackParentAuthorityReads -gt 1){throw 'FIXTURE_DUPLICATE_PARENT_AUTHORITY_TRAVERSAL'}
  return (& $rxOriginalAuthorityReader @PSBoundParameters)
 }
-function Initialize-AuthWireStageProcess {
+function New-AuthWireRollbackFilesystemIntent([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[switch]$RetainExecutionInputs){
+ $context=& $rxOriginalIntentProducer @PSBoundParameters
+ # Check the actual ownership transfer, including failures BEFORE a child can
+ # be initialized (for example, a flushed launch record followed by disk error).
  $stream=$null
- try{$stream=[IO.File]::Open((Join-Path $rbJob 'rollback-grant-consumed.json'),[IO.FileMode]::Open,[IO.FileAccess]::Write,[IO.FileShare]::ReadWrite)}
- catch [IO.IOException]{$script:RollbackHandoffPinsHeld=$true}
- finally{if($stream){$stream.Dispose()}}
- if(-not $script:RollbackHandoffPinsHeld){throw 'FIXTURE_HANDOFF_INPUTS_NOT_PINNED'}
+ try{
+  try{$stream=[IO.File]::Open((Join-Path $rbJob 'rollback-grant-consumed.json'),[IO.FileMode]::Open,[IO.FileAccess]::Write,[IO.FileShare]::ReadWrite)}
+  catch [IO.IOException]{$script:RollbackHandoffPinsHeld=$true}
+  finally{if($stream){$stream.Dispose()}}
+  if(-not $RetainExecutionInputs -or -not $script:RollbackHandoffPinsHeld){throw 'FIXTURE_HANDOFF_INPUTS_NOT_PINNED'}
+  return $context
+ }catch{if($context){Close-AuthWireRollbackExecutionInputPins $context.Inputs};throw}
+}
+function Initialize-AuthWireStageProcess {
  # This case changes AD only AFTER consumption has obtained its fresh witness.
  # Otherwise it tests consumption rejection, never the independent child check.
  if($case -ceq 'rb_execute_drift'){
@@ -31,6 +40,7 @@ $rxWatch=[Diagnostics.Stopwatch]::StartNew();$rxError='';$rxResult=$null
 try{$rxResult=Invoke-AuthWireAuthorizedFilesystemRollback $rbRoot $rbId $b $release $rsa -ConsumeFirst}catch{$rxError=$_.Exception.Message}
 finally{
  Set-Item function:Read-AuthWireRollbackAuthorizationEvidence -Value $rxOriginalAuthorityReader
+ Set-Item function:New-AuthWireRollbackFilesystemIntent -Value $rxOriginalIntentProducer
  Set-Item function:Initialize-AuthWireStageProcess -Value $rxOriginalProcessInit
 };$rxWatch.Stop()
 Check ($script:RollbackParentAuthorityReads -eq 1) 'real parent validates original authority once while retaining its original native inputs'
