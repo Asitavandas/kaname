@@ -28,6 +28,7 @@ try{
   'StagingRollbackEvidence.ps1','StagingRollbackAuthorization.ps1','StagingRollbackExecution.ps1','StagingRollbackResult.ps1',
   'StagingWritePollRecord.ps1','StagingWriteLifecycle.ps1','StagingWriteScheduler.ps1')){. (Join-Path $PSScriptRoot $file)}
  Assert-AuthWireWriteServiceConfigFields $c
+ $writeBaseUrl=Get-AuthWireWriteTransportBaseUrl $c
 
  $binding=@{};foreach($property in $c.Binding.PSObject.Properties){$binding[$property.Name]=$property.Value}
  $state=Join-Path $PSScriptRoot 'state';Assert-AuthWireChannelPath $state
@@ -49,7 +50,7 @@ try{
  $null=New-AuthWireConnectorPollProof -Binding $binding -ChannelKey $rsa
  $status.State='running';$status.StopReason=''
  Write-AuthWireChannelReceipt $statusPath $status
- $summary=Invoke-AuthWireStagingWriteScheduler -Root $root -Binding $binding -Release $c.ReleaseId -Key $rsa -BaseUrl $c.BaseUrl -StopSignal $stop -HostProcess $parent
+ $summary=Invoke-AuthWireStagingWriteScheduler -Root $root -Binding $binding -Release $c.ReleaseId -Key $rsa -BaseUrl $writeBaseUrl -StopSignal $stop -HostProcess $parent
  $status.State='stopped';$status.StopReason=$summary.StopReason;$status.Steps=$summary.Steps;$status.LastPhase=$summary.LastPhase
  Write-AuthWireChannelReceipt $statusPath $status
 }catch{

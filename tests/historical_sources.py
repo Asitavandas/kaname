@@ -4,6 +4,8 @@ Historical archive/file pins stay exact when the current product advances.
 Current service source pin validation is independent of these fixtures.
 """
 FROZEN = {
+    'CombinedStagingPreview.ps1': 'combined-staging-preview-dev45.ps1',
+    'ConnectorServiceUpgrade.ps1': 'connector-upgrade-dev45.ps1',
     'ConnectorServiceHost.cs': 'connector-host-dev45.cs',
     'Install-AuthWireConnectorService.ps1': 'connector-installer-dev45.ps1',
     'CombinedCandidateContent.ps1': 'combined-public-content-dev45.ps1',

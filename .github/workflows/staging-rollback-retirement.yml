@@ -1,0 +1,33 @@
+name: AuthWire append-only refused rollback retirement
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/staging-rollback-retirement.yml'
+      - 'tools/staging_rollback_retirement_windows_check.ps1'
+      - 'tools/staging_consumed_rollback_retirement_windows_check.ps1'
+      - 'tools/staging_preintent_rollback_retirement_windows_check.ps1'
+      - 'windows/connector/StagingRollbackAuthorization.ps1'
+      - 'windows/connector/StagingWriteHistory.ps1'
+      - 'windows/connector/StagingWriteRefusal.ps1'
+      - 'windows/connector/StagingWriteLifecycle.ps1'
+      - 'windows/connector/StagingWriteTransport.ps1'
+permissions:
+  contents: read
+jobs:
+  retirement:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Original reservation retained and distinct successor cannot bypass open history
+        shell: powershell
+        run: ./tools/staging_rollback_retirement_windows_check.ps1
+      - name: Consumed rollback keeps unknown result and requires independent unchanged-tree evidence
+        shell: powershell
+        run: ./tools/staging_consumed_rollback_retirement_windows_check.ps1
+
+      - name: Consumed grant without intent has a distinct non-replay retirement
+        shell: powershell
+        run: ./tools/staging_preintent_rollback_retirement_windows_check.ps1

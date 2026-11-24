@@ -1,0 +1,21 @@
+name: AuthWire local PDC SYSVOL junction checks
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/staging-sysvol-junction.yml'
+      - 'tools/staging_sysvol_junction_windows_check.ps1'
+      - 'windows/connector/StagingFilesystem.ps1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  junction:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Verify held junction and physical target identity over SMB
+        shell: powershell
+        run: ./tools/staging_sysvol_junction_windows_check.ps1

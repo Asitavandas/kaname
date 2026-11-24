@@ -33,7 +33,7 @@ function Read-AuthWireWriteAuthorizationEvidence([string]$JournalRoot,[string]$J
  try{
   $pin.PinAncestors($JournalRoot);$job=Join-Path $JournalRoot $JobId;$pin.PinAncestors($job)
   foreach($n in @('offer.json','preflight.json','claim-started.json','claim-proof.json','claim-sent.json','authorization.json')){$pin.PinFile((Join-Path $job $n))}
-  $pin.PinFile((Join-Path $JournalRoot ('gpo-'+$offer.target.scope_target.gpo_id+'.json')))
+  $pin.PinFile((Get-AuthWireHistoricalWriteLockPath $JournalRoot $JobId $offer.target.scope_target.gpo_id))
   $again=Read-AuthWireStagingWriteOfferAt $JournalRoot $JobId $Binding $Release $timeRecord.sent_at
   if((Get-AuthWireWriteHash $again) -cne (Get-AuthWireWriteHash $offer)){throw 'WRITE_LOCAL_RECORD_CHANGED'}
   $preflight=Read-AuthWireStagingJournal (Join-Path $job 'preflight.json')
@@ -66,15 +66,20 @@ function Read-AuthWireWriteAuthorizationEvidence([string]$JournalRoot,[string]$J
 function Read-AuthWireWriteIntentContext([string]$JournalRoot,[string]$JobId,$Offer,[hashtable]$Binding,[long]$ExpiresAt){
  Initialize-AuthWireScopeProcess
  $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
- $budget=[int][Math]::Min(8000,($ExpiresAt-$now-2)*1000)
+ # Cold AllSigned/AD readers exceeded eight seconds in the real DC pilot.
+ # This read remains inside the original grant, with two seconds reserved;
+ # it never renews a lease, recreates a claim, or extends authorization.
+ $budget=[int][Math]::Min(12000,($ExpiresAt-$now-2)*1000)
  if($budget -lt 100){throw 'WRITE_AUTHORIZATION_EXPIRED'}
  if($JournalRoot.Length -gt 1800 -or $JournalRoot.Contains('"')){throw 'WRITE_JOURNAL_PATH_REJECTED'}
  $file=Join-Path $PSScriptRoot 'Read-AuthWireStagingWritePreflight.ps1'
  $exe=Join-Path ([Environment]::GetFolderPath('Windows')) 'System32\WindowsPowerShell\v1.0\powershell.exe'
  $arguments='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$file+'" -JournalRoot "'+$JournalRoot.TrimEnd('\')+'" -JobId '+$JobId
- $r=[AuthWire.Connector.ScopeProcessV1]::Run($exe,$arguments,$budget)
- if($r.TimedOut -or $r.Truncated -or $r.ExitCode -ne 0){throw 'WRITE_INTENT_PREFLIGHT_FAILED'}
- $v=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($r.Output))
+ try{$r=[AuthWire.Connector.ScopeProcessV1]::Run($exe,$arguments,$budget)}catch{throw 'WRITE_INTENT_PREFLIGHT_RUNNER_FAILED'}
+ if($r.TimedOut){throw 'WRITE_INTENT_PREFLIGHT_TIMEOUT'}
+ if($r.Truncated){throw 'WRITE_INTENT_PREFLIGHT_OUTPUT_TRUNCATED'}
+ if($r.ExitCode -ne 0){throw 'WRITE_INTENT_PREFLIGHT_CHILD_FAILED'}
+ try{$v=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($r.Output))}catch{throw 'WRITE_INTENT_PREFLIGHT_OUTPUT_INVALID'}
  Assert-AuthWireWriteLiveContext $v $Offer $Binding
  if($v.checked_at -lt $now){throw 'WRITE_INTENT_PREFLIGHT_STALE'}
  return $v

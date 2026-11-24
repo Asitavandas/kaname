@@ -5,6 +5,24 @@ Set-StrictMode -Version 2
 function Assert-AuthWireStageStrings($Value,[string[]]$Names){
  foreach($n in $Names){if($Value.$n -isnot [string]){throw 'WRITE_EXECUTION_RECORD_REJECTED'}}
 }
+function Get-AuthWireStageWorkWindow($Launch){
+ # The original grant is an upper bound, not the parent's actual child lifetime.
+ # Round the recorded launch down conservatively and reserve one second for
+ # child completion/result work. Never derive a new issuance time or expiry.
+ if(-not (Test-AuthWireWriteInteger $Launch.started_at) -or $Launch.started_at -lt 1 -or $Launch.started_at -ge 1099511627776 -or
+    -not (Test-AuthWireWriteInteger $Launch.expires_at) -or $Launch.expires_at -le $Launch.started_at -or
+    -not (Test-AuthWireWriteInteger $Launch.work_budget_ms) -or $Launch.work_budget_ms -lt 100 -or $Launch.work_budget_ms -gt 15000 -or
+    $Launch.work_budget_ms -gt ($Launch.expires_at-$Launch.started_at-2)*1000){throw 'WRITE_EXECUTION_WORK_WINDOW_REJECTED'}
+ $finish=[long][Math]::Min($Launch.expires_at,($Launch.started_at+[long][Math]::Floor($Launch.work_budget_ms/1000.0)))
+ if($finish-$Launch.started_at -lt 4){throw 'WRITE_EXECUTION_WORK_BUDGET_INSUFFICIENT'}
+ return [pscustomobject]@{StartedAt=[long]$Launch.started_at;FinishNotAfter=$finish;EngineNotAfter=($finish-1)}
+}
+function Assert-AuthWireStageEngineBudget($Window){
+ $at=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+ # A minimum admission margin, not a promise about filesystem latency. Every
+ # engine effect still rechecks its earlier deadline; partial work stays review.
+ if($at -lt $Window.StartedAt*1000 -or $Window.EngineNotAfter*1000-$at -lt 2000){throw 'WRITE_EXECUTION_WORK_BUDGET_INSUFFICIENT'}
+}
 function Enter-AuthWireWriteOutcomeLock([string]$JobId){
  Assert-AuthWireCandidateGuid $JobId
  $m=[Threading.Mutex]::new($false,('Global\AuthWireWriteOutcome-'+([guid]$JobId).ToString('N')))
@@ -15,9 +33,24 @@ function New-AuthWireStageInputPins([string]$JournalRoot,[string]$JobId,$Offer){
  try{
   $p.PinAncestors($JournalRoot);$job=Join-Path $JournalRoot $JobId;$p.PinAncestors($job)
   foreach($n in @('offer.json','preflight.json','claim-started.json','claim-proof.json','claim-sent.json','authorization.json','grant-consumed.json','filesystem-intent.json')){$p.PinFile((Join-Path $job $n))}
-  $p.PinFile((Join-Path $JournalRoot ('gpo-'+$Offer.target.scope_target.gpo_id+'.json')))
+  $p.PinFile((Get-AuthWireHistoricalWriteLockPath $JournalRoot $JobId $Offer.target.scope_target.gpo_id))
   return $p
  }catch{$p.Dispose();throw}
+}
+function New-AuthWireStageIntentInputPins([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release){
+ # Select and pin private inputs before the ONE full intent validation. This
+ # selector grants nothing: the pinned authorization/claim/intent chain is
+ # still validated below before any gate, module, observation or effect.
+ Assert-AuthWireStagingWriteJournalLocation $JournalRoot $Binding;Assert-AuthWireCandidateGuid $JobId;Initialize-AuthWireStagingFilesystemTypes
+ $selector=[AuthWire.Staging.TreeLeaseV1]::new()
+ try{
+  $selector.PinAncestors($JournalRoot);$job=Join-Path $JournalRoot $JobId;$selector.PinAncestors($job)
+  foreach($name in @('offer.json','claim-sent.json')){$selector.PinFile((Join-Path $job $name))}
+  $sent=Read-AuthWireStagingJournal (Join-Path $job 'claim-sent.json')
+  if(-not (Test-AuthWireWriteInteger $sent.sent_at)){throw 'WRITE_AUTHORIZATION_REJECTED'}
+  $offer=Read-AuthWireStagingWriteOfferAt $JournalRoot $JobId $Binding $Release $sent.sent_at
+  return (New-AuthWireStageInputPins $JournalRoot $JobId $offer)
+ }finally{$selector.Dispose()}
 }
 function Read-AuthWireAuthorizedStageIntent([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
  $s=Read-AuthWireAuthorizedStageIntentEvidence $JournalRoot $JobId $Binding $Release $Key
@@ -107,12 +140,10 @@ function Get-AuthWireStageCompletion([string]$JournalRoot,[string]$JobId,$State,
 }
 function Invoke-AuthWireAuthorizedStageChild([string]$JournalRoot,[string]$JobId,[string]$ExpectedIntentSha256,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[string]$Publisher,[string]$BaseUrl){
  $script:AuthWireStageChildPhase='intent'
- $s=Read-AuthWireAuthorizedStageIntent $JournalRoot $JobId $Binding $Release $Key
- if(-not (Test-AuthWireWriteHash $ExpectedIntentSha256) -or $s.IntentSha256 -cne $ExpectedIntentSha256){throw 'WRITE_EXECUTION_INTENT_REJECTED'}
- $p=New-AuthWireStageInputPins $JournalRoot $JobId $s.Authorization.Offer
+ $p=New-AuthWireStageIntentInputPins $JournalRoot $JobId $Binding $Release
  try{
-  $again=Read-AuthWireAuthorizedStageIntent $JournalRoot $JobId $Binding $Release $Key
-  if($again.IntentSha256 -cne $s.IntentSha256){throw 'WRITE_LOCAL_RECORD_CHANGED'}
+  $s=Read-AuthWireAuthorizedStageIntent $JournalRoot $JobId $Binding $Release $Key
+  if(-not (Test-AuthWireWriteHash $ExpectedIntentSha256) -or $s.IntentSha256 -cne $ExpectedIntentSha256){throw 'WRITE_EXECUTION_INTENT_REJECTED'}
   $launch=Read-AuthWireStageLaunch $JournalRoot $JobId $s
   $job=Join-Path $JournalRoot $JobId;$op=$s.Intent.filesystem_operation_id
   if(Test-Path -LiteralPath (Join-Path $JournalRoot $op)){throw 'WRITE_EXECUTION_JOURNAL_EXISTS_REQUIRES_REVIEW'}
@@ -124,37 +155,42 @@ function Invoke-AuthWireAuthorizedStageChild([string]$JournalRoot,[string]$JobId
   $process=[Diagnostics.Process]::GetCurrentProcess()
   try{if($childIdentity.process_id -ne $PID -or $childIdentity.process_started_ticks -cne $process.StartTime.ToUniversalTime().Ticks.ToString([Globalization.CultureInfo]::InvariantCulture)){throw 'WRITE_EXECUTION_CHILD_IDENTITY_REJECTED'}}finally{$process.Dispose()}
   $start=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$clock=[Diagnostics.Stopwatch]::StartNew()
+  $work=Get-AuthWireStageWorkWindow $launch
   Write-AuthWireStagingJournal (Join-Path $job 'stage-entered.json') ([pscustomobject]@{format='AuthWireStageEnteredV1';job_id=$JobId;launch_sha256=(Get-AuthWireWriteHash $launch);child_identity_sha256=(Get-AuthWireWriteHash $childIdentity);entered_at=$start})
+  # Full private intent validation, held inputs, one-use gate and exact process
+  # identity precede module loading. The entry point need not validate the same
+  # full chain once more before this pinned validation.
+  $script:AuthWireStageChildPhase='modules'
+  Import-Module ActiveDirectory -ErrorAction Stop;Import-Module GroupPolicy -ErrorAction Stop
   $script:AuthWireStageChildPhase='context'
   $live=Get-AuthWireWriteStageLiveContext $s.Authorization.Offer $Binding $Publisher $BaseUrl
   Assert-AuthWireWriteLiveContext $live $s.Authorization.Offer $Binding
   if($live.checked_at -lt $start){throw 'WRITE_EXECUTION_PREFLIGHT_STALE'}
   foreach($n in @('source_root','gpo_root','protected_gpo_id','pdc')){if($live.$n -cne $s.Intent.live_context.$n){throw 'WRITE_EXECUTION_SCOPE_CHANGED'}}
   Write-AuthWireStagingJournal (Join-Path $job 'stage-preflight.json') $live
-  Assert-AuthWireStagingWriteDeadline $launch.expires_at $start $clock
+  Assert-AuthWireStagingWriteDeadline $work.FinishNotAfter $start $clock
   $offer=$s.Authorization.Offer
   $preview=[pscustomobject]@{Preview=(ConvertTo-AuthWireWriteOrderedPreview $offer.target.preview_record.Preview);PreviewSha256=$s.Intent.preview_sha256}
   $script:AuthWireStageChildPhase='engine'
-  $r=Invoke-AuthWireStagingFilesystemStage -Target $offer.target.scope_target -PreviewRecord $preview -ApprovedPreviewSha256 $preview.PreviewSha256 -SourceRoot $live.source_root -GpoRoot $live.gpo_root -JournalRoot $JournalRoot -OperationId $op -ProtectedGpoId $live.protected_gpo_id -NotAfter $launch.expires_at
+  Assert-AuthWireStageEngineBudget $work
+  $r=Invoke-AuthWireStagingFilesystemStage -Target $offer.target.scope_target -PreviewRecord $preview -ApprovedPreviewSha256 $preview.PreviewSha256 -SourceRoot $live.source_root -GpoRoot $live.gpo_root -JournalRoot $JournalRoot -OperationId $op -ProtectedGpoId $live.protected_gpo_id -NotAfter $work.EngineNotAfter
   $script:AuthWireStageChildPhase='postcheck'
   if($r.Phase -isnot [string] -or $r.Phase -cne 'staged' -or $r.OperationId -isnot [string] -or $r.OperationId -cne $op -or $r.FileCount -isnot [int] -or $r.FileCount -ne 20 -or $r.CanApplyGpo -isnot [bool] -or $r.CanApplyGpo){throw 'WRITE_EXECUTION_ENGINE_RESULT_REJECTED'}
   $complete=Get-AuthWireStageCompletion $JournalRoot $JobId $s $launch $Binding
-  Assert-AuthWireStagingWriteDeadline $launch.expires_at $start $clock
+  Assert-AuthWireStagingWriteDeadline $work.FinishNotAfter $start $clock
   $result=[pscustomobject][ordered]@{format='AuthWireAuthorizedStageResultV1';job_id=$JobId;filesystem_operation_id=$op;execution_intent_sha256=$s.IntentSha256;authorization_sha256=$s.Authorization.AuthorizationSha256;launch_sha256=(Get-AuthWireWriteHash $launch);child_identity_sha256=(Get-AuthWireWriteHash $childIdentity);stage_preflight_sha256=$complete.StagePreflightSha256;complete_sha256=$complete.CompleteSha256;tree_sha256=$complete.TreeSha256;checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();file_count=20;staged=$true;can_apply_gpo=$false}
   $script:AuthWireStageChildPhase='result_flush'
   Write-AuthWireStagingJournal (Join-Path $job 'execution-complete.json') $result
-  Assert-AuthWireStagingWriteDeadline $launch.expires_at $start $clock
+  Assert-AuthWireStagingWriteDeadline $work.FinishNotAfter $start $clock
   return $result
  }finally{$p.Dispose()}
 }
 function Invoke-AuthWireAuthorizedFilesystemStage([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
- $s=Read-AuthWireAuthorizedStageIntent $JournalRoot $JobId $Binding $Release $Key
- $p=New-AuthWireStageInputPins $JournalRoot $JobId $s.Authorization.Offer
+ $p=New-AuthWireStageIntentInputPins $JournalRoot $JobId $Binding $Release
  $gate=$null
  $decisionLock=$null
  try{
-  $again=Read-AuthWireAuthorizedStageIntent $JournalRoot $JobId $Binding $Release $Key
-  if($again.IntentSha256 -cne $s.IntentSha256){throw 'WRITE_LOCAL_RECORD_CHANGED'}
+  $s=Read-AuthWireAuthorizedStageIntent $JournalRoot $JobId $Binding $Release $Key
   $decisionLock=Enter-AuthWireWriteOutcomeLock $JobId
   $job=Join-Path $JournalRoot $JobId
   if(Test-Path -LiteralPath (Join-Path $job 'result-outbox.json')){throw 'WRITE_EXECUTION_RESULT_ALREADY_FROZEN'}
@@ -204,6 +240,9 @@ function Invoke-AuthWireAuthorizedFilesystemStage([string]$JournalRoot,[string]$
    $resultFile=Join-Path $job 'execution-complete.json';$p.PinFile($resultFile)
    if((Get-AuthWireWriteHash (Read-AuthWireStagingJournal $resultFile)) -cne (Get-AuthWireWriteHash $v)){throw 'WRITE_EXECUTION_RESULT_REJECTED'}
    $parentPhase='observation'
+   $work=Get-AuthWireStageWorkWindow $launch
+   Assert-AuthWireStagingWriteDeadline $work.FinishNotAfter $now $clock
+   if($clock.ElapsedMilliseconds -ge $budget -or $v.checked_at -ge $work.FinishNotAfter){throw 'WRITE_EXECUTION_WORK_BUDGET_EXCEEDED'}
    Write-AuthWireStagingJournal (Join-Path $job 'execution-observed.json') ([pscustomobject]@{format='AuthWireStageObservedV1';job_id=$JobId;result_sha256=(Get-AuthWireWriteHash $v);complete_sha256=$complete.CompleteSha256;observed_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()})
    return [pscustomobject]@{JobId=$JobId;Phase='staged';FilesystemOperationId=$s.Intent.filesystem_operation_id;CompleteSha256=$complete.CompleteSha256;TreeSha256=$complete.TreeSha256;FilesystemStaged=$true;PeerResultSubmitted=$false;CanApplyGpo=$false;ArtifactExecuted=$false}
   }catch{

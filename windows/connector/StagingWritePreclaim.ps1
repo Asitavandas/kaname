@@ -8,7 +8,25 @@ function Assert-AuthWireWriteServiceConfigFields($Config){
   if($Config.WriteSchedulerEnabled -isnot [bool]){throw 'CONNECTOR_CONFIG_REJECTED'}
   $fields+='WriteSchedulerEnabled'
  }
+ if($Config.PSObject.Properties['WritePilotPort']){
+  if($Config.PSObject.Properties['WritePilotPort'].Name -cne 'WritePilotPort'){throw 'CONNECTOR_CONFIG_REJECTED'}
+  $fields+='WritePilotPort'
+ }
  Assert-AuthWireCandidateFields $Config $fields
+ $null=Get-AuthWireWriteTransportBaseUrl $Config
+}
+
+function Get-AuthWireWriteTransportBaseUrl($Config){
+ if(-not $Config.PSObject.Properties['WritePilotPort']){return $Config.BaseUrl}
+ $base=$null
+ if(-not $Config.PSObject.Properties['WriteSchedulerEnabled'] -or $Config.WriteSchedulerEnabled -isnot [bool] -or -not $Config.WriteSchedulerEnabled -or
+    $Config.WritePilotPort -isnot [int] -or $Config.WritePilotPort -lt 1024 -or $Config.WritePilotPort -gt 65535 -or
+    -not [uri]::TryCreate($Config.BaseUrl,[UriKind]::Absolute,[ref]$base) -or $base.Scheme -cne 'https' -or
+    $base.Host -cne $Config.Binding.appliance_fqdn -or $base.UserInfo -or $base.Query -or $base.Fragment -or
+    $base.AbsolutePath -cne '/' -or $base.Port -eq $Config.WritePilotPort){throw 'CONNECTOR_CONFIG_REJECTED'}
+ $pilot=[UriBuilder]::new($base)
+ $pilot.Port=$Config.WritePilotPort
+ return $pilot.Uri.AbsoluteUri
 }
 
 function Enter-AuthWireWritePreauthorizationLock([string]$JobId){
@@ -21,31 +39,99 @@ function Assert-AuthWireWriteNotRefused([string]$Root,[string]$JobId){
  if(Test-Path -LiteralPath (Join-Path (Join-Path $Root $JobId) 'refusal-outbox.json')){throw 'WRITE_REFUSAL_ALREADY_FROZEN'}
 }
 
-function ConvertTo-AuthWireWriteJson($Value,[bool]$Sort=$true,[int]$Depth=0){
- if($Depth -gt 12){throw 'WRITE_JSON_DEPTH'}
- if($null -eq $Value){return 'null'}
- if($Value -is [bool]){if($Value){return 'true'}else{return 'false'}}
- if($Value -is [string]){
-  if($Value -cmatch '[^\x20-\x7e]'){throw 'WRITE_ASCII_REQUIRED'}
-  return ('"'+$Value.Replace('\','\\').Replace('"','\"')+'"')
+function Initialize-AuthWireWriteJsonTypes {
+ if('AuthWire.Connector.WriteJsonV1' -as [type]){return}
+ Add-Type -ReferencedAssemblies @('System.dll','System.Core.dll',[Management.Automation.PSObject].Assembly.Location) -TypeDefinition @'
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Management.Automation;
+using System.Text;
+namespace AuthWire.Connector {
+public static class WriteJsonV1 {
+ static void Fail(string code){throw new InvalidOperationException(code);}
+ static object Unwrap(object value){
+  PSObject p=value as PSObject;
+  while(p!=null && !(p.BaseObject is PSCustomObject)){
+   object next=p.BaseObject;
+   if(Object.ReferenceEquals(value,next))break;
+   value=next;p=value as PSObject;
+  }
+  return value;
  }
- if($Value -is [int] -or $Value -is [long]){return $Value.ToString([Globalization.CultureInfo]::InvariantCulture)}
- if($Value -is [array]){
-  if($Value.Count -gt 64){throw 'WRITE_JSON_LIMIT'}
-  $parts=@(foreach($v in $Value){ConvertTo-AuthWireWriteJson $v $Sort ($Depth+1)})
-  return ('['+($parts -join ',')+']')
+ static void Text(StringBuilder s,string value){
+  s.Append('"');
+  foreach(char c in value){
+   if(c<0x20 || c>0x7e)Fail("WRITE_ASCII_REQUIRED");
+   if(c=='\\' || c=='"')s.Append('\\');
+   s.Append(c);
+  }
+  s.Append('"');
  }
- if($Value -is [Collections.IDictionary]){$names=[string[]]@($Value.Keys)}
- elseif($Value -is [pscustomobject]){$names=[string[]]@($Value.PSObject.Properties.Name)}
- else{throw 'WRITE_JSON_KIND'}
- if($names.Count -gt 40){throw 'WRITE_JSON_LIMIT'}
- if($Sort){[Array]::Sort($names,[StringComparer]::Ordinal)}
- $parts=@(foreach($n in $names){
-  $v=if($Value -is [Collections.IDictionary]){$Value[$n]}else{$Value.$n}
-  (ConvertTo-AuthWireWriteJson $n $false ($Depth+1))+':'+(ConvertTo-AuthWireWriteJson $v $Sort ($Depth+1))
- })
- return ('{'+($parts -join ',')+'}')
+ static object PropertyValue(object value){
+  // Match the original PowerShell "$v=if(...){property}" assignment:
+  // its pipeline unwraps empty/singleton property collections. Retaining
+  // these legacy bytes is required for existing hashes and signatures.
+  value=Unwrap(value);
+  IEnumerator e=LanguagePrimitives.GetEnumerator(value);
+  if(e==null)return value;
+  var items=new List<object>();
+  while(e.MoveNext())items.Add(e.Current);
+  if(items.Count==0)return null;
+  if(items.Count==1)return items[0];
+  return items.ToArray();
+ }
+ static void Append(StringBuilder s,object value,bool sort,int depth){
+  if(depth>12)Fail("WRITE_JSON_DEPTH");
+  value=Unwrap(value);
+  if(value==null){s.Append("null");return;}
+  if(value is bool){s.Append((bool)value?"true":"false");return;}
+  if(value is string){Text(s,(string)value);return;}
+  if(value is int || value is long){s.Append(((IFormattable)value).ToString(null,CultureInfo.InvariantCulture));return;}
+  Array a=value as Array;
+  if(a!=null){
+   if(a.Length>64)Fail("WRITE_JSON_LIMIT");
+   s.Append('[');bool first=true;
+   foreach(object item in a){if(!first)s.Append(',');first=false;Append(s,item,sort,depth+1);}
+   s.Append(']');return;
+  }
+  IDictionary dictionary=value as IDictionary;
+  PSObject custom=value as PSObject;
+  if(dictionary==null && (custom==null || !(custom.BaseObject is PSCustomObject)))Fail("WRITE_JSON_KIND");
+  var names=new List<string>();
+  if(dictionary!=null){foreach(object key in dictionary.Keys)names.Add(LanguagePrimitives.ConvertTo<string>(key));}
+  else{foreach(PSPropertyInfo property in custom.Properties)names.Add(property.Name);}
+  if(names.Count>40)Fail("WRITE_JSON_LIMIT");
+  if(sort)names.Sort(StringComparer.Ordinal);
+  s.Append('{');bool firstProperty=true;
+  foreach(string name in names){
+   if(!firstProperty)s.Append(',');firstProperty=false;
+   // Property names obey the SAME depth/ASCII rule as value strings.
+   Append(s,name,false,depth+1);s.Append(':');
+   Append(s,PropertyValue(dictionary!=null?dictionary[name]:custom.Properties[name].Value),sort,depth+1);
+  }
+  s.Append('}');
+ }
+ public static string Encode(object value,bool sort,int depth){
+  var s=new StringBuilder();Append(s,value,sort,depth);return s.ToString();
+ }
 }
+}
+'@
+}
+function ConvertTo-AuthWireWriteJson($Value,[bool]$Sort=$true,[int]$Depth=0){
+ # This is only an encoder: no parsed-record cache, saved validation state,
+ # signature bypass or timestamp/authority change. Every caller still checks
+ # the same original bytes, chain, live observations and native input pins.
+ Initialize-AuthWireWriteJsonTypes
+ try{return [AuthWire.Connector.WriteJsonV1]::Encode($Value,$Sort,$Depth)}catch{
+  $code=$_.Exception.GetBaseException().Message
+  if($code -cin @('WRITE_JSON_DEPTH','WRITE_ASCII_REQUIRED','WRITE_JSON_LIMIT','WRITE_JSON_KIND')){throw $code}
+  throw 'WRITE_JSON_KIND'
+ }
+}
+
 function Get-AuthWireWriteHash($Value){
  return (Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes((ConvertTo-AuthWireWriteJson $Value))))
 }
@@ -151,19 +237,23 @@ function Get-AuthWireWriteStageLiveContext($Offer,[hashtable]$Binding,[string]$P
  # candidate/signature + non-admin service identity validation remains in use.
  if($Offer.operation -cne 'combined.filesystem.stage.v1'){throw 'WRITE_ROLLBACK_PREFLIGHT_UNAVAILABLE'}
  $target=$Offer.target.scope_target
- $context=Get-AuthWireCombinedScopeContext $target $Binding $Publisher $BaseUrl
+ # Reuse the context checked before AND after this one live observation.
+ # Previously a third full content/ACL/signature pass ran immediately before
+ # the preview's two passes, consuming the short grant's cold-child budget.
+ # Nothing is cached between calls; AD/source/SYSVOL and expiry stay fresh.
+ $observation=Get-AuthWireCombinedStagingObservation $target $Binding $Publisher $BaseUrl
+ $context=$observation.Context
  $a=$context.Approval
- $before=Get-ADDomain -Identity $a.domain -Server $a.domain -ErrorAction Stop
- $server=[string]$before.PDCEmulator;$domainSid=$Binding.service_sid.Substring(0,$Binding.service_sid.LastIndexOf('-'))
- if($before.DNSRoot -cne $target.domain -or $before.DomainSID.Value -cne $domainSid -or $server -cnotmatch '\A[a-z0-9.-]{1,253}\z' -or -not $server.EndsWith('.'+$target.domain,[StringComparison]::Ordinal)){throw 'WRITE_LIVE_SCOPE_CHANGED'}
- $fresh=Get-AuthWireCombinedStagingPreview $target $Binding $Publisher $BaseUrl
+ $server=[string]$observation.Pdc;$domainSid=$Binding.service_sid.Substring(0,$Binding.service_sid.LastIndexOf('-'))
+ if($a.domain -cne $target.domain -or $server -cnotmatch '\A[a-z0-9.-]{1,253}\z' -or -not $server.EndsWith('.'+$target.domain,[StringComparison]::Ordinal)){throw 'WRITE_LIVE_SCOPE_CHANGED'}
+ $fresh=$observation.PreviewRecord
  # Compare current business observations at the ORIGINAL approved timestamps.
  # A later snapshot must not silently replace/extend the approved preview.
  $fresh.Preview.checked_at=$Offer.target.preview_record.Preview.checked_at
  $fresh.Preview.expires_at=$Offer.target.preview_record.Preview.expires_at
  if((Get-AuthWireWritePreviewHash $fresh.Preview) -cne $Offer.target.preview_record.PreviewSha256){throw 'WRITE_LIVE_PREVIEW_CHANGED'}
  $after=Get-ADDomain -Identity $a.domain -Server $a.domain -ErrorAction Stop
- if($after.DNSRoot -cne $before.DNSRoot -or $after.DomainSID.Value -cne $domainSid -or [string]$after.PDCEmulator -cne $server){throw 'WRITE_LIVE_PDC_CHANGED'}
+ if($after.DNSRoot -cne $a.domain -or $after.DomainSID.Value -cne $domainSid -or [string]$after.PDCEmulator -cne $server){throw 'WRITE_LIVE_PDC_CHANGED'}
  $source=Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) ('AuthWire-CombinedCandidates-'+([guid]$Binding.connector_id).ToString('N'))
  $source=Join-Path $source ($target.plan_id+'-v'+$target.plan_version+'-'+$target.draft_sha256+'-ab1a11c683810061')
  $gpo=Get-AuthWireWriteGpoPath $server $target
@@ -204,6 +294,16 @@ function Save-AuthWireStagingWriteOffer($Offer,[hashtable]$Binding,[string]$Rele
 function Read-AuthWireStagingWriteOffer([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release){
  return (Read-AuthWireStagingWriteOfferAt $JournalRoot $JobId $Binding $Release ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()))
 }
+function Get-AuthWireHistoricalWriteLockPath([string]$Root,[string]$JobId,[string]$GpoId){
+ # Historical bytes do not authorize execution or close a cycle. The lifecycle
+ # separately verifies the CNG-signed closure before it can advance.
+ $job=Join-Path $Root $JobId;$saved=Join-Path $job 'released-gpo-lock.json'
+ if(Test-Path -LiteralPath $saved){
+  if(-not (Test-Path -LiteralPath (Join-Path $job 'consumed-stage-release.json'))){throw 'WRITE_RECOVERY_PARTIAL_REQUIRES_REVIEW'}
+  return $saved
+ }
+ return (Join-Path $Root ('gpo-'+$GpoId+'.json'))
+}
 function Read-AuthWireStagingWriteOfferAt([string]$JournalRoot,[string]$JobId,[hashtable]$Binding,[string]$Release,[long]$ObservedAt){
  Assert-AuthWireCandidateGuid $JobId;Assert-AuthWireStagingJournalRoot $JournalRoot;Initialize-AuthWireStagingFilesystemTypes
  $pin=[AuthWire.Staging.TreeLeaseV1]::new()
@@ -213,7 +313,7 @@ function Read-AuthWireStagingWriteOfferAt([string]$JournalRoot,[string]$JobId,[h
   Assert-AuthWireCandidateFields $v @('format','binding_scope','release_id','offer')
   if($v.format -cne 'AuthWireWriteOfferV1' -or $v.binding_scope -cne (Get-AuthWireJobScope $Binding) -or $v.release_id -cne $Release -or $v.offer.job_id -cne $JobId){throw 'WRITE_LOCAL_RECORD_CHANGED'}
   Assert-AuthWireWriteOfferAt $v.offer $Binding $Release $v.offer.request_id $ObservedAt
-  $lock=Join-Path $JournalRoot ('gpo-'+$v.offer.target.scope_target.gpo_id+'.json');$pin.PinFile($lock)
+  $lock=Get-AuthWireHistoricalWriteLockPath $JournalRoot $JobId $v.offer.target.scope_target.gpo_id;$pin.PinFile($lock)
   $l=Read-AuthWireStagingJournal $lock;Assert-AuthWireCandidateFields $l @('format','job_id','intent_sha256')
   if($l.format -cne 'AuthWireWriteGpoLockV1' -or $l.job_id -cne $JobId -or $l.intent_sha256 -cne $v.offer.intent_sha256){throw 'WRITE_LOCAL_RECORD_CHANGED'}
   return $v.offer
@@ -276,3 +376,4 @@ function New-AuthWireStagingWriteClaim([string]$JournalRoot,[string]$JobId,[hash
   return $proof
  }finally{$pin.Dispose();$decision.ReleaseMutex();$decision.Dispose()}
 }
+

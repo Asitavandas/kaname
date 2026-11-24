@@ -25,11 +25,8 @@ try{
  $rsa=[Security.Cryptography.RSACng]::new($key)
  $keyPath=Join-Path (Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) 'Microsoft\Crypto\Keys') $key.UniqueName
  if(-not (Compare-AuthWireSigningKeyAcl $c.ExpectedKeySddl (Get-Acl -LiteralPath $keyPath).Sddl).AclEquivalent){throw 'WRITE_EXECUTION_KEY_ACL_REJECTED'}
- # Import happens only after private intent, binding and original claim validation.
- $script:AuthWireStageChildPhase='intent'
- $null=Read-AuthWireAuthorizedStageIntent $JournalRoot $JobId $binding $c.ReleaseId $rsa
- $script:AuthWireStageChildPhase='modules'
- Import-Module ActiveDirectory -ErrorAction Stop;Import-Module GroupPolicy -ErrorAction Stop
+ # The adapter validates and pins the complete private intent/claim, consumes
+ # its gate and checks the exact PID/start time BEFORE it imports AD/GP.
  $result=Invoke-AuthWireAuthorizedStageChild $JournalRoot $JobId $IntentSha256 $binding $c.ReleaseId $rsa $c.PublisherThumbprint $c.BaseUrl
  [Console]::Out.WriteLine(($result|ConvertTo-Json -Depth 8 -Compress))
 }catch{

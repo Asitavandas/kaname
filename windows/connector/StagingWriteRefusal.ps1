@@ -3,9 +3,18 @@
 # an already frozen body; missing/partial evidence requires reconciliation.
 Set-StrictMode -Version 2
 
-function New-AuthWireWriteRefusalInputPins([string]$Root,[string]$Life,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key){
+function New-AuthWireWriteRefusalInputPins([string]$Root,[string]$Life,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[bool]$Historical=$false){
  Assert-AuthWireStagingWriteJournalLocation $Root $Binding
- if($Life -cne (Get-AuthWireWriteLifecyclePath $Root $Binding)){throw 'WRITE_REFUSAL_ROOT_REJECTED'}
+ $active=Get-AuthWireWriteLifecyclePath $Root $Binding
+ if($Life -cne $active){
+  # Historical reads may follow only the canonical bounded archive location.
+  # Creating/sending a refusal still requires the active lifecycle path.
+  $parent=Split-Path $Life -Parent;$index=Split-Path $parent -Leaf
+  $expected=Join-Path (Join-Path (Join-Path $active 'history-archives') $index) 'cycles'
+  if(-not $Historical -or $index -cnotmatch '\A00000[1-8]\z' -or $Life -cne $expected -or $State.Slot -cnotmatch '\A[0-9]{6}\z' -or
+     [int]$State.Slot -lt (([int]$index-1)*64+1) -or [int]$State.Slot -gt ([int]$index*64)){throw 'WRITE_REFUSAL_ROOT_REJECTED'}
+  if(-not (Test-Path -LiteralPath (Join-Path (Join-Path $Life $State.Slot) 'completion.json'))){throw 'WRITE_REFUSAL_ARCHIVE_INCOMPLETE'}
+ }
  $p=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
   $p.PinAncestors($Root);$dir=Join-Path $Life $State.Slot;$p.PinAncestors($dir)
@@ -17,6 +26,7 @@ function New-AuthWireWriteRefusalInputPins([string]$Root,[string]$Life,$State,[h
   # Strict allow-list: even a CLAIM signing-start marker or unknown file makes
   # "none" unsafe. Pin every existing file, rejecting hardlinks/ADS/reparse.
   $allowed=@('refusal-outbox.json','refusal-accepted.json')
+  if($o.operation -ceq 'combined.filesystem.rollback.v1'){$allowed+=@('rollback-reservation.json','rollback-retirement-review.json','rollback-retirement-complete.json')}
   foreach($i in 1..3){foreach($kind in @('attempt','proof')){$allowed+=,('refusal-'+$kind+'-'+$i+'.json')}}
   if($o.operation -ceq 'combined.filesystem.stage.v1'){$allowed+=@('offer.json','preflight.json')}
   else{$allowed+=@('rollback-offer.json','rollback-preflight.json')}
@@ -26,7 +36,7 @@ function New-AuthWireWriteRefusalInputPins([string]$Root,[string]$Life,$State,[h
    $saved=Read-AuthWireStagingWriteOfferAt $Root $o.job_id $Binding $release $State.Response.received_at
   }else{
    $saved=(Read-AuthWireRollbackOfferAt $Root $o.job_id $Binding $release $State.Response.received_at).Offer
-   $p.PinFile((Get-AuthWireRollbackReservationPath $Root $o.target.stage_receipt.stage_job_id))
+   $p.PinFile((Get-AuthWireRollbackReservationPath $Root $o.target.stage_receipt.stage_job_id $o.job_id))
   }
   $p.PinFile((Join-Path $Root ('gpo-'+$o.target.scope_target.gpo_id+'.json')))
   if((Get-AuthWireWriteHash $saved) -cne (Get-AuthWireWriteHash $o)){throw 'WRITE_REFUSAL_OFFER_REJECTED'}
@@ -35,8 +45,8 @@ function New-AuthWireWriteRefusalInputPins([string]$Root,[string]$Life,$State,[h
   return $p
  }catch{$p.Dispose();throw}
 }
-function Read-AuthWireWriteRefusalOutbox([string]$Root,[string]$Life,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key){
- $p=New-AuthWireWriteRefusalInputPins $Root $Life $State $Binding $Key
+function Read-AuthWireWriteRefusalOutbox([string]$Root,[string]$Life,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[bool]$Historical=$false){
+ $p=New-AuthWireWriteRefusalInputPins $Root $Life $State $Binding $Key $Historical
  try{
   $o=$State.Offer;$dir=Join-Path $Life $State.Slot;$file=Join-Path (Join-Path $Root $o.job_id) 'refusal-outbox.json';$p.PinFile($file)
   $v=Read-AuthWireStagingJournal $file;$f=Read-AuthWireStagingJournal (Join-Path $dir 'dispatch-failed.json')
@@ -108,3 +118,4 @@ function Send-AuthWireWriteRefusal([string]$Root,[string]$Life,$State,[hashtable
   Write-AuthWireStagingJournal (Join-Path $job 'refusal-accepted.json') ([pscustomobject]@{format='AuthWireWriteRefusalAcceptedV1';job_id=$State.Offer.job_id;body_sha256=$box.body_sha256;request_id=$request;ack=$ack})
  }finally{if($p){$p.Dispose()};$decision.ReleaseMutex();$decision.Dispose()}
 }
+

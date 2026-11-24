@@ -2,8 +2,13 @@
 # Not loaded by the worker/package; no delete, unlock, RESULT or peer route here.
 Set-StrictMode -Version 2
 
-function Get-AuthWireRollbackReservationPath([string]$Root,[string]$StageJobId){
+function Get-AuthWireRollbackReservationPath([string]$Root,[string]$StageJobId,[string]$JobId=''){
  Assert-AuthWireCandidateGuid $StageJobId
+ if($JobId -cne ''){
+  Assert-AuthWireCandidateGuid $JobId
+  $local=Join-Path (Join-Path $Root $JobId) 'rollback-reservation.json'
+  if(Test-Path -LiteralPath $local){return $local}
+ }
  return (Join-Path $Root ('rollback-stage-'+$StageJobId+'.json'))
 }
 function Assert-AuthWireRollbackReservation($Value,$Offer,[hashtable]$Binding,[string]$Release){
@@ -24,7 +29,7 @@ function Read-AuthWireRollbackOfferAt([string]$Root,[string]$JobId,[hashtable]$B
   Assert-AuthWireStageStrings $v @('format','binding_scope','release_id','reservation_sha256')
   if($v.format -cne 'AuthWireRollbackOfferV1' -or $v.binding_scope -cne (Get-AuthWireJobScope $Binding) -or $v.release_id -cne $Release -or $v.offer.job_id -cne $JobId -or $v.offer.operation -cne 'combined.filesystem.rollback.v1'){throw 'ROLLBACK_OFFER_REJECTED'}
   Assert-AuthWireWriteOfferAt $v.offer $Binding $Release $v.offer.request_id $ObservedAt
-  $file=Get-AuthWireRollbackReservationPath $Root $v.offer.target.stage_receipt.stage_job_id;$p.PinFile($file);$r=Read-AuthWireStagingJournal $file
+  $file=Get-AuthWireRollbackReservationPath $Root $v.offer.target.stage_receipt.stage_job_id $JobId;$p.PinFile($file);$r=Read-AuthWireStagingJournal $file
   Assert-AuthWireRollbackReservation $r $v.offer $Binding $Release
   if($v.reservation_sha256 -cne (Get-AuthWireWriteHash $r)){throw 'ROLLBACK_RESERVATION_REJECTED'}
   $file=Join-Path $Root ('gpo-'+$v.offer.target.scope_target.gpo_id+'.json');$p.PinFile($file);$l=Read-AuthWireStagingJournal $file
@@ -41,7 +46,7 @@ function New-AuthWireRollbackInputPins([string]$Root,[string]$JobId,$Saved,[stri
  try{
   $p.PinAncestors($Root);$job=Join-Path $Root $JobId;$p.PinAncestors($job)
   foreach($n in @('rollback-offer.json')+$Names){$p.PinFile((Join-Path $job $n))}
-  $p.PinFile((Get-AuthWireRollbackReservationPath $Root $Saved.Reservation.stage_job_id))
+  $p.PinFile((Get-AuthWireRollbackReservationPath $Root $Saved.Reservation.stage_job_id $JobId))
   $p.PinFile((Join-Path $Root ('gpo-'+$Saved.Offer.target.scope_target.gpo_id+'.json')))
   return $p
  }catch{$p.Dispose();throw}
@@ -58,14 +63,24 @@ function Save-AuthWireRollbackOffer($Offer,[hashtable]$Binding,[string]$Release,
   $children=@(Get-ChildItem -LiteralPath $root -Force)
   if($children.Count -gt 62 -or @($children|Where-Object PSIsContainer).Count -ge 32){throw 'ROLLBACK_STORE_LIMIT'}
   $job=Join-Path $root $Offer.job_id;$file=Get-AuthWireRollbackReservationPath $root $origin.StageJobId
-  if((Test-Path -LiteralPath $job) -or (Test-Path -LiteralPath $file)){throw 'ROLLBACK_PRIOR_RESERVATION_REQUIRES_REVIEW'}
+  if(Test-Path -LiteralPath $job){throw 'ROLLBACK_PRIOR_RESERVATION_REQUIRES_REVIEW'}
+  $successor=Test-Path -LiteralPath $file
+  if($successor){
+   # Append-only succession. The original root reservation is NEVER removed,
+   # rewritten or made live again. Every predecessor must have its own valid
+   # signed, operator-approved no-authorization retirement before a new offer.
+   Assert-AuthWireRetiredRollbackPredecessors $root $Offer $Binding $Key
+   [AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($job);$p.PinAncestors($job)
+   $file=Join-Path $job 'rollback-reservation.json'
+  }
   $again=Read-AuthWireRollbackOrigin $Offer $Binding $Release $Key
   if($again.ChainSha256 -cne $origin.ChainSha256){throw 'ROLLBACK_ORIGIN_CHANGED'}
   $r=[pscustomobject]@{format='AuthWireRollbackReservationV1';binding_scope=(Get-AuthWireJobScope $Binding);release_id=$Release;job_id=$Offer.job_id;stage_job_id=$origin.StageJobId;stage_release_id=$origin.StageReleaseId;stage_operation_id=$origin.FilesystemOperationId;intent_sha256=$Offer.intent_sha256;origin_chain_sha256=$origin.ChainSha256}
-  # Original-stage reservation is flushed BEFORE the new job directory. A new
-  # rollback job ID or an incomplete local write cannot bypass this reservation.
+  # First reservation is flushed BEFORE its job directory. A successor keeps
+  # that original anchor and appends its own reservation in the new directory;
+  # partial writes remain a durable barrier, never an automatic reset.
   Write-AuthWireStagingJournal $file $r
-  [AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($job);$p.PinAncestors($job)
+  if(-not $successor){[AuthWire.Staging.TreeLeaseV1]::CreateNewDirectory($job);$p.PinAncestors($job)}
   Write-AuthWireStagingJournal (Join-Path $job 'rollback-offer.json') ([pscustomobject]@{format='AuthWireRollbackOfferV1';binding_scope=$r.binding_scope;release_id=$Release;reservation_sha256=(Get-AuthWireWriteHash $r);offer=$Offer})
   return [pscustomobject]@{JobId=$Offer.job_id;Phase='rollback_offer_saved';CanDelete=$false;CanApplyGpo=$false}
  }finally{if($taken){$mutex.ReleaseMutex()};if($mutex){$mutex.Dispose()};$p.Dispose()}
@@ -83,21 +98,38 @@ function Assert-AuthWireRollbackPreflightAt($Value,$Saved,[hashtable]$Binding,[s
  foreach($n in @('read_only','requires_separate_claim')){if($v.$n -isnot [bool] -or -not $v.$n){throw 'ROLLBACK_PREFLIGHT_REJECTED'}}
  foreach($n in @('write_authorized','can_delete','can_apply_gpo')){if($v.$n -isnot [bool] -or $v.$n){throw 'ROLLBACK_PREFLIGHT_REJECTED'}}
 }
+function Get-AuthWireRollbackPreflightFailureCode($Result){
+ if($Result.TimedOut){return 'ROLLBACK_PREFLIGHT_TIMEOUT'}
+ if($Result.Truncated){return 'ROLLBACK_PREFLIGHT_OUTPUT_TRUNCATED'}
+ if($Result.ExitCode -eq 0){return ''}
+ # Keep only fixed entry-point phase/kind enums. Never persist raw child
+ # output, exception text, paths, credentials or caller-supplied strings.
+ if($Result.Output -is [string] -and $Result.Output.Length -le 512){try{
+  $v=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($Result.Output))
+  Assert-AuthWireCandidateFields $v @('error','phase','exception_kind')
+  if($v.error -ceq 'ROLLBACK_PREFLIGHT_FAILED' -and $v.phase -is [string] -and $v.phase -cin @('load','config','key','intent','modules') -and
+     $v.exception_kind -is [string] -and $v.exception_kind -cin @('other','io','security','timeout','runtime')){
+   return ('ROLLBACK_PREFLIGHT_CHILD_'+$v.phase.ToUpperInvariant()+'_'+$v.exception_kind.ToUpperInvariant())
+  }
+ }catch{}}
+ return 'ROLLBACK_PREFLIGHT_FAILED'
+}
 function Read-AuthWireRollbackPreflightProcess([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[long]$NotAfter=0){
  $saved=Read-AuthWireRollbackOffer $Root $JobId $Binding $Release
  Initialize-AuthWireScopeProcess
  if($Root.Length -gt 1800 -or $Root.Contains('"')){throw 'WRITE_JOURNAL_PATH_REJECTED'}
  $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
  $budget=[int][Math]::Min(15000,($saved.Offer.expires_at-$now-5)*1000)
- if($NotAfter -ne 0){if(-not (Test-AuthWireWriteInteger $NotAfter)){throw 'ROLLBACK_DEADLINE_REJECTED'};$budget=[int][Math]::Min(8000,[Math]::Min($budget,($NotAfter-$now-2)*1000))}
+ # Match the consumed-stage cold reader budget without extending its grant.
+ if($NotAfter -ne 0){if(-not (Test-AuthWireWriteInteger $NotAfter)){throw 'ROLLBACK_DEADLINE_REJECTED'};$budget=[int][Math]::Min(12000,[Math]::Min($budget,($NotAfter-$now-2)*1000))}
  if($budget -lt 100){throw 'ROLLBACK_AUTHORIZATION_EXPIRED'}
  $file=Join-Path $PSScriptRoot 'Read-AuthWireRollbackPreflight.ps1'
  $exe=Join-Path ([Environment]::GetFolderPath('Windows')) 'System32\WindowsPowerShell\v1.0\powershell.exe'
  $arguments='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$file+'" -JournalRoot "'+$Root.TrimEnd('\')+'" -JobId '+$JobId
  $r=[AuthWire.Connector.ScopeProcessV1]::Run($exe,$arguments,$budget)
- if($r.TimedOut){throw 'ROLLBACK_PREFLIGHT_TIMEOUT'}
- if($r.Truncated -or $r.ExitCode -ne 0){throw 'ROLLBACK_PREFLIGHT_FAILED'}
- $v=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($r.Output))
+ $failure=Get-AuthWireRollbackPreflightFailureCode $r
+ if($failure){throw $failure}
+ try{$v=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($r.Output))}catch{throw 'ROLLBACK_PREFLIGHT_OUTPUT_INVALID'}
  Assert-AuthWireRollbackPreflightAt $v $saved $Binding $Release ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
  if($v.checked_at -lt $now){throw 'ROLLBACK_PREFLIGHT_REJECTED'}
  return $v
@@ -217,7 +249,7 @@ function Read-AuthWireRollbackAuthorizationEvidence([string]$Root,[string]$JobId
  }finally{$timePin.Dispose()}
 }
 
-function New-AuthWireRollbackFilesystemIntent([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
+function New-AuthWireRollbackFilesystemIntent([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[switch]$RetainExecutionInputs){
  Assert-AuthWireStagingWriteJournalLocation $Root $Binding;Assert-AuthWireCandidateGuid $JobId
  $lock=Enter-AuthWireWriteOutcomeLock $JobId;$p=$null
  try{
@@ -246,6 +278,26 @@ function New-AuthWireRollbackFilesystemIntent([string]$Root,[string]$JobId,[hash
   Write-AuthWireStagingJournal (Join-Path $job 'rollback-filesystem-intent.json') $i
   $after=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
   if($after -lt $now -or $after -ge $expiry -or $clock.ElapsedMilliseconds -ge ($expiry-$now)*1000){throw 'ROLLBACK_AUTHORIZATION_EXPIRED'}
+  if($RetainExecutionInputs){
+   # Transfer this invocation's fully verified authority and STILL HELD native
+   # inputs to its immediate parent executor. No state is accepted from JSON,
+   # serialized as a cache, or reused after these handles are closed. The child
+   # independently validates the complete chain and its fresh live observations.
+   foreach($entry in @(
+    [pscustomobject]@{Name='rollback-grant-consumed.json';Value=$c},
+    [pscustomobject]@{Name='rollback-consumption-preflight.json';Value=$live},
+    [pscustomobject]@{Name='rollback-filesystem-intent.json';Value=$i}
+   )){
+    $file=Join-Path $job $entry.Name;$p.Inputs.PinFile($file)
+    if((Get-AuthWireWriteHash (Read-AuthWireStagingJournal $file)) -cne (Get-AuthWireWriteHash $entry.Value)){throw 'ROLLBACK_EXECUTION_HANDOFF_CHANGED'}
+   }
+   $after=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+   if($after -lt $now -or $after -ge $expiry -or $clock.ElapsedMilliseconds -ge ($expiry-$now)*1000){throw 'ROLLBACK_AUTHORIZATION_EXPIRED'}
+   $context=[pscustomobject]@{Inputs=$p;State=[pscustomobject]@{Authorization=$a;Consumed=$c;Intent=$i;IntentSha256=(Get-AuthWireWriteHash $i);ConsumptionPreflight=$live}}
+   $p=$null # The immediate caller now owns BOTH leases, including failure paths.
+   return $context
+  }
   return [pscustomobject]@{JobId=$JobId;Phase='rollback_intent_recorded';GrantConsumed=$true;FilesystemIntentSha256=(Get-AuthWireWriteHash $i);StageOperationId=$c.stage_operation_id;CanDelete=$false;CanApplyGpo=$false;RollbackExecuted=$false}
  }finally{if($p){$p.Origin.Dispose();$p.Inputs.Dispose()};$lock.ReleaseMutex();$lock.Dispose()}
 }
+

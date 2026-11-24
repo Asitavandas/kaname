@@ -1,10 +1,54 @@
-# Test only: real separate rollback grant/consumption was just produced.
+# Test only: a real separate rollback grant was just produced. The production
+# parent performs one-use consumption and execution with continuous input pins.
 $rxReceipt=Read-AuthWireStagingJournal (Join-Path $rbJob 'rollback-authorization.json')
 $fixture.rollback_expires_at=$rxReceipt.grant.expires_at
-if($case -ceq 'rb_execute_drift'){$fixture.rollback_drift=$true}
 [IO.File]::WriteAllText((Join-Path $package 'fixture.json'),($fixture|ConvertTo-Json -Depth 12 -Compress))
+# Count only this parent's full authority traversals. The independently signed
+# child loads its own original module, so this cannot stub its validation.
+$rxOriginalAuthorityReader=${function:Read-AuthWireRollbackAuthorizationEvidence}
+$rxOriginalIntentProducer=${function:New-AuthWireRollbackFilesystemIntent}
+$rxOriginalProcessInit=${function:Initialize-AuthWireStageProcess}
+$script:RollbackParentAuthorityReads=0;$script:RollbackHandoffPinsHeld=$false
+function Read-AuthWireRollbackAuthorizationEvidence([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
+ $script:RollbackParentAuthorityReads++
+ if($script:RollbackParentAuthorityReads -gt 1){throw 'FIXTURE_DUPLICATE_PARENT_AUTHORITY_TRAVERSAL'}
+ return (& $rxOriginalAuthorityReader @PSBoundParameters)
+}
+function New-AuthWireRollbackFilesystemIntent([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[switch]$RetainExecutionInputs){
+ $context=& $rxOriginalIntentProducer @PSBoundParameters
+ # Check the actual ownership transfer, including failures BEFORE a child can
+ # be initialized (for example, a flushed launch record followed by disk error).
+ $stream=$null
+ try{
+  try{$stream=[IO.File]::Open((Join-Path $rbJob 'rollback-grant-consumed.json'),[IO.FileMode]::Open,[IO.FileAccess]::Write,[IO.FileShare]::ReadWrite)}
+  catch [IO.IOException]{$script:RollbackHandoffPinsHeld=$true}
+  finally{if($stream){$stream.Dispose()}}
+  if(-not $RetainExecutionInputs -or -not $script:RollbackHandoffPinsHeld){throw 'FIXTURE_HANDOFF_INPUTS_NOT_PINNED'}
+  return $context
+ }catch{if($context){Close-AuthWireRollbackExecutionInputPins $context.Inputs};throw}
+}
+function Initialize-AuthWireStageProcess {
+ # This case changes AD only AFTER consumption has obtained its fresh witness.
+ # Otherwise it tests consumption rejection, never the independent child check.
+ if($case -ceq 'rb_execute_drift'){
+  $fixture.rollback_drift=$true
+  [IO.File]::WriteAllText((Join-Path $package 'fixture.json'),($fixture|ConvertTo-Json -Depth 12 -Compress))
+ }
+ & $rxOriginalProcessInit
+}
+$rxOriginalRemainingMs=[long][Math]::Max(0,($rxReceipt.grant.expires_at-[DateTimeOffset]::UtcNow.ToUnixTimeSeconds())*1000)
 $rxWatch=[Diagnostics.Stopwatch]::StartNew();$rxError='';$rxResult=$null
-try{$rxResult=Invoke-AuthWireAuthorizedFilesystemRollback $rbRoot $rbId $b $release $rsa}catch{$rxError=$_.Exception.Message};$rxWatch.Stop()
+try{$rxResult=Invoke-AuthWireAuthorizedFilesystemRollback $rbRoot $rbId $b $release $rsa -ConsumeFirst}catch{$rxError=$_.Exception.Message}
+finally{
+ Set-Item function:Read-AuthWireRollbackAuthorizationEvidence -Value $rxOriginalAuthorityReader
+ Set-Item function:New-AuthWireRollbackFilesystemIntent -Value $rxOriginalIntentProducer
+ Set-Item function:Initialize-AuthWireStageProcess -Value $rxOriginalProcessInit
+};$rxWatch.Stop()
+Check ($script:RollbackParentAuthorityReads -eq 1) 'real parent validates original authority once while retaining its original native inputs'
+Check $script:RollbackHandoffPinsHeld 'consumption inputs remain write-locked across immediate execution handoff'
+$rxReleased=[IO.File]::Open((Join-Path $rbJob 'rollback-grant-consumed.json'),[IO.FileMode]::Open,[IO.FileAccess]::Write,[IO.FileShare]::ReadWrite)
+$rxReleased.Dispose()
+Check $true 'native handoff pins are released after both success and execution failure without changing bytes'
 $rxSuccess=$case -cin @('rb_execute_success','rb_execute_lost_ack')
 $rxObserved=Join-Path $rbJob 'rollback-execution-observed.json'
 if($rxSuccess){
@@ -20,7 +64,12 @@ if($rxSuccess){
  if($case -cne 'rb_execute_launch_disk'){
   $rxReview=Read-AuthWireStagingJournal (Join-Path $rbJob 'rollback-execution-requires-review.json')
   Check ($rxReview.format -ceq 'AuthWireRollbackReviewV1' -and ($rxReview.diagnostic|ConvertTo-Json -Compress).Length -lt 512) 'bounded safe review diagnostic retained'
-  if($case -ceq 'rb_execute_timeout'){Check ($rxReview.diagnostic.timed_out -and $rxWatch.Elapsed.TotalSeconds -lt 23) 'kill-on-close child writer obeys original bounded process budget'}
+  if($case -ceq 'rb_execute_timeout'){
+   # The watch now includes consumption as well as execution. Bound the child
+   # by its unchanged <=15s launch budget, and the combined call by the actual
+   # ORIGINAL remaining grant, allowing only bounded process teardown overhead.
+   Check ($rxReview.diagnostic.timed_out -and $rxReview.diagnostic.work_budget_ms -le 15000 -and $rxReview.diagnostic.elapsed_ms -le $rxReview.diagnostic.work_budget_ms+1000 -and $rxWatch.ElapsedMilliseconds -lt $rxOriginalRemainingMs+2000) 'kill-on-close child and combined consumption obey unchanged original grant budgets'
+  }
   if($case -ceq 'rb_execute_drift'){Check ($rxReview.diagnostic.child_phase -ceq 'context') 'fresh PDC drift refused before rollback engine'}
   if($case -ceq 'rb_execute_parent_drift'){Check ($rxReview.diagnostic.parent_phase -ceq 'completion') 'parent independently refuses foreign post-child baseline change'}
  }
@@ -37,8 +86,10 @@ if($rxSuccess){
 Check (Test-Path -LiteralPath (Join-Path $rbJob 'rollback-launch.json')) 'one-launch gate retained after every rollback outcome'
 $rxHash=(Get-AuthWireSysvolInventory $gpo).Sha256;$rxReadPath=Join-Path $package ('rollback-reads-'+$rbId+'.txt');$rxReads=[IO.File]::ReadAllText($rxReadPath)
 Reject {Invoke-AuthWireAuthorizedFilesystemRollback $rbRoot $rbId $b $release $rsa} 'parent replay refused before history or fresh observation'
+Reject {Invoke-AuthWireAuthorizedFilesystemRollback $rbRoot $rbId $b $release $rsa -ConsumeFirst} 'combined consumption/execution replay refused before any fresh observation'
+$rxIntentHash=Get-AuthWireWriteHash (Read-AuthWireStagingJournal (Join-Path $rbJob 'rollback-filesystem-intent.json'))
 $rxExe=Join-Path ([Environment]::GetFolderPath('Windows')) 'System32\WindowsPowerShell\v1.0\powershell.exe'
-$rxArgs='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+(Join-Path $package 'Invoke-AuthWireRollbackChild.ps1')+'" -JournalRoot "'+$rbRoot+'" -JobId '+$rbId+' -IntentSha256 '+$rbUse.FilesystemIntentSha256
+$rxArgs='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+(Join-Path $package 'Invoke-AuthWireRollbackChild.ps1')+'" -JournalRoot "'+$rbRoot+'" -JobId '+$rbId+' -IntentSha256 '+$rxIntentHash
 $rxReplayWatch=[Diagnostics.Stopwatch]::StartNew()
 $rxReplay=[AuthWire.Connector.ScopeProcessV1]::Run($rxExe,$rxArgs,8000);$rxReplayWatch.Stop()
 if($rxReplay.TimedOut -or $rxReplay.ExitCode -ne 20){
@@ -75,4 +126,5 @@ Check ((Read-AuthWireRollbackResultOutbox $rbRoot $rbId $b $release $rsa).body_s
 Check ([IO.File]::ReadAllText($rxReadPath) -ceq $rxReads -and (Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $rxHash) 'result recovery performs no current AD check or deletion'
 Reject {Read-AuthWireWriteResultOutbox $rbRoot $rbId $b $release $rsa} 'rollback outbox cannot be reinterpreted as stage result'
 Write-Host ('ROLLBACK_EXECUTION_CASE_OK case='+$case+' child_parent_ms='+$rxWatch.ElapsedMilliseconds+' success='+$rxSuccess+' result_recovered=true customer_changed=false')
+
 

@@ -65,6 +65,34 @@ try{
    Reject {Read-AuthWireWriteRefusalOutbox $journal $rfLife $rfState $b $rsa} 'even a CLAIM start marker blocks no-effect report'
   }finally{[IO.File]::Delete($rfForeign)}
  }
+ # A historical refusal must retain the actual archived cycle context. These
+ # native reads use the real signed POLL/offer and accepted HTTPS/core result.
+ # The copied cycle here is a disposable path fixture, not a committed archive.
+ if($case -ceq 'ref_rollback'){
+  $rfArchive=Join-Path $rfLife 'history-archives\000001\cycles'
+  [IO.Directory]::CreateDirectory($rfArchive)|Out-Null
+  $rfSource=Join-Path $rfLife '000001';$rfCopy=Join-Path $rfArchive '000001'
+  Copy-Item -LiteralPath $rfSource -Destination $rfCopy -Recurse
+  $rfHold=Join-Path $flowDirectory ('held-refusal-cycle-'+[guid]::NewGuid().ToString('N'))
+  [IO.Directory]::Move($rfSource,$rfHold)
+  try{
+   $rfArchivedState=Read-AuthWireLifecyclePoll $rfArchive '000001' $b $rsa
+   $rfArchived=Read-AuthWireWriteRefusalOutbox $journal $rfArchive $rfArchivedState $b $rsa $true
+   Check ($rfArchived.body_sha256 -ceq $rfHash) 'archived refusal retains exact original body after active cycle is absent'
+   $rfCompletion=Read-AuthWireLifecycleCompletion $journal $rfArchive $rfArchivedState $b $rsa
+   Check ($rfCompletion.outcome -ceq 'refused_before_authorization' -and $rfCompletion.result_body_sha256 -ceq $rfHash) 'archived completion follows the original accepted ACK through the supplied cycle context'
+   Reject {Read-AuthWireWriteRefusalOutbox $journal $rfArchive $rfArchivedState $b $rsa} 'archived read requires explicit historical mode'
+   Reject {New-AuthWireWriteRefusalOutbox $journal $rfArchive $rfArchivedState $b $rsa} 'archived context cannot create a refusal'
+   Reject {Send-AuthWireWriteRefusal $journal $rfArchive $rfArchivedState $b $rsa $url} 'archived context cannot send a refusal or create a proof'
+   foreach($badPath in @((Join-Path $rfLife 'history-archives\000002\cycles'),(Join-Path $rfLife 'history-archives\000001\cycles\..\cycles'),(Join-Path $flowDirectory 'history-archives\000001\cycles'))){
+    Reject {Read-AuthWireWriteRefusalOutbox $journal $badPath $rfArchivedState $b $rsa $true} 'foreign noncanonical or out-of-segment archive path is refused'
+   }
+   $rfCompletePath=Join-Path $rfCopy 'completion.json';$rfCompleteBytes=[IO.File]::ReadAllBytes($rfCompletePath)
+   try{[IO.File]::Delete($rfCompletePath);Reject {Read-AuthWireWriteRefusalOutbox $journal $rfArchive $rfArchivedState $b $rsa $true} 'missing archived completion cannot become historical acceptance'}finally{[IO.File]::WriteAllBytes($rfCompletePath,$rfCompleteBytes)}
+   $rfForeign=Join-Path $rfJob 'rollback-claim-started.json'
+   try{[IO.File]::WriteAllText($rfForeign,'uncertain');Reject {Read-AuthWireWriteRefusalOutbox $journal $rfArchive $rfArchivedState $b $rsa $true} 'historical reads preserve the strict no-CLAIM barrier'}finally{[IO.File]::Delete($rfForeign)}
+  }finally{[IO.Directory]::Move($rfHold,$rfSource);Remove-Item (Join-Path $rfLife 'history-archives') -Recurse -Force}
+ }
  Check ((Get-AuthWireSysvolInventory $gpo).Sha256 -ceq $rfBefore) 'refusal or lost-claim recovery never writes or deletes SMB data'
  Check (Test-Path -LiteralPath (Join-Path $journal ('gpo-'+$t.gpo_id+'.json'))) 'original durable GPO lock is retained'
  Write-Host ('WRITE_REFUSAL_CASE_OK case='+$case+' job='+$rfId+' customer_changed=false')
@@ -73,3 +101,4 @@ try{
  ${function:Write-AuthWireStagingJournal}=$script:RefusalJournalWriter
  if($case -ceq 'ref_rollback'){[IO.File]::Delete($rfMode)}
 }
+

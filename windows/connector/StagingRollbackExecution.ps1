@@ -165,17 +165,26 @@ function Assert-AuthWireRollbackChildResult($Value,$State,$Launch,$Identity,$Com
     -not (Test-AuthWireWriteInteger $v.checked_at) -or $v.checked_at -lt $Launch.started_at -or $v.checked_at -gt $ObservedAt -or $v.checked_at -ge $s.Intent.expires_at -or
     $v.rolled_back -isnot [bool] -or -not $v.rolled_back -or $v.can_apply_gpo -isnot [bool] -or $v.can_apply_gpo){throw 'ROLLBACK_CHILD_RESULT_REJECTED'}
 }
-function Invoke-AuthWireAuthorizedFilesystemRollback([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
+function Invoke-AuthWireAuthorizedFilesystemRollback([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[switch]$ConsumeFirst){
  Assert-AuthWireStagingWriteJournalLocation $Root $Binding;Assert-AuthWireCandidateGuid $JobId
  $decision=Enter-AuthWireWriteOutcomeLock $JobId;$pins=$null;$gate=$null
  try{
   $job=Join-Path $Root $JobId
   if(Test-Path -LiteralPath (Join-Path $job 'rollback-result-outbox.json')){throw 'ROLLBACK_RESULT_ALREADY_FROZEN'}
   if(Test-Path -LiteralPath (Join-Path $job 'rollback-launch.json')){throw 'ROLLBACK_ALREADY_LAUNCHED_REQUIRES_REVIEW'}
-  $pins=New-AuthWireRollbackExecutionInputPins $Root $JobId $Binding $Release
-  $s=Read-AuthWireAuthorizedRollbackIntent $Root $JobId $Binding $Release $Key
+  if($ConsumeFirst){
+   # Obtain the state ONLY by performing real validation/one-use consumption
+   # here. The caller supplies no cached/forged context. Preserve those exact
+   # input handles until this execution (or any failure) has fully returned.
+   $context=New-AuthWireRollbackFilesystemIntent $Root $JobId $Binding $Release $Key -RetainExecutionInputs
+   $pins=$context.Inputs;$s=$context.State
+  }else{
+   # Separate/reloaded callers still perform the complete historical validation.
+   $pins=New-AuthWireRollbackExecutionInputPins $Root $JobId $Binding $Release
+   $s=Read-AuthWireAuthorizedRollbackIntent $Root $JobId $Binding $Release $Key
+  }
   $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();$clock=[Diagnostics.Stopwatch]::StartNew();$budget=[int][Math]::Min(15000,($s.Intent.expires_at-$now-2)*1000)
-  if($budget -lt 100){throw 'ROLLBACK_AUTHORIZATION_EXPIRED'}
+  if($budget -lt 100 -or $now -lt $s.Consumed.consumed_at){throw 'ROLLBACK_AUTHORIZATION_EXPIRED'}
   $name='Local\AuthWireRollback-'+([guid]$JobId).ToString('N')+'-'+[guid]::NewGuid().ToString('N');$acl=[Security.AccessControl.EventWaitHandleSecurity]::new()
   foreach($sid in @($Binding.service_sid,'S-1-5-18','S-1-5-32-544')){$acl.AddAccessRule([Security.AccessControl.EventWaitHandleAccessRule]::new([Security.Principal.SecurityIdentifier]::new($sid),[Security.AccessControl.EventWaitHandleRights]::FullControl,[Security.AccessControl.AccessControlType]::Allow))}
   $created=$false;$gate=[Threading.EventWaitHandle]::new($false,[Threading.EventResetMode]::AutoReset,$name,[ref]$created,$acl)
@@ -222,4 +231,5 @@ function Invoke-AuthWireAuthorizedFilesystemRollback([string]$Root,[string]$JobI
   }
  }finally{if($gate){$gate.Dispose()};Close-AuthWireRollbackExecutionInputPins $pins;$decision.ReleaseMutex();$decision.Dispose()}
 }
+
 
