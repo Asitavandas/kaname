@@ -1,0 +1,121 @@
+{
+  "schema": "authwire.g01.fresh-rollback-consumed-without-intent.v1",
+  "recorded_at": "2026-11-24T13:58:04.805Z",
+  "macro": {
+    "completed": 61,
+    "total": 94,
+    "open": 33,
+    "G01": "2/5"
+  },
+  "server": {
+    "status": "new_rollback_result_received",
+    "job_id": "5e20416c-b226-4fba-925d-27da63484158",
+    "stage_id": "e195a1c3-ce02-46bc-869a-6063bba14f9f",
+    "revision": 164,
+    "state": "requires_review",
+    "result": {
+      "journal_sha256": "",
+      "tree_sha256": "",
+      "reason": "OUTCOME_UNKNOWN",
+      "intent_sha256": "4070afa3883bd15cb5d9fc8a76c65e83b65bcfb0f372bb43800abd072691393d",
+      "job_id": "5e20416c-b226-4fba-925d-27da63484158",
+      "release_id": "5ef35333-e149-4f88-a364-32d37b4666ae",
+      "target_sha256": "5e935bd8ba04c45e80c9f8358ff66a32042d89fda819844e6eb7ed6b416ad411",
+      "filesystem_effects": "unconfirmed",
+      "checked_at": 1795528378,
+      "authorization_id": "7ce29f6bdae72491521c4b5d9fc5c714ea9379843395a3d161a83207c01ac8d4",
+      "outcome": "requires_review",
+      "lease_id": "085470f11f0ada53910a3ee39ec0c29ff7359859e484b1685746ea5dc17b06e1"
+    },
+    "original_jobs_preserved": true,
+    "gpo_applied": false,
+    "at": 1795528383,
+    "temporary_operator_profile_sessions_removed": true,
+    "timing": {
+      "created": 1795528257,
+      "deadline": 1795528557,
+      "lease_until": 1795528378,
+      "authorized_at": 1795528369,
+      "authorized_until": 1795528378
+    },
+    "result_sha256": "9598bee63bcc077a3dc6f961a0319adfaf0919f017af4fee8d22fa7debfbd16b"
+  },
+  "windows": {
+    "status": "post_attempt_readonly_evidence",
+    "job_id": "5e20416c-b226-4fba-925d-27da63484158",
+    "tree_sha256": "0978eb9c1ef8f1ca147df8729669ccabc9c123d2eff9d0329c36ea57bdc5c175",
+    "outside_baseline_sha256": "b694d3170907045f688ddb7490933815f29eeff21b4e682b795487233ffebec6",
+    "tree_rows": 23,
+    "staged_tree_unchanged": true,
+    "outside_unchanged": true,
+    "service_configuration_unchanged": true,
+    "original_journal": {
+      "engine_rollback_started": false,
+      "launch_present": false,
+      "entered_present": false,
+      "original_files": 839,
+      "at": 1795528407,
+      "scheduler": {
+        "WorkerPid": 5616,
+        "ServiceName": "AuthWireConnector-4c23eebe071546d188eea2e96ad7ee46",
+        "State": "stopped",
+        "StopReason": "lifecycle_requires_attention",
+        "LastPhase": "requires_review",
+        "Steps": 2,
+        "ReleaseId": "5ef35333-e149-4f88-a364-32d37b4666ae",
+        "Event": "WINDOWS_CONNECTOR_WRITE_SCHEDULER"
+      },
+      "intent_present": false,
+      "changed_original_files": 0
+    },
+    "new_job_files": [
+      "rollback-authorization.json",
+      "rollback-claim-proof.json",
+      "rollback-claim-sent.json",
+      "rollback-claim-started.json",
+      "rollback-grant-consumed.json",
+      "rollback-offer.json",
+      "rollback-preflight.json",
+      "rollback-reservation.json",
+      "rollback-result-accepted.json",
+      "rollback-result-attempt-1.json",
+      "rollback-result-outbox.json",
+      "rollback-result-proof-1.json"
+    ],
+    "at": 1795528537
+  },
+  "timing_analysis": {
+    "poll_at": 1795528288,
+    "offer_saved_at": 1795528354,
+    "preflight_saved_at": 1795528368,
+    "authorized_at": 1795528369,
+    "consumed_at": 1795528373,
+    "dispatch_failed_at": 1795528374,
+    "expires_at": 1795528378,
+    "poll_to_claim_seconds": 81,
+    "grant_remaining_at_issue_seconds": 9,
+    "grant_remaining_at_consumption_seconds": 5,
+    "exact_inner_error": "not retained by existing generic dispatch record; not yet proven"
+  },
+  "prior_completed_gate": "Existing 4845 retirement remains accepted at revision161; the distinct successor was actually created, leased, fully preflighted and separately authorized.",
+  "blocker": "New job 5e20416c consumed its grant but stopped before filesystem-intent creation. The result is frozen as requires_review/OUTCOME_UNKNOWN/unconfirmed at revision164; lifecycle slot000140 completed, permanent writer stopped with lifecycle_requires_attention. No replay.",
+  "next": [
+    "Add a bounded durable diagnostic for failure between grant-consumed and intent, without calling the expired write path.",
+    "Reduce redundant predecessor/history validation on the 90-second offer path while preserving signatures, live checks, native pins and all original deadlines.",
+    "Define and validate a distinct append-only consumed-without-intent disposition before any successor; existing intent-bearing retirement cannot apply to a missing intent.",
+    "Only after those gates: a separately approved fresh rollback; no stage/preview repetition."
+  ],
+  "must_not": [
+    "Do not recreate or re-execute job5e20416c, renew its expired consumed grant, remove reservations/GPO locks or relabel its original unknown result.",
+    "Do not repeat already successful EAP, renewal, stage or preview.",
+    "Do not claim actual rolled_back or G01 completion.",
+    "Do not restart the stopped writer or create a third rollback while this new unresolved predecessor is present."
+  ],
+  "evidence_paths": {
+    "linux": "/opt/authwire-g01-https-pilot/field-20261124-fresh-rollback-r161",
+    "windows": "C:\\ProgramData\\AuthWire-G01-FreshRollback-20261124-r161"
+  },
+  "code_changed": false,
+  "windows_release": "5ef35333-e149-4f88-a364-32d37b4666ae",
+  "report_version": 40
+}
