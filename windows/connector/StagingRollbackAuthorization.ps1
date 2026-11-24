@@ -98,6 +98,22 @@ function Assert-AuthWireRollbackPreflightAt($Value,$Saved,[hashtable]$Binding,[s
  foreach($n in @('read_only','requires_separate_claim')){if($v.$n -isnot [bool] -or -not $v.$n){throw 'ROLLBACK_PREFLIGHT_REJECTED'}}
  foreach($n in @('write_authorized','can_delete','can_apply_gpo')){if($v.$n -isnot [bool] -or $v.$n){throw 'ROLLBACK_PREFLIGHT_REJECTED'}}
 }
+function Get-AuthWireRollbackPreflightFailureCode($Result){
+ if($Result.TimedOut){return 'ROLLBACK_PREFLIGHT_TIMEOUT'}
+ if($Result.Truncated){return 'ROLLBACK_PREFLIGHT_OUTPUT_TRUNCATED'}
+ if($Result.ExitCode -eq 0){return ''}
+ # Keep only fixed entry-point phase/kind enums. Never persist raw child
+ # output, exception text, paths, credentials or caller-supplied strings.
+ if($Result.Output -is [string] -and $Result.Output.Length -le 512){try{
+  $v=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($Result.Output))
+  Assert-AuthWireCandidateFields $v @('error','phase','exception_kind')
+  if($v.error -ceq 'ROLLBACK_PREFLIGHT_FAILED' -and $v.phase -is [string] -and $v.phase -cin @('load','config','key','intent','modules') -and
+     $v.exception_kind -is [string] -and $v.exception_kind -cin @('other','io','security','timeout','runtime')){
+   return ('ROLLBACK_PREFLIGHT_CHILD_'+$v.phase.ToUpperInvariant()+'_'+$v.exception_kind.ToUpperInvariant())
+  }
+ }catch{}}
+ return 'ROLLBACK_PREFLIGHT_FAILED'
+}
 function Read-AuthWireRollbackPreflightProcess([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[long]$NotAfter=0){
  $saved=Read-AuthWireRollbackOffer $Root $JobId $Binding $Release
  Initialize-AuthWireScopeProcess
@@ -111,9 +127,9 @@ function Read-AuthWireRollbackPreflightProcess([string]$Root,[string]$JobId,[has
  $exe=Join-Path ([Environment]::GetFolderPath('Windows')) 'System32\WindowsPowerShell\v1.0\powershell.exe'
  $arguments='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned -File "'+$file+'" -JournalRoot "'+$Root.TrimEnd('\')+'" -JobId '+$JobId
  $r=[AuthWire.Connector.ScopeProcessV1]::Run($exe,$arguments,$budget)
- if($r.TimedOut){throw 'ROLLBACK_PREFLIGHT_TIMEOUT'}
- if($r.Truncated -or $r.ExitCode -ne 0){throw 'ROLLBACK_PREFLIGHT_FAILED'}
- $v=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($r.Output))
+ $failure=Get-AuthWireRollbackPreflightFailureCode $r
+ if($failure){throw $failure}
+ try{$v=ConvertFrom-AuthWireCandidateJson ([Text.UTF8Encoding]::new($false,$true).GetBytes($r.Output))}catch{throw 'ROLLBACK_PREFLIGHT_OUTPUT_INVALID'}
  Assert-AuthWireRollbackPreflightAt $v $saved $Binding $Release ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
  if($v.checked_at -lt $now){throw 'ROLLBACK_PREFLIGHT_REJECTED'}
  return $v

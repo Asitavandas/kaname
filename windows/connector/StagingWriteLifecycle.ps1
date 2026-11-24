@@ -100,11 +100,22 @@ function Test-AuthWireConsumptionDiagnostic($Code){
   'WRITE_AUTHORIZATION_EXPIRED','WRITE_PREFLIGHT_STALE','WRITE_PREFLIGHT_PATH_REJECTED',
   'WRITE_INTENT_USE_CLOCK_REJECTED','WRITE_INTENT_SCOPE_CHANGED','WRITE_CONSUMPTION_UNCLASSIFIED'))
 }
+function Test-AuthWireRollbackConsumptionDiagnostic($Code){
+ if($Code -isnot [string]){return $false}
+ if($Code -cin @('ROLLBACK_PREFLIGHT_TIMEOUT','ROLLBACK_PREFLIGHT_FAILED','ROLLBACK_PREFLIGHT_OUTPUT_TRUNCATED',
+  'ROLLBACK_PREFLIGHT_OUTPUT_INVALID','ROLLBACK_PREFLIGHT_REJECTED','ROLLBACK_PREFLIGHT_STALE',
+  'ROLLBACK_AUTHORIZATION_EXPIRED','WRITE_AUTHORIZATION_EXPIRED','ROLLBACK_INTENT_DEADLINE_OR_SCOPE_CHANGED',
+  'ROLLBACK_EXECUTION_HANDOFF_CHANGED','ROLLBACK_EXECUTION_REQUIRES_REVIEW','ROLLBACK_CONSUMPTION_UNCLASSIFIED')){return $true}
+ return ($Code -cmatch '\AROLLBACK_PREFLIGHT_CHILD_(LOAD|CONFIG|KEY|INTENT|MODULES)_(OTHER|IO|SECURITY|TIMEOUT|RUNTIME)\z')
+}
 function New-AuthWireLifecycleDispatchFailureRecord([string]$Operation,[string]$Phase,[string]$ErrorCode){
  $f=[ordered]@{format='AuthWireLifecycleDispatchFailedV1';phase=$Phase;reason='OUTCOME_REQUIRES_REVIEW';checked_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()}
  if($Operation -ceq 'combined.filesystem.stage.v1' -and $Phase -ceq 'consume'){
   $f.format='AuthWireLifecycleDispatchFailedV2'
   $f['diagnostic_code']=if(Test-AuthWireConsumptionDiagnostic $ErrorCode){$ErrorCode}else{'WRITE_CONSUMPTION_UNCLASSIFIED'}
+ }elseif($Operation -ceq 'combined.filesystem.rollback.v1' -and $Phase -ceq 'execute'){
+  $f.format='AuthWireLifecycleDispatchFailedV3'
+  $f['diagnostic_code']=if(Test-AuthWireRollbackConsumptionDiagnostic $ErrorCode){$ErrorCode}else{'ROLLBACK_CONSUMPTION_UNCLASSIFIED'}
  }
  return [pscustomobject]$f
 }
@@ -142,6 +153,10 @@ function Read-AuthWireLifecyclePoll([string]$Life,[string]$Slot,[hashtable]$Bind
     $fields+= 'diagnostic_code'
     if($r.reply.operation -cne 'combined.filesystem.stage.v1' -or $f.phase -cne 'consume' -or
        -not (Test-AuthWireConsumptionDiagnostic $f.diagnostic_code)){throw 'LIFECYCLE_DISPATCH_REJECTED'}
+   }elseif($f.format -ceq 'AuthWireLifecycleDispatchFailedV3'){
+    $fields+= 'diagnostic_code'
+    if($r.reply.operation -cne 'combined.filesystem.rollback.v1' -or $f.phase -cne 'execute' -or
+       -not (Test-AuthWireRollbackConsumptionDiagnostic $f.diagnostic_code)){throw 'LIFECYCLE_DISPATCH_REJECTED'}
    }elseif($f.format -cne 'AuthWireLifecycleDispatchFailedV1'){throw 'LIFECYCLE_DISPATCH_REJECTED'}
    Assert-AuthWireCandidateFields $f $fields
    if($f.phase -isnot [string] -or $f.phase -cnotin @('offer','preflight','claim','consume','execute') -or $f.reason -cne 'OUTCOME_REQUIRES_REVIEW' -or -not (Test-AuthWireWriteInteger $f.checked_at) -or $f.checked_at -lt $r.received_at -or $f.checked_at -gt [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()){throw 'LIFECYCLE_DISPATCH_REJECTED'}

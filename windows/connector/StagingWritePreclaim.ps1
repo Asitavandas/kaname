@@ -39,31 +39,99 @@ function Assert-AuthWireWriteNotRefused([string]$Root,[string]$JobId){
  if(Test-Path -LiteralPath (Join-Path (Join-Path $Root $JobId) 'refusal-outbox.json')){throw 'WRITE_REFUSAL_ALREADY_FROZEN'}
 }
 
-function ConvertTo-AuthWireWriteJson($Value,[bool]$Sort=$true,[int]$Depth=0){
- if($Depth -gt 12){throw 'WRITE_JSON_DEPTH'}
- if($null -eq $Value){return 'null'}
- if($Value -is [bool]){if($Value){return 'true'}else{return 'false'}}
- if($Value -is [string]){
-  if($Value -cmatch '[^\x20-\x7e]'){throw 'WRITE_ASCII_REQUIRED'}
-  return ('"'+$Value.Replace('\','\\').Replace('"','\"')+'"')
+function Initialize-AuthWireWriteJsonTypes {
+ if('AuthWire.Connector.WriteJsonV1' -as [type]){return}
+ Add-Type -ReferencedAssemblies @('System.dll','System.Core.dll',[Management.Automation.PSObject].Assembly.Location) -TypeDefinition @'
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Management.Automation;
+using System.Text;
+namespace AuthWire.Connector {
+public static class WriteJsonV1 {
+ static void Fail(string code){throw new InvalidOperationException(code);}
+ static object Unwrap(object value){
+  PSObject p=value as PSObject;
+  while(p!=null && !(p.BaseObject is PSCustomObject)){
+   object next=p.BaseObject;
+   if(Object.ReferenceEquals(value,next))break;
+   value=next;p=value as PSObject;
+  }
+  return value;
  }
- if($Value -is [int] -or $Value -is [long]){return $Value.ToString([Globalization.CultureInfo]::InvariantCulture)}
- if($Value -is [array]){
-  if($Value.Count -gt 64){throw 'WRITE_JSON_LIMIT'}
-  $parts=@(foreach($v in $Value){ConvertTo-AuthWireWriteJson $v $Sort ($Depth+1)})
-  return ('['+($parts -join ',')+']')
+ static void Text(StringBuilder s,string value){
+  s.Append('"');
+  foreach(char c in value){
+   if(c<0x20 || c>0x7e)Fail("WRITE_ASCII_REQUIRED");
+   if(c=='\\' || c=='"')s.Append('\\');
+   s.Append(c);
+  }
+  s.Append('"');
  }
- if($Value -is [Collections.IDictionary]){$names=[string[]]@($Value.Keys)}
- elseif($Value -is [pscustomobject]){$names=[string[]]@($Value.PSObject.Properties.Name)}
- else{throw 'WRITE_JSON_KIND'}
- if($names.Count -gt 40){throw 'WRITE_JSON_LIMIT'}
- if($Sort){[Array]::Sort($names,[StringComparer]::Ordinal)}
- $parts=@(foreach($n in $names){
-  $v=if($Value -is [Collections.IDictionary]){$Value[$n]}else{$Value.$n}
-  (ConvertTo-AuthWireWriteJson $n $false ($Depth+1))+':'+(ConvertTo-AuthWireWriteJson $v $Sort ($Depth+1))
- })
- return ('{'+($parts -join ',')+'}')
+ static object PropertyValue(object value){
+  // Match the original PowerShell "$v=if(...){property}" assignment:
+  // its pipeline unwraps empty/singleton property collections. Retaining
+  // these legacy bytes is required for existing hashes and signatures.
+  value=Unwrap(value);
+  IEnumerator e=LanguagePrimitives.GetEnumerator(value);
+  if(e==null)return value;
+  var items=new List<object>();
+  while(e.MoveNext())items.Add(e.Current);
+  if(items.Count==0)return null;
+  if(items.Count==1)return items[0];
+  return items.ToArray();
+ }
+ static void Append(StringBuilder s,object value,bool sort,int depth){
+  if(depth>12)Fail("WRITE_JSON_DEPTH");
+  value=Unwrap(value);
+  if(value==null){s.Append("null");return;}
+  if(value is bool){s.Append((bool)value?"true":"false");return;}
+  if(value is string){Text(s,(string)value);return;}
+  if(value is int || value is long){s.Append(((IFormattable)value).ToString(null,CultureInfo.InvariantCulture));return;}
+  Array a=value as Array;
+  if(a!=null){
+   if(a.Length>64)Fail("WRITE_JSON_LIMIT");
+   s.Append('[');bool first=true;
+   foreach(object item in a){if(!first)s.Append(',');first=false;Append(s,item,sort,depth+1);}
+   s.Append(']');return;
+  }
+  IDictionary dictionary=value as IDictionary;
+  PSObject custom=value as PSObject;
+  if(dictionary==null && (custom==null || !(custom.BaseObject is PSCustomObject)))Fail("WRITE_JSON_KIND");
+  var names=new List<string>();
+  if(dictionary!=null){foreach(object key in dictionary.Keys)names.Add(LanguagePrimitives.ConvertTo<string>(key));}
+  else{foreach(PSPropertyInfo property in custom.Properties)names.Add(property.Name);}
+  if(names.Count>40)Fail("WRITE_JSON_LIMIT");
+  if(sort)names.Sort(StringComparer.Ordinal);
+  s.Append('{');bool firstProperty=true;
+  foreach(string name in names){
+   if(!firstProperty)s.Append(',');firstProperty=false;
+   // Property names obey the SAME depth/ASCII rule as value strings.
+   Append(s,name,false,depth+1);s.Append(':');
+   Append(s,PropertyValue(dictionary!=null?dictionary[name]:custom.Properties[name].Value),sort,depth+1);
+  }
+  s.Append('}');
+ }
+ public static string Encode(object value,bool sort,int depth){
+  var s=new StringBuilder();Append(s,value,sort,depth);return s.ToString();
+ }
 }
+}
+'@
+}
+function ConvertTo-AuthWireWriteJson($Value,[bool]$Sort=$true,[int]$Depth=0){
+ # This is only an encoder: no parsed-record cache, saved validation state,
+ # signature bypass or timestamp/authority change. Every caller still checks
+ # the same original bytes, chain, live observations and native input pins.
+ Initialize-AuthWireWriteJsonTypes
+ try{return [AuthWire.Connector.WriteJsonV1]::Encode($Value,$Sort,$Depth)}catch{
+  $code=$_.Exception.GetBaseException().Message
+  if($code -cin @('WRITE_JSON_DEPTH','WRITE_ASCII_REQUIRED','WRITE_JSON_LIMIT','WRITE_JSON_KIND')){throw $code}
+  throw 'WRITE_JSON_KIND'
+ }
+}
+
 function Get-AuthWireWriteHash($Value){
  return (Get-AuthWireJobHash ([Text.Encoding]::ASCII.GetBytes((ConvertTo-AuthWireWriteJson $Value))))
 }
@@ -308,3 +376,4 @@ function New-AuthWireStagingWriteClaim([string]$JournalRoot,[string]$JobId,[hash
   return $proof
  }finally{$pin.Dispose();$decision.ReleaseMutex();$decision.Dispose()}
 }
+
