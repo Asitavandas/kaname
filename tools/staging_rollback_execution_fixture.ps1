@@ -36,6 +36,7 @@ function Initialize-AuthWireStageProcess {
  }
  & $rxOriginalProcessInit
 }
+$rxOriginalRemainingMs=[long][Math]::Max(0,($rxReceipt.grant.expires_at-[DateTimeOffset]::UtcNow.ToUnixTimeSeconds())*1000)
 $rxWatch=[Diagnostics.Stopwatch]::StartNew();$rxError='';$rxResult=$null
 try{$rxResult=Invoke-AuthWireAuthorizedFilesystemRollback $rbRoot $rbId $b $release $rsa -ConsumeFirst}catch{$rxError=$_.Exception.Message}
 finally{
@@ -63,7 +64,12 @@ if($rxSuccess){
  if($case -cne 'rb_execute_launch_disk'){
   $rxReview=Read-AuthWireStagingJournal (Join-Path $rbJob 'rollback-execution-requires-review.json')
   Check ($rxReview.format -ceq 'AuthWireRollbackReviewV1' -and ($rxReview.diagnostic|ConvertTo-Json -Compress).Length -lt 512) 'bounded safe review diagnostic retained'
-  if($case -ceq 'rb_execute_timeout'){Check ($rxReview.diagnostic.timed_out -and $rxWatch.Elapsed.TotalSeconds -lt 23) 'kill-on-close child writer obeys original bounded process budget'}
+  if($case -ceq 'rb_execute_timeout'){
+   # The watch now includes consumption as well as execution. Bound the child
+   # by its unchanged <=15s launch budget, and the combined call by the actual
+   # ORIGINAL remaining grant, allowing only bounded process teardown overhead.
+   Check ($rxReview.diagnostic.timed_out -and $rxReview.diagnostic.work_budget_ms -le 15000 -and $rxReview.diagnostic.elapsed_ms -le $rxReview.diagnostic.work_budget_ms+1000 -and $rxWatch.ElapsedMilliseconds -lt $rxOriginalRemainingMs+2000) 'kill-on-close child and combined consumption obey unchanged original grant budgets'
+  }
   if($case -ceq 'rb_execute_drift'){Check ($rxReview.diagnostic.child_phase -ceq 'context') 'fresh PDC drift refused before rollback engine'}
   if($case -ceq 'rb_execute_parent_drift'){Check ($rxReview.diagnostic.parent_phase -ceq 'completion') 'parent independently refuses foreign post-child baseline change'}
  }
