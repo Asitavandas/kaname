@@ -233,7 +233,7 @@ function Read-AuthWireRollbackAuthorizationEvidence([string]$Root,[string]$JobId
  }finally{$timePin.Dispose()}
 }
 
-function New-AuthWireRollbackFilesystemIntent([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key){
+function New-AuthWireRollbackFilesystemIntent([string]$Root,[string]$JobId,[hashtable]$Binding,[string]$Release,[Security.Cryptography.RSACng]$Key,[switch]$RetainExecutionInputs){
  Assert-AuthWireStagingWriteJournalLocation $Root $Binding;Assert-AuthWireCandidateGuid $JobId
  $lock=Enter-AuthWireWriteOutcomeLock $JobId;$p=$null
  try{
@@ -262,6 +262,26 @@ function New-AuthWireRollbackFilesystemIntent([string]$Root,[string]$JobId,[hash
   Write-AuthWireStagingJournal (Join-Path $job 'rollback-filesystem-intent.json') $i
   $after=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
   if($after -lt $now -or $after -ge $expiry -or $clock.ElapsedMilliseconds -ge ($expiry-$now)*1000){throw 'ROLLBACK_AUTHORIZATION_EXPIRED'}
+  if($RetainExecutionInputs){
+   # Transfer this invocation's fully verified authority and STILL HELD native
+   # inputs to its immediate parent executor. No state is accepted from JSON,
+   # serialized as a cache, or reused after these handles are closed. The child
+   # independently validates the complete chain and its fresh live observations.
+   foreach($entry in @(
+    [pscustomobject]@{Name='rollback-grant-consumed.json';Value=$c},
+    [pscustomobject]@{Name='rollback-consumption-preflight.json';Value=$live},
+    [pscustomobject]@{Name='rollback-filesystem-intent.json';Value=$i}
+   )){
+    $file=Join-Path $job $entry.Name;$p.Inputs.PinFile($file)
+    if((Get-AuthWireWriteHash (Read-AuthWireStagingJournal $file)) -cne (Get-AuthWireWriteHash $entry.Value)){throw 'ROLLBACK_EXECUTION_HANDOFF_CHANGED'}
+   }
+   $after=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+   if($after -lt $now -or $after -ge $expiry -or $clock.ElapsedMilliseconds -ge ($expiry-$now)*1000){throw 'ROLLBACK_AUTHORIZATION_EXPIRED'}
+   $context=[pscustomobject]@{Inputs=$p;State=[pscustomobject]@{Authorization=$a;Consumed=$c;Intent=$i;IntentSha256=(Get-AuthWireWriteHash $i);ConsumptionPreflight=$live}}
+   $p=$null # The immediate caller now owns BOTH leases, including failure paths.
+   return $context
+  }
   return [pscustomobject]@{JobId=$JobId;Phase='rollback_intent_recorded';GrantConsumed=$true;FilesystemIntentSha256=(Get-AuthWireWriteHash $i);StageOperationId=$c.stage_operation_id;CanDelete=$false;CanApplyGpo=$false;RollbackExecuted=$false}
  }finally{if($p){$p.Origin.Dispose();$p.Inputs.Dispose()};$lock.ReleaseMutex();$lock.Dispose()}
 }
+

@@ -348,8 +348,9 @@ function Invoke-AuthWireStagingWriteLifecycleStep([string]$Root,[hashtable]$Bind
     $null=Save-AuthWireRollbackOffer $o $Binding $Release $Key $o.request_id
     $phase='preflight';$null=Invoke-AuthWireRollbackPreflight $Root $o.job_id $Binding $Release
     $phase='claim';$null=New-AuthWireRollbackClaim $Root $o.job_id $Binding $Release $Key;$null=Invoke-AuthWireRollbackClaimTransport $Root $o.job_id $Binding $Release $Key $BaseUrl
-    $phase='consume';$null=New-AuthWireRollbackFilesystemIntent $Root $o.job_id $Binding $Release $Key
-    $phase='execute';$null=Invoke-AuthWireAuthorizedFilesystemRollback $Root $o.job_id $Binding $Release $Key
+    # Consumption and launch share the original still-open verified inputs.
+    # The independently authenticated child and all original deadlines remain.
+    $phase='execute';$null=Invoke-AuthWireAuthorizedFilesystemRollback $Root $o.job_id $Binding $Release $Key -ConsumeFirst
    }
   }catch [Management.Automation.PipelineStoppedException]{throw}catch{
    $failure=New-AuthWireLifecycleDispatchFailureRecord $o.operation $phase $_.Exception.Message
@@ -363,3 +364,4 @@ function Invoke-AuthWireStagingWriteLifecycleStep([string]$Root,[hashtable]$Bind
   return (Resume-AuthWireLifecycleResult $Root $life $s $Binding $Key $BaseUrl)
  }finally{$p.Dispose();$lock.ReleaseMutex();$lock.Dispose()}
 }
+

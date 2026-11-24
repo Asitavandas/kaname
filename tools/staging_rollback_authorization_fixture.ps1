@@ -71,7 +71,7 @@ try{
    }
    if($case -ceq 'rollback_expired'){Start-Sleep -Seconds 31}
    $rbUseFailure='';$rbUse=$null
-   try{$rbUse=New-AuthWireRollbackFilesystemIntent $rbRoot $rbId $b $release $rsa}catch{$rbUseFailure=$_.Exception.Message}
+   if(-not $rollbackExecutionMode){try{$rbUse=New-AuthWireRollbackFilesystemIntent $rbRoot $rbId $b $release $rsa}catch{$rbUseFailure=$_.Exception.Message}}
    if($rollbackExecutionMode){
     if($rbUseFailure){throw $rbUseFailure}
     . (Join-Path $PSScriptRoot 'staging_rollback_execution_fixture.ps1')
@@ -109,4 +109,5 @@ try{
  if(-not $rollbackExecutionMode){Check (-not (Test-Path -LiteralPath (Join-Path $rbEngine 'rollback-started.json'))) 'no rollback engine or cleanup invoked'}
  Write-Host ('ROLLBACK_AUTHORIZATION_CASE_OK case='+$case+' control_ms='+$rbWatch.ElapsedMilliseconds+' original_stage_preserved=true files_deleted=false')
 }finally{[IO.File]::Delete($rbModePath)}
+
 
