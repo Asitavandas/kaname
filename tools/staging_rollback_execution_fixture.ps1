@@ -2,7 +2,6 @@
 # parent performs one-use consumption and execution with continuous input pins.
 $rxReceipt=Read-AuthWireStagingJournal (Join-Path $rbJob 'rollback-authorization.json')
 $fixture.rollback_expires_at=$rxReceipt.grant.expires_at
-if($case -ceq 'rb_execute_drift'){$fixture.rollback_drift=$true}
 [IO.File]::WriteAllText((Join-Path $package 'fixture.json'),($fixture|ConvertTo-Json -Depth 12 -Compress))
 # Count only this parent's full authority traversals. The independently signed
 # child loads its own original module, so this cannot stub its validation.
@@ -20,6 +19,12 @@ function Initialize-AuthWireStageProcess {
  catch [IO.IOException]{$script:RollbackHandoffPinsHeld=$true}
  finally{if($stream){$stream.Dispose()}}
  if(-not $script:RollbackHandoffPinsHeld){throw 'FIXTURE_HANDOFF_INPUTS_NOT_PINNED'}
+ # This case changes AD only AFTER consumption has obtained its fresh witness.
+ # Otherwise it tests consumption rejection, never the independent child check.
+ if($case -ceq 'rb_execute_drift'){
+  $fixture.rollback_drift=$true
+  [IO.File]::WriteAllText((Join-Path $package 'fixture.json'),($fixture|ConvertTo-Json -Depth 12 -Compress))
+ }
  & $rxOriginalProcessInit
 }
 $rxWatch=[Diagnostics.Stopwatch]::StartNew();$rxError='';$rxResult=$null
