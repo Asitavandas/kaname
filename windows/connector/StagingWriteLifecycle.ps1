@@ -232,11 +232,12 @@ function Assert-AuthWireLifecycleRootEntries([string]$Root,$Baseline,[object[]]$
   foreach($id in $engines.Keys){$dir=Join-Path $Root $id;if(-not (Test-Path -LiteralPath $dir)){continue};foreach($i in Get-ChildItem -LiteralPath $dir -Force){if($i.PSIsContainer -or $i.Name -cnotin @('intent.json','complete.json','rollback-started.json','rolled-back.json') -or ($i.Name -cin @('rollback-started.json','rolled-back.json') -and -not $rollbackEngines.ContainsKey($id))){throw 'LIFECYCLE_UNKNOWN_ENGINE_RECORD'};$p.PinFile($i.FullName)}}
  }finally{$p.Dispose()}
 }
-function Get-AuthWireLifecycleOutcomeEvidence([string]$Root,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key){
+function Get-AuthWireLifecycleOutcomeEvidence([string]$Root,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[string]$Life=''){
  $o=$State.Offer;$release=$State.Started.release_id;$rollback=$o.operation -ceq 'combined.filesystem.rollback.v1'
  if(Test-Path -LiteralPath (Join-Path (Join-Path $Root $o.job_id) 'refusal-outbox.json')){
-  $life=Get-AuthWireWriteLifecyclePath $Root $Binding
-  $box=Read-AuthWireWriteRefusalOutbox $Root $life $State $Binding $Key
+  $active=Get-AuthWireWriteLifecyclePath $Root $Binding
+  if($Life -ceq ''){$Life=$active}
+  $box=Read-AuthWireWriteRefusalOutbox $Root $Life $State $Binding $Key ($Life -cne $active)
   $ack=Read-AuthWireWriteRefusalAccepted $Root $State $box
   return [pscustomobject]@{Outcome=$box.body.outcome;BodySha256=$box.body_sha256;AckSha256=(Get-AuthWireWriteHash $ack)}
  }
@@ -255,7 +256,7 @@ function Get-AuthWireLifecycleOutcomeEvidence([string]$Root,$State,[hashtable]$B
 }
 function Complete-AuthWireLifecycleCycle([string]$Root,[string]$Life,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key){
  $o=$State.Offer;$body='';$ack='';$outcome='no_job'
- if($o.job_id -cne ''){$e=Get-AuthWireLifecycleOutcomeEvidence $Root $State $Binding $Key;$outcome=$e.Outcome;$body=$e.BodySha256;$ack=$e.AckSha256}
+ if($o.job_id -cne ''){$e=Get-AuthWireLifecycleOutcomeEvidence $Root $State $Binding $Key $Life;$outcome=$e.Outcome;$body=$e.BodySha256;$ack=$e.AckSha256}
  $v=[pscustomobject]@{format='AuthWireLifecycleCompletionV1';slot=$State.Slot;operation=$o.operation;job_id=$o.job_id;offer_sha256=(Get-AuthWireWriteHash $o);response_sha256=(Get-AuthWireWriteHash $State.Response);outcome=$outcome;result_body_sha256=$body;ack_sha256=$ack;completed_at=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()}
  Write-AuthWireStagingJournal (Join-Path (Join-Path $Life $State.Slot) 'completion.json') $v
  return $v
@@ -270,7 +271,7 @@ function Read-AuthWireLifecycleCompletion([string]$Root,[string]$Life,$State,[ha
   if($v.format -cne 'AuthWireLifecycleCompletionV1' -or $v.slot -cne $State.Slot -or $v.operation -cne $o.operation -or $v.job_id -cne $o.job_id -or $v.offer_sha256 -cne (Get-AuthWireWriteHash $o) -or $v.response_sha256 -cne (Get-AuthWireWriteHash $State.Response) -or
      -not (Test-AuthWireWriteInteger $v.completed_at) -or $v.completed_at -lt $State.Response.received_at -or $v.completed_at -gt [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()){throw 'LIFECYCLE_COMPLETION_REJECTED'}
   if($o.job_id -ceq ''){if($v.outcome -cne 'no_job' -or $v.result_body_sha256 -cne '' -or $v.ack_sha256 -cne ''){throw 'LIFECYCLE_COMPLETION_REJECTED'}}
-  else{$e=Get-AuthWireLifecycleOutcomeEvidence $Root $State $Binding $Key;if($v.outcome -cne $e.Outcome -or $v.result_body_sha256 -cne $e.BodySha256 -or $v.ack_sha256 -cne $e.AckSha256){throw 'LIFECYCLE_COMPLETION_REJECTED'}}
+  else{$e=Get-AuthWireLifecycleOutcomeEvidence $Root $State $Binding $Key $Life;if($v.outcome -cne $e.Outcome -or $v.result_body_sha256 -cne $e.BodySha256 -or $v.ack_sha256 -cne $e.AckSha256){throw 'LIFECYCLE_COMPLETION_REJECTED'}}
   if($o.job_id -cne ''){Assert-AuthWireLifecycleDispatch $Life $State}
   return $v
  }finally{$p.Dispose()}

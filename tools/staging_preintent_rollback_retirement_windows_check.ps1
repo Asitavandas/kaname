@@ -80,6 +80,7 @@ try{
  $frozen=@{};foreach($f in @(Get-ChildItem $root -Recurse -File)){$frozen[$f.FullName]=[IO.File]::ReadAllBytes($f.FullName)}
  $closed=Complete-AuthWirePreIntentRollbackRetirement $root $jobId $b $rsa 'https://fixture/' $review $ack $session $csrf $word
  Check (Test-AuthWirePreIntentRollbackRetired $root $life $state $b $rsa) 'separate paired CNG closure validates historical originals'
+ Check (Test-AuthWireHistoryAcceptedOutcome $root $life $state ([pscustomobject]@{outcome='requires_review'}) $b $rsa) 'complete exact signed retirement is eligible for both active and archived history'
  Check ($closed.Body.original_unknown_result_preserved -and $closed.Body.filesystem_intent_absent -and -not $closed.Body.authority_renewed) 'unknown result and consumed grant stay unchanged'
  foreach($f in $frozen.Keys){Check ([Convert]::ToBase64String([IO.File]::ReadAllBytes($f)) -ceq [Convert]::ToBase64String($frozen[$f])) 'original record bytes unchanged'}
  $calls=$script:calls;Reject {Complete-AuthWirePreIntentRollbackRetirement $root $jobId $b $rsa 'https://fixture/' $review $ack $session $csrf $word} 'closure never replays';Check ($calls -eq $script:calls) 'replay refused before HTTP'
@@ -92,3 +93,4 @@ try{
 }finally{
  if($rsa){$rsa.Dispose()};if($key){$key.Delete();$key.Dispose()};foreach($p in @($root,$gpo)){if(Test-Path $p){Remove-Item $p -Recurse -Force}}
 }
+

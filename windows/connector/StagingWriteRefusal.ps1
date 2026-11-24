@@ -3,9 +3,18 @@
 # an already frozen body; missing/partial evidence requires reconciliation.
 Set-StrictMode -Version 2
 
-function New-AuthWireWriteRefusalInputPins([string]$Root,[string]$Life,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key){
+function New-AuthWireWriteRefusalInputPins([string]$Root,[string]$Life,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[bool]$Historical=$false){
  Assert-AuthWireStagingWriteJournalLocation $Root $Binding
- if($Life -cne (Get-AuthWireWriteLifecyclePath $Root $Binding)){throw 'WRITE_REFUSAL_ROOT_REJECTED'}
+ $active=Get-AuthWireWriteLifecyclePath $Root $Binding
+ if($Life -cne $active){
+  # Historical reads may follow only the canonical bounded archive location.
+  # Creating/sending a refusal still requires the active lifecycle path.
+  $parent=Split-Path $Life -Parent;$index=Split-Path $parent -Leaf
+  $expected=Join-Path (Join-Path (Join-Path $active 'history-archives') $index) 'cycles'
+  if(-not $Historical -or $index -cnotmatch '\A00000[1-8]\z' -or $Life -cne $expected -or $State.Slot -cnotmatch '\A[0-9]{6}\z' -or
+     [int]$State.Slot -lt (([int]$index-1)*64+1) -or [int]$State.Slot -gt ([int]$index*64)){throw 'WRITE_REFUSAL_ROOT_REJECTED'}
+  if(-not (Test-Path -LiteralPath (Join-Path (Join-Path $Life $State.Slot) 'completion.json'))){throw 'WRITE_REFUSAL_ARCHIVE_INCOMPLETE'}
+ }
  $p=[AuthWire.Staging.TreeLeaseV1]::new()
  try{
   $p.PinAncestors($Root);$dir=Join-Path $Life $State.Slot;$p.PinAncestors($dir)
@@ -36,8 +45,8 @@ function New-AuthWireWriteRefusalInputPins([string]$Root,[string]$Life,$State,[h
   return $p
  }catch{$p.Dispose();throw}
 }
-function Read-AuthWireWriteRefusalOutbox([string]$Root,[string]$Life,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key){
- $p=New-AuthWireWriteRefusalInputPins $Root $Life $State $Binding $Key
+function Read-AuthWireWriteRefusalOutbox([string]$Root,[string]$Life,$State,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key,[bool]$Historical=$false){
+ $p=New-AuthWireWriteRefusalInputPins $Root $Life $State $Binding $Key $Historical
  try{
   $o=$State.Offer;$dir=Join-Path $Life $State.Slot;$file=Join-Path (Join-Path $Root $o.job_id) 'refusal-outbox.json';$p.PinFile($file)
   $v=Read-AuthWireStagingJournal $file;$f=Read-AuthWireStagingJournal (Join-Path $dir 'dispatch-failed.json')
@@ -109,3 +118,4 @@ function Send-AuthWireWriteRefusal([string]$Root,[string]$Life,$State,[hashtable
   Write-AuthWireStagingJournal (Join-Path $job 'refusal-accepted.json') ([pscustomobject]@{format='AuthWireWriteRefusalAcceptedV1';job_id=$State.Offer.job_id;body_sha256=$box.body_sha256;request_id=$request;ack=$ack})
  }finally{if($p){$p.Dispose()};$decision.ReleaseMutex();$decision.Dispose()}
 }
+

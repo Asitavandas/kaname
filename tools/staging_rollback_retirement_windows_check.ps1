@@ -76,6 +76,7 @@ try{
  }
  $complete=Complete-AuthWireRefusedRollbackRetirement $root $jobId $b $rsa 'https://fixture.example/' $review.Proof $review.ProofSha256 $ack $session $csrf 'retire_refused_rollback_without_replay'
  Check (Test-AuthWireRefusedRollbackRetired $root $life $oldState $b $rsa) 'signed append-only completion validates'
+ Check (Test-AuthWireHistoryAcceptedOutcome $root $life $oldState ([pscustomobject]@{outcome='refused_before_authorization'}) $b $rsa) 'complete exact signed retirement is eligible for both active and archived history'
  Check ($complete.Body.original_reservation_retained -and $complete.Body.gpo_lock_retained -and -not $complete.Body.authority_renewed -and -not $complete.Body.can_delete) 'completion retains immutable records and grants no authority'
  foreach($f in $original.Keys){Check ([Convert]::ToBase64String([IO.File]::ReadAllBytes($f)) -ceq [Convert]::ToBase64String($original[$f])) 'original reservation GPO lock and refusal bytes unchanged'}
  $calls=$script:ackCalls
@@ -101,3 +102,4 @@ try{
  if($wrongRsa){$wrongRsa.Dispose()};if($wrong){$wrong.Delete();$wrong.Dispose()};if($rsa){$rsa.Dispose()};if($key){$key.Delete();$key.Dispose()}
  if(Test-Path -LiteralPath $root){Remove-Item -LiteralPath $root -Recurse -Force}
 }
+

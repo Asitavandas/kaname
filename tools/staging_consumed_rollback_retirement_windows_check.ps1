@@ -95,6 +95,7 @@ try{
  $frozen=@{};foreach($f in @(Get-ChildItem $job -File)+@(Get-Item $anchor,$gpoLock)){$frozen[$f.FullName]=[IO.File]::ReadAllBytes($f.FullName)}
  $closed=Complete-AuthWireConsumedRollbackRetirement $root $jobId $b $rsa 'https://fixture.example/' $review $ack $session $csrf $ackWord
  Check (Test-AuthWireConsumedRollbackRetired $root $life $state $b $rsa) 'distinct signed append-only completion validates'
+ Check (Test-AuthWireHistoryAcceptedOutcome $root $life $state ([pscustomobject]@{outcome='requires_review'}) $b $rsa) 'complete exact signed retirement is eligible for both active and archived history'
  Check ($closed.Body.original_unknown_result_preserved -and $closed.Body.original_reservation_retained -and $closed.Body.gpo_lock_retained -and -not $closed.Body.authority_renewed -and -not $closed.Body.can_delete) 'completion preserves result reservation lock and expired authority'
  foreach($f in $frozen.Keys){Check ([Convert]::ToBase64String([IO.File]::ReadAllBytes($f)) -ceq [Convert]::ToBase64String($frozen[$f])) 'original journal and reservation bytes retained'}
  $calls=$script:ackCalls;Reject {Complete-AuthWireConsumedRollbackRetirement $root $jobId $b $rsa 'https://fixture.example/' $review $ack $session $csrf $ackWord} 'closure never replays';Check ($calls -eq $script:ackCalls) 'replay refused before HTTP'
@@ -115,3 +116,4 @@ try{
  if($wrongRsa){$wrongRsa.Dispose()};if($wrong){$wrong.Delete();$wrong.Dispose()};if($rsa){$rsa.Dispose()};if($key){$key.Delete();$key.Dispose()}
  foreach($p in @($root,$gpo)){if(Test-Path -LiteralPath $p){Remove-Item -LiteralPath $p -Recurse -Force}}
 }
+

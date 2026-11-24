@@ -148,6 +148,19 @@ function Get-AuthWireHistoryCycleRows($Lease){
 function Get-AuthWireHistoryArchiveFrame($Body){
  return [Text.Encoding]::ASCII.GetBytes(("AUTHWIRE-WRITE-HISTORY-ARCHIVE-V1`n"+(ConvertTo-AuthWireWriteJson $Body)+"`n"))
 }
+# Shared active/archive eligibility: uncertain results require their exact
+# complete, independently signed closure; their original outcome stays unknown.
+function Test-AuthWireHistoryAcceptedOutcome([string]$Root,[string]$Life,$State,$Completion,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key){
+ if($Completion.outcome -cin @('no_job','staged','rolled_back')){return $true}
+ if($Completion.outcome -ceq 'refused_before_authorization'){return (Test-AuthWireRefusedRollbackRetired $Root $Life $State $Binding $Key)}
+ if($Completion.outcome -ceq 'requires_review'){
+  if(Test-AuthWireConsumedStageClosed $Root $Life $State $Binding $Key){return $true}
+  if(Test-AuthWireConsumedRollbackRetired $Root $Life $State $Binding $Key){return $true}
+  return (Test-AuthWirePreIntentRollbackRetired $Root $Life $State $Binding $Key)
+ }
+ return $false
+}
+
 function Read-AuthWireHistoryArchives([string]$Root,[string]$Life,$Baseline,[hashtable]$Binding,[Security.Cryptography.RSACng]$Key){
  $area=Join-Path $Life 'history-archives';$states=@();$through=0;$head='';$count=0
  if(-not (Test-Path -LiteralPath $area)){return [pscustomobject]@{States=$states;Through=$through;Head=$head;Count=$count}}
@@ -206,9 +219,7 @@ function Read-AuthWireHistoryArchives([string]$Root,[string]$Life,$Baseline,[has
     $s=Read-AuthWireLifecyclePoll $cycles $slot $Binding $Key
     if($s.Phase -cne 'reply_saved'){throw 'HISTORY_ARCHIVE_INCOMPLETE_CYCLE'}
     $done=Read-AuthWireLifecycleCompletion $Root $cycles $s $Binding $Key
-    $safe=$done.outcome -cin @('no_job','staged','rolled_back')
-    if(-not $safe -and $done.outcome -ceq 'requires_review'){$safe=Test-AuthWireConsumedStageClosed $Root $cycles $s $Binding $Key}
-    if(-not $safe -and $done.outcome -ceq 'refused_before_authorization'){$safe=Test-AuthWireRefusedRollbackRetired $Root $cycles $s $Binding $Key}
+    $safe=Test-AuthWireHistoryAcceptedOutcome $Root $cycles $s $done $Binding $Key
     if(-not $safe -or $done.completed_at -gt $a.created_at){throw 'HISTORY_ARCHIVE_INCOMPLETE_CYCLE'}
     $states+=,$s
    }
@@ -270,9 +281,7 @@ function New-AuthWireHistoryReviewState([string]$Root,[hashtable]$Binding,[Secur
    $s=$h.ActiveStates[$j]
    if($s.Phase -cne 'reply_saved' -or -not (Test-Path -LiteralPath (Join-Path (Join-Path $h.Life $s.Slot) 'completion.json'))){$eligible=$false;$reason='pending_cycle';if($j -ne $h.ActiveStates.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'};continue}
    $done=Read-AuthWireLifecycleCompletion $Root $h.Life $s $Binding $Key
-   $safe=$done.outcome -cin @('no_job','staged','rolled_back')
-   if(-not $safe -and $done.outcome -ceq 'requires_review'){$safe=Test-AuthWireConsumedStageClosed $Root $h.Life $s $Binding $Key}
-   if(-not $safe -and $done.outcome -ceq 'refused_before_authorization'){$safe=Test-AuthWireRefusedRollbackRetired $Root $h.Life $s $Binding $Key}
+   $safe=Test-AuthWireHistoryAcceptedOutcome $Root $h.Life $s $done $Binding $Key
    if(-not $safe){$eligible=$false;$reason='review_barrier';if($j -ne $h.ActiveStates.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'}}
   }
   if($h.ArchiveCount -ge 8){$eligible=$false;$reason='archive_quota'}
@@ -799,6 +808,7 @@ function Get-AuthWireWriteReconciliationReview([string]$Root,[hashtable]$Binding
     }
     if($done.outcome -ceq 'refused_before_authorization' -and (Test-AuthWireRefusedRollbackRetired $Root $h.Life $state $Binding $Key)){$review.Phase='refused_rollback_retired_reservation_retained';continue}
     if($done.outcome -ceq 'requires_review' -and (Test-AuthWireConsumedRollbackRetired $Root $h.Life $state $Binding $Key)){$review.Phase='consumed_rollback_retired_unknown_result_preserved';continue}
+    if($done.outcome -ceq 'requires_review' -and (Test-AuthWirePreIntentRollbackRetired $Root $h.Life $state $Binding $Key)){$review.Phase='preintent_rollback_retired_unknown_result_preserved';continue}
     if($done.outcome -ceq 'requires_review'){$review.StageConsumption=Get-AuthWireStageRecoveryClassification $Root $dir $state $Binding $Key}
     if($done.outcome -cin @('requires_review','refused_before_authorization') -and $i -ne $h.ActiveStates.Count-1){throw 'LIFECYCLE_PENDING_HISTORY_GAP'}
     continue
@@ -934,7 +944,7 @@ function Get-AuthWireRollbackRetirementState([string]$Root,[string]$JobId,[hasht
  if($done.outcome -cne 'refused_before_authorization'){throw 'ROLLBACK_RETIRE_NOT_REFUSED_ROLLBACK'}
  # These readers verify the signed POLL/offer, strict no-CLAIM allow-list,
  # failure record, frozen refusal and exact accepted server ACK/completion.
- $box=Read-AuthWireWriteRefusalOutbox $Root $life $state $Binding $Key
+ $box=Read-AuthWireWriteRefusalOutbox $Root $life $state $Binding $Key ($life -cne (Get-AuthWireWriteLifecyclePath $Root $Binding))
  $ack=Read-AuthWireWriteRefusalAccepted $Root $state $box
  if($box.body.authorization_id -cne '' -or $box.body.filesystem_effects -cne 'none' -or $box.body.reason -cne 'PREFLIGHT_FAILED'){throw 'ROLLBACK_RETIRE_AUTHORITY_OR_EFFECTS'}
  $saved=Read-AuthWireRollbackOfferAt $Root $JobId $Binding $state.Started.release_id $state.Response.received_at
@@ -1133,7 +1143,7 @@ function Get-AuthWireConsumedRollbackRetirementState([string]$Root,[string]$JobI
  foreach($dir in @((Join-Path $Root $origin.StageJobId),(Join-Path $Root $origin.FilesystemOperationId))){$Pins.PinAncestors($dir);foreach($f in Get-ChildItem -LiteralPath $dir -File){$Pins.PinFile($f.FullName)}}
  $box=Read-AuthWireRollbackResultOutbox $Root $JobId $Binding $state.Started.release_id $Key
  if($box.body.outcome -cne 'requires_review' -or $box.body.reason -cne 'OUTCOME_UNKNOWN' -or $box.body.filesystem_effects -cne 'unconfirmed' -or $box.body.authorization_id -ceq ''){throw 'ROLLBACK_CONSUMED_RESULT_REJECTED'}
- $accepted=Get-AuthWireLifecycleOutcomeEvidence $Root $state $Binding $Key
+ $accepted=Get-AuthWireLifecycleOutcomeEvidence $Root $state $Binding $Key $life
  if($accepted.Outcome -cne 'requires_review' -or $accepted.BodySha256 -cne $box.body_sha256){throw 'ROLLBACK_CONSUMED_ACK_REJECTED'}
  $launch=Read-AuthWireRollbackLaunch $Root $JobId $original
  $child=Read-AuthWireRollbackChildIdentity $Root $JobId $launch
@@ -1260,7 +1270,7 @@ function Get-AuthWirePreIntentRollbackState([string]$Root,[string]$JobId,[hashta
  foreach($dir in @((Join-Path $Root $origin.StageJobId),(Join-Path $Root $origin.FilesystemOperationId))){$Pins.PinAncestors($dir);foreach($f in Get-ChildItem -LiteralPath $dir -File){$Pins.PinFile($f.FullName)}}
  $box=Read-AuthWireRollbackResultOutbox $Root $JobId $Binding $state.Started.release_id $Key
  if($box.body.outcome -cne 'requires_review' -or $box.body.reason -cne 'OUTCOME_UNKNOWN' -or $box.body.filesystem_effects -cne 'unconfirmed' -or $box.body.authorization_id -cne $a.Receipt.grant.authorization_id){throw 'ROLLBACK_PREINTENT_RESULT_REJECTED'}
- $ack=Get-AuthWireLifecycleOutcomeEvidence $Root $state $Binding $Key
+ $ack=Get-AuthWireLifecycleOutcomeEvidence $Root $state $Binding $Key $life
  if($ack.Outcome -cne 'requires_review' -or $ack.BodySha256 -cne $box.body_sha256){throw 'ROLLBACK_PREINTENT_ACK_REJECTED'}
  $frozen=[pscustomobject]@{offer=(Get-AuthWireWriteHash $state.Offer);completion=(Get-AuthWireWriteHash $done);ack=$ack.AckSha256;result=(Get-AuthWireWriteHash $box);reservation=(Get-AuthWireWriteHash $a.Reservation);root_reservation=(Get-AuthWireWriteHash (Read-AuthWireStagingJournal (Get-AuthWireRollbackReservationPath $Root $origin.StageJobId)));origin=$origin.ChainSha256;gpo_lock=(Get-AuthWireWriteHash (Read-AuthWireStagingJournal $gpoLock));consumption=(Get-AuthWireWriteHash $c);job_records=(Get-AuthWireWriteHash $rows);slot_records=(Get-AuthWireWriteHash $slotRows)}
  $evidence=[pscustomobject]@{job_id=$JobId;scope_sha256=(Get-AuthWireJobScope $Binding);intent_sha256=$state.Offer.intent_sha256;result_body_sha256=$box.body_sha256;accepted_ack=$true}
