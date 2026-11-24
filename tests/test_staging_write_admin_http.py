@@ -131,6 +131,12 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
                 self.assertEqual(403, self.request('POST', RECONCILE+suffix, {}, headers)[0])
 
     def test_https_uncertain_rollback_ack_is_exact_audited_and_never_completes_job(self):
+        self._https_retirement(False)
+
+    def test_https_preintent_retirement_requires_same_privileged_boundary(self):
+        self._https_retirement(True)
+
+    def _https_retirement(self, preintent):
         value = self.ready()
         self.jobs.create(value | {'review_hash': self.jobs.review(value, self.actor)['review_hash']}, self.actor)
         stage_offer = self.jobs.poll(wf.StagingWriteJobTests.proof(self))
@@ -157,7 +163,7 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
         # Expire only the job-clock seam; HTTPS, actual sessions, permissions,
         # actor/revision review hash, CSRF and SQLite remain real.
         def expired_init(jobs, *args, **kwargs):
-            original_init(jobs, *args, **(kwargs | {'wall_clock': lambda: grant['expires_at']+1}))
+            original_init(jobs, *args, **(kwargs | {'wall_clock': lambda: max(grant['expires_at'], offer['expires_at'])+1}))
         with patch.object(StagingWriteJobs, '__init__', expired_init):
             code, review, _ = self.request('POST', RECONCILE+'/review', value, self.headers)
             self.assertEqual(200, code, review)
@@ -175,10 +181,14 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
 
         from kaname import rollback_retirements as rr
         from .test_rollback_retirements import make_proof
-        self.now=grant['expires_at']+1
+        self.now=max(grant['expires_at'], offer['expires_at'])+1
         with self.store.connect() as db:
             job=next(j for j in self.jobs._read(db)['jobs'] if j['id']==offer['job_id'])
-        proof=make_proof(self.jobs,self.private,job,request,receipt,self.now)
+        if preintent:
+            from .test_rollback_preintent_retirements import make_proof as preintent_proof
+            proof=preintent_proof(self.private,job,request,receipt,self.now)
+        else:
+            proof=make_proof(self.jobs,self.private,job,request,receipt,self.now)
         value={'expected_revision':self.store.snapshot()['revision'],'evidence':evidence,
                'decision':rr.DECISION,'retirement':proof}
         with patch.object(StagingWriteJobs,'__init__',expired_init):

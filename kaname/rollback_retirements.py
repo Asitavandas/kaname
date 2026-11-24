@@ -90,6 +90,9 @@ def validate_proof(jobs, db, ledger, evidence, proof):
     check(evidence == expected and type(evidence['accepted_ack']) is bool)
     fields(proof, 'review_record completion')
     record = proof['review_record']; completion = proof['completion']
+    if type(record) is dict and record.get('format') == 'AuthWirePreIntentRollbackRetirementRecordV1':
+        from .rollback_preintent_retirements import validate
+        return validate(jobs, db, job, evidence, proof, binding, now)
     fields(record, 'format review observation acknowledgement_request acknowledgement_receipt acknowledge')
     check(record['format'] == 'AuthWireConsumedRollbackRetirementRecordV1' and
           record['acknowledge'] == 'retire_consumed_rollback_preserve_unknown_outcome')
@@ -143,6 +146,11 @@ def validate_proof(jobs, db, ledger, evidence, proof):
           integer(ob['tree_rows']) and ob['tree_rows'] > 0 and integer(ob['at']) and
           job['authorized_until'] <= ob['at'] <= review['observed_at'] and
           digest(observation) == review['prior_observation_sha256'])
+    validate_acknowledgement(jobs, db, job, record, expected)
+    return job
+
+
+def validate_acknowledgement(jobs, db, job, record, expected):
     request = record['acknowledgement_request']; receipt = record['acknowledgement_receipt']
     fields(request, 'expected_revision evidence decision review_hash acknowledge')
     check(integer(request['expected_revision']) and request['evidence'] == expected and
@@ -171,7 +179,6 @@ def validate_proof(jobs, db, ledger, evidence, proof):
             original_actor = event[len(prefix):].split(':request:', 1)[0]
             audited |= guid(original_actor) and event == jobs._reconciliation_event(request, original_actor)
     check(audited, 'STAGING_WRITE_RETIREMENT_ACK_AUDIT_REQUIRED')
-    return job
 
 
 def validate_request(value, actor, confirm=False):
