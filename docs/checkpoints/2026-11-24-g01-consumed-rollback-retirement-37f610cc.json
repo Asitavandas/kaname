@@ -1,0 +1,91 @@
+{
+  "format": "AuthWireG01ConsumedRollbackRetirementCheckpointV1",
+  "observed_at": "2026-11-24T12:56:05.000Z",
+  "timezone": "Europe/Istanbul",
+  "macro_status": {
+    "completed": 61,
+    "total": 94,
+    "open": 33,
+    "base_open": 11,
+    "development_open": 22,
+    "G01": "2/5",
+    "G05": "5/5",
+    "B06": "5/5"
+  },
+  "windows": {
+    "source_commit": "ab937f8e9d4786aee5d72ba6e947b947e2e193f0",
+    "pr": 167,
+    "draft_unmerged": true,
+    "ci_success": 23,
+    "ci_total": 23,
+    "new_native_retirement_checks": 48,
+    "prior_refusal_checks": 24,
+    "release_id": "5ef35333-e149-4f88-a364-32d37b4666ae",
+    "prepare_exit": 0,
+    "apply_exit": 0,
+    "protected_original_files_byte_identical": 55,
+    "configuration_only_release_changed": true,
+    "service_account_preserved": true,
+    "channel_key_and_pairing_preserved": true,
+    "prior_release_archive_retained": true,
+    "evidence_directory": "C:\\ProgramData\\AuthWire-G01-ConsumedRetirementJunction-20261124"
+  },
+  "server": {
+    "source_commit": "c75963e8996ed5c75e30827c54d8abcce9ca6059",
+    "pr": 172,
+    "draft_unmerged": true,
+    "ci_success": 15,
+    "ci_total": 15,
+    "canonical_tests": 60,
+    "focused_pilot_tests": 6,
+    "isolated_module_sha256": "c328592c457dd155ef206477f8983343dde40ce8196ab9f3ad03d98e75006bb6",
+    "acknowledgement_revision": 160,
+    "stored_state": "requires_review",
+    "original_result_sha256": "06b2bb471bfce215d800bba5f3781a0733d69abebcda9be4821870250db9be25",
+    "server_busy_gate_still_blocks_successor": true,
+    "panel_pid": 647245,
+    "radius_pid": 647261,
+    "isolated_pilot_pid": 1073783,
+    "evidence_directory": "/opt/authwire-g01-https-pilot/field-20261124-consumed-rollback-retirement"
+  },
+  "local_retirement": {
+    "job_id": "4845f5c9-e44c-47ba-95f9-f3dd0f7467b4",
+    "stage_job_id": "e195a1c3-ce02-46bc-869a-6063bba14f9f",
+    "status": "consumed_rollback_retired_locally",
+    "canonical_closure_sha256": "37f610ccb8cded6de25efb9468190476ce9d5b34fd80b056b96387bcf4ae4f47",
+    "completion_file_raw_sha256": "ee5309031fcc9ed30b74e606eb290336903aaf7499d405d3c8bfeefcc53138b1",
+    "review_file_raw_sha256": "0bfd42dc453fea67d6d912c7064cd44d0607db4b043bc4346b5e3478478ed328",
+    "native_signature_and_frozen_history_validation": true,
+    "maintenance_task_exit": 0,
+    "original_unknown_result_preserved": true,
+    "original_reservation_and_gpo_lock_retained": true,
+    "authority_renewed": false,
+    "rollback_replayed": false,
+    "new_write_job_created": false,
+    "real_field_rollback_success": false
+  },
+  "cleanup": {
+    "temporary_task_removed": true,
+    "temporary_operator_profile_and_sessions_removed": true,
+    "remaining_temporary_sessions": 0,
+    "encrypted_transfer_files_and_ephemeral_key_blobs_removed": true,
+    "original_and_failed_attempt_evidence_preserved": true
+  },
+  "access": {
+    "linux_remote_management_agent": "offline",
+    "linux_machine": "reachable",
+    "linux_ssh_sudo": "verified via VV-Client01 with private stdin and pinned SSH host key",
+    "windows_management": "VV-Client01/DC01 remoting verified",
+    "ethernet_management_changed": false
+  },
+  "next_open_gate": "Implement and verify controller acceptance of this signed consumed-rollback retirement while preserving the original unknown result; only then approve a distinct new rollback job with fresh full preflight and separate original bounded grant.",
+  "other_open_gates": [
+    "real GPO rollback acceptance",
+    "three endpoint effective delivery",
+    "retired refusal archive reader and matching external restore"
+  ],
+  "report": {
+    "library_file_id": "libfile_10ba5813a5c0819198c40d79a02c69cf",
+    "version": 35
+  }
+}

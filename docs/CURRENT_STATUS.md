@@ -1,5 +1,18 @@
 # AuthWire current work record
 
+## 24 Kasım 2026 — G01 tüketilmiş yetkili eski denemenin yerel kapanışı doğrulandı; sunucu geçiş kapısı açık
+
+**61/94 tamamlandı, 33 açık (11 temel + 22 geliştirme); B06 5/5, G05 5/5, G01 2/5.** Bu teknik kapanış gerçek GPO geri alma saha kabulünü kapatmaz.
+
+- **Yapılan:** 4845f5c9 tüketilmiş yetkili deneme, özgün sunucu sonucu ile eşleştirildi; mevcut sonuç onayı rev160 ile kaydedildi. İki ayrı CNG imzalı CreateNew kayıtla yerel kapanış ve donmuş geçmiş doğrulandı. Kapanış kanonik SHA-256 `37f610ccb8cded6de25efb9468190476ce9d5b34fd80b056b96387bcf4ae4f47`; ham dosya hash’i farklıdır. Eski OUTCOME_UNKNOWN/unconfirmed sonucu, yetki, rezervasyon ve GPO kilidi korundu; geri alma yeniden çalıştırılmadı, yeni iş açılmadı.
+- **Kalıcı teslim:** Windows ab937f8e / taslak PR167, 23/23 CI; yeni native kapanış 48, önceki ret 24 kontrol başarılı. İmzalı 5ef35333 Prepare/Apply çıkış 0 ile DC01’de. Teslim ve kapanış sonrasında 55 özgün dosya aynı; yalnız ReleaseId değişti. gMSA, pairing, CNG anahtar/ACL ve yayıncı korundu; 73032576 arşivde. SYSVOL alt dizinleri mevcut sınırları sabit PDC GPO pin okuyucusunu kullanır; diğer reparse reddi gevşetilmedi. İlk junction hatasının kanıtı saklandı.
+- **Sunucu:** c75963e8 / taslak PR172 için 15/15 CI, 60 kanonik ve altı pilot-modül testi geçti. Yalnız izole pilot modülün dar kayıt-onayı kontrolü uygulandı; ana panel dev.52/RADIUS aynı PID647245/647261’de. Özgün sonuç hash’i `06b2bb471bfce215d800bba5f3781a0733d69abebcda9be4821870250db9be25` aynıdır.
+- **Açık ve sıradaki bağımlı iş:** Sunucudaki özgün `stored_state=requires_review` korunuyor; salt okunur `_busy` kontrolü hâlâ yeni işe geçişi engelliyor. Yerel imzalı kapanışı sunucuya kabul ettirecek ayrı kanıt/geçiş yolu henüz uygulanmadı. Bu kapı doğrulanmadan yeni rollback oluşturmayın; eski işi veya tüketilmiş yetkiyi yeniden açmayın. Sonraki gerçek rollback yeni iş, taze tam AD/GPO/ACL/içerik/ağaç ön kontrolü ve ayrı sınırlı yetki gerektirir.
+- **Erişim ve temizlik:** Linux makine açık; Desktop Commander bağlantısı çevrimdışı olduğundan VV-Client01 üzerinden segmentiq SSH/sudo erişimi doğrulandı. Parola dosyaya veya argv’ye yazılmadı; güvenli bellek kanalı kullanıldı. Geçici operatör/profil/oturumlar, bakım görevi ve şifreli aktarım/anahtar dosyaları kaldırıldı. Ethernet yönetimi değiştirilmedi. Başarılı EAP, yenileme, açılış ve stage/preview testleri tekrarlanmadı.
+
+G01 panel otomasyonu + gerçek rollback, imza/sürüm entegrasyonu, üç bilgisayarlı etkin teslim; ret arşiv okuyucusu ve eşleşen harici restore açık. Önceki bölümler tarihsel kayıttır; bu üst kayıt ve [kapanış/devam kanıtı](checkpoints/2026-11-24-g01-consumed-rollback-retirement-37f610cc.json) güncel durumu gösterir.
+
+
 ## 23 Kasım 2026 — G01 soğuk GPO raporu gecikmesi düzeltildi ve imzalı paket kuruldu
 
 **61/94 tamam,33 açık (11 temel+22 geliştirme); B065/5,G055/5,G012/5.** Ön kontroldeki teknik gecikme adımı tamamlandı; özgün G01 üç kalan kabul ölçütü açık.
