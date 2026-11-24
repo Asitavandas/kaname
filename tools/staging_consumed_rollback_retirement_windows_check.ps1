@@ -21,7 +21,8 @@ try{
  function Get-AuthWireJobScope {return ('1'*64)}
  function Assert-AuthWireRollbackReaderIdentity { }
  function Assert-AuthWireStagingWriteJournalLocation($Path){if($Path -cne $root){throw 'FIXTURE_ROOT_CHANGED'}}
- function Add-AuthWireStagingGpoPins($Pins,$Path){$Pins.PinAncestors($Path)}
+ $script:gpoPinPaths=@()
+ function Add-AuthWireStagingGpoPins($Pins,$Path){$script:gpoPinPaths+=,$Path;$Pins.PinStableAncestors($Path)}
  function Assert-AuthWireNoActiveStage { }
  $lease=[AuthWire.Staging.TreeLeaseV1]::Tree($dest,$false)
  try{$tree=Get-AuthWireStagingFilesystemDigest (Get-AuthWireStagingFilesystemRows $lease);$rowCount=@(Get-AuthWireStagingFilesystemRows $lease).Count}finally{$lease.Dispose()}
@@ -69,6 +70,7 @@ try{
  $foreign=Join-Path $gpo 'foreign.txt';[IO.File]::WriteAllText($foreign,'drift')
  try{Reject {Get-AuthWireConsumedRollbackRetirementReview $root $jobId $b $rsa $observation} 'actual outside inventory must match'}finally{[IO.File]::Delete($foreign)}
  $review=Get-AuthWireConsumedRollbackRetirementReview $root $jobId $b $rsa $observation
+ Check ($script:gpoPinPaths -ccontains $dest) 'every staged directory uses the independently bounded GPO pin helper including the local PDC junction'
  Check ($review.Proof.Body.filesystem_effects -ceq 'unconfirmed' -and $review.Proof.Body.original_outcome -ceq 'requires_review' -and -not $review.Proof.Body.can_delete) 'review never upgrades unknown history to success or no effects'
  Reject {Assert-AuthWireRollbackRetirementProof $review.Proof $rsa 'AUTHWIRE-REFUSED-ROLLBACK-RETIRE-REVIEW-V1'} 'consumed review cannot be used as a pre-authority refusal review'
  $receipt=[pscustomobject]@{job_id=$jobId;decision='acknowledge_saved_result';decision_recorded=$true;revision=11;approval_enabled=$false;write_authorization_enabled=$false;execution_adapter_available=$false;can_apply_gpo=$false}

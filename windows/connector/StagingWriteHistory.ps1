@@ -1096,7 +1096,7 @@ function Assert-AuthWireConsumedRollbackCurrentState([string]$Root,[string]$JobI
    $dest=Join-Path $origin.Intent.gpo_root $origin.Intent.relative_destination.Replace('/','\');$tree=[AuthWire.Staging.TreeLeaseV1]::Tree($dest,$false)
    $rows=Get-AuthWireStagingFilesystemRows $tree
    if((Get-AuthWireStagingFilesystemDigest $rows) -cne $origin.Complete.tree_sha256 -or @($rows).Count -ne $Observation.body.tree_rows){throw 'ROLLBACK_CONSUMED_STAGE_DRIFT'}
-   foreach($row in $rows){$path=if($row.Path -ceq ''){$dest}else{Join-Path $dest $row.Path.Replace('/','\')};if($row.Kind -ceq 'file'){$Pins.PinFile($path)}else{$Pins.PinAncestors($path)}}
+   foreach($row in $rows){$path=if($row.Path -ceq ''){$dest}else{Join-Path $dest $row.Path.Replace('/','\')};if($row.Kind -ceq 'file'){$Pins.PinFile($path)}else{Add-AuthWireStagingGpoPins $Pins $path $origin.Intent.gpo_root}}
    $v=Get-AuthWireSysvolInventory $origin.Intent.gpo_root;$rel=$origin.Intent.relative_destination
    $outside=@($v.Entries|Where-Object {$_.Path -cne $rel -and -not $_.Path.StartsWith($rel+'/',[StringComparison]::Ordinal)})
    if((Get-AuthWireScopeDataHash $outside) -cne $origin.Intent.baseline_sha256){throw 'ROLLBACK_CONSUMED_OUTSIDE_DRIFT'}
