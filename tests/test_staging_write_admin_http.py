@@ -130,6 +130,86 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
                 headers, _ = self.user('reconcile-'+uuid.uuid4().hex[:8], {grant:'write'})
                 self.assertEqual(403, self.request('POST', RECONCILE+suffix, {}, headers)[0])
 
+    def test_https_uncertain_rollback_ack_is_exact_audited_and_never_completes_job(self):
+        self._https_retirement(False)
+
+    def test_https_preintent_retirement_requires_same_privileged_boundary(self):
+        self._https_retirement(True)
+
+    def _https_retirement(self, preintent):
+        value = self.ready()
+        self.jobs.create(value | {'review_hash': self.jobs.review(value, self.actor)['review_hash']}, self.actor)
+        stage_offer = self.jobs.poll(wf.StagingWriteJobTests.proof(self))
+        stage_grant = self.jobs.claim(wf.StagingWriteJobTests.proof(self, 'CLAIM',
+            wf.StagingWriteJobTests.claim_body(self, stage_offer)))
+        body = wf.StagingWriteJobTests.result(self, stage_offer, stage_grant)
+        self.jobs.complete(wf.StagingWriteJobTests.proof(self, 'RESULT', body))
+        self.jobs.poll(wf.StagingWriteJobTests.proof(self))
+        value.update(expected_revision=self.store.snapshot()['revision'], job_id=str(uuid.uuid4()),
+            operation=ROLLBACK, stage_job_id=body['job_id'], acknowledge=ACK[ROLLBACK])
+        self.jobs.create(value | {'review_hash': self.jobs.review(value, self.actor)['review_hash']}, self.actor)
+        offer = self.jobs.poll(wf.StagingWriteJobTests.proof(self))
+        grant = self.jobs.claim(wf.StagingWriteJobTests.proof(self, 'CLAIM',
+            wf.StagingWriteJobTests.claim_body(self, offer)))
+        result = wf.StagingWriteJobTests.result(self, offer, grant, outcome='requires_review',
+            reason='OUTCOME_UNKNOWN', journal_sha256='', tree_sha256='', filesystem_effects='unconfirmed')
+        self.jobs.complete(wf.StagingWriteJobTests.proof(self, 'RESULT', result))
+        evidence = {name: offer[name] for name in ('job_id', 'scope_sha256', 'intent_sha256')}
+        evidence.update(result_body_sha256=digest(result), accepted_ack=True)
+        value = {'expected_revision': self.store.snapshot()['revision'], 'evidence': evidence,
+                 'decision': 'acknowledge_saved_result'}
+        self.assertEqual(409, self.request('POST', RECONCILE+'/review', value, self.headers)[0])
+        before = self.ledger(); audit = self.store.audit(); original_init = StagingWriteJobs.__init__
+        # Expire only the job-clock seam; HTTPS, actual sessions, permissions,
+        # actor/revision review hash, CSRF and SQLite remain real.
+        def expired_init(jobs, *args, **kwargs):
+            original_init(jobs, *args, **(kwargs | {'wall_clock': lambda: max(grant['expires_at'], offer['expires_at'])+1}))
+        with patch.object(StagingWriteJobs, '__init__', expired_init):
+            code, review, _ = self.request('POST', RECONCILE+'/review', value, self.headers)
+            self.assertEqual(200, code, review)
+            self.assertEqual(('result_matches', 'requires_review', 'requires_review'),
+                tuple(review[n] for n in ('comparison', 'stored_state', 'server_outcome')))
+            request = value | {'review_hash': review['review_hash'], 'acknowledge': 'record_reconciliation_decision'}
+            for _ in range(2):
+                code, receipt, _ = self.request('POST', RECONCILE+'/record', request, self.headers)
+                self.assertEqual(200, code, receipt)
+                self.assertFalse(receipt['can_apply_gpo'])
+                self.assertEqual(value['expected_revision']+1, receipt['revision'])
+        self.assertEqual(before, self.ledger())
+        self.assertEqual(len(audit)+1, len(self.store.audit()))
+        self.assertEqual('requires_review', self.jobs.status()['jobs'][0]['state'])
+
+        from kaname import rollback_retirements as rr
+        from .test_rollback_retirements import make_proof
+        self.now=max(grant['expires_at'], offer['expires_at'])+1
+        with self.store.connect() as db:
+            job=next(j for j in self.jobs._read(db)['jobs'] if j['id']==offer['job_id'])
+        if preintent:
+            from .test_rollback_preintent_retirements import make_proof as preintent_proof
+            proof=preintent_proof(self.private,job,request,receipt,self.now)
+        else:
+            proof=make_proof(self.jobs,self.private,job,request,receipt,self.now)
+        value={'expected_revision':self.store.snapshot()['revision'],'evidence':evidence,
+               'decision':rr.DECISION,'retirement':proof}
+        with patch.object(StagingWriteJobs,'__init__',expired_init):
+            self.assertEqual(401,self.request('POST',RECONCILE+'/review',value)[0])
+            self.assertEqual(403,self.request('POST',RECONCILE+'/review',value,
+                self.headers|{'X-Kaname-CSRF':'bad'})[0])
+            for grant_name in ('certificates.authority','system.connectors'):
+                limited,_=self.user('retire-'+uuid.uuid4().hex[:8],{grant_name:'write'})
+                self.assertEqual(403,self.request('POST',RECONCILE+'/review',value,limited)[0])
+            code,review,_=self.request('POST',RECONCILE+'/review',value,self.headers)
+            self.assertEqual(200,code,review)
+            confirmed=value|{'review_hash':review['review_hash'],'acknowledge':rr.ACK}
+            other,_=self.user('retire-other',{'certificates.authority':'write','system.connectors':'write'})
+            self.assertEqual(409,self.request('POST',RECONCILE+'/record',confirmed,other)[0])
+            for _ in range(2):
+                code,done,_=self.request('POST',RECONCILE+'/record',confirmed,self.headers)
+                self.assertEqual(200,code,done);self.assertTrue(done['retirement_recorded'])
+                self.assertFalse(done['authority_renewed']);self.assertFalse(done['can_apply_gpo'])
+        self.assertEqual(before,self.ledger())
+        self.assertEqual('requires_review',self.jobs.status()['jobs'][0]['state'])
+
     def test_stage_lock_release_approval_requires_audited_refusal_and_exact_evidence(self):
         value = self.ready()
         self.jobs.create(value | {'review_hash': self.jobs.review(value, self.actor)['review_hash']}, self.actor)
@@ -375,3 +455,4 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
                 code,result,_=self.request('GET',ROOT,headers=self.headers)
         self.assertEqual((503,'STORE_BUSY'),(code,result['error']))
         self.assertNotIn('private-db-detail',str(logs.output)+json.dumps(result))
+

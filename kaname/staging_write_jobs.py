@@ -287,7 +287,9 @@ class StagingWriteJobs(ConnectorJobs):
                     'STAGING_WRITE_REVIEW_CHANGED')
             require(len(ledger['jobs']) < LIMIT, 'STAGING_WRITE_LIMIT')
             now = int(self.clock())
-            require(not self._busy(ledger, p['target'], p['operation'], scope, now), 'STAGING_WRITE_GPO_BUSY')
+            from .rollback_retirements import queue_ledger
+            busy_ledger = queue_ledger(self, db, ledger, p['target'], p['operation'], scope)
+            require(not self._busy(busy_ledger, p['target'], p['operation'], scope, now), 'STAGING_WRITE_GPO_BUSY')
             deadline = p['target']['preview_record']['Preview']['expires_at'] if p['operation'] == STAGE else now + LIFETIME
             ledger['jobs'].append({'id': p['job_id'], 'operation': p['operation'], 'actor': actor, 'scope': scope,
                 'created': now, 'deadline': deadline, 'lease_id': '', 'lease_until': 0, 'state': 'queued',
@@ -469,8 +471,20 @@ class StagingWriteJobs(ConnectorJobs):
         evidence = value['evidence']
         comparison, job = self._compare_reconciliation(db, evidence)
         if value['decision'] == 'acknowledge_saved_result':
+            # This acknowledges the exact already accepted uncertain RESULT;
+            # it never completes/reopens the job, renews a grant or unlocks GPO.
+            # Refusal-only and consumed-stage release gates stay unchanged.
+            result = job['result'] if job else None
+            uncertain_rollback = bool(job and result and job['operation'] == ROLLBACK and
+                job['state'] == 'requires_review' and job['authorization_id'] and
+                result['authorization_id'] == job['authorization_id'] and
+                result['outcome'] == 'requires_review' and result['reason'] == 'OUTCOME_UNKNOWN' and
+                result['filesystem_effects'] == 'unconfirmed' and
+                result['journal_sha256'] == result['tree_sha256'] == '' and
+                int(self.clock()) >= job['authorized_until'] and evidence['accepted_ack'])
             require(comparison['comparison'] in {'result_matches', 'result_matches_ack_missing'} and
-                    comparison.get('stored_state') == 'completed', 'STAGING_WRITE_RECONCILIATION_CONFLICT')
+                    (comparison.get('stored_state') == 'completed' or uncertain_rollback),
+                    'STAGING_WRITE_RECONCILIATION_CONFLICT')
         review = {'revision': revision, 'actor': actor, 'job_id': evidence['job_id'],
                   'decision': value['decision'], **comparison}
         if value['decision'] == RELEASE_APPROVAL:
@@ -482,12 +496,18 @@ class StagingWriteJobs(ConnectorJobs):
         return review
 
     def review_reconciliation(self, value, actor):
+        if type(value) is dict and value.get('decision') == 'accept_consumed_rollback_retirement':
+            from .rollback_retirements import review
+            return review(self, value, actor)
         self._validate_reconciliation_decision(value, actor)
         with self.store.connect() as db:
             db.execute('BEGIN')
             return self._reconciliation_decision_review(db, value, actor)
 
     def record_reconciliation(self, value, actor):
+        if type(value) is dict and value.get('decision') == 'accept_consumed_rollback_retirement':
+            from .rollback_retirements import record
+            return record(self, value, actor)
         self._validate_reconciliation_decision(value, actor, confirm=True)
         job_id = value['evidence']['job_id']
         decision = value['decision']
@@ -505,4 +525,5 @@ class StagingWriteJobs(ConnectorJobs):
             else:
                 revision = saved[0]
         return {'job_id': job_id, 'decision': decision, 'decision_recorded': True, 'revision': revision}
+
 

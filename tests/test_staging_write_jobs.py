@@ -340,6 +340,69 @@ class StagingWriteJobTests(unittest.TestCase):
         with self.assertRaisesRegex(JobError, 'ALREADY_ROLLED_BACK'):
             self.jobs.review(self.value(ROLLBACK, stage['job_id']), self.actor)
 
+    def saved_uncertain_result(self, operation=ROLLBACK, **changes):
+        if operation == ROLLBACK:
+            stage, _, _ = self.finish_stage()
+            self.enqueue(self.value(ROLLBACK, stage['job_id']))
+            offer = self.jobs.poll(self.proof())
+        else:
+            offer = self.offer()
+        grant = self.authorize(offer)
+        result = self.result(offer, grant, **({'outcome': 'requires_review', 'reason': 'OUTCOME_UNKNOWN',
+            'filesystem_effects': 'unconfirmed', 'journal_sha256': '', 'tree_sha256': ''} | changes))
+        self.jobs.complete(self.proof('RESULT', result))
+        evidence = {name: offer[name] for name in ('job_id', 'scope_sha256', 'intent_sha256')}
+        evidence.update(result_body_sha256=digest(result), accepted_ack=True)
+        request = {'expected_revision': self.store.snapshot()['revision'], 'evidence': evidence,
+                   'decision': 'acknowledge_saved_result'}
+        return offer, grant, request
+
+    def test_expired_uncertain_rollback_ack_preserves_original_job_and_authority(self):
+        offer, grant, value = self.saved_uncertain_result()
+        self.now = grant['expires_at'] + 1
+        with self.store.connect() as db:
+            before = db.execute('SELECT payload FROM runtime_settings WHERE name=?', (SECTION,)).fetchone()[0]
+        review = self.jobs.review_reconciliation(value, self.actor)
+        self.assertEqual(('result_matches', 'requires_review', 'requires_review'),
+            tuple(review[n] for n in ('comparison', 'stored_state', 'server_outcome')))
+        request = value | {'review_hash': review['review_hash'], 'acknowledge': 'record_reconciliation_decision'}
+        receipts = [self.jobs.record_reconciliation(request, self.actor) for _ in range(2)]
+        self.assertEqual(receipts[0], receipts[1])
+        self.assertEqual(value['expected_revision']+1, receipts[0]['revision'])
+        with self.store.connect() as db:
+            self.assertEqual(before, db.execute('SELECT payload FROM runtime_settings WHERE name=?', (SECTION,)).fetchone()[0])
+        self.assertEqual('requires_review', self.jobs.status()['jobs'][0]['state'])
+        with self.assertRaisesRegex(JobError, 'NOT_CLAIMABLE'):
+            self.authorize(offer)
+        self.assertEqual('requires_review', self.jobs.status()['jobs'][0]['peer_reported_outcome'])
+
+    def test_uncertain_rollback_ack_requires_expired_authority_accepted_ack_and_exact_result(self):
+        _, grant, value = self.saved_uncertain_result()
+        with self.assertRaisesRegex(JobError, 'RECONCILIATION_CONFLICT'):
+            self.jobs.review_reconciliation(value, self.actor)
+        self.now = grant['expires_at'] + 1
+        for change in ({'accepted_ack': False}, {'result_body_sha256': '0'*64}, {'intent_sha256': '0'*64}):
+            with self.subTest(change=change), self.assertRaisesRegex(JobError, 'RECONCILIATION_CONFLICT'):
+                self.jobs.review_reconciliation(value | {'evidence': value['evidence'] | change}, self.actor)
+
+    def test_uncertain_stage_cannot_use_rollback_ack_exception(self):
+        _, grant, value = self.saved_uncertain_result(STAGE)
+        self.now = grant['expires_at'] + 1
+        with self.assertRaisesRegex(JobError, 'RECONCILIATION_CONFLICT'):
+            self.jobs.review_reconciliation(value, self.actor)
+
+    def test_rollback_with_execution_hash_cannot_use_not_entered_ack_exception(self):
+        _, grant, value = self.saved_uncertain_result(journal_sha256='a'*64)
+        self.now = grant['expires_at'] + 1
+        with self.assertRaisesRegex(JobError, 'RECONCILIATION_CONFLICT'):
+            self.jobs.review_reconciliation(value, self.actor)
+
+    def test_rollback_with_other_review_reason_cannot_use_unknown_ack_exception(self):
+        _, grant, value = self.saved_uncertain_result(reason='IO_FAILURE')
+        self.now = grant['expires_at'] + 1
+        with self.assertRaisesRegex(JobError, 'RECONCILIATION_CONFLICT'):
+            self.jobs.review_reconciliation(value, self.actor)
+
     def test_rollback_cannot_claim_a_different_staged_tree(self):
         stage, _, _ = self.finish_stage()
         self.enqueue(self.value(ROLLBACK, stage['job_id'])); offer = self.jobs.poll(self.proof())
@@ -500,3 +563,4 @@ class StagingWriteJobTests(unittest.TestCase):
         value['jobs'][0]['authorization_id'] = 'a' * 64
         self.assertNotEqual(stable_runtime_payload(SECTION, raw),
                             stable_runtime_payload(SECTION, json.dumps(value)))
+
