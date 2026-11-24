@@ -26,6 +26,11 @@ Under the cycle, job and store locks it rechecks everything, confirms the exact
 saved server result through the existing privileged Origin/CSRF endpoint, then
 checks child/marker/tree/outside state again while staged files remain pinned.
 The server acknowledgement confirms saved evidence; it is never delete authority.
+The server permits acknowledgement of an uncertain rollback only after its
+original grant expires, with an accepted ACK and exact matching saved result,
+`OUTCOME_UNKNOWN`, empty execution hashes and `unconfirmed` effects. An uncertain
+stage or another reason cannot use this exception. The ledger/result/authority
+remain byte-identical; only the reconciliation audit revision is appended.
 
 Only two CreateNew records are appended in the old rollback job:
 `rollback-consumed-retirement-review.json` and

@@ -469,8 +469,20 @@ class StagingWriteJobs(ConnectorJobs):
         evidence = value['evidence']
         comparison, job = self._compare_reconciliation(db, evidence)
         if value['decision'] == 'acknowledge_saved_result':
+            # This acknowledges the exact already accepted uncertain RESULT;
+            # it never completes/reopens the job, renews a grant or unlocks GPO.
+            # Refusal-only and consumed-stage release gates stay unchanged.
+            result = job['result'] if job else None
+            uncertain_rollback = bool(job and result and job['operation'] == ROLLBACK and
+                job['state'] == 'requires_review' and job['authorization_id'] and
+                result['authorization_id'] == job['authorization_id'] and
+                result['outcome'] == 'requires_review' and result['reason'] == 'OUTCOME_UNKNOWN' and
+                result['filesystem_effects'] == 'unconfirmed' and
+                result['journal_sha256'] == result['tree_sha256'] == '' and
+                int(self.clock()) >= job['authorized_until'] and evidence['accepted_ack'])
             require(comparison['comparison'] in {'result_matches', 'result_matches_ack_missing'} and
-                    comparison.get('stored_state') == 'completed', 'STAGING_WRITE_RECONCILIATION_CONFLICT')
+                    (comparison.get('stored_state') == 'completed' or uncertain_rollback),
+                    'STAGING_WRITE_RECONCILIATION_CONFLICT')
         review = {'revision': revision, 'actor': actor, 'job_id': evidence['job_id'],
                   'decision': value['decision'], **comparison}
         if value['decision'] == RELEASE_APPROVAL:
@@ -505,4 +517,5 @@ class StagingWriteJobs(ConnectorJobs):
             else:
                 revision = saved[0]
         return {'job_id': job_id, 'decision': decision, 'decision_recorded': True, 'revision': revision}
+
 
