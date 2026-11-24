@@ -5,6 +5,7 @@ on:
       - '.github/workflows/staging-rollback-retirement.yml'
       - 'tools/staging_rollback_retirement_windows_check.ps1'
       - 'tools/staging_consumed_rollback_retirement_windows_check.ps1'
+      - 'tools/staging_preintent_rollback_retirement_windows_check.ps1'
       - 'windows/connector/StagingRollbackAuthorization.ps1'
       - 'windows/connector/StagingWriteHistory.ps1'
       - 'windows/connector/StagingWriteRefusal.ps1'
@@ -27,3 +28,6 @@ jobs:
         shell: powershell
         run: ./tools/staging_consumed_rollback_retirement_windows_check.ps1
 
+      - name: Consumed grant without intent has a distinct non-replay retirement
+        shell: powershell
+        run: ./tools/staging_preintent_rollback_retirement_windows_check.ps1
