@@ -1,0 +1,73 @@
+{
+  "schema": "authwire.g01.controller-signed-retirement-acceptance.v1",
+  "recorded_at": "2026-11-24T16:41:00+03:00",
+  "macro": {
+    "completed": 61,
+    "total": 94,
+    "open": 33,
+    "basic_open": 11,
+    "development_open": 22,
+    "G01": "2/5",
+    "G05": "5/5",
+    "B06": "5/5"
+  },
+  "result": {
+    "status": "signed_retirement_accepted_by_controller",
+    "source_commit": "6fdd9352a51936b8ad9cbfe4ce948ac1e5f980a8",
+    "job_id": "4845f5c9-e44c-47ba-95f9-f3dd0f7467b4",
+    "revision": 161,
+    "closure_sha256": "37f610ccb8cded6de25efb9468190476ce9d5b34fd80b056b96387bcf4ae4f47",
+    "original_job_ledger_byte_identical": true,
+    "original_result_sha256": "06b2bb471bfce215d800bba5f3781a0733d69abebcda9be4821870250db9be25",
+    "original_state": "requires_review",
+    "original_busy_gate": true,
+    "verified_scoped_busy_gate": false,
+    "authority_renewed": false,
+    "new_write_job_created": false,
+    "new_authorization_issued": false,
+    "at": 1795527442,
+    "temporary_operator_profile_sessions_removed": true
+  },
+  "stage_job_id": "e195a1c3-ce02-46bc-869a-6063bba14f9f",
+  "engine_operation_id": "29f1e53b-6c1b-453b-c715-7c1682d9dd52",
+  "deployment": {
+    "scope": "isolated G01 HTTPS pilot only",
+    "source_commit": "6fdd9352a51936b8ad9cbfe4ce948ac1e5f980a8",
+    "pull_request": 172,
+    "draft": true,
+    "merged": false,
+    "pilot_module_sha256": "99a51633db21a79516cd0d493b24579a74aaea8aefa055f94e1c696a15f932a6",
+    "retirement_module_sha256": "ca32026f53a21527d1f30b854ef22263b1d64ca2b081682afeee00f7ac73171d",
+    "main_panel_pid": 647245,
+    "radius_pid": 647261,
+    "pilot_pid": 1109336,
+    "windows_release_unchanged": "5ef35333-e149-4f88-a364-32d37b4666ae"
+  },
+  "validation": {
+    "ci_passed": 15,
+    "canonical_tests_passed": 72,
+    "pilot_source_tests_passed": 13,
+    "real_https_acceptance": true,
+    "temporary_operator_profile_sessions_removed": true
+  },
+  "evidence_directory": "/opt/authwire-g01-https-pilot/field-20261124-controller-rollback-retirement",
+  "report": {
+    "library_file_id": "libfile_10ba5813a5c0819198c40d79a02c69cf",
+    "version": 38
+  },
+  "completed_gate": "Controller accepted the existing paired CNG retirement proof at revision 161. Scoped busy gate for a distinct rollback of the same original stage is false.",
+  "next": "Make permanent writer ready through its normal lifecycle; create a distinct rollback job for original stage e195a1c3, run fresh full preflight and issue a separate bounded one-use grant. Real field rolled_back acceptance remains pending.",
+  "must_preserve": [
+    "Original unknown result, job ledger, expired consumed authority and local anchors remain unchanged.",
+    "Do not replay old job 4845f5c9 or renew its consumed grant.",
+    "Do not repeat successful EAP, renewal, reboot, stage or preview.",
+    "Keep PR167 and PR172 draft and unmerged.",
+    "Ethernet1 is permanent management; Ethernet0 is the test adapter."
+  ],
+  "remaining": [
+    "Real G01 rolled_back field result",
+    "Retired refusal archive acceptance",
+    "Matching external restore",
+    "Three-endpoint delivery"
+  ]
+}

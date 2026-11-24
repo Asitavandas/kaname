@@ -1,5 +1,17 @@
 # AuthWire current work record
 
+## 24 Kasım 2026 16:41 — G01 imzalı kapanış sunucuda kabul edildi; aynı stage için geçiş kapısı tamamlandı
+
+**61/94 tamamlandı, 33 açık (11 temel + 22 geliştirme); B06 5/5, G05 5/5, G01 2/5.** Bu kayıt aşağıdaki önceki “sunucu geçiş kapısı açık” devam notunu günceller. Gerçek GPO geri alma saha kabulü henüz tamamlanmadı.
+
+- **Tamamlanan:** Mevcut CNG imzalı yerel kapanış, gerçek ayrıcalıklı HTTPS review/record akışıyla sunucuda **revizyon 161** olarak kabul edildi. Özgün 4845f5c9 iş defteri bayt düzeyinde aynı; requires_review / OUTCOME_UNKNOWN / unconfirmed sonucu ve sonuç SHA-256 `06b2bb471bfce215d800bba5f3781a0733d69abebcda9be4821870250db9be25` korundu. Kapanış SHA-256 `37f610ccb8cded6de25efb9468190476ce9d5b34fd80b056b96387bcf4ae4f47`; Windows kanıtı yeniden üretilmedi.
+- **Geçiş doğrulandı:** Ayrı `windows_consumed_rollback_retirements_v1` defteri ve audit kaydı, eşleştirme, üç imza ve iki audit bağı ile doğrulanır. Eski ham busy kontrolü true kalır; yalnız aynı e195a1c3 stage için doğrulanmış kapsamlı busy görünümü false. Bu kapı artık açık iş değildir. Bozuk/eksik kayıt, yanlış anahtar, farklı stage ve başka çözülmemiş iş güvenli biçimde engellenir.
+- **Uygulandı:** `6fdd9352a51936b8ad9cbfe4ce948ac1e5f980a8`, taslak PR172. 15/15 CI, 72 kanonik test ve gerçek izole kaynakla 13 kontrol başarılı. Yalnız izole pilot hizmetine kabul modülü ve üç dar çağrı noktası teslim edildi. Ana panel/RADIUS PID647245/647261 değişmedi; izole pilot PID1109336. Windows 5ef35333 / ab937f8e değişmedi. Teslim öncesi kaynak yedeği saklandı.
+- **Yetki sınırı:** Bu işlem yeni yazma işi veya grant oluşturmadı; eski tek kullanımlık yetki yenilenmedi; gerçek rollback yeniden çalıştırılmadı. Özgün rezervasyon/GPO kilidi ve donmuş geçmiş korundu. 5 saniye güncellik, 15 saniye çocuk sınırı, iki saniye pay ve özgün offer/grant süreleri aynı.
+- **Temizlik ve erişim:** Geçici panel operatörü/profili ve oturumlar kaldırıldı. Linux RDC ajanı çevrimdışı; VV-Client01 üzerinden doğrulanmış SSH/sudo yolu çalıştı. Yönetim Ethernet1, test Ethernet0, gMSA ve anahtarlar değiştirilmedi. Parola dosya/argv/rapora yazılmadı.
+- **Sıradaki somut iş:** Kalıcı yazıcıyı normal yaşam döngüsüyle hazır hale getir; aynı özgün e195a1c3 stage'e bağlı **ayrı yeni rollback işi**, taze tam ön kontrol ve ayrı sınırlı tek kullanımlık yetkiyle gerçek geri almayı yürüt. Eski4845 işi/yetki tekrar açılmayacak. Önceden başarılı EAP, yenileme, reboot, stage/preview testleri tekrarlanmayacak. Gerçek rolled_back, ret arşiv kabulü, eşleşen harici restore ve üç bilgisayarda etkin teslim hâlâ açık.
+- **Kanıt:** `/opt/authwire-g01-https-pilot/field-20261124-controller-rollback-retirement`; `docs/checkpoints/2026-11-24-g01-controller-retirement-rev161.json`. Güncel PDF sürüm38; ilk iki sayfa güncel, devamı geçmiş kayıtlardır.
+
 ## 24 Kasım 2026 — G01 tüketilmiş yetkili eski denemenin yerel kapanışı doğrulandı; sunucu geçiş kapısı açık
 
 **61/94 tamamlandı, 33 açık (11 temel + 22 geliştirme); B06 5/5, G05 5/5, G01 2/5.** Bu teknik kapanış gerçek GPO geri alma saha kabulünü kapatmaz.
