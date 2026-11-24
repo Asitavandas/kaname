@@ -287,7 +287,9 @@ class StagingWriteJobs(ConnectorJobs):
                     'STAGING_WRITE_REVIEW_CHANGED')
             require(len(ledger['jobs']) < LIMIT, 'STAGING_WRITE_LIMIT')
             now = int(self.clock())
-            require(not self._busy(ledger, p['target'], p['operation'], scope, now), 'STAGING_WRITE_GPO_BUSY')
+            from .rollback_retirements import queue_ledger
+            busy_ledger = queue_ledger(self, db, ledger, p['target'], p['operation'], scope)
+            require(not self._busy(busy_ledger, p['target'], p['operation'], scope, now), 'STAGING_WRITE_GPO_BUSY')
             deadline = p['target']['preview_record']['Preview']['expires_at'] if p['operation'] == STAGE else now + LIFETIME
             ledger['jobs'].append({'id': p['job_id'], 'operation': p['operation'], 'actor': actor, 'scope': scope,
                 'created': now, 'deadline': deadline, 'lease_id': '', 'lease_until': 0, 'state': 'queued',
@@ -494,12 +496,18 @@ class StagingWriteJobs(ConnectorJobs):
         return review
 
     def review_reconciliation(self, value, actor):
+        if type(value) is dict and value.get('decision') == 'accept_consumed_rollback_retirement':
+            from .rollback_retirements import review
+            return review(self, value, actor)
         self._validate_reconciliation_decision(value, actor)
         with self.store.connect() as db:
             db.execute('BEGIN')
             return self._reconciliation_decision_review(db, value, actor)
 
     def record_reconciliation(self, value, actor):
+        if type(value) is dict and value.get('decision') == 'accept_consumed_rollback_retirement':
+            from .rollback_retirements import record
+            return record(self, value, actor)
         self._validate_reconciliation_decision(value, actor, confirm=True)
         job_id = value['evidence']['job_id']
         decision = value['decision']

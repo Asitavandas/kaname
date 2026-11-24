@@ -173,6 +173,33 @@ class StagingWriteAdminHTTPTests(unittest.TestCase):
         self.assertEqual(len(audit)+1, len(self.store.audit()))
         self.assertEqual('requires_review', self.jobs.status()['jobs'][0]['state'])
 
+        from kaname import rollback_retirements as rr
+        from .test_rollback_retirements import make_proof
+        self.now=grant['expires_at']+1
+        with self.store.connect() as db:
+            job=next(j for j in self.jobs._read(db)['jobs'] if j['id']==offer['job_id'])
+        proof=make_proof(self.jobs,self.private,job,request,receipt,self.now)
+        value={'expected_revision':self.store.snapshot()['revision'],'evidence':evidence,
+               'decision':rr.DECISION,'retirement':proof}
+        with patch.object(StagingWriteJobs,'__init__',expired_init):
+            self.assertEqual(401,self.request('POST',RECONCILE+'/review',value)[0])
+            self.assertEqual(403,self.request('POST',RECONCILE+'/review',value,
+                self.headers|{'X-Kaname-CSRF':'bad'})[0])
+            for grant_name in ('certificates.authority','system.connectors'):
+                limited,_=self.user('retire-'+uuid.uuid4().hex[:8],{grant_name:'write'})
+                self.assertEqual(403,self.request('POST',RECONCILE+'/review',value,limited)[0])
+            code,review,_=self.request('POST',RECONCILE+'/review',value,self.headers)
+            self.assertEqual(200,code,review)
+            confirmed=value|{'review_hash':review['review_hash'],'acknowledge':rr.ACK}
+            other,_=self.user('retire-other',{'certificates.authority':'write','system.connectors':'write'})
+            self.assertEqual(409,self.request('POST',RECONCILE+'/record',confirmed,other)[0])
+            for _ in range(2):
+                code,done,_=self.request('POST',RECONCILE+'/record',confirmed,self.headers)
+                self.assertEqual(200,code,done);self.assertTrue(done['retirement_recorded'])
+                self.assertFalse(done['authority_renewed']);self.assertFalse(done['can_apply_gpo'])
+        self.assertEqual(before,self.ledger())
+        self.assertEqual('requires_review',self.jobs.status()['jobs'][0]['state'])
+
     def test_stage_lock_release_approval_requires_audited_refusal_and_exact_evidence(self):
         value = self.ready()
         self.jobs.create(value | {'review_hash': self.jobs.review(value, self.actor)['review_hash']}, self.actor)

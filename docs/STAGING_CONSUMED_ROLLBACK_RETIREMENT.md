@@ -58,3 +58,32 @@ CreateNew journals, child-liveness checks, staged tree digests and outside
 inventory. Historical POLL/CLAIM/origin protocol bodies and privileged HTTPS are
 explicit fixture seams; this is not a domain GPO acceptance test. Existing
 native authorization/execution workflows continue to cover those protocol bodies.
+
+## Controller acceptance and queue succession
+
+The existing privileged reconciliation review/record routes accept a separate
+`accept_consumed_rollback_retirement` decision. The request contains exact
+original result evidence plus the signed local `review_record` and `completion`.
+The explicit record acknowledgement is
+`record_signed_rollback_retirement_preserve_original_result`. The 16 KiB input
+limit, strict schemas, current pairing/scope/RSA key, three signature domains,
+original grant expiry, historical local 60-second review window, tree/baseline
+identity and original immutable server ACK audit are all checked. The old ACK
+operator may have been removed; its actual audited event must still match.
+Current caller session, both write permissions, Origin/CSRF, actor/revision-bound
+review hash and idempotent record checks remain enforced by the existing routes.
+
+Accepted proof is appended to the separate
+`windows_consumed_rollback_retirements_v1` runtime-settings ledger and audited.
+The original job/result/grant ledger stays byte-identical. Every queue admission
+revalidates the stored proof and both audit links against the current binding.
+Only the busy predicate receives a filtered view, only for a distinct rollback
+of that exact original stage; the saved original uncertain job is never removed,
+completed, reopened or granted again. Other unresolved jobs still block a third
+attempt. Partial, changed, mismatched, unaudited or corrupt retirement evidence
+fails closed. GPO activation, old-lease replay and archive/restore acceptance are
+not granted by this record.
+
+A successor must still pass its ordinary new approval, full current preflight,
+separate single-use claim/grant and original bounded execution checks. Accepting
+this proof does not create or execute a successor job automatically.
