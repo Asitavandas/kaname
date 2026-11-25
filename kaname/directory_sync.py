@@ -83,6 +83,38 @@ class DirectorySync:
         finally:
             server.directory_lock.release()
 
+    def ou_scope(self, expected_revision, ou_dn):
+        server = self.server
+        current = server.store.snapshot()
+        if current['config'] is None:
+            raise ValidationError('CONFIG_REQUIRED')
+        if type(expected_revision) is not int or expected_revision != current['revision']:
+            raise ConflictError()
+        if not server.directory_lock.acquire(blocking=False):
+            raise DirectoryError('AD_QUERY_BUSY')
+        connection = None
+        try:
+            if time.monotonic() < server.directory_next_attempt:
+                raise DirectoryError('AD_RETRY_LATER')
+            if server.operations.health().get('error') == 'AD_CREDENTIALS_REJECTED':
+                raise DirectoryError('AD_CREDENTIALS_REJECTED')
+            server.directory_next_attempt = time.monotonic() + 10
+            connection = server.operations.directory_connection()
+            result = server.directory_reader(connection, current['config'], ou_dn=ou_dn)
+            if server.store.snapshot()['revision'] != expected_revision:
+                raise ConflictError()
+            return result
+        except DirectoryError as error:
+            if connection is not None and error.code == 'AD_CREDENTIALS_REJECTED':
+                server.operations.record_health(error.code, expected_revision=expected_revision)
+            if error.code in {'AD_SCOPE_INVALID', 'AD_SCOPE_NOT_FOUND', 'AD_SCOPE_AMBIGUOUS'}:
+                raise ValidationError(error.code) from None
+            raise
+        finally:
+            if connection is not None:
+                connection['password'] = ''
+            server.directory_lock.release()
+
     def tick(self, now=None):
         now = time.monotonic() if now is None else now
         settings = self.server.operations.directory()

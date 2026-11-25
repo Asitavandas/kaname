@@ -347,6 +347,21 @@ class Reader:
         return validate_catalog({'domain': domain, 'dc_fqdn': dc, 'transport': TRANSPORT,
                                  **collections, 'membership_schema': 1, 'memberships': edges}, domain, dc)
 
+    def ou_scope(self, domain, search_base, ou_dn):
+        if not any(dn_within(ou_dn, allowed) for allowed in self.resolve_scopes(domain, search_base)):
+            raise DirectoryError('AD_SCOPE_INVALID')
+        try:
+            rows, _ = self.search(ou_dn, self.ldap.SCOPE_BASE, '(objectClass=organizationalUnit)', ['objectClass'])
+        except self.ldap.NO_SUCH_OBJECT:
+            raise DirectoryError('AD_SCOPE_NOT_FOUND') from None
+        if len(rows) != 1:
+            raise DirectoryError('AD_SCOPE_NOT_FOUND')
+        dn, attributes = rows[0]
+        if (not dn_within(dn, ou_dn) or not dn_within(ou_dn, dn) or
+                not any(value.lower() == b'organizationalunit' for value in attributes.get('objectclass', []))):
+            raise DirectoryError('AD_INVALID_RESPONSE')
+        return dn
+
 
 def protected_connection(ldap, sasl, dc):
     connection = ldap.initialize('ldap://' + dc + ':389')
@@ -428,6 +443,9 @@ def run(request):
         if attribute(attrs, 'defaultnamingcontext').casefold() != expected.casefold() or attribute(attrs, 'dnshostname').lower() != request['dc_fqdn']:
             raise DirectoryError('AD_DOMAIN_MISMATCH')
         reader = Reader(connection, ldap, (ValueLessRequestControl, SimplePagedResultsControl))
+        if request.get('ou_dn') is not None:
+            dn = reader.ou_scope(request['domain'], request['search_base'], request['ou_dn'])
+            return {'domain': request['domain'], 'dc_fqdn': request['dc_fqdn'], 'ou_dn': dn, 'scope': 'subtree'}
         if request['probe']:
             reader.resolve_scopes(request['domain'], request['search_base'])
             return {'probe': 'ok', 'domain': request['domain'], 'dc_fqdn': request['dc_fqdn']}
