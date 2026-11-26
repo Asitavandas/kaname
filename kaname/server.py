@@ -40,7 +40,7 @@ STATIC = Path(__file__).parent / 'static'
 STAGING_WRITE_PROBE_PATH = '/api/connector/v1/staging-write/poll'
 STAGING_WRITE_PEER_PATHS = frozenset((STAGING_WRITE_PROBE_PATH,
     '/api/connector/v1/staging-write/claim', '/api/connector/v1/staging-write/result'))
-ASSETS = {'/deployment.js': ('deployment.js','application/javascript'), '/user-enrollment.js': ('user-enrollment.js','application/javascript'), '/dashboard.js': ('dashboard.js','application/javascript'), '/device.js': ('device.js','application/javascript'), '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
+ASSETS = {'/staging-write-panel.js': ('staging-write-panel.js', 'application/javascript'), '/deployment.js': ('deployment.js','application/javascript'), '/user-enrollment.js': ('user-enrollment.js','application/javascript'), '/dashboard.js': ('dashboard.js','application/javascript'), '/device.js': ('device.js','application/javascript'), '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'application/javascript'),
           '/audit.js': ('audit.js','application/javascript'),
           '/access-events.js': ('access-events.js','application/javascript'),
           '/services.js': ('services.js','application/javascript'),
@@ -415,6 +415,8 @@ class Handler(BaseHTTPRequestHandler):
                 if self.path != '/api/deployment/staging-write':
                     raise ValueError()
                 result = jobs.status()
+                from .staging_write_panel import describe
+                result['panel_workflow'] = describe(jobs, result, pilot)
             else:
                 value = self.read_body()
                 with self.server.admin.connect() as adb:
@@ -1257,3 +1259,4 @@ class Handler(BaseHTTPRequestHandler):
             self.store_error(error)
         except OSError:
             self.respond(503, {'error': 'STORE_UNAVAILABLE'})
+

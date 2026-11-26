@@ -1,4 +1,4 @@
-/* Preparation only: no GPO or endpoint write can be issued by this screen. */
+/* Preparation plus explicit scoped filesystem approvals; no GPO activation. */
 let depState=null,depBusy=false,depRequest=0,depFlight=null,depEditing=null,depRevision=0,depUncertain=false,depUncertainDraft=null,depPreview=null,depOffset=0;
 const depGroups=new Map(),depURLs=new Set();
 const depKinds={machine:'Bilgisayar',user:'Kullanıcı',machineOrUser:'Bilgisayar + kullanıcı'};
@@ -82,6 +82,7 @@ let candidateRows=[],candidateBusy=false,candidateTicket=0,candidatePreview=null
 function candidateAccess(write=false){return can('certificates.authority',write)&&can('system.connectors',write);}
 function candidateError(error){return ({COMBINED_NETWORK_RECORD_REQUIRED:'Bu planın güncel ağ profili hazırlık kaydı bulunamadı. Önce ağ profili hazırlık sonucunu kaydedin.',CANDIDATE_JOB_FORMAT_UNSUPPORTED:'Bu paket için farklı doğrulama yolu gerekiyor.',COMBINED_WORKER_NOT_READY:'Birleşik paket doğrulaması için güncel Windows Connector bağlantısı bekleniyor.'})[error.code]||error.code||error.message;}
 function candidateControls(){
+ globalThis.AuthWireFilesystemPanel?.controls();
  const read=candidateAccess(),write=candidateAccess(true);
  $('dep-candidates').hidden=!read;$('dep-candidate-open').hidden=!write;
  $('dep-candidate-open').disabled=candidateBusy||candidateVerifyBusy||!write;$('dep-candidate-refresh').disabled=candidateBusy||candidateVerifyBusy||!read;
@@ -90,13 +91,15 @@ function candidateControls(){
  for(const id of ['dep-candidate-close','dep-candidate-cancel'])$(id).disabled=candidateBusy;
 }
 function resetCandidateRegistration(){
+ globalThis.AuthWireFilesystemPanel?.reset();
  candidateVerifyTicket++;candidateVerifyBusy=false;candidateVerifySending=false;candidateVerifyUncertain=null;
  candidateTicket++;candidateRows=[];candidateBusy=false;candidatePreview=null;candidateRequest=null;candidateUncertain=false;
  $('dep-candidate-dialog').close();$('dep-candidate-json').value='';$('dep-candidate-list').replaceChildren();
  $('dep-candidate-preview').replaceChildren();$('dep-candidate-error').textContent='';$('dep-candidate-feedback').textContent='';candidateControls();
 }
 async function loadCandidateStatus(){
- if(!candidateAccess()||candidateVerifySending)return null;
+ if(!candidateAccess()||candidateVerifySending||globalThis.AuthWireFilesystemPanel?.busy)return null;
+ globalThis.AuthWireFilesystemPanel?.invalidate();
  if(candidateVerifyBusy){candidateVerifyTicket++;candidateVerifyBusy=false;}
  const generation=authGeneration,ticket=++candidateTicket;
  try{const writeStatusRequest=api('/api/deployment/staging-write').catch(()=>null);
@@ -147,12 +150,13 @@ async function loadCandidateStatus(){
 }
 function renderStagingWriteStatus(box,status,existing=null){
  const item=existing||depNode('article');item.replaceChildren(depNode('strong','Dosya yazma ve geri alma durumu'));
- item.append(depNode('p','Bu arayüzde yeni dosya yazma veya geri alma onayı kapalı.'));
+ const pilot=globalThis.AuthWireFilesystemPanel?.accepts(status)===true;
+ if(!pilot)item.append(depNode('p','Bu arayüzde yeni dosya yazma veya geri alma onayı kapalı.'));
  if(status===undefined){item.append(depNode('p','Yazma/geri alma durumu kontrol ediliyor. Paket bilgilerini incelemeye devam edebilirsiniz.'));}
- else if(!status||status.approval_enabled!==false||status.write_authorization_enabled!==false||status.execution_adapter_available!==false||status.can_apply_gpo!==false||!Array.isArray(status.jobs)||status.jobs.length>32||status.jobs.some(j=>!j||typeof j.id!=='string'||typeof j.operation!=='string'||typeof j.state!=='string')){
+ else if(!status||(!pilot&&(status.approval_enabled!==false||status.write_authorization_enabled!==false||status.execution_adapter_available!==false))||status.can_apply_gpo!==false||!Array.isArray(status.jobs)||status.jobs.length>32||status.jobs.some(j=>!j||typeof j.id!=='string'||typeof j.operation!=='string'||typeof j.state!=='string')){
   item.append(depNode('p','İşlem durumu alınamadı; mevcut görevlerin sonucu hakkında karar vermeyin. Yenile ile tekrar kontrol edin.'));
  }else{
-  item.append(depNode('p','Windows yürütücüsü, kesinti kurtarması ve yedekleme kontrolleri tamamlandıktan sonra kontrollü onay açılacak.'));
+  if(!pilot)item.append(depNode('p','Windows yürütücüsü, kesinti kurtarması ve yedekleme kontrolleri tamamlandıktan sonra kontrollü onay açılacak.'));
   const states={queued:'Görev kayıtlı; yürütme yetkisi verilmedi.',leased:'Görev alındı; yürütme yetkisi verilmedi.',authorized:'Yetki verilmiş; dosya sonucu henüz doğrulanmadı.',requires_review:'Sonuç belirsiz; inceleme gerekiyor. İşlemi tekrar başlatmayın.',completed:'Connector sonuç bildirimi kayıtlı; bağımsız disk kabulü anlamına gelmez.',expired:'Süresi dolmuş; otomatik tekrar başlatılmaz.',obsolete:'Bağlantı kapsamı değişmiş; otomatik tekrar başlatılmaz.'};
   if(!status.jobs.length)item.append(depNode('p','Kayıtlı yazma/geri alma görevi yok.'));
   const refusalReasons={CONTENT_REJECTED:'Paketin imzası veya içeriği doğrulanamadı.',SCOPE_CHANGED:'AD veya GPO kapsamı değişti.',PREVIEW_EXPIRED:'Onaylanan önizlemenin süresi doldu.',PREFLIGHT_FAILED:'Yazma öncesi kontrol tamamlanamadı.',WRITER_UNAVAILABLE:'Windows yürütücüsü kullanılamıyor.'};
@@ -169,6 +173,7 @@ function renderStagingWriteStatus(box,status,existing=null){
    }
    item.append(depNode('p',operation+' · '+String(job.id)+' · '+text));
   }
+  if(pilot)globalThis.AuthWireFilesystemPanel.render(item,status,candidateRows);
  }
  box.append(item);return item;
 }
@@ -402,4 +407,5 @@ $('connector-job-refresh').addEventListener('click',loadConnectorJobs);
 $('connector-job-preview-button').addEventListener('click',previewConnectorJob);
 $('connector-job-create').addEventListener('click',createConnectorJob);
 $('connector-job-cancel').addEventListener('click',()=>{if(!connectorJobBusy){connectorJobPreview=null;connectorJobPermissions();}});
+
 
